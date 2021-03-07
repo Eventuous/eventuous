@@ -1,11 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Subscriptions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using MongoTools;
 
-namespace CoreLib.MongoDB {
+namespace Eventuous.MongoDB {
+    [PublicAPI]
     public abstract class MongoProjection<T> : IEventHandler
         where T : Document {
         readonly ILogger             _log;
@@ -59,7 +61,7 @@ namespace CoreLib.MongoDB {
         )
             => new(Operation(id, update));
 
-        protected ValueTask<UpdateOperation<T>> NoOp => new((UpdateOperation<T>) null);
+        protected ValueTask<UpdateOperation<T>> NoOp => new((UpdateOperation<T>) null!);
     }
 
     public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update);

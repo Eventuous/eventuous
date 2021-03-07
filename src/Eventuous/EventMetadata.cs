@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CoreLib
+namespace Eventuous
 {
     public class EventMetadata : Dictionary<string, string> { }
 }

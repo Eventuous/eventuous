@@ -1,10 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreLib", "src\CoreLib\CoreLib.csproj", "{7494C655-CC42-447C-A2D3-97408F17CCC1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous", "src\Eventuous\Eventuous.csproj", "{7494C655-CC42-447C-A2D3-97408F17CCC1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreLib.EventStoreDB", "src\CoreLib.EventStoreDB\CoreLib.EventStoreDB.csproj", "{7C9EDFDD-967D-464D-9860-3D276511FAA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.EventStoreDB", "src\Eventuous.EventStoreDB\Eventuous.EventStoreDB.csproj", "{7C9EDFDD-967D-464D-9860-3D276511FAA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreLib.MongoDB", "src\CoreLib.MongoDB\CoreLib.MongoDB.csproj", "{0649460A-DE39-4AD4-996A-7104E28C68FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.MongoDB", "src\Eventuous.MongoDB\Eventuous.MongoDB.csproj", "{0649460A-DE39-4AD4-996A-7104E28C68FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

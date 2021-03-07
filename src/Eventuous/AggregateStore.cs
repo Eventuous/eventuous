@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
-namespace CoreLib {
+namespace Eventuous {
+    [PublicAPI]
     public abstract class AggregateStore : IAggregateStore {
         readonly IEventStore      _eventStore;
         readonly IEventSerializer _serializer;
@@ -39,7 +41,7 @@ namespace CoreLib {
 
             return aggregate;
 
-            object Deserialize(StreamEvent streamEvent) => _serializer.Deserialize(
+            object? Deserialize(StreamEvent streamEvent) => _serializer.Deserialize(
                 streamEvent.Data.AsSpan(),
                 streamEvent.EventType
             );

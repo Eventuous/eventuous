@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client;
 
-namespace CoreLib.EventStoreDB {
+namespace Eventuous.EventStoreDB {
     public class EventStore : IEventStore {
         readonly EventStoreClient _client;
 

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
-namespace CoreLib {
+namespace Eventuous {
+    [PublicAPI]
     public static class TypeMap {
         static readonly Dictionary<string, Type> ReverseMap = new();
         static readonly Dictionary<Type, string> Map        = new();
@@ -12,7 +14,7 @@ namespace CoreLib {
 
         public static Type GetType(string typeName) => ReverseMap[typeName];
         
-        public static bool TryGetType(string typeName, out Type type) => ReverseMap.TryGetValue(typeName, out type);
+        public static bool TryGetType(string typeName, out Type? type) => ReverseMap.TryGetValue(typeName, out type);
 
         public static void AddType<T>(string name) {
             ReverseMap[name] = typeof(T);

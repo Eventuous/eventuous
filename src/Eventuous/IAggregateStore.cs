@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace CoreLib
+namespace Eventuous
 {
     public interface IAggregateStore {
         Task Store<T>(T entity) where T : Aggregate;

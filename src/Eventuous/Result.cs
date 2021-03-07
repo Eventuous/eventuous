@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CoreLib {
+namespace Eventuous {
     public abstract record Result<T, TState, TId>(TState State)
         where T : Aggregate<TState, TId>
         where TState : AggregateState<TState, TId>, new()

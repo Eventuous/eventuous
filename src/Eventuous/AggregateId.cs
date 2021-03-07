@@ -1,4 +1,4 @@
-namespace CoreLib {
+namespace Eventuous {
     public abstract record AggregateId(string Value) {
         string Value { get; } = Value;
         

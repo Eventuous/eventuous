@@ -1,4 +1,4 @@
-namespace CoreLib {
+namespace Eventuous {
     public abstract record AggregateState<T> where T : AggregateState<T> {
         public abstract T When(object @event);
     }

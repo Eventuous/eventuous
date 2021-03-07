@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 
-namespace CoreLib {
+namespace Eventuous {
+    [PublicAPI]
     public abstract class Aggregate {
         public IReadOnlyCollection<object> Changes => _changes.AsReadOnly();
 
@@ -11,7 +13,7 @@ namespace CoreLib {
 
         readonly List<object> _changes = new();
         
-        public abstract void Load(IEnumerable<object> events);
+        public abstract void Load(IEnumerable<object?> events);
 
         public abstract string GetId();
 
@@ -34,8 +36,8 @@ namespace CoreLib {
             State = State.When(evt);
         }
 
-        public override void Load(IEnumerable<object> events) {
-            State = events.Aggregate(new T(), Fold);
+        public override void Load(IEnumerable<object?> events) {
+            State = events.Where(x => x != null).Aggregate(new T(), Fold!);
 
             T Fold(T state, object evt) {
                 Version++;

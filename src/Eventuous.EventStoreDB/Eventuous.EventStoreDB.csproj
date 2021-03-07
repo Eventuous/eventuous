@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-      <ProjectReference Include="..\CoreLib\CoreLib.csproj" />
+      <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
     </ItemGroup>
 
     <ItemGroup>

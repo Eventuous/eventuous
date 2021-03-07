@@ -1,8 +1,8 @@
 using System;
 
-namespace CoreLib {
+namespace Eventuous {
     public interface IEventSerializer {
-        object Deserialize(ReadOnlySpan<byte> data, string eventType);
+        object? Deserialize(ReadOnlySpan<byte> data, string eventType);
 
         byte[] Serialize(object evt);
     }

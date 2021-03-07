@@ -1,4 +1,4 @@
-namespace CoreLib {
+namespace Eventuous {
     public record ExpectedStreamVersion(long Value) {
         public static ExpectedStreamVersion NoStream = new(-1);
     }

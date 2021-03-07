@@ -1,6 +1,6 @@
 using System;
 
-namespace CoreLib {
+namespace Eventuous {
     static class Exceptions {
         public class AggregateNotFound<T> : Exception {
             public AggregateNotFound(string id) : base($"Aggregate of type {typeof(T).Name} with id {id} does not exist") { }
