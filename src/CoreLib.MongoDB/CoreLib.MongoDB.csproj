@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="EventStore.Subscriptions" Version="0.0.0-alpha.0.12" />
+        <PackageReference Include="MongoTools" Version="0.0.0-alpha.0.1" />
+    </ItemGroup>
+</Project>
