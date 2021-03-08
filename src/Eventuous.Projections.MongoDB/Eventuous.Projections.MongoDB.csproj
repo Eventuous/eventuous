@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
         <PackageReference Include="EventStore.Subscriptions" Version="0.0.0-alpha.0.12" />
-        <PackageReference Include="MongoTools" Version="0.0.0-alpha.0.1" />
+        <PackageReference Include="MongoDB.Driver" Version="2.12.0" />
     </ItemGroup>
 </Project>

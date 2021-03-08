@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Subscriptions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
-using MongoDefaults = MongoTools.MongoDefaults;
+using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 
-namespace Roomote.Checkin.Infrastructure.Mongo {
+namespace Eventuous.Projections.MongoDB {
+    [PublicAPI]
     public class MongoCheckpointStore : ICheckpointStore {
         readonly int                           _batchSize;
         readonly ILogger<MongoCheckpointStore> _log;
@@ -69,15 +71,16 @@ namespace Roomote.Checkin.Infrastructure.Mongo {
             await Checkpoints.ReplaceOneAsync(
                 x => x.Id == checkpoint.Id,
                 checkpoint,
-                MongoDefaults.DefaultReplaceOptions,
+                Tools.MongoDefaults.DefaultReplaceOptions,
                 cancellationToken
             );
 
-            _log.LogDebug(
-                "[{CheckpointId}] Checkpoint position set to {Checkpoint}",
-                checkpoint.Id,
-                checkpoint.Position
-            );
+            if (_log.IsEnabled(LogLevel.Debug))
+                _log.LogDebug(
+                    "[{CheckpointId}] Checkpoint position set to {Checkpoint}",
+                    checkpoint.Id,
+                    checkpoint.Position
+                );
 
             return checkpoint;
         }

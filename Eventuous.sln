@@ -4,7 +4,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous", "src\Eventuous\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.EventStoreDB", "src\Eventuous.EventStoreDB\Eventuous.EventStoreDB.csproj", "{7C9EDFDD-967D-464D-9860-3D276511FAA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.MongoDB", "src\Eventuous.MongoDB\Eventuous.MongoDB.csproj", "{0649460A-DE39-4AD4-996A-7104E28C68FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Projections.MongoDB", "src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj", "{0649460A-DE39-4AD4-996A-7104E28C68FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.EventStoreDB.Subscriptions", "src\Eventuous.EventStoreDB.Subscriptions\Eventuous.EventStoreDB.Subscriptions.csproj", "{D343C1BE-6DBE-480B-B749-54407A7E1F49}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +26,9 @@ Global
 		{0649460A-DE39-4AD4-996A-7104E28C68FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0649460A-DE39-4AD4-996A-7104E28C68FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0649460A-DE39-4AD4-996A-7104E28C68FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D343C1BE-6DBE-480B-B749-54407A7E1F49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D343C1BE-6DBE-480B-B749-54407A7E1F49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D343C1BE-6DBE-480B-B749-54407A7E1F49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D343C1BE-6DBE-480B-B749-54407A7E1F49}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
