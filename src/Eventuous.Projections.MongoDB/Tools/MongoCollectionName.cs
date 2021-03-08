@@ -8,15 +8,15 @@ namespace Eventuous.Projections.MongoDB.Tools {
     /// "Document", "Entity", "View", "Projection", "ProjectionDocument", "ProjectionEntity"
     /// </summary>
     public record MongoCollectionName {
-        public static readonly MongoCollectionName Default = new("");
+        static readonly MongoCollectionName Default = new("");
 
-        readonly string _value;
+        readonly string? _value;
 
         MongoCollectionName(string value) => _value = value;
 
-        public static MongoCollectionName For<T>(string prefix = null) => For(typeof(T), prefix);
+        public static MongoCollectionName For<T>(string? prefix = null) => For(typeof(T), prefix);
 
-        public static MongoCollectionName For(Type type, string prefix = null) {
+        public static MongoCollectionName For(Type type, string? prefix = null) {
             var collectionName = type.Name;
 
             var suffixes = new[] {"Document", "Entity", "View", "Projection", "ProjectionDocument", "ProjectionEntity"};

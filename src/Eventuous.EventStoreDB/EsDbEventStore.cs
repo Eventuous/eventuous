@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client;
+using JetBrains.Annotations;
 
 namespace Eventuous.EventStoreDB {
-    public class EventStore : IEventStore {
+    [PublicAPI]
+    public class EsDbEventStore : IEventStore {
         readonly EventStoreClient _client;
 
-        public EventStore(EventStoreClient client) => _client = client;
+        public EsDbEventStore(EventStoreClient client) => _client = client;
 
         public async Task AppendEvents(
             string stream, ExpectedStreamVersion expectedVersion, IReadOnlyCollection<StreamEvent> events

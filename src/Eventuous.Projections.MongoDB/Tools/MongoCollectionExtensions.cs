@@ -4,12 +4,16 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using MongoDB.Driver;
 using static System.String;
 
 namespace Eventuous.Projections.MongoDB.Tools {
+    [PublicAPI]
     public static class MongoCollectionExtensions {
-        public static IMongoCollection<T> GetDocumentCollection<T>(this IMongoDatabase database, MongoCollectionName collectionName = null)
+        public static IMongoCollection<T> GetDocumentCollection<T>(
+            this IMongoDatabase database, MongoCollectionName? collectionName = null
+        )
             where T : Document
             => GetDocumentCollection<T>(database, collectionName ?? MongoCollectionName.For<T>(), null);
 
@@ -20,44 +24,50 @@ namespace Eventuous.Projections.MongoDB.Tools {
             => GetDocumentCollection<T>(database, MongoCollectionName.For<T>(), settings);
 
         public static IMongoCollection<T> GetDocumentCollection<T>(
-            this IMongoDatabase     database,
-            MongoCollectionName     collectionName,
-            MongoCollectionSettings settings
+            this IMongoDatabase      database,
+            MongoCollectionName?     collectionName,
+            MongoCollectionSettings? settings
         ) where T : Document
-            => database.GetCollection<T>(collectionName == null ? MongoCollectionName.For<T>() : collectionName, settings);
+            => database.GetCollection<T>(
+                collectionName == null ? MongoCollectionName.For<T>() : collectionName,
+                settings
+            );
 
         public static Task<bool> DocumentExists<T>(
             this IMongoCollection<T> collection,
             string                   id,
             CancellationToken        cancellationToken = default
         ) where T : Document {
-            if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+            if (IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
             return collection
                 .Find(x => x.Id == id)
                 .AnyAsync(cancellationToken);
         }
 
-        public static Task<T> LoadDocument<T>(
+        public static Task<T?> LoadDocument<T>(
             this IMongoCollection<T> collection,
             string                   id,
             CancellationToken        cancellationToken = default
         ) where T : Document {
-            if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+            if (IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
             return collection
                 .Find(x => x.Id == id)
                 .Limit(1)
-                .SingleOrDefaultAsync(cancellationToken);
+                .SingleOrDefaultAsync(cancellationToken)!;
         }
 
-        public static Task<TResult> LoadDocumentAs<T, TResult>(
+        public static Task<TResult?> LoadDocumentAs<T, TResult>(
             this IMongoCollection<T>     collection,
             string                       id,
             Expression<Func<T, TResult>> projection,
             CancellationToken            cancellationToken = default
         ) where T : Document {
-            if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+            if (IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
             if (projection == null) throw new ArgumentNullException(nameof(projection));
 
@@ -65,7 +75,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 .Find(x => x.Id == id)
                 .Limit(1)
                 .Project(projection)
-                .SingleOrDefaultAsync(cancellationToken);
+                .SingleOrDefaultAsync(cancellationToken)!;
         }
 
         public static Task<List<T>> LoadDocuments<T>(
@@ -76,7 +86,10 @@ namespace Eventuous.Projections.MongoDB.Tools {
             var idsList = ids.ToList();
 
             if (ids == null || idsList.Count == 0 || idsList.Any(IsNullOrWhiteSpace))
-                throw new ArgumentException("Document ids collection cannot be empty or contain empty values", nameof(ids));
+                throw new ArgumentException(
+                    "Document ids collection cannot be empty or contain empty values",
+                    nameof(ids)
+                );
 
             return collection
                 .Find(Builders<T>.Filter.In(x => x.Id, idsList))
@@ -92,7 +105,10 @@ namespace Eventuous.Projections.MongoDB.Tools {
             var idsList = ids.ToList();
 
             if (ids == null || idsList.Count == 0 || idsList.Any(IsNullOrWhiteSpace))
-                throw new ArgumentException("Document ids collection cannot be empty or contain empty values", nameof(ids));
+                throw new ArgumentException(
+                    "Document ids collection cannot be empty or contain empty values",
+                    nameof(ids)
+                );
 
             if (projection == null) throw new ArgumentNullException(nameof(projection), "Projection must be specified");
 
@@ -102,13 +118,14 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 .ToListAsync(cancellationToken);
         }
 
-        public static Task<TResult> LoadDocumentAs<T, TResult>(
+        public static Task<TResult?> LoadDocumentAs<T, TResult>(
             this IMongoCollection<T>         collection,
             string                           id,
             ProjectionDefinition<T, TResult> projection,
             CancellationToken                cancellationToken = default
         ) where T : Document {
-            if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+            if (IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
             if (projection == null) throw new ArgumentNullException(nameof(projection));
 
@@ -116,10 +133,10 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 .Find(x => x.Id == id)
                 .Limit(1)
                 .Project(projection)
-                .SingleOrDefaultAsync(cancellationToken);
+                .SingleOrDefaultAsync(cancellationToken)!;
         }
 
-        public static Task<TResult> LoadDocumentAs<T, TResult>(
+        public static Task<TResult?> LoadDocumentAs<T, TResult>(
             this IMongoCollection<T>                                      collection,
             string                                                        id,
             Func<ProjectionDefinitionBuilder<T>, ProjectionDefinition<T>> projection,
@@ -127,13 +144,10 @@ namespace Eventuous.Projections.MongoDB.Tools {
         ) where T : Document
             => collection.LoadDocumentAs<T, TResult>(id, projection(Builders<T>.Projection), cancellationToken);
 
-        /// <summary>
-        /// Replaces the document and by default inserts a new one if no matching document by id is found.
-        /// </summary>
         public static async Task<ReplaceOneResult> ReplaceDocument<T>(
             this IMongoCollection<T> collection,
             T                        document,
-            Action<ReplaceOptions>   configure,
+            Action<ReplaceOptions>?  configure,
             CancellationToken        cancellationToken = default
         ) where T : Document {
             if (document == null) throw new ArgumentNullException(nameof(document), "Document cannot be null.");
@@ -150,9 +164,6 @@ namespace Eventuous.Projections.MongoDB.Tools {
             );
         }
 
-        /// <summary>
-        /// Replaces the document and by default inserts a new one if no matching document by id is found.
-        /// </summary>
         public static Task ReplaceDocument<T>(
             this IMongoCollection<T> collection,
             T                        document,
@@ -165,7 +176,8 @@ namespace Eventuous.Projections.MongoDB.Tools {
             string                   id,
             CancellationToken        cancellationToken = default
         ) where T : Document {
-            if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+            if (IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
             var result = await collection.DeleteOneAsync(x => x.Id == id, cancellationToken);
 
@@ -185,23 +197,23 @@ namespace Eventuous.Projections.MongoDB.Tools {
         }
 
         public static Task<long> DeleteManyDocuments<T>(
-            this IMongoCollection<T>                              collection,
-            Func<FilterDefinitionBuilder<T>, FilterDefinition<T>> filter,
-            CancellationToken                                     cancellationToken = default
+            this IMongoCollection<T> collection,
+            BuildFilter<T>           filter,
+            CancellationToken        cancellationToken = default
         ) where T : Document
             => collection.DeleteManyDocuments(filter(Builders<T>.Filter), cancellationToken);
 
         public static async Task<long> BulkUpdateDocuments<T>(
-            this IMongoCollection<T>                                 collection,
-            IEnumerable<T>                                           documents,
-            Func<T, FilterDefinitionBuilder<T>, FilterDefinition<T>> filter,
-            Func<T, UpdateDefinitionBuilder<T>, UpdateDefinition<T>> update,
-            Action<BulkWriteOptions>                                 configure,
-            CancellationToken                                        cancellationToken = default
+            this IMongoCollection<T>  collection,
+            IEnumerable<T>            documents,
+            BuildBulkFilter<T>        filter,
+            BuildBulkUpdate<T>        update,
+            Action<BulkWriteOptions>? configure,
+            CancellationToken         cancellationToken = default
         ) where T : Document {
             var options = new BulkWriteOptions();
 
-            configure(options);
+            configure?.Invoke(options);
 
             var models = documents.Select(
                 document => new UpdateOneModel<T>(
@@ -216,32 +228,32 @@ namespace Eventuous.Projections.MongoDB.Tools {
         }
 
         public static async Task<BulkWriteResult> BulkWriteDocuments<T>(
-            this IMongoCollection<T> collection,
-            IEnumerable<T>           documents,
-            Func<T, WriteModel<T>>   write,
-            Action<BulkWriteOptions> configure,
-            CancellationToken        cancellationToken = default
+            this IMongoCollection<T>  collection,
+            IEnumerable<T>            documents,
+            Func<T, WriteModel<T>>    write,
+            Action<BulkWriteOptions>? configure,
+            CancellationToken         cancellationToken = default
         ) where T : Document {
             var options = new BulkWriteOptions();
 
-            configure(options);
+            configure?.Invoke(options);
 
             return await collection.BulkWriteAsync(documents.Select(write), options, cancellationToken);
         }
 
         public static Task<long> BulkUpdateDocuments<T>(
-            this IMongoCollection<T>                                 collection,
-            IEnumerable<T>                                           documents,
-            Func<T, FilterDefinitionBuilder<T>, FilterDefinition<T>> filter,
-            Func<T, UpdateDefinitionBuilder<T>, UpdateDefinition<T>> update,
-            CancellationToken                                        cancellationToken = default
+            this IMongoCollection<T> collection,
+            IEnumerable<T>           documents,
+            BuildBulkFilter<T>       filter,
+            BuildBulkUpdate<T>       update,
+            CancellationToken        cancellationToken = default
         ) where T : Document
             => collection.BulkUpdateDocuments(documents, filter, update, null, cancellationToken);
 
         public static Task<string> CreateDocumentIndex<T>(
-            this IMongoCollection<T>                                    collection,
-            Func<IndexKeysDefinitionBuilder<T>, IndexKeysDefinition<T>> index,
-            Action<CreateIndexOptions>                                  configure = null
+            this IMongoCollection<T>    collection,
+            BuildIndex<T>               index,
+            Action<CreateIndexOptions>? configure = null
         ) where T : Document {
             var options = new CreateIndexOptions();
 
@@ -256,10 +268,10 @@ namespace Eventuous.Projections.MongoDB.Tools {
         }
 
         public static async Task<string> CreateDocumentIndex<T>(
-            this IMongoCollection<T>                                    collection,
-            Func<IndexKeysDefinitionBuilder<T>, IndexKeysDefinition<T>> index,
-            Action<CreateIndexOptions>                                  configure,
-            CancellationToken                                           cancellationToken
+            this IMongoCollection<T>    collection,
+            BuildIndex<T>               index,
+            Action<CreateIndexOptions>? configure,
+            CancellationToken           cancellationToken
         ) where T : Document {
             var options = new CreateIndexOptions();
 
@@ -269,7 +281,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 return await CreateIndex();
             }
             catch (MongoCommandException ex) when (ex.Message.Contains("already exists")) {
-                // Ignore, but the user should decide
+                // Ignore
             }
 
             return Empty;
@@ -284,23 +296,18 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 );
         }
 
-        #region . Update .
-
-        /// <summary>
-        /// Updates a document and by default inserts a new one if no matching document is found.
-        /// </summary>
         public static async Task UpdateDocument<T>(
             this IMongoCollection<T> collection,
             FilterDefinition<T>      filter,
             UpdateDefinition<T>      update,
-            Action<UpdateOptions>    configure,
+            Action<UpdateOptions>?   configure,
             CancellationToken        cancellationToken = default
         ) where T : Document {
             var options = new UpdateOptions {IsUpsert = true};
 
             configure?.Invoke(options);
 
-            var result = await collection.UpdateOneAsync(
+            await collection.UpdateOneAsync(
                 filter,
                 update,
                 options,
@@ -308,15 +315,12 @@ namespace Eventuous.Projections.MongoDB.Tools {
             );
         }
 
-        /// <summary>
-        /// Updates a document and by default inserts a new one if no matching document is found.
-        /// </summary>
         public static Task UpdateDocument<T>(
-            this IMongoCollection<T>                              collection,
-            Func<FilterDefinitionBuilder<T>, FilterDefinition<T>> filter,
-            Func<UpdateDefinitionBuilder<T>, UpdateDefinition<T>> update,
-            Action<UpdateOptions>                                 configure,
-            CancellationToken                                     cancellationToken = default
+            this IMongoCollection<T> collection,
+            BuildFilter<T>           filter,
+            BuildUpdate<T>           update,
+            Action<UpdateOptions>?   configure,
+            CancellationToken        cancellationToken = default
         ) where T : Document
             => collection.UpdateDocument(
                 filter(Builders<T>.Filter),
@@ -325,9 +329,6 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 cancellationToken
             );
 
-        /// <summary>
-        /// Updates a document and by default inserts a new one if no matching document is found.
-        /// </summary>
         public static Task UpdateDocument<T>(
             this IMongoCollection<T> collection,
             FilterDefinition<T>      filter,
@@ -336,14 +337,11 @@ namespace Eventuous.Projections.MongoDB.Tools {
         ) where T : Document
             => collection.UpdateDocument(filter, update, null, cancellationToken);
 
-        /// <summary>
-        /// Updates a document and by default inserts a new one if no matching document is found.
-        /// </summary>
         public static Task UpdateDocument<T>(
-            this IMongoCollection<T>                              collection,
-            Func<FilterDefinitionBuilder<T>, FilterDefinition<T>> filter,
-            Func<UpdateDefinitionBuilder<T>, UpdateDefinition<T>> update,
-            CancellationToken                                     cancellationToken = default
+            this IMongoCollection<T> collection,
+            BuildFilter<T>           filter,
+            BuildUpdate<T>           update,
+            CancellationToken        cancellationToken = default
         ) where T : Document
             => collection.UpdateDocument(
                 filter(Builders<T>.Filter),
@@ -352,17 +350,15 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 cancellationToken
             );
 
-        /// <summary>
-        /// Updates a document and by default inserts a new one if no matching document by id is found.
-        /// </summary>
         public static Task UpdateDocument<T>(
             this IMongoCollection<T> collection,
             string                   id,
             UpdateDefinition<T>      update,
-            Action<UpdateOptions>    configure,
+            Action<UpdateOptions>?   configure,
             CancellationToken        cancellationToken = default
         ) where T : Document {
-            if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+            if (IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
             return collection.UpdateDocument(
                 Builders<T>.Filter.Eq(x => x.Id, id),
@@ -376,11 +372,11 @@ namespace Eventuous.Projections.MongoDB.Tools {
         /// Updates a document and by default inserts a new one if no matching document by id is found.
         /// </summary>
         public static Task UpdateDocument<T>(
-            this IMongoCollection<T>                              collection,
-            string                                                id,
-            Func<UpdateDefinitionBuilder<T>, UpdateDefinition<T>> update,
-            Action<UpdateOptions>                                 configure,
-            CancellationToken                                     cancellationToken = default
+            this IMongoCollection<T> collection,
+            string                   id,
+            BuildUpdate<T>           update,
+            Action<UpdateOptions>?   configure,
+            CancellationToken        cancellationToken = default
         ) where T : Document
             => collection.UpdateDocument(
                 id,
@@ -389,9 +385,6 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 cancellationToken
             );
 
-        /// <summary>
-        /// Updates a document and by default inserts a new one if no matching document by id is found.
-        /// </summary>
         public static Task UpdateDocument<T>(
             this IMongoCollection<T> collection,
             string                   id,
@@ -400,29 +393,19 @@ namespace Eventuous.Projections.MongoDB.Tools {
         ) where T : Document
             => collection.UpdateDocument(id, update, null, cancellationToken);
 
-        /// <summary>
-        /// Updates a document and by default inserts a new one if no matching document by id is found.
-        /// </summary>
         public static Task UpdateDocument<T>(
-            this IMongoCollection<T>                              collection,
-            string                                                id,
-            Func<UpdateDefinitionBuilder<T>, UpdateDefinition<T>> update,
-            CancellationToken                                     cancellationToken = default
+            this IMongoCollection<T> collection,
+            string                   id,
+            BuildUpdate<T>           update,
+            CancellationToken        cancellationToken = default
         ) where T : Document
             => collection.UpdateDocument(id, update, null, cancellationToken);
 
-        #endregion
-
-        #region . UpdateMany .
-
-        /// <summary>
-        /// Updates documents and by default inserts new ones if no matching documents are found.
-        /// </summary>
         public static async Task<long> UpdateManyDocuments<T>(
             this IMongoCollection<T> collection,
             FilterDefinition<T>      filter,
             UpdateDefinition<T>      update,
-            Action<UpdateOptions>    configure,
+            Action<UpdateOptions>?   configure,
             CancellationToken        cancellationToken = default
         ) where T : Document {
             if (filter == null) throw new ArgumentNullException(nameof(filter));
@@ -437,21 +420,20 @@ namespace Eventuous.Projections.MongoDB.Tools {
             return result.ModifiedCount;
         }
 
-        /// <summary>
-        /// Updates documents and by default inserts new ones if no matching documents are found.
-        /// </summary>
         public static Task<long> UpdateManyDocuments<T>(
-            this IMongoCollection<T>                              collection,
-            Func<FilterDefinitionBuilder<T>, FilterDefinition<T>> filter,
-            Func<UpdateDefinitionBuilder<T>, UpdateDefinition<T>> update,
-            Action<UpdateOptions>                                 configure,
-            CancellationToken                                     cancellationToken = default
+            this IMongoCollection<T> collection,
+            BuildFilter<T>           filter,
+            BuildUpdate<T>           update,
+            Action<UpdateOptions>?   configure,
+            CancellationToken        cancellationToken = default
         ) where T : Document
-            => collection.UpdateManyDocuments(filter(Builders<T>.Filter), update(Builders<T>.Update), configure, cancellationToken);
+            => collection.UpdateManyDocuments(
+                filter(Builders<T>.Filter),
+                update(Builders<T>.Update),
+                configure,
+                cancellationToken
+            );
 
-        /// <summary>
-        /// Updates documents and by default inserts new ones if no matching documents are found.
-        /// </summary>
         public static Task<long> UpdateManyDocuments<T>(
             this IMongoCollection<T> collection,
             FilterDefinition<T>      filter,
@@ -460,17 +442,17 @@ namespace Eventuous.Projections.MongoDB.Tools {
         ) where T : Document
             => collection.UpdateManyDocuments(filter, update, null, cancellationToken);
 
-        /// <summary>
-        /// Updates documents and by default inserts new ones if no matching documents by filter are found.
-        /// </summary>
         public static Task<long> UpdateManyDocuments<T>(
-            this IMongoCollection<T>                              collection,
-            Func<FilterDefinitionBuilder<T>, FilterDefinition<T>> filter,
-            Func<UpdateDefinitionBuilder<T>, UpdateDefinition<T>> update,
-            CancellationToken                                     cancellationToken = default
+            this IMongoCollection<T> collection,
+            BuildFilter<T>           filter,
+            BuildUpdate<T>           update,
+            CancellationToken        cancellationToken = default
         ) where T : Document
-            => collection.UpdateManyDocuments(filter(Builders<T>.Filter), update(Builders<T>.Update), null, cancellationToken);
-
-        #endregion
+            => collection.UpdateManyDocuments(
+                filter(Builders<T>.Filter),
+                update(Builders<T>.Update),
+                null,
+                cancellationToken
+            );
     }
 }

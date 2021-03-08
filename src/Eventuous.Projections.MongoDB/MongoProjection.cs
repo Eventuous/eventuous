@@ -54,7 +54,4 @@ namespace Eventuous.Projections.MongoDB {
 
     public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update);
 
-    public delegate UpdateDefinition<T> BuildUpdate<T>(UpdateDefinitionBuilder<T> update);
-
-    public delegate FilterDefinition<T> BuildFilter<T>(FilterDefinitionBuilder<T> filter);
 }
