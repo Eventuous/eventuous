@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="EventStore.Subscriptions" Version="0.0.0-alpha.0.12" />
         <PackageReference Include="MongoDB.Driver" Version="2.12.0" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Eventuous.EventStoreDB.Subscriptions\Eventuous.EventStoreDB.Subscriptions.csproj" />
     </ItemGroup>
 </Project>

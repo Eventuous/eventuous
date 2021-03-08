@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using EventStore.Subscriptions;
+using Eventuous.EventStoreDB.Subscriptions;
 using Eventuous.Projections.MongoDB.Tools;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;

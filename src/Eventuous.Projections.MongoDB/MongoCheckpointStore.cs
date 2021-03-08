@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Subscriptions;
+using Eventuous.EventStoreDB.Subscriptions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -71,7 +71,7 @@ namespace Eventuous.Projections.MongoDB {
             await Checkpoints.ReplaceOneAsync(
                 x => x.Id == checkpoint.Id,
                 checkpoint,
-                Tools.MongoDefaults.DefaultReplaceOptions,
+                MongoDefaults.DefaultReplaceOptions,
                 cancellationToken
             );
 
