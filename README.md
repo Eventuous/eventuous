@@ -5,7 +5,9 @@ Event Sourcing library for .NET, which is:
 - Extremely opinionated
 - [EventStoreDB](https://eventstore.com)-oriented
 
-Author: [Alexey Zimarev](https://zimarev.com)
+Authors: 
+- [Alexey Zimarev](https://zimarev.com)
+- MongoDB tools - [Sergio Silveira](https://twitter.com/RagingKore)
 
 Sponsor: [Ubiquitous](https://ubiqutous.no)
 
