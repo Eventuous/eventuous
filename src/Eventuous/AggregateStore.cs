@@ -5,11 +5,11 @@ using JetBrains.Annotations;
 
 namespace Eventuous {
     [PublicAPI]
-    public abstract class AggregateStore : IAggregateStore {
+    public class AggregateStore : IAggregateStore {
         readonly IEventStore      _eventStore;
         readonly IEventSerializer _serializer;
 
-        protected AggregateStore(IEventStore eventStore, IEventSerializer serializer) {
+        public AggregateStore(IEventStore eventStore, IEventSerializer serializer) {
             _eventStore = eventStore;
             _serializer = serializer;
         }
