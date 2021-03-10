@@ -28,6 +28,7 @@ namespace Eventuous {
         }
     }
     
+    [PublicAPI]
     public abstract class Aggregate<T> : Aggregate where T : AggregateState<T>, new() {
         protected Aggregate() => State = new T();
         

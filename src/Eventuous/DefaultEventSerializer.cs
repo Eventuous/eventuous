@@ -14,10 +14,9 @@ namespace Eventuous {
 
         public object? Deserialize(ReadOnlySpan<byte> data, string eventType)
             => !TypeMap.TryGetType(eventType, out var dataType)
-                ? null
-                    !
+                ? null!
                 : JsonSerializer.Deserialize(data, dataType!, _options);
 
-        public byte[] Serialize(object evt) => JsonSerializer.SerializeToUtf8Bytes(evt);
+        public byte[] Serialize(object evt) => JsonSerializer.SerializeToUtf8Bytes(evt, _options);
     }
 }

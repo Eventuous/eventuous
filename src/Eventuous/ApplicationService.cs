@@ -40,18 +40,17 @@ namespace Eventuous {
 
             var aggregate = onExisting ? await Load() : new T();
 
+            if (aggregate == default) return new ErrorResult<T, TState, TId>();
+
             action(aggregate, command);
 
             await _store.Store(aggregate);
 
             return new OkResult<T, TState, TId>(aggregate.State, aggregate.Changes);
 
-            async Task<T> Load() {
+            Task<T?> Load() {
                 var id     = _getId[typeof(TCommand)](command);
-                var loaded = await _store.Load<T>(id);
-                if (loaded == null) throw new Exceptions.AggregateNotFound<T>(id);
-
-                return loaded;
+                return _store.Load<T>(id);
             }
         }
     }

@@ -22,7 +22,8 @@ namespace Eventuous.Projections.MongoDB {
         public string SubscriptionGroup { get; }
 
         public async Task HandleEvent(object evt, long? position) {
-            var update = await GetUpdate(evt);
+            var updateTask = GetUpdate(evt);
+            var update     = updateTask == NoOp ? null : await updateTask;
 
             if (update == null) {
                 _log?.LogDebug("No handler for {Event}", evt.GetType().Name);
@@ -49,7 +50,7 @@ namespace Eventuous.Projections.MongoDB {
         protected ValueTask<UpdateOperation<T>> OperationTask(string id, BuildUpdate<T> update)
             => new(Operation(id, update));
 
-        protected ValueTask<UpdateOperation<T>> NoOp => new((UpdateOperation<T>) null!);
+        protected readonly static ValueTask<UpdateOperation<T>> NoOp = new((UpdateOperation<T>) null!);
     }
 
     public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update);
