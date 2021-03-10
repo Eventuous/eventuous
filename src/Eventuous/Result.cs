@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 
 namespace Eventuous {
-    public abstract record Result<T, TState, TId>(TState State)
+    public abstract record Result<T, TState, TId>(TState State, IEnumerable<object>? Changes = null)
         where T : Aggregate<TState, TId>
         where TState : AggregateState<TState, TId>, new()
         where TId : AggregateId;
 
-    public record OkResult<T, TState, TId>(TState State, IEnumerable<object> Changes) : Result<T, TState, TId>(State) 
+    public record OkResult<T, TState, TId>(TState State, IEnumerable<object> Changes) : Result<T, TState, TId>(State, Changes) 
         where T : Aggregate<TState, TId> 
         where TState : AggregateState<TState, TId>, new()
         where TId : AggregateId;

@@ -26,7 +26,7 @@ namespace Eventuous {
             await _eventStore.AppendEvents(stream, expectedVersion, aggregate.Changes.Select(ToStreamEvent).ToArray());
 
             StreamEvent ToStreamEvent(object evt)
-                => new(TypeMap.GetTypeName(evt.GetType()), _serializer.Serialize(evt));
+                => new(TypeMap.GetTypeName(evt), _serializer.Serialize(evt));
         }
 
         public async Task<T> Load<T>(string id) where T : Aggregate, new() {
