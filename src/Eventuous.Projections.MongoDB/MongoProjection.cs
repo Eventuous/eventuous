@@ -50,9 +50,8 @@ namespace Eventuous.Projections.MongoDB {
         protected ValueTask<UpdateOperation<T>> OperationTask(string id, BuildUpdate<T> update)
             => new(Operation(id, update));
 
-        protected readonly static ValueTask<UpdateOperation<T>> NoOp = new((UpdateOperation<T>) null!);
+        protected static readonly ValueTask<UpdateOperation<T>> NoOp = new((UpdateOperation<T>) null!);
     }
 
     public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update);
-
 }

@@ -20,5 +20,7 @@ namespace Eventuous {
             ReverseMap[name] = typeof(T);
             Map[typeof(T)]   = name;
         }
+
+        public static bool IsTypeRegistered<T>() => Map.ContainsKey(typeof(T));
     }
 }
