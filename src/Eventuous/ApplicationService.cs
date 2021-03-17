@@ -29,7 +29,7 @@ namespace Eventuous {
             => Handle(command, false);
 
         public Task<Result<T, TState, TId>> HandleExisting<TCommand>(TCommand command) where TCommand : class
-            => Handle(command, false);
+            => Handle(command, true);
 
         async Task<Result<T, TState, TId>> Handle<TCommand>(TCommand command, bool onExisting) where TCommand : class {
             var handlerMap = onExisting ? _handleExisting : _handleNew;
