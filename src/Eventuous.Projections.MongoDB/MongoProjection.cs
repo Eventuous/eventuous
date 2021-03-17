@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Eventuous.EventStoreDB.Subscriptions;
 using Eventuous.Projections.MongoDB.Tools;
@@ -34,16 +35,20 @@ namespace Eventuous.Projections.MongoDB {
             _log?.LogDebug("Projecting {Event}", evt);
 
             var task = update switch {
-                AsyncOperation<T> operation => operation.Task,
-                UpdateOperation<T> upd => Collection.UpdateOneAsync(
-                    upd.Filter,
-                    upd.Update.Set(x => x.Position, position),
-                    new UpdateOptions { IsUpsert = true }
-                ),
-                _ => Task.CompletedTask
+                OtherOperation<T> operation => operation.Task,
+                CollectionOperation<T> col  => col.Execute(Collection),
+                UpdateOperation<T> upd      => ExecuteUpdate(upd),
+                _                           => Task.CompletedTask
             };
 
             await task;
+
+            Task ExecuteUpdate(UpdateOperation<T> upd)
+                => Collection.UpdateOneAsync(
+                    upd.Filter,
+                    upd.Update.Set(x => x.Position, position),
+                    new UpdateOptions { IsUpsert = true }
+                );
         }
 
         protected abstract ValueTask<Operation<T>> GetUpdate(object evt);
@@ -67,5 +72,7 @@ namespace Eventuous.Projections.MongoDB {
 
     public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update) : Operation<T>;
 
-    public record AsyncOperation<T>(Task Task) : Operation<T>;
+    public record OtherOperation<T>(Task Task) : Operation<T>;
+
+    public record CollectionOperation<T>(Func<IMongoCollection<T>, Task> Execute) : Operation<T>;
 }
