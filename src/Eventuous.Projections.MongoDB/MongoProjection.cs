@@ -53,17 +53,17 @@ namespace Eventuous.Projections.MongoDB {
 
         protected abstract ValueTask<Operation<T>> GetUpdate(object evt);
 
-        protected UpdateOperation<T> Operation(BuildFilter<T> filter, BuildUpdate<T> update)
-            => new(filter(Builders<T>.Filter), update(Builders<T>.Update));
+        protected Operation<T> UpdateOperation(BuildFilter<T> filter, BuildUpdate<T> update)
+            => new UpdateOperation<T>(filter(Builders<T>.Filter), update(Builders<T>.Update));
 
-        protected ValueTask<UpdateOperation<T>> OperationTask(BuildFilter<T> filter, BuildUpdate<T> update)
-            => new(Operation(filter, update));
+        protected ValueTask<Operation<T>> UpdateOperationTask(BuildFilter<T> filter, BuildUpdate<T> update)
+            => new(UpdateOperation(filter, update));
 
-        protected UpdateOperation<T> Operation(string id, BuildUpdate<T> update)
-            => Operation(filter => filter.Eq(x => x.Id, id), update);
+        protected Operation<T> UpdateOperation(string id, BuildUpdate<T> update)
+            => UpdateOperation(filter => filter.Eq(x => x.Id, id), update);
 
-        protected ValueTask<UpdateOperation<T>> OperationTask(string id, BuildUpdate<T> update)
-            => new(Operation(id, update));
+        protected ValueTask<Operation<T>> UpdateOperationTask(string id, BuildUpdate<T> update)
+            => new(UpdateOperation(id, update));
 
         protected static readonly ValueTask<Operation<T>> NoOp = new((Operation<T>) null!);
     }
