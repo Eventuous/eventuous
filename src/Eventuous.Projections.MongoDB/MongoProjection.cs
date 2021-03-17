@@ -9,14 +9,15 @@ namespace Eventuous.Projections.MongoDB {
     [PublicAPI]
     public abstract class MongoProjection<T> : IEventHandler
         where T : ProjectedDocument {
-        readonly ILogger?            _log;
-        readonly IMongoCollection<T> _collection;
+        readonly ILogger? _log;
+
+        protected IMongoCollection<T> Collection { get; }
 
         protected MongoProjection(IMongoDatabase database, string subscriptionGroup, ILoggerFactory loggerFactory) {
             var log = loggerFactory.CreateLogger(GetType());
             _log              = log.IsEnabled(LogLevel.Debug) ? log : null;
             SubscriptionGroup = subscriptionGroup;
-            _collection       = database.GetDocumentCollection<T>();
+            Collection        = database.GetDocumentCollection<T>();
         }
 
         public string SubscriptionGroup { get; }
@@ -33,7 +34,7 @@ namespace Eventuous.Projections.MongoDB {
             update.Update.Set(x => x.Position, position);
 
             _log?.LogDebug("Projecting {Event}", evt);
-            await _collection.UpdateOneAsync(update.Filter, update.Update, new UpdateOptions {IsUpsert = true});
+            await Collection.UpdateOneAsync(update.Filter, update.Update, new UpdateOptions { IsUpsert = true });
         }
 
         protected abstract ValueTask<UpdateOperation<T>> GetUpdate(object evt);

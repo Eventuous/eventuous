@@ -4,11 +4,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.EventStoreDB.Subscriptions {
+    [PublicAPI]
     public abstract class SubscriptionService : IHostedService, IHealthCheck {
         readonly ICheckpointStore      _checkpointStore;
         readonly IEventSerializer      _eventSerializer;
