@@ -31,13 +31,22 @@ namespace Eventuous.Projections.MongoDB {
                 return;
             }
 
-            update.Update.Set(x => x.Position, position);
-
             _log?.LogDebug("Projecting {Event}", evt);
-            await Collection.UpdateOneAsync(update.Filter, update.Update, new UpdateOptions { IsUpsert = true });
+
+            var task = update switch {
+                AsyncOperation<T> operation => operation.Task,
+                UpdateOperation<T> upd => Collection.UpdateOneAsync(
+                    upd.Filter,
+                    upd.Update.Set(x => x.Position, position),
+                    new UpdateOptions { IsUpsert = true }
+                ),
+                _ => Task.CompletedTask
+            };
+
+            await task;
         }
 
-        protected abstract ValueTask<UpdateOperation<T>> GetUpdate(object evt);
+        protected abstract ValueTask<Operation<T>> GetUpdate(object evt);
 
         protected UpdateOperation<T> Operation(BuildFilter<T> filter, BuildUpdate<T> update)
             => new(filter(Builders<T>.Filter), update(Builders<T>.Update));
@@ -51,8 +60,12 @@ namespace Eventuous.Projections.MongoDB {
         protected ValueTask<UpdateOperation<T>> OperationTask(string id, BuildUpdate<T> update)
             => new(Operation(id, update));
 
-        protected static readonly ValueTask<UpdateOperation<T>> NoOp = new((UpdateOperation<T>) null!);
+        protected static readonly ValueTask<Operation<T>> NoOp = new((Operation<T>) null!);
     }
 
-    public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update);
+    public abstract record Operation<T>;
+
+    public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update) : Operation<T>;
+
+    public record AsyncOperation<T>(Task Task) : Operation<T>;
 }
