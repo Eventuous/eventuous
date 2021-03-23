@@ -38,7 +38,7 @@ namespace Eventuous.Tests {
                 )
             };
 
-            await Service.HandleAny(cmd);
+            await Service.Handle(cmd);
 
             var events = await Fixture.EventStore.ReadEvents(
                 StreamName.For<Booking>(cmd.BookingId),

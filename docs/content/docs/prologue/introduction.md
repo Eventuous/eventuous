@@ -13,9 +13,20 @@ weight: 100
 toc: true
 ---
 
-## Get started
+## What is Eventuous
 
-There are two main ways to get started with Doks:
+Eventuous is a (relatively) lightweight library, which allows building production-grade applications using the [Event Sourcing](https://zimarev.com/blog/event-sourcing/introduction/) pattern.
+
+The base library has a set of abstractions, following Domain-Driven Design tactical patterns, like `Aggregate`.
+
+Additional components include:
+- Aggregate persistence using [EventStoreDB](https://eventstore.com)
+- Real-time subscriptions for EventStoreDB
+- Read-model projections for MongoDB
+
+### Warning
+
+Eventuous is in a highly volatile state as it changes according to immediate needs of its production users. The API is not stable and can change at any time.
 
 ### Tutorial
 
@@ -36,18 +47,6 @@ Recipes, Reference Guides, Extensions, and Showcase.
 ### Recipes
 
 Get instructions on how to accomplish common tasks with Doks. [Recipes →](https://getdoks.org/docs/recipes/project-configuration/)
-
-### Reference Guides
-
-Learn how to customize Doks to fully make it your own. [Reference Guides →](https://getdoks.org/docs/reference-guides/security/)
-
-### Extensions
-
-Get instructions on how to add even more to Doks. [Extensions →](https://getdoks.org/docs/extensions/add-google-fonts/)
-
-### Showcase
-
-See what others have build with Doks. [Showcase →](https://getdoks.org/showcase/parietal-numerics-documentation/)
 
 ## Contributing
 

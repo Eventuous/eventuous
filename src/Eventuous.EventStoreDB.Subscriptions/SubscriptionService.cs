@@ -46,7 +46,7 @@ namespace Eventuous.EventStoreDB.Subscriptions {
             _measure          = measure;
             _projections      = projections.Where(x => x.SubscriptionGroup == subscriptionName).ToArray();
             _log              = loggerFactory?.CreateLogger($"StreamSubscription-{subscriptionName}");
-            _debugLog         = _log.IsEnabled(LogLevel.Debug) ? _log.LogDebug : null;
+            _debugLog         = _log?.IsEnabled(LogLevel.Debug) == true ? _log.LogDebug : null;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken) {

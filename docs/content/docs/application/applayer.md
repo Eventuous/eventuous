@@ -13,36 +13,16 @@ weight: 630
 toc: true
 ---
 
-## Hyas?
+The application layer sits between the system edge (different APIs), and the domain model. It is responsible for handling commands coming from the edge.
 
-Doks is a [Hyas theme](https://gethyas.com/themes/doks/) build by the creator of Hyas.
+## Concept
 
-## Footer notice?
+In general, the command handling flow can be described like this:
 
-Please keep it in place.
+1. The edge receives a command via its API (HTTP, gRPC, SignalR, messaging, etc).
+2. It passes the command over to the application service. As the edge is responsible for authentication and some authorisation, it can enrich commands with user credentials.
+3. The command service, which is agnostic to the API itself, handles the command, and gives response to the edge (positive or negative).
+4. The API layer then returns the response to the calling party.
 
-## Keyboard shortcuts for search?
+Eventuous gives you a base class to implement command services in the application later: the `ApplicationService`.
 
-- focus: `/`
-- select: `↓` and `↑`
-- open: `Enter`
-- close: `Esc`
-
-## Other documentation?
-
-- [Netlify](https://docs.netlify.com/)
-- [Hugo](https://gohugo.io/documentation/)
-
-## Can I get support?
-
-Create a topic:
-
-- [Netlify Community](https://community.netlify.com/)
-- [Hugo Forums](https://discourse.gohugo.io/)
-
-## Contact the creator?
-
-Send `h-enk` a message:
-
-- [Netlify Community](https://community.netlify.com/)
-- [Hugo Forums](https://discourse.gohugo.io/)

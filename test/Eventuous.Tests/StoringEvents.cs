@@ -37,7 +37,7 @@ namespace Eventuous.Tests {
                 )
             };
 
-            var result = await Service.HandleNew(cmd);
+            var result = await Service.Handle(cmd);
 
             result.Changes.Should().BeEquivalentTo(expected);
         }
