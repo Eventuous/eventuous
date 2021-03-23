@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Eventuous.EventStoreDB\Eventuous.EventStoreDB.csproj" />
     <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj" />
   </ItemGroup>
   <ItemGroup>

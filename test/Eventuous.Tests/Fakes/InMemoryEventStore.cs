@@ -26,11 +26,29 @@ namespace Eventuous.Tests.Fakes {
             }
         }
 
-        public Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start) {
+        public Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start, int count)
+            => Task.FromResult(FindStream(stream).Take(count).ToArray());
+
+        public Task<StreamEvent[]> ReadEventsBackwards(string stream, int count) {
+            var reversed = new List<StreamEvent>(FindStream(stream));
+            reversed.Reverse();
+
+            return Task.FromResult(reversed.Take(count).ToArray());
+        }
+
+        public Task ReadStream(string stream, StreamReadPosition start, Action<StreamEvent> callback) {
+            foreach (var streamEvent in FindStream(stream)) {
+                callback(streamEvent);
+            }
+            return Task.CompletedTask;
+        }
+
+        // ReSharper disable once ReturnTypeCanBeEnumerable.Local
+        List<StreamEvent> FindStream(string stream) {
             if (!_storage.TryGetValue(stream, out var existing))
                 throw new NotFound(stream);
 
-            return Task.FromResult(existing.ToArray());
+            return existing;
         }
 
         class WrongVersion : Exception {

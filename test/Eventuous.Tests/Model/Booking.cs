@@ -7,6 +7,10 @@ namespace Eventuous.Tests.Model {
 
             Apply(new RoomBooked(id, roomId, period.CheckIn, period.CheckOut, price));
         }
+
+        public void Import(BookingId id, string roomId, StayPeriod period) {
+            Apply(new BookingImported(id, roomId, period.CheckIn, period.CheckOut));
+        }
     }
 
     public record BookingState : AggregateState<BookingState, BookingId> {
@@ -14,8 +18,9 @@ namespace Eventuous.Tests.Model {
 
         public override BookingState When(object @event)
             => @event switch {
-                RoomBooked booked => this with { Id = new BookingId(booked.BookingId), Price = booked.Price },
-                _                 => this
+                RoomBooked booked        => this with { Id = new BookingId(booked.BookingId), Price = booked.Price },
+                BookingImported imported => this with { Id = new BookingId(imported.BookingId) },
+                _                        => this
             };
     }
 

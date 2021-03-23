@@ -20,7 +20,7 @@ namespace Eventuous {
 
             if (aggregate.Changes.Count == 0) return;
 
-            var stream          = GetStreamName<T>(aggregate.GetId());
+            var stream          = StreamName.For<T>(aggregate.GetId());
             var expectedVersion = new ExpectedStreamVersion(aggregate.Version);
 
             await _eventStore.AppendEvents(stream, expectedVersion, aggregate.Changes.Select(ToStreamEvent).ToArray());
@@ -32,21 +32,27 @@ namespace Eventuous {
         public async Task<T> Load<T>(string id) where T : Aggregate, new() {
             if (id == null) throw new ArgumentNullException(nameof(id));
 
-            var stream    = GetStreamName<T>(id);
+            var stream    = StreamName.For<T>(id);
             var aggregate = new T();
 
-            var events = await _eventStore.ReadEvents(stream, StreamReadPosition.Start);
-
-            aggregate!.Load(events.Select(Deserialize));
+            try {
+                await _eventStore.ReadStream(stream, StreamReadPosition.Start, Fold);
+            }
+            catch (Exceptions.StreamNotFound e) {
+                throw new Exceptions.AggregateNotFound<T>(id, e);
+            }
 
             return aggregate;
 
-            object? Deserialize(StreamEvent streamEvent) => _serializer.Deserialize(
-                streamEvent.Data.AsSpan(),
-                streamEvent.EventType
-            );
-        }
+            void Fold(StreamEvent streamEvent) {
+                var evt = Deserialize(streamEvent);
+                if (evt == null) return;
 
-        protected virtual string GetStreamName<T>(string entityId) => $"{typeof(T).Name}-{entityId}";
+                aggregate!.Fold(evt);
+            }
+
+            object? Deserialize(StreamEvent streamEvent)
+                => _serializer.Deserialize(streamEvent.Data.AsSpan(), streamEvent.EventType);
+        }
     }
 }

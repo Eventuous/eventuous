@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,6 +20,7 @@ namespace Eventuous.EventStoreDB {
             var resultTask = expectedVersion == ExpectedStreamVersion.NoStream
                 ? _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents)
                 : _client.AppendToStreamAsync(stream, StreamRevision.FromInt64(expectedVersion.Value), proposedEvents);
+
             await resultTask;
 
             static EventData ToEventData(StreamEvent streamEvent)
@@ -30,14 +32,50 @@ namespace Eventuous.EventStoreDB {
                 );
         }
 
-        public async Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start) {
-            var position       = new StreamPosition((ulong) start.Value);
-            var read           = _client.ReadStreamAsync(Direction.Forwards, stream, position);
-            var resolvedEvents = await read.ToArrayAsync();
+        public async Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start, int count) {
+            var position = new StreamPosition((ulong) start.Value);
+            var read     = _client.ReadStreamAsync(Direction.Forwards, stream, position, count);
 
-            return resolvedEvents
-                .Select(x => new StreamEvent(x.Event.EventType, x.Event.Data.ToArray(), x.Event.Metadata.ToArray()))
-                .ToArray();
+            try {
+                var resolvedEvents = await read.ToArrayAsync();
+                return ToStreamEvents(resolvedEvents);
+            }
+            catch (StreamNotFoundException) {
+                throw new Exceptions.StreamNotFound(stream);
+            }
         }
+
+        public async Task<StreamEvent[]> ReadEventsBackwards(string stream, int count) {
+            var read = _client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, count);
+
+            try {
+                var resolvedEvents = await read.ToArrayAsync();
+                return ToStreamEvents(resolvedEvents);
+            }
+            catch (StreamNotFoundException) {
+                throw new Exceptions.StreamNotFound(stream);
+            }
+        }
+
+        public async Task ReadStream(string stream, StreamReadPosition start, Action<StreamEvent> callback) {
+            var position = new StreamPosition((ulong) start.Value);
+            var read     = _client.ReadStreamAsync(Direction.Forwards, stream, position);
+
+            try {
+                await foreach (var re in read) {
+                    callback(ToStreamEvent(re));
+                }
+            }
+            catch (StreamNotFoundException) {
+                throw new Exceptions.StreamNotFound(stream);
+            }
+        }
+
+        static StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent)
+            => new(resolvedEvent.Event.EventType, resolvedEvent.Event.Data.ToArray(), resolvedEvent.Event.Metadata
+                .ToArray());
+
+        static StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
+            => resolvedEvents.Select(ToStreamEvent).ToArray();
     }
 }
