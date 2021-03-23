@@ -41,28 +41,41 @@ isPlainText = true
 noUgly = true
 rel  = "sitemap"
 
+#[markup]
+#  [markup.goldmark]
+#    [markup.goldmark.extensions]
+#      linkify = false
+#    [markup.goldmark.parser]
+#      autoHeadingID = true
+#      autoHeadingIDType = "github"
+#      [markup.goldmark.parser.attribute]
+#        block = true
+#        title = true
+#    [markup.goldmark.renderer]
+#      unsafe = true
+#  [markup.highlight]
+#    codeFences = true
+#    guessSyntax = false
+#    hl_Lines = ""
+#    lineNoStart = 1
+#    lineNos = false
+#    lineNumbersInTable = true
+#    noClasses = false
+#    style = "dracula"
+#    tabWidth = 4
 [markup]
-  [markup.goldmark]
-    [markup.goldmark.extensions]
-      linkify = false
-    [markup.goldmark.parser]
-      autoHeadingID = true
-      autoHeadingIDType = "github"
-      [markup.goldmark.parser.attribute]
-        block = true
-        title = true
-    [markup.goldmark.renderer]
-      unsafe = true
-  [markup.highlight]
-    codeFences = true
-    guessSyntax = false
-    hl_Lines = ""
-    lineNoStart = 1
-    lineNos = false
-    lineNumbersInTable = true
-    noClasses = false
-    style = "dracula"
-    tabWidth = 4
+[markup.highlight]
+anchorLineNos = false
+codeFences = true
+guessSyntax = false
+hl_Lines = ""
+lineAnchors = ""
+lineNoStart = 1
+lineNos = false
+lineNumbersInTable = true
+noClasses = true
+style = "dracula"
+tabWidth = 4
 
 [sitemap]
   changefreq = "weekly"

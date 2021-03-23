@@ -44,14 +44,3 @@ One page summary of how to start a new Doks project. [Quick Start →]({{< ref "
 
 Recipes, Reference Guides, Extensions, and Showcase.
 
-### Recipes
-
-Get instructions on how to accomplish common tasks with Doks. [Recipes →](https://getdoks.org/docs/recipes/project-configuration/)
-
-## Contributing
-
-Find out how to contribute to Doks. [Contributing →](https://getdoks.org/docs/contributing/how-to-contribute/)
-
-## Help
-
-Get help on Doks. [Help →]({{< ref "how-to-update" >}})
