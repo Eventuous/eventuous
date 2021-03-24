@@ -15,4 +15,4 @@ Licence: MIT
 
 Use it on your own risk.
 
-Documentation is missing.
+[Docs (incomplete)](https://eventuous.dev)

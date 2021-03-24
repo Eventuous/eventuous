@@ -39,30 +39,8 @@ baseName = "sitemap"
 isHTML = false
 isPlainText = true
 noUgly = true
-rel  = "sitemap"
+rel = "sitemap"
 
-#[markup]
-#  [markup.goldmark]
-#    [markup.goldmark.extensions]
-#      linkify = false
-#    [markup.goldmark.parser]
-#      autoHeadingID = true
-#      autoHeadingIDType = "github"
-#      [markup.goldmark.parser.attribute]
-#        block = true
-#        title = true
-#    [markup.goldmark.renderer]
-#      unsafe = true
-#  [markup.highlight]
-#    codeFences = true
-#    guessSyntax = false
-#    hl_Lines = ""
-#    lineNoStart = 1
-#    lineNos = false
-#    lineNumbersInTable = true
-#    noClasses = false
-#    style = "dracula"
-#    tabWidth = 4
 [markup]
 [markup.highlight]
 anchorLineNos = false
@@ -78,23 +56,23 @@ style = "dracula"
 tabWidth = 4
 
 [sitemap]
-  changefreq = "weekly"
-  filename = "sitemap.xml"
-  priority = 0.5
+changefreq = "weekly"
+filename = "sitemap.xml"
+priority = 0.5
 
 [taxonomies]
-  contributor = "contributors"
+contributor = "contributors"
 
 [permalinks]
-  blog = "/blog/:title/"
+blog = "/blog/:title/"
 
 [module]
-  [[module.mounts]]
-    source = "assets"
-    target = "assets"
-  [[module.mounts]]
-    source = "static"
-    target = "static"
-  [[module.mounts]]
-    source = "node_modules/flexsearch"
-    target = "assets/js/vendor/flexsearch"
+[[module.mounts]]
+source = "assets"
+target = "assets"
+[[module.mounts]]
+source = "static"
+target = "static"
+[[module.mounts]]
+source = "node_modules/flexsearch"
+target = "assets/js/vendor/flexsearch"
