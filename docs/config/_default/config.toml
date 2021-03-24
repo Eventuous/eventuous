@@ -4,7 +4,7 @@ disableHugoGeneratorInject = true
 enableEmoji = true
 enableGitInfo = false
 enableRobotsTXT = true
-languageCode = "en-US"
+languageCode = "en-GB"
 paginate = 7
 rssLimit = 10
 

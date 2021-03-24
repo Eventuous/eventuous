@@ -9,6 +9,7 @@ on:
     paths-ignore:
       - '**.md'
       - '**.toml'
+      - '**.html'
 
 jobs:
   nuget:
