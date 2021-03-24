@@ -6,6 +6,9 @@ on:
       - master
     tags:
       - '*'
+    paths-ignore:
+      - '**.md'
+      - '**.toml'
 
 jobs:
   nuget:
