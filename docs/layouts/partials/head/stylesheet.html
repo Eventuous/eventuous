@@ -8,4 +8,5 @@
   {{ $secureCSS := $css | resources.Fingerprint "sha512" -}}
   <link rel="stylesheet" href="{{ $secureCSS.Permalink }}" integrity="{{ $secureCSS.Data.Integrity }}" crossorigin="anonymous">
 {{ end -}}
+<link rel="stylesheet" href="/css/syntax.css">
 <noscript><style>img.lazyload { display: none; }</style></noscript>

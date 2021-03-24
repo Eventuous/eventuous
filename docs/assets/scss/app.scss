@@ -14,7 +14,6 @@
 @import "components/alerts";
 @import "components/buttons";
 @import "components/code";
-// @import "components/syntax";
 @import "components/comments";
 @import "components/forms";
 @import "components/images";
@@ -25,3 +24,7 @@
 @import "layouts/pages";
 @import "layouts/posts";
 @import "layouts/sidebar";
+
+/** Import syntax highlight */
+@import "highlight/syntax";
+@import "highlight/syntax-dark";
