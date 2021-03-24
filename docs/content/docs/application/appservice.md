@@ -32,9 +32,11 @@ Eventuous provides a base class for you to build command services. It is a gener
 
 We have three methods, which you call in your class constructor to register the command handlers:
 
-- `OnNew` - registers the handler, which expects no instance aggregate to exist (create, register, initialise, etc). It will get a new aggregate instance. The operation will fail when it will try storing the aggregate state due to version mismatch.
-- `OnExisting` - registers the handler, which expect an aggregate instance to exist. You need to provide a function to extract the aggregate id from the command. The handler will get the aggregate instance loaded from the store, and will throw if there's no aggregate to load.
-- `OnAny` - used for handlers, which can operate both on new and existing aggregate instances. The command service will _try_ to load the aggregate, but won't throw if the load fails, and will pass a new instance instead.
+| Function | What's it for |
+| -------- | ------------- |
+| `OnNew` | Registers the handler, which expects no instance aggregate to exist (create, register, initialise, etc). It will get a new aggregate instance. The operation will fail when it will try storing the aggregate state due to version mismatch. |
+| `OnExisting` | Registers the handler, which expect an aggregate instance to exist. You need to provide a function to extract the aggregate id from the command. The handler will get the aggregate instance loaded from the store, and will throw if there's no aggregate to load. |
+| `OnAny` | Used for handlers, which can operate both on new and existing aggregate instances. The command service will _try_ to load the aggregate, but won't throw if the load fails, and will pass a new instance instead. |
 
 Here is an example of a command service form our test project:
 
