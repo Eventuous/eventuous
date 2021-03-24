@@ -9,7 +9,7 @@ images: []
 menu:
   docs:
     parent: "subscriptions"
-weight: 630
+weight: 510
 toc: true
 ---
 
