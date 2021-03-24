@@ -23,3 +23,17 @@ We have only two operations in the `AggegateStore`:
 - `Store` - collects new events from an aggregate and stores those events to the aggregate stream.
 
 Our `ApplicationService` uses the `AggregateStore` in its command-handling flow.
+
+## Infrastructure
+
+Eventuous supports [EventStoreDB](https://eventstore.com) out of the box, but only v20+ with gRPC protocol.
+
+Using this pre-made event persistence is easy. You can register the necessary dependencies in your `Startup` class when using ASP.NET Core:
+
+```csharp
+services.AddSingleton(new EventStoreClient(
+    EventStoreClientSettings.Create(connectionString)
+));
+services.AddSingleton<IEventStore, EsDbEventStore>();
+services.AddSingleton<IAggregateStore, AggregateStore>();
+```

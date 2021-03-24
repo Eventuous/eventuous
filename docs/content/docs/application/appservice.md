@@ -38,32 +38,32 @@ We have three methods, which you call in your class constructor to register the 
 Here is an example of a command service form our test project:
 
 ```csharp
-  public class BookingService
-    : ApplicationService<Booking, BookingState, BookingId> {
-      public BookingService(IAggregateStore store) : base(store) {
-          OnNew<Commands.BookRoom>(
-              (booking, cmd)
-                  => booking.BookRoom(
-                      new BookingId(cmd.BookingId),
-                      cmd.RoomId,
-                      new StayPeriod(cmd.CheckIn, cmd.CheckOut),
-                      cmd.Price,
-                      cmd.BookedBy,
-                      cmd.BookedAt
-                  )
-          );
+public class BookingService
+  : ApplicationService<Booking, BookingState, BookingId> {
+    public BookingService(IAggregateStore store) : base(store) {
+        OnNew<Commands.BookRoom>(
+            (booking, cmd)
+                => booking.BookRoom(
+                    new BookingId(cmd.BookingId),
+                    cmd.RoomId,
+                    new StayPeriod(cmd.CheckIn, cmd.CheckOut),
+                    cmd.Price,
+                    cmd.BookedBy,
+                    cmd.BookedAt
+                )
+        );
 
-          OnAny<Commands.ImportBooking>(
-              cmd => new BookingId(cmd.BookingId),
-              (booking, cmd)
-                  => booking.Import(
-                      new BookingId(cmd.BookingId),
-                      cmd.RoomId,
-                      new StayPeriod(cmd.CheckIn, cmd.CheckOut)
-                  )
-          );
-      }
-  }
+        OnAny<Commands.ImportBooking>(
+            cmd => new BookingId(cmd.BookingId),
+            (booking, cmd)
+                => booking.Import(
+                    new BookingId(cmd.BookingId),
+                    cmd.RoomId,
+                    new StayPeriod(cmd.CheckIn, cmd.CheckOut)
+                )
+        );
+    }
+}
 ```
 
 You pass the command handler as a function to one of those methods. The function can be inline, like in the example, or it could be a method in the command service class.
@@ -120,3 +120,13 @@ The command service will return an instance of `Result`.
 It could be an `OkResult`, which contains the new aggregate state and the list of new events. You use the data in the result to pass it over to the caller, if needed.
 
 If the operation was not successful, the command service will throw an exception. We plan to change this behaviour later in favour of producing a failure result.
+
+### Bootstrap
+
+If you registered the `EsdbEventStore` and the `AggregateStore` in your `Startup` as described on the [Aggregate store]({{< ref "aggregatestore" >}}) page, you can also register the application service:
+
+```csharp
+services.AddSingleton<BookingCommandService>();
+```
+
+When also using `AddControllers`, you get the command service injected to your controllers.
