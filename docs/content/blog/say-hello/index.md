@@ -1,6 +1,7 @@
 ---
 title: "Say hello to Eventuous 👋"
 description: "Introducing Eventuous, an opinionated lightweight library for .NET to build event-sourced applications."
+lead: "Introducing Eventuous, an opinionated lightweight library for .NET to build event-sourced applications."
 date: 2020-11-04T09:19:42+01:00
 lastmod: 2020-11-04T09:19:42+01:00
 draft: false
