@@ -7,7 +7,6 @@
     <div class="col-lg-9 col-xl-8 text-center">
       <p class="lead">{{ .Params.lead | safeHTML }}</p>
       <a class="btn btn-primary btn-lg px-4 mb-2" href="{{ "docs/prologue/introduction/" | absURL }}" role="button">Get started</a>
-      <p class="meta">Open-source MIT Licensed. <a href="https://github.com/h-enk/doks">GitHub v{{ .Site.Data.doks.version }}</a></p>
     </div>
   </div>
 </section>
@@ -19,15 +18,15 @@
     <div class="row justify-content-center text-center">
       <div class="col-lg-5">
         <h2 class="h4">DDD-oriented</h2>
-        <p>Get A+ scores on <a href="https://observatory.mozilla.org/analyze/doks.netlify.app">Mozilla Observatory</a> out of the box. Easily change the default Security Headers to suit your needs.</p>
+        <p>Eventuous provides just enough tactical DDD patterns, optimised for Event Sourcing. Enough to get you going, but no more. We don't encourage having excessive number of abstractions.</p>
       </div>
       <div class="col-lg-5">
         <h2 class="h4">Edge-agnostic</h2>
-        <p>Get 100 scores on <a href="https://googlechrome.github.io/lighthouse/viewer/?gist=7731347bb8ce999eff7428a8e763b637">Google Lighthouse</a> by default. Doks removes unused css, prefetches links, and lazy loads images.</p>
+        <p>Eventuous doesn't set any requirements on which API you use. Isolate your application layer and domain model from API-related concerns.</p>
       </div>
       <div class="col-lg-5">
         <h2 class="h4">EventStoreDB</h2>
-        <p>Use sensible defaults for structured data, open graph, and Twitter cards. Or easily change the SEO settings to your liking.</p>
+        <p><a href="https://eventstore.com" target="_blank">EventStoreDB</a> is a database with Event Sourcing in heart. Eventuous uses it as the primary persistence method.</p>
       </div>
     </div>
   </div>
