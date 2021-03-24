@@ -28,17 +28,13 @@ Additional components include:
 
 Eventuous is in a highly volatile state as it changes according to immediate needs of its production users. The API is not stable and can change at any time.
 
-### Tutorial
-
-{{< alert icon="👉" text="The Tutorial is intended for novice to intermediate users." >}}
-
-### Quick Start
+### Quick Start - WIP
 
 {{< alert icon="👉" text="The Quick Start is intended for intermediate to advanced users." >}}
 
 One page summary of how to start a new Doks project. [Quick Start →]({{< ref "quick-start" >}})
 
-## Go further
+## Go further - WIP
 
 Recipes, Reference Guides, Extensions, and Showcase.
 
