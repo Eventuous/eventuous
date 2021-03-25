@@ -47,7 +47,7 @@ When propagating events to reporting models (read models, query side, whatever y
 
 Publishing to a message broker from a [subscription]({{< ref "subs-concept" >}}) is an entirely legit scenario. Do not build reporting models by consuming from a broker unless it's an event log-based broker like Apache Kafka, Apache Pulsar or Azure Event Hub. Prefer projecting events by subscribing directly to your event store.
 
-### Using projections as state
+### Using reporting database as system state
 
 The very nature of Event Sourcing as a persistence mechanism makes it fully consistent. You append an event to the aggregate stream, using the aggregate version as the expected version for the optimistic concurrency as a transaction. You restore the aggregate state by reading those events. It is atomic, consistent, isolated and durable - ACID, read your own writes and all that.
 
