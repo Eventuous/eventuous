@@ -22,7 +22,11 @@ We have only two operations in the `AggegateStore`:
 - `Load` - retrieves events from an aggregate stream and restores the aggregate state using those events.
 - `Store` - collects new events from an aggregate and stores those events to the aggregate stream.
 
-Our `ApplicationService` uses the `AggregateStore` in its command-handling flow.
+The `AggregateStore` constructor needs two arguments:
+- Event store (`IEventStore`)
+- Event serializer (`IEventSerializer`)
+
+Our [`ApplicationService`]({{< ref "appservice" >}}) uses the `AggregateStore` in its command-handling flow.
 
 ## Infrastructure
 
@@ -34,6 +38,13 @@ Using this pre-made event persistence is easy. You can register the necessary de
 services.AddSingleton(new EventStoreClient(
     EventStoreClientSettings.Create(connectionString)
 ));
+services.AddSingleton<IEventSerializer>(
+    new DefaultEventSerializer(
+        new JsonSerializerOptions(JsonSerializerDefaults.Web)
+    )
+);
 services.AddSingleton<IEventStore, EsDbEventStore>();
 services.AddSingleton<IAggregateStore, AggregateStore>();
 ```
+
+{{< alert icon="👉" text="Make sure to read about <a href="serialisation">events serialisation</a>." >}}

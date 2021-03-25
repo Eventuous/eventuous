@@ -24,9 +24,18 @@ Additional components include:
 - Real-time subscriptions for EventStoreDB
 - Read-model projections for MongoDB
 
-### Warning
+{{< alert icon="⚠️" text="Eventuous is in a highly volatile state as it changes according to immediate needs of its production users. The API is not stable and can change at any time." >}}
 
-Eventuous is in a highly volatile state as it changes according to immediate needs of its production users. The API is not stable and can change at any time.
+### Packages
+
+Right now we publish four NuGet packages:
+
+| Package | What's it for |
+| ------- | ------------- |
+| `Eventuous` | The core library. |
+| `Eventuous.EventStoreDB` | Persistence support for [EventStoreDB](https://eventstore.com) |
+| `Eventuous.EventStoreDB.Subscriptions` | Real-time subscriptions support for EventStoreDB |
+| `Eventuous.Projections.MongoDB` | Projections support for [MongoDB](https://www.mongodb.com/) |
 
 ### Quick Start - WIP
 
