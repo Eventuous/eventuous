@@ -47,4 +47,4 @@ services.AddSingleton<IEventStore, EsDbEventStore>();
 services.AddSingleton<IAggregateStore, AggregateStore>();
 ```
 
-{{< alert icon="👉" text="Make sure to read about <a href="serialisation">events serialisation</a>." >}}
+{{< alert icon="👉" text="Make sure to read about <a href='serialisation'>events serialisation</a>." >}}
