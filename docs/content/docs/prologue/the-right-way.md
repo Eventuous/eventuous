@@ -45,7 +45,7 @@ When propagating events to reporting models (read models, query side, whatever y
 
 {{< alert icon="👉" text="Do not use message brokers to publish events when handling commands (do use them to receive commands, though). Make sure your event store database is able to support real-time subscriptions, so you can subscribe to new events, which are already persisted, and do whatever you want with them <i>after</i> they are persisted." >}}
 
-Publishing to a message broker from a subscription is a entirely legit scenario. Do not build reporting models by consuming from a broker unless it's an event log-based broker like Apache Kafka, Apache Pulsar or Azure Event Hub. Prefer projecting events by subscribing directly to your event store.
+Publishing to a message broker from a [subscription]({{< ref "subs-concept" >}}) is an entirely legit scenario. Do not build reporting models by consuming from a broker unless it's an event log-based broker like Apache Kafka, Apache Pulsar or Azure Event Hub. Prefer projecting events by subscribing directly to your event store.
 
 ### Using projections as state
 

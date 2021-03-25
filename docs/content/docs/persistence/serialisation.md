@@ -17,7 +17,7 @@ As described on the [Domain events]({{< ref "events" >}}) page, events must be (
 The serializer interface is very simple:
 
 ```csharp
-public interface IEventSerializer {
+interface IEventSerializer {
     object? Deserialize(ReadOnlySpan<byte> data, string eventType);
 
     byte[] Serialize(object evt);
@@ -35,7 +35,7 @@ Therefore, we need to have a way to map strong types of the events to strings, w
 For example, if you have a place where domain events are defined, you can put the mapping code there, as a static member:
 
 ```csharp
-public static class BookingEvents {
+static class BookingEvents {
     // events are defined here
 
     public static void MapBookingEvents() {

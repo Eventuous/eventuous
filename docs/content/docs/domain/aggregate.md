@@ -107,7 +107,7 @@ To support state immutability, `AggregateState` is an abstract _record_, not cla
 A record, which inherits from `AggregateState` needs to implement a single function called `When`. It gets an event as an argument and returns the new state instance. For example:
 
 ```csharp
-public record BookingState : AggregateState<BookingState, BookingId> {
+record BookingState : AggregateState<BookingState, BookingId> {
     decimal Price { get; init; }
 
     public override BookingState When(object @event)
@@ -132,7 +132,7 @@ The last abstraction is `Aggregate<T, TId>`, where `T` is `AggregateState` and `
 Use the `AggregateId` abstract record, which needs a string value for its constructor:
 
 ```csharp
-public record BookingId(string Value) : AggregateId(Value);
+record BookingId(string Value) : AggregateId(Value);
 ```
 
 The abstract record overrides its `ToString` to return the string value as-is. It also has an implicit conversion operator, which allows you to use a string value without explicitly instantiating the identity record. However, we still recommend instantiating the identity explicitly to benefit from type safety.
@@ -150,7 +150,7 @@ Although the number of generic parameters for this version of the `Aggregate` ba
 Example:
 
 ```csharp
-public class Booking : Aggregate<BookingState, BookingId> {
+class Booking : Aggregate<BookingState, BookingId> {
     public void BookRoom(
         BookingId id,
         string roomId,

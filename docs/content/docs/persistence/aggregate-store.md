@@ -12,7 +12,7 @@ weight: 320
 toc: true
 ---
 
-{{< alert icon="👉" text="Eventuous does not have a concept of Repository. Find out Why at the bottom of this page." >}}
+{{< alert icon="👉" text="Eventuous does not have a concept of Repository. Find out why <a href='../../faq/persistence'>on this page</a>." >}}
 
 Eventuous provides a single abstraction for the domain objects persistence, which is the `AggregateStore`.
 
@@ -23,10 +23,10 @@ We have only two operations in the `AggegateStore`:
 - `Store` - collects new events from an aggregate and stores those events to the aggregate stream.
 
 The `AggregateStore` constructor needs two arguments:
-- Event store (`IEventStore`)
-- Event serializer (`IEventSerializer`)
+- [Event store]({{< ref "event-store" >}}) (`IEventStore`)
+- [Event serializer]({{< ref "serialisation" >}}) (`IEventSerializer`)
 
-Our [`ApplicationService`]({{< ref "appservice" >}}) uses the `AggregateStore` in its command-handling flow.
+Our [`ApplicationService`]({{< ref "app-service" >}}) uses the `AggregateStore` in its command-handling flow.
 
 ## Infrastructure
 
