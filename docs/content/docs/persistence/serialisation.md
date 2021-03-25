@@ -12,7 +12,7 @@ weight: 330
 toc: true
 ---
 
-As described on the [Domain events]({{< ref "events" }}) page, events must be (de)serializable. Eventuous doesn't care about the serialisation format, but requires you to provide a serializer instance, which implements the `IEventSerializer` interface.
+As described on the [Domain events]({{< ref "events" >}}) page, events must be (de)serializable. Eventuous doesn't care about the serialisation format, but requires you to provide a serializer instance, which implements the `IEventSerializer` interface.
 
 The serializer interface is very simple:
 
@@ -55,7 +55,7 @@ BookingEvents.MapBookingEvents();
 
 ### Default serializer
 
-Eventuous provides a default serializer implementation, which uses `System.Text.Json`. You just need to register it in the `Startup` to make it available for the infrastructure components, like [aggregate store]({{< ref "aggregatestore" >}}) and [subscriptions]({{< ref "subscriptions" >}}).
+Eventuous provides a default serializer implementation, which uses `System.Text.Json`. You just need to register it in the `Startup` to make it available for the infrastructure components, like [aggregate store]({{< ref "aggregate-store" >}}) and [subscriptions]({{< ref "subs-concept" >}}).
 
 ```csharp
 services.AddSingleton<IEventSerializer>(

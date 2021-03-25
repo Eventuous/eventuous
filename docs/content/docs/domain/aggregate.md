@@ -20,7 +20,7 @@ toc: true
 
 When handling a command, you need to ensure it only changes the state of a single aggregate. An aggregate boundary is a transaction boundary, so the state transition for the aggregate needs to happen entirely or not at all.
 
-{{< alert icon="👉" text="TD;LR Eventuous doesn't have entities. If you are okay with that, <a href='#implementation'>scroll down</a>." >}}
+{{< alert icon="👉" text="TD;LR Eventuous doesn't have entities other than the Aggregate Root. If you are okay with that, <a href='#implementation'>scroll down</a>." >}}
 
 Traditionally, DDD defines three concepts, which are related to aggregate:
 - `Entity` - a representation of a business object, which has an identifier

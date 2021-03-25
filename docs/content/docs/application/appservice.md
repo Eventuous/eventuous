@@ -19,7 +19,7 @@ toc: true
 The command service itself performs the following operations, when handling one command:
 1. Extract the aggregate id from the command, if necessary.
 1. Instantiate all the necessary value objects. This could effectively reject the command, if value objects cannot be constructed. The command service could also load some other aggregates, or any other information, which is needed to execute the command, but won't change state.
-1. If the command expects to operate on an existing aggregate instance, this instance gets loaded from the [Aggregate Store](../persistence/aggregatestore.md).
+1. If the command expects to operate on an existing aggregate instance, this instance gets loaded from the [Aggregate Store](../persistence/aggregate-store.md).
 1. Execute an operation on the loaded (or new) aggregate, using values from the command, and the constructed value objects.
 1. The aggregate either performs the operation and changes it state by producing new events, or rejects the operation.
 1. If the operation was successful, the service persists new events to the store. Otherwise, it returns a failure to the edge.
@@ -126,7 +126,7 @@ If the operation was not successful, the command service will throw an exception
 
 ### Bootstrap
 
-If you registered the `EsdbEventStore` and the `AggregateStore` in your `Startup` as described on the [Aggregate store]({{< ref "aggregatestore" >}}) page, you can also register the application service:
+If you registered the `EsdbEventStore` and the `AggregateStore` in your `Startup` as described on the [Aggregate store]({{< ref "aggregate-store" >}}) page, you can also register the application service:
 
 ```csharp
 services.AddSingleton<BookingCommandService>();
