@@ -7,6 +7,7 @@ on:
     tags:
       - '*'
     paths-ignore:
+      - 'docs/*'
       - '**.md'
       - '**.toml'
       - '**.html'
