@@ -12,7 +12,9 @@ weight: 320
 toc: true
 ---
 
-{{< alert icon="👉" text="Eventuous does not have a concept of Repository. Find out why <a href='../../faq/persistence'>on this page</a>." >}}
+{{% alert icon="👉" %}}
+Eventuous does not have a concept of Repository. Find out why [on this page]({{< ref "../faq/persistence" >}}).
+{{% /alert %}}
 
 Eventuous provides a single abstraction for the domain objects persistence, which is the `AggregateStore`.
 
@@ -47,4 +49,6 @@ services.AddSingleton<IEventStore, EsDbEventStore>();
 services.AddSingleton<IAggregateStore, AggregateStore>();
 ```
 
-{{< alert icon="👉" text="Make sure to read about <a href='serialisation'>events serialisation</a>." >}}
+{{% alert icon="👉" %}}
+Make sure to read about [events serialisation]({{< ref "serialisation">}}).
+{{% /alert %}}

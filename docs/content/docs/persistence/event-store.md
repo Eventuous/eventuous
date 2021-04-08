@@ -43,4 +43,7 @@ Right now, we only have four operations for an event store:
 
 For the parameters, you can look at the interface source code. If you use the EventStoreDB implementation we provide, you won't need to know about the event store abstraction. It is required though if you want to implement it for your preferred database.
 
-{{< alert icon="👉" text="Preferring EventStoreDB will save you lots of time! Remember to check <a href='https://www.eventstore.com/event-store-cloud'>Event Store Cloud</a>." >}}
+{{% alert icon="👉" %}}
+Preferring EventStoreDB will save you lots of time!
+Remember to check [Event Store Cloud](https://www.eventstore.com/event-store-cloud).
+{{% /alert %}}

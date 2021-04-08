@@ -12,7 +12,9 @@ weight: 420
 toc: true
 ---
 
-{{< alert icon="👉" text="The Application Service base class is <b>optional</b>, it just makes your life a bit easier." >}}
+{{% alert icon="👉" %}}
+The Application Service base class is **optional**, it just makes your life a bit easier.
+{{%/ alert %}}
 
 ## Concept
 

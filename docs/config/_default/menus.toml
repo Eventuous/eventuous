@@ -12,21 +12,27 @@ url = "/docs/domain/"
 
 [[docs]]
 name = "Persistence"
-weight = 25
+weight = 30
 identifier = "persistence"
 url = "/docs/persistence/"
 
 [[docs]]
 name = "Application"
-weight = 30
+weight = 40
 identifier = "application"
 url = "/docs/application/"
 
 [[docs]]
 name = "Subscriptions"
-weight = 40
+weight = 50
 identifier = "subscriptions"
 url = "/docs/subscriptions/"
+
+[[docs]]
+name = "Read models"
+weight = 60
+identifier = "read-models"
+url = "/docs/read-models/"
 
 [[main]]
 name = "Docs"

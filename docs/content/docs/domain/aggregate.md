@@ -14,13 +14,17 @@ toc: true
 
 ## Concept
 
-{{< alert icon="👉" text="If you are familiar with the concept, <a href='#implementation'>scroll down</a>." >}}
+{{% alert icon="👉" color="light" %}}
+If you are familiar with the concept, [scroll down](#implementation).
+{{% /alert %}}
 
 `Aggregate` is probably the most important tactical pattern in Domain-Driven Design. It is a building block of the domain model. An `Aggregate` is a model on its own, a model of a particular business objects, which can be uniquely identified and by that distinguished from any other object of the same kind.
 
 When handling a command, you need to ensure it only changes the state of a single aggregate. An aggregate boundary is a transaction boundary, so the state transition for the aggregate needs to happen entirely or not at all.
 
-{{< alert icon="👉" text="TD;LR Eventuous doesn't have entities other than the Aggregate Root. If you are okay with that, <a href='#implementation'>scroll down</a>." >}}
+{{% alert icon="👉" color="light" %}}
+**TD;LR** Eventuous doesn't have entities other than the Aggregate Root. If you are okay with that, [scroll down](#implementation).
+{{% /alert %}}
 
 Traditionally, DDD defines three concepts, which are related to aggregate:
 - `Entity` - a representation of a business object, which has an identifier

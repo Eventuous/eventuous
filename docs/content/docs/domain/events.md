@@ -12,7 +12,9 @@ weight: 210
 toc: true
 ---
 
-{{< alert icon="👉" text="There's almost no code here, just a lot of text." >}}
+{{< alert icon="🙄" >}}
+There's almost no code here, just a lot of text.
+{{< /alert >}}
 
 ## Concept
 

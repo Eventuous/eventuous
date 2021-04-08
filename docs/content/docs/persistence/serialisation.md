@@ -28,7 +28,9 @@ interface IEventSerializer {
 
 For deserialization, the serializer will get the binary payload and the event type as string. Event store is unaware of your event types, it just stores the payload in a binary format to the database, along with the event type as string. It is up to you how your strong event types map to the event type string.
 
-{{< alert icon="👉" text="We do not advise using fully-qualified type names as event types. It will block your ability to refactor the domain model code." >}}
+{{< alert icon="✋" color="warning" >}}
+We do not advise using fully-qualified type names as event types. It will block your ability to refactor the domain model code.
+{{< /alert >}}
 
 Therefore, we need to have a way to map strong types of the events to strings, which are used to identify those types in the database and for serialisation. For that purpose, Eventuous uses the `TypeMap`. It is a singleton, which is available globally. When you add new events to your domain model, remember to also add a mapping for those events. The mapping is static, so you can implement it anywhere in the application. The only requirement is that the mapping code must execute when the application starts.
 

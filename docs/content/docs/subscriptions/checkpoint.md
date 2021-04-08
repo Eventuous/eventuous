@@ -26,6 +26,10 @@ Some log-based brokers also use the term _offset_ to describe the checkpoint con
 
 Eventuous provides an abstraction, which allows subscriptions to store checkpoints reliably. You can decide to store it in a file or in a database. You can also decide if you want to store a checkpoint after processing each event, or only flush it now and then. Periodical checkpoint flush decreases the pressure on the infrastructure behind the checkpoint store, but also requires you to make your subscription idempotent. It's usually hard or impossible for integration since you can rarely check if you published an event to a broker or not. However, it can work for read model projections.
 
+{{% alert icon="😱" %}}
+**Keep the checkpoint safe.** When the checkpoint is lost, the subscription will get all the events. It might be intentional when you are creating a brand new [read model]({{< ref "rm-concept" >}}), then it's okay. Otherwise, you get undesired consequences.
+{{% /alert %}}
+
 The checkpoint store interface is simple, it only has two functions:
 
 ```csharp
@@ -49,12 +53,3 @@ record Checkpoint(string Id, ulong? Position);
 ```
 
 Out of the box, Eventuous provides a checkpoint store for MongoDB.
-
-_WIP_
-
-There are two types of subscriptions available:
-- Stream subscription
-- All stream subscription
-
-
-- Hosted service
