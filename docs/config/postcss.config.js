@@ -21,6 +21,7 @@ module.exports = {
         ...whitelister([
           './assets/scss/components/_code.scss',
           './assets/scss/components/_search.scss',
+          './assets/scss/components/_alerts.scss',
           './assets/scss/common/_dark.scss',
           './assets/scss/highlight/_syntax.scss',
           './assets/scss/highlight/_syntax-dark.scss',
