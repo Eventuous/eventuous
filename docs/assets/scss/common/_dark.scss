@@ -82,6 +82,11 @@ body.dark .alert-primary a {
 
 body.dark .alert-warning {
   background: $body-overlay-dark;
+  color: #edce6f;
+}
+
+body.dark .alert-light {
+  background: $body-overlay-dark;
   color: $body-color-dark;
 }
 
