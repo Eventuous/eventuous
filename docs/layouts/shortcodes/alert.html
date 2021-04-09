@@ -1,5 +1,0 @@
-{{ $color := .Get "color" | default "light" }}
-<div class="alert alert-{{ $color }} d-flex" role="alert">
-  <div class="flex-shrink-1 alert-icon">{{ with .Get "icon" }}{{.}}{{ end }}</div>
-  <div class="w-100" >{{ .Inner | markdownify }}</div>
-</div>
