@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 namespace Eventuous.EventStoreDB.Subscriptions {
     [PublicAPI]
     public abstract class TypedEventHandler : IEventHandler {
-        public abstract string SubscriptionGroup { get; }
+        public abstract string SubscriptionId { get; }
 
         readonly Dictionary<Type, Func<object, long?, Task>> _handlersMap = new();
 

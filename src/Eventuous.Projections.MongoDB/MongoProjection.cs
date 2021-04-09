@@ -17,11 +17,11 @@ namespace Eventuous.Projections.MongoDB {
         protected MongoProjection(IMongoDatabase database, string subscriptionGroup, ILoggerFactory loggerFactory) {
             var log = loggerFactory.CreateLogger(GetType());
             _log              = log.IsEnabled(LogLevel.Debug) ? log : null;
-            SubscriptionGroup = subscriptionGroup;
+            SubscriptionId = subscriptionGroup;
             Collection        = database.GetDocumentCollection<T>();
         }
 
-        public string SubscriptionGroup { get; }
+        public string SubscriptionId { get; }
 
         public async Task HandleEvent(object evt, long? position) {
             var updateTask = GetUpdate(evt);

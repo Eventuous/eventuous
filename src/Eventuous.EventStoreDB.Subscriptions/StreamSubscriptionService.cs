@@ -11,20 +11,20 @@ namespace Eventuous.EventStoreDB.Subscriptions {
         readonly string _streamName;
 
         public StreamSubscriptionService(
-            EventStoreClient           eventEventStoreClient,
+            EventStoreClient           eventStoreClient,
             string                     streamName,
-            string                     subscriptionName,
+            string                     subscriptionId,
             ICheckpointStore           checkpointStore,
             IEventSerializer           eventSerializer,
-            IEnumerable<IEventHandler> projections,
+            IEnumerable<IEventHandler> eventHandlers,
             ILoggerFactory?            loggerFactory = null,
-            ProjectionGapMeasure?      measure       = null
+            SubscriptionGapMeasure?    measure       = null
         ) : base(
-            eventEventStoreClient,
-            subscriptionName,
+            eventStoreClient,
+            subscriptionId,
             checkpointStore,
             eventSerializer,
-            projections,
+            eventHandlers,
             loggerFactory,
             measure
         )
@@ -34,7 +34,8 @@ namespace Eventuous.EventStoreDB.Subscriptions {
             => resolvedEvent.Event.EventNumber.ToUInt64();
 
         protected override Task<StreamSubscription> Subscribe(
-            Checkpoint checkpoint, CancellationToken cancellationToken
+            Checkpoint        checkpoint,
+            CancellationToken cancellationToken
         )
             => checkpoint.Position == null
                 ? EventStoreClient.SubscribeToStreamAsync(
