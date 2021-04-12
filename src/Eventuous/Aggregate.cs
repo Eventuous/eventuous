@@ -34,9 +34,11 @@ namespace Eventuous {
     public abstract class Aggregate<T> : Aggregate where T : AggregateState<T>, new() {
         protected Aggregate() => State = new T();
 
-        protected void Apply(object evt) {
+        protected virtual (T PreviousState, T CurrentState) Apply(object evt) {
             AddChange(evt);
+            var previous = State;
             State = State.When(evt);
+            return (previous, State);
         }
 
         public override void Load(IEnumerable<object?> events) 
