@@ -4,6 +4,12 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 
 namespace Eventuous {
+    /// <summary>
+    /// Application service base class. A derived class should be scoped to handle commands for one aggregate type only.
+    /// </summary>
+    /// <typeparam name="T">The aggregate type</typeparam>
+    /// <typeparam name="TState">The aggregate state type</typeparam>
+    /// <typeparam name="TId">The aggregate identity type</typeparam>
     [PublicAPI]
     public abstract class ApplicationService<T, TState, TId>
         where T : Aggregate<TState, TId>, new()
@@ -15,18 +21,35 @@ namespace Eventuous {
 
         protected ApplicationService(IAggregateStore store) => _store = store;
 
+        /// <summary>
+        /// Register a handler for a command, which is expected to create a new aggregate instance.
+        /// </summary>
+        /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
+        /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnNew<TCommand>(Action<T, TCommand> action) where TCommand : class
             => _handlers.Add(
                 typeof(TCommand), 
                 new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
+        /// <summary>
+        /// Register an asynchronous handler for a command, which is expected to create a new aggregate instance.
+        /// </summary>
+        /// <param name="action">Asynchronous action to be performed on the aggregate,
+        /// given the aggregate instance and the command</param>
+        /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnNew<TCommand>(Func<T, TCommand, Task> action) where TCommand : class
             => _handlers.Add(
                 typeof(TCommand), 
                 new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
+        /// <summary>
+        /// Register a handler for a command, which is expected to use an existing aggregate instance.
+        /// </summary>
+        /// <param name="getId">A function to get the aggregate id from the command</param>
+        /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
+        /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnExisting<TCommand>(Func<TCommand, TId> getId, Action<T, TCommand> action)
             where TCommand : class {
             _handlers.Add(
@@ -37,6 +60,13 @@ namespace Eventuous {
             _getId.TryAdd(typeof(TCommand), cmd => new ValueTask<TId>(getId((TCommand) cmd)));
         }
 
+        /// <summary>
+        /// Register an asynchronous handler for a command, which is expected to use an existing aggregate instance.
+        /// </summary>
+        /// <param name="getId">A function to get the aggregate id from the command</param>
+        /// <param name="action">Asynchronous action to be performed on the aggregate,
+        /// given the aggregate instance and the command</param>
+        /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnExisting<TCommand>(Func<TCommand, TId> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
@@ -47,6 +77,13 @@ namespace Eventuous {
             _getId.TryAdd(typeof(TCommand), cmd => new ValueTask<TId>(getId((TCommand) cmd)));
         }
 
+        /// <summary>
+        /// Register a handler for a command, which is expected to use an a new or an existing aggregate instance.
+        /// </summary>
+        /// <param name="getId">A function to get the aggregate id from the command</param>
+        /// <param name="action">Action to be performed on the aggregate,
+        /// given the aggregate instance and the command</param>
+        /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnAny<TCommand>(Func<TCommand, TId> getId, Action<T, TCommand> action)
             where TCommand : class {
             _handlers.Add(
@@ -57,6 +94,13 @@ namespace Eventuous {
             _getId.TryAdd(typeof(TCommand), cmd => new ValueTask<TId>(getId((TCommand) cmd)));
         }
 
+        /// <summary>
+        /// Register an asynchronous handler for a command, which is expected to use an a new or an existing aggregate instance.
+        /// </summary>
+        /// <param name="getId">A function to get the aggregate id from the command</param>
+        /// <param name="action">Asynchronous action to be performed on the aggregate,
+        /// given the aggregate instance and the command</param>
+        /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnAny<TCommand>(Func<TCommand, TId> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
@@ -67,6 +111,13 @@ namespace Eventuous {
             _getId.TryAdd(typeof(TCommand), cmd => new ValueTask<TId>(getId((TCommand) cmd)));
         }
 
+        /// <summary>
+        /// Register an asynchronous handler for a command, which is expected to use an a new or an existing aggregate instance.
+        /// </summary>
+        /// <param name="getId">Asynchronous function to get the aggregate id from the command</param>
+        /// <param name="action">Asynchronous action to be performed on the aggregate,
+        /// given the aggregate instance and the command</param>
+        /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnAny<TCommand>(Func<TCommand, ValueTask<TId>> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
@@ -86,6 +137,13 @@ namespace Eventuous {
             await action(aggregate, (TCommand) cmd);
         }
 
+        /// <summary>
+        /// The generic command handler. Call this function from your edge (API).
+        /// </summary>
+        /// <param name="command">Command to execute</param>
+        /// <typeparam name="TCommand">Command type</typeparam>
+        /// <returns><see cref="Result{T,TState,TId}"/> of the execution</returns>
+        /// <exception cref="Exceptions.CommandHandlerNotFound"></exception>
         public async Task<Result<T, TState, TId>> Handle<TCommand>(TCommand command)
             where TCommand : class {
             if (!_handlers.TryGetValue(typeof(TCommand), out var registeredHandler)) {
