@@ -3,6 +3,6 @@
         <PackageReference Include="MongoDB.Driver" Version="2.12.0" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Eventuous.EventStoreDB.Subscriptions\Eventuous.EventStoreDB.Subscriptions.csproj" />
+      <ProjectReference Include="..\Eventuous.Subscriptions.EventStoreDB\Eventuous.Subscriptions.EventStoreDB.csproj" />
     </ItemGroup>
 </Project>

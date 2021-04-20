@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace Eventuous.EventStoreDB.Subscriptions {
+namespace Eventuous.Subscriptions {
     /// <summary>
     /// The gap measurement tool, which can be used for metrics and alerts when the subscription
     /// is lagging behind real-time updates.
@@ -10,7 +10,7 @@ namespace Eventuous.EventStoreDB.Subscriptions {
     public class SubscriptionGapMeasure {
         readonly Dictionary<string, ulong> _gaps = new();
 
-        internal void PutGap(string subscriptionId, ulong gap) => _gaps[subscriptionId] = gap;
+        public void PutGap(string subscriptionId, ulong gap) => _gaps[subscriptionId] = gap;
 
         /// <summary>
         /// Retrieve the current subscription gap

@@ -1,7 +1,8 @@
 using System;
 using System.Threading.Tasks;
-using Eventuous.EventStoreDB.Subscriptions;
+using Eventuous.Subscriptions.EventStoreDB;
 using Eventuous.Projections.MongoDB.Tools;
+using Eventuous.Subscriptions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;

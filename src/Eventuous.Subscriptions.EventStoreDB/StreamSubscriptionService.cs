@@ -1,13 +1,15 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
+using Eventuous.Subscriptions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.EventStoreDB.Subscriptions {
+namespace Eventuous.Subscriptions.EventStoreDB {
     [PublicAPI]
-    public class StreamSubscriptionService : SubscriptionService {
+    public class StreamSubscriptionService : EsdbSubscriptionService {
         readonly string _streamName;
 
         public StreamSubscriptionService(
@@ -30,22 +32,19 @@ namespace Eventuous.EventStoreDB.Subscriptions {
         )
             => _streamName = streamName;
 
-        protected override ulong? GetPosition(ResolvedEvent resolvedEvent)
-            => resolvedEvent.Event.EventNumber.ToUInt64();
-
-        protected override Task<StreamSubscription> Subscribe(
+        protected override async Task<MessageSubscription> Subscribe(
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
-        )
-            => checkpoint.Position == null
-                ? EventStoreClient.SubscribeToStreamAsync(
+        ) {
+            var sub = checkpoint.Position == null
+                ? await EventStoreClient.SubscribeToStreamAsync(
                     _streamName,
                     Handler,
                     true,
                     Dropped,
                     cancellationToken: cancellationToken
                 )
-                : EventStoreClient.SubscribeToStreamAsync(
+                : await EventStoreClient.SubscribeToStreamAsync(
                     _streamName,
                     StreamPosition.FromInt64((long) checkpoint.Position),
                     Handler,
@@ -53,5 +52,8 @@ namespace Eventuous.EventStoreDB.Subscriptions {
                     Dropped,
                     cancellationToken: cancellationToken
                 );
+
+            return new MessageSubscription(SubscriptionId, sub);
+        }
     }
 }

@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Eventuous.Subscriptions;
 using JetBrains.Annotations;
 
-namespace Eventuous.EventStoreDB.Subscriptions {
+namespace Eventuous.Subscriptions.EventStoreDB {
     [PublicAPI]
     public abstract class TypedEventHandler : IEventHandler {
         public abstract string SubscriptionId { get; }

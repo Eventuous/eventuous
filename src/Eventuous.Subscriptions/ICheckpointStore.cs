@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Eventuous.EventStoreDB.Subscriptions {
+namespace Eventuous.Subscriptions {
     public record Checkpoint(string Id, ulong? Position);
 
     public interface ICheckpointStore {

@@ -5,9 +5,9 @@ using EventStore.Client;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.EventStoreDB.Subscriptions {
+namespace Eventuous.Subscriptions.EventStoreDB {
     [PublicAPI]
-    public class AllStreamSubscriptionService : SubscriptionService {
+    public class AllStreamSubscriptionService : EsdbSubscriptionService {
         readonly IEventFilter _eventFilter;
 
         protected AllStreamSubscriptionService(
@@ -30,15 +30,12 @@ namespace Eventuous.EventStoreDB.Subscriptions {
         )
             => _eventFilter = eventFilter ?? EventTypeFilter.ExcludeSystemEvents();
 
-        protected override ulong? GetPosition(ResolvedEvent resolvedEvent)
-            => resolvedEvent.Event.Position.CommitPosition;
-
-        protected override Task<StreamSubscription> Subscribe(
+        protected override async Task<MessageSubscription> Subscribe(
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
-        )
-            => checkpoint.Position != null
-                ? EventStoreClient.SubscribeToAllAsync(
+        ) {
+            var sub = checkpoint.Position != null
+                ? await EventStoreClient.SubscribeToAllAsync(
                     new Position(checkpoint.Position.Value, checkpoint.Position.Value),
                     Handler,
                     false,
@@ -50,7 +47,7 @@ namespace Eventuous.EventStoreDB.Subscriptions {
                     ),
                     cancellationToken: cancellationToken
                 )
-                : EventStoreClient.SubscribeToAllAsync(
+                : await EventStoreClient.SubscribeToAllAsync(
                     Handler,
                     false,
                     Dropped,
@@ -61,5 +58,8 @@ namespace Eventuous.EventStoreDB.Subscriptions {
                     ),
                     cancellationToken: cancellationToken
                 );
+
+            return new MessageSubscription(SubscriptionId, sub);
+        }
     }
 }

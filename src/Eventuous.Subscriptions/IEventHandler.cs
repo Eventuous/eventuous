@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Eventuous.EventStoreDB.Subscriptions {
+namespace Eventuous.Subscriptions {
     public interface IEventHandler {
         string SubscriptionId { get; }
         

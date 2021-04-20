@@ -3,35 +3,32 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Client;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.EventStoreDB.Subscriptions {
+namespace Eventuous.Subscriptions {
     [PublicAPI]
     public abstract class SubscriptionService : IHostedService, IHealthCheck {
+        protected bool                IsRunning      { get; set; }
+        protected bool                IsDropped      { get; set; }
+        protected MessageSubscription Subscription   { get; set; } = null!;
+        protected string              SubscriptionId { get; }
+
         readonly ICheckpointStore        _checkpointStore;
         readonly IEventSerializer        _eventSerializer;
         readonly IEventHandler[]         _projections;
-        readonly string                  _subscriptionId;
         readonly SubscriptionGapMeasure? _measure;
         readonly ILogger?                _log;
         readonly Log?                    _debugLog;
 
-        StreamSubscription      _subscription;
-        CancellationTokenSource _cts;
-        Task?                   _measureTask;
-        ulong?                  _lastProcessedPosition;
-        ulong                   _gap;
-        bool                    _running;
-        bool                    _dropped;
-
-        protected EventStoreClient EventStoreClient { get; }
+        CancellationTokenSource? _cts;
+        Task?                    _measureTask;
+        ulong?                   _lastProcessedPosition;
+        ulong                    _gap;
 
         protected SubscriptionService(
-            EventStoreClient           eventStoreClient,
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
             IEventSerializer           eventSerializer,
@@ -39,10 +36,9 @@ namespace Eventuous.EventStoreDB.Subscriptions {
             ILoggerFactory?            loggerFactory = null,
             SubscriptionGapMeasure?    measure       = null
         ) {
-            EventStoreClient = eventStoreClient;
             _checkpointStore = checkpointStore;
             _eventSerializer = eventSerializer;
-            _subscriptionId  = subscriptionId;
+            SubscriptionId   = subscriptionId;
             _measure         = measure;
 
             _projections = eventHandlers.Where(x => x.SubscriptionId == subscriptionId).ToArray();
@@ -55,50 +51,48 @@ namespace Eventuous.EventStoreDB.Subscriptions {
         public async Task StartAsync(
             CancellationToken cancellationToken
         ) {
-            var checkpoint = await _checkpointStore.GetLastCheckpoint(_subscriptionId, cancellationToken);
+            var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken);
 
             _lastProcessedPosition = checkpoint.Position;
 
-            _subscription = await Subscribe(checkpoint, cancellationToken);
+            Subscription = await Subscribe(checkpoint, cancellationToken);
 
             if (_measure != null) {
                 _cts         = new CancellationTokenSource();
                 _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
             }
 
-            _running = true;
+            IsRunning = true;
 
-            _log.LogInformation("Started subscription {Subscription}", _subscriptionId);
+            _log.LogInformation("Started subscription {Subscription}", SubscriptionId);
         }
 
-        protected async Task Handler(StreamSubscription sub, ResolvedEvent re, CancellationToken cancellationToken) {
+        protected async Task Handler(ReceivedMessage re, CancellationToken cancellationToken) {
             _debugLog?.Invoke(
                 "Subscription {Subscription} got an event {@Event}",
-                sub.SubscriptionId,
+                SubscriptionId,
                 re
             );
 
             _lastProcessedPosition = GetPosition(re);
 
-            if (re.Event.EventType.StartsWith("$")) {
+            if (re.MessageType.StartsWith("$")) {
                 await Store();
             }
 
             try {
-                var evt = _eventSerializer.Deserialize(re.Event.Data.Span, re.Event.EventType);
+                var evt = _eventSerializer.Deserialize(re.Data.Span, re.MessageType);
 
                 if (evt != null) {
                     _debugLog?.Invoke("Handling event {Event}", evt);
 
                     await Task.WhenAll(
-                        _projections.Select(
-                            x => x.HandleEvent(evt, (long?) re.OriginalPosition?.CommitPosition)
-                        )
+                        _projections.Select(x => x.HandleEvent(evt, (long?) re.Position))
                     );
                 }
             }
             catch (Exception e) {
-                _log.LogWarning(e, "Error when handling the event {Event}", re.Event.EventType);
+                _log.LogWarning(e, "Error when handling the event {Event}", re.MessageType);
             }
 
             await Store();
@@ -109,23 +103,23 @@ namespace Eventuous.EventStoreDB.Subscriptions {
         protected async Task StoreCheckpoint(ulong? position, CancellationToken cancellationToken) {
             _lastProcessedPosition = position;
 
-            var checkpoint = new Checkpoint(_subscriptionId, position);
+            var checkpoint = new Checkpoint(SubscriptionId, position);
 
             await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken);
         }
 
-        protected abstract ulong? GetPosition(ResolvedEvent resolvedEvent);
+        protected abstract ulong? GetPosition(ReceivedMessage receivedMessage);
 
-        protected abstract Task<StreamSubscription> Subscribe(
+        protected abstract Task<MessageSubscription> Subscribe(
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         );
 
         public async Task StopAsync(CancellationToken cancellationToken) {
-            _running = false;
+            IsRunning = false;
 
             if (_measureTask != null) {
-                _cts.Cancel();
+                _cts?.Cancel();
 
                 try {
                     await _measureTask;
@@ -135,28 +129,28 @@ namespace Eventuous.EventStoreDB.Subscriptions {
                 }
             }
 
-            _subscription.Dispose();
+            Subscription.Dispose();
 
-            _log.LogInformation("Stopped subscription {Subscription}", _subscriptionId);
+            _log.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
         }
 
-        async Task Resubscribe(TimeSpan delay) {
-            _log.LogWarning("Resubscribing {Subscription}", _subscriptionId);
+        protected async Task Resubscribe(TimeSpan delay) {
+            _log.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
             await Task.Delay(delay);
 
-            while (_running && _dropped) {
+            while (IsRunning && IsDropped) {
                 try {
-                    var checkpoint = new Checkpoint(_subscriptionId, _lastProcessedPosition);
+                    var checkpoint = new Checkpoint(SubscriptionId, _lastProcessedPosition);
 
-                    _subscription = await Subscribe(checkpoint, CancellationToken.None);
+                    Subscription = await Subscribe(checkpoint, CancellationToken.None);
 
-                    _dropped = false;
+                    IsDropped = false;
 
-                    _log.LogInformation("Subscription {Subscription} restored", _subscriptionId);
+                    _log.LogInformation("Subscription {Subscription} restored", SubscriptionId);
                 }
                 catch (Exception e) {
-                    _log.LogError(e, "Unable to restart the subscription {Subscription}", _subscriptionId);
+                    _log.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
 
                     await Task.Delay(1000);
                 }
@@ -164,60 +158,65 @@ namespace Eventuous.EventStoreDB.Subscriptions {
         }
 
         protected void Dropped(
-            StreamSubscription        _,
-            SubscriptionDroppedReason reason,
-            Exception?                exception
+            DropReason reason,
+            Exception? exception
         ) {
-            if (!_running) return;
+            if (!IsRunning) return;
 
             _log.LogWarning(
                 exception,
                 "Subscription {Subscription} dropped {Reason}",
-                _subscriptionId,
+                SubscriptionId,
                 reason
             );
 
-            _dropped = true;
+            IsDropped = true;
 
             Task.Run(
                 () => Resubscribe(
-                    reason == SubscriptionDroppedReason.Disposed ? TimeSpan.FromSeconds(10) : TimeSpan.Zero
+                    reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.Zero
                 )
             );
         }
 
         async Task MeasureGap(CancellationToken cancellationToken) {
             while (!cancellationToken.IsCancellationRequested) {
-                var lastEventRead = EventStoreClient.ReadAllAsync(
-                    Direction.Backwards,
-                    Position.End,
-                    1,
-                    cancellationToken: cancellationToken
-                );
-
-                var events = await lastEventRead.ToArrayAsync(cancellationToken);
-
-                var lastPosition = events[0].OriginalPosition?.CommitPosition;
+                var lastPosition = await GetLastEventPosition(cancellationToken);
 
                 if (_lastProcessedPosition != null && lastPosition != null) {
                     _gap = (ulong) lastPosition - _lastProcessedPosition.Value;
 
-                    _measure!.PutGap(_subscriptionId, _gap);
+                    _measure!.PutGap(SubscriptionId, _gap);
                 }
 
                 await Task.Delay(1000, cancellationToken);
             }
         }
 
+        protected abstract Task<long?> GetLastEventPosition(CancellationToken cancellationToken);
+
         public Task<HealthCheckResult> CheckHealthAsync(
             HealthCheckContext context,
             CancellationToken  cancellationToken = default
         ) {
-            var result = _running && _dropped
+            var result = IsRunning && IsDropped
                 ? HealthCheckResult.Unhealthy("Subscription dropped")
                 : HealthCheckResult.Healthy();
 
             return Task.FromResult(result);
         }
+    }
+
+    public class MessageSubscription : IDisposable {
+        readonly IDisposable _inner;
+
+        public MessageSubscription(string subscriptionId, IDisposable inner) {
+            _inner         = inner;
+            SubscriptionId = subscriptionId;
+        }
+
+        public string SubscriptionId { get; }
+
+        public void Dispose() => _inner.Dispose();
     }
 }
