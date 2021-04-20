@@ -17,6 +17,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 MessageId   = re.Event.EventId.ToGuid(),
                 Position    = re.Event.Position.CommitPosition,
                 Sequence    = re.Event.EventNumber,
+                Created     = re.Event.Created,
                 MessageType = re.Event.EventType,
                 Data        = re.Event.Data,
                 Metadata    = re.Event.Metadata

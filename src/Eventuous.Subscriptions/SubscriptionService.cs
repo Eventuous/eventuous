@@ -25,7 +25,7 @@ namespace Eventuous.Subscriptions {
 
         CancellationTokenSource? _cts;
         Task?                    _measureTask;
-        ulong?                   _lastProcessedPosition;
+        MessagePosition?         _lastProcessed;
         ulong                    _gap;
 
         protected SubscriptionService(
@@ -53,7 +53,7 @@ namespace Eventuous.Subscriptions {
         ) {
             var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken);
 
-            _lastProcessedPosition = checkpoint.Position;
+            _lastProcessed = new MessagePosition(checkpoint.Position, DateTime.Now);
 
             Subscription = await Subscribe(checkpoint, cancellationToken);
 
@@ -74,7 +74,7 @@ namespace Eventuous.Subscriptions {
                 re
             );
 
-            _lastProcessedPosition = GetPosition(re);
+            _lastProcessed = GetPosition(re);
 
             if (re.MessageType.StartsWith("$")) {
                 await Store();
@@ -100,15 +100,15 @@ namespace Eventuous.Subscriptions {
             Task Store() => StoreCheckpoint(GetPosition(re), cancellationToken);
         }
 
-        protected async Task StoreCheckpoint(ulong? position, CancellationToken cancellationToken) {
-            _lastProcessedPosition = position;
-
-            var checkpoint = new Checkpoint(SubscriptionId, position);
+        protected async Task StoreCheckpoint(MessagePosition position, CancellationToken cancellationToken) {
+            _lastProcessed = position;
+            var checkpoint = new Checkpoint(SubscriptionId, position.Position);
 
             await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken);
         }
 
-        protected abstract ulong? GetPosition(ReceivedMessage receivedMessage);
+        static MessagePosition GetPosition(ReceivedMessage receivedMessage)
+            => new(receivedMessage.Sequence, receivedMessage.Created);
 
         protected abstract Task<MessageSubscription> Subscribe(
             Checkpoint        checkpoint,
@@ -141,7 +141,7 @@ namespace Eventuous.Subscriptions {
 
             while (IsRunning && IsDropped) {
                 try {
-                    var checkpoint = new Checkpoint(SubscriptionId, _lastProcessedPosition);
+                    var checkpoint = new Checkpoint(SubscriptionId, _lastProcessed?.Position);
 
                     Subscription = await Subscribe(checkpoint, CancellationToken.None);
 
@@ -181,19 +181,19 @@ namespace Eventuous.Subscriptions {
 
         async Task MeasureGap(CancellationToken cancellationToken) {
             while (!cancellationToken.IsCancellationRequested) {
-                var lastPosition = await GetLastEventPosition(cancellationToken);
+                var (position, created) = await GetLastEventPosition(cancellationToken);
 
-                if (_lastProcessedPosition != null && lastPosition != null) {
-                    _gap = (ulong) lastPosition - _lastProcessedPosition.Value;
+                if (_lastProcessed?.Position != null && position != null) {
+                    _gap = (ulong) position - _lastProcessed.Position.Value;
 
-                    _measure!.PutGap(SubscriptionId, _gap);
+                    _measure!.PutGap(SubscriptionId, _gap, created);
                 }
 
                 await Task.Delay(1000, cancellationToken);
             }
         }
 
-        protected abstract Task<long?> GetLastEventPosition(CancellationToken cancellationToken);
+        protected abstract Task<MessagePosition> GetLastEventPosition(CancellationToken cancellationToken);
 
         public Task<HealthCheckResult> CheckHealthAsync(
             HealthCheckContext context,
@@ -219,4 +219,6 @@ namespace Eventuous.Subscriptions {
 
         public void Dispose() => _inner.Dispose();
     }
+
+    public record MessagePosition(ulong? Position, DateTime Created);
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,28 +35,26 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         ) {
+            var filterOptions = new SubscriptionFilterOptions(
+                _eventFilter,
+                10,
+                (_, p, ct) => StoreCheckpoint(new MessagePosition(p.CommitPosition, DateTime.Now), ct)
+            );
+
             var sub = checkpoint.Position != null
                 ? await EventStoreClient.SubscribeToAllAsync(
                     new Position(checkpoint.Position.Value, checkpoint.Position.Value),
                     Handler,
                     false,
                     Dropped,
-                    new SubscriptionFilterOptions(
-                        _eventFilter,
-                        10,
-                        (_, p, ct) => StoreCheckpoint(p.CommitPosition, ct)
-                    ),
+                    filterOptions,
                     cancellationToken: cancellationToken
                 )
                 : await EventStoreClient.SubscribeToAllAsync(
                     Handler,
                     false,
                     Dropped,
-                    new SubscriptionFilterOptions(
-                        _eventFilter,
-                        10,
-                        (_, p, ct) => StoreCheckpoint(p.CommitPosition, ct)
-                    ),
+                    filterOptions,
                     cancellationToken: cancellationToken
                 );
 

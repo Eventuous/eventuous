@@ -28,7 +28,6 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             EventStoreClient = eventStoreClient;
         }
 
-        protected override ulong? GetPosition(ReceivedMessage receivedMessage) => receivedMessage.Sequence;
         
         protected Task Handler(StreamSubscription _, ResolvedEvent re, CancellationToken cancellationToken)
             => Handler(re.ToMessageReceived(), cancellationToken);
@@ -56,10 +55,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             );
         }
         
-        protected override async Task<long?> GetLastEventPosition(CancellationToken cancellationToken) {
+        protected override async Task<MessagePosition> GetLastEventPosition(CancellationToken cancellationToken) {
             var read = EventStoreClient.ReadAllAsync(Direction.Backwards, Position.End, 1, cancellationToken: cancellationToken);
             var events = await read.ToArrayAsync(cancellationToken);
-            return (long) events[0].Event.Position.CommitPosition;
+            return new MessagePosition(events[0].Event.Position.CommitPosition, events[0].Event.Created);
         }
     }
 }

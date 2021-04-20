@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
@@ -8,15 +9,18 @@ namespace Eventuous.Subscriptions {
     /// </summary>
     [PublicAPI]
     public class SubscriptionGapMeasure {
-        readonly Dictionary<string, ulong> _gaps = new();
+        readonly Dictionary<string, SubscriptionGap> _gaps = new();
 
-        public void PutGap(string subscriptionId, ulong gap) => _gaps[subscriptionId] = gap;
+        public void PutGap(string subscriptionId, ulong gap, DateTime created)
+            => _gaps[subscriptionId] = new SubscriptionGap(gap, DateTime.Now - created);
 
         /// <summary>
         /// Retrieve the current subscription gap
         /// </summary>
         /// <param name="subscriptionId">Subscription identifier</param>
         /// <returns></returns>
-        public ulong GetGap(string subscriptionId) => _gaps[subscriptionId];
+        public SubscriptionGap GetGap(string subscriptionId) => _gaps[subscriptionId];
     }
+
+    public record SubscriptionGap(ulong PositionGap, TimeSpan TimeGap);
 }
