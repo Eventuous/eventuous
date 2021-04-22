@@ -32,7 +32,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         )
             => _streamName = streamName;
 
-        protected override async Task<MessageSubscription> Subscribe(
+        protected override async Task<EventSubscription> Subscribe(
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         ) {
@@ -53,7 +53,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     cancellationToken: cancellationToken
                 );
 
-            return new MessageSubscription(SubscriptionId, sub);
+            return new EventSubscription(SubscriptionId, sub);
         }
     }
 }

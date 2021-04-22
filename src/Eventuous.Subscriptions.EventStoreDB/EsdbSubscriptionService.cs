@@ -55,10 +55,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             );
         }
         
-        protected override async Task<MessagePosition> GetLastEventPosition(CancellationToken cancellationToken) {
+        protected override async Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {
             var read = EventStoreClient.ReadAllAsync(Direction.Backwards, Position.End, 1, cancellationToken: cancellationToken);
             var events = await read.ToArrayAsync(cancellationToken);
-            return new MessagePosition(events[0].Event.Position.CommitPosition, events[0].Event.Created);
+            return new EventPosition(events[0].Event.Position.CommitPosition, events[0].Event.Created);
         }
     }
 }
