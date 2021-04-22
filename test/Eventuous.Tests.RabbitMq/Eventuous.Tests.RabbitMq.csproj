@@ -10,4 +10,8 @@
       <ProjectReference Include="..\..\src\Eventuous.Subscriptions.RabbitMq\Eventuous.Subscriptions.RabbitMq.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0" />
+    </ItemGroup>
+
 </Project>

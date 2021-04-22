@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -83,8 +84,16 @@ namespace Eventuous.Subscriptions {
             try {
                 if (re.ContentType != _eventSerializer.ContentType)
                     throw new InvalidOperationException($"Unknown content type {re.ContentType}");
-                
-                var evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
+
+                object evt;
+
+                try {
+                    evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
+                }
+                catch (Exception e) {
+                    _log?.LogError(e, "Error deserializing: {Data}", Encoding.UTF8.GetString(re.Data.ToArray()));
+                    throw;
+                }
 
                 if (evt != null) {
                     _debugLog?.Invoke("Handling event {Event}", evt);
@@ -134,11 +143,11 @@ namespace Eventuous.Subscriptions {
 
             Subscription.Dispose();
 
-            _log.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
+            _log?.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
         }
 
         protected async Task Resubscribe(TimeSpan delay) {
-            _log.LogWarning("Resubscribing {Subscription}", SubscriptionId);
+            _log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
             await Task.Delay(delay);
 
@@ -150,10 +159,10 @@ namespace Eventuous.Subscriptions {
 
                     IsDropped = false;
 
-                    _log.LogInformation("Subscription {Subscription} restored", SubscriptionId);
+                    _log?.LogInformation("Subscription {Subscription} restored", SubscriptionId);
                 }
                 catch (Exception e) {
-                    _log.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
+                    _log?.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
 
                     await Task.Delay(1000);
                 }
@@ -166,7 +175,7 @@ namespace Eventuous.Subscriptions {
         ) {
             if (!IsRunning) return;
 
-            _log.LogWarning(
+            _log?.LogWarning(
                 exception,
                 "Subscription {Subscription} dropped {Reason}",
                 SubscriptionId,
