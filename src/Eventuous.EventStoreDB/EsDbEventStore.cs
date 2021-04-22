@@ -13,7 +13,9 @@ namespace Eventuous.EventStoreDB {
         public EsDbEventStore(EventStoreClient client) => _client = client;
 
         public async Task AppendEvents(
-            string stream, ExpectedStreamVersion expectedVersion, IReadOnlyCollection<StreamEvent> events
+            string                           stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events
         ) {
             var proposedEvents = events.Select(ToEventData);
 
@@ -72,8 +74,12 @@ namespace Eventuous.EventStoreDB {
         }
 
         static StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent)
-            => new(resolvedEvent.Event.EventType, resolvedEvent.Event.Data.ToArray(), resolvedEvent.Event.Metadata
-                .ToArray());
+            => new(
+                resolvedEvent.Event.EventType,
+                resolvedEvent.Event.Data.ToArray(),
+                resolvedEvent.Event.Metadata.ToArray(),
+                resolvedEvent.Event.ContentType
+            );
 
         static StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
             => resolvedEvents.Select(ToStreamEvent).ToArray();

@@ -18,5 +18,7 @@ namespace Eventuous {
                 : JsonSerializer.Deserialize(data, dataType!, _options);
 
         public byte[] Serialize(object evt) => JsonSerializer.SerializeToUtf8Bytes(evt, _options);
+
+        public string ContentType { get; } = "application/json";
     }
 }

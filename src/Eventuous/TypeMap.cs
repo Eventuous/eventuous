@@ -11,6 +11,8 @@ namespace Eventuous {
         public static string GetTypeName<T>() => Map[typeof(T)];
         
         public static string GetTypeName(object o) => Map[o.GetType()];
+        
+        public static string GetTypeNameByType(Type type) => Map[type];
 
         public static Type GetType(string typeName) => ReverseMap[typeName];
         

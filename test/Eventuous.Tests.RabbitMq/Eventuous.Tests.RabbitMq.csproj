@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Eventuous.Producers.RabbitMq\Eventuous.Producers.RabbitMq.csproj" />
+      <ProjectReference Include="..\..\src\Eventuous.Producers\Eventuous.Producers.csproj" />
+      <ProjectReference Include="..\..\src\Eventuous.Subscriptions.RabbitMq\Eventuous.Subscriptions.RabbitMq.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0" />
+    </ItemGroup>
+
+</Project>
