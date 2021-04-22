@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests", "test\Eve
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Subscriptions", "src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj", "{D89AB806-DD31-428F-917D-924134A4E4D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Producers", "src\Eventuous.Producers\Eventuous.Producers.csproj", "{B15AE3DB-46D6-4E6D-A978-E3497DB2AEFA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{D89AB806-DD31-428F-917D-924134A4E4D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D89AB806-DD31-428F-917D-924134A4E4D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D89AB806-DD31-428F-917D-924134A4E4D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B15AE3DB-46D6-4E6D-A978-E3497DB2AEFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B15AE3DB-46D6-4E6D-A978-E3497DB2AEFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B15AE3DB-46D6-4E6D-A978-E3497DB2AEFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B15AE3DB-46D6-4E6D-A978-E3497DB2AEFA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BD44B15F-4131-4A59-B17E-1E2E81D81B86} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
