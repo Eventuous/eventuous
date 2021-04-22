@@ -31,14 +31,14 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         )
             => _eventFilter = eventFilter ?? EventTypeFilter.ExcludeSystemEvents();
 
-        protected override async Task<MessageSubscription> Subscribe(
+        protected override async Task<EventSubscription> Subscribe(
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         ) {
             var filterOptions = new SubscriptionFilterOptions(
                 _eventFilter,
                 10,
-                (_, p, ct) => StoreCheckpoint(new MessagePosition(p.CommitPosition, DateTime.Now), ct)
+                (_, p, ct) => StoreCheckpoint(new EventPosition(p.CommitPosition, DateTime.Now), ct)
             );
 
             var sub = checkpoint.Position != null
@@ -58,7 +58,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     cancellationToken: cancellationToken
                 );
 
-            return new MessageSubscription(SubscriptionId, sub);
+            return new EventSubscription(SubscriptionId, sub);
         }
     }
 }

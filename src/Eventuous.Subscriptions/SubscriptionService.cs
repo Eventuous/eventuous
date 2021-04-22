@@ -11,10 +11,10 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Subscriptions {
     [PublicAPI]
     public abstract class SubscriptionService : IHostedService, IHealthCheck {
-        protected bool                IsRunning      { get; set; }
-        protected bool                IsDropped      { get; set; }
-        protected MessageSubscription Subscription   { get; set; } = null!;
-        protected string              SubscriptionId { get; }
+        protected bool              IsRunning      { get; set; }
+        protected bool              IsDropped      { get; set; }
+        protected EventSubscription Subscription   { get; set; } = null!;
+        protected string            SubscriptionId { get; }
 
         readonly ICheckpointStore        _checkpointStore;
         readonly IEventSerializer        _eventSerializer;
@@ -25,7 +25,7 @@ namespace Eventuous.Subscriptions {
 
         CancellationTokenSource? _cts;
         Task?                    _measureTask;
-        MessagePosition?         _lastProcessed;
+        EventPosition?           _lastProcessed;
         ulong                    _gap;
 
         protected SubscriptionService(
@@ -53,7 +53,7 @@ namespace Eventuous.Subscriptions {
         ) {
             var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken);
 
-            _lastProcessed = new MessagePosition(checkpoint.Position, DateTime.Now);
+            _lastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
 
             Subscription = await Subscribe(checkpoint, cancellationToken);
 
@@ -67,7 +67,7 @@ namespace Eventuous.Subscriptions {
             _log.LogInformation("Started subscription {Subscription}", SubscriptionId);
         }
 
-        protected async Task Handler(ReceivedMessage re, CancellationToken cancellationToken) {
+        protected async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
             _debugLog?.Invoke(
                 "Subscription {Subscription} got an event {@Event}",
                 SubscriptionId,
@@ -76,12 +76,12 @@ namespace Eventuous.Subscriptions {
 
             _lastProcessed = GetPosition(re);
 
-            if (re.MessageType.StartsWith("$")) {
+            if (re.EventType.StartsWith("$")) {
                 await Store();
             }
 
             try {
-                var evt = _eventSerializer.Deserialize(re.Data.Span, re.MessageType);
+                var evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
 
                 if (evt != null) {
                     _debugLog?.Invoke("Handling event {Event}", evt);
@@ -92,7 +92,7 @@ namespace Eventuous.Subscriptions {
                 }
             }
             catch (Exception e) {
-                _log.LogWarning(e, "Error when handling the event {Event}", re.MessageType);
+                _log.LogWarning(e, "Error when handling the event {Event}", re.EventType);
             }
 
             await Store();
@@ -100,17 +100,17 @@ namespace Eventuous.Subscriptions {
             Task Store() => StoreCheckpoint(GetPosition(re), cancellationToken);
         }
 
-        protected async Task StoreCheckpoint(MessagePosition position, CancellationToken cancellationToken) {
+        protected async Task StoreCheckpoint(EventPosition position, CancellationToken cancellationToken) {
             _lastProcessed = position;
             var checkpoint = new Checkpoint(SubscriptionId, position.Position);
 
             await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken);
         }
 
-        static MessagePosition GetPosition(ReceivedMessage receivedMessage)
-            => new(receivedMessage.Sequence, receivedMessage.Created);
+        static EventPosition GetPosition(ReceivedEvent receivedEvent)
+            => new(receivedEvent.Sequence, receivedEvent.Created);
 
-        protected abstract Task<MessageSubscription> Subscribe(
+        protected abstract Task<EventSubscription> Subscribe(
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         );
@@ -193,7 +193,7 @@ namespace Eventuous.Subscriptions {
             }
         }
 
-        protected abstract Task<MessagePosition> GetLastEventPosition(CancellationToken cancellationToken);
+        protected abstract Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken);
 
         public Task<HealthCheckResult> CheckHealthAsync(
             HealthCheckContext context,
@@ -207,10 +207,10 @@ namespace Eventuous.Subscriptions {
         }
     }
 
-    public class MessageSubscription : IDisposable {
+    public class EventSubscription : IDisposable {
         readonly IDisposable _inner;
 
-        public MessageSubscription(string subscriptionId, IDisposable inner) {
+        public EventSubscription(string subscriptionId, IDisposable inner) {
             _inner         = inner;
             SubscriptionId = subscriptionId;
         }
@@ -220,5 +220,5 @@ namespace Eventuous.Subscriptions {
         public void Dispose() => _inner.Dispose();
     }
 
-    public record MessagePosition(ulong? Position, DateTime Created);
+    public record EventPosition(ulong? Position, DateTime Created);
 }

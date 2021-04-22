@@ -12,13 +12,13 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, null)
             };
 
-        public static ReceivedMessage ToMessageReceived(this ResolvedEvent re)
+        public static ReceivedEvent ToMessageReceived(this ResolvedEvent re)
             => new() {
-                MessageId   = re.Event.EventId.ToGuid(),
+                EventId   = re.Event.EventId.ToGuid(),
                 Position    = re.Event.Position.CommitPosition,
                 Sequence    = re.Event.EventNumber,
                 Created     = re.Event.Created,
-                MessageType = re.Event.EventType,
+                EventType = re.Event.EventType,
                 Data        = re.Event.Data,
                 Metadata    = re.Event.Metadata
             };
