@@ -14,7 +14,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
 
         public static ReceivedEvent ToMessageReceived(this ResolvedEvent re)
             => new() {
-                EventId   = re.Event.EventId.ToGuid(),
+                EventId   = re.Event.EventId.ToString(),
                 Position    = re.Event.Position.CommitPosition,
                 Sequence    = re.Event.EventNumber,
                 Created     = re.Event.Created,

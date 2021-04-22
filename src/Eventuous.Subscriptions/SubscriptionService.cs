@@ -64,7 +64,7 @@ namespace Eventuous.Subscriptions {
 
             IsRunning = true;
 
-            _log.LogInformation("Started subscription {Subscription}", SubscriptionId);
+            _log?.LogInformation("Started subscription {Subscription}", SubscriptionId);
         }
 
         protected async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
@@ -81,6 +81,9 @@ namespace Eventuous.Subscriptions {
             }
 
             try {
+                if (re.ContentType != _eventSerializer.ContentType)
+                    throw new InvalidOperationException($"Unknown content type {re.ContentType}");
+                
                 var evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
 
                 if (evt != null) {
@@ -92,7 +95,7 @@ namespace Eventuous.Subscriptions {
                 }
             }
             catch (Exception e) {
-                _log.LogWarning(e, "Error when handling the event {Event}", re.EventType);
+                _log?.LogWarning(e, "Error when handling the event {Event}", re.EventType);
             }
 
             await Store();

@@ -27,6 +27,16 @@ services:
       MONGO_INITDB_ROOT_USERNAME: mongoadmin
       MONGO_INITDB_ROOT_PASSWORD: secret
 
+  rabbitmq:
+    container_name: eventuous-rabbitmq
+    hostname: rabbitmq
+    image: rabbitmq:management-alpine
+    ports:
+      - '4369:4369'
+      - '5672:5672'
+      - '25672:25672'
+      - '15672:15672'
+
 networks:
   default:
     name: eventuous-network
