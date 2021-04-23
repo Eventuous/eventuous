@@ -60,20 +60,19 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         ) {
             var settings = new PersistentSubscriptionSettings(true);
 
-            await _persistentSubscriptionsClient.CreateAsync(
-                _stream,
-                SubscriptionId,
-                settings,
-                cancellationToken: cancellationToken
-            );
+            try {
+                await LocalSubscribe();
+            }
+            catch (PersistentSubscriptionNotFoundException) {
+                await _persistentSubscriptionsClient.CreateAsync(
+                    _stream,
+                    SubscriptionId,
+                    settings,
+                    cancellationToken: cancellationToken
+                );
 
-            _subscription = await _persistentSubscriptionsClient.SubscribeAsync(
-                _stream,
-                SubscriptionId,
-                HandleEvent,
-                HandleDrop,
-                cancellationToken: cancellationToken
-            );
+                await LocalSubscribe();
+            }
 
             return new EventSubscription(SubscriptionId, new Disposable(Close));
 
@@ -87,6 +86,16 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 CancellationToken      ct
             )
                 => Handler(re.ToMessageReceived(), ct);
+
+            async Task LocalSubscribe() {
+                _subscription = await _persistentSubscriptionsClient.SubscribeAsync(
+                    _stream,
+                    SubscriptionId,
+                    HandleEvent,
+                    HandleDrop,
+                    cancellationToken: cancellationToken
+                );
+            }
         }
 
         void Close() => _subscription.Dispose();
