@@ -10,13 +10,13 @@ namespace Eventuous {
         readonly IEventSerializer _serializer;
 
         public AggregateStore(IEventStore eventStore, IEventSerializer serializer) {
-            _eventStore = eventStore;
-            _serializer = serializer;
+            _eventStore = Ensure.NotNull(eventStore, nameof(eventStore));
+            _serializer = Ensure.NotNull(serializer, nameof(serializer));
         }
 
         public async Task Store<T>(T aggregate)
             where T : Aggregate {
-            if (aggregate == null) throw new ArgumentNullException(nameof(aggregate));
+            Ensure.NotNull(aggregate, nameof(aggregate));
 
             if (aggregate.Changes.Count == 0) return;
 
@@ -30,7 +30,7 @@ namespace Eventuous {
         }
 
         public async Task<T> Load<T>(string id) where T : Aggregate, new() {
-            if (id == null) throw new ArgumentNullException(nameof(id));
+            Ensure.NotEmptyString(id, nameof(id));
 
             var stream    = StreamName.For<T>(id);
             var aggregate = new T();

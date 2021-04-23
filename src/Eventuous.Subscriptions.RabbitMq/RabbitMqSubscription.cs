@@ -32,12 +32,13 @@ namespace Eventuous.Subscriptions.RabbitMq {
         ) : base(subscriptionId, new NoOpCheckpointStore(), eventSerializer, eventHandlers, loggerFactory, measure) {
             _log = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
 
-            _connection = connectionFactory.CreateConnection();
+            _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
             _channel    = _connection.CreateModel();
             var prefetch = _concurrencyLimit * 10;
             _channel.BasicQos((uint) prefetch, (ushort) prefetch, false);
-            _subscriptionQueue = subscriptionQueue;
-            _exchange          = exchange;
+            
+            _subscriptionQueue = Ensure.NotEmptyString(subscriptionQueue, nameof(subscriptionQueue));
+            _exchange          = Ensure.NotEmptyString(exchange, nameof(exchange));
             _concurrencyLimit  = concurrencyLimit;
         }
 

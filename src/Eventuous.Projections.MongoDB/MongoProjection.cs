@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Eventuous.Subscriptions.EventStoreDB;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions;
 using JetBrains.Annotations;
@@ -15,11 +14,11 @@ namespace Eventuous.Projections.MongoDB {
 
         protected IMongoCollection<T> Collection { get; }
 
-        protected MongoProjection(IMongoDatabase database, string subscriptionGroup, ILoggerFactory loggerFactory) {
-            var log = loggerFactory.CreateLogger(GetType());
-            _log              = log.IsEnabled(LogLevel.Debug) ? log : null;
-            SubscriptionId = subscriptionGroup;
-            Collection        = database.GetDocumentCollection<T>();
+        protected MongoProjection(IMongoDatabase database, string subscriptionGroup, ILoggerFactory? loggerFactory) {
+            var log = loggerFactory?.CreateLogger(GetType());
+            _log           = log?.IsEnabled(LogLevel.Debug) == true ? log : null;
+            SubscriptionId = Ensure.NotEmptyString(subscriptionGroup, nameof(subscriptionGroup));
+            Collection     = Ensure.NotNull(database, nameof(database)).GetDocumentCollection<T>();
         }
 
         public string SubscriptionId { get; }

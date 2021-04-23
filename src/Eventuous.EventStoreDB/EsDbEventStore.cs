@@ -10,7 +10,7 @@ namespace Eventuous.EventStoreDB {
     public class EsDbEventStore : IEventStore {
         readonly EventStoreClient _client;
 
-        public EsDbEventStore(EventStoreClient client) => _client = client;
+        public EsDbEventStore(EventStoreClient client) => _client = Ensure.NotNull(client, nameof(client));
 
         public async Task AppendEvents(
             string                           stream,

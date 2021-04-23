@@ -12,12 +12,12 @@ namespace Eventuous.Producers.RabbitMq {
         readonly string           _exchange;
 
         public RabbitMqProducer(ConnectionFactory connectionFactory, string exchange, IEventSerializer serializer) {
-            _serializer = serializer;
-            _exchange   = exchange;
+            _serializer = Ensure.NotNull(serializer, nameof(serializer));
+            _exchange   = Ensure.NotEmptyString(exchange, nameof(exchange));
 
             // this name will be shared by all connections instantiated by this factory
             // factory.ClientProvidedName = "app:audit component:event-consumer"
-            _connection = connectionFactory.CreateConnection();
+            _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
             _channel    = _connection.CreateModel();
 
             // Make it configurable

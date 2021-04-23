@@ -37,12 +37,14 @@ namespace Eventuous.Subscriptions {
             ILoggerFactory?            loggerFactory = null,
             SubscriptionGapMeasure?    measure       = null
         ) {
-            _checkpointStore = checkpointStore;
-            _eventSerializer = eventSerializer;
-            SubscriptionId   = subscriptionId;
+            _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
+            _eventSerializer = Ensure.NotNull(eventSerializer, nameof(eventSerializer));
+            SubscriptionId   = Ensure.NotEmptyString(subscriptionId, subscriptionId);
             _measure         = measure;
 
-            _projections = eventHandlers.Where(x => x.SubscriptionId == subscriptionId).ToArray();
+            _projections = Ensure.NotNull(eventHandlers, nameof(eventHandlers))
+                .Where(x => x.SubscriptionId == subscriptionId)
+                .ToArray();
 
             _log = loggerFactory?.CreateLogger($"StreamSubscription-{subscriptionId}");
 

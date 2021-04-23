@@ -30,7 +30,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             loggerFactory,
             measure
         )
-            => _streamName = streamName;
+            => _streamName = Ensure.NotEmptyString(streamName, nameof(streamName));
 
         protected override async Task<EventSubscription> Subscribe(
             Checkpoint        checkpoint,

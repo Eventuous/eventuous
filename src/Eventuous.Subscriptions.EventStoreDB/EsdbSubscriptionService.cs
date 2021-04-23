@@ -25,15 +25,14 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             ILoggerFactory?            loggerFactory = null,
             SubscriptionGapMeasure?    measure       = null
         ) : base(subscriptionId, checkpointStore, eventSerializer, eventHandlers, loggerFactory, measure) {
-            EventStoreClient = eventStoreClient;
+            EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         }
 
-        
         protected Task Handler(StreamSubscription _, ResolvedEvent re, CancellationToken cancellationToken)
             => Handler(re.ToMessageReceived(), cancellationToken);
 
         protected void Dropped(
-            StreamSubscription sub,
+            StreamSubscription        sub,
             SubscriptionDroppedReason reason,
             Exception?                exception
         ) {
@@ -54,9 +53,15 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 )
             );
         }
-        
+
         protected override async Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {
-            var read = EventStoreClient.ReadAllAsync(Direction.Backwards, Position.End, 1, cancellationToken: cancellationToken);
+            var read = EventStoreClient.ReadAllAsync(
+                Direction.Backwards,
+                Position.End,
+                1,
+                cancellationToken: cancellationToken
+            );
+
             var events = await read.ToArrayAsync(cancellationToken);
             return new EventPosition(events[0].Event.Position.CommitPosition, events[0].Event.Created);
         }

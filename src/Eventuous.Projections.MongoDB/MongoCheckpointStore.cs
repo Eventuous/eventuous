@@ -12,18 +12,18 @@ using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 namespace Eventuous.Projections.MongoDB {
     [PublicAPI]
     public class MongoCheckpointStore : ICheckpointStore {
-        readonly int                           _batchSize;
-        readonly ILogger<MongoCheckpointStore> _log;
+        readonly int                            _batchSize;
+        readonly ILogger<MongoCheckpointStore>? _log;
 
         public MongoCheckpointStore(
-            IMongoCollection<Checkpoint> database, int batchSize, ILogger<MongoCheckpointStore> logger
+            IMongoCollection<Checkpoint> database, int batchSize, ILogger<MongoCheckpointStore>? logger
         ) {
-            Checkpoints = database;
+            Checkpoints = Ensure.NotNull(database, nameof(database));
             _batchSize  = batchSize;
             _log        = logger;
         }
 
-        public MongoCheckpointStore(IMongoDatabase database, ILogger<MongoCheckpointStore> logger) : this(
+        public MongoCheckpointStore(IMongoDatabase database, ILogger<MongoCheckpointStore>? logger) : this(
             database.GetCollection<Checkpoint>("checkpoint"),
             0,
             logger
@@ -34,7 +34,7 @@ namespace Eventuous.Projections.MongoDB {
         public async ValueTask<Checkpoint> GetLastCheckpoint(
             string checkpointId, CancellationToken cancellationToken = default
         ) {
-            _log.LogDebug("[{CheckpointId}] Finding checkpoint...", checkpointId);
+            _log?.LogDebug("[{CheckpointId}] Finding checkpoint...", checkpointId);
 
             var checkpoint = await Checkpoints.AsQueryable()
                 .Where(x => x.Id == checkpointId)
@@ -43,13 +43,13 @@ namespace Eventuous.Projections.MongoDB {
             if (checkpoint is null) {
                 checkpoint = new Checkpoint(checkpointId, null);
 
-                _log.LogInformation(
+                _log?.LogInformation(
                     "[{CheckpointId}] Checkpoint not found, defaulting to earliest position",
                     checkpointId
                 );
             }
             else {
-                _log.LogInformation(
+                _log?.LogInformation(
                     "[{CheckpointId}] Checkpoint found at position {Checkpoint}",
                     checkpointId,
                     checkpoint.Position
@@ -76,7 +76,7 @@ namespace Eventuous.Projections.MongoDB {
                 cancellationToken
             );
 
-            if (_log.IsEnabled(LogLevel.Debug))
+            if (_log?.IsEnabled(LogLevel.Debug) == true)
                 _log.LogDebug(
                     "[{CheckpointId}] Checkpoint position set to {Checkpoint}",
                     checkpoint.Id,

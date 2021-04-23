@@ -1,7 +1,6 @@
 using System.Text.Json;
 using EventStore.Client;
 using Eventuous.EventStoreDB;
-using Eventuous.Tests.Fakes;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 
