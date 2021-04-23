@@ -21,7 +21,7 @@ namespace Eventuous {
             if (aggregate.Changes.Count == 0) return;
 
             var stream          = StreamName.For<T>(aggregate.GetId());
-            var expectedVersion = new ExpectedStreamVersion(aggregate.Version);
+            var expectedVersion = new ExpectedStreamVersion(aggregate.OriginalVersion);
 
             await _eventStore.AppendEvents(stream, expectedVersion, aggregate.Changes.Select(ToStreamEvent).ToArray());
 
