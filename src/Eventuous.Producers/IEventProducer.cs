@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -9,16 +11,18 @@ namespace Eventuous.Producers {
         /// in the <seealso cref="TypeMap"/>.
         /// </summary>
         /// <param name="message">Message to produce</param>
+        /// <param name="cancellationToken"></param>
         /// <typeparam name="T">Message typ</typeparam>
         /// <returns></returns>
-        Task Produce<T>(T message) where T : class;
+        Task Produce<T>(T message, CancellationToken cancellationToken =default) where T : class;
 
         /// <summary>
-        /// Produce a message, use the message type returned by message.GetType, then
-        /// look it up in the <seealso cref="TypeMap"/>.
+        /// Produce a batch of messages, use the message type returned by message.GetType,
+        /// then look it up in the <seealso cref="TypeMap"/>.
         /// </summary>
-        /// <param name="message">Message to produce</param>
+        /// <param name="messages"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task Produce(object message);
+        Task Produce(IEnumerable<object> messages, CancellationToken cancellationToken = default);
     }
 }

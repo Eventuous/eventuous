@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,7 +63,7 @@ namespace Eventuous.Tests.RabbitMq {
 
             var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
 
-            await Task.WhenAll(testEvents.Select(x => _producer.Produce(x)));
+            await _producer.Produce(testEvents);
 
             await Task.Delay(count / 5);
 
