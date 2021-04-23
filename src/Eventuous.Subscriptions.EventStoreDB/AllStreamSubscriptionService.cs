@@ -11,7 +11,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
     public class AllStreamSubscriptionService : EsdbSubscriptionService {
         readonly IEventFilter _eventFilter;
 
-        protected AllStreamSubscriptionService(
+        public AllStreamSubscriptionService(
             EventStoreClient           eventStoreClient,
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
@@ -31,6 +31,26 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         )
             => _eventFilter = eventFilter ?? EventTypeFilter.ExcludeSystemEvents();
 
+        public AllStreamSubscriptionService(
+            EventStoreClientSettings   clientSettings,
+            string                     subscriptionId,
+            ICheckpointStore           checkpointStore,
+            IEventSerializer           eventSerializer,
+            IEnumerable<IEventHandler> eventHandlers,
+            ILoggerFactory?            loggerFactory = null,
+            IEventFilter?              eventFilter   = null,
+            SubscriptionGapMeasure?    measure       = null
+        ) : this(
+            new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
+            subscriptionId,
+            checkpointStore,
+            eventSerializer,
+            eventHandlers,
+            loggerFactory,
+            eventFilter,
+            measure
+        ) { }
+
         protected override async Task<EventSubscription> Subscribe(
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
@@ -44,21 +64,27 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             var sub = checkpoint.Position != null
                 ? await EventStoreClient.SubscribeToAllAsync(
                     new Position(checkpoint.Position.Value, checkpoint.Position.Value),
-                    Handler,
+                    HandleEvent,
                     false,
-                    Dropped,
+                    HandleDrop,
                     filterOptions,
                     cancellationToken: cancellationToken
                 )
                 : await EventStoreClient.SubscribeToAllAsync(
-                    Handler,
+                    HandleEvent,
                     false,
-                    Dropped,
+                    HandleDrop,
                     filterOptions,
                     cancellationToken: cancellationToken
                 );
 
             return new EventSubscription(SubscriptionId, sub);
+
+            Task HandleEvent(StreamSubscription _, ResolvedEvent re, CancellationToken ct)
+                => Handler(re.ToMessageReceived(), ct);
+
+            void HandleDrop(StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
+                => Dropped(EsdbMappings.AsDropReason(reason), ex);
         }
     }
 }

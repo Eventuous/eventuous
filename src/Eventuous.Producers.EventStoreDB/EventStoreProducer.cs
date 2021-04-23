@@ -19,6 +19,9 @@ namespace Eventuous.Producers.EventStoreDB {
             _serializer = Ensure.NotNull(serializer, nameof(serializer));
         }
 
+        public EventStoreProducer(EventStoreClientSettings clientSettings, string stream, IEventSerializer serializer)
+            : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), stream, serializer) { }
+
         protected override Task ProduceMany(IEnumerable<object> messages, CancellationToken cancellationToken) {
             var data = Ensure.NotNull(messages, nameof(messages))
                 .Select(x => CreateMessage(x, x.GetType()));
@@ -26,7 +29,7 @@ namespace Eventuous.Producers.EventStoreDB {
             return _client.AppendToStreamAsync(_stream, StreamState.Any, data, cancellationToken: cancellationToken);
         }
 
-        protected override Task ProduceOne(object message, Type type, CancellationToken cancellationToken){
+        protected override Task ProduceOne(object message, Type type, CancellationToken cancellationToken) {
             var eventData = CreateMessage(message, type);
 
             return _client.AppendToStreamAsync(

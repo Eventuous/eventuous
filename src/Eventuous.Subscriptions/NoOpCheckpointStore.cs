@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Eventuous.Subscriptions.RabbitMq {
+namespace Eventuous.Subscriptions {
     public class NoOpCheckpointStore : ICheckpointStore {
         public ValueTask<Checkpoint> GetLastCheckpoint(
             string            checkpointId,

@@ -12,6 +12,9 @@ namespace Eventuous.EventStoreDB {
 
         public EsDbEventStore(EventStoreClient client) => _client = Ensure.NotNull(client, nameof(client));
 
+        public EsDbEventStore(EventStoreClientSettings clientSettings)
+            : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings)))) { }
+
         public async Task AppendEvents(
             string                           stream,
             ExpectedStreamVersion            expectedVersion,

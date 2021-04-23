@@ -28,32 +28,6 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         }
 
-        protected Task Handler(StreamSubscription _, ResolvedEvent re, CancellationToken cancellationToken)
-            => Handler(re.ToMessageReceived(), cancellationToken);
-
-        protected void Dropped(
-            StreamSubscription        sub,
-            SubscriptionDroppedReason reason,
-            Exception?                exception
-        ) {
-            if (!IsRunning) return;
-
-            _log.LogWarning(
-                exception,
-                "Subscription {Subscription} dropped {Reason}",
-                Subscription.SubscriptionId,
-                reason
-            );
-
-            IsDropped = true;
-
-            Task.Run(
-                () => Resubscribe(
-                    reason == SubscriptionDroppedReason.Disposed ? TimeSpan.FromSeconds(10) : TimeSpan.Zero
-                )
-            );
-        }
-
         protected override async Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {
             var read = EventStoreClient.ReadAllAsync(
                 Direction.Backwards,

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
+        <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="21.2.0" />
         <PackageReference Include="EventStore.Client.Grpc.Streams" Version="21.2.0" />
         <PackageReference Include="Grpc.Net.Client" Version="2.35.0" />
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="5.0.*" />
