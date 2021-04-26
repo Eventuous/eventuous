@@ -5,7 +5,7 @@ namespace Eventuous {
         public static T NotNull<T>(T? value, string name) where T : class
             => value ?? throw new ArgumentNullException(name);
 
-        public static string NotEmptyString(string value, string name)
+        public static string NotEmptyString(string? value, string name)
             => !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentNullException(name);
     }
 }

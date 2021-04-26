@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Eventuous.Producers.GooglePubSub\Eventuous.Producers.GooglePubSub.csproj" />
+      <ProjectReference Include="..\..\src\Eventuous.Subscriptions.GooglePubSub\Eventuous.Subscriptions.GooglePubSub.csproj" />
+      <ProjectReference Include="..\..\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0" />
+    </ItemGroup>
+
+</Project>

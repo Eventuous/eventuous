@@ -51,9 +51,7 @@ namespace Eventuous.Subscriptions {
             _debugLog = _log?.IsEnabled(LogLevel.Debug) == true ? _log.LogDebug : null;
         }
 
-        public async Task StartAsync(
-            CancellationToken cancellationToken
-        ) {
+        public async Task StartAsync(CancellationToken cancellationToken) {
             var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken);
 
             _lastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
@@ -87,7 +85,7 @@ namespace Eventuous.Subscriptions {
                 if (re.ContentType != _eventSerializer.ContentType)
                     throw new InvalidOperationException($"Unknown content type {re.ContentType}");
 
-                object evt;
+                object? evt;
 
                 try {
                     evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
@@ -143,7 +141,7 @@ namespace Eventuous.Subscriptions {
                 }
             }
 
-            Subscription.Dispose();
+            await Subscription.Stop(cancellationToken);
 
             _log?.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
         }
@@ -219,19 +217,6 @@ namespace Eventuous.Subscriptions {
 
             return Task.FromResult(result);
         }
-    }
-
-    public class EventSubscription : IDisposable {
-        readonly IDisposable _inner;
-
-        public EventSubscription(string subscriptionId, IDisposable inner) {
-            _inner         = inner;
-            SubscriptionId = subscriptionId;
-        }
-
-        public string SubscriptionId { get; }
-
-        public void Dispose() => _inner.Dispose();
     }
 
     public record EventPosition(ulong? Position, DateTime Created);

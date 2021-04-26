@@ -78,10 +78,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     cancellationToken: cancellationToken
                 );
 
-            return new EventSubscription(SubscriptionId, sub);
+            return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
             Task HandleEvent(StreamSubscription _, ResolvedEvent re, CancellationToken ct)
-                => Handler(re.ToMessageReceived(), ct);
+                => Handler(re.AsReceivedEvent(), ct);
 
             void HandleDrop(StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
                 => Dropped(EsdbMappings.AsDropReason(reason), ex);

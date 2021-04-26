@@ -63,7 +63,7 @@ namespace Eventuous.Subscriptions.RabbitMq {
 
             _channel.BasicConsume(consumer, _subscriptionQueue);
 
-            return Task.FromResult(new EventSubscription(SubscriptionId, new Disposable(CloseConnection)));
+            return Task.FromResult(new EventSubscription(SubscriptionId, new Stoppable(CloseConnection)));
 
             async Task RunConsumer() {
                 while (!cts.IsCancellationRequested) {
