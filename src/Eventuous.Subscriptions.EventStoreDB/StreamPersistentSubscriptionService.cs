@@ -11,7 +11,6 @@ namespace Eventuous.Subscriptions.EventStoreDB {
     public class StreamPersistentSubscriptionService : EsdbSubscriptionService {
         readonly EventStorePersistentSubscriptionsClient _persistentSubscriptionsClient;
         readonly string                                  _stream;
-        PersistentSubscription                           _subscription = null!;
 
         public StreamPersistentSubscriptionService(
             EventStoreClient                        eventStoreClient,
@@ -60,8 +59,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         ) {
             var settings = new PersistentSubscriptionSettings(true);
 
+            PersistentSubscription sub;
+
             try {
-                await LocalSubscribe();
+                sub = await LocalSubscribe();
             }
             catch (PersistentSubscriptionNotFoundException) {
                 await _persistentSubscriptionsClient.CreateAsync(
@@ -71,33 +72,37 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     cancellationToken: cancellationToken
                 );
 
-                await LocalSubscribe();
+                sub = await LocalSubscribe();
             }
 
-            return new EventSubscription(SubscriptionId, new Disposable(Close));
+            return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
-            void HandleDrop(PersistentSubscription sub, SubscriptionDroppedReason reason, Exception? exception)
+            void HandleDrop(PersistentSubscription __, SubscriptionDroppedReason reason, Exception? exception)
                 => Dropped(EsdbMappings.AsDropReason(reason), exception);
 
-            Task HandleEvent(
-                PersistentSubscription sub,
+            async Task HandleEvent(
+                PersistentSubscription subscription,
                 ResolvedEvent          re,
                 int?                   retryCount,
                 CancellationToken      ct
-            )
-                => Handler(re.ToMessageReceived(), ct);
+            ) {
+                try {
+                    await Handler(re.AsReceivedEvent(), ct);
+                    await subscription.Ack(re);
+                }
+                catch (Exception e) {
+                    await subscription.Nack(PersistentSubscriptionNakEventAction.Retry, e.Message, re);
+                }
+            }
 
-            async Task LocalSubscribe() {
-                _subscription = await _persistentSubscriptionsClient.SubscribeAsync(
+            Task<PersistentSubscription> LocalSubscribe()
+                => _persistentSubscriptionsClient.SubscribeAsync(
                     _stream,
                     SubscriptionId,
                     HandleEvent,
                     HandleDrop,
                     cancellationToken: cancellationToken
                 );
-            }
         }
-
-        void Close() => _subscription.Dispose();
     }
 }
