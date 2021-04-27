@@ -4,7 +4,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="EventStore.Client.Grpc.Streams" Version="21.2.0" />
+      <PackageReference Include="EventStore.Client.Grpc.Streams" Version="20.10.0" />
     </ItemGroup>
 
 </Project>
