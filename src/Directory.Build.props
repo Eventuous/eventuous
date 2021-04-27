@@ -19,11 +19,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MinVer" Version="2.4.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="JetBrains.Annotations" Version="2020.3.0" PrivateAssets="All"/>
+        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All" />
+        <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
     </ItemGroup>
 
     <ItemGroup>
