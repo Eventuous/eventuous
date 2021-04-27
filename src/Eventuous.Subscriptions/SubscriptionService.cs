@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -200,7 +199,7 @@ namespace Eventuous.Subscriptions {
 
             Task.Run(
                 () => Resubscribe(
-                    reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.Zero
+                    reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2)
                 )
             );
         }
