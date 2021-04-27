@@ -77,7 +77,7 @@ namespace Eventuous.Subscriptions {
 
             _lastProcessed = GetPosition(re);
 
-            if (re.EventType.StartsWith("$")) {
+            if (re.EventType.StartsWith("$") || re.Data.IsEmpty) {
                 await Store();
                 return;
             }
