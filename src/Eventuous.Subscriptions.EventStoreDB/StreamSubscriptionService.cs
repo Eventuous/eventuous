@@ -85,6 +85,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     EventId        = re.Event.EventId.ToString(),
                     GlobalPosition = re.Event.Position.CommitPosition,
                     StreamPosition = re.Event.EventNumber,
+                    OriginalStream = re.OriginalStreamId,
                     Sequence       = re.Event.EventNumber,
                     Created        = re.Event.Created,
                     EventType      = re.Event.EventType,

@@ -99,7 +99,13 @@ namespace Eventuous.Subscriptions {
                 }
 
                 if (evt != null) {
-                    _debugLog?.Invoke("Handling event {Event}", evt);
+                    try {
+                        _debugLog?.Invoke("Handling event {Event}", evt);
+                    }
+                    catch (Exception) {
+                        _log?.LogWarning("Something weird with the log {Stream} {Position} {Type}",
+                            re.OriginalStream, re.StreamPosition, re.EventType);
+                    }
 
                     await Task.WhenAll(
                         _projections.Select(x => x.HandleEvent(evt, (long?) re.GlobalPosition))
