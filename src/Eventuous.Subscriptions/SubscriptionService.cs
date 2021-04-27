@@ -79,11 +79,14 @@ namespace Eventuous.Subscriptions {
 
             if (re.EventType.StartsWith("$")) {
                 await Store();
+                return;
             }
 
             try {
-                if (re.ContentType != _eventSerializer.ContentType)
-                    throw new InvalidOperationException($"Unknown content type {re.ContentType}");
+                var contentType = string.IsNullOrWhiteSpace(re.ContentType) ? "application/json" : re.ContentType;
+                
+                if (contentType != _eventSerializer.ContentType)
+                    throw new InvalidOperationException($"Unknown content type {contentType}");
 
                 object? evt;
 

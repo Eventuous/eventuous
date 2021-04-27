@@ -32,7 +32,7 @@ namespace Eventuous.Projections.MongoDB {
                 return;
             }
 
-            _log?.LogDebug("Projecting {Event}", evt);
+            _log?.LogDebug("Projecting {Event}", evt.GetType().Name);
 
             var task = update switch {
                 OtherOperation<T> operation => operation.Task,
