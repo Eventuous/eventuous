@@ -70,9 +70,9 @@ namespace Eventuous.Subscriptions {
 
         protected async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
             _debugLog?.Invoke(
-                "Subscription {Subscription} got an event {@Event}",
+                "Subscription {Subscription} got an event {EventType}",
                 SubscriptionId,
-                re
+                re.EventType
             );
 
             _lastProcessed = GetPosition(re);
@@ -104,7 +104,7 @@ namespace Eventuous.Subscriptions {
                 }
             }
             catch (Exception e) {
-                _log?.LogWarning(e, "Error when handling the event {Event}", re.EventType);
+                _log?.LogWarning(e, "Error when handling the event {EventType}", re.EventType);
             }
 
             await Store();
