@@ -94,26 +94,31 @@ namespace Eventuous.Subscriptions {
                     evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
                 }
                 catch (Exception e) {
-                    _log?.LogError(e, "Error deserializing: {Data}", Encoding.UTF8.GetString(re.Data.ToArray()));
+                    _log?.LogError(
+                        e,
+                        "Error deserializing event {Strean} {Position} {Type}",
+                        re.OriginalStream,
+                        re.StreamPosition,
+                        re.EventType
+                    );
+
                     throw;
                 }
 
                 if (evt != null) {
-                    try {
-                        _debugLog?.Invoke("Handling event {Event}", evt);
-                    }
-                    catch (Exception) {
-                        _log?.LogWarning("Something weird with the log {Stream} {Position} {Type}",
-                            re.OriginalStream, re.StreamPosition, re.EventType);
-                    }
-
                     await Task.WhenAll(
                         _projections.Select(x => x.HandleEvent(evt, (long?) re.GlobalPosition))
                     );
                 }
             }
             catch (Exception e) {
-                _log?.LogWarning(e, "Error when handling the event {EventType}", re.EventType);
+                _log?.LogWarning(
+                    e,
+                    "Error when handling the event {Strean} {Position} {Type}",
+                    re.OriginalStream,
+                    re.StreamPosition,
+                    re.EventType
+                );
             }
 
             await Store();
