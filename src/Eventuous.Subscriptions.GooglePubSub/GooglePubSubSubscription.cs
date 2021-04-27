@@ -44,7 +44,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                     ContentType = msg.Attributes["contentType"],
                     EventType   = msg.Attributes["eventType"],
                     EventId     = msg.MessageId,
-                    Position    = 0,
+                    GlobalPosition    = 0,
                     Sequence    = 0
                 };
 

@@ -84,7 +84,7 @@ namespace Eventuous.Subscriptions {
 
             try {
                 var contentType = string.IsNullOrWhiteSpace(re.ContentType) ? "application/json" : re.ContentType;
-                
+
                 if (contentType != _eventSerializer.ContentType)
                     throw new InvalidOperationException($"Unknown content type {contentType}");
 
@@ -102,7 +102,7 @@ namespace Eventuous.Subscriptions {
                     _debugLog?.Invoke("Handling event {Event}", evt);
 
                     await Task.WhenAll(
-                        _projections.Select(x => x.HandleEvent(evt, (long?) re.Position))
+                        _projections.Select(x => x.HandleEvent(evt, (long?) re.GlobalPosition))
                     );
                 }
             }
@@ -113,6 +113,9 @@ namespace Eventuous.Subscriptions {
             await Store();
 
             Task Store() => StoreCheckpoint(GetPosition(re), cancellationToken);
+
+            static EventPosition GetPosition(ReceivedEvent receivedEvent)
+                => new(receivedEvent.StreamPosition, receivedEvent.Created);
         }
 
         protected async Task StoreCheckpoint(EventPosition position, CancellationToken cancellationToken) {
@@ -121,9 +124,6 @@ namespace Eventuous.Subscriptions {
 
             await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken);
         }
-
-        static EventPosition GetPosition(ReceivedEvent receivedEvent)
-            => new(receivedEvent.Sequence, receivedEvent.Created);
 
         protected abstract Task<EventSubscription> Subscribe(
             Checkpoint        checkpoint,

@@ -87,7 +87,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 CancellationToken      ct
             ) {
                 try {
-                    await Handler(re.AsReceivedEvent(), ct);
+                    await Handler(AsReceivedEvent(re), ct);
                     await subscription.Ack(re);
                 }
                 catch (Exception e) {
@@ -103,6 +103,18 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     HandleDrop,
                     cancellationToken: cancellationToken
                 );
+            
+            static ReceivedEvent AsReceivedEvent(ResolvedEvent re)
+                => new() {
+                    EventId        = re.Event.EventId.ToString(),
+                    GlobalPosition = re.Event.Position.CommitPosition,
+                    StreamPosition = re.Event.EventNumber,
+                    Sequence       = re.Event.EventNumber,
+                    Created        = re.Event.Created,
+                    EventType      = re.Event.EventType,
+                    Data           = re.Event.Data,
+                    Metadata       = re.Event.Metadata
+                };
         }
     }
 }

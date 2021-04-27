@@ -73,12 +73,24 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 );
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
-            
+
             Task HandleEvent(StreamSubscription _, ResolvedEvent re, CancellationToken ct)
-                => Handler(re.AsReceivedEvent(), ct);
+                => Handler(AsReceivedEvent(re), ct);
 
             void HandleDrop(StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
                 => Dropped(EsdbMappings.AsDropReason(reason), ex);
+
+            static ReceivedEvent AsReceivedEvent(ResolvedEvent re)
+                => new() {
+                    EventId        = re.Event.EventId.ToString(),
+                    GlobalPosition = re.Event.Position.CommitPosition,
+                    StreamPosition = re.Event.EventNumber,
+                    Sequence       = re.Event.EventNumber,
+                    Created        = re.Event.Created,
+                    EventType      = re.Event.EventType,
+                    Data           = re.Event.Data,
+                    Metadata       = re.Event.Metadata
+                };
         }
     }
 }

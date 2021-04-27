@@ -11,15 +11,5 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, null)
             };
 
-        public static ReceivedEvent AsReceivedEvent(this ResolvedEvent re)
-            => new() {
-                EventId   = re.Event.EventId.ToString(),
-                Position  = re.Event.Position.CommitPosition,
-                Sequence  = re.Event.EventNumber,
-                Created   = re.Event.Created,
-                EventType = re.Event.EventType,
-                Data      = re.Event.Data,
-                Metadata  = re.Event.Metadata
-            };
     }
 }
