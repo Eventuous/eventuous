@@ -7,12 +7,24 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions.EventStoreDB {
+    /// <summary>
+    /// Persistent subscription for EventStoreDB, for a specific stream
+    /// </summary>
     [PublicAPI]
-    public class StreamPersistentSubscriptionService : EsdbSubscriptionService {
+    public class StreamPersistentSubscription : EsdbSubscriptionService {
         readonly EventStorePersistentSubscriptionsClient _persistentSubscriptionsClient;
         readonly string                                  _stream;
 
-        public StreamPersistentSubscriptionService(
+        /// <summary>
+        /// Creates EventStoreDB persistent subscription service for a given stream
+        /// </summary>
+        /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
+        /// <param name="subscriptionId">Subscription ID</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="loggerFactory">Optional: logger factory</param>
+        /// <param name="measure">Optional: gap measurement for metrics</param>
+        public StreamPersistentSubscription(
             EventStoreClient                        eventStoreClient,
             EventStorePersistentSubscriptionsClient persistentSubscriptionsClient,
             string                                  streamName,
@@ -34,7 +46,16 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             _stream                        = streamName;
         }
 
-        public StreamPersistentSubscriptionService(
+        /// <summary>
+        /// Creates EventStoreDB persistent subscription service for a given stream
+        /// </summary>
+        /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
+        /// <param name="subscriptionId">Subscription ID</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="loggerFactory">Optional: logger factory</param>
+        /// <param name="measure">Optional: gap measurement for metrics</param>
+        public StreamPersistentSubscription(
             EventStoreClientSettings   clientSettings,
             string                     streamName,
             string                     subscriptionId,

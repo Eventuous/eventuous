@@ -6,6 +6,9 @@ using JetBrains.Annotations;
 using RabbitMQ.Client;
 
 namespace Eventuous.Producers.RabbitMq {
+    /// <summary>
+    /// RabbitMQ producer
+    /// </summary>
     [PublicAPI]
     public class RabbitMqProducer : BaseProducer, IDisposable {
         readonly IEventSerializer _serializer;
@@ -13,6 +16,12 @@ namespace Eventuous.Producers.RabbitMq {
         readonly IModel           _channel;
         readonly string           _exchange;
 
+        /// <summary>
+        /// Creates a RabbitMQ producer instance
+        /// </summary>
+        /// <param name="connectionFactory">RabbitMQ connection factory</param>
+        /// <param name="exchange">Exchange name, will be created if doesn't exist</param>
+        /// <param name="serializer">Event serializer instance</param>
         public RabbitMqProducer(ConnectionFactory connectionFactory, string exchange, IEventSerializer serializer) {
             _serializer = Ensure.NotNull(serializer, nameof(serializer));
             _exchange   = Ensure.NotEmptyString(exchange, nameof(exchange));

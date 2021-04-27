@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Eventuous.Subscriptions.NoOps;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace Eventuous.Subscriptions.RabbitMq {
+    /// <summary>
+    /// RabbitMQ subscription service
+    /// </summary>
     [PublicAPI]
     public class RabbitMqSubscriptionService : SubscriptionService {
         readonly IConnection _connection;
@@ -19,6 +23,17 @@ namespace Eventuous.Subscriptions.RabbitMq {
 
         ILogger<RabbitMqSubscriptionService>? _log;
 
+        /// <summary>
+        /// Creates RabbitMQ subscription service instance
+        /// </summary>
+        /// <param name="connectionFactory">RabbitMQ connection factory</param>
+        /// <param name="subscriptionQueue">Subscription queue, will be created it doesn't exist</param>
+        /// <param name="exchange">Exchange to consume events from, the queue will get bound to this exchange</param>
+        /// <param name="subscriptionId">Subscription ID</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="concurrencyLimit">The number of concurrent consumers</param>
+        /// <param name="loggerFactory">Optional: logging factory</param>
         public RabbitMqSubscriptionService(
             ConnectionFactory          connectionFactory,
             string                     subscriptionQueue,
@@ -27,9 +42,8 @@ namespace Eventuous.Subscriptions.RabbitMq {
             IEventSerializer           eventSerializer,
             IEnumerable<IEventHandler> eventHandlers,
             int                        concurrencyLimit = 1,
-            ILoggerFactory?            loggerFactory    = null,
-            SubscriptionGapMeasure?    measure          = null
-        ) : base(subscriptionId, new NoOpCheckpointStore(), eventSerializer, eventHandlers, loggerFactory, measure) {
+            ILoggerFactory?            loggerFactory    = null
+        ) : base(subscriptionId, new NoOpCheckpointStore(), eventSerializer, eventHandlers, loggerFactory, new NoOpGapMeasure()) {
             _log = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
 
             _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();

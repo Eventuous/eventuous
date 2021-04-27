@@ -1,9 +1,8 @@
-using Eventuous.Subscriptions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Eventuous.Subscriptions.EventStoreDB {
+namespace Eventuous.Subscriptions {
     [PublicAPI]
     public static class ServiceCollectionExtensions {
         /// <summary>

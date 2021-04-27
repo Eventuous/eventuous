@@ -7,11 +7,25 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions.EventStoreDB {
+    /// <summary>
+    /// Catch-up subscription for EventStoreDB, using the $all global stream
+    /// </summary>
     [PublicAPI]
-    public class AllStreamSubscriptionService : EsdbSubscriptionService {
+    public class AllStreamSubscription : EsdbSubscriptionService {
         readonly IEventFilter _eventFilter;
 
-        public AllStreamSubscriptionService(
+        /// <summary>
+        /// Creates EventStoreDB catch-up subscription service for $all
+        /// </summary>
+        /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
+        /// <param name="subscriptionId">Subscription ID</param>
+        /// <param name="checkpointStore">Checkpoint store instance</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="loggerFactory">Optional: logger factory</param>
+        /// <param name="eventFilter">Optional: server-side event filter</param>
+        /// <param name="measure">Optional: gap measurement for metrics</param>
+        public AllStreamSubscription(
             EventStoreClient           eventStoreClient,
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
@@ -31,7 +45,18 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         )
             => _eventFilter = eventFilter ?? EventTypeFilter.ExcludeSystemEvents();
 
-        public AllStreamSubscriptionService(
+        /// <summary>
+        /// Creates EventStoreDB catch-up subscription service for $all
+        /// </summary>
+        /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
+        /// <param name="subscriptionId">Subscription ID</param>
+        /// <param name="checkpointStore">Checkpoint store instance</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="loggerFactory">Optional: logger factory</param>
+        /// <param name="eventFilter">Optional: server-side event filter</param>
+        /// <param name="measure">Optional: gap measurement for metrics</param>
+        public AllStreamSubscription(
             EventStoreClientSettings   clientSettings,
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
@@ -80,10 +105,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
-            Task HandleEvent(StreamSubscription _, ResolvedEvent re, CancellationToken ct)
+            Task HandleEvent(EventStore.Client.StreamSubscription _, ResolvedEvent re, CancellationToken ct)
                 => Handler(AsReceivedEvent(re), ct);
 
-            void HandleDrop(StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
+            void HandleDrop(EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
                 => Dropped(EsdbMappings.AsDropReason(reason), ex);
             
             static ReceivedEvent AsReceivedEvent(ResolvedEvent re)

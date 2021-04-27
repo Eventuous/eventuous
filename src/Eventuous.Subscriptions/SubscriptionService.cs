@@ -16,12 +16,12 @@ namespace Eventuous.Subscriptions {
         protected EventSubscription Subscription   { get; set; } = null!;
         protected string            SubscriptionId { get; }
 
-        readonly ICheckpointStore        _checkpointStore;
-        readonly IEventSerializer        _eventSerializer;
-        readonly IEventHandler[]         _projections;
-        readonly SubscriptionGapMeasure? _measure;
-        readonly ILogger?                _log;
-        readonly Log?                    _debugLog;
+        readonly ICheckpointStore         _checkpointStore;
+        readonly IEventSerializer         _eventSerializer;
+        readonly IEventHandler[]          _projections;
+        readonly ISubscriptionGapMeasure? _measure;
+        readonly ILogger?                 _log;
+        readonly Log?                     _debugLog;
 
         CancellationTokenSource? _cts;
         Task?                    _measureTask;
@@ -34,7 +34,7 @@ namespace Eventuous.Subscriptions {
             IEventSerializer           eventSerializer,
             IEnumerable<IEventHandler> eventHandlers,
             ILoggerFactory?            loggerFactory = null,
-            SubscriptionGapMeasure?    measure       = null
+            ISubscriptionGapMeasure?   measure       = null
         ) {
             _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
             _eventSerializer = Ensure.NotNull(eventSerializer, nameof(eventSerializer));

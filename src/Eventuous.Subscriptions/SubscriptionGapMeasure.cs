@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 
 namespace Eventuous.Subscriptions {
+    public interface ISubscriptionGapMeasure {
+        void PutGap(string subscriptionId, ulong gap, DateTime created);
+
+        SubscriptionGap GetGap(string subscriptionId);
+    }
+    
     /// <summary>
     /// The gap measurement tool, which can be used for metrics and alerts when the subscription
     /// is lagging behind real-time updates.
     /// </summary>
     [PublicAPI]
-    public class SubscriptionGapMeasure {
+    public class SubscriptionGapMeasure : ISubscriptionGapMeasure {
         readonly Dictionary<string, SubscriptionGap> _gaps = new();
 
         public void PutGap(string subscriptionId, ulong gap, DateTime created)

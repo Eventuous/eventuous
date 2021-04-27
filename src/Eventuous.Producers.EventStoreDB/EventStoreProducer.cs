@@ -7,18 +7,33 @@ using EventStore.Client;
 using JetBrains.Annotations;
 
 namespace Eventuous.Producers.EventStoreDB {
+    /// <summary>
+    /// Producer for EventStoreDB
+    /// </summary>
     [PublicAPI]
     public class EventStoreProducer : BaseProducer {
         readonly string           _stream;
         readonly EventStoreClient _client;
         readonly IEventSerializer _serializer;
 
-        public EventStoreProducer(EventStoreClient client, string stream, IEventSerializer serializer) {
-            _client     = Ensure.NotNull(client, nameof(client));
+        /// <summary>
+        /// Create a new EventStoreDB producer instance
+        /// </summary>
+        /// <param name="eventStoreClient">EventStoreDB gRPC client</param>
+        /// <param name="stream">Stream name, where the events will be produced</param>
+        /// <param name="serializer">Event serializer instance</param>
+        public EventStoreProducer(EventStoreClient eventStoreClient, string stream, IEventSerializer serializer) {
+            _client     = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
             _stream     = Ensure.NotEmptyString(stream, nameof(stream));
             _serializer = Ensure.NotNull(serializer, nameof(serializer));
         }
 
+        /// <summary>
+        /// Create a new EventStoreDB producer instance
+        /// </summary>
+        /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
+        /// <param name="stream">Stream name, where the events will be produced</param>
+        /// <param name="serializer">Event serializer instance</param>
         public EventStoreProducer(EventStoreClientSettings clientSettings, string stream, IEventSerializer serializer)
             : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), stream, serializer) { }
 
