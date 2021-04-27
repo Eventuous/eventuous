@@ -26,6 +26,6 @@ jobs:
       - name: Create and push NuGet package
         run: |
           dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
-          dotnet nuget push nuget/**/*.nupkg --skip-duplicate
+          dotnet nuget push nuget/**/*.nupkg --skip-duplicate --api-key ${{ github.token }}
         env:
           NUGET_AUTH_TOKEN: ${{ github.token }}
