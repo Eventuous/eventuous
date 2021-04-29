@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions;
@@ -23,7 +24,7 @@ namespace Eventuous.Projections.MongoDB {
 
         public string SubscriptionId { get; }
 
-        public async Task HandleEvent(object evt, long? position) {
+        public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
             var updateTask = GetUpdate(evt);
             var update     = updateTask == NoOp ? null : await updateTask;
 
@@ -36,7 +37,7 @@ namespace Eventuous.Projections.MongoDB {
 
             var task = update switch {
                 OtherOperation<T> operation => operation.Task,
-                CollectionOperation<T> col  => col.Execute(Collection),
+                CollectionOperation<T> col  => col.Execute(Collection, cancellationToken),
                 UpdateOperation<T> upd      => ExecuteUpdate(upd),
                 _                           => Task.CompletedTask
             };
@@ -47,7 +48,8 @@ namespace Eventuous.Projections.MongoDB {
                 => Collection.UpdateOneAsync(
                     upd.Filter,
                     upd.Update.Set(x => x.Position, position),
-                    new UpdateOptions { IsUpsert = true }
+                    new UpdateOptions { IsUpsert = true },
+                    cancellationToken
                 );
         }
 
@@ -74,5 +76,5 @@ namespace Eventuous.Projections.MongoDB {
 
     public record OtherOperation<T>(Task Task) : Operation<T>;
 
-    public record CollectionOperation<T>(Func<IMongoCollection<T>, Task> Execute) : Operation<T>;
+    public record CollectionOperation<T>(Func<IMongoCollection<T>, CancellationToken, Task> Execute) : Operation<T>;
 }

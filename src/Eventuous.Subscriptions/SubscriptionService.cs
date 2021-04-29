@@ -18,7 +18,7 @@ namespace Eventuous.Subscriptions {
 
         readonly ICheckpointStore         _checkpointStore;
         readonly IEventSerializer         _eventSerializer;
-        readonly IEventHandler[]          _projections;
+        readonly IEventHandler[]          _eventHandlers;
         readonly ISubscriptionGapMeasure? _measure;
         readonly ILogger?                 _log;
         readonly Log?                     _debugLog;
@@ -41,7 +41,7 @@ namespace Eventuous.Subscriptions {
             SubscriptionId   = Ensure.NotEmptyString(subscriptionId, subscriptionId);
             _measure         = measure;
 
-            _projections = Ensure.NotNull(eventHandlers, nameof(eventHandlers))
+            _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers))
                 .Where(x => x.SubscriptionId == subscriptionId)
                 .ToArray();
 
@@ -106,7 +106,7 @@ namespace Eventuous.Subscriptions {
 
                 if (evt != null) {
                     await Task.WhenAll(
-                        _projections.Select(x => x.HandleEvent(evt, (long?) re.GlobalPosition))
+                        _eventHandlers.Select(x => x.HandleEvent(evt, (long?) re.GlobalPosition, cancellationToken))
                     );
                 }
             }

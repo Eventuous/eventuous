@@ -81,7 +81,7 @@ namespace Eventuous.Tests.RabbitMq {
 
             public ConcurrentBag<object> ReceivedEvents { get; } = new();
 
-            public Task HandleEvent(object evt, long? position) {
+            public Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
                 ReceivedEvents.Add(evt);
                 return Task.CompletedTask;
             }
