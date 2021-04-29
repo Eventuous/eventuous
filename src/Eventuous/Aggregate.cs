@@ -106,7 +106,7 @@ namespace Eventuous {
         /// <summary>
         /// Returns the current aggregate state. Cannot be mutated from the outside.
         /// </summary>
-        public T State { get; private set; }
+        public T State { get; internal set; }
     }
 
     public abstract class Aggregate<T, TId> : Aggregate<T>

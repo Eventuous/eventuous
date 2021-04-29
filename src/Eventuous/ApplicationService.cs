@@ -28,7 +28,7 @@ namespace Eventuous {
         /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnNew<TCommand>(Action<T, TCommand> action) where TCommand : class
             => _handlers.Add(
-                typeof(TCommand), 
+                typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
@@ -40,7 +40,7 @@ namespace Eventuous {
         /// <typeparam name="TCommand">Command type</typeparam>
         protected void OnNew<TCommand>(Func<T, TCommand, Task> action) where TCommand : class
             => _handlers.Add(
-                typeof(TCommand), 
+                typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
@@ -53,7 +53,7 @@ namespace Eventuous {
         protected void OnExisting<TCommand>(Func<TCommand, TId> getId, Action<T, TCommand> action)
             where TCommand : class {
             _handlers.Add(
-                typeof(TCommand), 
+                typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.Existing, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
@@ -70,7 +70,7 @@ namespace Eventuous {
         protected void OnExisting<TCommand>(Func<TCommand, TId> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
-                typeof(TCommand), 
+                typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.Existing, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
@@ -87,7 +87,7 @@ namespace Eventuous {
         protected void OnAny<TCommand>(Func<TCommand, TId> getId, Action<T, TCommand> action)
             where TCommand : class {
             _handlers.Add(
-                typeof(TCommand), 
+                typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
@@ -104,7 +104,7 @@ namespace Eventuous {
         protected void OnAny<TCommand>(Func<TCommand, TId> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
-                typeof(TCommand), 
+                typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
@@ -121,7 +121,7 @@ namespace Eventuous {
         protected void OnAny<TCommand>(Func<TCommand, Task<TId>> getId, Action<T, TCommand> action)
             where TCommand : class {
             _handlers.Add(
-                typeof(TCommand), 
+                typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
@@ -138,7 +138,7 @@ namespace Eventuous {
         protected void OnAny<TCommand>(Func<TCommand, Task<TId>> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
-                typeof(TCommand), 
+                typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
@@ -167,10 +167,12 @@ namespace Eventuous {
                 throw new Exceptions.CommandHandlerNotFound(typeof(TCommand));
             }
 
+            var id = await _getId[typeof(TCommand)](command);
+
             var aggregate = registeredHandler.ExpectedState switch {
                 ExpectedState.Any      => await TryLoad(),
                 ExpectedState.Existing => await Load(),
-                ExpectedState.New      => new T()
+                ExpectedState.New      => Create()
             };
 
             await registeredHandler.Handler(aggregate, command);
@@ -179,18 +181,21 @@ namespace Eventuous {
 
             return new OkResult<T, TState, TId>(aggregate.State, aggregate.Changes);
 
-            async Task<T> Load() {
-                var id = await _getId[typeof(TCommand)](command);
-                return await _store.Load<T>(id);
-            }
+            Task<T> Load() => _store.Load<T>(id);
 
             async Task<T> TryLoad() {
                 try {
                     return await Load();
                 }
                 catch (Exceptions.AggregateNotFound<T>) {
-                    return new T();
+                    return Create();
                 }
+            }
+
+            T Create() {
+                var newInstance = new T();
+                newInstance.State = newInstance.State.SetId(id);
+                return newInstance;
             }
         }
     }
