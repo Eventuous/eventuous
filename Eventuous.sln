@@ -30,6 +30,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Subscriptions.Goo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.GooglePubSub", "test\Eventuous.Tests.GooglePubSub\Eventuous.Tests.GooglePubSub.csproj", "{135075B3-AAE5-4C13-87F6-BF3ECF108B37}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Experiment", "Experiment", "{AA482118-D4CD-48CF-955F-4621642FE9DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Spyglass", "experiment\Eventuous.Spyglass\Eventuous.Spyglass.csproj", "{FD8A1466-2B55-4C15-AAB5-1014BD51AC12}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -92,10 +96,15 @@ Global
 		{135075B3-AAE5-4C13-87F6-BF3ECF108B37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{135075B3-AAE5-4C13-87F6-BF3ECF108B37}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{135075B3-AAE5-4C13-87F6-BF3ECF108B37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD8A1466-2B55-4C15-AAB5-1014BD51AC12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD8A1466-2B55-4C15-AAB5-1014BD51AC12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD8A1466-2B55-4C15-AAB5-1014BD51AC12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD8A1466-2B55-4C15-AAB5-1014BD51AC12}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BD44B15F-4131-4A59-B17E-1E2E81D81B86} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
 		{D9DC676A-F577-4BDF-A037-ACFE215581C1} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
 		{135075B3-AAE5-4C13-87F6-BF3ECF108B37} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
+		{FD8A1466-2B55-4C15-AAB5-1014BD51AC12} = {AA482118-D4CD-48CF-955F-4621642FE9DC}
 	EndGlobalSection
 EndGlobal
