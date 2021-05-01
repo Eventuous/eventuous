@@ -74,8 +74,6 @@ namespace Eventuous.Tests.GooglePubSub {
             }
         }
 
-        record TestEvent(string Data, int Number);
-
         class Handler : IEventHandler {
             public Handler(string subscriptionId) => SubscriptionId = subscriptionId;
 
@@ -101,4 +99,6 @@ namespace Eventuous.Tests.GooglePubSub {
             await PubSubFixture.DeleteTopic(_pubsubTopic);
         }
     }
+
+    record TestEvent(string Data, int Number);
 }

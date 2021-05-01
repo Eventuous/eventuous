@@ -51,16 +51,16 @@ namespace Eventuous.Subscriptions {
         }
 
         public async Task StartAsync(CancellationToken cancellationToken) {
+            if (_measure != null) {
+                _cts         = new CancellationTokenSource();
+                _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
+            }
+
             var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken);
 
             _lastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
 
             Subscription = await Subscribe(checkpoint, cancellationToken);
-
-            if (_measure != null) {
-                _cts         = new CancellationTokenSource();
-                _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
-            }
 
             IsRunning = true;
 

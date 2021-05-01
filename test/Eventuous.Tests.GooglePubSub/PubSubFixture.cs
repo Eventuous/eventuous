@@ -5,7 +5,8 @@ using Grpc.Core;
 
 namespace Eventuous.Tests.GooglePubSub {
     public static class PubSubFixture {
-        public static readonly string ProjectId = Environment.GetEnvironmentVariable("PUBSUB_PROJECT_ID");
+        public static readonly string ProjectId = "master-works-208819";
+            //Environment.GetEnvironmentVariable("PUBSUB_PROJECT_ID");
 
         static PubSubFixture() {
             Environment.SetEnvironmentVariable(
