@@ -22,9 +22,18 @@ namespace Eventuous.EventStoreDB {
         ) {
             var proposedEvents = events.Select(ToEventData);
 
-            var resultTask = expectedVersion == ExpectedStreamVersion.NoStream
-                ? _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents)
-                : _client.AppendToStreamAsync(stream, StreamRevision.FromInt64(expectedVersion.Value), proposedEvents);
+            Task resultTask;
+
+            if (expectedVersion == ExpectedStreamVersion.NoStream)
+                resultTask = _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents);
+            else if (expectedVersion == ExpectedStreamVersion.Any)
+                resultTask = _client.AppendToStreamAsync(stream, StreamState.Any, proposedEvents);
+            else
+                resultTask = _client.AppendToStreamAsync(
+                    stream,
+                    StreamRevision.FromInt64(expectedVersion.Value),
+                    proposedEvents
+                );
 
             await resultTask;
 
