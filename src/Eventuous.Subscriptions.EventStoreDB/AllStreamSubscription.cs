@@ -11,7 +11,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
     /// Catch-up subscription for EventStoreDB, using the $all global stream
     /// </summary>
     [PublicAPI]
-    public class AllStreamSubscription : EsdbSubscriptionService {
+    public class AllStreamSubscription : EventStoreSubscriptionService {
         readonly IEventFilter _eventFilter;
 
         /// <summary>

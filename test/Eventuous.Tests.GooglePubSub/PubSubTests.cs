@@ -43,7 +43,7 @@ namespace Eventuous.Tests.GooglePubSub {
                 _pubsubSubscription,
                 Serializer,
                 new[] { _handler },
-                loggerFactory
+                loggerFactory: loggerFactory
             );
         }
 

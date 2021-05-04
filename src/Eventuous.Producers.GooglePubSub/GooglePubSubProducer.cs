@@ -16,11 +16,11 @@ namespace Eventuous.Producers.GooglePubSub {
     /// </summary>
     [PublicAPI]
     public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions> {
-        readonly ClientCreationSettings? _clientCreationSettings;
-        readonly Settings?               _settings;
-        readonly IEventSerializer        _serializer;
-        PublisherClient?                 _client;
-        readonly TopicName               _topicName;
+        readonly PubSubProducerOptions? _options;
+        readonly IEventSerializer       _serializer;
+        readonly TopicName              _topicName;
+
+        PublisherClient? _client;
 
         /// <summary>
         /// Create a new instance of a Google PubSub producer
@@ -28,18 +28,15 @@ namespace Eventuous.Producers.GooglePubSub {
         /// <param name="projectId">GCP project ID</param>
         /// <param name="topicId">Google PubSup topic ID (within the project). The topic must be created upfront.</param>
         /// <param name="serializer">Event serializer instance</param>
-        /// <param name="clientCreationSettings">Optional: <see cref="ClientCreationSettings"/> for the <seealso cref="PublisherClient"/> creation</param>
-        /// <param name="settings">Optional: <see cref="Settings"/> of the <seealso cref="PublisherClient"/></param>
+        /// <param name="options">PubSub producer options</param>
         public GooglePubSubProducer(
-            string                  projectId,
-            string                  topicId,
-            IEventSerializer        serializer,
-            ClientCreationSettings? clientCreationSettings = null,
-            Settings?               settings               = null
+            string                 projectId,
+            string                 topicId,
+            IEventSerializer       serializer,
+            PubSubProducerOptions? options = null
         ) {
-            _clientCreationSettings = clientCreationSettings;
-            _settings               = settings;
-            _serializer             = Ensure.NotNull(serializer, nameof(serializer));
+            _options    = options;
+            _serializer = Ensure.NotNull(serializer, nameof(serializer));
 
             _topicName = TopicName.FromProjectTopic(
                 Ensure.NotEmptyString(projectId, nameof(projectId)),
@@ -48,7 +45,7 @@ namespace Eventuous.Producers.GooglePubSub {
         }
 
         public override async Task Initialize(CancellationToken cancellationToken = default) {
-            _client = await CreateAsync(_topicName, _clientCreationSettings, _settings);
+            _client = await CreateAsync(_topicName, _options?.ClientCreationSettings, _options?.Settings);
         }
 
         public override Task Shutdown(CancellationToken cancellationToken = default)
@@ -62,7 +59,7 @@ namespace Eventuous.Producers.GooglePubSub {
         ) {
             if (_client == null)
                 throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
-            
+
             var pubSubMessage = CreateMessage(message, type, options);
 
             return _client.PublishAsync(pubSubMessage);

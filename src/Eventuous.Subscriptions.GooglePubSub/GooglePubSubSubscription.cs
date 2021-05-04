@@ -15,9 +15,10 @@ namespace Eventuous.Subscriptions.GooglePubSub {
     /// </summary>
     [PublicAPI]
     public class GooglePubSubSubscription : SubscriptionService, ICanStop {
-        readonly SubscriptionName    _subscriptionName;
-        readonly SubscriberClient    _client;
-        readonly MetricServiceClient _metricClient;
+        readonly PubSubSubscriptionOptions? _options;
+        readonly SubscriptionName           _subscriptionName;
+        SubscriberClient?                   _client;
+        MetricServiceClient?                _metricClient;
 
         /// <summary>
         /// Creates a Google PubSub subscription service
@@ -26,6 +27,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
         /// <param name="subscriptionId">Google PubSub subscription ID (within the project), which must already exist</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="options">Subscription options</param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Callback for measuring the subscription gap</param>
         public GooglePubSubSubscription(
@@ -33,6 +35,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             string                     subscriptionId,
             IEventSerializer           eventSerializer,
             IEnumerable<IEventHandler> eventHandlers,
+            PubSubSubscriptionOptions? options       = null,
             ILoggerFactory?            loggerFactory = null,
             SubscriptionGapMeasure?    measure       = null
         ) : base(
@@ -43,13 +46,12 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             loggerFactory,
             measure
         ) {
+            _options = options;
+
             _subscriptionName = SubscriptionName.FromProjectSubscription(
                 Ensure.NotEmptyString(projectId, nameof(projectId)),
                 Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId))
             );
-
-            _client       = SubscriberClient.Create(_subscriptionName);
-            _metricClient = MetricServiceClient.Create();
 
             _undeliveredCountRequest = GetFilteredRequest(PubSubMetricUndeliveredMessagesCount);
             _oldestAgeRequest        = GetFilteredRequest(PubSubMetricOldestUnackedMessageAge);
@@ -64,12 +66,19 @@ namespace Eventuous.Subscriptions.GooglePubSub {
 
         Task _subscriberTask = null!;
 
-        protected override Task<EventSubscription> Subscribe(
+        protected override async Task<EventSubscription> Subscribe(
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         ) {
+            _client = await SubscriberClient.CreateAsync(
+                _subscriptionName,
+                _options?.ClientCreationSettings,
+                _options?.Settings
+            );
+
+            _metricClient   = await MetricServiceClient.CreateAsync(cancellationToken);
             _subscriberTask = _client.StartAsync(Handle);
-            return Task.FromResult(new EventSubscription(SubscriptionId, this));
+            return new EventSubscription(SubscriptionId, this);
 
             async Task<SubscriberClient.Reply> Handle(PubsubMessage msg, CancellationToken ct) {
                 var receivedEvent = new ReceivedEvent {
@@ -114,14 +123,16 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             async Task<Point?> GetPoint(ListTimeSeriesRequest request) {
                 request.Interval = interval;
 
-                var result = _metricClient.ListTimeSeriesAsync(request);
+                var result = _metricClient!.ListTimeSeriesAsync(request);
                 var page   = await result.ReadPageAsync(1, cancellationToken);
                 return page.FirstOrDefault()?.Points?.FirstOrDefault();
             }
         }
 
         public async Task Stop(CancellationToken cancellationToken = default) {
-            await _client.StopAsync(cancellationToken);
+            if (_client != null)
+                await _client.StopAsync(cancellationToken);
+
             await _subscriberTask;
         }
     }

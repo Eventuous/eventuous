@@ -11,8 +11,9 @@ namespace Eventuous.Subscriptions.EventStoreDB {
     /// Catch-up subscription for EventStoreDB, for a specific stream
     /// </summary>
     [PublicAPI]
-    public class StreamSubscription : EsdbSubscriptionService {
-        readonly string _streamName;
+    public class StreamSubscription : EventStoreSubscriptionService {
+        readonly EventStoreSubscriptionOptions? _options;
+        readonly string                         _streamName;
 
         /// <summary>
         /// Creates EventStoreDB catch-up subscription service for a given stream
@@ -23,17 +24,19 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         /// <param name="checkpointStore">Checkpoint store instance</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="options">Subscription options</param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
         public StreamSubscription(
-            EventStoreClient           eventStoreClient,
-            string                     streamName,
-            string                     subscriptionId,
-            ICheckpointStore           checkpointStore,
-            IEventSerializer           eventSerializer,
-            IEnumerable<IEventHandler> eventHandlers,
-            ILoggerFactory?            loggerFactory = null,
-            SubscriptionGapMeasure?    measure       = null
+            EventStoreClient               eventStoreClient,
+            string                         streamName,
+            string                         subscriptionId,
+            ICheckpointStore               checkpointStore,
+            IEventSerializer               eventSerializer,
+            IEnumerable<IEventHandler>     eventHandlers,
+            EventStoreSubscriptionOptions? options       = null,
+            ILoggerFactory?                loggerFactory = null,
+            SubscriptionGapMeasure?        measure       = null
         ) : base(
             eventStoreClient,
             subscriptionId,
@@ -42,8 +45,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             eventHandlers,
             loggerFactory,
             measure
-        )
-            => _streamName = Ensure.NotEmptyString(streamName, nameof(streamName));
+        ) {
+            _options    = options;
+            _streamName = Ensure.NotEmptyString(streamName, nameof(streamName));
+        }
 
         /// <summary>
         /// Creates EventStoreDB catch-up subscription service for a given stream
@@ -54,17 +59,19 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         /// <param name="checkpointStore">Checkpoint store instance</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="options">Subscription options</param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
         public StreamSubscription(
-            EventStoreClientSettings   clientSettings,
-            string                     streamName,
-            string                     subscriptionId,
-            ICheckpointStore           checkpointStore,
-            IEventSerializer           eventSerializer,
-            IEnumerable<IEventHandler> eventHandlers,
-            ILoggerFactory?            loggerFactory = null,
-            SubscriptionGapMeasure?    measure       = null
+            EventStoreClientSettings       clientSettings,
+            string                         streamName,
+            string                         subscriptionId,
+            ICheckpointStore               checkpointStore,
+            IEventSerializer               eventSerializer,
+            IEnumerable<IEventHandler>     eventHandlers,
+            EventStoreSubscriptionOptions? options       = null,
+            ILoggerFactory?                loggerFactory = null,
+            SubscriptionGapMeasure?        measure       = null
         ) : this(
             new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
             streamName,
@@ -72,6 +79,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             checkpointStore,
             eventSerializer,
             eventHandlers,
+            options,
             loggerFactory,
             measure
         ) { }
@@ -84,17 +92,21 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 ? await EventStoreClient.SubscribeToStreamAsync(
                     _streamName,
                     HandleEvent,
-                    true,
+                    _options?.ResolveLinkTos ?? true,
                     HandleDrop,
-                    cancellationToken: cancellationToken
+                    _options?.ConfigureOperation,
+                    _options?.Credentials,
+                    cancellationToken
                 )
                 : await EventStoreClient.SubscribeToStreamAsync(
                     _streamName,
                     StreamPosition.FromInt64((long) checkpoint.Position),
                     HandleEvent,
-                    true,
+                    _options?.ResolveLinkTos ?? true,
                     HandleDrop,
-                    cancellationToken: cancellationToken
+                    _options?.ConfigureOperation,
+                    _options?.Credentials,
+                    cancellationToken
                 );
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));

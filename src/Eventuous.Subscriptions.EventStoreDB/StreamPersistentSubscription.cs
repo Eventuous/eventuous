@@ -11,28 +11,33 @@ namespace Eventuous.Subscriptions.EventStoreDB {
     /// Persistent subscription for EventStoreDB, for a specific stream
     /// </summary>
     [PublicAPI]
-    public class StreamPersistentSubscription : EsdbSubscriptionService {
-        readonly EventStorePersistentSubscriptionsClient _persistentSubscriptionsClient;
-        readonly string                                  _stream;
+    public class StreamPersistentSubscription : EventStoreSubscriptionService {
+        readonly EventStorePersistentSubscriptionsClient  _subscriptionClient;
+        readonly string                                   _stream;
+        readonly EventStorePersistentSubscriptionOptions? _options;
 
         /// <summary>
         /// Creates EventStoreDB persistent subscription service for a given stream
         /// </summary>
         /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
+        /// <param name="streamName">Name of the stream to receive events from</param>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="options">Subscription options</param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
+        /// <param name="subscriptionClient">Client for EventStoreDB persistent subscriptions</param>
         public StreamPersistentSubscription(
-            EventStoreClient                        eventStoreClient,
-            EventStorePersistentSubscriptionsClient persistentSubscriptionsClient,
-            string                                  streamName,
-            string                                  subscriptionId,
-            IEventSerializer                        eventSerializer,
-            IEnumerable<IEventHandler>              eventHandlers,
-            ILoggerFactory?                         loggerFactory = null,
-            SubscriptionGapMeasure?                 measure       = null
+            EventStoreClient                         eventStoreClient,
+            EventStorePersistentSubscriptionsClient  subscriptionClient,
+            string                                   streamName,
+            string                                   subscriptionId,
+            IEventSerializer                         eventSerializer,
+            IEnumerable<IEventHandler>               eventHandlers,
+            EventStorePersistentSubscriptionOptions? options       = null,
+            ILoggerFactory?                          loggerFactory = null,
+            SubscriptionGapMeasure?                  measure       = null
         ) : base(
             eventStoreClient,
             subscriptionId,
@@ -42,27 +47,31 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             loggerFactory,
             measure
         ) {
-            _persistentSubscriptionsClient = persistentSubscriptionsClient;
-            _stream                        = streamName;
+            _subscriptionClient = subscriptionClient;
+            _stream             = streamName;
+            _options            = options;
         }
 
         /// <summary>
         /// Creates EventStoreDB persistent subscription service for a given stream
         /// </summary>
         /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
+        /// <param name="streamName">Name of the stream to receive events from</param>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="options">Subscription options</param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
         public StreamPersistentSubscription(
-            EventStoreClientSettings   clientSettings,
-            string                     streamName,
-            string                     subscriptionId,
-            IEventSerializer           eventSerializer,
-            IEnumerable<IEventHandler> eventHandlers,
-            ILoggerFactory?            loggerFactory = null,
-            SubscriptionGapMeasure?    measure       = null
+            EventStoreClientSettings                 clientSettings,
+            string                                   streamName,
+            string                                   subscriptionId,
+            IEventSerializer                         eventSerializer,
+            IEnumerable<IEventHandler>               eventHandlers,
+            EventStorePersistentSubscriptionOptions? options       = null,
+            ILoggerFactory?                          loggerFactory = null,
+            SubscriptionGapMeasure?                  measure       = null
         ) : this(
             new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
             new EventStorePersistentSubscriptionsClient(clientSettings),
@@ -70,6 +79,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             subscriptionId,
             eventSerializer,
             eventHandlers,
+            options,
             loggerFactory,
             measure
         ) { }
@@ -78,7 +88,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             Checkpoint        _,
             CancellationToken cancellationToken
         ) {
-            var settings = new PersistentSubscriptionSettings(true);
+            var settings = _options?.SubscriptionSettings ?? new PersistentSubscriptionSettings(true);
+            var autoAck  = _options?.AutoAck ?? true;
 
             PersistentSubscription sub;
 
@@ -86,11 +97,12 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 sub = await LocalSubscribe();
             }
             catch (PersistentSubscriptionNotFoundException) {
-                await _persistentSubscriptionsClient.CreateAsync(
+                await _subscriptionClient.CreateAsync(
                     _stream,
                     SubscriptionId,
                     settings,
-                    cancellationToken: cancellationToken
+                    _options?.Credentials,
+                    cancellationToken
                 );
 
                 sub = await LocalSubscribe();
@@ -109,7 +121,9 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             ) {
                 try {
                     await Handler(AsReceivedEvent(re), ct);
-                    await subscription.Ack(re);
+
+                    if (!autoAck)
+                        await subscription.Ack(re);
                 }
                 catch (Exception e) {
                     await subscription.Nack(PersistentSubscriptionNakEventAction.Retry, e.Message, re);
@@ -117,14 +131,17 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             }
 
             Task<PersistentSubscription> LocalSubscribe()
-                => _persistentSubscriptionsClient.SubscribeAsync(
+                => _subscriptionClient.SubscribeAsync(
                     _stream,
                     SubscriptionId,
                     HandleEvent,
                     HandleDrop,
-                    cancellationToken: cancellationToken
+                    _options?.Credentials,
+                    _options?.BufferSize ?? 10,
+                    _options?.AutoAck ?? true,
+                    cancellationToken
                 );
-            
+
             static ReceivedEvent AsReceivedEvent(ResolvedEvent re)
                 => new() {
                     EventId        = re.Event.EventId.ToString(),

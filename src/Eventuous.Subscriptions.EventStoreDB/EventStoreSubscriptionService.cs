@@ -8,14 +8,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions.EventStoreDB {
     [PublicAPI]
-    public abstract class EsdbSubscriptionService : SubscriptionService {
+    public abstract class EventStoreSubscriptionService : SubscriptionService {
         readonly SubscriptionGapMeasure? _measure;
         readonly ILogger?                _log;
         readonly Log?                    _debugLog;
 
         protected EventStoreClient EventStoreClient { get; }
 
-        protected EsdbSubscriptionService(
+        protected EventStoreSubscriptionService(
             EventStoreClient           eventStoreClient,
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
