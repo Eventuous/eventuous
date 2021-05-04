@@ -4,17 +4,39 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Eventuous.Producers {
-    public abstract class BaseProducer : IEventProducer {
-        public Task Produce<T>(T message, CancellationToken cancellationToken = default) where T : class
-            => message is IEnumerable<object> collection 
-                ? ProduceMany(collection, cancellationToken)
-                : ProduceOne(message, typeof(T), cancellationToken);
+    public abstract class BaseProducer<TProduceOptions> : IEventProducer<TProduceOptions>
+        where TProduceOptions : class {
+        public abstract Task Initialize(CancellationToken cancellationToken = default);
 
-        public Task Produce(IEnumerable<object> messages, CancellationToken cancellationToken = default)
-            => ProduceMany(messages, cancellationToken);
+        public abstract Task Shutdown(CancellationToken cancellationToken = default);
 
-        protected abstract Task ProduceOne(object message, Type type, CancellationToken cancellationToken);
+        public Task Produce<T>(
+            T                 message,
+            TProduceOptions?  options           = null,
+            CancellationToken cancellationToken = default
+        ) where T : class
+            => message is IEnumerable<object> collection
+                ? ProduceMany(collection, options, cancellationToken)
+                : ProduceOne(message, typeof(T), options, cancellationToken);
 
-        protected abstract Task ProduceMany(IEnumerable<object> messages, CancellationToken cancellationToken);
+        public Task Produce(
+            IEnumerable<object> messages,
+            TProduceOptions?    options           = null,
+            CancellationToken   cancellationToken = default
+        )
+            => ProduceMany(messages, options, cancellationToken);
+
+        protected abstract Task ProduceOne(
+            object            message,
+            Type              type,
+            TProduceOptions?  options,
+            CancellationToken cancellationToken
+        );
+
+        protected abstract Task ProduceMany(
+            IEnumerable<object> messages,
+            TProduceOptions?    options,
+            CancellationToken   cancellationToken
+        );
     }
 }

@@ -11,7 +11,7 @@ namespace Eventuous.Producers.EventStoreDB {
     /// Producer for EventStoreDB
     /// </summary>
     [PublicAPI]
-    public class EventStoreProducer : BaseProducer {
+    public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         readonly string           _stream;
         readonly EventStoreClient _client;
         readonly IEventSerializer _serializer;
@@ -37,33 +37,56 @@ namespace Eventuous.Producers.EventStoreDB {
         public EventStoreProducer(EventStoreClientSettings clientSettings, string stream, IEventSerializer serializer)
             : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), stream, serializer) { }
 
-        protected override Task ProduceMany(IEnumerable<object> messages, CancellationToken cancellationToken) {
+        public override Task Initialize(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public override Task Shutdown(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        protected override Task ProduceMany(
+            IEnumerable<object>       messages,
+            EventStoreProduceOptions? options,
+            CancellationToken         cancellationToken
+        ) {
             var data = Ensure.NotNull(messages, nameof(messages))
-                .Select(x => CreateMessage(x, x.GetType()));
-
-            return _client.AppendToStreamAsync(_stream, StreamState.Any, data, cancellationToken: cancellationToken);
-        }
-
-        protected override Task ProduceOne(object message, Type type, CancellationToken cancellationToken) {
-            var eventData = CreateMessage(message, type);
+                .Select(x => CreateMessage(x, x.GetType(), options?.Metadata));
 
             return _client.AppendToStreamAsync(
                 _stream,
-                StreamState.Any,
-                new[] { eventData },
-                cancellationToken: cancellationToken
+                options?.ExpectedState ?? StreamState.Any,
+                data,
+                options?.ConfigureOperation,
+                options?.Credentials,
+                cancellationToken
             );
         }
 
-        EventData CreateMessage(object message, Type type) {
-            var msg      = Ensure.NotNull(message, nameof(message));
-            var typeName = TypeMap.GetTypeNameByType(type);
+        protected override Task ProduceOne(
+            object                    message,
+            Type                      type,
+            EventStoreProduceOptions? options,
+            CancellationToken         cancellationToken
+        ) {
+            var eventData = CreateMessage(message, type, options?.Metadata);
+
+            return _client.AppendToStreamAsync(
+                _stream,
+                options?.ExpectedState ?? StreamState.Any,
+                new[] { eventData },
+                options?.ConfigureOperation,
+                options?.Credentials,
+                cancellationToken
+            );
+        }
+
+        EventData CreateMessage(object message, Type type, object? metadata) {
+            var msg       = Ensure.NotNull(message, nameof(message));
+            var typeName  = TypeMap.GetTypeNameByType(type);
+            var metaBytes = metadata == null ? null : _serializer.Serialize(metadata);
 
             return new EventData(
                 Uuid.NewUuid(),
                 typeName,
                 _serializer.Serialize(msg),
-                null,
+                metaBytes,
                 _serializer.ContentType
             );
         }
