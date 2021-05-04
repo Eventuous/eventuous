@@ -12,7 +12,7 @@ namespace Eventuous.Producers {
 
         public Task Produce<T>(
             T                 message,
-            TProduceOptions?  options           = null,
+            TProduceOptions?  options,
             CancellationToken cancellationToken = default
         ) where T : class
             => message is IEnumerable<object> collection
@@ -21,7 +21,7 @@ namespace Eventuous.Producers {
 
         public Task Produce(
             IEnumerable<object> messages,
-            TProduceOptions?    options           = null,
+            TProduceOptions?    options,
             CancellationToken   cancellationToken = default
         )
             => ProduceMany(messages, options, cancellationToken);
@@ -38,5 +38,13 @@ namespace Eventuous.Producers {
             TProduceOptions?    options,
             CancellationToken   cancellationToken
         );
+        
+
+        public Task Produce<TMessage>(TMessage message, CancellationToken cancellationToken = default)
+            where TMessage : class
+            => Produce(message, null, cancellationToken);
+
+        public Task Produce(IEnumerable<object> messages, CancellationToken cancellationToken = default)
+            => Produce(messages, null, cancellationToken);
     }
 }

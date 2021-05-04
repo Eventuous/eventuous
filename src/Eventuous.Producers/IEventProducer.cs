@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 
 namespace Eventuous.Producers {
     [PublicAPI]
-    public interface IEventProducer<in TProduceOptions> where TProduceOptions : class {
+    public interface IEventProducer {
         /// <summary>
         /// Initializes the producer, creating necessary resources if needed
         /// </summary>
@@ -25,13 +25,42 @@ namespace Eventuous.Producers {
         /// in the <seealso cref="TypeMap"/>.
         /// </summary>
         /// <param name="message">Message to produce</param>
+        /// <param name="cancellationToken"></param>
+        /// <typeparam name="TMessage">Message typ</typeparam>
+        /// <returns></returns>
+        Task Produce<TMessage>(
+            TMessage          message,
+            CancellationToken cancellationToken = default
+        )
+            where TMessage : class;
+
+        /// <summary>
+        /// Produce a batch of messages, use the message type returned by message.GetType,
+        /// then look it up in the <seealso cref="TypeMap"/>.
+        /// </summary>
+        /// <param name="messages"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task Produce(
+            IEnumerable<object> messages,
+            CancellationToken   cancellationToken = default
+        );
+    }
+    
+    [PublicAPI]
+    public interface IEventProducer<in TProduceOptions> : IEventProducer where TProduceOptions : class {
+        /// <summary>
+        /// Produce a message of type <see cref="TMessage"/>. The type is used to look up the type name
+        /// in the <seealso cref="TypeMap"/>.
+        /// </summary>
+        /// <param name="message">Message to produce</param>
         /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
         /// <typeparam name="TMessage">Message typ</typeparam>
         /// <returns></returns>
         Task Produce<TMessage>(
             TMessage          message,
-            TProduceOptions?  options           = null,
+            TProduceOptions?  options,
             CancellationToken cancellationToken = default
         )
             where TMessage : class;
@@ -46,7 +75,7 @@ namespace Eventuous.Producers {
         /// <returns></returns>
         Task Produce(
             IEnumerable<object> messages,
-            TProduceOptions?    options           = null,
+            TProduceOptions?    options,
             CancellationToken   cancellationToken = default
         );
     }
