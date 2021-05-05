@@ -13,7 +13,6 @@ namespace Eventuous.Producers.RabbitMq {
     public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions> {
         readonly RabbitMqExchangeOptions? _options;
         readonly IEventSerializer         _serializer;
-        readonly string                   _exchange;
         readonly ConnectionFactory        _connectionFactory;
 
         IConnection? _connection;
@@ -28,13 +27,11 @@ namespace Eventuous.Producers.RabbitMq {
         /// <param name="options">Additional configuration for the exchange</param>
         public RabbitMqProducer(
             ConnectionFactory        connectionFactory,
-            string                   exchange,
             IEventSerializer         serializer,
             RabbitMqExchangeOptions? options = null
         ) {
             _options           = options;
             _serializer        = Ensure.NotNull(serializer, nameof(serializer));
-            _exchange          = Ensure.NotEmptyString(exchange, nameof(exchange));
             _connectionFactory = Ensure.NotNull(connectionFactory, nameof(connectionFactory));
         }
 
@@ -43,40 +40,37 @@ namespace Eventuous.Producers.RabbitMq {
             _channel    = _connection.CreateModel();
             _channel.ConfirmSelect();
 
-            _channel.ExchangeDeclare(
-                _exchange,
-                _options?.Type ?? ExchangeType.Fanout,
-                _options?.Durable ?? true,
-                _options?.AutoDelete ?? false,
-                _options?.Arguments
-            );
-
             return Task.CompletedTask;
         }
 
         protected override async Task ProduceMany(
+            string                  stream,
             IEnumerable<object>     messages,
             RabbitMqProduceOptions? options,
             CancellationToken       cancellationToken
         ) {
+            EnsureExchange(stream);
+            
             foreach (var message in messages) {
-                Publish(message, message.GetType(), options);
+                Publish(stream, message, message.GetType(), options);
             }
 
             await Confirm(cancellationToken);
         }
 
         protected override Task ProduceOne(
+            string                  stream,
             object                  message,
             Type                    type,
             RabbitMqProduceOptions? options,
             CancellationToken       cancellationToken
         ) {
-            Publish(message, type, options);
+            EnsureExchange(stream);
+            Publish(stream, message, type, options);
             return Confirm(cancellationToken);
         }
 
-        void Publish(object message, Type type, RabbitMqProduceOptions? options) {
+        void Publish(string stream, object message, Type type, RabbitMqProduceOptions? options) {
             if (_channel == null)
                 throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
 
@@ -99,7 +93,23 @@ namespace Eventuous.Producers.RabbitMq {
                 prop.ReplyTo       = options.ReplyTo;
             }
 
-            _channel.BasicPublish(_exchange, options?.RoutingKey ?? "", true, prop, payload);
+            _channel.BasicPublish(stream, options?.RoutingKey ?? "", true, prop, payload);
+        }
+
+        readonly ExchangeCache _exchangeCache = new();
+
+        void EnsureExchange(string exchange) {
+            _exchangeCache.EnsureExchange(
+                exchange,
+                () =>
+                    _channel!.ExchangeDeclare(
+                        exchange,
+                        _options?.Type ?? ExchangeType.Fanout,
+                        _options?.Durable ?? true,
+                        _options?.AutoDelete ?? false,
+                        _options?.Arguments
+                    )
+            );
         }
 
         async Task Confirm(CancellationToken cancellationToken) {

@@ -1,6 +1,8 @@
 using Google.Cloud.PubSub.V1;
+using JetBrains.Annotations;
 
 namespace Eventuous.Subscriptions.GooglePubSub {
+    [PublicAPI]
     public class PubSubSubscriptionOptions {
         
         /// <summary>
@@ -12,5 +14,9 @@ namespace Eventuous.Subscriptions.GooglePubSub {
         /// <see cref="Settings"/> of the <seealso cref="SubscriberClient"/>
         /// </summary>
         public SubscriberClient.Settings? Settings { get; init; }
+        
+        public PushConfig? PushConfig { get; init; }
+
+        public int AckDeadline { get; init; } = 60;
     }
 }

@@ -23,22 +23,23 @@ namespace Eventuous.Tests.RabbitMq {
         readonly RabbitMqSubscriptionService _subscription;
         readonly RabbitMqProducer            _producer;
         readonly Handler                     _handler;
+        readonly string                      _exchange;
 
         public PubSubTests(ITestOutputHelper outputHelper) {
-            var exchange = Auto.Create<string>();
-            var queue    = Auto.Create<string>();
+            _exchange = Auto.Create<string>();
+            var queue = Auto.Create<string>();
 
             var loggerFactory =
                 LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
             _handler = new Handler();
 
-            _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory, exchange, Serializer);
+            _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory, Serializer);
 
             _subscription = new RabbitMqSubscriptionService(
                 RabbitMqFixture.ConnectionFactory,
                 queue,
-                exchange,
+                _exchange,
                 "queue",
                 Serializer,
                 new[] { _handler },
@@ -52,7 +53,7 @@ namespace Eventuous.Tests.RabbitMq {
         [Fact]
         public async Task SubscribeAndProduce() {
             var testEvent = Auto.Create<TestEvent>();
-            await _producer.Produce(testEvent);
+            await _producer.Produce(_exchange, testEvent);
 
             await Task.Delay(50);
 
@@ -65,7 +66,7 @@ namespace Eventuous.Tests.RabbitMq {
 
             var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
 
-            await _producer.Produce(testEvents);
+            await _producer.Produce(_exchange, testEvents);
 
             await Task.Delay(count / 2);
 

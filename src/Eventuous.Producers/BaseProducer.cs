@@ -11,22 +11,25 @@ namespace Eventuous.Producers {
         public abstract Task Shutdown(CancellationToken cancellationToken = default);
 
         public Task Produce<T>(
+            string            stream,
             T                 message,
             TProduceOptions?  options,
             CancellationToken cancellationToken = default
         ) where T : class
             => message is IEnumerable<object> collection
-                ? ProduceMany(collection, options, cancellationToken)
-                : ProduceOne(message, typeof(T), options, cancellationToken);
+                ? ProduceMany(stream, collection, options, cancellationToken)
+                : ProduceOne(stream, message, typeof(T), options, cancellationToken);
 
         public Task Produce(
+            string            stream,
             IEnumerable<object> messages,
             TProduceOptions?    options,
             CancellationToken   cancellationToken = default
         )
-            => ProduceMany(messages, options, cancellationToken);
+            => ProduceMany(stream, messages, options, cancellationToken);
 
         protected abstract Task ProduceOne(
+            string            stream,
             object            message,
             Type              type,
             TProduceOptions?  options,
@@ -34,17 +37,18 @@ namespace Eventuous.Producers {
         );
 
         protected abstract Task ProduceMany(
+            string            stream,
             IEnumerable<object> messages,
             TProduceOptions?    options,
             CancellationToken   cancellationToken
         );
         
 
-        public Task Produce<TMessage>(TMessage message, CancellationToken cancellationToken = default)
+        public Task Produce<TMessage>(string stream, TMessage message, CancellationToken cancellationToken = default)
             where TMessage : class
-            => Produce(message, null, cancellationToken);
+            => Produce(stream, message, null, cancellationToken);
 
-        public Task Produce(IEnumerable<object> messages, CancellationToken cancellationToken = default)
-            => Produce(messages, null, cancellationToken);
+        public Task Produce(string stream, IEnumerable<object> messages, CancellationToken cancellationToken = default)
+            => Produce(stream, messages, null, cancellationToken);
     }
 }

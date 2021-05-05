@@ -11,7 +11,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
     public abstract class EventStoreSubscriptionService : SubscriptionService {
         readonly SubscriptionGapMeasure? _measure;
         readonly ILogger?                _log;
-        readonly Log?                    _debugLog;
+        readonly Logging?                    _debugLog;
 
         protected EventStoreClient EventStoreClient { get; }
 

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Google.Cloud.PubSub.V1;
 using Google.Protobuf;
 using JetBrains.Annotations;
-using static Google.Cloud.PubSub.V1.PublisherClient;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable InvertIf
 
@@ -16,11 +16,9 @@ namespace Eventuous.Producers.GooglePubSub {
     /// </summary>
     [PublicAPI]
     public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions> {
-        readonly PubSubProducerOptions? _options;
-        readonly IEventSerializer       _serializer;
-        readonly TopicName              _topicName;
-
-        PublisherClient? _client;
+        readonly IEventSerializer _serializer;
+        readonly ClientCache      _clientCache;
+        readonly ILogger?         _log;
 
         /// <summary>
         /// Create a new instance of a Google PubSub producer
@@ -29,48 +27,54 @@ namespace Eventuous.Producers.GooglePubSub {
         /// <param name="topicId">Google PubSup topic ID (within the project). The topic must be created upfront.</param>
         /// <param name="serializer">Event serializer instance</param>
         /// <param name="options">PubSub producer options</param>
+        /// <param name="loggerFactory">Logger factory</param>
         public GooglePubSubProducer(
             string                 projectId,
             string                 topicId,
             IEventSerializer       serializer,
-            PubSubProducerOptions? options = null
+            PubSubProducerOptions? options       = null,
+            ILoggerFactory?        loggerFactory = null
         ) {
-            _options    = options;
-            _serializer = Ensure.NotNull(serializer, nameof(serializer));
-
-            _topicName = TopicName.FromProjectTopic(
-                Ensure.NotEmptyString(projectId, nameof(projectId)),
-                Ensure.NotEmptyString(topicId, nameof(topicId))
-            );
+            _serializer  = Ensure.NotNull(serializer, nameof(serializer));
+            _log         = loggerFactory?.CreateLogger($"Producer:{projectId}:{topicId}");
+            _clientCache = new ClientCache(Ensure.NotEmptyString(projectId, nameof(projectId)), options, _log);
         }
 
-        public override async Task Initialize(CancellationToken cancellationToken = default) {
-            _client = await CreateAsync(_topicName, _options?.ClientCreationSettings, _options?.Settings);
-        }
+        public override Task Initialize(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public override Task Shutdown(CancellationToken cancellationToken = default)
-            => _client == null ? Task.CompletedTask : _client.ShutdownAsync(cancellationToken);
+            => Task.WhenAll(_clientCache.GetAllClients().Select(x => x.ShutdownAsync(cancellationToken)));
 
-        protected override Task ProduceOne(
+        protected override async Task ProduceOne(
+            string                stream,
             object                message,
             Type                  type,
             PubSubProduceOptions? options,
             CancellationToken     cancellationToken
         ) {
-            if (_client == null)
-                throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
-
-            var pubSubMessage = CreateMessage(message, type, options);
-
-            return _client.PublishAsync(pubSubMessage);
+            var client = await _clientCache.GetOrAddPublisher(stream);
+            await Produce(client, message, type, options);
         }
 
-        protected override Task ProduceMany(
+        protected override async Task ProduceMany(
+            string                stream,
             IEnumerable<object>   messages,
             PubSubProduceOptions? options,
             CancellationToken     cancellationToken
-        )
-            => Task.WhenAll(messages.Select(x => ProduceOne(x, x.GetType(), options, cancellationToken)));
+        ) {
+            var client = await _clientCache.GetOrAddPublisher(stream);
+            await Task.WhenAll(messages.Select(x => Produce(client, x, x.GetType(), options)));
+        }
+
+        async Task Produce(
+            PublisherClient       client,
+            object                message,
+            Type                  type,
+            PubSubProduceOptions? options
+        ) {
+            var pubSubMessage = CreateMessage(message, type, options);
+            await client.PublishAsync(pubSubMessage);
+        }
 
         PubsubMessage CreateMessage(object message, Type type, PubSubProduceOptions? options) {
             var psm = new PubsubMessage {

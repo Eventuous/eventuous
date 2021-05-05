@@ -15,7 +15,14 @@ namespace Eventuous.Subscriptions.RabbitMq {
     /// </summary>
     [PublicAPI]
     public class RabbitMqSubscriptionService : SubscriptionService {
+        public delegate void HandleEventProcessingFailure(
+            IModel                channel,
+            BasicDeliverEventArgs message,
+            Exception             exception
+        );
+
         readonly RabbitMqSubscriptionOptions? _options;
+        readonly HandleEventProcessingFailure _failureHandler;
         readonly IConnection                  _connection;
         readonly IModel                       _channel;
         readonly string                       _subscriptionQueue;
@@ -35,15 +42,17 @@ namespace Eventuous.Subscriptions.RabbitMq {
         /// <param name="eventHandlers">Collection of event handlers</param>
         /// <param name="options"></param>
         /// <param name="loggerFactory">Optional: logging factory</param>
+        /// <param name="failureHandler"></param>
         public RabbitMqSubscriptionService(
-            ConnectionFactory            connectionFactory,
-            string                       subscriptionQueue,
-            string                       exchange,
-            string                       subscriptionId,
-            IEventSerializer             eventSerializer,
-            IEnumerable<IEventHandler>   eventHandlers,
-            RabbitMqSubscriptionOptions? options,
-            ILoggerFactory?              loggerFactory = null
+            ConnectionFactory             connectionFactory,
+            string                        subscriptionQueue,
+            string                        exchange,
+            string                        subscriptionId,
+            IEventSerializer              eventSerializer,
+            IEnumerable<IEventHandler>    eventHandlers,
+            RabbitMqSubscriptionOptions?  options,
+            ILoggerFactory?               loggerFactory  = null,
+            HandleEventProcessingFailure? failureHandler = null
         ) : base(
             subscriptionId,
             new NoOpCheckpointStore(),
@@ -53,6 +62,7 @@ namespace Eventuous.Subscriptions.RabbitMq {
             new NoOpGapMeasure()
         ) {
             _options          = options;
+            _failureHandler   = failureHandler ?? DefaultEventFailureHandler;
             _log              = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
             _concurrencyLimit = options?.ConcurrencyLimit ?? 1;
             _connection       = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
@@ -94,7 +104,7 @@ namespace Eventuous.Subscriptions.RabbitMq {
                 _options?.BindingOptions?.Arguments
             );
 
-            var consumeChannel = Channel.CreateBounded<ReceivedEvent>(_concurrencyLimit * 10);
+            var consumeChannel = Channel.CreateBounded<Event>(_concurrencyLimit * 10);
 
             for (var i = 0; i < _concurrencyLimit; i++) {
                 Task.Run(RunConsumer, CancellationToken.None);
@@ -108,31 +118,15 @@ namespace Eventuous.Subscriptions.RabbitMq {
             return Task.FromResult(new EventSubscription(SubscriptionId, new Stoppable(CloseConnection)));
 
             async Task RunConsumer() {
-                while (!cts.IsCancellationRequested) {
-                    ReceivedEvent re;
+                while (!consumeChannel.Reader.Completion.IsCompleted) {
+                    var (message, re) = await consumeChannel.Reader.ReadAsync(CancellationToken.None);
 
                     try {
-                        re = await consumeChannel.Reader.ReadAsync(cts.Token);
-                    }
-                    catch (ChannelClosedException) {
-                        return;
+                        await Handler(re, CancellationToken.None);
+                        _channel.BasicAck(message.DeliveryTag, false);
                     }
                     catch (Exception e) {
-                        _log?.LogError(e, "Error while reading from the consume channel: {Message}", e.Message);
-                        throw;
-                    }
-
-                    try {
-                        await Handler(re, cts.Token);
-                        _channel.BasicAck(re.Sequence, false);
-                    }
-                    catch (OperationCanceledException) {
-                        _log?.LogInformation("Stopping RabbitMq subscription");
-                        // expected
-                    }
-                    catch (Exception e) {
-                        _log?.LogWarning(e, "Error in the consumer, will redeliver");
-                        _channel.BasicReject(re.Sequence, true);
+                        _failureHandler(_channel, message, e);
                     }
                 }
             }
@@ -150,28 +144,22 @@ namespace Eventuous.Subscriptions.RabbitMq {
         }
 
         async Task HandleReceived(
-            object                       sender,
-            BasicDeliverEventArgs        received,
-            ChannelWriter<ReceivedEvent> writer
+            object                sender,
+            BasicDeliverEventArgs received,
+            ChannelWriter<Event>  writer
         ) {
             _log?.LogDebug("Consuming from RabbitMq");
 
-            try {
-                var receivedEvent = new ReceivedEvent {
-                    Created     = received.BasicProperties.Timestamp.ToDateTime(),
-                    Data        = received.Body.ToArray(),
-                    EventId     = received.BasicProperties.MessageId,
-                    EventType   = received.BasicProperties.Type,
-                    ContentType = received.BasicProperties.ContentType,
-                    Sequence    = received.DeliveryTag
-                };
+            var receivedEvent = new ReceivedEvent {
+                Created     = received.BasicProperties.Timestamp.ToDateTime(),
+                Data        = received.Body.ToArray(),
+                EventId     = received.BasicProperties.MessageId,
+                EventType   = received.BasicProperties.Type,
+                ContentType = received.BasicProperties.ContentType,
+                Sequence    = received.DeliveryTag
+            };
 
-                await writer.WriteAsync(receivedEvent);
-            }
-            catch (Exception e) {
-                Console.WriteLine(e);
-                throw;
-            }
+            await writer.WriteAsync(new Event(received, receivedEvent));
         }
 
         protected override Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {
@@ -179,5 +167,12 @@ namespace Eventuous.Subscriptions.RabbitMq {
             // The queue size gives us the gap, but we can't measure the lead time
             return Task.FromResult(new EventPosition(0, DateTime.Now));
         }
+
+        void DefaultEventFailureHandler(IModel channel, BasicDeliverEventArgs message, Exception exception) {
+            _log?.LogWarning(exception, "Error in the consumer, will redeliver");
+            _channel.BasicReject(message.DeliveryTag, true);
+        }
+
+        record Event(BasicDeliverEventArgs Original, ReceivedEvent ReceivedEvent);
     }
 }

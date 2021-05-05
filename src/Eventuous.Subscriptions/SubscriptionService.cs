@@ -15,13 +15,13 @@ namespace Eventuous.Subscriptions {
         protected bool              IsDropped      { get; set; }
         protected EventSubscription Subscription   { get; set; } = null!;
         protected string            SubscriptionId { get; }
+        protected Logging?          DebugLog       { get; }
+        protected ILogger?          Log            { get; }
 
         readonly ICheckpointStore         _checkpointStore;
         readonly IEventSerializer         _eventSerializer;
         readonly IEventHandler[]          _eventHandlers;
         readonly ISubscriptionGapMeasure? _measure;
-        readonly ILogger?                 _log;
-        readonly Log?                     _debugLog;
 
         CancellationTokenSource? _cts;
         Task?                    _measureTask;
@@ -45,9 +45,9 @@ namespace Eventuous.Subscriptions {
                 .Where(x => x.SubscriptionId == subscriptionId)
                 .ToArray();
 
-            _log = loggerFactory?.CreateLogger($"StreamSubscription-{subscriptionId}");
+            Log = loggerFactory?.CreateLogger($"StreamSubscription-{subscriptionId}");
 
-            _debugLog = _log?.IsEnabled(LogLevel.Debug) == true ? _log.LogDebug : null;
+            DebugLog = Log?.IsEnabled(LogLevel.Debug) == true ? Log.LogDebug : null;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken) {
@@ -64,11 +64,11 @@ namespace Eventuous.Subscriptions {
 
             IsRunning = true;
 
-            _log?.LogInformation("Started subscription {Subscription}", SubscriptionId);
+            Log?.LogInformation("Started subscription {Subscription}", SubscriptionId);
         }
 
         protected async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
-            _debugLog?.Invoke(
+            DebugLog?.Invoke(
                 "Subscription {Subscription} got an event {EventType}",
                 SubscriptionId,
                 re.EventType
@@ -93,7 +93,7 @@ namespace Eventuous.Subscriptions {
                     evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
                 }
                 catch (Exception e) {
-                    _log?.LogError(
+                    Log?.LogError(
                         e,
                         "Error deserializing event {Strean} {Position} {Type}",
                         re.OriginalStream,
@@ -111,7 +111,7 @@ namespace Eventuous.Subscriptions {
                 }
             }
             catch (Exception e) {
-                _log?.LogWarning(
+                Log?.LogWarning(
                     e,
                     "Error when handling the event {Strean} {Position} {Type}",
                     re.OriginalStream,
@@ -156,11 +156,11 @@ namespace Eventuous.Subscriptions {
 
             await Subscription.Stop(cancellationToken);
 
-            _log?.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
+            Log?.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
         }
 
         protected async Task Resubscribe(TimeSpan delay) {
-            _log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
+            Log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
             await Task.Delay(delay);
 
@@ -172,10 +172,10 @@ namespace Eventuous.Subscriptions {
 
                     IsDropped = false;
 
-                    _log?.LogInformation("Subscription {Subscription} restored", SubscriptionId);
+                    Log?.LogInformation("Subscription {Subscription} restored", SubscriptionId);
                 }
                 catch (Exception e) {
-                    _log?.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
+                    Log?.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
 
                     await Task.Delay(1000);
                 }
@@ -188,7 +188,7 @@ namespace Eventuous.Subscriptions {
         ) {
             if (!IsRunning) return;
 
-            _log?.LogWarning(
+            Log?.LogWarning(
                 exception,
                 "Subscription {Subscription} dropped {Reason}",
                 SubscriptionId,

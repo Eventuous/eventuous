@@ -14,9 +14,7 @@ using Xunit.Abstractions;
 
 namespace Eventuous.Tests.GooglePubSub {
     public class PubSubTests : IAsyncLifetime {
-        static PubSubTests() {
-            TypeMap.AddType<TestEvent>("test-event");
-        }
+        static PubSubTests() => TypeMap.AddType<TestEvent>("test-event");
 
         static readonly Fixture          Auto       = new();
         static readonly IEventSerializer Serializer = DefaultEventSerializer.Instance;
@@ -36,10 +34,16 @@ namespace Eventuous.Tests.GooglePubSub {
 
             _handler = new Handler(_pubsubSubscription);
 
-            _producer = new GooglePubSubProducer(PubSubFixture.ProjectId, _pubsubTopic, Serializer);
+            _producer = new GooglePubSubProducer(
+                PubSubFixture.ProjectId,
+                _pubsubTopic,
+                Serializer,
+                loggerFactory: loggerFactory
+            );
 
             _subscription = new GooglePubSubSubscription(
                 PubSubFixture.ProjectId,
+                _pubsubTopic,
                 _pubsubSubscription,
                 Serializer,
                 new[] { _handler },
@@ -50,7 +54,7 @@ namespace Eventuous.Tests.GooglePubSub {
         [Fact]
         public async Task SubscribeAndProduce() {
             var testEvent = Auto.Create<TestEvent>();
-            await _producer.Produce(testEvent);
+            await _producer.Produce(_pubsubTopic, testEvent);
 
             await Task.Delay(2000);
 
@@ -63,7 +67,7 @@ namespace Eventuous.Tests.GooglePubSub {
 
             var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
 
-            await _producer.Produce(testEvents);
+            await _producer.Produce(_pubsubTopic, testEvents);
 
             await Task.Delay(count / 2);
 
@@ -88,12 +92,12 @@ namespace Eventuous.Tests.GooglePubSub {
         }
 
         public async Task InitializeAsync() {
-            await PubSubFixture.CreateTopic(_pubsubTopic);
-            await PubSubFixture.CreateSubscription(_pubsubTopic, _pubsubSubscription);
+            await _producer.Initialize();
             await _subscription.StartAsync(CancellationToken.None);
         }
 
         public async Task DisposeAsync() {
+            await _producer.Shutdown();
             await _subscription.StopAsync(CancellationToken.None);
             await PubSubFixture.DeleteSubscription(_pubsubSubscription);
             await PubSubFixture.DeleteTopic(_pubsubTopic);

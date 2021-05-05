@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Google.Cloud.Monitoring.V3;
 using Google.Cloud.PubSub.V1;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -15,29 +16,42 @@ namespace Eventuous.Subscriptions.GooglePubSub {
     /// </summary>
     [PublicAPI]
     public class GooglePubSubSubscription : SubscriptionService, ICanStop {
-        readonly PubSubSubscriptionOptions? _options;
-        readonly SubscriptionName           _subscriptionName;
-        SubscriberClient?                   _client;
-        MetricServiceClient?                _metricClient;
+        public delegate SubscriberClient.Reply HandleEventProcessingFailure(
+            SubscriberClient client,
+            PubsubMessage    pubsubMessage,
+            Exception        exception
+        );
+
+        readonly PubSubSubscriptionOptions?   _options;
+        readonly HandleEventProcessingFailure _failureHandler;
+        readonly SubscriptionName             _subscriptionName;
+        readonly TopicName                    _topicName;
+
+        SubscriberClient?    _client;
+        MetricServiceClient? _metricClient;
 
         /// <summary>
         /// Creates a Google PubSub subscription service
         /// </summary>
         /// <param name="projectId">GCP project ID</param>
+        /// <param name="topicId"></param>
         /// <param name="subscriptionId">Google PubSub subscription ID (within the project), which must already exist</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
         /// <param name="options">Subscription options</param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Callback for measuring the subscription gap</param>
+        /// <param name="failureHandler"></param>
         public GooglePubSubSubscription(
-            string                     projectId,
-            string                     subscriptionId,
-            IEventSerializer           eventSerializer,
-            IEnumerable<IEventHandler> eventHandlers,
-            PubSubSubscriptionOptions? options       = null,
-            ILoggerFactory?            loggerFactory = null,
-            SubscriptionGapMeasure?    measure       = null
+            string                        projectId,
+            string                        topicId,
+            string                        subscriptionId,
+            IEventSerializer              eventSerializer,
+            IEnumerable<IEventHandler>    eventHandlers,
+            PubSubSubscriptionOptions?    options                      = null,
+            ILoggerFactory?               loggerFactory                = null,
+            SubscriptionGapMeasure?       measure                      = null,
+            HandleEventProcessingFailure? failureHandler = null
         ) : base(
             subscriptionId,
             new NoOpCheckpointStore(),
@@ -48,10 +62,14 @@ namespace Eventuous.Subscriptions.GooglePubSub {
         ) {
             _options = options;
 
+            _failureHandler = failureHandler ?? DefaultEventProcessingErrorHandler;
+
             _subscriptionName = SubscriptionName.FromProjectSubscription(
                 Ensure.NotEmptyString(projectId, nameof(projectId)),
                 Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId))
             );
+
+            _topicName = TopicName.FromProjectTopic(projectId, Ensure.NotEmptyString(topicId, nameof(topicId)));
 
             _undeliveredCountRequest = GetFilteredRequest(PubSubMetricUndeliveredMessagesCount);
             _oldestAgeRequest        = GetFilteredRequest(PubSubMetricOldestUnackedMessageAge);
@@ -70,6 +88,8 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         ) {
+            await CreateSubscription(_subscriptionName, _topicName, _options?.PushConfig, _options?.AckDeadline ?? 60);
+
             _client = await SubscriberClient.CreateAsync(
                 _subscriptionName,
                 _options?.ClientCreationSettings,
@@ -95,8 +115,8 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                     await Handler(receivedEvent, ct);
                     return SubscriberClient.Reply.Ack;
                 }
-                catch (Exception) {
-                    return SubscriberClient.Reply.Nack;
+                catch (Exception ex) {
+                    return _failureHandler(_client, msg, ex);
                 }
             }
         }
@@ -135,5 +155,47 @@ namespace Eventuous.Subscriptions.GooglePubSub {
 
             await _subscriberTask;
         }
+
+        public async Task CreateSubscription(
+            SubscriptionName subscriptionName,
+            TopicName        topicName,
+            PushConfig?      pushConfig,
+            int              ackDeadline
+        ) {
+            var subscriberServiceApiClient = await SubscriberServiceApiClient.CreateAsync();
+            var publisherServiceApiClient  = await PublisherServiceApiClient.CreateAsync();
+
+            try {
+                Log?.LogInformation("Checking topic {Topic}", topicName);
+                await publisherServiceApiClient.CreateTopicAsync(topicName);
+                Log?.LogInformation("Created topic {Topic}", topicName);
+            }
+            catch (RpcException e) when (e.Status.StatusCode == StatusCode.AlreadyExists) {
+                Log?.LogInformation("Topic {Topic} exists", topicName);
+            }
+
+            try {
+                Log?.LogInformation("Checking subscription {Subscription} for {Topic}", subscriptionName, topicName);
+
+                await subscriberServiceApiClient.CreateSubscriptionAsync(
+                    subscriptionName,
+                    topicName,
+                    pushConfig,
+                    ackDeadline
+                );
+
+                Log?.LogInformation("Created subscription {Subscription} for {Topic}", subscriptionName, topicName);
+            }
+            catch (RpcException e) when (e.Status.StatusCode == StatusCode.AlreadyExists) {
+                Log?.LogInformation("Subscription {Subscription} for {Topic} exists", subscriptionName, topicName);
+            }
+        }
+
+        static SubscriberClient.Reply DefaultEventProcessingErrorHandler(
+            SubscriberClient client,
+            PubsubMessage    message,
+            Exception        exception
+        )
+            => SubscriberClient.Reply.Nack;
     }
 }

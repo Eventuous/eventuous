@@ -12,9 +12,17 @@ namespace Eventuous.Subscriptions.EventStoreDB {
     /// </summary>
     [PublicAPI]
     public class StreamPersistentSubscription : EventStoreSubscriptionService {
+        public delegate Task HandleEventProcessingFailure(
+            EventStoreClient       client,
+            PersistentSubscription subscription,
+            ResolvedEvent          resolvedEvent,
+            Exception              exception
+        );
+
         readonly EventStorePersistentSubscriptionsClient  _subscriptionClient;
-        readonly string                                   _stream;
         readonly EventStorePersistentSubscriptionOptions? _options;
+        readonly HandleEventProcessingFailure             _handleEventProcessingFailure;
+        readonly string                                   _stream;
 
         /// <summary>
         /// Creates EventStoreDB persistent subscription service for a given stream
@@ -28,6 +36,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
         /// <param name="subscriptionClient">Client for EventStoreDB persistent subscriptions</param>
+        /// <param name="handleEventProcessingFailure"></param>
         public StreamPersistentSubscription(
             EventStoreClient                         eventStoreClient,
             EventStorePersistentSubscriptionsClient  subscriptionClient,
@@ -35,9 +44,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             string                                   subscriptionId,
             IEventSerializer                         eventSerializer,
             IEnumerable<IEventHandler>               eventHandlers,
-            EventStorePersistentSubscriptionOptions? options       = null,
-            ILoggerFactory?                          loggerFactory = null,
-            SubscriptionGapMeasure?                  measure       = null
+            EventStorePersistentSubscriptionOptions? options                      = null,
+            ILoggerFactory?                          loggerFactory                = null,
+            SubscriptionGapMeasure?                  measure                      = null,
+            HandleEventProcessingFailure?            handleEventProcessingFailure = null
         ) : base(
             eventStoreClient,
             subscriptionId,
@@ -47,9 +57,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             loggerFactory,
             measure
         ) {
-            _subscriptionClient = subscriptionClient;
-            _stream             = streamName;
-            _options            = options;
+            _subscriptionClient           = subscriptionClient;
+            _stream                       = streamName;
+            _options                      = options;
+            _handleEventProcessingFailure = handleEventProcessingFailure ?? DefaultEventProcessingFailureHandler;
         }
 
         /// <summary>
@@ -119,14 +130,16 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 int?                   retryCount,
                 CancellationToken      ct
             ) {
+                var receivedEvent = AsReceivedEvent(re);
+
                 try {
-                    await Handler(AsReceivedEvent(re), ct);
+                    await Handler(receivedEvent, ct);
 
                     if (!autoAck)
                         await subscription.Ack(re);
                 }
                 catch (Exception e) {
-                    await subscription.Nack(PersistentSubscriptionNakEventAction.Retry, e.Message, re);
+                    await _handleEventProcessingFailure(EventStoreClient, subscription, re, e);
                 }
             }
 
@@ -154,6 +167,15 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     Data           = re.Event.Data,
                     Metadata       = re.Event.Metadata
                 };
+        }
+
+        static Task DefaultEventProcessingFailureHandler(
+            EventStoreClient       client,
+            PersistentSubscription subscription,
+            ResolvedEvent          resolvedEvent,
+            Exception              exception
+        ) {
+            return subscription.Nack(PersistentSubscriptionNakEventAction.Retry, exception.Message, resolvedEvent);
         }
     }
 }

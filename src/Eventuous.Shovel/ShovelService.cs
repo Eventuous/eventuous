@@ -8,7 +8,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Shovel {
-    public delegate ValueTask<object> Transform(object message);
+    public delegate ValueTask<ShovelMessage> RouteAndTransform(object message);
+
+    public record ShovelMessage(string TargetStream, object Message);
 
     /// <summary>
     /// Super-simple shovel, which allows to use a subscription to receive events, and then
@@ -21,7 +23,7 @@ namespace Eventuous.Shovel {
     [PublicAPI]
     public class ShovelService<TSubscription, TProducer> : IHostedService
         where TSubscription : SubscriptionService
-        where TProducer : IEventProducer {
+        where TProducer : class, IEventProducer {
         readonly TSubscription _subscription;
         readonly TProducer     _producer;
 
@@ -40,7 +42,7 @@ namespace Eventuous.Shovel {
         /// <param name="eventSerializer">Event serializer</param>
         /// <param name="createSubscription">Function to create a subscription</param>
         /// <param name="producer">Producer instance</param>
-        /// <param name="transform">Optional transformation function</param>
+        /// <param name="routeAndTransform">Routing and transformation function</param>
         /// <param name="loggerFactory">Logger factory</param>
         /// <param name="measure">Subscription gap measurement</param>
         public ShovelService(
@@ -48,16 +50,18 @@ namespace Eventuous.Shovel {
             IEventSerializer        eventSerializer,
             CreateSubscription      createSubscription,
             TProducer               producer,
-            Transform?              transform     = null,
+            RouteAndTransform       routeAndTransform,
             ILoggerFactory?         loggerFactory = null,
             SubscriptionGapMeasure? measure       = null
         ) {
-            _producer = producer;
+            _producer = Ensure.NotNull(producer, nameof(producer));
 
             _subscription = createSubscription(
-                subscriptionId,
-                eventSerializer,
-                new[] { new ShovelHandler<TProducer>(subscriptionId, producer, transform) },
+                Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId)),
+                Ensure.NotNull(eventSerializer, nameof(eventSerializer)),
+                new[] {
+                    new ShovelHandler<TProducer>(subscriptionId, producer, Ensure.NotNull(routeAndTransform, nameof(routeAndTransform)))
+                },
                 loggerFactory,
                 measure
             );
@@ -75,15 +79,15 @@ namespace Eventuous.Shovel {
     }
 
     class ShovelHandler<TProducer> : IEventHandler where TProducer : IEventProducer {
-        readonly TProducer  _eventProducer;
-        readonly Transform? _transform;
+        readonly TProducer         _eventProducer;
+        readonly RouteAndTransform _transform;
 
         public string SubscriptionId { get; }
 
         public ShovelHandler(
-            string     subscriptionId,
-            TProducer  eventProducer,
-            Transform? transform
+            string            subscriptionId,
+            TProducer         eventProducer,
+            RouteAndTransform transform
         ) {
             _eventProducer = eventProducer;
             _transform     = transform;
@@ -91,8 +95,17 @@ namespace Eventuous.Shovel {
         }
 
         public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
-            var transformed = _transform == null ? evt : await _transform(evt);
-            await _eventProducer.Produce(new[] { transformed }, cancellationToken);
+            var (targetStream, message) = await _transform(evt);
+            await _eventProducer.Produce(targetStream, new[] { message }, cancellationToken);
         }
+    }
+
+    [PublicAPI]
+    public class DefaultRoute {
+        readonly string _targetStream;
+
+        public DefaultRoute(string targetStream) => _targetStream = targetStream;
+
+        public ValueTask<ShovelMessage> Route(object message) => new(new ShovelMessage(_targetStream, message));
     }
 }

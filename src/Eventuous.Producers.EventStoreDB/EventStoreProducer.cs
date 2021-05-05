@@ -12,7 +12,6 @@ namespace Eventuous.Producers.EventStoreDB {
     /// </summary>
     [PublicAPI]
     public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
-        readonly string           _stream;
         readonly EventStoreClient _client;
         readonly IEventSerializer _serializer;
 
@@ -20,11 +19,9 @@ namespace Eventuous.Producers.EventStoreDB {
         /// Create a new EventStoreDB producer instance
         /// </summary>
         /// <param name="eventStoreClient">EventStoreDB gRPC client</param>
-        /// <param name="stream">Stream name, where the events will be produced</param>
         /// <param name="serializer">Event serializer instance</param>
-        public EventStoreProducer(EventStoreClient eventStoreClient, string stream, IEventSerializer serializer) {
+        public EventStoreProducer(EventStoreClient eventStoreClient, IEventSerializer serializer) {
             _client     = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
-            _stream     = Ensure.NotEmptyString(stream, nameof(stream));
             _serializer = Ensure.NotNull(serializer, nameof(serializer));
         }
 
@@ -32,16 +29,16 @@ namespace Eventuous.Producers.EventStoreDB {
         /// Create a new EventStoreDB producer instance
         /// </summary>
         /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
-        /// <param name="stream">Stream name, where the events will be produced</param>
         /// <param name="serializer">Event serializer instance</param>
-        public EventStoreProducer(EventStoreClientSettings clientSettings, string stream, IEventSerializer serializer)
-            : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), stream, serializer) { }
+        public EventStoreProducer(EventStoreClientSettings clientSettings, IEventSerializer serializer)
+            : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), serializer) { }
 
         public override Task Initialize(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public override Task Shutdown(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         protected override Task ProduceMany(
+            string                    stream,
             IEnumerable<object>       messages,
             EventStoreProduceOptions? options,
             CancellationToken         cancellationToken
@@ -50,7 +47,7 @@ namespace Eventuous.Producers.EventStoreDB {
                 .Select(x => CreateMessage(x, x.GetType(), options?.Metadata));
 
             return _client.AppendToStreamAsync(
-                _stream,
+                stream,
                 options?.ExpectedState ?? StreamState.Any,
                 data,
                 options?.ConfigureOperation,
@@ -60,6 +57,7 @@ namespace Eventuous.Producers.EventStoreDB {
         }
 
         protected override Task ProduceOne(
+            string                    stream,
             object                    message,
             Type                      type,
             EventStoreProduceOptions? options,
@@ -68,7 +66,7 @@ namespace Eventuous.Producers.EventStoreDB {
             var eventData = CreateMessage(message, type, options?.Metadata);
 
             return _client.AppendToStreamAsync(
-                _stream,
+                stream,
                 options?.ExpectedState ?? StreamState.Any,
                 new[] { eventData },
                 options?.ConfigureOperation,
