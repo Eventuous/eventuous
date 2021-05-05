@@ -4,6 +4,7 @@ using JetBrains.Annotations;
 namespace Eventuous.Producers.RabbitMq {
     [PublicAPI]
     public class RabbitMqProduceOptions {
+        public string? RoutingKey    { get; init; }
         public string? AppId         { get; init; }
         public byte    DeliveryMode  { get; init; } = DefaultDeliveryMode;
         public string? CorrelationId { get; init; }

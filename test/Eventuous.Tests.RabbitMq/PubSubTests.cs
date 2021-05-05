@@ -42,7 +42,9 @@ namespace Eventuous.Tests.RabbitMq {
                 "queue",
                 Serializer,
                 new[] { _handler },
-                10,
+                new RabbitMqSubscriptionOptions {
+                    ConcurrencyLimit = 10
+                },
                 loggerFactory
             );
         }
@@ -65,7 +67,7 @@ namespace Eventuous.Tests.RabbitMq {
 
             await _producer.Produce(testEvents);
 
-            await Task.Delay(count / 5);
+            await Task.Delay(count / 2);
 
             _handler.ReceivedEvents.Count.Should().Be(testEvents.Count);
 
@@ -87,8 +89,14 @@ namespace Eventuous.Tests.RabbitMq {
             }
         }
 
-        public Task InitializeAsync() => _subscription.StartAsync(CancellationToken.None);
+        public async Task InitializeAsync() {
+            await _subscription.StartAsync(CancellationToken.None);
+            await _producer.Initialize();
+        }
 
-        public Task DisposeAsync() => _subscription.StopAsync(CancellationToken.None);
+        public async Task DisposeAsync() {
+            await _producer.Shutdown();
+            await _subscription.StopAsync(CancellationToken.None);
+        }
     }
 }

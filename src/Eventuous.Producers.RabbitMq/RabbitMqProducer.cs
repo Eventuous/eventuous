@@ -11,7 +11,7 @@ namespace Eventuous.Producers.RabbitMq {
     /// </summary>
     [PublicAPI]
     public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions> {
-        readonly RabbitMqExchangeOptions? _exchangeOptions;
+        readonly RabbitMqExchangeOptions? _options;
         readonly IEventSerializer         _serializer;
         readonly string                   _exchange;
         readonly ConnectionFactory        _connectionFactory;
@@ -25,28 +25,31 @@ namespace Eventuous.Producers.RabbitMq {
         /// <param name="connectionFactory">RabbitMQ connection factory</param>
         /// <param name="exchange">Exchange name, will be created if doesn't exist</param>
         /// <param name="serializer">Event serializer instance</param>
-        /// <param name="exchangeOptions">Additional configuration for the exchange</param>
+        /// <param name="options">Additional configuration for the exchange</param>
         public RabbitMqProducer(
             ConnectionFactory        connectionFactory,
             string                   exchange,
             IEventSerializer         serializer,
-            RabbitMqExchangeOptions? exchangeOptions = null
+            RabbitMqExchangeOptions? options = null
         ) {
-            _exchangeOptions   = exchangeOptions;
+            _options           = options;
             _serializer        = Ensure.NotNull(serializer, nameof(serializer));
             _exchange          = Ensure.NotEmptyString(exchange, nameof(exchange));
             _connectionFactory = Ensure.NotNull(connectionFactory, nameof(connectionFactory));
         }
 
         public override Task Initialize(CancellationToken cancellationToken = default) {
-            // this name will be shared by all connections instantiated by this factory
-            // factory.ClientProvidedName = "app:audit component:event-consumer"
             _connection = _connectionFactory.CreateConnection();
             _channel    = _connection.CreateModel();
             _channel.ConfirmSelect();
 
-            // Make it configurable
-            _channel.ExchangeDeclare(_exchange, ExchangeType.Fanout, true);
+            _channel.ExchangeDeclare(
+                _exchange,
+                _options?.Type ?? ExchangeType.Fanout,
+                _options?.Durable ?? true,
+                _options?.AutoDelete ?? false,
+                _options?.Arguments
+            );
 
             return Task.CompletedTask;
         }
@@ -76,11 +79,11 @@ namespace Eventuous.Producers.RabbitMq {
         void Publish(object message, Type type, RabbitMqProduceOptions? options) {
             if (_channel == null)
                 throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
-            
+
             var payload   = _serializer.Serialize(message);
             var eventType = TypeMap.GetTypeNameByType(type);
-            
-            var prop      = _channel.CreateBasicProperties();
+
+            var prop = _channel.CreateBasicProperties();
             prop.ContentType  = _serializer.ContentType;
             prop.DeliveryMode = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
             prop.Type         = eventType;
@@ -96,7 +99,7 @@ namespace Eventuous.Producers.RabbitMq {
                 prop.ReplyTo       = options.ReplyTo;
             }
 
-            _channel.BasicPublish(_exchange, eventType, true, prop, payload);
+            _channel.BasicPublish(_exchange, options?.RoutingKey ?? "", true, prop, payload);
         }
 
         async Task Confirm(CancellationToken cancellationToken) {

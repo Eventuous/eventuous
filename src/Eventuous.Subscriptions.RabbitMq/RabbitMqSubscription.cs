@@ -15,11 +15,12 @@ namespace Eventuous.Subscriptions.RabbitMq {
     /// </summary>
     [PublicAPI]
     public class RabbitMqSubscriptionService : SubscriptionService {
-        readonly IConnection _connection;
-        readonly IModel      _channel;
-        readonly string      _subscriptionQueue;
-        readonly string      _exchange;
-        readonly int         _concurrencyLimit;
+        readonly RabbitMqSubscriptionOptions? _options;
+        readonly IConnection                  _connection;
+        readonly IModel                       _channel;
+        readonly string                       _subscriptionQueue;
+        readonly string                       _exchange;
+        readonly int                          _concurrencyLimit;
 
         ILogger<RabbitMqSubscriptionService>? _log;
 
@@ -32,28 +33,36 @@ namespace Eventuous.Subscriptions.RabbitMq {
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
-        /// <param name="concurrencyLimit">The number of concurrent consumers</param>
+        /// <param name="options"></param>
         /// <param name="loggerFactory">Optional: logging factory</param>
         public RabbitMqSubscriptionService(
-            ConnectionFactory          connectionFactory,
-            string                     subscriptionQueue,
-            string                     exchange,
-            string                     subscriptionId,
-            IEventSerializer           eventSerializer,
-            IEnumerable<IEventHandler> eventHandlers,
-            int                        concurrencyLimit = 1,
-            ILoggerFactory?            loggerFactory    = null
-        ) : base(subscriptionId, new NoOpCheckpointStore(), eventSerializer, eventHandlers, loggerFactory, new NoOpGapMeasure()) {
-            _log = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
+            ConnectionFactory            connectionFactory,
+            string                       subscriptionQueue,
+            string                       exchange,
+            string                       subscriptionId,
+            IEventSerializer             eventSerializer,
+            IEnumerable<IEventHandler>   eventHandlers,
+            RabbitMqSubscriptionOptions? options,
+            ILoggerFactory?              loggerFactory = null
+        ) : base(
+            subscriptionId,
+            new NoOpCheckpointStore(),
+            eventSerializer,
+            eventHandlers,
+            loggerFactory,
+            new NoOpGapMeasure()
+        ) {
+            _options          = options;
+            _log              = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
+            _concurrencyLimit = options?.ConcurrencyLimit ?? 1;
+            _connection       = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
+            _channel          = _connection.CreateModel();
 
-            _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
-            _channel    = _connection.CreateModel();
             var prefetch = _concurrencyLimit * 10;
-            _channel.BasicQos((uint) prefetch, (ushort) prefetch, false);
-            
+            _channel.BasicQos(0, (ushort) prefetch, false);
+
             _subscriptionQueue = Ensure.NotEmptyString(subscriptionQueue, nameof(subscriptionQueue));
             _exchange          = Ensure.NotEmptyString(exchange, nameof(exchange));
-            _concurrencyLimit  = concurrencyLimit;
         }
 
         protected override Task<EventSubscription> Subscribe(
@@ -62,9 +71,28 @@ namespace Eventuous.Subscriptions.RabbitMq {
         ) {
             var cts = new CancellationTokenSource();
 
-            _channel.ExchangeDeclare(_exchange, ExchangeType.Fanout, true);
-            _channel.QueueDeclare(_subscriptionQueue, true, false, false, null);
-            _channel.QueueBind(_subscriptionQueue, _exchange, _subscriptionQueue, null);
+            _channel.ExchangeDeclare(
+                _exchange,
+                _options?.ExchangeOptions?.Type ?? ExchangeType.Fanout,
+                _options?.ExchangeOptions?.Durable ?? true,
+                _options?.ExchangeOptions?.AutoDelete ?? true,
+                _options?.ExchangeOptions?.Arguments
+            );
+
+            _channel.QueueDeclare(
+                _subscriptionQueue,
+                _options?.QueueOptions?.Durable ?? true,
+                _options?.QueueOptions?.Exclusive ?? false,
+                _options?.QueueOptions?.AutoDelete ?? false,
+                _options?.QueueOptions?.Arguments
+            );
+
+            _channel.QueueBind(
+                _subscriptionQueue,
+                _exchange,
+                _options?.BindingOptions?.RoutingKey ?? "",
+                _options?.BindingOptions?.Arguments
+            );
 
             var consumeChannel = Channel.CreateBounded<ReceivedEvent>(_concurrencyLimit * 10);
 

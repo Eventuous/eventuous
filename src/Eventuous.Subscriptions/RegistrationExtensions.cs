@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Subscriptions {
     [PublicAPI]
-    public static class ServiceCollectionExtensions {
+    public static class RegistrationExtensions {
         /// <summary>
         /// Register subscription as a hosted service
         /// </summary>
