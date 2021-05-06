@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,7 +61,7 @@ namespace Eventuous.Projections.MongoDB {
             return checkpoint;
         }
 
-        readonly Dictionary<string, int> _counters = new();
+        readonly ConcurrentDictionary<string, int> _counters = new();
 
         public async ValueTask<Checkpoint> StoreCheckpoint(
             Checkpoint checkpoint, CancellationToken cancellationToken = default
