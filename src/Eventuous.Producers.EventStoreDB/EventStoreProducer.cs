@@ -15,6 +15,8 @@ namespace Eventuous.Producers.EventStoreDB {
         readonly EventStoreClient _client;
         readonly IEventSerializer _serializer;
 
+        const int ChunkSize = 500;
+
         /// <summary>
         /// Create a new EventStoreDB producer instance
         /// </summary>
@@ -37,7 +39,7 @@ namespace Eventuous.Producers.EventStoreDB {
 
         public override Task Shutdown(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-        protected override Task ProduceMany(
+        protected override async Task ProduceMany(
             string                    stream,
             IEnumerable<object>       messages,
             EventStoreProduceOptions? options,
@@ -46,14 +48,16 @@ namespace Eventuous.Producers.EventStoreDB {
             var data = Ensure.NotNull(messages, nameof(messages))
                 .Select(x => CreateMessage(x, x.GetType(), options?.Metadata));
 
-            return _client.AppendToStreamAsync(
-                stream,
-                options?.ExpectedState ?? StreamState.Any,
-                data,
-                options?.ConfigureOperation,
-                options?.Credentials,
-                cancellationToken
-            );
+            foreach (var chunk in data.Chunks(ChunkSize)) {
+                await _client.AppendToStreamAsync(
+                    stream,
+                    options?.ExpectedState ?? StreamState.Any,
+                    chunk,
+                    options?.ConfigureOperation,
+                    options?.Credentials,
+                    cancellationToken
+                );
+            }
         }
 
         protected override Task ProduceOne(
