@@ -9,6 +9,7 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using static Google.Cloud.PubSub.V1.SubscriberClient;
 
 namespace Eventuous.Subscriptions.GooglePubSub {
     /// <summary>
@@ -16,7 +17,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
     /// </summary>
     [PublicAPI]
     public class GooglePubSubSubscription : SubscriptionService, ICanStop {
-        public delegate SubscriberClient.Reply HandleEventProcessingFailure(
+        public delegate ValueTask<Reply> HandleEventProcessingFailure(
             SubscriberClient client,
             PubsubMessage    pubsubMessage,
             Exception        exception
@@ -114,7 +115,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
         ) {
             await CreateSubscription(_subscriptionName, _topicName, _options?.PushConfig, _options?.AckDeadline ?? 60);
 
-            _client = await SubscriberClient.CreateAsync(
+            _client = await CreateAsync(
                 _subscriptionName,
                 _options?.ClientCreationSettings,
                 _options?.Settings
@@ -124,7 +125,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             _subscriberTask = _client.StartAsync(Handle);
             return new EventSubscription(SubscriptionId, this);
 
-            async Task<SubscriberClient.Reply> Handle(PubsubMessage msg, CancellationToken ct) {
+            async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
                 var receivedEvent = new ReceivedEvent {
                     Created        = msg.PublishTime.ToDateTime(),
                     Data           = msg.Data.ToByteArray(),
@@ -137,10 +138,10 @@ namespace Eventuous.Subscriptions.GooglePubSub {
 
                 try {
                     await Handler(receivedEvent, ct);
-                    return SubscriberClient.Reply.Ack;
+                    return Reply.Ack;
                 }
                 catch (Exception ex) {
-                    return _failureHandler(_client, msg, ex);
+                    return await _failureHandler(_client, msg, ex);
                 }
             }
         }
@@ -215,11 +216,11 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             }
         }
 
-        static SubscriberClient.Reply DefaultEventProcessingErrorHandler(
+        static ValueTask<Reply> DefaultEventProcessingErrorHandler(
             SubscriberClient client,
             PubsubMessage    message,
             Exception        exception
         )
-            => SubscriberClient.Reply.Nack;
+            => new(Reply.Nack);
     }
 }
