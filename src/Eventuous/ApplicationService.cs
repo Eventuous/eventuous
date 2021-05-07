@@ -38,7 +38,7 @@ namespace Eventuous {
         /// <param name="action">Asynchronous action to be performed on the aggregate,
         /// given the aggregate instance and the command</param>
         /// <typeparam name="TCommand">Command type</typeparam>
-        protected void OnNew<TCommand>(Func<T, TCommand, Task> action) where TCommand : class
+        protected void OnNewAsync<TCommand>(Func<T, TCommand, Task> action) where TCommand : class
             => _handlers.Add(
                 typeof(TCommand),
                 new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd) => AsTask(aggregate, cmd, action))
@@ -67,7 +67,7 @@ namespace Eventuous {
         /// <param name="action">Asynchronous action to be performed on the aggregate,
         /// given the aggregate instance and the command</param>
         /// <typeparam name="TCommand">Command type</typeparam>
-        protected void OnExisting<TCommand>(Func<TCommand, TId> getId, Func<T, TCommand, Task> action)
+        protected void OnExistingAsync<TCommand>(Func<TCommand, TId> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
@@ -101,7 +101,7 @@ namespace Eventuous {
         /// <param name="action">Asynchronous action to be performed on the aggregate,
         /// given the aggregate instance and the command</param>
         /// <typeparam name="TCommand">Command type</typeparam>
-        protected void OnAny<TCommand>(Func<TCommand, TId> getId, Func<T, TCommand, Task> action)
+        protected void OnAnyAsync<TCommand>(Func<TCommand, TId> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
@@ -135,7 +135,7 @@ namespace Eventuous {
         /// <param name="action">Asynchronous action to be performed on the aggregate,
         /// given the aggregate instance and the command</param>
         /// <typeparam name="TCommand">Command type</typeparam>
-        protected void OnAny<TCommand>(Func<TCommand, Task<TId>> getId, Func<T, TCommand, Task> action)
+        protected void OnAnyAsync<TCommand>(Func<TCommand, Task<TId>> getId, Func<T, TCommand, Task> action)
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),

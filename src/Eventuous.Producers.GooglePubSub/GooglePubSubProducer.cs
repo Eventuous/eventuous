@@ -82,7 +82,7 @@ namespace Eventuous.Producers.GooglePubSub {
             PubSubProduceOptions? options,
             CancellationToken     cancellationToken
         ) {
-            var client = await _clientCache.GetOrAddPublisher(stream);
+            var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken);
             await Produce(client, message, type, options);
         }
 
@@ -92,7 +92,7 @@ namespace Eventuous.Producers.GooglePubSub {
             PubSubProduceOptions? options,
             CancellationToken     cancellationToken
         ) {
-            var client = await _clientCache.GetOrAddPublisher(stream);
+            var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken);
             await Task.WhenAll(messages.Select(x => Produce(client, x, x.GetType(), options)));
         }
 
