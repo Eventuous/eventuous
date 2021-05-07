@@ -42,8 +42,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             EventStorePersistentSubscriptionsClient  subscriptionClient,
             string                                   streamName,
             string                                   subscriptionId,
-            IEventSerializer                         eventSerializer,
             IEnumerable<IEventHandler>               eventHandlers,
+            IEventSerializer?                        eventSerializer              = null,
             EventStorePersistentSubscriptionOptions? options                      = null,
             ILoggerFactory?                          loggerFactory                = null,
             SubscriptionGapMeasure?                  measure                      = null,
@@ -52,8 +52,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             eventStoreClient,
             subscriptionId,
             new NoOpCheckpointStore(),
-            eventSerializer,
             eventHandlers,
+            eventSerializer,
             loggerFactory,
             measure
         ) {
@@ -78,18 +78,18 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             EventStoreClientSettings                 clientSettings,
             string                                   streamName,
             string                                   subscriptionId,
-            IEventSerializer                         eventSerializer,
             IEnumerable<IEventHandler>               eventHandlers,
-            EventStorePersistentSubscriptionOptions? options       = null,
-            ILoggerFactory?                          loggerFactory = null,
-            SubscriptionGapMeasure?                  measure       = null
+            IEventSerializer?                        eventSerializer = null,
+            EventStorePersistentSubscriptionOptions? options         = null,
+            ILoggerFactory?                          loggerFactory   = null,
+            SubscriptionGapMeasure?                  measure         = null
         ) : this(
             new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
             new EventStorePersistentSubscriptionsClient(clientSettings),
             streamName,
             subscriptionId,
-            eventSerializer,
             eventHandlers,
+            eventSerializer,
             options,
             loggerFactory,
             measure

@@ -36,49 +36,73 @@ namespace Eventuous.Subscriptions.GooglePubSub {
         /// <param name="projectId">GCP project ID</param>
         /// <param name="topicId"></param>
         /// <param name="subscriptionId">Google PubSub subscription ID (within the project), which must already exist</param>
-        /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
-        /// <param name="options">Subscription options</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Callback for measuring the subscription gap</param>
-        /// <param name="failureHandler"></param>
         public GooglePubSubSubscription(
-            string                        projectId,
-            string                        topicId,
-            string                        subscriptionId,
-            IEventSerializer              eventSerializer,
-            IEnumerable<IEventHandler>    eventHandlers,
-            PubSubSubscriptionOptions?    options                      = null,
-            ILoggerFactory?               loggerFactory                = null,
-            SubscriptionGapMeasure?       measure                      = null,
-            HandleEventProcessingFailure? failureHandler = null
-        ) : base(
-            subscriptionId,
-            new NoOpCheckpointStore(),
-            eventSerializer,
+            string                     projectId,
+            string                     topicId,
+            string                     subscriptionId,
+            IEnumerable<IEventHandler> eventHandlers,
+            IEventSerializer?          eventSerializer = null,
+            ILoggerFactory?            loggerFactory   = null,
+            SubscriptionGapMeasure?    measure         = null
+        ) : this(
+            new PubSubSubscriptionOptions {
+                SubscriptionId = subscriptionId,
+                ProjectId      = projectId,
+                TopicId        = topicId
+            },
             eventHandlers,
+            eventSerializer,
+            loggerFactory,
+            measure
+        ) { }
+
+        /// <summary>
+        /// Creates a Google PubSub subscription service
+        /// </summary>
+        /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
+        /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="loggerFactory">Optional: logger factory</param>
+        /// <param name="measure">Callback for measuring the subscription gap</param>
+        public GooglePubSubSubscription(
+            PubSubSubscriptionOptions  options,
+            IEnumerable<IEventHandler> eventHandlers,
+            IEventSerializer?          eventSerializer = null,
+            ILoggerFactory?            loggerFactory   = null,
+            SubscriptionGapMeasure?    measure         = null
+        ) : base(
+            options,
+            new NoOpCheckpointStore(),
+            eventHandlers,
+            eventSerializer ?? DefaultEventSerializer.Instance,
             loggerFactory,
             measure
         ) {
-            _options = options;
-
-            _failureHandler = failureHandler ?? DefaultEventProcessingErrorHandler;
+            _failureHandler = Ensure.NotNull(options, nameof(options)).FailureHandler
+                           ?? DefaultEventProcessingErrorHandler;
 
             _subscriptionName = SubscriptionName.FromProjectSubscription(
-                Ensure.NotEmptyString(projectId, nameof(projectId)),
-                Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId))
+                Ensure.NotEmptyString(options.ProjectId, nameof(options.ProjectId)),
+                Ensure.NotEmptyString(options.SubscriptionId, nameof(options.SubscriptionId))
             );
 
-            _topicName = TopicName.FromProjectTopic(projectId, Ensure.NotEmptyString(topicId, nameof(topicId)));
+            _topicName = TopicName.FromProjectTopic(
+                options.ProjectId,
+                Ensure.NotEmptyString(options.TopicId, nameof(options.TopicId))
+            );
 
             _undeliveredCountRequest = GetFilteredRequest(PubSubMetricUndeliveredMessagesCount);
             _oldestAgeRequest        = GetFilteredRequest(PubSubMetricOldestUnackedMessageAge);
 
             ListTimeSeriesRequest GetFilteredRequest(string metric)
                 => new() {
-                    Name = $"projects/{projectId}",
+                    Name = $"projects/{options.ProjectId}",
                     Filter = $"metric.type = \"pubsub.googleapis.com/subscription/{metric}\" "
-                           + $"AND resource.label.subscription_id = \"{subscriptionId}\""
+                           + $"AND resource.label.subscription_id = \"{options.SubscriptionId}\""
                 };
         }
 

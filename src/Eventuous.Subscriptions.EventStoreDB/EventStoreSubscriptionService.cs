@@ -11,7 +11,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
     public abstract class EventStoreSubscriptionService : SubscriptionService {
         readonly SubscriptionGapMeasure? _measure;
         readonly ILogger?                _log;
-        readonly Logging?                    _debugLog;
+        readonly Logging?                _debugLog;
 
         protected EventStoreClient EventStoreClient { get; }
 
@@ -19,11 +19,11 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             EventStoreClient           eventStoreClient,
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
-            IEventSerializer           eventSerializer,
             IEnumerable<IEventHandler> eventHandlers,
-            ILoggerFactory?            loggerFactory = null,
-            SubscriptionGapMeasure?    measure       = null
-        ) : base(subscriptionId, checkpointStore, eventSerializer, eventHandlers, loggerFactory, measure) {
+            IEventSerializer?          eventSerializer = null,
+            ILoggerFactory?            loggerFactory   = null,
+            SubscriptionGapMeasure?    measure         = null
+        ) : base(subscriptionId, checkpointStore, eventHandlers, eventSerializer, loggerFactory, measure) {
             EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         }
 

@@ -29,15 +29,31 @@ namespace Eventuous.Subscriptions {
         ulong                    _gap;
 
         protected SubscriptionService(
+            SubscriptionOptions        options,
+            ICheckpointStore           checkpointStore,
+            IEnumerable<IEventHandler> eventHandlers,
+            IEventSerializer?          eventSerializer = null,
+            ILoggerFactory?            loggerFactory   = null,
+            ISubscriptionGapMeasure?   measure         = null
+        ) : this(
+            Ensure.NotEmptyString(options.SubscriptionId, nameof(options.SubscriptionId)),
+            checkpointStore,
+            eventHandlers,
+            eventSerializer,
+            loggerFactory,
+            measure
+        ) { }
+
+        protected SubscriptionService(
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
-            IEventSerializer           eventSerializer,
             IEnumerable<IEventHandler> eventHandlers,
-            ILoggerFactory?            loggerFactory = null,
-            ISubscriptionGapMeasure?   measure       = null
+            IEventSerializer?          eventSerializer = null,
+            ILoggerFactory?            loggerFactory   = null,
+            ISubscriptionGapMeasure?   measure         = null
         ) {
             _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
-            _eventSerializer = Ensure.NotNull(eventSerializer, nameof(eventSerializer));
+            _eventSerializer = eventSerializer ?? DefaultEventSerializer.Instance;
             SubscriptionId   = Ensure.NotEmptyString(subscriptionId, subscriptionId);
             _measure         = measure;
 

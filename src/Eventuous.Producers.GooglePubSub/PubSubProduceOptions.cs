@@ -1,10 +1,12 @@
 using System;
 using Google.Protobuf.Collections;
+using JetBrains.Annotations;
 
 namespace Eventuous.Producers.GooglePubSub {
     /// <summary>
     /// Google PubSub produce options, supplied per message or batch
     /// </summary>
+    [PublicAPI]
     public class PubSubProduceOptions {
         /// <summary>
         /// Function, which can be used to add custom message attributes

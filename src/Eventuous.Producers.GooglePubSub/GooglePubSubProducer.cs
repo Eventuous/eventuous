@@ -7,6 +7,8 @@ using Google.Cloud.PubSub.V1;
 using Google.Protobuf;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using static Google.Cloud.PubSub.V1.PublisherClient;
 
 // ReSharper disable InvertIf
 
@@ -24,21 +26,49 @@ namespace Eventuous.Producers.GooglePubSub {
         /// Create a new instance of a Google PubSub producer
         /// </summary>
         /// <param name="projectId">GCP project ID</param>
-        /// <param name="topicId">Google PubSup topic ID (within the project). The topic must be created upfront.</param>
         /// <param name="serializer">Event serializer instance</param>
-        /// <param name="options">PubSub producer options</param>
+        /// <param name="settings"></param>
+        /// <param name="loggerFactory">Logger factory</param>
+        /// <param name="clientCreationSettings"></param>
+        public GooglePubSubProducer(
+            string                  projectId,
+            IEventSerializer?       serializer             = null,
+            ClientCreationSettings? clientCreationSettings = null,
+            Settings?               settings               = null,
+            ILoggerFactory?         loggerFactory          = null
+        ) : this(
+            new PubSubProducerOptions {
+                ProjectId              = Ensure.NotEmptyString(projectId, nameof(projectId)),
+                Settings               = settings,
+                ClientCreationSettings = clientCreationSettings
+            },
+            serializer,
+            loggerFactory
+        ) { }
+
+        /// <summary>
+        /// Create a new instance of a Google PubSub producer
+        /// </summary>
+        /// <param name="options">Producer options</param>
+        /// <param name="serializer">Optional: event serializer. Will use the default instance if missing.</param>
         /// <param name="loggerFactory">Logger factory</param>
         public GooglePubSubProducer(
-            string                 projectId,
-            string                 topicId,
-            IEventSerializer       serializer,
-            PubSubProducerOptions? options       = null,
-            ILoggerFactory?        loggerFactory = null
+            PubSubProducerOptions options,
+            IEventSerializer?     serializer    = null,
+            ILoggerFactory?       loggerFactory = null
         ) {
-            _serializer  = Ensure.NotNull(serializer, nameof(serializer));
-            _log         = loggerFactory?.CreateLogger($"Producer:{projectId}:{topicId}");
-            _clientCache = new ClientCache(Ensure.NotEmptyString(projectId, nameof(projectId)), options, _log);
+            Ensure.NotNull(options, nameof(options));
+
+            _serializer  = serializer ?? DefaultEventSerializer.Instance;
+            _log         = loggerFactory?.CreateLogger($"Producer:{options.ProjectId}");
+            _clientCache = new ClientCache(options, _log);
         }
+
+        public GooglePubSubProducer(
+            IOptions<PubSubProducerOptions> options,
+            IEventSerializer?               serializer    = null,
+            ILoggerFactory?                 loggerFactory = null
+        ) : this(options.Value, serializer, loggerFactory) { }
 
         public override Task Initialize(CancellationToken cancellationToken = default) => Task.CompletedTask;
 

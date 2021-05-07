@@ -32,17 +32,17 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             string                         streamName,
             string                         subscriptionId,
             ICheckpointStore               checkpointStore,
-            IEventSerializer               eventSerializer,
             IEnumerable<IEventHandler>     eventHandlers,
-            EventStoreSubscriptionOptions? options       = null,
-            ILoggerFactory?                loggerFactory = null,
-            SubscriptionGapMeasure?        measure       = null
+            IEventSerializer?              eventSerializer = null,
+            EventStoreSubscriptionOptions? options         = null,
+            ILoggerFactory?                loggerFactory   = null,
+            SubscriptionGapMeasure?        measure         = null
         ) : base(
             eventStoreClient,
             subscriptionId,
             checkpointStore,
-            eventSerializer,
             eventHandlers,
+            eventSerializer,
             loggerFactory,
             measure
         ) {
@@ -67,18 +67,18 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             string                         streamName,
             string                         subscriptionId,
             ICheckpointStore               checkpointStore,
-            IEventSerializer               eventSerializer,
             IEnumerable<IEventHandler>     eventHandlers,
-            EventStoreSubscriptionOptions? options       = null,
-            ILoggerFactory?                loggerFactory = null,
-            SubscriptionGapMeasure?        measure       = null
+            IEventSerializer?              eventSerializer = null,
+            EventStoreSubscriptionOptions? options         = null,
+            ILoggerFactory?                loggerFactory   = null,
+            SubscriptionGapMeasure?        measure         = null
         ) : this(
             new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
             streamName,
             subscriptionId,
             checkpointStore,
-            eventSerializer,
             eventHandlers,
+            eventSerializer,
             options,
             loggerFactory,
             measure

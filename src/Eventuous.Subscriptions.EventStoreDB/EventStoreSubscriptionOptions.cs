@@ -1,8 +1,10 @@
 using System;
 using EventStore.Client;
+using JetBrains.Annotations;
 
 namespace Eventuous.Subscriptions.EventStoreDB {
-    public class EventStoreSubscriptionOptions {
+    [PublicAPI]
+    public class EventStoreSubscriptionOptions : SubscriptionOptions {
         /// <summary>
         /// Optional function to configure client operation options
         /// </summary>

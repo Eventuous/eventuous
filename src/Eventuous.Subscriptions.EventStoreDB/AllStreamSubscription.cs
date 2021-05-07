@@ -29,17 +29,17 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             EventStoreClient           eventStoreClient,
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
-            IEventSerializer           eventSerializer,
             IEnumerable<IEventHandler> eventHandlers,
-            ILoggerFactory?            loggerFactory = null,
-            IEventFilter?              eventFilter   = null,
-            SubscriptionGapMeasure?    measure       = null
+            IEventSerializer?          eventSerializer = null,
+            ILoggerFactory?            loggerFactory   = null,
+            IEventFilter?              eventFilter     = null,
+            SubscriptionGapMeasure?    measure         = null
         ) : base(
             eventStoreClient,
             subscriptionId,
             checkpointStore,
-            eventSerializer,
             eventHandlers,
+            eventSerializer,
             loggerFactory,
             measure
         )
@@ -60,8 +60,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             EventStoreClientSettings   clientSettings,
             string                     subscriptionId,
             ICheckpointStore           checkpointStore,
-            IEventSerializer           eventSerializer,
             IEnumerable<IEventHandler> eventHandlers,
+            IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory = null,
             IEventFilter?              eventFilter   = null,
             SubscriptionGapMeasure?    measure       = null
@@ -69,8 +69,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
             subscriptionId,
             checkpointStore,
-            eventSerializer,
             eventHandlers,
+            eventSerializer,
             loggerFactory,
             eventFilter,
             measure
@@ -110,7 +110,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
 
             void HandleDrop(EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
                 => Dropped(EsdbMappings.AsDropReason(reason), ex);
-            
+
             static ReceivedEvent AsReceivedEvent(ResolvedEvent re)
                 => new() {
                     EventId        = re.Event.EventId.ToString(),

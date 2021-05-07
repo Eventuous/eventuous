@@ -17,7 +17,6 @@ namespace Eventuous.Tests.GooglePubSub {
         static PubSubTests() => TypeMap.AddType<TestEvent>("test-event");
 
         static readonly Fixture          Auto       = new();
-        static readonly IEventSerializer Serializer = DefaultEventSerializer.Instance;
 
         readonly GooglePubSubSubscription _subscription;
         readonly GooglePubSubProducer     _producer;
@@ -36,8 +35,6 @@ namespace Eventuous.Tests.GooglePubSub {
 
             _producer = new GooglePubSubProducer(
                 PubSubFixture.ProjectId,
-                _pubsubTopic,
-                Serializer,
                 loggerFactory: loggerFactory
             );
 
@@ -45,7 +42,6 @@ namespace Eventuous.Tests.GooglePubSub {
                 PubSubFixture.ProjectId,
                 _pubsubTopic,
                 _pubsubSubscription,
-                Serializer,
                 new[] { _handler },
                 loggerFactory: loggerFactory
             );

@@ -17,8 +17,7 @@ namespace Eventuous.Tests.RabbitMq {
             TypeMap.AddType<TestEvent>("test-event");
         }
 
-        static readonly Fixture          Auto       = new();
-        static readonly IEventSerializer Serializer = DefaultEventSerializer.Instance;
+        static readonly Fixture Auto = new();
 
         readonly RabbitMqSubscriptionService _subscription;
         readonly RabbitMqProducer            _producer;
@@ -34,19 +33,18 @@ namespace Eventuous.Tests.RabbitMq {
 
             _handler = new Handler();
 
-            _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory, Serializer);
+            _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory);
 
             _subscription = new RabbitMqSubscriptionService(
                 RabbitMqFixture.ConnectionFactory,
-                queue,
-                _exchange,
-                "queue",
-                Serializer,
-                new[] { _handler },
                 new RabbitMqSubscriptionOptions {
-                    ConcurrencyLimit = 10
+                    ConcurrencyLimit  = 10,
+                    SubscriptionQueue = queue,
+                    Exchange          = _exchange,
+                    SubscriptionId    = queue
                 },
-                loggerFactory
+                new[] { _handler },
+                loggerFactory: loggerFactory
             );
         }
 

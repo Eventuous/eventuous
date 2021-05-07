@@ -22,16 +22,15 @@ namespace Eventuous.Producers.RabbitMq {
         /// Creates a RabbitMQ producer instance
         /// </summary>
         /// <param name="connectionFactory">RabbitMQ connection factory</param>
-        /// <param name="exchange">Exchange name, will be created if doesn't exist</param>
         /// <param name="serializer">Event serializer instance</param>
         /// <param name="options">Additional configuration for the exchange</param>
         public RabbitMqProducer(
             ConnectionFactory        connectionFactory,
-            IEventSerializer         serializer,
+            IEventSerializer?        serializer = null,
             RabbitMqExchangeOptions? options = null
         ) {
             _options           = options;
-            _serializer        = Ensure.NotNull(serializer, nameof(serializer));
+            _serializer        = serializer ?? DefaultEventSerializer.Instance;
             _connectionFactory = Ensure.NotNull(connectionFactory, nameof(connectionFactory));
         }
 

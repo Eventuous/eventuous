@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -8,14 +7,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Producers.GooglePubSub {
     class ClientCache {
-        readonly string                 _projectId;
-        readonly PubSubProducerOptions? _options;
-        readonly ILogger?               _log;
+        readonly string                _projectId;
+        readonly PubSubProducerOptions _options;
+        readonly ILogger?              _log;
 
         readonly ConcurrentDictionary<string, PublisherClient> _clients = new();
 
-        public ClientCache(string projectId, PubSubProducerOptions? options, ILogger? log) {
-            _projectId = projectId;
+        public ClientCache(PubSubProducerOptions options, ILogger? log) {
+            _projectId = Ensure.NotEmptyString(options.ProjectId, nameof(options.ProjectId));
             _options   = options;
             _log       = log;
         }
@@ -41,7 +40,7 @@ namespace Eventuous.Producers.GooglePubSub {
                 _log?.LogInformation("Topic {Topic} exists", topicName);
             }
 
-            return await PublisherClient.CreateAsync(topicName, _options?.ClientCreationSettings, _options?.Settings);
+            return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings);
         }
 
         public IEnumerable<PublisherClient> GetAllClients() => _clients.Values;

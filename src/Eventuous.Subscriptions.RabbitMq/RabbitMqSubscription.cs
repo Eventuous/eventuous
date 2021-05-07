@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Eventuous.Subscriptions.NoOps;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -34,46 +35,88 @@ namespace Eventuous.Subscriptions.RabbitMq {
         /// <summary>
         /// Creates RabbitMQ subscription service instance
         /// </summary>
+        /// <param name="connectionFactory"></param>
+        /// <param name="options"></param>
+        /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="loggerFactory">Optional: logging factory</param>
+        public RabbitMqSubscriptionService(
+            ConnectionFactory                     connectionFactory,
+            IOptions<RabbitMqSubscriptionOptions> options,
+            IEnumerable<IEventHandler>            eventHandlers,
+            IEventSerializer?                     eventSerializer = null,
+            ILoggerFactory?                       loggerFactory   = null
+        ) : this(connectionFactory, options.Value, eventHandlers, eventSerializer, loggerFactory) { }
+
+        /// <summary>
+        /// Creates RabbitMQ subscription service instance
+        /// </summary>
+        /// <param name="connectionFactory"></param>
+        /// <param name="options"></param>
+        /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="loggerFactory">Optional: logging factory</param>
+        public RabbitMqSubscriptionService(
+            ConnectionFactory           connectionFactory,
+            RabbitMqSubscriptionOptions options,
+            IEnumerable<IEventHandler>  eventHandlers,
+            IEventSerializer?           eventSerializer = null,
+            ILoggerFactory?             loggerFactory   = null
+        )
+            : base(
+                Ensure.NotNull(options, nameof(options)),
+                new NoOpCheckpointStore(),
+                eventHandlers,
+                eventSerializer,
+                loggerFactory,
+                new NoOpGapMeasure()
+            ) {
+            _options = options;
+
+            _failureHandler   = options.FailureHandler ?? DefaultEventFailureHandler;
+            _log              = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
+            _concurrencyLimit = options.ConcurrencyLimit;
+
+            _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
+
+            _channel = _connection.CreateModel();
+
+            var prefetch = _concurrencyLimit * 10;
+            _channel.BasicQos(0, (ushort) prefetch, false);
+
+            _subscriptionQueue = Ensure.NotEmptyString(options.SubscriptionQueue, nameof(options.SubscriptionQueue));
+            _exchange          = Ensure.NotEmptyString(options.Exchange, nameof(options.Exchange));
+        }
+
+        /// <summary>
+        /// Creates RabbitMQ subscription service instance
+        /// </summary>
         /// <param name="connectionFactory">RabbitMQ connection factory</param>
         /// <param name="subscriptionQueue">Subscription queue, will be created it doesn't exist</param>
         /// <param name="exchange">Exchange to consume events from, the queue will get bound to this exchange</param>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
-        /// <param name="options"></param>
         /// <param name="loggerFactory">Optional: logging factory</param>
-        /// <param name="failureHandler"></param>
         public RabbitMqSubscriptionService(
-            ConnectionFactory             connectionFactory,
-            string                        subscriptionQueue,
-            string                        exchange,
-            string                        subscriptionId,
-            IEventSerializer              eventSerializer,
-            IEnumerable<IEventHandler>    eventHandlers,
-            RabbitMqSubscriptionOptions?  options,
-            ILoggerFactory?               loggerFactory  = null,
-            HandleEventProcessingFailure? failureHandler = null
-        ) : base(
-            subscriptionId,
-            new NoOpCheckpointStore(),
-            eventSerializer,
+            ConnectionFactory          connectionFactory,
+            string                     subscriptionQueue,
+            string                     exchange,
+            string                     subscriptionId,
+            IEnumerable<IEventHandler> eventHandlers,
+            IEventSerializer?          eventSerializer = null,
+            ILoggerFactory?            loggerFactory   = null
+        ) : this(
+            connectionFactory,
+            new RabbitMqSubscriptionOptions {
+                SubscriptionQueue = subscriptionQueue,
+                Exchange          = exchange,
+                SubscriptionId    = subscriptionId
+            },
             eventHandlers,
-            loggerFactory,
-            new NoOpGapMeasure()
-        ) {
-            _options          = options;
-            _failureHandler   = failureHandler ?? DefaultEventFailureHandler;
-            _log              = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
-            _concurrencyLimit = options?.ConcurrencyLimit ?? 1;
-            _connection       = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
-            _channel          = _connection.CreateModel();
-
-            var prefetch = _concurrencyLimit * 10;
-            _channel.BasicQos(0, (ushort) prefetch, false);
-
-            _subscriptionQueue = Ensure.NotEmptyString(subscriptionQueue, nameof(subscriptionQueue));
-            _exchange          = Ensure.NotEmptyString(exchange, nameof(exchange));
-        }
+            eventSerializer,
+            loggerFactory
+        ) { }
 
         protected override Task<EventSubscription> Subscribe(
             Checkpoint        checkpoint,

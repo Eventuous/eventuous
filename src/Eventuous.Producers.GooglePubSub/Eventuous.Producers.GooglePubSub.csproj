@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
       <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.4.0" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>
