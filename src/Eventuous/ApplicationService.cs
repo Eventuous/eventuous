@@ -172,7 +172,11 @@ namespace Eventuous {
             var aggregate = registeredHandler.ExpectedState switch {
                 ExpectedState.Any      => await TryLoad(),
                 ExpectedState.Existing => await Load(),
-                ExpectedState.New      => Create()
+                ExpectedState.New      => Create(),
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(registeredHandler.ExpectedState),
+                    "Unknown expected state"
+                )
             };
 
             await registeredHandler.Handler(aggregate, command);

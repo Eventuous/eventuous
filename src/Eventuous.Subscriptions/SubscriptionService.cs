@@ -22,6 +22,7 @@ namespace Eventuous.Subscriptions {
         readonly IEventSerializer         _eventSerializer;
         readonly IEventHandler[]          _eventHandlers;
         readonly ISubscriptionGapMeasure? _measure;
+        readonly bool                     _throwOnError;
 
         CancellationTokenSource? _cts;
         Task?                    _measureTask;
@@ -41,7 +42,8 @@ namespace Eventuous.Subscriptions {
             eventHandlers,
             eventSerializer,
             loggerFactory,
-            measure
+            measure,
+            options.ThrowOnError
         ) { }
 
         protected SubscriptionService(
@@ -50,12 +52,14 @@ namespace Eventuous.Subscriptions {
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
-            ISubscriptionGapMeasure?   measure         = null
+            ISubscriptionGapMeasure?   measure         = null,
+            bool                       throwOnError    = false
         ) {
             _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
             _eventSerializer = eventSerializer ?? DefaultEventSerializer.Instance;
             SubscriptionId   = Ensure.NotEmptyString(subscriptionId, subscriptionId);
             _measure         = measure;
+            _throwOnError    = throwOnError;
 
             _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers))
                 .Where(x => x.SubscriptionId == subscriptionId)
@@ -97,43 +101,59 @@ namespace Eventuous.Subscriptions {
                 return;
             }
 
-            try {
-                var contentType = string.IsNullOrWhiteSpace(re.ContentType) ? "application/json" : re.ContentType;
+            object? evt;
 
-                if (contentType != _eventSerializer.ContentType)
+            var contentType = string.IsNullOrWhiteSpace(re.ContentType) ? "application/json" : re.ContentType;
+
+            if (contentType != _eventSerializer.ContentType) {
+                Log?.LogError(
+                    "Unknown content type {ContentType} for event {Strean} {Position} {Type}",
+                    contentType,
+                    re.OriginalStream,
+                    re.StreamPosition,
+                    re.EventType
+                );
+
+                if (_throwOnError)
                     throw new InvalidOperationException($"Unknown content type {contentType}");
+            }
 
-                object? evt;
+            try {
+                evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
+            }
+            catch (Exception e) {
+                Log?.LogError(
+                    e,
+                    "Error deserializing event {Strean} {Position} {Type}",
+                    re.OriginalStream,
+                    re.StreamPosition,
+                    re.EventType
+                );
 
-                try {
-                    evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
-                }
-                catch (Exception e) {
-                    Log?.LogError(
-                        e,
-                        "Error deserializing event {Strean} {Position} {Type}",
-                        re.OriginalStream,
-                        re.StreamPosition,
-                        re.EventType
-                    );
+                if (_throwOnError)
+                    throw new DeserializationException(re, e);
 
-                    throw;
-                }
+                return;
+            }
 
+            try {
                 if (evt != null) {
                     await Task.WhenAll(
-                        _eventHandlers.Select(x => x.HandleEvent(evt, (long?) re.GlobalPosition, cancellationToken))
+                        _eventHandlers.Select(x => x.HandleEvent(evt, (long?) re.StreamPosition, cancellationToken))
                     );
                 }
             }
             catch (Exception e) {
                 Log?.LogWarning(
                     e,
-                    "Error when handling the event {Strean} {Position} {Type}",
+                    "Error when handling the event {Stream} {Position} {Type}",
                     re.OriginalStream,
                     re.StreamPosition,
                     re.EventType
                 );
+
+                if (_throwOnError) 
+                    throw new SubscriptionException(re, evt, e);
             }
 
             await Store();
