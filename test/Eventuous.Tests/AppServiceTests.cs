@@ -38,12 +38,13 @@ namespace Eventuous.Tests {
                 )
             };
 
-            await Service.Handle(cmd);
+            await Service.Handle(cmd, default);
 
             var events = await Fixture.EventStore.ReadEvents(
                 StreamName.For<Booking>(cmd.BookingId),
                 StreamReadPosition.Start,
-                int.MaxValue
+                int.MaxValue,
+                default
             );
 
             var result = events.Select(x => Fixture.Serializer.Deserialize(x.Data, x.EventType)).ToArray();

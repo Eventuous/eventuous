@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -125,7 +126,7 @@ namespace Eventuous {
                 new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
-            _getId.TryAdd(typeof(TCommand), async cmd => await getId((TCommand) cmd));
+            _getId.TryAdd(typeof(TCommand), async cmd => await getId((TCommand) cmd).Ignore());
         }
 
         /// <summary>
@@ -142,7 +143,7 @@ namespace Eventuous {
                 new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd) => AsTask(aggregate, cmd, action))
             );
 
-            _getId.TryAdd(typeof(TCommand), async cmd => await getId((TCommand) cmd));
+            _getId.TryAdd(typeof(TCommand), async cmd => await getId((TCommand) cmd).Ignore());
         }
 
         static ValueTask AsTask<TCommand>(T aggregate, object cmd, Action<T, TCommand> action) {
@@ -151,7 +152,7 @@ namespace Eventuous {
         }
 
         static async ValueTask AsTask<TCommand>(T aggregate, object cmd, Func<T, TCommand, Task> action) {
-            await action(aggregate, (TCommand) cmd);
+            await action(aggregate, (TCommand) cmd).Ignore();
         }
 
         /// <summary>
@@ -161,17 +162,17 @@ namespace Eventuous {
         /// <typeparam name="TCommand">Command type</typeparam>
         /// <returns><see cref="Result{T,TState,TId}"/> of the execution</returns>
         /// <exception cref="Exceptions.CommandHandlerNotFound"></exception>
-        public async Task<Result<T, TState, TId>> Handle<TCommand>(TCommand command)
+        public async Task<Result<T, TState, TId>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
             where TCommand : class {
             if (!_handlers.TryGetValue(typeof(TCommand), out var registeredHandler)) {
                 throw new Exceptions.CommandHandlerNotFound(typeof(TCommand));
             }
 
-            var id = await _getId[typeof(TCommand)](command);
+            var id = await _getId[typeof(TCommand)](command).Ignore();
 
             var aggregate = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await TryLoad(),
-                ExpectedState.Existing => await Load(),
+                ExpectedState.Any      => await TryLoad().Ignore(),
+                ExpectedState.Existing => await Load().Ignore(),
                 ExpectedState.New      => Create(),
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(registeredHandler.ExpectedState),
@@ -179,17 +180,17 @@ namespace Eventuous {
                 )
             };
 
-            await registeredHandler.Handler(aggregate, command);
+            await registeredHandler.Handler(aggregate, command).Ignore();
 
-            await _store.Store(aggregate);
+            await _store.Store(aggregate, cancellationToken).Ignore();
 
             return new OkResult<T, TState, TId>(aggregate.State, aggregate.Changes);
 
-            Task<T> Load() => _store.Load<T>(id);
+            Task<T> Load() => _store.Load<T>(id, cancellationToken);
 
             async Task<T> TryLoad() {
                 try {
-                    return await Load();
+                    return await Load().Ignore();
                 }
                 catch (Exceptions.AggregateNotFound<T>) {
                     return Create();

@@ -89,8 +89,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 (_, p, ct) => StoreCheckpoint(new EventPosition(p.CommitPosition, DateTime.Now), ct)
             );
 
-            var sub = checkpoint.Position != null
-                ? await EventStoreClient.SubscribeToAllAsync(
+            var subTask = checkpoint.Position != null
+                ? EventStoreClient.SubscribeToAllAsync(
                     new Position(checkpoint.Position.Value, checkpoint.Position.Value),
                     HandleEvent,
                     false,
@@ -100,7 +100,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     _options.Credentials,
                     cancellationToken
                 )
-                : await EventStoreClient.SubscribeToAllAsync(
+                : EventStoreClient.SubscribeToAllAsync(
                     HandleEvent,
                     false,
                     HandleDrop,
@@ -109,6 +109,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     _options.Credentials,
                     cancellationToken
                 );
+
+            var sub = await subTask.Ignore();
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 

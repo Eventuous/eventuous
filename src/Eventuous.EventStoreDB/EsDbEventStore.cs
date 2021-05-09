@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 using JetBrains.Annotations;
@@ -18,24 +19,26 @@ namespace Eventuous.EventStoreDB {
         public async Task AppendEvents(
             string                           stream,
             ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
         ) {
             var proposedEvents = events.Select(ToEventData);
 
             Task resultTask;
 
             if (expectedVersion == ExpectedStreamVersion.NoStream)
-                resultTask = _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents);
+                resultTask = _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents, cancellationToken: cancellationToken);
             else if (expectedVersion == ExpectedStreamVersion.Any)
-                resultTask = _client.AppendToStreamAsync(stream, StreamState.Any, proposedEvents);
+                resultTask = _client.AppendToStreamAsync(stream, StreamState.Any, proposedEvents, cancellationToken: cancellationToken);
             else
                 resultTask = _client.AppendToStreamAsync(
                     stream,
                     StreamRevision.FromInt64(expectedVersion.Value),
-                    proposedEvents
+                    proposedEvents,
+                    cancellationToken: cancellationToken
                 );
 
-            await resultTask;
+            await resultTask.Ignore();
 
             static EventData ToEventData(StreamEvent streamEvent)
                 => new(
@@ -46,12 +49,12 @@ namespace Eventuous.EventStoreDB {
                 );
         }
 
-        public async Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start, int count) {
+        public async Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
             var position = new StreamPosition((ulong) start.Value);
             var read     = _client.ReadStreamAsync(Direction.Forwards, stream, position, count);
 
             try {
-                var resolvedEvents = await read.ToArrayAsync();
+                var resolvedEvents = await read.ToArrayAsync(cancellationToken).Ignore();
                 return ToStreamEvents(resolvedEvents);
             }
             catch (StreamNotFoundException) {
@@ -59,11 +62,11 @@ namespace Eventuous.EventStoreDB {
             }
         }
 
-        public async Task<StreamEvent[]> ReadEventsBackwards(string stream, int count) {
+        public async Task<StreamEvent[]> ReadEventsBackwards(string stream, int count, CancellationToken cancellationToken) {
             var read = _client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, count);
 
             try {
-                var resolvedEvents = await read.ToArrayAsync();
+                var resolvedEvents = await read.ToArrayAsync(cancellationToken).Ignore();
                 return ToStreamEvents(resolvedEvents);
             }
             catch (StreamNotFoundException) {
@@ -71,12 +74,17 @@ namespace Eventuous.EventStoreDB {
             }
         }
 
-        public async Task ReadStream(string stream, StreamReadPosition start, Action<StreamEvent> callback) {
+        public async Task ReadStream(
+            string              stream,
+            StreamReadPosition  start,
+            Action<StreamEvent> callback,
+            CancellationToken   cancellationToken
+        ) {
             var position = new StreamPosition((ulong) start.Value);
             var read     = _client.ReadStreamAsync(Direction.Forwards, stream, position);
 
             try {
-                await foreach (var re in read) {
+                await foreach (var re in read.IgnoreWithCancellation(cancellationToken)) {
                     callback(ToStreamEvent(re));
                 }
             }

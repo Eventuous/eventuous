@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Eventuous.Tests.Fakes {
@@ -8,7 +9,10 @@ namespace Eventuous.Tests.Fakes {
         readonly Dictionary<string, List<StreamEvent>> _storage = new();
 
         public Task AppendEvents(
-            string stream, ExpectedStreamVersion expectedVersion, IReadOnlyCollection<StreamEvent> events
+            string                           stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
         ) {
             return _storage.TryGetValue(stream, out var existing) ? AddToExisting() : AddToNew();
 
@@ -26,20 +30,21 @@ namespace Eventuous.Tests.Fakes {
             }
         }
 
-        public Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start, int count)
+        public Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
             => Task.FromResult(FindStream(stream).Take(count).ToArray());
 
-        public Task<StreamEvent[]> ReadEventsBackwards(string stream, int count) {
+        public Task<StreamEvent[]> ReadEventsBackwards(string stream, int count, CancellationToken cancellationToken) {
             var reversed = new List<StreamEvent>(FindStream(stream));
             reversed.Reverse();
 
             return Task.FromResult(reversed.Take(count).ToArray());
         }
 
-        public Task ReadStream(string stream, StreamReadPosition start, Action<StreamEvent> callback) {
+        public Task ReadStream(string stream, StreamReadPosition start, Action<StreamEvent> callback, CancellationToken cancellationToken) {
             foreach (var streamEvent in FindStream(stream)) {
                 callback(streamEvent);
             }
+
             return Task.CompletedTask;
         }
 

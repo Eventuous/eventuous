@@ -38,7 +38,8 @@ namespace Eventuous.Projections.MongoDB {
 
             var checkpoint = await Checkpoints.AsQueryable()
                 .Where(x => x.Id == checkpointId)
-                .SingleOrDefaultAsync(cancellationToken);
+                .SingleOrDefaultAsync(cancellationToken)
+                .Ignore();
 
             if (checkpoint is null) {
                 checkpoint = new Checkpoint(checkpointId, null);
@@ -74,7 +75,7 @@ namespace Eventuous.Projections.MongoDB {
                 checkpoint,
                 MongoDefaults.DefaultReplaceOptions,
                 cancellationToken
-            );
+            ).Ignore();
 
             if (_log?.IsEnabled(LogLevel.Debug) == true)
                 _log.LogDebug(

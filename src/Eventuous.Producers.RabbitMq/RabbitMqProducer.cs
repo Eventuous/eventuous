@@ -54,7 +54,7 @@ namespace Eventuous.Producers.RabbitMq {
                 Publish(stream, message, message.GetType(), options);
             }
 
-            await Confirm(cancellationToken);
+            await Confirm(cancellationToken).Ignore();
         }
 
         protected override Task ProduceOne(
@@ -113,7 +113,7 @@ namespace Eventuous.Producers.RabbitMq {
 
         async Task Confirm(CancellationToken cancellationToken) {
             while (!_channel!.WaitForConfirms(ConfirmTimeout) && !cancellationToken.IsCancellationRequested) {
-                await Task.Delay(ConfirmIdle, cancellationToken);
+                await Task.Delay(ConfirmIdle, cancellationToken).Ignore();
             }
         }
 

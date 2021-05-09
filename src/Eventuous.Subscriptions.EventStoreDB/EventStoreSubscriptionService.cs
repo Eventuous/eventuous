@@ -35,7 +35,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 cancellationToken: cancellationToken
             );
 
-            var events = await read.ToArrayAsync(cancellationToken);
+            var events = await read.ToArrayAsync(cancellationToken).Ignore();
             return new EventPosition(events[0].Event.Position.CommitPosition, events[0].Event.Created);
         }
     }

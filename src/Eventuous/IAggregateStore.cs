@@ -1,10 +1,11 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Eventuous
 {
     public interface IAggregateStore {
-        Task Store<T>(T entity) where T : Aggregate;
+        Task Store<T>(T entity, CancellationToken cancellationToken) where T : Aggregate;
 
-        Task<T> Load<T>(string id) where T : Aggregate, new();
+        Task<T> Load<T>(string id, CancellationToken cancellationToken) where T : Aggregate, new();
     }
 }

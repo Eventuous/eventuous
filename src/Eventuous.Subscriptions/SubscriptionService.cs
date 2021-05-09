@@ -57,11 +57,11 @@ namespace Eventuous.Subscriptions {
                 _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
             }
 
-            var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken);
+            var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken).Ignore();
 
             _lastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
 
-            Subscription = await Subscribe(checkpoint, cancellationToken);
+            Subscription = await Subscribe(checkpoint, cancellationToken).Ignore();
 
             IsRunning = true;
 
@@ -78,7 +78,7 @@ namespace Eventuous.Subscriptions {
             _lastProcessed = GetPosition(re);
 
             if (re.EventType.StartsWith("$") || re.Data.IsEmpty) {
-                await Store();
+                await Store().Ignore();
                 return;
             }
 
@@ -121,7 +121,7 @@ namespace Eventuous.Subscriptions {
                 if (evt != null) {
                     await Task.WhenAll(
                         _eventHandlers.Select(x => x.HandleEvent(evt, (long?) re.StreamPosition, cancellationToken))
-                    );
+                    ).Ignore();
                 }
             }
             catch (Exception e) {
@@ -137,7 +137,7 @@ namespace Eventuous.Subscriptions {
                     throw new SubscriptionException(re, evt, e);
             }
 
-            await Store();
+            await Store().Ignore();
 
             Task Store() => StoreCheckpoint(GetPosition(re), cancellationToken);
 
@@ -149,7 +149,7 @@ namespace Eventuous.Subscriptions {
             _lastProcessed = position;
             var checkpoint = new Checkpoint(SubscriptionId, position.Position);
 
-            await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken);
+            await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).Ignore();
         }
 
         protected abstract Task<EventSubscription> Subscribe(
@@ -164,14 +164,14 @@ namespace Eventuous.Subscriptions {
                 _cts?.Cancel();
 
                 try {
-                    await _measureTask;
+                    await _measureTask.Ignore();
                 }
                 catch (OperationCanceledException) {
                     // Expected
                 }
             }
 
-            await Subscription.Stop(cancellationToken);
+            await Subscription.Stop(cancellationToken).Ignore();
 
             Log?.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
         }
@@ -181,13 +181,13 @@ namespace Eventuous.Subscriptions {
         protected async Task Resubscribe(TimeSpan delay) {
             Log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
-            await Task.Delay(delay);
+            await Task.Delay(delay).Ignore();
 
             while (IsRunning && IsDropped && _resubscribing.CanMove()) {
                 try {
                     var checkpoint = new Checkpoint(SubscriptionId, _lastProcessed?.Position);
 
-                    Subscription = await Subscribe(checkpoint, CancellationToken.None);
+                    Subscription = await Subscribe(checkpoint, CancellationToken.None).Ignore();
 
                     IsDropped = false;
                     _resubscribing.Open();
@@ -197,7 +197,7 @@ namespace Eventuous.Subscriptions {
                 catch (Exception e) {
                     Log?.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
 
-                    await Task.Delay(1000);
+                    await Task.Delay(1000).Ignore();
                 }
             }
         }
@@ -227,7 +227,7 @@ namespace Eventuous.Subscriptions {
 
         async Task MeasureGap(CancellationToken cancellationToken) {
             while (!cancellationToken.IsCancellationRequested) {
-                var (position, created) = await GetLastEventPosition(cancellationToken);
+                var (position, created) = await GetLastEventPosition(cancellationToken).Ignore();
 
                 if (_lastProcessed?.Position != null && position != null) {
                     _gap = (ulong) position - _lastProcessed.Position.Value;
@@ -235,7 +235,7 @@ namespace Eventuous.Subscriptions {
                     _measure!.PutGap(SubscriptionId, _gap, created);
                 }
 
-                await Task.Delay(1000, cancellationToken);
+                await Task.Delay(1000, cancellationToken).Ignore();
             }
         }
 

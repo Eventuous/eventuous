@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -14,7 +15,7 @@ namespace Eventuous {
             _serializer = Ensure.NotNull(serializer, nameof(serializer));
         }
 
-        public async Task Store<T>(T aggregate)
+        public async Task Store<T>(T aggregate, CancellationToken cancellationToken)
             where T : Aggregate {
             Ensure.NotNull(aggregate, nameof(aggregate));
 
@@ -23,20 +24,25 @@ namespace Eventuous {
             var stream          = StreamName.For<T>(aggregate.GetId());
             var expectedVersion = new ExpectedStreamVersion(aggregate.OriginalVersion);
 
-            await _eventStore.AppendEvents(stream, expectedVersion, aggregate.Changes.Select(ToStreamEvent).ToArray());
+            await _eventStore.AppendEvents(
+                stream,
+                expectedVersion,
+                aggregate.Changes.Select(ToStreamEvent).ToArray(),
+                cancellationToken
+            ).Ignore();
 
             StreamEvent ToStreamEvent(object evt)
                 => new(TypeMap.GetTypeName(evt), _serializer.Serialize(evt), null, _serializer.ContentType);
         }
 
-        public async Task<T> Load<T>(string id) where T : Aggregate, new() {
+        public async Task<T> Load<T>(string id, CancellationToken cancellationToken) where T : Aggregate, new() {
             Ensure.NotEmptyString(id, nameof(id));
 
             var stream    = StreamName.For<T>(id);
             var aggregate = new T();
 
             try {
-                await _eventStore.ReadStream(stream, StreamReadPosition.Start, Fold);
+                await _eventStore.ReadStream(stream, StreamReadPosition.Start, Fold, cancellationToken).Ignore();
             }
             catch (Exceptions.StreamNotFound e) {
                 throw new Exceptions.AggregateNotFound<T>(id, e);

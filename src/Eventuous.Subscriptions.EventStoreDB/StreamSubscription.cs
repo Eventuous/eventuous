@@ -78,8 +78,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         ) {
-            var sub = checkpoint.Position == null
-                ? await EventStoreClient.SubscribeToStreamAsync(
+            var subTask = checkpoint.Position == null
+                ? EventStoreClient.SubscribeToStreamAsync(
                     _options.StreamName,
                     HandleEvent,
                     _options.ResolveLinkTos,
@@ -88,7 +88,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     _options.Credentials,
                     cancellationToken
                 )
-                : await EventStoreClient.SubscribeToStreamAsync(
+                : EventStoreClient.SubscribeToStreamAsync(
                     _options.StreamName,
                     StreamPosition.FromInt64((long) checkpoint.Position),
                     HandleEvent,
@@ -99,10 +99,12 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     cancellationToken
                 );
 
+            var sub = await subTask.Ignore();
+
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
             async Task HandleEvent(EventStore.Client.StreamSubscription _, ResolvedEvent re, CancellationToken ct) {
-                await Handler(AsReceivedEvent(re), ct);
+                await Handler(AsReceivedEvent(re), ct).Ignore();
             }
 
             void HandleDrop(EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
