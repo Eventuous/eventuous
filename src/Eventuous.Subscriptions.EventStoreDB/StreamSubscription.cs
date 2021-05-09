@@ -34,7 +34,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
-            SubscriptionGapMeasure?    measure         = null,
+            ISubscriptionGapMeasure?   measure         = null,
             bool                       throwOnError    = false
         ) : this(
             eventStoreClient,
@@ -67,7 +67,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
-            SubscriptionGapMeasure?    measure         = null
+            ISubscriptionGapMeasure?   measure         = null
         ) : base(client, options, checkpointStore, eventHandlers, eventSerializer, loggerFactory, measure) {
             Ensure.NotEmptyString(options.StreamName, nameof(options.StreamName));
 

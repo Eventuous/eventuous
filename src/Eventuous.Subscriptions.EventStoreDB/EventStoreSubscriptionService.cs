@@ -9,9 +9,9 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Subscriptions.EventStoreDB {
     [PublicAPI]
     public abstract class EventStoreSubscriptionService : SubscriptionService {
-        readonly SubscriptionGapMeasure? _measure;
-        readonly ILogger?                _log;
-        readonly Logging?                _debugLog;
+        readonly ISubscriptionGapMeasure? _measure;
+        readonly ILogger?                 _log;
+        readonly Logging?                 _debugLog;
 
         protected EventStoreClient EventStoreClient { get; }
 
@@ -22,7 +22,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEnumerable<IEventHandler>    eventHandlers,
             IEventSerializer?             eventSerializer = null,
             ILoggerFactory?               loggerFactory   = null,
-            SubscriptionGapMeasure?       measure         = null
+            ISubscriptionGapMeasure?      measure         = null
         ) : base(options, checkpointStore, eventHandlers, eventSerializer, loggerFactory, measure) {
             EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         }

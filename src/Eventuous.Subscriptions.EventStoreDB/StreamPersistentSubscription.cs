@@ -30,7 +30,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEnumerable<IEventHandler>          eventHandlers,
             IEventSerializer?                   eventSerializer = null,
             ILoggerFactory?                     loggerFactory   = null,
-            SubscriptionGapMeasure?             measure         = null
+            ISubscriptionGapMeasure?            measure         = null
         ) : base(
             eventStoreClient,
             options,
@@ -41,7 +41,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             measure
         ) {
             Ensure.NotEmptyString(options.Stream, nameof(options.Stream));
-            
+
             var settings   = eventStoreClient.GetSettings().Copy();
             var opSettings = settings.OperationOptions.Clone();
             options.ConfigureOperation?.Invoke(opSettings);
@@ -69,7 +69,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
-            SubscriptionGapMeasure?    measure         = null
+            ISubscriptionGapMeasure?   measure         = null
         ) : this(
             eventStoreClient,
             new StreamPersistentSubscriptionOptions {
@@ -146,7 +146,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 => new() {
                     EventId        = re.Event.EventId.ToString(),
                     GlobalPosition = re.Event.Position.CommitPosition,
-                    Stream = re.OriginalStreamId,
+                    Stream         = re.OriginalStreamId,
                     StreamPosition = re.Event.EventNumber,
                     Sequence       = re.Event.EventNumber,
                     Created        = re.Event.Created,

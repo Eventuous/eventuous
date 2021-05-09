@@ -1,10 +1,15 @@
 using System;
 using EventStore.Client;
+using Eventuous;
+using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.EventStoreDB;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using StreamSubscription = Eventuous.Subscriptions.EventStoreDB.StreamSubscription;
 
-namespace Eventuous.Subscriptions.EventStoreDB {
+// ReSharper disable CheckNamespace
+
+namespace Microsoft.Extensions.DependencyInjection {
     [PublicAPI]
     public static class RegistrationExtensions {
         public static IServiceCollection AddStreamSubscription(this IServiceCollection services, StreamSubscriptionOptions options) {

@@ -4,17 +4,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions {
     [PublicAPI]
-    public abstract class SubscriptionService : IHostedService, IHealthCheck {
-        protected bool              IsRunning      { get; set; }
-        protected bool              IsDropped      { get; set; }
+    public abstract class SubscriptionService : IHostedService, IReportHealth {
+        internal  bool              IsRunning      { get; set; }
+        internal  bool              IsDropped      { get; set; }
+        public    string            SubscriptionId { get; }
         protected EventSubscription Subscription   { get; set; } = null!;
-        protected string            SubscriptionId { get; }
         protected Logging?          DebugLog       { get; }
         protected ILogger?          Log            { get; }
 
@@ -177,18 +176,21 @@ namespace Eventuous.Subscriptions {
             Log?.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
         }
 
+        readonly InterlockedSemaphore _resubscribing = new();
+
         protected async Task Resubscribe(TimeSpan delay) {
             Log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
             await Task.Delay(delay);
 
-            while (IsRunning && IsDropped) {
+            while (IsRunning && IsDropped && _resubscribing.CanMove()) {
                 try {
                     var checkpoint = new Checkpoint(SubscriptionId, _lastProcessed?.Position);
 
                     Subscription = await Subscribe(checkpoint, CancellationToken.None);
 
                     IsDropped = false;
+                    _resubscribing.Open();
 
                     Log?.LogInformation("Subscription {Subscription} restored", SubscriptionId);
                 }
@@ -204,7 +206,7 @@ namespace Eventuous.Subscriptions {
             DropReason reason,
             Exception? exception
         ) {
-            if (!IsRunning) return;
+            if (!IsRunning || _resubscribing.IsClosed()) return;
 
             Log?.LogWarning(
                 exception,
@@ -213,7 +215,8 @@ namespace Eventuous.Subscriptions {
                 reason
             );
 
-            IsDropped = true;
+            IsDropped      = true;
+            _lastException = exception;
 
             Task.Run(
                 () => Resubscribe(
@@ -238,16 +241,9 @@ namespace Eventuous.Subscriptions {
 
         protected abstract Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken);
 
-        public Task<HealthCheckResult> CheckHealthAsync(
-            HealthCheckContext context,
-            CancellationToken  cancellationToken = default
-        ) {
-            var result = IsRunning && IsDropped
-                ? HealthCheckResult.Unhealthy("Subscription dropped")
-                : HealthCheckResult.Healthy();
+        Exception? _lastException;
 
-            return Task.FromResult(result);
-        }
+        public SubscriptionHealth Health => new(!(IsRunning && IsDropped), _lastException);
     }
 
     public record EventPosition(ulong? Position, DateTime Created);

@@ -48,7 +48,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
-            SubscriptionGapMeasure?    measure         = null
+            ISubscriptionGapMeasure?   measure         = null
         ) : this(
             new PubSubSubscriptionOptions {
                 SubscriptionId = subscriptionId,
@@ -74,7 +74,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
-            SubscriptionGapMeasure?    measure         = null
+            ISubscriptionGapMeasure?   measure         = null
         ) : base(
             options,
             new NoOpCheckpointStore(),

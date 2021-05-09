@@ -1,9 +1,11 @@
 using System;
+using Eventuous.Subscriptions;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Eventuous.Subscriptions {
+// ReSharper disable CheckNamespace
+
+namespace Microsoft.Extensions.DependencyInjection {
     [PublicAPI]
     public static class RegistrationExtensions {
         /// <summary>
@@ -16,8 +18,10 @@ namespace Eventuous.Subscriptions {
             this IServiceCollection   services,
             Func<IServiceProvider, T> getSubscription
         ) where T : SubscriptionService {
+            services.TryAddSingleton<SubscriptionHealthCheck>();
             services.AddSingleton(getSubscription);
-            services.AddSingleton<IHostedService>(ctx => ctx.GetRequiredService<T>());
+            services.AddHostedService(sp => sp.GetRequiredService<T>());
+            services.AddSingleton<IReportHealth>(sp => sp.GetRequiredService<T>());
             return services;
         }
 
@@ -28,26 +32,10 @@ namespace Eventuous.Subscriptions {
         /// <typeparam name="T">Subscription service type</typeparam>
         public static IServiceCollection AddSubscription<T>(this IServiceCollection services)
             where T : SubscriptionService {
+            services.TryAddSingleton<SubscriptionHealthCheck>();
             services.AddSingleton<T>();
-            services.AddSingleton<IHostedService>(ctx => ctx.GetRequiredService<T>());
-            return services;
-        }
-
-        /// <summary>
-        /// Register subscription as a hosted service, with health checks
-        /// </summary>
-        /// <param name="services"><see cref="IServiceCollection"/> container</param>
-        /// <param name="checkName">Health check name</param>
-        /// <param name="tags">Health check tags</param>
-        /// <typeparam name="T">Subscription service type</typeparam>
-        public static IServiceCollection AddSubscription<T>(
-            this IServiceCollection services,
-            string                  checkName,
-            string[]                tags
-        )
-            where T : SubscriptionService {
-            services.AddSubscription<T>();
-            services.AddHealthChecks().AddCheck<T>(checkName, null, tags);
+            services.AddHostedService(sp => sp.GetRequiredService<T>());
+            services.AddSingleton<IReportHealth>(sp => sp.GetRequiredService<T>());
             return services;
         }
 
@@ -59,5 +47,12 @@ namespace Eventuous.Subscriptions {
         public static IServiceCollection AddEventHandler<T>(this IServiceCollection services)
             where T : class, IEventHandler
             => services.AddSingleton<IEventHandler, T>();
+
+        public static IHealthChecksBuilder AddSubscriptionsCheck(
+            this IHealthChecksBuilder builder,
+            string                    checkName,
+            string[]                  tags
+        )
+            => builder.AddCheck<SubscriptionHealthCheck>(checkName, null, tags);
     }
 }

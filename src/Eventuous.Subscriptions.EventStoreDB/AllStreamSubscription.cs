@@ -34,7 +34,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
             IEventFilter?              eventFilter     = null,
-            SubscriptionGapMeasure?    measure         = null
+            ISubscriptionGapMeasure?   measure         = null
         ) : this(
             eventStoreClient,
             new AllStreamSubscriptionOptions { SubscriptionId = subscriptionId },
@@ -65,7 +65,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEventSerializer?            eventSerializer = null,
             ILoggerFactory?              loggerFactory   = null,
             IEventFilter?                eventFilter     = null,
-            SubscriptionGapMeasure?      measure         = null
+            ISubscriptionGapMeasure?     measure         = null
         ) : base(
             eventStoreClient,
             options,
