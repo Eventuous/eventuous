@@ -16,14 +16,14 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         protected EventStoreClient EventStoreClient { get; }
 
         protected EventStoreSubscriptionService(
-            EventStoreClient           eventStoreClient,
-            string                     subscriptionId,
-            ICheckpointStore           checkpointStore,
-            IEnumerable<IEventHandler> eventHandlers,
-            IEventSerializer?          eventSerializer = null,
-            ILoggerFactory?            loggerFactory   = null,
-            SubscriptionGapMeasure?    measure         = null
-        ) : base(subscriptionId, checkpointStore, eventHandlers, eventSerializer, loggerFactory, measure) {
+            EventStoreClient              eventStoreClient,
+            EventStoreSubscriptionOptions options,
+            ICheckpointStore              checkpointStore,
+            IEnumerable<IEventHandler>    eventHandlers,
+            IEventSerializer?             eventSerializer = null,
+            ILoggerFactory?               loggerFactory   = null,
+            SubscriptionGapMeasure?       measure         = null
+        ) : base(options, checkpointStore, eventHandlers, eventSerializer, loggerFactory, measure) {
             EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         }
 

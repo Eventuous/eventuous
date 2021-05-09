@@ -36,36 +36,18 @@ namespace Eventuous.Subscriptions {
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
             ISubscriptionGapMeasure?   measure         = null
-        ) : this(
-            Ensure.NotEmptyString(options.SubscriptionId, nameof(options.SubscriptionId)),
-            checkpointStore,
-            eventHandlers,
-            eventSerializer,
-            loggerFactory,
-            measure,
-            options.ThrowOnError
-        ) { }
-
-        protected SubscriptionService(
-            string                     subscriptionId,
-            ICheckpointStore           checkpointStore,
-            IEnumerable<IEventHandler> eventHandlers,
-            IEventSerializer?          eventSerializer = null,
-            ILoggerFactory?            loggerFactory   = null,
-            ISubscriptionGapMeasure?   measure         = null,
-            bool                       throwOnError    = false
         ) {
             _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
             _eventSerializer = eventSerializer ?? DefaultEventSerializer.Instance;
-            SubscriptionId   = Ensure.NotEmptyString(subscriptionId, subscriptionId);
+            SubscriptionId   = Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
             _measure         = measure;
-            _throwOnError    = throwOnError;
+            _throwOnError    = options.ThrowOnError;
 
             _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers))
-                .Where(x => x.SubscriptionId == subscriptionId)
+                .Where(x => x.SubscriptionId == options.SubscriptionId)
                 .ToArray();
 
-            Log = loggerFactory?.CreateLogger($"StreamSubscription-{subscriptionId}");
+            Log = loggerFactory?.CreateLogger($"StreamSubscription-{options.SubscriptionId}");
 
             DebugLog = Log?.IsEnabled(LogLevel.Debug) == true ? Log.LogDebug : null;
         }
@@ -109,7 +91,7 @@ namespace Eventuous.Subscriptions {
                 Log?.LogError(
                     "Unknown content type {ContentType} for event {Strean} {Position} {Type}",
                     contentType,
-                    re.OriginalStream,
+                    re.Stream,
                     re.StreamPosition,
                     re.EventType
                 );
@@ -125,7 +107,7 @@ namespace Eventuous.Subscriptions {
                 Log?.LogError(
                     e,
                     "Error deserializing event {Strean} {Position} {Type}",
-                    re.OriginalStream,
+                    re.Stream,
                     re.StreamPosition,
                     re.EventType
                 );
@@ -147,12 +129,12 @@ namespace Eventuous.Subscriptions {
                 Log?.LogWarning(
                     e,
                     "Error when handling the event {Stream} {Position} {Type}",
-                    re.OriginalStream,
+                    re.Stream,
                     re.StreamPosition,
                     re.EventType
                 );
 
-                if (_throwOnError) 
+                if (_throwOnError)
                     throw new SubscriptionException(re, evt, e);
             }
 
