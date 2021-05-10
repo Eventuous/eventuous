@@ -77,55 +77,21 @@ namespace Eventuous.Subscriptions {
 
             _lastProcessed = GetPosition(re);
 
-            if (re.EventType.StartsWith("$") || re.Data.IsEmpty) {
+            if (re.EventType.StartsWith("$")) {
                 await Store().Ignore();
                 return;
             }
 
-            object? evt;
-
-            var contentType = string.IsNullOrWhiteSpace(re.ContentType) ? "application/json" : re.ContentType;
-
-            if (contentType != _eventSerializer.ContentType) {
-                Log?.LogError(
-                    "Unknown content type {ContentType} for event {Strean} {Position} {Type}",
-                    contentType,
-                    re.Stream,
-                    re.StreamPosition,
-                    re.EventType
-                );
-
-                if (_throwOnError)
-                    throw new InvalidOperationException($"Unknown content type {contentType}");
-            }
-
             try {
-                evt = _eventSerializer.Deserialize(re.Data.Span, re.EventType);
-            }
-            catch (Exception e) {
-                Log?.LogError(
-                    e,
-                    "Error deserializing event {Strean} {Position} {Type}",
-                    re.Stream,
-                    re.StreamPosition,
-                    re.EventType
-                );
-
-                if (_throwOnError)
-                    throw new DeserializationException(re, e);
-
-                return;
-            }
-
-            try {
-                if (evt != null) {
+                if (re.Payload != null) {
                     await Task.WhenAll(
-                        _eventHandlers.Select(x => x.HandleEvent(evt, (long?) re.StreamPosition, cancellationToken))
+                        _eventHandlers.Select(x => x.HandleEvent(re.Payload, (long?) re.StreamPosition, cancellationToken))
                     ).Ignore();
                 }
             }
             catch (Exception e) {
-                Log?.LogWarning(
+                Log?.Log(
+                    _throwOnError ? LogLevel.Error : LogLevel.Warning,
                     e,
                     "Error when handling the event {Stream} {Position} {Type}",
                     re.Stream,
@@ -134,7 +100,7 @@ namespace Eventuous.Subscriptions {
                 );
 
                 if (_throwOnError)
-                    throw new SubscriptionException(re, evt, e);
+                    throw new SubscriptionException(re.Stream, re.EventType, re.Sequence, re.Payload, e);
             }
 
             await Store().Ignore();
@@ -150,6 +116,44 @@ namespace Eventuous.Subscriptions {
             var checkpoint = new Checkpoint(SubscriptionId, position.Position);
 
             await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).Ignore();
+        }
+
+        protected object? DeserializeData(string eventContentType, string eventType, ReadOnlyMemory<byte> data, string stream, ulong position = 0) {
+            if (data.IsEmpty) return null;
+            
+            var contentType = string.IsNullOrWhiteSpace(eventType) ? "application/json" : eventContentType;
+
+            if (contentType != _eventSerializer.ContentType) {
+                Log?.LogError(
+                    "Unknown content type {ContentType} for event {Stream} {Position} {Type}",
+                    contentType,
+                    stream,
+                    position,
+                    eventType
+                );
+
+                if (_throwOnError)
+                    throw new InvalidOperationException($"Unknown content type {contentType}");
+            }
+
+            try {
+                return _eventSerializer.Deserialize(data.Span, eventType);
+            }
+            catch (Exception e) {
+                Log?.LogError(
+                    e,
+                    "Error deserializing event {Strean} {Position} {Type}",
+                    stream,
+                    position,
+                    eventType
+                );
+
+                if (_throwOnError)
+                    throw new DeserializationException(stream, eventType, position, e);
+
+                return null;
+            }
+            
         }
 
         protected abstract Task<EventSubscription> Subscribe(
@@ -179,18 +183,21 @@ namespace Eventuous.Subscriptions {
         readonly InterlockedSemaphore _resubscribing = new();
 
         protected async Task Resubscribe(TimeSpan delay) {
+            if (_resubscribing.IsClosed()) return;
+            
             Log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
             await Task.Delay(delay).Ignore();
 
-            while (IsRunning && IsDropped && _resubscribing.CanMove()) {
+            while (IsRunning && IsDropped) {
                 try {
+                    _resubscribing.Close();
+
                     var checkpoint = new Checkpoint(SubscriptionId, _lastProcessed?.Position);
 
-                    Subscription = await Subscribe(checkpoint, CancellationToken.None).Ignore();
+                    Subscription = await Subscribe(checkpoint, default).Ignore();
 
                     IsDropped = false;
-                    _resubscribing.Open();
 
                     Log?.LogInformation("Subscription {Subscription} restored", SubscriptionId);
                 }
@@ -198,6 +205,9 @@ namespace Eventuous.Subscriptions {
                     Log?.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
 
                     await Task.Delay(1000).Ignore();
+                }
+                finally {
+                    _resubscribing.Open();
                 }
             }
         }

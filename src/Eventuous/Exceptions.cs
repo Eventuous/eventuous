@@ -2,6 +2,12 @@ using System;
 
 namespace Eventuous {
     public static class Exceptions {
+        public class InvalidIdException : Exception {
+            public InvalidIdException(AggregateId id) : base(
+                $"Aggregate id {id.GetType().Name} cannot have an empty value"
+            ) { }
+        }
+
         public class AggregateNotFound<T> : Exception {
             public AggregateNotFound(string id, Exception? inner) : base(
                 $"Aggregate of type {typeof(T).Name} with id {id} does not exist",

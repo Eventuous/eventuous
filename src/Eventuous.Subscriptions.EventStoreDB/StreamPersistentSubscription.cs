@@ -142,18 +142,28 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     cancellationToken
                 );
 
-            static ReceivedEvent AsReceivedEvent(ResolvedEvent re)
-                => new() {
-                    EventId        = re.Event.EventId.ToString(),
-                    GlobalPosition = re.Event.Position.CommitPosition,
-                    Stream         = re.OriginalStreamId,
-                    StreamPosition = re.Event.EventNumber,
-                    Sequence       = re.Event.EventNumber,
-                    Created        = re.Event.Created,
-                    EventType      = re.Event.EventType,
-                    Data           = re.Event.Data,
-                    Metadata       = re.Event.Metadata
-                };
+            ReceivedEvent AsReceivedEvent(ResolvedEvent re) {
+                var evt = DeserializeData(
+                    re.Event.ContentType,
+                    re.Event.EventType,
+                    re.Event.Data,
+                    re.OriginalStreamId,
+                    re.Event.Position.CommitPosition
+                );
+
+                return new ReceivedEvent(
+                    re.Event.EventId.ToString(),
+                    re.Event.EventType,
+                    re.Event.ContentType,
+                    re.Event.Position.CommitPosition,
+                    re.Event.Position.CommitPosition,
+                    re.OriginalStreamId,
+                    re.Event.EventNumber,
+                    re.Event.Created,
+                    evt
+                    // re.Event.Metadata
+                );
+            }
         }
 
         static Task DefaultEventProcessingFailureHandler(

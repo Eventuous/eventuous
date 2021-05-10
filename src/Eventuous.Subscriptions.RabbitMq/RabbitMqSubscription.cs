@@ -191,16 +191,24 @@ namespace Eventuous.Subscriptions.RabbitMq {
             BasicDeliverEventArgs received,
             ChannelWriter<Event>  writer
         ) {
-            _log?.LogDebug("Consuming from RabbitMq");
+            var evt = DeserializeData(
+                received.BasicProperties.ContentType,
+                received.BasicProperties.Type,
+                received.Body,
+                received.Exchange
+            );
 
-            var receivedEvent = new ReceivedEvent {
-                Created     = received.BasicProperties.Timestamp.ToDateTime(),
-                Data        = received.Body.ToArray(),
-                EventId     = received.BasicProperties.MessageId,
-                EventType   = received.BasicProperties.Type,
-                ContentType = received.BasicProperties.ContentType,
-                Sequence    = received.DeliveryTag
-            };
+            var receivedEvent = new ReceivedEvent(
+                received.BasicProperties.MessageId,
+                received.BasicProperties.Type,
+                received.BasicProperties.ContentType,
+                0,
+                0,
+                received.Exchange,
+                received.DeliveryTag,
+                received.BasicProperties.Timestamp.ToDateTime(),
+                evt
+            );
 
             await writer.WriteAsync(new Event(received, receivedEvent)).Ignore();
         }

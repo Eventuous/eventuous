@@ -127,15 +127,22 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             return new EventSubscription(SubscriptionId, this);
 
             async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
-                var receivedEvent = new ReceivedEvent {
-                    Created        = msg.PublishTime.ToDateTime(),
-                    Data           = msg.Data.ToByteArray(),
-                    ContentType    = msg.Attributes["contentType"],
-                    EventType      = msg.Attributes["eventType"],
-                    EventId        = msg.MessageId,
-                    GlobalPosition = 0,
-                    Sequence       = 0
-                };
+                var eventType   = msg.Attributes["eventType"];
+                var contentType = msg.Attributes["contentType"];
+
+                var evt = DeserializeData(contentType, eventType, msg.Data.ToByteArray(), _topicName.TopicId);
+                
+                var receivedEvent = new ReceivedEvent(
+                    msg.MessageId,
+                    eventType,
+                    contentType,
+                    0,
+                    0,
+                    _topicName.TopicId,
+                    0,
+                    msg.PublishTime.ToDateTime(),
+                    evt
+                );
 
                 try {
                     await Handler(receivedEvent, ct).Ignore();

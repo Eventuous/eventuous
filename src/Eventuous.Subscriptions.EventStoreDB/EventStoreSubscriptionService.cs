@@ -9,10 +9,6 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Subscriptions.EventStoreDB {
     [PublicAPI]
     public abstract class EventStoreSubscriptionService : SubscriptionService {
-        readonly ISubscriptionGapMeasure? _measure;
-        readonly ILogger?                 _log;
-        readonly Logging?                 _debugLog;
-
         protected EventStoreClient EventStoreClient { get; }
 
         protected EventStoreSubscriptionService(

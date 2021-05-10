@@ -4,18 +4,14 @@ using System.Collections.Generic;
 
 namespace Eventuous.Subscriptions {
     public class DeserializationException : Exception {
-        public DeserializationException(ReceivedEvent re, Exception e)
-            : base($"Error deserializing event {re.Stream} {re.StreamPosition} {re.EventType}", e) {
-            Data.Add("ReceivedEvent", re);
+        public DeserializationException(string stream, string eventType, ulong position, Exception e)
+            : base($"Error deserializing event {stream} {position} {eventType}", e) {
         }
-
-        public sealed override IDictionary Data { get; } = new Dictionary<string, object>();
     }
 
     public class SubscriptionException : Exception {
-        public SubscriptionException(ReceivedEvent re, object? evt, Exception e)
-            : base($"Error processing event {re.Stream} {re.StreamPosition} {re.EventType}", e) {
-            Data.Add("ReceivedEvent", re);
+        public SubscriptionException(string stream, string eventType, ulong position, object? evt, Exception e)
+            : base($"Error processing event {stream} {position} {eventType}", e) {
             Data.Add("Event", evt);
         }
 
