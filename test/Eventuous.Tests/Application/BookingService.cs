@@ -4,6 +4,7 @@ namespace Eventuous.Tests.Application {
     public class BookingService : ApplicationService<Booking, BookingState, BookingId> {
         public BookingService(IAggregateStore store) : base(store) {
             OnNew<Commands.BookRoom>(
+                cmd => new BookingId(cmd.BookingId),
                 (booking, cmd)
                     => booking.BookRoom(
                         new BookingId(cmd.BookingId),
