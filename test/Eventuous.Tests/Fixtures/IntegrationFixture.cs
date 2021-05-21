@@ -17,7 +17,7 @@ namespace Eventuous.Tests.Fixtures {
         public IntegrationFixture() {
             var settings = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
             var client   = new EventStoreClient(settings);
-            EventStore     = new EsDbEventStore(client);
+            EventStore     = new EsdbEventStore(client);
             AggregateStore = new AggregateStore(EventStore, Serializer);
         }
     }

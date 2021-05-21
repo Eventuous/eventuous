@@ -83,6 +83,8 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             loggerFactory,
             measure
         ) {
+            _options = options;
+
             _failureHandler = Ensure.NotNull(options, nameof(options)).FailureHandler
                            ?? DefaultEventProcessingErrorHandler;
 
@@ -131,7 +133,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                 var contentType = msg.Attributes["contentType"];
 
                 var evt = DeserializeData(contentType, eventType, msg.Data.ToByteArray(), _topicName.TopicId);
-                
+
                 var receivedEvent = new ReceivedEvent(
                     msg.MessageId,
                     eventType,

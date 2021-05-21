@@ -56,30 +56,9 @@ namespace Eventuous {
 
                 aggregate!.Fold(evt);
             }
+
+            object? Deserialize(StreamEvent streamEvent)
+                => _serializer.Deserialize(streamEvent.Data.AsSpan(), streamEvent.EventType);
         }
-
-        public async Task<T> LoadState<T, TId>(StreamName stream, CancellationToken cancellationToken)
-            where T : AggregateState<T, TId>, new() where TId : AggregateId {
-            var state = new T();
-
-            try {
-                await _eventStore.ReadStream(stream, StreamReadPosition.Start, Fold, cancellationToken).Ignore();
-            }
-            catch (Exceptions.StreamNotFound e) {
-                throw new Exceptions.StreamNotFound(stream);
-            }
-
-            return state;
-            
-            void Fold(StreamEvent streamEvent) {
-                var evt = Deserialize(streamEvent);
-                if (evt == null) return;
-
-                state = state.When(evt);
-            }
-        }
-
-        object? Deserialize(StreamEvent streamEvent)
-            => _serializer.Deserialize(streamEvent.Data.AsSpan(), streamEvent.EventType);
     }
 }

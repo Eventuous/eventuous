@@ -1,14 +1,30 @@
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Eventuous
 {
+    /// <summary>
+    /// Aggregate state persistent store
+    /// </summary>
+    [PublicAPI]
     public interface IAggregateStore {
-        Task Store<T>(T entity, CancellationToken cancellationToken) where T : Aggregate;
+        /// <summary>
+        /// Store the new or updated aggregate state
+        /// </summary>
+        /// <param name="aggregate">Aggregate instance, which needs to be persisted</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <typeparam name="T">Aggregate type</typeparam>
+        /// <returns></returns>
+        Task Store<T>(T aggregate, CancellationToken cancellationToken) where T : Aggregate;
 
+        /// <summary>
+        /// Load the aggregate from the store for a given id
+        /// </summary>
+        /// <param name="id">Aggregate id</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <typeparam name="T">Aggregate type</typeparam>
+        /// <returns></returns>
         Task<T> Load<T>(string id, CancellationToken cancellationToken) where T : Aggregate, new();
-
-        Task<T> LoadState<T, TId>(StreamName stream, CancellationToken cancellationToken)
-            where T : AggregateState<T, TId>, new() where TId : AggregateId;
     }
 }

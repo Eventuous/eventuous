@@ -8,12 +8,12 @@ using JetBrains.Annotations;
 
 namespace Eventuous.EventStoreDB {
     [PublicAPI]
-    public class EsDbEventStore : IEventStore {
+    public class EsdbEventStore : IEventStore {
         readonly EventStoreClient _client;
 
-        public EsDbEventStore(EventStoreClient client) => _client = Ensure.NotNull(client, nameof(client));
+        public EsdbEventStore(EventStoreClient client) => _client = Ensure.NotNull(client, nameof(client));
 
-        public EsDbEventStore(EventStoreClientSettings clientSettings)
+        public EsdbEventStore(EventStoreClientSettings clientSettings)
             : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings)))) { }
 
         public async Task AppendEvents(
