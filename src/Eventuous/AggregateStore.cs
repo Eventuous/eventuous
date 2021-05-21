@@ -15,21 +15,23 @@ namespace Eventuous {
             _serializer = Ensure.NotNull(serializer, nameof(serializer));
         }
 
-        public async Task Store<T>(T aggregate, CancellationToken cancellationToken)
+        public async Task<AppendEventsResult> Store<T>(T aggregate, CancellationToken cancellationToken)
             where T : Aggregate {
             Ensure.NotNull(aggregate, nameof(aggregate));
 
-            if (aggregate.Changes.Count == 0) return;
+            if (aggregate.Changes.Count == 0) return AppendEventsResult.NoOp;
 
             var stream          = StreamName.For<T>(aggregate.GetId());
             var expectedVersion = new ExpectedStreamVersion(aggregate.OriginalVersion);
 
-            await _eventStore.AppendEvents(
+            var result = await _eventStore.AppendEvents(
                 stream,
                 expectedVersion,
                 aggregate.Changes.Select(ToStreamEvent).ToArray(),
                 cancellationToken
             ).Ignore();
+
+            return result;
 
             StreamEvent ToStreamEvent(object evt)
                 => new(TypeMap.GetTypeName(evt), _serializer.Serialize(evt), null, _serializer.ContentType);

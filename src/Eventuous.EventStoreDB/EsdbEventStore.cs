@@ -16,7 +16,7 @@ namespace Eventuous.EventStoreDB {
         public EsdbEventStore(EventStoreClientSettings clientSettings)
             : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings)))) { }
 
-        public async Task AppendEvents(
+        public async Task<AppendEventsResult> AppendEvents(
             string                           stream,
             ExpectedStreamVersion            expectedVersion,
             IReadOnlyCollection<StreamEvent> events,
@@ -24,7 +24,7 @@ namespace Eventuous.EventStoreDB {
         ) {
             var proposedEvents = events.Select(ToEventData);
 
-            Task resultTask;
+            Task<IWriteResult> resultTask;
 
             if (expectedVersion == ExpectedStreamVersion.NoStream)
                 resultTask = _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents, cancellationToken: cancellationToken);
@@ -38,7 +38,12 @@ namespace Eventuous.EventStoreDB {
                     cancellationToken: cancellationToken
                 );
 
-            await resultTask.Ignore();
+            var result = await resultTask.Ignore();
+
+            return new AppendEventsResult(
+                result.LogPosition.CommitPosition,
+                result.NextExpectedStreamRevision.ToInt64()
+            );
 
             static EventData ToEventData(StreamEvent streamEvent)
                 => new(

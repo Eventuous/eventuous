@@ -7,30 +7,37 @@ using System.Threading.Tasks;
 namespace Eventuous.Tests.Fakes {
     public class InMemoryEventStore : IEventStore {
         readonly Dictionary<string, List<StreamEvent>> _storage = new();
+        readonly List<StreamEvent>                     _global  = new();
 
-        public Task AppendEvents(
+        public Task<AppendEventsResult> AppendEvents(
             string                           stream,
             ExpectedStreamVersion            expectedVersion,
             IReadOnlyCollection<StreamEvent> events,
             CancellationToken                cancellationToken
         ) {
-            return _storage.TryGetValue(stream, out var existing) ? AddToExisting() : AddToNew();
+            if (_storage.TryGetValue(stream, out var existing)) AddToExisting();
+            else AddToNew();
 
-            Task AddToExisting() {
+            _global.AddRange(events);
+
+            return Task.FromResult(new AppendEventsResult((ulong) (_global.Count - 1), _storage[stream].Count));
+
+            void AddToExisting() {
                 if (existing.Count >= expectedVersion.Value)
                     throw new WrongVersion(expectedVersion, existing.Count - 1);
 
                 existing.AddRange(events);
-                return Task.CompletedTask;
             }
 
-            Task AddToNew() {
-                _storage[stream] = events.ToList();
-                return Task.CompletedTask;
-            }
+            void AddToNew() => _storage[stream] = events.ToList();
         }
 
-        public Task<StreamEvent[]> ReadEvents(string stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
+        public Task<StreamEvent[]> ReadEvents(
+            string             stream,
+            StreamReadPosition start,
+            int                count,
+            CancellationToken  cancellationToken
+        )
             => Task.FromResult(FindStream(stream).Take(count).ToArray());
 
         public Task<StreamEvent[]> ReadEventsBackwards(string stream, int count, CancellationToken cancellationToken) {
@@ -40,7 +47,12 @@ namespace Eventuous.Tests.Fakes {
             return Task.FromResult(reversed.Take(count).ToArray());
         }
 
-        public Task ReadStream(string stream, StreamReadPosition start, Action<StreamEvent> callback, CancellationToken cancellationToken) {
+        public Task ReadStream(
+            string              stream,
+            StreamReadPosition  start,
+            Action<StreamEvent> callback,
+            CancellationToken   cancellationToken
+        ) {
             foreach (var streamEvent in FindStream(stream)) {
                 callback(streamEvent);
             }

@@ -232,9 +232,9 @@ namespace Eventuous {
 
             var result = await registeredHandler.Handler(aggregate, command, cancellationToken).Ignore();
 
-            await Store.Store(result, cancellationToken).Ignore();
+            var storeResult = await Store.Store(result, cancellationToken).Ignore();
 
-            return new OkResult<T, TState, TId>(result.State, result.Changes);
+            return new OkResult<T, TState, TId>(result.State, result.Changes, storeResult.GlobalPosition);
 
             Task<T> Load() => Store.Load<T, TState, TId>(id, cancellationToken);
 

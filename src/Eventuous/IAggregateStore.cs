@@ -16,7 +16,7 @@ namespace Eventuous
         /// <param name="cancellationToken">Cancellation token</param>
         /// <typeparam name="T">Aggregate type</typeparam>
         /// <returns></returns>
-        Task Store<T>(T aggregate, CancellationToken cancellationToken) where T : Aggregate;
+        Task<AppendEventsResult> Store<T>(T aggregate, CancellationToken cancellationToken) where T : Aggregate;
 
         /// <summary>
         /// Load the aggregate from the store for a given id
