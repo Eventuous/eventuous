@@ -13,6 +13,6 @@ namespace Eventuous {
             where T : Aggregate<TState, TId>, new()
             where TState : AggregateState<TState, TId>, new()
             where TId : AggregateId
-            => store.Load<T>(id.ToString(), cancellationToken);
+            => store.Load<T>(id, cancellationToken);
     }
 }
