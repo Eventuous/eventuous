@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SqlStreamStore" Version="1.2.0" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SqlStreamStore" Version="1.2.0" />
+    <PackageReference Include="SqlStreamStore.MsSql" Version="1.2.0" />
+    <PackageReference Include="SqlStreamStore.Mysql" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
+    <ProjectReference Include="..\Eventuous.Producers\Eventuous.Producers.csproj" />
+  </ItemGroup>
+
+</Project>
