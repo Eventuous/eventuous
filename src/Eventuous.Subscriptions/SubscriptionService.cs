@@ -57,11 +57,11 @@ namespace Eventuous.Subscriptions {
                 _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
             }
 
-            var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken).Ignore();
+            var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken).NoContext();
 
             _lastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
 
-            Subscription = await Subscribe(checkpoint, cancellationToken).Ignore();
+            Subscription = await Subscribe(checkpoint, cancellationToken).NoContext();
 
             IsRunning = true;
 
@@ -78,7 +78,7 @@ namespace Eventuous.Subscriptions {
             _lastProcessed = GetPosition(re);
 
             if (re.EventType.StartsWith("$")) {
-                await Store().Ignore();
+                await Store().NoContext();
                 return;
             }
 
@@ -86,7 +86,7 @@ namespace Eventuous.Subscriptions {
                 if (re.Payload != null) {
                     await Task.WhenAll(
                         _eventHandlers.Select(x => x.HandleEvent(re.Payload, (long?) re.StreamPosition, cancellationToken))
-                    ).Ignore();
+                    ).NoContext();
                 }
             }
             catch (Exception e) {
@@ -103,7 +103,7 @@ namespace Eventuous.Subscriptions {
                     throw new SubscriptionException(re.Stream, re.EventType, re.Sequence, re.Payload, e);
             }
 
-            await Store().Ignore();
+            await Store().NoContext();
 
             Task Store() => StoreCheckpoint(GetPosition(re), cancellationToken);
 
@@ -115,7 +115,7 @@ namespace Eventuous.Subscriptions {
             _lastProcessed = position;
             var checkpoint = new Checkpoint(SubscriptionId, position.Position);
 
-            await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).Ignore();
+            await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
         }
 
         protected object? DeserializeData(string eventContentType, string eventType, ReadOnlyMemory<byte> data, string stream, ulong position = 0) {
@@ -168,14 +168,14 @@ namespace Eventuous.Subscriptions {
                 _cts?.Cancel();
 
                 try {
-                    await _measureTask.Ignore();
+                    await _measureTask.NoContext();
                 }
                 catch (OperationCanceledException) {
                     // Expected
                 }
             }
 
-            await Subscription.Stop(cancellationToken).Ignore();
+            await Subscription.Stop(cancellationToken).NoContext();
 
             Log?.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
         }
@@ -187,7 +187,7 @@ namespace Eventuous.Subscriptions {
             
             Log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
-            await Task.Delay(delay).Ignore();
+            await Task.Delay(delay).NoContext();
 
             while (IsRunning && IsDropped) {
                 try {
@@ -195,7 +195,7 @@ namespace Eventuous.Subscriptions {
 
                     var checkpoint = new Checkpoint(SubscriptionId, _lastProcessed?.Position);
 
-                    Subscription = await Subscribe(checkpoint, default).Ignore();
+                    Subscription = await Subscribe(checkpoint, default).NoContext();
 
                     IsDropped = false;
 
@@ -204,7 +204,7 @@ namespace Eventuous.Subscriptions {
                 catch (Exception e) {
                     Log?.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
 
-                    await Task.Delay(1000).Ignore();
+                    await Task.Delay(1000).NoContext();
                 }
                 finally {
                     _resubscribing.Open();
@@ -237,7 +237,7 @@ namespace Eventuous.Subscriptions {
 
         async Task MeasureGap(CancellationToken cancellationToken) {
             while (!cancellationToken.IsCancellationRequested) {
-                var (position, created) = await GetLastEventPosition(cancellationToken).Ignore();
+                var (position, created) = await GetLastEventPosition(cancellationToken).NoContext();
 
                 if (_lastProcessed?.Position != null && position != null) {
                     _gap = (ulong) position - _lastProcessed.Position.Value;
@@ -245,7 +245,7 @@ namespace Eventuous.Subscriptions {
                     _measure!.PutGap(SubscriptionId, _gap, created);
                 }
 
-                await Task.Delay(1000, cancellationToken).Ignore();
+                await Task.Delay(1000, cancellationToken).NoContext();
             }
         }
 

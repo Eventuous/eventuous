@@ -38,7 +38,7 @@ namespace Eventuous.EventStoreDB {
                     cancellationToken: cancellationToken
                 );
 
-            var result = await resultTask.Ignore();
+            var result = await resultTask.NoContext();
 
             return new AppendEventsResult(
                 result.LogPosition.CommitPosition,
@@ -59,7 +59,7 @@ namespace Eventuous.EventStoreDB {
             var read     = _client.ReadStreamAsync(Direction.Forwards, stream, position, count);
 
             try {
-                var resolvedEvents = await read.ToArrayAsync(cancellationToken).Ignore();
+                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
                 return ToStreamEvents(resolvedEvents);
             }
             catch (StreamNotFoundException) {
@@ -71,7 +71,7 @@ namespace Eventuous.EventStoreDB {
             var read = _client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, count);
 
             try {
-                var resolvedEvents = await read.ToArrayAsync(cancellationToken).Ignore();
+                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
                 return ToStreamEvents(resolvedEvents);
             }
             catch (StreamNotFoundException) {

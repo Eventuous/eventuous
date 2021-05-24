@@ -116,15 +116,15 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             CancellationToken cancellationToken
         ) {
             await CreateSubscription(_subscriptionName, _topicName, _options?.PushConfig, _options?.AckDeadline ?? 60)
-                .Ignore();
+                .NoContext();
 
             _client = await CreateAsync(
                 _subscriptionName,
                 _options?.ClientCreationSettings,
                 _options?.Settings
-            ).Ignore();
+            ).NoContext();
 
-            _metricClient   = await MetricServiceClient.CreateAsync(cancellationToken).Ignore();
+            _metricClient   = await MetricServiceClient.CreateAsync(cancellationToken).NoContext();
             _subscriberTask = _client.StartAsync(Handle);
             return new EventSubscription(SubscriptionId, this);
 
@@ -147,11 +147,11 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                 );
 
                 try {
-                    await Handler(receivedEvent, ct).Ignore();
+                    await Handler(receivedEvent, ct).NoContext();
                     return Reply.Ack;
                 }
                 catch (Exception ex) {
-                    return await _failureHandler(_client, msg, ex).Ignore();
+                    return await _failureHandler(_client, msg, ex).NoContext();
                 }
             }
         }
@@ -169,8 +169,8 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                 EndTime   = Timestamp.FromDateTime(DateTime.UtcNow)
             };
 
-            var undelivered = await GetPoint(_undeliveredCountRequest).Ignore();
-            var oldestAge = await GetPoint(_oldestAgeRequest).Ignore();
+            var undelivered = await GetPoint(_undeliveredCountRequest).NoContext();
+            var oldestAge = await GetPoint(_oldestAgeRequest).NoContext();
             var age = oldestAge == null ? DateTime.UtcNow : DateTime.UtcNow.AddSeconds(-oldestAge.Value.Int64Value);
 
             return new EventPosition((ulong?) undelivered?.Value?.Int64Value, age);
@@ -179,16 +179,16 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                 request.Interval = interval;
 
                 var result = _metricClient!.ListTimeSeriesAsync(request);
-                var page   = await result.ReadPageAsync(1, cancellationToken).Ignore();
+                var page   = await result.ReadPageAsync(1, cancellationToken).NoContext();
                 return page.FirstOrDefault()?.Points?.FirstOrDefault();
             }
         }
 
         public async Task Stop(CancellationToken cancellationToken = default) {
             if (_client != null)
-                await _client.StopAsync(cancellationToken).Ignore();
+                await _client.StopAsync(cancellationToken).NoContext();
 
-            await _subscriberTask.Ignore();
+            await _subscriberTask.NoContext();
         }
 
         public async Task CreateSubscription(
@@ -197,12 +197,12 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             PushConfig?      pushConfig,
             int              ackDeadline
         ) {
-            var subscriberServiceApiClient = await SubscriberServiceApiClient.CreateAsync().Ignore();
-            var publisherServiceApiClient  = await PublisherServiceApiClient.CreateAsync().Ignore();
+            var subscriberServiceApiClient = await SubscriberServiceApiClient.CreateAsync().NoContext();
+            var publisherServiceApiClient  = await PublisherServiceApiClient.CreateAsync().NoContext();
 
             try {
                 Log?.LogInformation("Checking topic {Topic}", topicName);
-                await publisherServiceApiClient.CreateTopicAsync(topicName).Ignore();
+                await publisherServiceApiClient.CreateTopicAsync(topicName).NoContext();
                 Log?.LogInformation("Created topic {Topic}", topicName);
             }
             catch (RpcException e) when (e.Status.StatusCode == StatusCode.AlreadyExists) {
@@ -217,7 +217,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                     topicName,
                     pushConfig,
                     ackDeadline
-                ).Ignore();
+                ).NoContext();
 
                 Log?.LogInformation("Created subscription {Subscription} for {Topic}", subscriptionName, topicName);
             }

@@ -92,7 +92,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             PersistentSubscription sub;
 
             try {
-                sub = await LocalSubscribe().Ignore();
+                sub = await LocalSubscribe().NoContext();
             }
             catch (PersistentSubscriptionNotFoundException) {
                 await _subscriptionClient.CreateAsync(
@@ -101,9 +101,9 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     settings,
                     _options.Credentials,
                     cancellationToken
-                ).Ignore();
+                ).NoContext();
 
-                sub = await LocalSubscribe().Ignore();
+                sub = await LocalSubscribe().NoContext();
             }
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
@@ -120,13 +120,13 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 var receivedEvent = AsReceivedEvent(re);
 
                 try {
-                    await Handler(receivedEvent, ct).Ignore();
+                    await Handler(receivedEvent, ct).NoContext();
 
                     if (!autoAck)
-                        await subscription.Ack(re).Ignore();
+                        await subscription.Ack(re).NoContext();
                 }
                 catch (Exception e) {
-                    await _handleEventProcessingFailure(EventStoreClient, subscription, re, e).Ignore();
+                    await _handleEventProcessingFailure(EventStoreClient, subscription, re, e).NoContext();
                 }
             }
 

@@ -161,7 +161,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 document,
                 options,
                 cancellationToken
-            ).Ignore();
+            ).NoContext();
         }
 
         public static Task ReplaceDocument<T>(
@@ -179,7 +179,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
             if (IsNullOrWhiteSpace(id))
                 throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
-            var result = await collection.DeleteOneAsync(x => x.Id == id, cancellationToken).Ignore();
+            var result = await collection.DeleteOneAsync(x => x.Id == id, cancellationToken).NoContext();
 
             return result.DeletedCount == 1;
         }
@@ -191,7 +191,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
         ) where T : Document {
             if (filter == null) throw new ArgumentNullException(nameof(filter));
 
-            var result = await collection.DeleteManyAsync(filter, cancellationToken).Ignore();
+            var result = await collection.DeleteManyAsync(filter, cancellationToken).NoContext();
 
             return result.DeletedCount;
         }
@@ -222,7 +222,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 )
             );
 
-            var result = await collection.BulkWriteAsync(models, options, cancellationToken).Ignore();
+            var result = await collection.BulkWriteAsync(models, options, cancellationToken).NoContext();
 
             return result.ModifiedCount;
         }
@@ -238,7 +238,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
 
             configure?.Invoke(options);
 
-            return await collection.BulkWriteAsync(documents.Select(write), options, cancellationToken).Ignore();
+            return await collection.BulkWriteAsync(documents.Select(write), options, cancellationToken).NoContext();
         }
 
         public static Task<long> BulkUpdateDocuments<T>(
@@ -278,7 +278,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
             configure?.Invoke(options);
 
             try {
-                return await CreateIndex().Ignore();
+                return await CreateIndex().NoContext();
             }
             catch (MongoCommandException ex) when (ex.Message.Contains("already exists")) {
                 // Ignore
@@ -312,7 +312,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
                 update,
                 options,
                 cancellationToken
-            ).Ignore();
+            ).NoContext();
         }
 
         public static Task UpdateDocument<T>(
@@ -415,7 +415,7 @@ namespace Eventuous.Projections.MongoDB.Tools {
 
             configure?.Invoke(options);
 
-            var result = await collection.UpdateManyAsync(filter, update, options, cancellationToken).Ignore();
+            var result = await collection.UpdateManyAsync(filter, update, options, cancellationToken).NoContext();
 
             return result.ModifiedCount;
         }

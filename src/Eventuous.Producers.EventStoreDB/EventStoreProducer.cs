@@ -56,7 +56,7 @@ namespace Eventuous.Producers.EventStoreDB {
                     options?.ConfigureOperation,
                     options?.Credentials,
                     cancellationToken
-                ).Ignore();
+                ).NoContext();
             }
         }
 

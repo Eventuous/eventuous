@@ -18,7 +18,7 @@ namespace Eventuous {
             where T : AggregateState<T, TId>, new() where TId : AggregateId {
             var state = new T();
 
-            await _eventStore.ReadStream(stream, StreamReadPosition.Start, Fold, cancellationToken).Ignore();
+            await _eventStore.ReadStream(stream, StreamReadPosition.Start, Fold, cancellationToken).NoContext();
 
             return state;
 

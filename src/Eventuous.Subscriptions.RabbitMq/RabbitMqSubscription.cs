@@ -165,7 +165,7 @@ namespace Eventuous.Subscriptions.RabbitMq {
                     var (message, re) = await consumeChannel.Reader.ReadAsync(CancellationToken.None);
 
                     try {
-                        await Handler(re, CancellationToken.None).Ignore();
+                        await Handler(re, CancellationToken.None).NoContext();
                         _channel.BasicAck(message.DeliveryTag, false);
                     }
                     catch (Exception e) {
@@ -210,7 +210,7 @@ namespace Eventuous.Subscriptions.RabbitMq {
                 evt
             );
 
-            await writer.WriteAsync(new Event(received, receivedEvent)).Ignore();
+            await writer.WriteAsync(new Event(received, receivedEvent)).NoContext();
         }
 
         protected override Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {

@@ -32,7 +32,7 @@ namespace Eventuous {
         protected void OnNew<TCommand>(Func<TCommand, TId> getId, Action<T, TCommand> action) where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
-                new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd, _) => AsTask(aggregate!, cmd, action))
+                new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action))
             );
 
             _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand) cmd)));
@@ -52,7 +52,7 @@ namespace Eventuous {
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
-                new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd, ct) => AsTask(aggregate!, cmd, ct, action))
+                new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd, ct) => AsTask(aggregate, cmd, ct, action))
             );
 
             _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand) cmd)));
@@ -68,7 +68,10 @@ namespace Eventuous {
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
-                new RegisteredHandler<T>(ExpectedState.Existing, (aggregate, cmd, _) => AsTask(aggregate!, cmd, action))
+                new RegisteredHandler<T>(
+                    ExpectedState.Existing,
+                    (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
+                )
             );
 
             _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand) cmd)));
@@ -90,7 +93,7 @@ namespace Eventuous {
                 typeof(TCommand),
                 new RegisteredHandler<T>(
                     ExpectedState.Existing,
-                    (aggregate, cmd, ct) => AsTask(aggregate!, cmd, ct, action)
+                    (aggregate, cmd, ct) => AsTask(aggregate, cmd, ct, action)
                 )
             );
 
@@ -108,7 +111,7 @@ namespace Eventuous {
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
-                new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, _) => AsTask(aggregate!, cmd, action))
+                new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action))
             );
 
             _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand) cmd)));
@@ -128,7 +131,7 @@ namespace Eventuous {
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
-                new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, ct) => AsTask(aggregate!, cmd, ct, action))
+                new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, ct) => AsTask(aggregate, cmd, ct, action))
             );
 
             _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand) cmd)));
@@ -145,10 +148,10 @@ namespace Eventuous {
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
-                new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, _) => AsTask(aggregate!, cmd, action))
+                new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action))
             );
 
-            _getId.TryAdd(typeof(TCommand), async (cmd, ct) => await getId((TCommand) cmd, ct).Ignore());
+            _getId.TryAdd(typeof(TCommand), async (cmd, ct) => await getId((TCommand) cmd, ct).NoContext());
         }
 
         /// <summary>
@@ -165,10 +168,10 @@ namespace Eventuous {
             where TCommand : class {
             _handlers.Add(
                 typeof(TCommand),
-                new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, ct) => AsTask(aggregate!, cmd, ct, action))
+                new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, ct) => AsTask(aggregate, cmd, ct, action))
             );
 
-            _getId.TryAdd(typeof(TCommand), async (cmd, ct) => await getId((TCommand) cmd, ct).Ignore());
+            _getId.TryAdd(typeof(TCommand), async (cmd, ct) => await getId((TCommand) cmd, ct).NoContext());
         }
 
         /// <summary>
@@ -181,11 +184,11 @@ namespace Eventuous {
                 typeof(TCommand),
                 new RegisteredHandler<T>(
                     ExpectedState.Unknown,
-                    async (_, cmd, ct) => await action((TCommand) cmd, ct)
+                    async (_, cmd, ct) => await action((TCommand) cmd, ct).NoContext()
                 )
             );
 
-        static ValueTask<T> AsTask<TCommand>(T aggregate, object cmd, Action<T, TCommand> action) {
+        static ValueTask<T> SyncAsTask<TCommand>(T aggregate, object cmd, Action<T, TCommand> action) {
             action(aggregate, (TCommand) cmd);
             return new ValueTask<T>(aggregate);
         }
@@ -196,7 +199,7 @@ namespace Eventuous {
             CancellationToken                          cancellationToken,
             Func<T, TCommand, CancellationToken, Task> action
         ) {
-            await action(aggregate, (TCommand) cmd, cancellationToken).Ignore();
+            await action(aggregate, (TCommand) cmd, cancellationToken).NoContext();
             return aggregate;
         }
 
@@ -217,12 +220,10 @@ namespace Eventuous {
                 throw new Exceptions.CommandHandlerNotFound(typeof(TCommand));
             }
 
-            var id = await _getId[typeof(TCommand)](command, cancellationToken).Ignore();
-
             var aggregate = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await TryLoad().Ignore(),
-                ExpectedState.Existing => await Load().Ignore(),
-                ExpectedState.New      => Create(),
+                ExpectedState.Any      => await TryLoad().NoContext(),
+                ExpectedState.Existing => await Load().NoContext(),
+                ExpectedState.New      => await Create().NoContext(),
                 ExpectedState.Unknown  => default,
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(registeredHandler.ExpectedState),
@@ -230,32 +231,37 @@ namespace Eventuous {
                 )
             };
 
-            var result = await registeredHandler.Handler(aggregate, command, cancellationToken).Ignore();
+            var result = await registeredHandler.Handler(aggregate!, command, cancellationToken).NoContext();
 
-            var storeResult = await Store.Store(result, cancellationToken).Ignore();
+            var storeResult = await Store.Store(result, cancellationToken).NoContext();
 
             return new OkResult<T, TState, TId>(result.State, result.Changes, storeResult.GlobalPosition);
 
-            Task<T> Load() => Store.Load<T, TState, TId>(id, cancellationToken);
+            async Task<T> Load() {
+                var id = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();
+                return await Store.Load<T, TState, TId>(id, cancellationToken).NoContext();
+            }
 
             async Task<T> TryLoad() {
                 try {
-                    return await Load().Ignore();
+                    return await Load().NoContext();
                 }
                 catch (Exceptions.AggregateNotFound<T>) {
-                    return Create();
+                    return await Create().NoContext();
                 }
             }
 
-            T Create() {
+            async ValueTask<T> Create() {
                 var newInstance = new T();
+
+                var id = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();
                 newInstance.State = newInstance.State.SetId(id);
                 return newInstance;
             }
         }
     }
 
-    record RegisteredHandler<T>(ExpectedState ExpectedState, Func<T?, object, CancellationToken, ValueTask<T>> Handler);
+    record RegisteredHandler<T>(ExpectedState ExpectedState, Func<T, object, CancellationToken, ValueTask<T>> Handler);
 
     class HandlersMap<T> : Dictionary<Type, RegisteredHandler<T>> { }
 

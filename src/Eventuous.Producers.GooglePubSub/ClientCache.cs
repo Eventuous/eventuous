@@ -24,26 +24,26 @@ namespace Eventuous.Producers.GooglePubSub {
         public async Task<PublisherClient> GetOrAddPublisher(string topic, CancellationToken cancellationToken) {
             if (_clients.TryGetValue(topic, out var client)) return client;
 
-            client = await CreateTopicAndClient(topic, cancellationToken).Ignore();
+            client = await CreateTopicAndClient(topic, cancellationToken).NoContext();
             _clients.TryAdd(topic, client);
             return client;
         }
 
         async Task<PublisherClient> CreateTopicAndClient(string topicId, CancellationToken cancellationToken) {
-            var publisherServiceApiClient = await PublisherServiceApiClient.CreateAsync(cancellationToken).Ignore();
+            var publisherServiceApiClient = await PublisherServiceApiClient.CreateAsync(cancellationToken).NoContext();
 
             var topicName = TopicName.FromProjectTopic(_projectId, topicId);
 
             try {
                 _log?.LogInformation("Checking topic {Topic}", topicName);
-                await publisherServiceApiClient.CreateTopicAsync(topicName, cancellationToken).Ignore();
+                await publisherServiceApiClient.CreateTopicAsync(topicName, cancellationToken).NoContext();
                 _log?.LogInformation("Created topic {Topic}", topicName);
             }
             catch (RpcException e) when (e.Status.StatusCode == StatusCode.AlreadyExists) {
                 _log?.LogInformation("Topic {Topic} exists", topicName);
             }
 
-            return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings).Ignore();
+            return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings).NoContext();
         }
 
         public IEnumerable<PublisherClient> GetAllClients() => _clients.Values;

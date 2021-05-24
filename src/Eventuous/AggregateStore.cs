@@ -29,7 +29,7 @@ namespace Eventuous {
                 expectedVersion,
                 aggregate.Changes.Select(ToStreamEvent).ToArray(),
                 cancellationToken
-            ).Ignore();
+            ).NoContext();
 
             return result;
 
@@ -44,7 +44,7 @@ namespace Eventuous {
             var aggregate = new T();
 
             try {
-                await _eventStore.ReadStream(stream, StreamReadPosition.Start, Fold, cancellationToken).Ignore();
+                await _eventStore.ReadStream(stream, StreamReadPosition.Start, Fold, cancellationToken).NoContext();
             }
             catch (Exceptions.StreamNotFound e) {
                 throw new Exceptions.AggregateNotFound<T>(id, e);

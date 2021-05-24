@@ -82,8 +82,8 @@ namespace Eventuous.Producers.GooglePubSub {
             PubSubProduceOptions? options,
             CancellationToken     cancellationToken
         ) {
-            var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).Ignore();
-            await Produce(client, message, type, options).Ignore();
+            var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
+            await Produce(client, message, type, options).NoContext();
         }
 
         protected override async Task ProduceMany(
@@ -92,7 +92,7 @@ namespace Eventuous.Producers.GooglePubSub {
             PubSubProduceOptions? options,
             CancellationToken     cancellationToken
         ) {
-            var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).Ignore();
+            var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
             await Task.WhenAll(messages.Select(x => Produce(client, x, x.GetType(), options)));
         }
 
@@ -103,7 +103,7 @@ namespace Eventuous.Producers.GooglePubSub {
             PubSubProduceOptions? options
         ) {
             var pubSubMessage = CreateMessage(message, type, options);
-            await client.PublishAsync(pubSubMessage).Ignore();
+            await client.PublishAsync(pubSubMessage).NoContext();
         }
 
         PubsubMessage CreateMessage(object message, Type type, PubSubProduceOptions? options) {

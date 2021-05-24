@@ -68,13 +68,13 @@ namespace Eventuous.Shovel {
         }
 
         public async Task StartAsync(CancellationToken cancellationToken) {
-            await _producer.Initialize(cancellationToken).Ignore();
-            await _subscription.StartAsync(cancellationToken).Ignore();
+            await _producer.Initialize(cancellationToken).NoContext();
+            await _subscription.StartAsync(cancellationToken).NoContext();
         }
 
         public async Task StopAsync(CancellationToken cancellationToken) {
-            await _subscription.StopAsync(cancellationToken).Ignore();
-            await _producer.Shutdown(cancellationToken).Ignore();
+            await _subscription.StopAsync(cancellationToken).NoContext();
+            await _producer.Shutdown(cancellationToken).NoContext();
         }
     }
 
@@ -95,8 +95,8 @@ namespace Eventuous.Shovel {
         }
 
         public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
-            var (targetStream, message) = await _transform(evt).Ignore();
-            await _eventProducer.Produce(targetStream, new[] { message }, cancellationToken).Ignore();
+            var (targetStream, message) = await _transform(evt).NoContext();
+            await _eventProducer.Produce(targetStream, new[] { message }, cancellationToken).NoContext();
         }
     }
 

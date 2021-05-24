@@ -110,7 +110,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     cancellationToken
                 );
 
-            var sub = await subTask.Ignore();
+            var sub = await subTask.NoContext();
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 

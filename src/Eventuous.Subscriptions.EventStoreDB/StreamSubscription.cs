@@ -99,12 +99,12 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     cancellationToken
                 );
 
-            var sub = await subTask.Ignore();
+            var sub = await subTask.NoContext();
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
             async Task HandleEvent(EventStore.Client.StreamSubscription _, ResolvedEvent re, CancellationToken ct) {
-                await Handler(AsReceivedEvent(re), ct).Ignore();
+                await Handler(AsReceivedEvent(re), ct).NoContext();
             }
 
             void HandleDrop(EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)

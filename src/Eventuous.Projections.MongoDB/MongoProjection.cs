@@ -26,7 +26,7 @@ namespace Eventuous.Projections.MongoDB {
 
         public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
             var updateTask = GetUpdate(evt);
-            var update     = updateTask == NoOp ? null : await updateTask.Ignore();
+            var update     = updateTask == NoOp ? null : await updateTask.NoContext();
 
             if (update == null) {
                 _log?.LogDebug("No handler for {Event}", evt.GetType().Name);
@@ -42,7 +42,7 @@ namespace Eventuous.Projections.MongoDB {
                 _                           => Task.CompletedTask
             };
 
-            await task.Ignore();
+            await task.NoContext();
 
             Task ExecuteUpdate(UpdateOperation<T> upd)
                 => Collection.UpdateOneAsync(
