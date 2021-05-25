@@ -1,4 +1,7 @@
+using JetBrains.Annotations;
+
 namespace Eventuous {
+    [PublicAPI]
     public abstract record AggregateId {
         protected AggregateId(string value) {
             if (string.IsNullOrWhiteSpace(value))

@@ -1,6 +1,8 @@
 using System;
+using JetBrains.Annotations;
 
 namespace Eventuous {
+    [PublicAPI]
     public record StreamName {
         string Value { get; }
 
@@ -15,7 +17,7 @@ namespace Eventuous {
         public static StreamName For<T, TState, TId>(TId aggregateId)
             where T : Aggregate<TState, TId>
             where TState : AggregateState<TState, TId>, new()
-            where TId : AggregateId => For<T>(aggregateId.ToString());
+            where TId : AggregateId => For<T>(aggregateId);
         
         public static implicit operator string(StreamName streamName) => streamName.Value;
 

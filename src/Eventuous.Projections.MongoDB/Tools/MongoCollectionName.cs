@@ -19,11 +19,12 @@ namespace Eventuous.Projections.MongoDB.Tools {
         public static MongoCollectionName For(Type type, string? prefix = null) {
             var collectionName = type.Name;
 
-            var suffixes = new[] {"Document", "Entity", "View", "Projection", "ProjectionDocument", "ProjectionEntity"};
+            var suffixes = new[]
+                { "Document", "Entity", "View", "Projection", "ProjectionDocument", "ProjectionEntity" };
 
             foreach (var suffix in suffixes) {
                 if (collectionName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-                    collectionName = collectionName.Substring(0, collectionName.Length - suffix.Length);
+                    collectionName = collectionName[..^suffix.Length];
             }
 
             if (!IsNullOrWhiteSpace(prefix)) collectionName = $"{prefix}-{collectionName}";
@@ -33,7 +34,9 @@ namespace Eventuous.Projections.MongoDB.Tools {
 
         public override string ToString() => _value ?? "";
 
-        public static implicit operator string(MongoCollectionName self) => self.ToString();
-        public static implicit operator MongoCollectionName(string value) => IsNullOrWhiteSpace(value) ? Default : new MongoCollectionName(value);
+        public static implicit operator string(MongoCollectionName self) => self._value ?? "";
+
+        public static implicit operator MongoCollectionName(string value)
+            => IsNullOrWhiteSpace(value) ? Default : new MongoCollectionName(value);
     }
 }
