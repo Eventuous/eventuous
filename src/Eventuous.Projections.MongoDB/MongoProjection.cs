@@ -25,7 +25,7 @@ namespace Eventuous.Projections.MongoDB {
         public string SubscriptionId { get; }
 
         public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
-            var updateTask = GetUpdate(evt);
+            var updateTask = GetUpdate(evt, position);
             var update     = updateTask == NoOp ? null : await updateTask.NoContext();
 
             if (update == null) {
@@ -53,7 +53,7 @@ namespace Eventuous.Projections.MongoDB {
                 );
         }
 
-        protected abstract ValueTask<Operation<T>> GetUpdate(object evt);
+        protected abstract ValueTask<Operation<T>> GetUpdate(object evt, long? position);
 
         protected Operation<T> UpdateOperation(BuildFilter<T> filter, BuildUpdate<T> update)
             => new UpdateOperation<T>(filter(Builders<T>.Filter), update(Builders<T>.Update));
