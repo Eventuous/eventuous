@@ -8,17 +8,16 @@ using SqlStreamStore;
 using SqlStreamStore.Streams;
 using Eventuous;
 using Eventuous.Producers;
-using JetBrains.Annotations;
 
 namespace Eventuous.Producers.SqlStreamStore
 {
     /// <summary>
-    /// Producer for SqlStreamStore (https://sqlstreamstore.readthedocs.io)
+    /// Base class to create event stores on top of standard SQL databases. 
+    /// It's based on the SqlStreamStore library (https://sqlstreamstore.readthedocs.io).
     /// </summary>
-    [PublicAPI]
-    public class SqlStreamStoreProducer : BaseProducer<SqlStreamStoreProduceOptions>
+    public abstract class SqlStreamStoreProducer : BaseProducer<SqlStreamStoreProduceOptions>
     {
-        readonly IStreamStore _streamStore;
+        protected readonly IStreamStore StreamStore;
         readonly IEventSerializer _serializer;
         const int ChunkSize = 500;
 
@@ -27,28 +26,11 @@ namespace Eventuous.Producers.SqlStreamStore
         /// </summary>
         /// <param name="streamStore">IStreamStore instance</param>
         /// <param name="serializer">Event serializer instance</param>
-        public SqlStreamStoreProducer(IStreamStore streamStore, IEventSerializer serializer) {
-            _streamStore = Ensure.NotNull(streamStore, nameof(streamStore));
+        protected SqlStreamStoreProducer(IStreamStore streamStore, IEventSerializer serializer) {
+            StreamStore = Ensure.NotNull(streamStore, nameof(streamStore));
             _serializer = Ensure.NotNull(serializer, nameof(serializer));
         }
-
-        /// <summary>
-        /// Create a new SqlStreamStore producer instance with an MSSQL (e.g. Azure Sql) store
-        /// </summary>
-        /// <param name="msSqlSettings">settings for creating an MSSQL based SqlStreamStore instance</param>
-        /// <param name="serializer">Event serializer instance</param>
-        public SqlStreamStoreProducer(MsSqlStreamStoreV3Settings msSqlSettings, IEventSerializer serializer) 
-            : this(new MsSqlStreamStoreV3(Ensure.NotNull(msSqlSettings, nameof(msSqlSettings))), serializer) { }
-        
-        /// <summary>
-        /// Create a new SqlStreamStore producer instance with an MySQL store
-        /// </summary>
-        /// <param name="mySqlSettings">settings for creating a MySql based SqlStreamStore instance</param>
-        /// <param name="serializer">Event serializer instance</param>
-        public SqlStreamStoreProducer(MySqlStreamStoreSettings mySqlSettings, IEventSerializer serializer) 
-            : this(new MySqlStreamStore(Ensure.NotNull(mySqlSettings, nameof(mySqlSettings))), serializer) { }
-
-
+       
         public override Task Initialize(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public override Task Shutdown(CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -63,7 +45,7 @@ namespace Eventuous.Producers.SqlStreamStore
                 .Select(x => CreateMessage(x, x.GetType(), options?.Metadata));
 
             foreach( var chunk in data.Chunks(ChunkSize)) {
-                await _streamStore.AppendToStream(
+                await StreamStore.AppendToStream(
                     new StreamId(stream),
                     options?.ExpectedState ?? ExpectedVersion.Any,
                     chunk.ToArray(),
@@ -81,7 +63,7 @@ namespace Eventuous.Producers.SqlStreamStore
         ) {
             var eventData = CreateMessage(message, type, options?.Metadata);
 
-            return _streamStore.AppendToStream(
+            return StreamStore.AppendToStream(
                 new StreamId(stream),
                 options?.ExpectedState ?? ExpectedVersion.Any,
                 new[] { eventData},

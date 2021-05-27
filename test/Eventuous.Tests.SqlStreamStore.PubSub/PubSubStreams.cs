@@ -14,14 +14,7 @@ using static Eventuous.Tests.SqlStreamStore.PubSub.Events;
 
 namespace Eventuous.Tests.SqlStreamStore.PubSub
 {
-    public class PubSubStreams: InMemoryFixture, IDisposable {
-
-        readonly SqlStreamStoreProducer producer; 
-        readonly AllStreamSubscription allStreamSubscription;
-        readonly StreamSubscription streamSubscription; 
-        readonly string stream = "stream";
-        readonly string subscription = "subscription";
-        readonly MockEventHandler eventHandler; 
+    public class PubSubStreams: MsSqlFixture, IDisposable {
         object[] expectedEvents = {
             new AccountCreated(Guid.NewGuid()),
             new AmountLodged(100), 
@@ -29,26 +22,6 @@ namespace Eventuous.Tests.SqlStreamStore.PubSub
         };
 
         public PubSubStreams(): base() {
-            producer = new SqlStreamStoreProducer(StreamStore, Serializer);
-            eventHandler = new MockEventHandler(subscription);
-
-            streamSubscription = new StreamSubscription(
-                StreamStore, 
-                stream, 
-                subscription, 
-                new InMemoryCheckpointStore(), 
-                new[] {eventHandler},
-                Serializer
-            );
-
-            allStreamSubscription = new AllStreamSubscription(
-                StreamStore,
-                subscription,
-                new InMemoryCheckpointStore(),
-                new[] {eventHandler},
-                Serializer
-            );
-
             MapEvents();
         }
 

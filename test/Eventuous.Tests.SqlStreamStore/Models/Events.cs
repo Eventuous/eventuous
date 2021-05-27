@@ -3,7 +3,7 @@ using Eventuous;
 
 namespace Eventuous.Tests.SqlStreamStore {
     public static class Events {
-        public record AccountCreated(Guid AccountNumber);
+        public record AccountCreated(string AccountNumber);
         public record AmountLodged(decimal Amount);
         public record AmountWithdrawn(decimal Amount);
         

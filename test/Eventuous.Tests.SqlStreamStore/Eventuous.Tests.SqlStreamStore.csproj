@@ -8,10 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
-    <PackageReference Include="SQLStreamStore" Version="1.2.0" />
+    <!-- <PackageReference Include="SQLStreamStore" Version="1.2.0" />
     <PackageReference Include="SqlStreamStore.MsSql" Version="1.2.0" />
     <PackageReference Include="SqlStreamStore.MySql" Version="1.2.0" />
-    <PackageReference Include="SqlStreamStore.Postgres" Version="1.2.0-beta.8" />
+    <PackageReference Include="SqlStreamStore.Postgres" Version="1.2.0-beta.8" /> -->
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
     <PackageReference Include="NodaTime" Version="3.0.5" />
     <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
@@ -28,7 +28,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj" />
-    <ProjectReference Include="..\..\src\Eventuous.SQLStreamStore\Eventuous.SQLStreamStore.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.SqlStreamStore\Eventuous.SqlStreamStore.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.SqlStreamStore.InMemory\Eventuous.SqlStreamStore.InMemory.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.SqlStreamStore.MsSql\Eventuous.SqlStreamStore.MsSql.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.SqlStreamStore.MySql\Eventuous.SqlStreamStore.MySql.csproj" />
     <ProjectReference Include="..\..\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
   </ItemGroup>
 

@@ -10,14 +10,13 @@ using static Eventuous.Tests.SqlStreamStore.Events;
 
 namespace Eventuous.Tests.SqlStreamStore
 {
-    public class StoringEvents: InMemoryFixture
+    public class StoringEvents: InMemoryFixture // MsSqlFixture
     {
         object[] expectedEvents = {
-            new AccountCreated(Guid.NewGuid()),
+            new AccountCreated(Guid.NewGuid().ToString()),
             new AmountLodged(100), 
             new AmountWithdrawn(20)
         };
-        string stream = "account";
 
         public StoringEvents() : base(){
             MapEvents();
@@ -26,6 +25,8 @@ namespace Eventuous.Tests.SqlStreamStore
         [Fact]
         public async Task AppendEventsWithNoStreamVersion_ReadEventsForward()
         {
+            string stream = Guid.NewGuid().ToString();
+            
             await EventStore.AppendEvents(stream, ExpectedStreamVersion.NoStream, ToStreamEvents(expectedEvents), new CancellationToken());
 
             var streamEvents = await EventStore.ReadEvents(stream, StreamReadPosition.Start, 3, new CancellationToken());
@@ -37,6 +38,8 @@ namespace Eventuous.Tests.SqlStreamStore
         [Fact]
         public async Task AppendEventsWithNoStreamVersion_ReadEventsBackwards()
         {
+            string stream = Guid.NewGuid().ToString();
+
             await EventStore.AppendEvents(stream, ExpectedStreamVersion.NoStream, ToStreamEvents(expectedEvents), new CancellationToken());
 
             var streamEvents = await EventStore.ReadEventsBackwards(stream, 3, new CancellationToken());
@@ -48,6 +51,8 @@ namespace Eventuous.Tests.SqlStreamStore
         [Fact]
         public async Task AppendEventsWithNoStreamVersion_ReadStream()
         {
+            string stream = Guid.NewGuid().ToString();
+
             List<StreamEvent> streamEvents = new List<StreamEvent>();
 
             await EventStore.AppendEvents(stream, ExpectedStreamVersion.NoStream, ToStreamEvents(expectedEvents), new CancellationToken());
@@ -64,6 +69,8 @@ namespace Eventuous.Tests.SqlStreamStore
         [Fact]
         public async Task AppendEventsWithAnyStreamVersion_ReadEventsForward()
         {
+            string stream = Guid.NewGuid().ToString();
+
             await EventStore.AppendEvents(stream, ExpectedStreamVersion.Any, ToStreamEvents(expectedEvents), new CancellationToken());
 
             var streamEvents = await EventStore.ReadEvents(stream, StreamReadPosition.Start, 3, new CancellationToken());
@@ -76,10 +83,12 @@ namespace Eventuous.Tests.SqlStreamStore
         public async Task AppendEventsMultipleTimes_ReadEventsForward()
         {
             object[] additionalEvents = {
-                new AccountCreated(Guid.NewGuid()),
+                new AccountCreated(Guid.NewGuid().ToString()),
                 new AmountLodged(100), 
                 new AmountWithdrawn(20)
             };
+
+            string stream = Guid.NewGuid().ToString();
 
             await EventStore.AppendEvents(stream, ExpectedStreamVersion.Any, ToStreamEvents(expectedEvents), new CancellationToken());
 

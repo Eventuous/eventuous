@@ -6,8 +6,6 @@
 
   <ItemGroup>
     <PackageReference Include="SqlStreamStore" Version="1.2.0" />
-    <PackageReference Include="SqlStreamStore.MsSql" Version="1.2.0" />
-    <PackageReference Include="SqlStreamStore.Mysql" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>

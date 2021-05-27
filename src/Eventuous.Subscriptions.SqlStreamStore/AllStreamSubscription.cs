@@ -3,7 +3,6 @@ using System.Text;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using SqlStreamStore;
 using SqlStreamStore.Streams;
@@ -12,42 +11,9 @@ using Eventuous;
 using Eventuous.Subscriptions;
 
 namespace Eventuous.Subscriptions.SqlStreamStore {
-    /// <summary>
-    /// Catch-up subscription for SqlStreamStore (https://sqlstreamstore.readthedocs.io), using the $all global stream
-    /// </summary>
-    [PublicAPI]
-    public class AllStreamSubscription : SqlStreamStoreSubscriptionService {
+    public abstract class AllStreamSubscription : SqlStreamStoreSubscriptionService {
         readonly AllStreamSubscriptionOptions _options;
         const string ContentType = "application/json";
-
-        /// <summary>
-        /// Creates SqlStreamStore catch-up subscription service for $all
-        /// </summary>
-        /// <param name="streamStore">SqlStreamStore instance</param>
-        /// <param name="subscriptionId">Subscription ID</param>
-        /// <param name="checkpointStore">Checkpoint store instance</param>
-        /// <param name="eventHandlers">Collection of event handlers</param>
-        /// <param name="eventSerializer">Event serializer instance</param>
-        /// <param name="loggerFactory">Optional: logger factory</param>
-        /// <param name="measure">Optional: gap measurement for metrics</param>
-
-        public AllStreamSubscription(
-            IStreamStore                streamStore,
-            string                      subscriptionId,
-            ICheckpointStore            checkpointStore,
-            IEnumerable<IEventHandler>  eventHandlers,
-            IEventSerializer?           eventSerializer = null,
-            ILoggerFactory?             loggerFactory   = null,
-            ISubscriptionGapMeasure?    measure         = null
-        ) : this(
-            streamStore,
-            new AllStreamSubscriptionOptions { SubscriptionId = subscriptionId},
-            checkpointStore,
-            eventHandlers,
-            eventSerializer,
-            loggerFactory,
-            measure
-        ) { }
 
         /// <summary>
         /// Creates SqlStreamStore catch-up subscription service for $all
@@ -60,7 +26,7 @@ namespace Eventuous.Subscriptions.SqlStreamStore {
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
 
-        public AllStreamSubscription(
+        protected AllStreamSubscription(
             IStreamStore streamStore,
             AllStreamSubscriptionOptions options,
             ICheckpointStore checkpointStore,

@@ -3,6 +3,7 @@ using SqlStreamStore;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Eventuous.SqlStreamStore;
+using Eventuous.SqlStreamStore.InMemory;
 
 namespace Eventuous.Tests.SqlStreamStore
 {
@@ -13,7 +14,7 @@ namespace Eventuous.Tests.SqlStreamStore
         );
 
         public InMemoryFixture() {
-            EventStore = new SqlEventStore(new InMemoryStreamStore());
+            EventStore = new InMemoryEventStore(new InMemoryStreamStore());
         }
 
     }    

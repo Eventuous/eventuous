@@ -11,13 +11,13 @@ using Eventuous;
 
 namespace Eventuous.SqlStreamStore {
     [PublicAPI]
-    public class SqlEventStore : IEventStore {
+    public abstract class SqlEventStore : IEventStore {
         readonly IStreamStore _streamStore;        
         const int PageSize = 500;
         const string ContentType = "application/json";
-        public SqlEventStore(IStreamStore streamStore) => _streamStore = streamStore;
+        protected SqlEventStore(IStreamStore streamStore) => _streamStore = streamStore;
         
-        public async Task AppendEvents(
+        public async Task<AppendEventsResult> AppendEvents(
             string                           stream,
             ExpectedStreamVersion            expectedVersion,
             IReadOnlyCollection<StreamEvent> events,
@@ -26,7 +26,7 @@ namespace Eventuous.SqlStreamStore {
         {
             var proposedEvents = events.Select(ToStreamMessage).ToArray();
 
-            Task resultTask;
+            Task<AppendResult> resultTask;
 
             if (expectedVersion == ExpectedStreamVersion.NoStream)
                 resultTask = _streamStore.AppendToStream(
@@ -50,7 +50,12 @@ namespace Eventuous.SqlStreamStore {
                     cancellationToken
                 );
 
-            await resultTask.Ignore();
+            var result = await resultTask.Ignore();
+
+            return new AppendEventsResult(
+                (ulong) result.CurrentPosition,
+                (long) result.CurrentVersion + 1
+            );
 
             static NewStreamMessage ToStreamMessage(StreamEvent streamEvent)
                 => new(

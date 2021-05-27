@@ -3,6 +3,7 @@ using SqlStreamStore;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Eventuous.SqlStreamStore;
+using Eventuous.SqlStreamStore.MsSql;
 
 namespace Eventuous.Tests.SqlStreamStore
 {
@@ -15,12 +16,15 @@ namespace Eventuous.Tests.SqlStreamStore
         public MsSqlFixture() {
             string connectionString = "Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword;";
             string schema = "events";
-            EventStore = new SqlEventStore(new MsSqlStreamStoreV3(
+            var mssqlStreamStore = new MsSqlStreamStoreV3(
                 new MsSqlStreamStoreV3Settings(connectionString)
                 {
                     Schema = schema
                 }
-            ));
+            );
+            EventStore = new MsSqlEventStore(mssqlStreamStore);
+
+            mssqlStreamStore.CreateSchemaIfNotExists().Wait();
         }
 
     }    

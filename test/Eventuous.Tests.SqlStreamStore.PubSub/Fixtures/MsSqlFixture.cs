@@ -6,11 +6,20 @@ using SqlStreamStore;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Dapper;
+using Eventuous.Producers.SqlStreamStore;
+using Eventuous.Producers.SqlStreamStore.MsSql;
+using Eventuous.Subscriptions.SqlStreamStore;
+using Eventuous.Subscriptions.SqlStreamStore.MsSql;
 
 namespace Eventuous.Tests.SqlStreamStore.PubSub
 {
     public class MsSqlFixture {
-        protected IStreamStore StreamStore { get; }
+        protected MockEventHandler eventHandler; 
+        protected readonly string stream = "stream";
+        protected readonly string subscription = "subscription";
+        protected readonly SqlStreamStoreProducer producer;
+        protected readonly AllStreamSubscription allStreamSubscription;
+        protected readonly StreamSubscription streamSubscription; 
         protected IEventSerializer Serializer { get; } = new DefaultEventSerializer(
             new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
         );
@@ -20,13 +29,34 @@ namespace Eventuous.Tests.SqlStreamStore.PubSub
 
         public MsSqlFixture() {
 
-            StreamStore = new MsSqlStreamStoreV3(
+            eventHandler = new MockEventHandler(subscription);
+            var streamStore = new MsSqlStreamStoreV3(
                 new MsSqlStreamStoreV3Settings(connectionString)
                 {
                     Schema = schema
                 }
             );
-            ((MsSqlStreamStoreV3)StreamStore).CreateSchemaIfNotExists().Wait();
+            streamStore.CreateSchemaIfNotExists().Wait();
+
+            producer = new MsSqlStreamStoreProducer(streamStore, Serializer);
+
+            streamSubscription = new MsSqlStreamSubscription(
+                streamStore, 
+                stream, 
+                subscription, 
+                new InMemoryCheckpointStore(), 
+                new[] {eventHandler},
+                Serializer
+            );
+
+            allStreamSubscription = new MsSqlAllStreamSubscription(
+                streamStore, 
+                subscription,
+                new InMemoryCheckpointStore(),
+                new[] {eventHandler},
+                Serializer
+            );
+
         }
 
         public async Task CleanUp() {

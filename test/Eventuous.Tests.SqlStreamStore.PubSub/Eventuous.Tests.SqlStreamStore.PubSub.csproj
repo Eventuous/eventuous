@@ -33,7 +33,11 @@
     <ProjectReference Include="..\..\src\Eventuous.Producers\Eventuous.Producers.csproj" />
     <ProjectReference Include="..\..\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     <ProjectReference Include="..\..\src\Eventuous.Producers.SqlStreamStore\Eventuous.Producers.SqlStreamStore.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.Producers.SqlStreamStore.InMemory\Eventuous.Producers.SqlStreamStore.InMemory.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.Producers.SqlStreamStore.MsSql\Eventuous.Producers.SqlStreamStore.MsSql.csproj" />
     <ProjectReference Include="..\..\src\Eventuous.Subscriptions.SqlStreamStore\Eventuous.Subscriptions.SqlStreamStore.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.Subscriptions.SqlStreamStore.MsSql\Eventuous.Subscriptions.SqlStreamStore.MsSql.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.Subscriptions.SqlStreamStore.InMemory\Eventuous.Subscriptions.InMemoryEventStore.csproj" />
   </ItemGroup>
 
 </Project>
