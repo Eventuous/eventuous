@@ -6,13 +6,13 @@ using SqlStreamStore;
 using SqlStreamStore.Streams;
 using Eventuous.Subscriptions.SqlStreamStore;
 
-namespace Eventuous.Subscriptions.SqlStreamStore.MySql
+namespace Eventuous.Subscriptions.SqlStreamStore.MsSql
 {
     /// <summary>
-    /// Producer for SqlStreamStore (https://sqlstreamstore.readthedocs.io) which has a MySQL database as the event data store.
+    /// Producer for SqlStreamStore (https://sqlstreamstore.readthedocs.io) which has a MsSQL database as the event data store.
     /// </summary>
     [PublicAPI]
-    public class StreamSubscription : SqlStreamStore.StreamSubscription
+    public class AllStreamSubscription : SqlStreamStore.AllStreamSubscription
     {
         /// <summary>
         /// Creates SqlStreamStore catch-up subscription service for $all
@@ -25,23 +25,17 @@ namespace Eventuous.Subscriptions.SqlStreamStore.MySql
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
 
-        public StreamSubscription(
-            MySqlStreamStore            mySqlStore,
-            string                      streamName,
+        public AllStreamSubscription(
+            MsSqlStreamStoreV3          msSqlStore,
             string                      subscriptionId,
             ICheckpointStore            checkpointStore,
             IEnumerable<IEventHandler>  eventHandlers,
             IEventSerializer?           eventSerializer = null,
             ILoggerFactory?             loggerFactory   = null,
-            ISubscriptionGapMeasure?    measure         = null,
-            bool                        throwOnError    = false
+            ISubscriptionGapMeasure?    measure         = null
         ) : base(
-            Ensure.NotNull(mySqlStore, nameof(mySqlStore)),
-            new StreamSubscriptionOptions { 
-                StreamName = streamName,
-                SubscriptionId = subscriptionId,
-                ThrowOnError = throwOnError
-            },
+            Ensure.NotNull(msSqlStore, nameof(msSqlStore)),
+            new AllStreamSubscriptionOptions { SubscriptionId = subscriptionId},
             checkpointStore,
             eventHandlers,
             eventSerializer,
