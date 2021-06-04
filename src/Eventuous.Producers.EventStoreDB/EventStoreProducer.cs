@@ -22,9 +22,9 @@ namespace Eventuous.Producers.EventStoreDB {
         /// </summary>
         /// <param name="eventStoreClient">EventStoreDB gRPC client</param>
         /// <param name="serializer">Event serializer instance</param>
-        public EventStoreProducer(EventStoreClient eventStoreClient, IEventSerializer serializer) {
+        public EventStoreProducer(EventStoreClient eventStoreClient, IEventSerializer? serializer = null) {
             _client     = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
-            _serializer = Ensure.NotNull(serializer, nameof(serializer));
+            _serializer = serializer ?? DefaultEventSerializer.Instance;
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Eventuous.Producers.EventStoreDB {
         /// </summary>
         /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
         /// <param name="serializer">Event serializer instance</param>
-        public EventStoreProducer(EventStoreClientSettings clientSettings, IEventSerializer serializer)
+        public EventStoreProducer(EventStoreClientSettings clientSettings, IEventSerializer? serializer = null)
             : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), serializer) { }
 
         public override Task Initialize(CancellationToken cancellationToken = default) => Task.CompletedTask;

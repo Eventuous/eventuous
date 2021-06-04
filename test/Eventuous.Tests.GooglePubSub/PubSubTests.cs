@@ -16,7 +16,7 @@ namespace Eventuous.Tests.GooglePubSub {
     public class PubSubTests : IAsyncLifetime {
         static PubSubTests() => TypeMap.AddType<TestEvent>("test-event");
 
-        static readonly Fixture          Auto       = new();
+        static readonly Fixture Auto = new();
 
         readonly GooglePubSubSubscription _subscription;
         readonly GooglePubSubProducer     _producer;

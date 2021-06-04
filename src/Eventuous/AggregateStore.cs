@@ -10,9 +10,9 @@ namespace Eventuous {
         readonly IEventStore      _eventStore;
         readonly IEventSerializer _serializer;
 
-        public AggregateStore(IEventStore eventStore, IEventSerializer serializer) {
+        public AggregateStore(IEventStore eventStore, IEventSerializer? serializer = null) {
             _eventStore = Ensure.NotNull(eventStore, nameof(eventStore));
-            _serializer = Ensure.NotNull(serializer, nameof(serializer));
+            _serializer = serializer ?? DefaultEventSerializer.Instance;
         }
 
         public async Task<AppendEventsResult> Store<T>(T aggregate, CancellationToken cancellationToken)

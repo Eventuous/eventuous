@@ -9,9 +9,9 @@ namespace Eventuous {
         readonly IEventStore      _eventStore;
         readonly IEventSerializer _serializer;
 
-        public StateStore(IEventStore eventStore, IEventSerializer serializer) {
+        public StateStore(IEventStore eventStore, IEventSerializer? serializer = null) {
             _eventStore = Ensure.NotNull(eventStore, nameof(eventStore));
-            _serializer = Ensure.NotNull(serializer, nameof(serializer));
+            _serializer = serializer ?? DefaultEventSerializer.Instance;
         }
 
         public async Task<T> LoadState<T, TId>(StreamName stream, CancellationToken cancellationToken)
