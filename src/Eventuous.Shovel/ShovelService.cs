@@ -25,7 +25,7 @@ namespace Eventuous.Shovel {
 
         public record ShovelMessage(string TargetStream, object? Message);
 
-        public delegate ValueTask<ShovelMessage> RouteAndTransform(object message);
+        public delegate ValueTask<ShovelMessage?> RouteAndTransform(object message);
 
         public delegate TSubscription CreateSubscription(
             string                     subscriptionId,
@@ -145,9 +145,12 @@ namespace Eventuous.Shovel {
         }
 
         public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
-            var (targetStream, message) = await _transform(evt).NoContext();
-            if (message == null) return;
-            await _eventProducer.Produce(targetStream, new[] { message }, cancellationToken).NoContext();
+            var shovelMessage = await _transform(evt).NoContext();
+            if (shovelMessage?.Message == null) return;
+
+            await _eventProducer
+                .Produce(shovelMessage.TargetStream, new[] { shovelMessage.Message }, cancellationToken)
+                .NoContext();
         }
     }
 }
