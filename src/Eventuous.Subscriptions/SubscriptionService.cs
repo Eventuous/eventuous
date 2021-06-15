@@ -75,9 +75,8 @@ namespace Eventuous.Subscriptions {
                 re.EventType
             );
 
-            _lastProcessed = GetPosition(re);
-
             if (re.EventType.StartsWith("$")) {
+                _lastProcessed = GetPosition(re);
                 await Store().NoContext();
                 return;
             }
@@ -88,6 +87,7 @@ namespace Eventuous.Subscriptions {
                         _eventHandlers.Select(x => x.HandleEvent(re.Payload, (long?) re.StreamPosition, cancellationToken))
                     ).NoContext();
                 }
+                _lastProcessed = GetPosition(re);
             }
             catch (Exception e) {
                 Log?.Log(
