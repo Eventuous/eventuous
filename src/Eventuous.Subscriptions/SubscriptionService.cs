@@ -84,9 +84,12 @@ namespace Eventuous.Subscriptions {
             try {
                 if (re.Payload != null) {
                     await Task.WhenAll(
-                        _eventHandlers.Select(x => x.HandleEvent(re.Payload, (long?) re.StreamPosition, cancellationToken))
+                        _eventHandlers.Select(
+                            x => x.HandleEvent(re.Payload, (long?)re.StreamPosition, cancellationToken)
+                        )
                     ).NoContext();
                 }
+
                 _lastProcessed = GetPosition(re);
             }
             catch (Exception e) {
@@ -118,9 +121,15 @@ namespace Eventuous.Subscriptions {
             await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
         }
 
-        protected object? DeserializeData(string eventContentType, string eventType, ReadOnlyMemory<byte> data, string stream, ulong position = 0) {
+        protected object? DeserializeData(
+            string               eventContentType,
+            string               eventType,
+            ReadOnlyMemory<byte> data,
+            string               stream,
+            ulong                position = 0
+        ) {
             if (data.IsEmpty) return null;
-            
+
             var contentType = string.IsNullOrWhiteSpace(eventType) ? "application/json" : eventContentType;
 
             if (contentType != _eventSerializer.ContentType) {
@@ -153,7 +162,6 @@ namespace Eventuous.Subscriptions {
 
                 return null;
             }
-            
         }
 
         protected abstract Task<EventSubscription> Subscribe(
@@ -184,7 +192,7 @@ namespace Eventuous.Subscriptions {
 
         protected async Task Resubscribe(TimeSpan delay) {
             if (_resubscribing.IsClosed()) return;
-            
+
             Log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
             await Task.Delay(delay).NoContext();
@@ -237,12 +245,17 @@ namespace Eventuous.Subscriptions {
 
         async Task MeasureGap(CancellationToken cancellationToken) {
             while (!cancellationToken.IsCancellationRequested) {
-                var (position, created) = await GetLastEventPosition(cancellationToken).NoContext();
+                try {
+                    var (position, created) = await GetLastEventPosition(cancellationToken).NoContext();
 
-                if (_lastProcessed?.Position != null && position != null) {
-                    _gap = (ulong) position - _lastProcessed.Position.Value;
+                    if (_lastProcessed?.Position != null && position != null) {
+                        _gap = (ulong)position - _lastProcessed.Position.Value;
 
-                    _measure!.PutGap(SubscriptionId, _gap, created);
+                        _measure!.PutGap(SubscriptionId, _gap, created);
+                    }
+                }
+                catch (Exception e) {
+                    Log?.LogWarning(e, "Unable to get the last event position for {SubscriptionId}", SubscriptionId);
                 }
 
                 await Task.Delay(1000, cancellationToken).NoContext();

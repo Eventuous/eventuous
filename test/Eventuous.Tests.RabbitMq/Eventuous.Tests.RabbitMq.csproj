@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Eventuous.Producers.RabbitMq\Eventuous.Producers.RabbitMq.csproj" />
+      <ProjectReference Include="..\..\src\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
       <ProjectReference Include="..\..\src\Eventuous.Producers\Eventuous.Producers.csproj" />
       <ProjectReference Include="..\..\src\Eventuous.Subscriptions.RabbitMq\Eventuous.Subscriptions.RabbitMq.csproj" />
     </ItemGroup>

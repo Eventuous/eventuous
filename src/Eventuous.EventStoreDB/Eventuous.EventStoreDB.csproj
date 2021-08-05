@@ -1,9 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-      <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="..\Eventuous.Producers\Eventuous.Producers.csproj" />
+        <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="..\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="EventStore.Client.Grpc.Streams" Version="21.2.0" />
+        <PackageReference Include="EventStore.Client.Grpc.Streams" Version="21.2.0" />
+        <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="21.2.0" />
     </ItemGroup>
 </Project>

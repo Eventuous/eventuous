@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
         <LangVersion>9</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
