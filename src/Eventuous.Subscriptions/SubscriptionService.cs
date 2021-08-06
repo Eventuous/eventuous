@@ -75,6 +75,7 @@ namespace Eventuous.Subscriptions {
                 re.EventType
             );
 
+            // TODO: This is ESDB-specific and must be moved elsewhere
             if (re.EventType.StartsWith("$")) {
                 _lastProcessed = GetPosition(re);
                 await Store().NoContext();
@@ -84,9 +85,12 @@ namespace Eventuous.Subscriptions {
             try {
                 if (re.Payload != null) {
                     await Task.WhenAll(
-                        _eventHandlers.Select(x => x.HandleEvent(re.Payload, (long?) re.StreamPosition, cancellationToken))
+                        _eventHandlers.Select(
+                            x => x.HandleEvent(re.Payload, (long?)re.StreamPosition, cancellationToken)
+                        )
                     ).NoContext();
                 }
+
                 _lastProcessed = GetPosition(re);
             }
             catch (Exception e) {
@@ -118,9 +122,15 @@ namespace Eventuous.Subscriptions {
             await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
         }
 
-        protected object? DeserializeData(string eventContentType, string eventType, ReadOnlyMemory<byte> data, string stream, ulong position = 0) {
+        protected object? DeserializeData(
+            string               eventContentType,
+            string               eventType,
+            ReadOnlyMemory<byte> data,
+            string               stream,
+            ulong                position = 0
+        ) {
             if (data.IsEmpty) return null;
-            
+
             var contentType = string.IsNullOrWhiteSpace(eventType) ? "application/json" : eventContentType;
 
             if (contentType != _eventSerializer.ContentType) {
@@ -137,12 +147,12 @@ namespace Eventuous.Subscriptions {
             }
 
             try {
-                return _eventSerializer.Deserialize(data.Span, eventType);
+                return _eventSerializer.DeserializeEvent(data.Span, eventType);
             }
             catch (Exception e) {
                 Log?.LogError(
                     e,
-                    "Error deserializing event {Strean} {Position} {Type}",
+                    "Error deserializing event {Stream} {Position} {Type}",
                     stream,
                     position,
                     eventType
@@ -153,7 +163,6 @@ namespace Eventuous.Subscriptions {
 
                 return null;
             }
-            
         }
 
         protected abstract Task<EventSubscription> Subscribe(
@@ -184,7 +193,7 @@ namespace Eventuous.Subscriptions {
 
         protected async Task Resubscribe(TimeSpan delay) {
             if (_resubscribing.IsClosed()) return;
-            
+
             Log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
 
             await Task.Delay(delay).NoContext();
@@ -212,10 +221,7 @@ namespace Eventuous.Subscriptions {
             }
         }
 
-        protected void Dropped(
-            DropReason reason,
-            Exception? exception
-        ) {
+        protected void Dropped(DropReason reason, Exception? exception) {
             if (!IsRunning || _resubscribing.IsClosed()) return;
 
             Log?.LogWarning(
@@ -240,7 +246,7 @@ namespace Eventuous.Subscriptions {
                 var (position, created) = await GetLastEventPosition(cancellationToken).NoContext();
 
                 if (_lastProcessed?.Position != null && position != null) {
-                    _gap = (ulong) position - _lastProcessed.Position.Value;
+                    _gap = (ulong)position - _lastProcessed.Position.Value;
 
                     _measure!.PutGap(SubscriptionId, _gap, created);
                 }

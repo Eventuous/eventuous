@@ -67,6 +67,7 @@ namespace Eventuous.Producers.GooglePubSub {
         public GooglePubSubProducer(
             IOptions<PubSubProducerOptions> options,
             IEventSerializer?               serializer    = null,
+            TypeMapper?                     typeMapper    = null,
             ILoggerFactory?                 loggerFactory = null
         ) : this(options.Value, serializer, loggerFactory) { }
 
@@ -107,12 +108,14 @@ namespace Eventuous.Producers.GooglePubSub {
         }
 
         PubsubMessage CreateMessage(object message, Type type, PubSubProduceOptions? options) {
+            var (eventType, payload) = _serializer.SerializeEvent(message);
+
             var psm = new PubsubMessage {
-                Data        = ByteString.CopyFrom(_serializer.Serialize(message)),
+                Data        = ByteString.CopyFrom(payload),
                 OrderingKey = options?.OrderingKey ?? "",
                 Attributes = {
                     { "contentType", _serializer.ContentType },
-                    { "eventType", TypeMap.GetTypeNameByType(type) }
+                    { "eventType", eventType }
                 }
             };
 

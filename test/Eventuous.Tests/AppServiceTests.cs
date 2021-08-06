@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoFixture;
-using Eventuous.Tests.Application;
 using Eventuous.Tests.Fixtures;
-using Eventuous.Tests.Model;
+using Eventuous.Tests.SutApp;
+using Eventuous.Tests.SutDomain;
 using FluentAssertions;
 using NodaTime;
 using Xunit;
@@ -47,7 +47,7 @@ namespace Eventuous.Tests {
                 default
             );
 
-            var result = events.Select(x => Fixture.Serializer.Deserialize(x.Data, x.EventType)).ToArray();
+            var result = events.Select(x => Fixture.Serializer.DeserializeEvent(x.Data, x.EventType)).ToArray();
 
             result.Should().BeEquivalentTo(expected);
         }

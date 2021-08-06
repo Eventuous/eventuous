@@ -21,8 +21,11 @@ namespace Eventuous.Producers.EventStoreDB {
         /// Create a new EventStoreDB producer instance
         /// </summary>
         /// <param name="eventStoreClient">EventStoreDB gRPC client</param>
-        /// <param name="serializer">Event serializer instance</param>
-        public EventStoreProducer(EventStoreClient eventStoreClient, IEventSerializer? serializer = null) {
+        /// <param name="serializer">Optional: event serializer instance</param>
+        public EventStoreProducer(
+            EventStoreClient  eventStoreClient,
+            IEventSerializer? serializer = null
+        ) {
             _client     = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
             _serializer = serializer ?? DefaultEventSerializer.Instance;
         }
@@ -31,9 +34,15 @@ namespace Eventuous.Producers.EventStoreDB {
         /// Create a new EventStoreDB producer instance
         /// </summary>
         /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
-        /// <param name="serializer">Event serializer instance</param>
-        public EventStoreProducer(EventStoreClientSettings clientSettings, IEventSerializer? serializer = null)
-            : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), serializer) { }
+        /// <param name="serializer">Optional: event serializer instance</param>
+        public EventStoreProducer(
+            EventStoreClientSettings clientSettings,
+            IEventSerializer?        serializer = null
+        )
+            : this(
+                new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
+                serializer
+            ) { }
 
         public override Task Initialize(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
@@ -79,15 +88,15 @@ namespace Eventuous.Producers.EventStoreDB {
             );
         }
 
-        EventData CreateMessage(object message, Type type, object? metadata) {
+        EventData CreateMessage(object message, Type type, Metadata? metadata) {
             var msg       = Ensure.NotNull(message, nameof(message));
-            var typeName  = TypeMap.GetTypeNameByType(type);
-            var metaBytes = metadata == null ? null : _serializer.Serialize(metadata);
+            var (eventType, payload) = _serializer.SerializeEvent(msg);
+            var metaBytes = metadata == null ? null : _serializer.SerializeMetadata(metadata);
 
             return new EventData(
                 Uuid.NewUuid(),
-                typeName,
-                _serializer.Serialize(msg),
+                eventType,
+                payload,
                 metaBytes,
                 _serializer.ContentType
             );

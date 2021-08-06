@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using System.Linq;
-using static Eventuous.Tests.Model.BookingEvents;
+using static Eventuous.Tests.SutDomain.BookingEvents;
 
-namespace Eventuous.Tests.Model {
+namespace Eventuous.Tests.SutDomain {
     public class Booking : Aggregate<BookingState, BookingId> {
         public void BookRoom(BookingId id, string roomId, StayPeriod period, decimal price) {
             EnsureDoesntExist();
@@ -33,11 +33,11 @@ namespace Eventuous.Tests.Model {
         decimal                      AmountPaid     { get; init; }
         ImmutableList<PaymentRecord> PaymentRecords { get; init; } = ImmutableList<PaymentRecord>.Empty;
 
-        internal bool HasPaymentRecord(string paymentId) => PaymentRecords.Any(x => x.PaymentId == paymentId);
+        public bool HasPaymentRecord(string paymentId) => PaymentRecords.Any(x => x.PaymentId == paymentId);
 
-        internal bool IsFullyPaid() => AmountPaid >= Price;
+        public bool IsFullyPaid() => AmountPaid >= Price;
 
-        internal bool IsOverpaid() => AmountPaid > Price;
+        public bool IsOverpaid() => AmountPaid > Price;
 
         public override BookingState When(object @event)
             => @event switch {

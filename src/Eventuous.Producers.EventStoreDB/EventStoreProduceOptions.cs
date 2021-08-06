@@ -6,7 +6,7 @@ namespace Eventuous.Producers.EventStoreDB {
         /// <summary>
         /// Message metadata
         /// </summary>
-        public object? Metadata { get; init; }
+        public Metadata? Metadata { get; init; }
         
         /// <summary>
         /// User credentials

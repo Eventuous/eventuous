@@ -1,6 +1,6 @@
 using NodaTime;
 
-namespace Eventuous.Tests.Model {
+namespace Eventuous.Tests.SutDomain {
     public static class BookingEvents {
         public record RoomBooked(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);
 

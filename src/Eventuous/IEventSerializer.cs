@@ -2,9 +2,11 @@ using System;
 
 namespace Eventuous {
     public interface IEventSerializer {
-        object? Deserialize(ReadOnlySpan<byte> data, string eventType);
+        object? DeserializeEvent(ReadOnlySpan<byte> data, string eventType);
 
-        byte[] Serialize(object evt);
+        (string EventType, byte[] Payload) SerializeEvent(object evt);
+        
+        byte[] SerializeMetadata(Metadata evt);
 
         string ContentType { get; }
     }
