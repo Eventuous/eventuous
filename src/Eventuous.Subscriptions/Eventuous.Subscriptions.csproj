@@ -7,4 +7,9 @@
     <ItemGroup>
       <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+            <Link>IsExternalInit.cs</Link>
+        </Compile>
+    </ItemGroup>
 </Project>
