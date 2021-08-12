@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using AutoFixture;
-using Eventuous.Tests.Application;
 using Eventuous.Tests.Fixtures;
-using Eventuous.Tests.Model;
+using Eventuous.Tests.SutApp;
+using Eventuous.Tests.SutDomain;
 using FluentAssertions;
 using NodaTime;
 using Xunit;

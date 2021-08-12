@@ -1,7 +1,7 @@
 using System;
 using NodaTime;
 
-namespace Eventuous.Tests.Model {
+namespace Eventuous.Tests.SutDomain {
     public record StayPeriod {
         public StayPeriod(LocalDate checkIn, LocalDate checkOut) {
             if (checkIn >= checkOut)

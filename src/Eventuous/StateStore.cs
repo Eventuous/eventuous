@@ -30,7 +30,7 @@ namespace Eventuous {
             }
 
             object? Deserialize(StreamEvent streamEvent)
-                => _serializer.Deserialize(streamEvent.Data.AsSpan(), streamEvent.EventType);
+                => _serializer.DeserializeEvent(streamEvent.Data.AsSpan(), streamEvent.EventType);
         }
     }
 }

@@ -9,15 +9,22 @@ namespace Eventuous {
             new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         readonly JsonSerializerOptions _options;
+        readonly TypeMapper            _typeMapper;
 
-        public DefaultEventSerializer(JsonSerializerOptions options) => _options = options;
+        public DefaultEventSerializer(JsonSerializerOptions options, TypeMapper? typeMapper = null) {
+            _options    = options;
+            _typeMapper = typeMapper ?? TypeMap.Instance;
+        }
 
-        public object? Deserialize(ReadOnlySpan<byte> data, string eventType)
-            => !TypeMap.TryGetType(eventType, out var dataType)
+        public object? DeserializeEvent(ReadOnlySpan<byte> data, string eventType)
+            => !_typeMapper.TryGetType(eventType, out var dataType)
                 ? null!
                 : JsonSerializer.Deserialize(data, dataType!, _options);
 
-        public byte[] Serialize(object evt) => JsonSerializer.SerializeToUtf8Bytes(evt, _options);
+        public (string EventType, byte[] Payload) SerializeEvent(object evt)
+            => (_typeMapper.GetTypeName(evt), JsonSerializer.SerializeToUtf8Bytes(evt, _options));
+
+        public byte[] SerializeMetadata(Metadata evt) => JsonSerializer.SerializeToUtf8Bytes(evt, _options);
 
         public string ContentType { get; } = "application/json";
     }

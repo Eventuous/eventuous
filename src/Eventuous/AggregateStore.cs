@@ -33,8 +33,10 @@ namespace Eventuous {
 
             return result;
 
-            StreamEvent ToStreamEvent(object evt)
-                => new(TypeMap.GetTypeName(evt), _serializer.Serialize(evt), null, _serializer.ContentType);
+            StreamEvent ToStreamEvent(object evt) {
+                var (eventType, payload) = _serializer.SerializeEvent(evt);
+                return new(eventType, payload, null, _serializer.ContentType);
+            }
         }
 
         public async Task<T> Load<T>(string id, CancellationToken cancellationToken) where T : Aggregate, new() {
@@ -60,7 +62,7 @@ namespace Eventuous {
             }
 
             object? Deserialize(StreamEvent streamEvent)
-                => _serializer.Deserialize(streamEvent.Data.AsSpan(), streamEvent.EventType);
+                => _serializer.DeserializeEvent(streamEvent.Data.AsSpan(), streamEvent.EventType);
         }
     }
 }

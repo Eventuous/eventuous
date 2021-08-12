@@ -22,12 +22,12 @@ namespace Eventuous.Producers.RabbitMq {
         /// Creates a RabbitMQ producer instance
         /// </summary>
         /// <param name="connectionFactory">RabbitMQ connection factory</param>
-        /// <param name="serializer">Event serializer instance</param>
-        /// <param name="options">Additional configuration for the exchange</param>
+        /// <param name="serializer">Optional: event serializer instance</param>
+        /// <param name="options">Optional: additional configuration for the exchange</param>
         public RabbitMqProducer(
             ConnectionFactory        connectionFactory,
             IEventSerializer?        serializer = null,
-            RabbitMqExchangeOptions? options = null
+            RabbitMqExchangeOptions? options    = null
         ) {
             _options           = options;
             _serializer        = serializer ?? DefaultEventSerializer.Instance;
@@ -49,7 +49,7 @@ namespace Eventuous.Producers.RabbitMq {
             CancellationToken       cancellationToken
         ) {
             EnsureExchange(stream);
-            
+
             foreach (var message in messages) {
                 Publish(stream, message, message.GetType(), options);
             }
@@ -73,8 +73,7 @@ namespace Eventuous.Producers.RabbitMq {
             if (_channel == null)
                 throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
 
-            var payload   = _serializer.Serialize(message);
-            var eventType = TypeMap.GetTypeNameByType(type);
+            var (eventType, payload) = _serializer.SerializeEvent(message);
 
             var prop = _channel.CreateBasicProperties();
             prop.ContentType  = _serializer.ContentType;
