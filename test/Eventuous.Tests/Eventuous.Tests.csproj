@@ -5,11 +5,15 @@
     <ProjectReference Include="..\Eventuous.Tests.SutApp\Eventuous.Tests.SutApp.csproj" />
     <ProjectReference Include="..\Eventuous.Tests.SutDomain\Eventuous.Tests.SutDomain.csproj" />
   </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="NodaTime" Version="3.0.5" />
     <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Folder Include="Application" />
+    <Compile Include="..\..\src\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+      <Link>IsExternalInit.cs</Link>
+    </Compile>
   </ItemGroup>
 </Project>

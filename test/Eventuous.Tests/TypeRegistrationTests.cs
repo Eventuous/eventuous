@@ -1,5 +1,3 @@
-using System;
-using System.Reflection;
 using FluentAssertions;
 using Xunit;
 using static Eventuous.Tests.SutDomain.BookingEvents;

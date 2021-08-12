@@ -1,8 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="MongoDB.Driver" Version="2.12.2" />
+        <PackageReference Include="MongoDB.Driver" Version="2.12.2"/>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="..\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+            <Link>IsExternalInit.cs</Link>
+        </Compile>
     </ItemGroup>
 </Project>
