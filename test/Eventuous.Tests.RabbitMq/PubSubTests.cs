@@ -31,7 +31,7 @@ namespace Eventuous.Tests.RabbitMq {
             var loggerFactory =
                 LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
-            _handler = new Handler();
+            _handler = new Handler(queue);
 
             _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory);
 
@@ -78,7 +78,11 @@ namespace Eventuous.Tests.RabbitMq {
         record TestEvent(string Data, int Number);
 
         class Handler : IEventHandler {
-            public string SubscriptionId => "queue";
+            public Handler(string queue) {
+                SubscriptionId = queue;
+            }
+
+            public string SubscriptionId { get; }
 
             public ConcurrentBag<object> ReceivedEvents { get; } = new();
 
