@@ -1,3 +1,3 @@
 namespace Eventuous {
-    public record StreamEvent(string EventType, byte[] Data, byte[]? Metadata, string ContentType);
+    public record StreamEvent(string EventType, byte[] Data, byte[]? Metadata, string ContentType, long Position);
 }

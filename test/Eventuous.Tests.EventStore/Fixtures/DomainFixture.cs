@@ -2,19 +2,21 @@ using System;
 using AutoFixture;
 using Eventuous.Tests.SutApp;
 using NodaTime;
+using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.EventStore.Fixtures {
     public static class DomainFixture {
-        static readonly Fixture Fixture = new();
-
+        static DomainFixture()
+            => TypeMap.RegisterKnownEventTypes();
+        
         public static Commands.ImportBooking CreateImportBooking() {
-            var from = Fixture.Create<DateTime>();
+            var from = Instance.Auto.Create<DateTime>();
 
             return new Commands.ImportBooking(
-                Fixture.Create<string>(),
-                Fixture.Create<string>(),
+                Instance.Auto.Create<string>(),
+                Instance.Auto.Create<string>(),
                 LocalDate.FromDateTime(from),
-                LocalDate.FromDateTime(from.AddDays(Fixture.Create<int>()))
+                LocalDate.FromDateTime(from.AddDays(Instance.Auto.Create<int>()))
             );
         }
     }

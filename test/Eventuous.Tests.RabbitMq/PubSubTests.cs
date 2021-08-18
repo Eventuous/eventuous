@@ -71,7 +71,7 @@ namespace Eventuous.Tests.RabbitMq {
             _handler.ReceivedEvents.Count.Should().Be(testEvents.Count);
 
             while (_handler.ReceivedEvents.TryTake(out var re)) {
-                testEvents.Should().Contain(re as TestEvent);
+                testEvents.Should().Contain((re as TestEvent)!);
             }
         }
 

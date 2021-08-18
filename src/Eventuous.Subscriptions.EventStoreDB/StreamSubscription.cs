@@ -68,7 +68,15 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEventSerializer?          eventSerializer = null,
             ILoggerFactory?            loggerFactory   = null,
             ISubscriptionGapMeasure?   measure         = null
-        ) : base(client, options, checkpointStore, eventHandlers, eventSerializer, loggerFactory, measure) {
+        ) : base(
+            client,
+            options,
+            checkpointStore,
+            eventHandlers,
+            eventSerializer,
+            loggerFactory,
+            measure
+        ) {
             Ensure.NotEmptyString(options.StreamName, nameof(options.StreamName));
 
             _options = options;
@@ -90,7 +98,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 )
                 : EventStoreClient.SubscribeToStreamAsync(
                     _options.StreamName,
-                    StreamPosition.FromInt64((long) checkpoint.Position),
+                    StreamPosition.FromInt64((long)checkpoint.Position),
                     HandleEvent,
                     _options.ResolveLinkTos,
                     HandleDrop,
@@ -103,12 +111,28 @@ namespace Eventuous.Subscriptions.EventStoreDB {
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
-            async Task HandleEvent(EventStore.Client.StreamSubscription _, ResolvedEvent re, CancellationToken ct) {
-                // if (re.Event is null) return;
-                await Handler(AsReceivedEvent(re), ct).NoContext();
+            async Task HandleEvent(
+                EventStore.Client.StreamSubscription _,
+                ResolvedEvent                        re,
+                CancellationToken                    ct
+            ) {
+                // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                if (re.Event is null) return;
+                try {
+                    await Handler(AsReceivedEvent(re), ct).NoContext();
+                }
+                catch (Exception e) {
+                    Log.LogError(e, "Error occured when handling event {Event}", re.Event);
+                    if (_options.ThrowOnError) throw;
+                }
             }
 
-            void HandleDrop(EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
+            void HandleDrop(
+                EventStore.Client.StreamSubscription _,
+                SubscriptionDroppedReason            reason,
+                Exception?                           ex
+            )
                 => Dropped(EsdbMappings.AsDropReason(reason), ex);
 
             ReceivedEvent AsReceivedEvent(ResolvedEvent re) {
@@ -119,7 +143,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     re.Event.EventStreamId,
                     re.Event.EventNumber
                 );
-                
+
                 return new ReceivedEvent(
                     re.Event.EventId.ToString(),
                     re.Event.EventType,

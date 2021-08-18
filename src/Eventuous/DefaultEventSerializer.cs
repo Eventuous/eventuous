@@ -5,11 +5,14 @@ using JetBrains.Annotations;
 namespace Eventuous {
     [PublicAPI]
     public class DefaultEventSerializer : IEventSerializer {
-        public static readonly IEventSerializer Instance =
+        public static IEventSerializer Instance { get; private set; } =
             new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         readonly JsonSerializerOptions _options;
         readonly TypeMapper            _typeMapper;
+
+        public static void SetDefaultSerializer(IEventSerializer serializer)
+            => Instance = serializer;
 
         public DefaultEventSerializer(JsonSerializerOptions options, TypeMapper? typeMapper = null) {
             _options    = options;

@@ -3,11 +3,16 @@ using System.Threading.Tasks;
 
 namespace Eventuous.Subscriptions {
     public class NoOpCheckpointStore : ICheckpointStore {
+        readonly Checkpoint _start;
+
+        public NoOpCheckpointStore(ulong? start = null)
+            => _start = new Checkpoint("", start);
+
         public ValueTask<Checkpoint> GetLastCheckpoint(
             string            checkpointId,
             CancellationToken cancellationToken = default
         )
-            => new(new Checkpoint(checkpointId, 0));
+            => new(_start);
 
         public ValueTask<Checkpoint> StoreCheckpoint(
             Checkpoint        checkpoint,

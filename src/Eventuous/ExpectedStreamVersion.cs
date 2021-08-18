@@ -5,6 +5,8 @@ namespace Eventuous {
     }
 
     public record StreamReadPosition(long Value) {
-        public static StreamReadPosition Start = new(0L);
+        public static readonly StreamReadPosition Start = new(0L);
     }
+
+    public record StreamTruncatePosition(long Value);
 }
