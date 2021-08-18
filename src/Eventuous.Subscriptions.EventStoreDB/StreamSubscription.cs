@@ -119,13 +119,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (re.Event is null) return;
-                try {
-                    await Handler(AsReceivedEvent(re), ct).NoContext();
-                }
-                catch (Exception e) {
-                    Log.LogError(e, "Error occured when handling event {Event}", re.Event);
-                    if (_options.ThrowOnError) throw;
-                }
+
+                await Handler(AsReceivedEvent(re), ct).NoContext();
             }
 
             void HandleDrop(
