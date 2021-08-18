@@ -104,6 +104,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
             async Task HandleEvent(EventStore.Client.StreamSubscription _, ResolvedEvent re, CancellationToken ct) {
+                // if (re.Event is null) return;
                 await Handler(AsReceivedEvent(re), ct).NoContext();
             }
 
@@ -124,9 +125,9 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     re.Event.EventType,
                     re.Event.ContentType,
                     re.Event.Position.CommitPosition,
-                    re.Event.EventNumber,
+                    re.OriginalEventNumber.ToUInt64(),
                     re.Event.EventStreamId,
-                    re.Event.EventNumber,
+                    re.OriginalEventNumber.ToUInt64(),
                     re.Event.Created,
                     evt
                     // re.Event.Metadata

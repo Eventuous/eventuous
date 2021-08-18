@@ -1,11 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-      <PackageReference Include="System.Text.Json" Version="5.0.2" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="..\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-            <Link>IsExternalInit.cs</Link>
-        </Compile>
+        <PackageReference Include="System.Text.Json" Version="5.0.2" Condition="'$(TargetFramework)' == 'netcoreapp3.1'"/>
     </ItemGroup>
 </Project>

@@ -25,5 +25,8 @@
 
     <ItemGroup>
         <None Include="..\..\e-logo.png" Pack="true" PackagePath="\"/>
+        <Compile Include="..\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+            <Link>IsExternalInit.cs</Link>
+        </Compile>
     </ItemGroup>
 </Project>

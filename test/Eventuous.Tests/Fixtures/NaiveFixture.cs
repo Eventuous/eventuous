@@ -13,7 +13,7 @@ namespace Eventuous.Tests.Fixtures {
             new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
         );
 
-        public NaiveFixture() {
+        protected NaiveFixture() {
             EventStore     = new InMemoryEventStore();
             AggregateStore = new AggregateStore(EventStore, Serializer);
         }

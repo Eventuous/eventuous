@@ -1,0 +1,13 @@
+{
+  "solution": {
+    "path": "Eventuous.sln",
+    "projects": [
+      "src\\Eventuous\\Eventuous.csproj",
+      "src\\Eventuous.Subscriptions\\Eventuous.Subscriptions.csproj",
+      "src\\Eventuous.Producers\\Eventuous.Producers.csproj",
+      "test\\Eventuous.Tests\\Eventuous.Tests.csproj",
+      "test\\Eventuous.Tests.SitDomain\\Eventuous.Tests.SutDomain.csproj",
+      "test\\Eventuous.Tests.SutApp\\Eventuous.Tests.SutApp.csproj"
+    ]
+  }
+}
