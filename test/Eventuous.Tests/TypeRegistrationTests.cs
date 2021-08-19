@@ -12,8 +12,8 @@ namespace Eventuous.Tests {
         public void ShouldResolveDecoratedEvent() {
             _typeMapper.RegisterKnownEventTypes();
 
-            _typeMapper.GetTypeName<BookingCancelled>().Should().Be(BookingCancelledTypeName);
-            _typeMapper.GetType(BookingCancelledTypeName).Should().Be<BookingCancelled>();
+            _typeMapper.GetTypeName<BookingCancelled>().Should().Be(TypeNames.BookingCancelled);
+            _typeMapper.GetType(TypeNames.BookingCancelled).Should().Be<BookingCancelled>();
         }
     }
 }

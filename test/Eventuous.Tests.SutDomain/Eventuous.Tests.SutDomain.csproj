@@ -6,10 +6,4 @@
     <ItemGroup>
         <PackageReference Include="NodaTime" Version="3.0.5" />
     </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="..\..\src\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-            <Link>IsExternalInit.cs</Link>
-        </Compile>
-    </ItemGroup>
 </Project>

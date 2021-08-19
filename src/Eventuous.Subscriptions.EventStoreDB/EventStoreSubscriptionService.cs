@@ -19,9 +19,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             IEventSerializer?             eventSerializer = null,
             ILoggerFactory?               loggerFactory   = null,
             ISubscriptionGapMeasure?      measure         = null
-        ) : base(options, checkpointStore, eventHandlers, eventSerializer, loggerFactory, measure) {
-            EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
-        }
+        ) : base(options, checkpointStore, eventHandlers, eventSerializer, loggerFactory, measure)
+            => EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
 
         protected override async Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {
             var read = EventStoreClient.ReadAllAsync(

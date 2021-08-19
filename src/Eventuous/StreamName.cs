@@ -6,7 +6,7 @@ namespace Eventuous {
     public record StreamName {
         string Value { get; }
 
-        StreamName(string value) {
+        public StreamName(string value) {
             if (string.IsNullOrWhiteSpace(value)) throw new InvalidStreamName(value);
             
             Value = value;

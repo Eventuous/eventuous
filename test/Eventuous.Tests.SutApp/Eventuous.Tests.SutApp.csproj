@@ -3,10 +3,4 @@
         <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj"/>
         <ProjectReference Include="..\Eventuous.Tests.SutDomain\Eventuous.Tests.SutDomain.csproj"/>
     </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="..\..\src\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-            <Link>IsExternalInit.cs</Link>
-        </Compile>
-    </ItemGroup>
 </Project>

@@ -35,7 +35,7 @@ namespace Eventuous {
 
             StreamEvent ToStreamEvent(object evt) {
                 var (eventType, payload) = _serializer.SerializeEvent(evt);
-                return new(eventType, payload, null, _serializer.ContentType);
+                return new(eventType, payload, null, _serializer.ContentType, -1);
             }
         }
 

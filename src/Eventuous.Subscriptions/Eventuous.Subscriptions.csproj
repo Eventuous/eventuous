@@ -1,15 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="5.0.*" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.*" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="5.0.*"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.*"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.*"/>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="..\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-            <Link>IsExternalInit.cs</Link>
-        </Compile>
+        <ProjectReference Include="..\Eventuous\Eventuous.csproj"/>
     </ItemGroup>
 </Project>

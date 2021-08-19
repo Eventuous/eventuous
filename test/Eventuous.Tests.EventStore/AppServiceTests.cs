@@ -2,32 +2,23 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoFixture;
-using Eventuous.Tests.Fixtures;
+using Eventuous.Tests.EventStore.Fixtures;
 using Eventuous.Tests.SutApp;
 using Eventuous.Tests.SutDomain;
 using FluentAssertions;
 using NodaTime;
 using Xunit;
+using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 
-namespace Eventuous.Tests {
+namespace Eventuous.Tests.EventStore {
     public class AppServiceTests {
-        static readonly IntegrationFixture Fixture = new();
+        static AppServiceTests() => BookingEvents.MapBookingEvents();
 
-        public AppServiceTests() {
-            Service = new BookingService(Fixture.AggregateStore);
-            BookingEvents.MapBookingEvents();
-        }
-
-        BookingService Service { get; }
+        static BookingService Service { get; } = new(Instance.AggregateStore);
 
         [Fact]
         public async Task ProcessAnyForNew() {
-            var cmd = new Commands.ImportBooking(
-                Fixture.Auto.Create<string>(),
-                Fixture.Auto.Create<string>(),
-                LocalDate.FromDateTime(DateTime.Today),
-                LocalDate.FromDateTime(DateTime.Today.AddDays(2))
-            );
+            var cmd = DomainFixture.CreateImportBooking();
 
             var expected = new object[] {
                 new BookingEvents.BookingImported(
@@ -40,14 +31,14 @@ namespace Eventuous.Tests {
 
             await Service.Handle(cmd, default);
 
-            var events = await Fixture.EventStore.ReadEvents(
+            var events = await Instance.EventStore.ReadEvents(
                 StreamName.For<Booking>(cmd.BookingId),
                 StreamReadPosition.Start,
                 int.MaxValue,
                 default
             );
 
-            var result = events.Select(x => Fixture.Serializer.DeserializeEvent(x.Data, x.EventType)).ToArray();
+            var result = events.Select(x => Serializer.Json.DeserializeEvent(x.Data, x.EventType)).ToArray();
 
             result.Should().BeEquivalentTo(expected);
         }

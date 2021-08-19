@@ -4,6 +4,7 @@
         <IsPackable>false</IsPackable>
         <LangVersion>9</LangVersion>
         <IsTestProject>true</IsTestProject>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,5 +15,12 @@
         <PackageReference Include="xunit" Version="2.4.1"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="All" />
         <PackageReference Include="coverlet.collector" Version="3.0.3" PrivateAssets="All" />
+        <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\src\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+            <Link>IsExternalInit.cs</Link>
+        </Compile>
     </ItemGroup>
 </Project>

@@ -1,16 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-      <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.4.0" />
-      <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
+        <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.4.0"/>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0"/>
     </ItemGroup>
-
     <ItemGroup>
-      <ProjectReference Include="..\Eventuous.Producers\Eventuous.Producers.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="..\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-            <Link>IsExternalInit.cs</Link>
-        </Compile>
+        <ProjectReference Include="..\Eventuous.Producers\Eventuous.Producers.csproj"/>
     </ItemGroup>
 </Project>
