@@ -18,12 +18,9 @@ using StreamSubscription = Eventuous.Subscriptions.EventStoreDB.StreamSubscripti
 
 namespace Eventuous.Tests.EventStore {
     public class StreamSubscriptionTests {
-        readonly ITestOutputHelper _output;
         readonly ILoggerFactory    _loggerFactory;
 
         public StreamSubscriptionTests(ITestOutputHelper output) {
-            _output = output;
-
             _loggerFactory = LoggerFactory.Create(
                 cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug)
             );
