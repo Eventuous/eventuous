@@ -12,10 +12,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace Eventuous.Tests.RabbitMq {
-    public class PubSubTests : IAsyncLifetime {
-        static PubSubTests() {
-            TypeMap.AddType<TestEvent>("test-event");
-        }
+    public class SubscriptionSpec : IAsyncLifetime {
+        static SubscriptionSpec() => TypeMap.AddType<TestEvent>("test-event");
 
         static readonly Fixture Auto = new();
 
@@ -24,14 +22,14 @@ namespace Eventuous.Tests.RabbitMq {
         readonly Handler                     _handler;
         readonly string                      _exchange;
 
-        public PubSubTests(ITestOutputHelper outputHelper) {
+        public SubscriptionSpec(ITestOutputHelper outputHelper) {
             _exchange = Auto.Create<string>();
             var queue = Auto.Create<string>();
 
             var loggerFactory =
                 LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
-            _handler = new Handler();
+            _handler = new Handler(queue);
 
             _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory);
 
@@ -78,7 +76,9 @@ namespace Eventuous.Tests.RabbitMq {
         record TestEvent(string Data, int Number);
 
         class Handler : IEventHandler {
-            public string SubscriptionId => "queue";
+            public Handler(string queue) => SubscriptionId = queue;
+
+            public string SubscriptionId { get; }
 
             public ConcurrentBag<object> ReceivedEvents { get; } = new();
 
