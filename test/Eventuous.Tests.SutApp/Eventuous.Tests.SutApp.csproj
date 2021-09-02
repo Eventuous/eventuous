@@ -1,6 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-        <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj"/>
-        <ProjectReference Include="..\Eventuous.Tests.SutDomain\Eventuous.Tests.SutDomain.csproj"/>
-    </ItemGroup>
-</Project>

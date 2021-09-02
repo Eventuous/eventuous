@@ -1,6 +1,6 @@
 using System;
 using AutoFixture;
-using Eventuous.Tests.SutApp;
+using Eventuous.Sut.App;
 using NodaTime;
 using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 

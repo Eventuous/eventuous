@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="Hypothesist" Version="2.0.11" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+      <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj" />
+    </ItemGroup>
+</Project>

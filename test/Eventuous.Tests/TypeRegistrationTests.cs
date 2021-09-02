@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Xunit;
-using static Eventuous.Tests.SutDomain.BookingEvents;
+using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests {
     public class TypeRegistrationTests {
