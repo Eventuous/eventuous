@@ -3,8 +3,8 @@
     <ProjectReference Include="..\..\src\Eventuous.EventStoreDB\Eventuous.EventStoreDB.csproj" />
     <ProjectReference Include="..\..\src\Eventuous.Producers.EventStoreDB\Eventuous.Producers.EventStoreDB.csproj" />
     <ProjectReference Include="..\..\src\Eventuous.Subscriptions.EventStoreDB\Eventuous.Subscriptions.EventStoreDB.csproj" />
-    <ProjectReference Include="..\Eventuous.Tests.SutApp\Eventuous.Tests.SutApp.csproj" />
-    <ProjectReference Include="..\Eventuous.Tests.SutDomain\Eventuous.Tests.SutDomain.csproj" />
+    <ProjectReference Include="..\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
+    <ProjectReference Include="..\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />

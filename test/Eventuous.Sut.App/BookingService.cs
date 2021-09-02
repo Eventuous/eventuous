@@ -1,6 +1,6 @@
-using Eventuous.Tests.SutDomain;
+using Eventuous.Sut.Domain;
 
-namespace Eventuous.Tests.SutApp {
+namespace Eventuous.Sut.App {
     public class BookingService : ApplicationService<Booking, BookingState, BookingId> {
         public BookingService(IAggregateStore store) : base(store) {
             OnNew<Commands.BookRoom>(

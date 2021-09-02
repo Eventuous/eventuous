@@ -7,20 +7,23 @@ using AutoFixture;
 using Eventuous.Producers.GooglePubSub;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.GooglePubSub;
+using Eventuous.Sut.Subs;
 using FluentAssertions;
+using FluentAssertions.Extensions;
+using Hypothesist;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Eventuous.Tests.GooglePubSub {
     public class PubSubTests : IAsyncLifetime {
-        static PubSubTests() => TypeMap.AddType<TestEvent>("test-event");
+        static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
         static readonly Fixture Auto = new();
 
         readonly GooglePubSubSubscription _subscription;
         readonly GooglePubSubProducer     _producer;
-        readonly Handler                  _handler;
+        readonly TestEventHandler         _handler;
         readonly string                   _pubsubTopic;
         readonly string                   _pubsubSubscription;
 
@@ -31,7 +34,7 @@ namespace Eventuous.Tests.GooglePubSub {
             _pubsubTopic        = $"test-{Guid.NewGuid():N}";
             _pubsubSubscription = $"test-{Guid.NewGuid():N}";
 
-            _handler = new Handler(_pubsubSubscription);
+            _handler = new TestEventHandler(_pubsubSubscription);
 
             _producer = new GooglePubSubProducer(
                 PubSubFixture.ProjectId,
@@ -50,11 +53,11 @@ namespace Eventuous.Tests.GooglePubSub {
         [Fact]
         public async Task SubscribeAndProduce() {
             var testEvent = Auto.Create<TestEvent>();
+            _handler.AssertThat().Any(x => x as TestEvent == testEvent);
+
             await _producer.Produce(_pubsubTopic, testEvent);
-
-            await Task.Delay(2000);
-
-            _handler.ReceivedEvents.Last().Should().Be(testEvent);
+            
+            await _handler.Validate(10.Seconds());
         }
 
         [Fact]
@@ -62,29 +65,11 @@ namespace Eventuous.Tests.GooglePubSub {
             const int count = 10000;
 
             var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
+            _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
             await _producer.Produce(_pubsubTopic, testEvents);
 
-            await Task.Delay(count / 2);
-
-            _handler.ReceivedEvents.Count.Should().Be(testEvents.Count);
-
-            while (_handler.ReceivedEvents.TryTake(out var re)) {
-                testEvents.Should().Contain((re as TestEvent)!);
-            }
-        }
-
-        class Handler : IEventHandler {
-            public Handler(string subscriptionId) => SubscriptionId = subscriptionId;
-
-            public string SubscriptionId { get; }
-
-            public ConcurrentBag<object> ReceivedEvents { get; } = new();
-
-            public Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
-                ReceivedEvents.Add(evt);
-                return Task.CompletedTask;
-            }
+            await _handler.Validate(10.Seconds());
         }
 
         public async Task InitializeAsync() {
@@ -99,6 +84,4 @@ namespace Eventuous.Tests.GooglePubSub {
             await PubSubFixture.DeleteTopic(_pubsubTopic);
         }
     }
-
-    record TestEvent(string Data, int Number);
 }

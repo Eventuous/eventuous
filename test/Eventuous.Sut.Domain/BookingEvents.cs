@@ -1,7 +1,7 @@
 using NodaTime;
 // ReSharper disable MemberHidesStaticFromOuterClass
 
-namespace Eventuous.Tests.SutDomain {
+namespace Eventuous.Sut.Domain {
     public static class BookingEvents {
         public record RoomBooked(
             string    BookingId,

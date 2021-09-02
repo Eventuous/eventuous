@@ -1,19 +1,19 @@
 using System.Collections.Immutable;
 using System.Linq;
-using static Eventuous.Tests.SutDomain.BookingEvents;
+using static Eventuous.Sut.Domain.BookingEvents;
 
-namespace Eventuous.Tests.SutDomain {
+namespace Eventuous.Sut.Domain {
     public class Booking : Aggregate<BookingState, BookingId> {
         public void BookRoom(BookingId id, string roomId, StayPeriod period, decimal price) {
             EnsureDoesntExist();
 
-            Apply(new RoomBooked(id, roomId, period.CheckIn, period.CheckOut, price));
+            Apply(new BookingEvents.RoomBooked(id, roomId, period.CheckIn, period.CheckOut, price));
         }
 
         public void Import(BookingId id, string roomId, StayPeriod period) {
             EnsureDoesntExist();
 
-            Apply(new BookingImported(id, roomId, period.CheckIn, period.CheckOut));
+            Apply(new BookingEvents.BookingImported(id, roomId, period.CheckIn, period.CheckOut));
         }
 
         public void RecordPayment(string paymentId, decimal amount) {
@@ -21,10 +21,10 @@ namespace Eventuous.Tests.SutDomain {
             
             if (State.HasPaymentRecord(paymentId)) return;
 
-            var (previousState, currentState) = Apply(new BookingPaymentRegistered(State.Id, paymentId, amount));
+            var (previousState, currentState) = Apply(new BookingEvents.BookingPaymentRegistered(State.Id, paymentId, amount));
 
             if (!previousState.IsFullyPaid() && currentState.IsFullyPaid())
-                Apply(new BookingFullyPaid(State.Id));
+                Apply(new BookingEvents.BookingFullyPaid(State.Id));
         }
     }
 
@@ -41,9 +41,9 @@ namespace Eventuous.Tests.SutDomain {
 
         public override BookingState When(object @event)
             => @event switch {
-                RoomBooked booked        => this with { Id = new BookingId(booked.BookingId), Price = booked.Price },
-                BookingImported imported => this with { Id = new BookingId(imported.BookingId) },
-                BookingPaymentRegistered paid => this with {
+                BookingEvents.RoomBooked booked        => this with { Id = new BookingId(booked.BookingId), Price = booked.Price },
+                BookingEvents.BookingImported imported => this with { Id = new BookingId(imported.BookingId) },
+                BookingEvents.BookingPaymentRegistered paid => this with {
                     PaymentRecords = PaymentRecords.Add(new PaymentRecord(paid.PaymentId, paid.AmountPaid)),
                     AmountPaid = AmountPaid + paid.AmountPaid
                 },

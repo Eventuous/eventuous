@@ -26,9 +26,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.GooglePubSu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Shovel", "src\Eventuous.Shovel\Eventuous.Shovel.csproj", "{F597091E-E8AD-429B-A8E0-3C7972031F83}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.SutApp", "test\Eventuous.Tests.SutApp\Eventuous.Tests.SutApp.csproj", "{151A0839-2B1F-49D6-B5DD-199A5FAAB610}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Sut.App", "test\Eventuous.Sut.App\Eventuous.Sut.App.csproj", "{151A0839-2B1F-49D6-B5DD-199A5FAAB610}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.SutDomain", "test\Eventuous.Tests.SutDomain\Eventuous.Tests.SutDomain.csproj", "{09805579-49ED-4B07-B498-047B00DEBCCF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Sut.Domain", "test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj", "{09805579-49ED-4B07-B498-047B00DEBCCF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.EventStoreDB", "src\Eventuous.EventStoreDB\Eventuous.EventStoreDB.csproj", "{BE63EFFE-4F43-47C0-B91C-19C3FF3CE5D1}"
 EndProject
@@ -37,6 +37,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Producers.EventStoreDB", "src\Eventuous.Producers.EventStoreDB\Eventuous.Producers.EventStoreDB.csproj", "{F278E2EF-807A-47A8-9D6B-7BBF407F77FA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Subscriptions.EventStoreDB", "src\Eventuous.Subscriptions.EventStoreDB\Eventuous.Subscriptions.EventStoreDB.csproj", "{8253B734-F0F7-4F47-9955-90D43B02CBFA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Sut.Subs", "test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj", "{37E68C45-74AA-4103-A03A-BA8189873884}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -116,6 +118,10 @@ Global
 		{8253B734-F0F7-4F47-9955-90D43B02CBFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8253B734-F0F7-4F47-9955-90D43B02CBFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8253B734-F0F7-4F47-9955-90D43B02CBFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37E68C45-74AA-4103-A03A-BA8189873884}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37E68C45-74AA-4103-A03A-BA8189873884}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37E68C45-74AA-4103-A03A-BA8189873884}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37E68C45-74AA-4103-A03A-BA8189873884}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BD44B15F-4131-4A59-B17E-1E2E81D81B86} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
@@ -124,5 +130,6 @@ Global
 		{151A0839-2B1F-49D6-B5DD-199A5FAAB610} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
 		{09805579-49ED-4B07-B498-047B00DEBCCF} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
 		{D7E4AE22-6512-401D-A6FF-F607B458F439} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
+		{37E68C45-74AA-4103-A03A-BA8189873884} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
 	EndGlobalSection
 EndGlobal

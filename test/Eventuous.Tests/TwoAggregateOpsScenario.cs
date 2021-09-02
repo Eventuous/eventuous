@@ -1,6 +1,6 @@
 using System;
 using AutoFixture;
-using Eventuous.Tests.SutDomain;
+using Eventuous.Sut.Domain;
 using FluentAssertions;
 using NodaTime;
 using Xunit;
