@@ -3,6 +3,7 @@ using NodaTime;
 
 namespace Eventuous.Sut.Domain {
     public static class BookingEvents {
+        [EventType("RoomBooked")]
         public record RoomBooked(
             string    BookingId,
             string    RoomId,
@@ -11,6 +12,7 @@ namespace Eventuous.Sut.Domain {
             decimal   Price
         );
 
+        [EventType("PaymentRegistered")]
         public record BookingPaymentRegistered(
             string  BookingId,
             string  PaymentId,
@@ -22,7 +24,7 @@ namespace Eventuous.Sut.Domain {
         [EventType(TypeNames.BookingCancelled)]
         public record BookingCancelled(string BookingId);
 
-        [EventType(TypeNames.BookingImported)]
+        [EventType("V1.BookingImported")]
         public record BookingImported(
             string    BookingId,
             string    RoomId,
@@ -30,14 +32,9 @@ namespace Eventuous.Sut.Domain {
             LocalDate CheckOut
         );
 
-        public static void MapBookingEvents() {
-            TypeMap.AddType<RoomBooked>("RoomBooked");
-            TypeMap.AddType<BookingPaymentRegistered>("BookingPaymentRegistered");
-        }
-
+        // These constants are for test purpose, use inline names in real apps
         public static class TypeNames {
             public const string BookingCancelled = "V1.BookingCancelled";
-            public const string BookingImported  = "V1.BookingImported";
         }
     }
 }

@@ -10,10 +10,7 @@ using Xunit;
 
 namespace Eventuous.Tests {
     public class StoringEvents : NaiveFixture {
-        public StoringEvents() {
-            Service = new BookingService(AggregateStore);
-            BookingEvents.MapBookingEvents();
-        }
+        public StoringEvents() => Service = new BookingService(AggregateStore);
 
         BookingService Service { get; }
 

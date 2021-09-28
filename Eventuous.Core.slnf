@@ -6,8 +6,8 @@
       "src\\Eventuous.Subscriptions\\Eventuous.Subscriptions.csproj",
       "src\\Eventuous.Producers\\Eventuous.Producers.csproj",
       "test\\Eventuous.Tests\\Eventuous.Tests.csproj",
-      "test\\Eventuous.Tests.SitDomain\\Eventuous.Tests.SutDomain.csproj",
-      "test\\Eventuous.Tests.SutApp\\Eventuous.Tests.SutApp.csproj"
+      "test\\Eventuous.Sut.Domain\\Eventuous.Sut.Domain.csproj",
+      "test\\Eventuous.Sut.App\\Eventuous.Sut.App.csproj"
     ]
   }
 }
