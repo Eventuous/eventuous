@@ -3,5 +3,6 @@
       <ProjectReference Include="..\..\src\Eventuous.Producers.GooglePubSub\Eventuous.Producers.GooglePubSub.csproj" />
       <ProjectReference Include="..\..\src\Eventuous.Subscriptions.GooglePubSub\Eventuous.Subscriptions.GooglePubSub.csproj" />
       <ProjectReference Include="..\..\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+      <ProjectReference Include="..\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
     </ItemGroup>
 </Project>

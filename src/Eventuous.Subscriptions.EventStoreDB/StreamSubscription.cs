@@ -117,16 +117,14 @@ namespace Eventuous.Subscriptions.EventStoreDB {
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
-            async Task HandleEvent(
+            Task HandleEvent(
                 EventStore.Client.StreamSubscription _,
                 ResolvedEvent                        re,
                 CancellationToken                    ct
             ) {
                 // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                if (re.Event is null) return;
-
-                await Handler(AsReceivedEvent(re), ct).NoContext();
+                return re.Event is null ? Task.CompletedTask : Handler(AsReceivedEvent(re), ct);
             }
 
             void HandleDrop(

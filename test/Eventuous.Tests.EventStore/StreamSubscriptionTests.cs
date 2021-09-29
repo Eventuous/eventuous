@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Client;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.EventStoreDB;
+using Eventuous.Sut.App;
+using Eventuous.Sut.Domain;
 using Eventuous.Tests.EventStore.Fixtures;
-using Eventuous.Tests.SutApp;
-using Eventuous.Tests.SutDomain;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -18,12 +17,9 @@ using StreamSubscription = Eventuous.Subscriptions.EventStoreDB.StreamSubscripti
 
 namespace Eventuous.Tests.EventStore {
     public class StreamSubscriptionTests {
-        readonly ITestOutputHelper _output;
         readonly ILoggerFactory    _loggerFactory;
 
         public StreamSubscriptionTests(ITestOutputHelper output) {
-            _output = output;
-
             _loggerFactory = LoggerFactory.Create(
                 cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug)
             );

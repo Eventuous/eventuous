@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj" />
-    <ProjectReference Include="..\Eventuous.Tests.SutApp\Eventuous.Tests.SutApp.csproj" />
-    <ProjectReference Include="..\Eventuous.Tests.SutDomain\Eventuous.Tests.SutDomain.csproj" />
+    <ProjectReference Include="..\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
+    <ProjectReference Include="..\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
   </ItemGroup>
   
   <ItemGroup>

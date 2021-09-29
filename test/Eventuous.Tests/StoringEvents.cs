@@ -2,18 +2,15 @@ using System;
 using System.Threading.Tasks;
 using AutoFixture;
 using Eventuous.Tests.Fixtures;
-using Eventuous.Tests.SutApp;
-using Eventuous.Tests.SutDomain;
+using Eventuous.Sut.App;
+using Eventuous.Sut.Domain;
 using FluentAssertions;
 using NodaTime;
 using Xunit;
 
 namespace Eventuous.Tests {
     public class StoringEvents : NaiveFixture {
-        public StoringEvents() {
-            Service = new BookingService(AggregateStore);
-            BookingEvents.MapBookingEvents();
-        }
+        public StoringEvents() => Service = new BookingService(AggregateStore);
 
         BookingService Service { get; }
 

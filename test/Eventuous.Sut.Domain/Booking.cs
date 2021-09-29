@@ -1,17 +1,19 @@
-using static Eventuous.Tests.SutDomain.BookingEvents;
+using System.Collections.Immutable;
+using System.Linq;
+using static Eventuous.Sut.Domain.BookingEvents;
 
-namespace Eventuous.Tests.SutDomain {
+namespace Eventuous.Sut.Domain {
     public class Booking : Aggregate<BookingState, BookingId> {
         public void BookRoom(BookingId id, string roomId, StayPeriod period, decimal price) {
             EnsureDoesntExist();
 
-            Apply(new RoomBooked(id, roomId, period.CheckIn, period.CheckOut, price));
+            Apply(new BookingEvents.RoomBooked(id, roomId, period.CheckIn, period.CheckOut, price));
         }
 
         public void Import(BookingId id, string roomId, StayPeriod period) {
             EnsureDoesntExist();
 
-            Apply(new BookingImported(id, roomId, period.CheckIn, period.CheckOut));
+            Apply(new BookingEvents.BookingImported(id, roomId, period.CheckIn, period.CheckOut));
         }
 
         public void RecordPayment(string paymentId, decimal amount) {
@@ -21,9 +23,10 @@ namespace Eventuous.Tests.SutDomain {
 
             var (previousState, currentState) =
                 Apply(new BookingPaymentRegistered(State.Id, paymentId, amount));
+            var (previousState, currentState) = Apply(new BookingEvents.BookingPaymentRegistered(State.Id, paymentId, amount));
 
             if (!previousState.IsFullyPaid() && currentState.IsFullyPaid())
-                Apply(new BookingFullyPaid(State.Id));
+                Apply(new BookingEvents.BookingFullyPaid(State.Id));
         }
     }
 

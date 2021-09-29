@@ -20,7 +20,6 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 DefaultCredentials       = settings.DefaultCredentials,
                 LoggerFactory            = settings.LoggerFactory,
                 OperationOptions         = settings.OperationOptions,
-                CreateHttpMessageHandler = settings.CreateHttpMessageHandler
             };
     }
 }
