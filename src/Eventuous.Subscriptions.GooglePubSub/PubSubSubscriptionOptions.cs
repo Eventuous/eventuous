@@ -1,3 +1,4 @@
+using System;
 using Google.Cloud.PubSub.V1;
 using JetBrains.Annotations;
 using static Eventuous.Subscriptions.GooglePubSub.GooglePubSubSubscription;
@@ -26,13 +27,14 @@ namespace Eventuous.Subscriptions.GooglePubSub {
         /// </summary>
         public Settings? Settings { get; init; }
 
-        public PushConfig? PushConfig { get; init; }
-
-        public int AckDeadline { get; init; } = 60;
-
         /// <summary>
         /// Custom failure handler, which allows overriding the default behaviour (NACK)
         /// </summary>
         public HandleEventProcessingFailure? FailureHandler { get; init; }
+        
+        /// <summary>
+        /// A function to customise the subscription options when the subscription is created
+        /// </summary>
+        public Action<Subscription>? ConfigureSubscription { get; init; }
     }
 }
