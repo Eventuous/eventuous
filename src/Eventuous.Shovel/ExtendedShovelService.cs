@@ -16,10 +16,6 @@ namespace Eventuous.Shovel {
         readonly TSubscription _subscription;
         readonly TProducer     _producer;
 
-        public record ShovelMessage(string TargetStream, object? Message, TProduceOptions ProduceOptions);
-
-        public delegate ValueTask<ShovelMessage?> RouteAndTransform(object message);
-
         public delegate TSubscription CreateSubscription(
             string                     subscriptionId,
             IEnumerable<IEventHandler> eventHandlers,
@@ -39,20 +35,20 @@ namespace Eventuous.Shovel {
         /// <param name="loggerFactory">Logger factory</param>
         /// <param name="measure">Subscription gap measurement</param>
         public ShovelService(
-            string                  subscriptionId,
-            CreateSubscription      createSubscription,
-            TProducer               producer,
-            RouteAndTransform       routeAndTransform,
-            IEventSerializer?       eventSerializer = null,
-            ILoggerFactory?         loggerFactory   = null,
-            SubscriptionGapMeasure? measure         = null
+            string                             subscriptionId,
+            CreateSubscription                 createSubscription,
+            TProducer                          producer,
+            RouteAndTransform<TProduceOptions> routeAndTransform,
+            IEventSerializer?                  eventSerializer = null,
+            ILoggerFactory?                    loggerFactory   = null,
+            SubscriptionGapMeasure?            measure         = null
         ) {
             _producer = Ensure.NotNull(producer, nameof(producer));
 
             _subscription = createSubscription(
                 Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId)),
                 new[] {
-                    new ShovelHandler<TSubscription, TProducer, TProduceOptions>(
+                    new ShovelHandler(
                         subscriptionId,
                         producer,
                         Ensure.NotNull(routeAndTransform, nameof(routeAndTransform))
@@ -73,38 +69,51 @@ namespace Eventuous.Shovel {
             await _subscription.StopAsync(cancellationToken).NoContext();
             await _producer.Shutdown(cancellationToken).NoContext();
         }
+
+        class ShovelHandler : IEventHandler {
+            readonly TProducer _eventProducer;
+
+            readonly RouteAndTransform<TProduceOptions> _transform;
+
+            public string SubscriptionId { get; }
+
+            public ShovelHandler(
+                string                             subscriptionId,
+                TProducer                          eventProducer,
+                RouteAndTransform<TProduceOptions> transform
+            ) {
+                _eventProducer = eventProducer;
+                _transform     = transform;
+                SubscriptionId = subscriptionId;
+            }
+
+            public async Task HandleEvent(
+                object            evt,
+                long?             position,
+                CancellationToken cancellationToken
+            ) {
+                var shovelMessage = await _transform(evt).NoContext();
+                if (shovelMessage?.Message == null) return;
+
+                await _eventProducer.Produce(
+                        shovelMessage.TargetStream,
+                        new[] { shovelMessage.Message },
+                        shovelMessage.ProduceOptions,
+                        cancellationToken
+                    )
+                    .NoContext();
+            }
+        }
     }
 
-    class ShovelHandler<TSubscription, TProducer, TProduceOptions> : IEventHandler
-        where TProducer : class, IEventProducer<TProduceOptions>
-        where TSubscription : SubscriptionService
-        where TProduceOptions : class {
-        readonly TProducer _eventProducer;
+    [PublicAPI]
+    public record ShovelMessage<TProduceOptions>(
+        string          TargetStream,
+        object?         Message,
+        TProduceOptions ProduceOptions
+    );
 
-        readonly ShovelService<TSubscription, TProducer, TProduceOptions>.RouteAndTransform _transform;
-
-        public string SubscriptionId { get; }
-
-        public ShovelHandler(
-            string                                                                     subscriptionId,
-            TProducer                                                                  eventProducer,
-            ShovelService<TSubscription, TProducer, TProduceOptions>.RouteAndTransform transform
-        ) {
-            _eventProducer = eventProducer;
-            _transform     = transform;
-            SubscriptionId = subscriptionId;
-        }
-
-        public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
-            var shovelMessage = await _transform(evt).NoContext();
-            if (shovelMessage?.Message == null) return;
-
-            await _eventProducer.Produce(
-                shovelMessage.TargetStream,
-                new[] { shovelMessage.Message },
-                shovelMessage.ProduceOptions,
-                cancellationToken
-            ).NoContext();
-        }
-    }
+    public delegate ValueTask<ShovelMessage<TProduceOptions>?> RouteAndTransform<TProduceOptions>(
+        object message
+    );
 }

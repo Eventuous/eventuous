@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Cloud.Monitoring.V3;
 using Google.Cloud.PubSub.V1;
+using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using JetBrains.Annotations;
@@ -79,7 +80,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             options,
             new NoOpCheckpointStore(),
             eventHandlers,
-            eventSerializer ?? DefaultEventSerializer.Instance,
+            eventSerializer,
             loggerFactory,
             measure
         ) {
@@ -153,7 +154,8 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                     _topicName.TopicId,
                     0,
                     msg.PublishTime.ToDateTime(),
-                    evt
+                    evt,
+                    AsMeta(msg.Attributes)
                 );
 
                 try {
@@ -164,6 +166,9 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                     return await _failureHandler(_client, msg, ex).NoContext();
                 }
             }
+
+            Metadata AsMeta(MapField<string, string> attributes)
+                => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value));
         }
 
         const string PubSubMetricUndeliveredMessagesCount = "num_undelivered_messages";

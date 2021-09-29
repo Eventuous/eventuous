@@ -23,6 +23,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         /// <param name="checkpointStore">Checkpoint store instance</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="metaSerializer"></param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
         /// <param name="throwOnError"></param>
@@ -33,6 +34,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             ICheckpointStore           checkpointStore,
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
+            IMetadataSerializer?       metaSerializer  = null,
             ILoggerFactory?            loggerFactory   = null,
             ISubscriptionGapMeasure?   measure         = null,
             bool                       throwOnError    = false
@@ -46,6 +48,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             checkpointStore,
             eventHandlers,
             eventSerializer,
+            metaSerializer,
             loggerFactory,
             measure
         ) { }
@@ -58,6 +61,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
         /// <param name="options">Subscription options</param>
+        /// <param name="metaSerializer"></param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
         public StreamSubscription(
@@ -66,6 +70,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             ICheckpointStore           checkpointStore,
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
+            IMetadataSerializer?       metaSerializer  = null,
             ILoggerFactory?            loggerFactory   = null,
             ISubscriptionGapMeasure?   measure         = null
         ) : base(
@@ -74,6 +79,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             checkpointStore,
             eventHandlers,
             eventSerializer,
+            metaSerializer,
             loggerFactory,
             measure
         ) {
@@ -144,12 +150,12 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     re.Event.EventType,
                     re.Event.ContentType,
                     re.Event.Position.CommitPosition,
-                    re.OriginalEventNumber.ToUInt64(),
+                    re.Event.EventNumber,
                     re.Event.EventStreamId,
                     re.OriginalEventNumber.ToUInt64(),
                     re.Event.Created,
-                    evt
-                    // re.Event.Metadata
+                    evt,
+                    DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber)
                 );
             }
         }

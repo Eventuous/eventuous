@@ -29,6 +29,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             StreamPersistentSubscriptionOptions options,
             IEnumerable<IEventHandler>          eventHandlers,
             IEventSerializer?                   eventSerializer = null,
+            IMetadataSerializer?                metaSerializer  = null,
             ILoggerFactory?                     loggerFactory   = null,
             ISubscriptionGapMeasure?            measure         = null
         ) : base(
@@ -37,6 +38,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             new NoOpCheckpointStore(),
             eventHandlers,
             eventSerializer,
+            metaSerializer,
             loggerFactory,
             measure
         ) {
@@ -47,9 +49,12 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             options.ConfigureOperation?.Invoke(opSettings);
             settings.OperationOptions = opSettings;
 
-            _subscriptionClient           = new EventStorePersistentSubscriptionsClient(settings);
-            _handleEventProcessingFailure = options.FailureHandler ?? DefaultEventProcessingFailureHandler;
-            _options                      = options;
+            _subscriptionClient = new EventStorePersistentSubscriptionsClient(settings);
+
+            _handleEventProcessingFailure =
+                options.FailureHandler ?? DefaultEventProcessingFailureHandler;
+
+            _options = options;
         }
 
         /// <summary>
@@ -59,6 +64,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         /// <param name="streamName">Name of the stream to receive events from</param>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="eventSerializer">Event serializer instance</param>
+        /// <param name="metaSerializer"></param>
         /// <param name="eventHandlers">Collection of event handlers</param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
@@ -68,6 +74,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             string                     subscriptionId,
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
+            IMetadataSerializer?       metaSerializer  = null,
             ILoggerFactory?            loggerFactory   = null,
             ISubscriptionGapMeasure?   measure         = null
         ) : this(
@@ -78,6 +85,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             },
             eventHandlers,
             eventSerializer,
+            metaSerializer,
             loggerFactory,
             measure
         ) { }
@@ -86,8 +94,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             Checkpoint        _,
             CancellationToken cancellationToken
         ) {
-            var settings = _options.SubscriptionSettings ?? new PersistentSubscriptionSettings(_options.ResolveLinkTos);
-            var autoAck  = _options.AutoAck;
+            var settings = _options.SubscriptionSettings
+                        ?? new PersistentSubscriptionSettings(_options.ResolveLinkTos);
+
+            var autoAck = _options.AutoAck;
 
             PersistentSubscription sub;
 
@@ -96,19 +106,24 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             }
             catch (PersistentSubscriptionNotFoundException) {
                 await _subscriptionClient.CreateAsync(
-                    _options.Stream,
-                    SubscriptionId,
-                    settings,
-                    _options.Credentials,
-                    cancellationToken
-                ).NoContext();
+                        _options.Stream,
+                        SubscriptionId,
+                        settings,
+                        _options.Credentials,
+                        cancellationToken
+                    )
+                    .NoContext();
 
                 sub = await LocalSubscribe().NoContext();
             }
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
-            void HandleDrop(PersistentSubscription __, SubscriptionDroppedReason reason, Exception? exception)
+            void HandleDrop(
+                PersistentSubscription    __,
+                SubscriptionDroppedReason reason,
+                Exception?                exception
+            )
                 => Dropped(EsdbMappings.AsDropReason(reason), exception);
 
             async Task HandleEvent(
@@ -122,11 +137,11 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                 try {
                     await Handler(receivedEvent, ct).NoContext();
 
-                    if (!autoAck)
-                        await subscription.Ack(re).NoContext();
+                    if (!autoAck) await subscription.Ack(re).NoContext();
                 }
                 catch (Exception e) {
-                    await _handleEventProcessingFailure(EventStoreClient, subscription, re, e).NoContext();
+                    await _handleEventProcessingFailure(EventStoreClient, subscription, re, e)
+                        .NoContext();
                 }
             }
 
@@ -156,12 +171,12 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     re.Event.EventType,
                     re.Event.ContentType,
                     re.Event.Position.CommitPosition,
-                    re.Event.Position.CommitPosition,
+                    re.Event.EventNumber,
                     re.OriginalStreamId,
                     re.Event.EventNumber,
                     re.Event.Created,
-                    evt
-                    // re.Event.Metadata
+                    evt,
+                    DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber)
                 );
             }
         }
@@ -172,6 +187,10 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             ResolvedEvent          resolvedEvent,
             Exception              exception
         )
-            => subscription.Nack(PersistentSubscriptionNakEventAction.Retry, exception.Message, resolvedEvent);
+            => subscription.Nack(
+                PersistentSubscriptionNakEventAction.Retry,
+                exception.Message,
+                resolvedEvent
+            );
     }
 }

@@ -16,7 +16,7 @@ namespace Eventuous.Tests.EventStore.Fixtures {
                 DateTimeZoneProviders.Tzdb
             )
         );
-
+        
         public static IntegrationFixture Instance { get; } = new();
 
         public IntegrationFixture() {

@@ -25,6 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection {
                     provider.GetRequiredService<ICheckpointStore>(),
                     provider.GetServices<IEventHandler>(),
                     provider.GetService<IEventSerializer>(),
+                    provider.GetService<IMetadataSerializer>(),
                     provider.GetService<ILoggerFactory>(),
                     provider.GetService<SubscriptionGapMeasure>()
                 );

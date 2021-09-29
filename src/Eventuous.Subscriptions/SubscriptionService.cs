@@ -16,12 +16,12 @@ namespace Eventuous.Subscriptions {
         protected EventSubscription Subscription   { get; set; } = null!;
         protected Logging?          DebugLog       { get; }
         protected ILogger?          Log            { get; }
+        protected bool              ThrowOnError   { get; }
 
         readonly ICheckpointStore         _checkpointStore;
         readonly IEventSerializer         _eventSerializer;
         readonly IEventHandler[]          _eventHandlers;
         readonly ISubscriptionGapMeasure? _measure;
-        readonly bool                     _throwOnError;
 
         CancellationTokenSource? _cts;
         Task?                    _measureTask;
@@ -38,9 +38,9 @@ namespace Eventuous.Subscriptions {
         ) {
             _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
             _eventSerializer = eventSerializer ?? DefaultEventSerializer.Instance;
-            SubscriptionId   = Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
-            _measure         = measure;
-            _throwOnError    = options.ThrowOnError;
+            SubscriptionId = Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
+            _measure = measure;
+            ThrowOnError = options.ThrowOnError;
 
             _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers))
                 .Where(x => x.SubscriptionId == options.SubscriptionId)
@@ -57,7 +57,9 @@ namespace Eventuous.Subscriptions {
                 _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
             }
 
-            var checkpoint = await _checkpointStore.GetLastCheckpoint(SubscriptionId, cancellationToken).NoContext();
+            var checkpoint = await _checkpointStore
+                .GetLastCheckpoint(SubscriptionId, cancellationToken)
+                .NoContext();
 
             _lastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
 
@@ -85,17 +87,22 @@ namespace Eventuous.Subscriptions {
             try {
                 if (re.Payload != null) {
                     await Task.WhenAll(
-                        _eventHandlers.Select(
-                            x => x.HandleEvent(re.Payload, (long?)re.StreamPosition, cancellationToken)
+                            _eventHandlers.Select(
+                                x => x.HandleEvent(
+                                    re.Payload,
+                                    (long?)re.StreamPosition,
+                                    cancellationToken
+                                )
+                            )
                         )
-                    ).NoContext();
+                        .NoContext();
                 }
 
                 _lastProcessed = GetPosition(re);
             }
             catch (Exception e) {
                 Log?.Log(
-                    _throwOnError ? LogLevel.Error : LogLevel.Warning,
+                    ThrowOnError ? LogLevel.Error : LogLevel.Warning,
                     e,
                     "Error when handling the event {Stream} {Position} {Type}",
                     re.Stream,
@@ -103,19 +110,29 @@ namespace Eventuous.Subscriptions {
                     re.EventType
                 );
 
-                if (_throwOnError)
-                    throw new SubscriptionException(re.Stream, re.EventType, re.Sequence, re.Payload, e);
+                if (ThrowOnError)
+                    throw new SubscriptionException(
+                        re.Stream,
+                        re.EventType,
+                        re.Sequence,
+                        re.Payload,
+                        e
+                    );
             }
 
             await Store().NoContext();
 
-            Task Store() => StoreCheckpoint(GetPosition(re), cancellationToken);
+            Task Store()
+                => StoreCheckpoint(GetPosition(re), cancellationToken);
 
             static EventPosition GetPosition(ReceivedEvent receivedEvent)
                 => new(receivedEvent.StreamPosition, receivedEvent.Created);
         }
 
-        protected async Task StoreCheckpoint(EventPosition position, CancellationToken cancellationToken) {
+        protected async Task StoreCheckpoint(
+            EventPosition     position,
+            CancellationToken cancellationToken
+        ) {
             _lastProcessed = position;
             var checkpoint = new Checkpoint(SubscriptionId, position.Position);
 
@@ -131,7 +148,8 @@ namespace Eventuous.Subscriptions {
         ) {
             if (data.IsEmpty) return null;
 
-            var contentType = string.IsNullOrWhiteSpace(eventType) ? "application/json" : eventContentType;
+            var contentType = string.IsNullOrWhiteSpace(eventType) ? "application/json"
+                : eventContentType;
 
             if (contentType != _eventSerializer.ContentType) {
                 Log?.LogError(
@@ -142,7 +160,7 @@ namespace Eventuous.Subscriptions {
                     eventType
                 );
 
-                if (_throwOnError)
+                if (ThrowOnError)
                     throw new InvalidOperationException($"Unknown content type {contentType}");
             }
 
@@ -158,7 +176,7 @@ namespace Eventuous.Subscriptions {
                     eventType
                 );
 
-                if (_throwOnError)
+                if (ThrowOnError)
                     throw new DeserializationException(stream, eventType, position, e);
 
                 return null;
@@ -211,7 +229,11 @@ namespace Eventuous.Subscriptions {
                     Log?.LogInformation("Subscription {Subscription} restored", SubscriptionId);
                 }
                 catch (Exception e) {
-                    Log?.LogError(e, "Unable to restart the subscription {Subscription}", SubscriptionId);
+                    Log?.LogError(
+                        e,
+                        "Unable to restart the subscription {Subscription}",
+                        SubscriptionId
+                    );
 
                     await Task.Delay(1000).NoContext();
                 }
@@ -236,7 +258,8 @@ namespace Eventuous.Subscriptions {
 
             Task.Run(
                 () => Resubscribe(
-                    reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2)
+                    reason == DropReason.Stopped ? TimeSpan.FromSeconds(10)
+                        : TimeSpan.FromSeconds(2)
                 )
             );
         }
@@ -255,7 +278,9 @@ namespace Eventuous.Subscriptions {
             }
         }
 
-        protected abstract Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken);
+        protected abstract Task<EventPosition> GetLastEventPosition(
+            CancellationToken cancellationToken
+        );
 
         Exception? _lastException;
 
