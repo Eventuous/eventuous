@@ -36,5 +36,7 @@ namespace Eventuous.Sut.Domain {
         public static class TypeNames {
             public const string BookingCancelled = "V1.BookingCancelled";
         }
+
+        public static void MapBookingEvents() => TypeMap.RegisterKnownEventTypes();
     }
 }
