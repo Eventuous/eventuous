@@ -27,8 +27,6 @@ namespace Eventuous {
         public (string EventType, byte[] Payload) SerializeEvent(object evt)
             => (_typeMapper.GetTypeName(evt), JsonSerializer.SerializeToUtf8Bytes(evt, _options));
 
-        public byte[] SerializeMetadata(Metadata evt) => JsonSerializer.SerializeToUtf8Bytes(evt, _options);
-
         public string ContentType { get; } = "application/json";
     }
 }

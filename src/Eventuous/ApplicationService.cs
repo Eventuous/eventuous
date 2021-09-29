@@ -209,9 +209,9 @@ namespace Eventuous {
         /// <param name="command">Command to execute</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <typeparam name="TCommand">Command type</typeparam>
-        /// <returns><see cref="Result{T,TState,TId}"/> of the execution</returns>
+        /// <returns><see cref="Result{TState,TId}"/> of the execution</returns>
         /// <exception cref="Exceptions.CommandHandlerNotFound"></exception>
-        public async Task<Result<T, TState, TId>> Handle<TCommand>(
+        public async Task<Result<TState, TId>> Handle<TCommand>(
             TCommand          command,
             CancellationToken cancellationToken
         )
@@ -235,7 +235,7 @@ namespace Eventuous {
 
             var storeResult = await Store.Store(result, cancellationToken).NoContext();
 
-            return new OkResult<T, TState, TId>(result.State, result.Changes, storeResult.GlobalPosition);
+            return new OkResult<TState, TId>(result.State, result.Changes, storeResult.GlobalPosition);
 
             async Task<T> Load() {
                 var id = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();

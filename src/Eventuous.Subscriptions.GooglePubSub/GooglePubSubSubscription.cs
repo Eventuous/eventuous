@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Cloud.Monitoring.V3;
 using Google.Cloud.PubSub.V1;
+using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using JetBrains.Annotations;
@@ -79,7 +80,7 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             options,
             new NoOpCheckpointStore(),
             eventHandlers,
-            eventSerializer ?? DefaultEventSerializer.Instance,
+            eventSerializer,
             loggerFactory,
             measure
         ) {
@@ -115,14 +116,19 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             Checkpoint        checkpoint,
             CancellationToken cancellationToken
         ) {
-            await CreateSubscription(_subscriptionName, _topicName, _options?.PushConfig, _options?.AckDeadline ?? 60)
+            await CreateSubscription(
+                    _subscriptionName,
+                    _topicName,
+                    _options?.ConfigureSubscription
+                )
                 .NoContext();
 
             _client = await CreateAsync(
-                _subscriptionName,
-                _options?.ClientCreationSettings,
-                _options?.Settings
-            ).NoContext();
+                    _subscriptionName,
+                    _options?.ClientCreationSettings,
+                    _options?.Settings
+                )
+                .NoContext();
 
             _metricClient   = await MetricServiceClient.CreateAsync(cancellationToken).NoContext();
             _subscriberTask = _client.StartAsync(Handle);
@@ -132,7 +138,12 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                 var eventType   = msg.Attributes["eventType"];
                 var contentType = msg.Attributes["contentType"];
 
-                var evt = DeserializeData(contentType, eventType, msg.Data.ToByteArray(), _topicName.TopicId);
+                var evt = DeserializeData(
+                    contentType,
+                    eventType,
+                    msg.Data.ToByteArray(),
+                    _topicName.TopicId
+                );
 
                 var receivedEvent = new ReceivedEvent(
                     msg.MessageId,
@@ -143,7 +154,8 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                     _topicName.TopicId,
                     0,
                     msg.PublishTime.ToDateTime(),
-                    evt
+                    evt,
+                    AsMeta(msg.Attributes)
                 );
 
                 try {
@@ -154,6 +166,9 @@ namespace Eventuous.Subscriptions.GooglePubSub {
                     return await _failureHandler(_client, msg, ex).NoContext();
                 }
             }
+
+            Metadata AsMeta(MapField<string, string> attributes)
+                => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value));
         }
 
         const string PubSubMetricUndeliveredMessagesCount = "num_undelivered_messages";
@@ -162,7 +177,9 @@ namespace Eventuous.Subscriptions.GooglePubSub {
         readonly ListTimeSeriesRequest _undeliveredCountRequest;
         readonly ListTimeSeriesRequest _oldestAgeRequest;
 
-        protected override async Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {
+        protected override async Task<EventPosition> GetLastEventPosition(
+            CancellationToken cancellationToken
+        ) {
             // Subscription metrics are sampled each 60 sec, so we need to use an extended period
             var interval = new TimeInterval {
                 StartTime = Timestamp.FromDateTime(DateTime.UtcNow - TimeSpan.FromMinutes(2)),
@@ -170,10 +187,12 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             };
 
             var undelivered = await GetPoint(_undeliveredCountRequest).NoContext();
-            var oldestAge = await GetPoint(_oldestAgeRequest).NoContext();
-            var age = oldestAge == null ? DateTime.UtcNow : DateTime.UtcNow.AddSeconds(-oldestAge.Value.Int64Value);
+            var oldestAge   = await GetPoint(_oldestAgeRequest).NoContext();
 
-            return new EventPosition((ulong?) undelivered?.Value?.Int64Value, age);
+            var age = oldestAge == null ? DateTime.UtcNow
+                : DateTime.UtcNow.AddSeconds(-oldestAge.Value.Int64Value);
+
+            return new EventPosition((ulong?)undelivered?.Value?.Int64Value, age);
 
             async Task<Point?> GetPoint(ListTimeSeriesRequest request) {
                 request.Interval = interval;
@@ -185,20 +204,21 @@ namespace Eventuous.Subscriptions.GooglePubSub {
         }
 
         public async Task Stop(CancellationToken cancellationToken = default) {
-            if (_client != null)
-                await _client.StopAsync(cancellationToken).NoContext();
+            if (_client != null) await _client.StopAsync(cancellationToken).NoContext();
 
             await _subscriberTask.NoContext();
         }
 
         public async Task CreateSubscription(
-            SubscriptionName subscriptionName,
-            TopicName        topicName,
-            PushConfig?      pushConfig,
-            int              ackDeadline
+            SubscriptionName      subscriptionName,
+            TopicName             topicName,
+            Action<Subscription>? configureSubscription
         ) {
-            var subscriberServiceApiClient = await SubscriberServiceApiClient.CreateAsync().NoContext();
-            var publisherServiceApiClient  = await PublisherServiceApiClient.CreateAsync().NoContext();
+            var subscriberServiceApiClient =
+                await SubscriberServiceApiClient.CreateAsync().NoContext();
+
+            var publisherServiceApiClient =
+                await PublisherServiceApiClient.CreateAsync().NoContext();
 
             try {
                 Log?.LogInformation("Checking topic {Topic}", topicName);
@@ -210,19 +230,35 @@ namespace Eventuous.Subscriptions.GooglePubSub {
             }
 
             try {
-                Log?.LogInformation("Checking subscription {Subscription} for {Topic}", subscriptionName, topicName);
+                Log?.LogInformation(
+                    "Checking subscription {Subscription} for {Topic}",
+                    subscriptionName,
+                    topicName
+                );
+
+                var subscriptionRequest = new Subscription { AckDeadlineSeconds = 60 };
+
+                configureSubscription?.Invoke(subscriptionRequest);
+                subscriptionRequest.SubscriptionName = subscriptionName;
+                subscriptionRequest.TopicAsTopicName = topicName;
 
                 await subscriberServiceApiClient.CreateSubscriptionAsync(
-                    subscriptionName,
-                    topicName,
-                    pushConfig,
-                    ackDeadline
-                ).NoContext();
+                        subscriptionRequest
+                    )
+                    .NoContext();
 
-                Log?.LogInformation("Created subscription {Subscription} for {Topic}", subscriptionName, topicName);
+                Log?.LogInformation(
+                    "Created subscription {Subscription} for {Topic}",
+                    subscriptionName,
+                    topicName
+                );
             }
             catch (RpcException e) when (e.Status.StatusCode == StatusCode.AlreadyExists) {
-                Log?.LogInformation("Subscription {Subscription} for {Topic} exists", subscriptionName, topicName);
+                Log?.LogInformation(
+                    "Subscription {Subscription} for {Topic} exists",
+                    subscriptionName,
+                    topicName
+                );
             }
         }
 

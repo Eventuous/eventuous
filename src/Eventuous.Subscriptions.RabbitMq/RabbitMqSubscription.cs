@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -198,6 +199,10 @@ namespace Eventuous.Subscriptions.RabbitMq {
                 received.Exchange
             );
 
+            var meta = new Metadata(
+                received.BasicProperties.Headers.ToDictionary(x => x.Key, x => x.Value)
+            );
+
             var receivedEvent = new ReceivedEvent(
                 received.BasicProperties.MessageId,
                 received.BasicProperties.Type,
@@ -207,7 +212,8 @@ namespace Eventuous.Subscriptions.RabbitMq {
                 received.Exchange,
                 received.DeliveryTag,
                 received.BasicProperties.Timestamp.ToDateTime(),
-                evt
+                evt,
+                meta
             );
 
             await writer.WriteAsync(new Event(received, receivedEvent)).NoContext();

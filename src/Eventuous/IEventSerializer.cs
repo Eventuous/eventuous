@@ -6,7 +6,6 @@ namespace Eventuous {
 
         (string EventType, byte[] Payload) SerializeEvent(object evt);
         
-        byte[] SerializeMetadata(Metadata evt);
 
         string ContentType { get; }
     }

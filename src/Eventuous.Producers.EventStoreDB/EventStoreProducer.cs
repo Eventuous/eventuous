@@ -12,8 +12,9 @@ namespace Eventuous.Producers.EventStoreDB {
     /// </summary>
     [PublicAPI]
     public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
-        readonly EventStoreClient _client;
-        readonly IEventSerializer _serializer;
+        readonly EventStoreClient    _client;
+        readonly IEventSerializer    _serializer;
+        readonly IMetadataSerializer _metaSerializer;
 
         const int ChunkSize = 500;
 
@@ -22,12 +23,15 @@ namespace Eventuous.Producers.EventStoreDB {
         /// </summary>
         /// <param name="eventStoreClient">EventStoreDB gRPC client</param>
         /// <param name="serializer">Optional: event serializer instance</param>
+        /// <param name="metaSerializer"></param>
         public EventStoreProducer(
-            EventStoreClient  eventStoreClient,
-            IEventSerializer? serializer = null
+            EventStoreClient     eventStoreClient,
+            IEventSerializer?    serializer     = null,
+            IMetadataSerializer? metaSerializer = null
         ) {
-            _client     = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
-            _serializer = serializer ?? DefaultEventSerializer.Instance;
+            _client         = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
+            _serializer     = serializer     ?? DefaultEventSerializer.Instance;
+            _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         }
 
         /// <summary>
@@ -35,18 +39,23 @@ namespace Eventuous.Producers.EventStoreDB {
         /// </summary>
         /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
         /// <param name="serializer">Optional: event serializer instance</param>
+        /// <param name="metaSerializer"></param>
         public EventStoreProducer(
             EventStoreClientSettings clientSettings,
-            IEventSerializer?        serializer = null
+            IEventSerializer?        serializer     = null,
+            IMetadataSerializer?     metaSerializer = null
         )
             : this(
                 new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
-                serializer
+                serializer,
+                metaSerializer
             ) { }
 
-        public override Task Initialize(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public override Task Initialize(CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
 
-        public override Task Shutdown(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public override Task Shutdown(CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
 
         protected override async Task ProduceMany(
             string                    stream,
@@ -59,13 +68,14 @@ namespace Eventuous.Producers.EventStoreDB {
 
             foreach (var chunk in data.Chunks(ChunkSize)) {
                 await _client.AppendToStreamAsync(
-                    stream,
-                    options?.ExpectedState ?? StreamState.Any,
-                    chunk,
-                    options?.ConfigureOperation,
-                    options?.Credentials,
-                    cancellationToken
-                ).NoContext();
+                        stream,
+                        options?.ExpectedState ?? StreamState.Any,
+                        chunk,
+                        options?.ConfigureOperation,
+                        options?.Credentials,
+                        cancellationToken
+                    )
+                    .NoContext();
             }
         }
 
@@ -89,9 +99,9 @@ namespace Eventuous.Producers.EventStoreDB {
         }
 
         EventData CreateMessage(object message, Type type, Metadata? metadata) {
-            var msg       = Ensure.NotNull(message, nameof(message));
+            var msg = Ensure.NotNull(message, nameof(message));
             var (eventType, payload) = _serializer.SerializeEvent(msg);
-            var metaBytes = metadata == null ? null : _serializer.SerializeMetadata(metadata);
+            var metaBytes = metadata == null ? null : _metaSerializer.Serialize(metadata);
 
             return new EventData(
                 Uuid.NewUuid(),

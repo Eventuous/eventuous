@@ -23,6 +23,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         /// <param name="checkpointStore">Checkpoint store instance</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="metaSerializer"></param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="eventFilter">Optional: server-side event filter</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
@@ -32,15 +33,17 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             ICheckpointStore           checkpointStore,
             IEnumerable<IEventHandler> eventHandlers,
             IEventSerializer?          eventSerializer = null,
+            IMetadataSerializer?       metaSerializer  = null,
             ILoggerFactory?            loggerFactory   = null,
             IEventFilter?              eventFilter     = null,
             ISubscriptionGapMeasure?   measure         = null
         ) : this(
             eventStoreClient,
-            new AllStreamSubscriptionOptions {SubscriptionId = subscriptionId},
+            new AllStreamSubscriptionOptions { SubscriptionId = subscriptionId },
             checkpointStore,
             eventHandlers,
             eventSerializer,
+            metaSerializer,
             loggerFactory,
             eventFilter,
             measure
@@ -54,6 +57,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
         /// <param name="checkpointStore">Checkpoint store instance</param>
         /// <param name="eventSerializer">Event serializer instance</param>
         /// <param name="eventHandlers">Collection of event handlers</param>
+        /// <param name="metaSerializer"></param>
         /// <param name="loggerFactory">Optional: logger factory</param>
         /// <param name="eventFilter">Optional: server-side event filter</param>
         /// <param name="measure">Optional: gap measurement for metrics</param>
@@ -63,6 +67,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             ICheckpointStore             checkpointStore,
             IEnumerable<IEventHandler>   eventHandlers,
             IEventSerializer?            eventSerializer = null,
+            IMetadataSerializer?         metaSerializer  = null,
             ILoggerFactory?              loggerFactory   = null,
             IEventFilter?                eventFilter     = null,
             ISubscriptionGapMeasure?     measure         = null
@@ -72,6 +77,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
             checkpointStore,
             eventHandlers,
             eventSerializer,
+            metaSerializer,
             loggerFactory,
             measure
         ) {
@@ -114,10 +120,18 @@ namespace Eventuous.Subscriptions.EventStoreDB {
 
             return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
 
-            Task HandleEvent(EventStore.Client.StreamSubscription _, ResolvedEvent re, CancellationToken ct)
+            Task HandleEvent(
+                EventStore.Client.StreamSubscription _,
+                ResolvedEvent                        re,
+                CancellationToken                    ct
+            )
                 => Handler(AsReceivedEvent(re), ct);
 
-            void HandleDrop(EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
+            void HandleDrop(
+                EventStore.Client.StreamSubscription _,
+                SubscriptionDroppedReason            reason,
+                Exception?                           ex
+            )
                 => Dropped(EsdbMappings.AsDropReason(reason), ex);
 
             ReceivedEvent AsReceivedEvent(ResolvedEvent re) {
@@ -128,7 +142,7 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     re.Event.EventStreamId,
                     re.Event.EventNumber
                 );
-                
+
                 return new ReceivedEvent(
                     re.Event.EventId.ToString(),
                     re.Event.EventType,
@@ -138,8 +152,8 @@ namespace Eventuous.Subscriptions.EventStoreDB {
                     re.OriginalStreamId,
                     re.Event.EventNumber,
                     re.Event.Created,
-                    evt
-                    // re.Event.Metadata
+                    evt,
+                    DeserializeMeta(re.Event.Metadata, re.OriginalStreamId)
                 );
             }
         }
