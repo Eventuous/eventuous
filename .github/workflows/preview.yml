@@ -3,7 +3,7 @@ name: Publish Preview NuGet
 on:
   push:
     branches:
-      - master
+      - dev
     paths-ignore:
       - 'docs/**/*'
       - '**.md'
