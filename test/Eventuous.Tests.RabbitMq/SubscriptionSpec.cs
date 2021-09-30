@@ -9,7 +9,7 @@ using Hypothesist;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace Eventuous.Tests.RabbitMq; 
+namespace Eventuous.Tests.RabbitMq;
 
 public class SubscriptionSpec : IAsyncLifetime {
     static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
@@ -26,7 +26,11 @@ public class SubscriptionSpec : IAsyncLifetime {
         var queue = Auto.Create<string>();
 
         var loggerFactory =
-            LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
+            LoggerFactory.Create(
+                builder => builder
+                    .SetMinimumLevel(LogLevel.Debug)
+                    .AddXunit(outputHelper, LogLevel.Trace)
+            );
 
         _handler = new TestEventHandler(queue);
 
@@ -38,7 +42,8 @@ public class SubscriptionSpec : IAsyncLifetime {
                 ConcurrencyLimit  = 10,
                 SubscriptionQueue = queue,
                 Exchange          = _exchange,
-                SubscriptionId    = queue
+                SubscriptionId    = queue,
+                ThrowOnError      = true
             },
             new[] { _handler },
             loggerFactory: loggerFactory

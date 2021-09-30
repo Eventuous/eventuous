@@ -2,7 +2,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Eventuous.Subscriptions.RabbitMq; 
+namespace Eventuous.Subscriptions.RabbitMq;
 
 /// <summary>
 /// RabbitMQ subscription service
@@ -66,8 +66,8 @@ public class RabbitMqSubscriptionService : SubscriptionService {
         ) {
         _options = options;
 
-        _failureHandler   = options.FailureHandler ?? DefaultEventFailureHandler;
         _log              = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
+        _failureHandler   = options.FailureHandler ?? DefaultEventFailureHandler;
         _concurrencyLimit = options.ConcurrencyLimit;
 
         _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
@@ -75,7 +75,7 @@ public class RabbitMqSubscriptionService : SubscriptionService {
         _channel = _connection.CreateModel();
 
         var prefetch = _concurrencyLimit * 10;
-        _channel.BasicQos(0, (ushort) prefetch, false);
+        _channel.BasicQos(0, (ushort)prefetch, false);
 
         _subscriptionQueue = Ensure.NotEmptyString(options.SubscriptionQueue, nameof(options.SubscriptionQueue));
         _exchange          = Ensure.NotEmptyString(options.Exchange, nameof(options.Exchange));
@@ -117,6 +117,8 @@ public class RabbitMqSubscriptionService : SubscriptionService {
     ) {
         var cts = new CancellationTokenSource();
 
+        Log.LogDebug("Ensuring exchange {Exchange}", _exchange);
+
         _channel.ExchangeDeclare(
             _exchange,
             _options?.ExchangeOptions?.Type ?? ExchangeType.Fanout,
@@ -125,6 +127,8 @@ public class RabbitMqSubscriptionService : SubscriptionService {
             _options?.ExchangeOptions?.Arguments
         );
 
+        Log.LogDebug("Ensuring queue {Queue}", _subscriptionQueue);
+
         _channel.QueueDeclare(
             _subscriptionQueue,
             _options?.QueueOptions?.Durable ?? true,
@@ -132,6 +136,8 @@ public class RabbitMqSubscriptionService : SubscriptionService {
             _options?.QueueOptions?.AutoDelete ?? false,
             _options?.QueueOptions?.Arguments
         );
+
+        Log.LogDebug("Binding {Exchange} to {Queue}", _exchange, _subscriptionQueue);
 
         _channel.QueueBind(
             _subscriptionQueue,
@@ -154,16 +160,36 @@ public class RabbitMqSubscriptionService : SubscriptionService {
         return Task.FromResult(new EventSubscription(SubscriptionId, new Stoppable(CloseConnection)));
 
         async Task RunConsumer() {
+            _log.LogDebug("Started consumer instance for {Queue}", _subscriptionQueue);
+
             while (!consumeChannel.Reader.Completion.IsCompleted) {
-                var (message, re) = await consumeChannel.Reader.ReadAsync(CancellationToken.None);
+                var evt = await TryGetMessage();
+                if (evt == null) continue;
 
                 try {
-                    await Handler(re, CancellationToken.None).NoContext();
-                    _channel.BasicAck(message.DeliveryTag, false);
+                    _log.LogDebug("Handling message {MessageId} from {Queue}", evt.ReceivedEvent.EventId, _subscriptionQueue);
+                    await Handler(evt.ReceivedEvent, CancellationToken.None).NoContext();
+                    _channel.BasicAck(evt.Original.DeliveryTag, false);
                 }
                 catch (Exception e) {
-                    _failureHandler(_channel, message, e);
+                    _failureHandler(_channel, evt.Original, e);
                 }
+            }
+
+            _log.LogDebug("Stopped consumer instance for {Queue}", _subscriptionQueue);
+        }
+
+        async Task<Event?> TryGetMessage() {
+            try {
+                return await consumeChannel.Reader.ReadAsync(cts.Token);
+            }
+            catch (OperationCanceledException) {
+                // Expected
+                return null;
+            }
+            catch (Exception e) {
+                Log.LogError(e, "Unable to read message from the channel: {Message}", e.Message);
+                throw;
             }
         }
 
@@ -172,9 +198,10 @@ public class RabbitMqSubscriptionService : SubscriptionService {
             _channel.Dispose();
             _connection.Close();
             _connection.Dispose();
-
-            consumeChannel.Writer.Complete();
+            
             cts.Cancel();
+            consumeChannel.Writer.Complete();
+            consumeChannel.Reader.Completion.GetAwaiter().GetResult();
             cts.Dispose();
         }
     }
@@ -184,6 +211,21 @@ public class RabbitMqSubscriptionService : SubscriptionService {
         BasicDeliverEventArgs received,
         ChannelWriter<Event>  writer
     ) {
+        Log.LogTrace("Received message {MessageType}", received.BasicProperties.Type);
+
+        try {
+            var receivedEvent = TryHandleReceived(sender, received);
+            await writer.WriteAsync(new Event(received, receivedEvent)).NoContext();
+        }
+        catch (Exception e) {
+            Log.Log(FailOnError ? LogLevel.Error : LogLevel.Warning, e, "Deserialization failed");
+
+            // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
+            if (FailOnError) throw;
+        }
+    }
+
+    ReceivedEvent TryHandleReceived(object sender, BasicDeliverEventArgs received) {
         var evt = DeserializeData(
             received.BasicProperties.ContentType,
             received.BasicProperties.Type,
@@ -191,11 +233,11 @@ public class RabbitMqSubscriptionService : SubscriptionService {
             received.Exchange
         );
 
-        var meta = new Metadata(
-            received.BasicProperties.Headers.ToDictionary(x => x.Key, x => x.Value)
-        );
+        var meta = received.BasicProperties.Headers != null
+            ? new Metadata(received.BasicProperties.Headers.ToDictionary(x => x.Key, x => x.Value))
+            : null;
 
-        var receivedEvent = new ReceivedEvent(
+        return new ReceivedEvent(
             received.BasicProperties.MessageId,
             received.BasicProperties.Type,
             received.BasicProperties.ContentType,
@@ -207,8 +249,6 @@ public class RabbitMqSubscriptionService : SubscriptionService {
             evt,
             meta
         );
-
-        await writer.WriteAsync(new Event(received, receivedEvent)).NoContext();
     }
 
     protected override Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {

@@ -24,6 +24,10 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
     </ItemGroup>
 
+    <PropertyGroup>
+        <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
+    </PropertyGroup>
+
     <ItemGroup>
         <None Include="..\..\e-logo.png" Pack="true" PackagePath="\"/>
         <Compile Include="..\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">

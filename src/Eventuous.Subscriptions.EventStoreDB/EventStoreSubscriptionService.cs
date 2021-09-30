@@ -63,7 +63,7 @@ public abstract class EventStoreSubscriptionService : SubscriptionService {
                 position
             );
 
-            if (ThrowOnError)
+            if (FailOnError)
                 throw new DeserializationException(stream, "metadata", position, e);
 
             return null;

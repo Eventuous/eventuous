@@ -11,7 +11,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
     protected EventSubscription Subscription   { get; set; } = null!;
     protected Logging?          DebugLog       { get; }
     protected ILogger?          Log            { get; }
-    protected bool              ThrowOnError   { get; }
+    protected bool              FailOnError   { get; }
 
     readonly ICheckpointStore         _checkpointStore;
     readonly IEventSerializer         _eventSerializer;
@@ -35,7 +35,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
         _eventSerializer = eventSerializer ?? DefaultEventSerializer.Instance;
         SubscriptionId   = Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
         _measure         = measure;
-        ThrowOnError     = options.ThrowOnError;
+        FailOnError     = options.ThrowOnError;
 
         _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers))
             .Where(x => x.SubscriptionId == options.SubscriptionId)
@@ -97,7 +97,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
         }
         catch (Exception e) {
             Log?.Log(
-                ThrowOnError ? LogLevel.Error : LogLevel.Warning,
+                FailOnError ? LogLevel.Error : LogLevel.Warning,
                 e,
                 "Error when handling the event {Stream} {Position} {Type}",
                 re.Stream,
@@ -105,7 +105,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
                 re.EventType
             );
 
-            if (ThrowOnError)
+            if (FailOnError)
                 throw new SubscriptionException(
                     re.Stream,
                     re.EventType,
@@ -155,7 +155,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
                 eventType
             );
 
-            if (ThrowOnError)
+            if (FailOnError)
                 throw new InvalidOperationException($"Unknown content type {contentType}");
         }
 
@@ -171,7 +171,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
                 eventType
             );
 
-            if (ThrowOnError)
+            if (FailOnError)
                 throw new DeserializationException(stream, eventType, position, e);
 
             return null;
