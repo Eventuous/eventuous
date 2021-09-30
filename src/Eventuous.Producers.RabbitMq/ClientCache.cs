@@ -1,15 +1,12 @@
-using System;
-using System.Collections.Generic;
+namespace Eventuous.Producers.RabbitMq; 
 
-namespace Eventuous.Producers.RabbitMq {
-    class ExchangeCache {
-        public void EnsureExchange(string name, Action createExchange) {
-            if (_exchanges.Contains(name)) return;
+class ExchangeCache {
+    public void EnsureExchange(string name, Action createExchange) {
+        if (_exchanges.Contains(name)) return;
 
-            createExchange();
-            _exchanges.Add(name);
-        }
-
-        readonly HashSet<string> _exchanges = new();
+        createExchange();
+        _exchanges.Add(name);
     }
+
+    readonly HashSet<string> _exchanges = new();
 }

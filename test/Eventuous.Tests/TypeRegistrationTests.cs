@@ -1,19 +1,17 @@
-using FluentAssertions;
-using Xunit;
 using static Eventuous.Sut.Domain.BookingEvents;
 
-namespace Eventuous.Tests {
-    public class TypeRegistrationTests {
-        readonly TypeMapper _typeMapper;
+namespace Eventuous.Tests;
 
-        public TypeRegistrationTests() => _typeMapper = new TypeMapper();
+public class TypeRegistrationTests {
+    readonly TypeMapper _typeMapper;
 
-        [Fact]
-        public void ShouldResolveDecoratedEvent() {
-            // This test works because event types are registered by the domain Module.cs
+    public TypeRegistrationTests() => _typeMapper = new TypeMapper();
+
+    [Fact]
+    public void ShouldResolveDecoratedEvent() {
+        // This test works because event types are registered by the domain Module.cs
             
-            _typeMapper.GetTypeName<BookingCancelled>().Should().Be(TypeNames.BookingCancelled);
-            _typeMapper.GetType(TypeNames.BookingCancelled).Should().Be<BookingCancelled>();
-        }
+        _typeMapper.GetTypeName<BookingCancelled>().Should().Be(TypeNames.BookingCancelled);
+        _typeMapper.GetType(TypeNames.BookingCancelled).Should().Be<BookingCancelled>();
     }
 }

@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
-        <LangVersion>9</LangVersion>
+        <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
+        <LangVersion>10</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
         <IsPackable>true</IsPackable>
@@ -19,8 +19,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All" />
+        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
         <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
     </ItemGroup>
 
     <ItemGroup>

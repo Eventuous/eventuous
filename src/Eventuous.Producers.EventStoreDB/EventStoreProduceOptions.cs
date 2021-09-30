@@ -1,26 +1,30 @@
-using System;
-using EventStore.Client;
+global using System;
+global using EventStore.Client;
+global using JetBrains.Annotations;
 
-namespace Eventuous.Producers.EventStoreDB {
-    public class EventStoreProduceOptions {
-        /// <summary>
-        /// Message metadata
-        /// </summary>
-        public Metadata? Metadata { get; init; }
-        
-        /// <summary>
-        /// User credentials
-        /// </summary>
-        public UserCredentials? Credentials { get; init; }
-        
-        /// <summary>
-        /// Expected stream state
-        /// </summary>
-        public StreamState ExpectedState { get; init; } = StreamState.Any;
+namespace Eventuous.Producers.EventStoreDB; 
 
-        /// <summary>
-        /// Optional function to configure client operation options
-        /// </summary>
-        public Action<EventStoreClientOperationOptions>? ConfigureOperation { get; init; }
-    }
+[PublicAPI]
+public class EventStoreProduceOptions {
+    /// <summary>
+    /// User credentials
+    /// </summary>
+    public UserCredentials? Credentials { get; init; }
+        
+    /// <summary>
+    /// Expected stream state
+    /// </summary>
+    public StreamState ExpectedState { get; init; } = StreamState.Any;
+
+    /// <summary>
+    /// Maximum number of events appended to a single stream in one batch
+    /// </summary>
+    public int MaxAppendEventsCound { get; init; } = 500;
+
+    /// <summary>
+    /// Optional function to configure client operation options
+    /// </summary>
+    public Action<EventStoreClientOperationOptions>? ConfigureOperation { get; init; }
+
+    public static EventStoreProduceOptions Default { get; } = new();
 }

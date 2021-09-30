@@ -1,7 +1,7 @@
 using System.ComponentModel;
 
 // ReSharper disable once CheckNamespace
-namespace System.Runtime.CompilerServices {
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    static class IsExternalInit { }
-}
+namespace System.Runtime.CompilerServices;
+
+[EditorBrowsable(EditorBrowsableState.Never)]
+static class IsExternalInit { }

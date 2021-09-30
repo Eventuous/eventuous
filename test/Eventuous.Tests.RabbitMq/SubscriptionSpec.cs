@@ -1,81 +1,79 @@
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
-using AutoFixture;
+using Eventuous.Producers;
 using Eventuous.Producers.RabbitMq;
 using Eventuous.Subscriptions.RabbitMq;
 using Eventuous.Sut.Subs;
 using FluentAssertions.Extensions;
 using Hypothesist;
 using Microsoft.Extensions.Logging;
-using Xunit;
 using Xunit.Abstractions;
 
-namespace Eventuous.Tests.RabbitMq {
-    public class SubscriptionSpec : IAsyncLifetime {
-        static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+namespace Eventuous.Tests.RabbitMq; 
 
-        static readonly Fixture Auto = new();
+public class SubscriptionSpec : IAsyncLifetime {
+    static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-        readonly RabbitMqSubscriptionService _subscription;
-        readonly RabbitMqProducer            _producer;
-        readonly TestEventHandler            _handler;
-        readonly string                      _exchange;
+    static readonly Fixture Auto = new();
 
-        public SubscriptionSpec(ITestOutputHelper outputHelper) {
-            _exchange = Auto.Create<string>();
-            var queue = Auto.Create<string>();
+    readonly RabbitMqSubscriptionService _subscription;
+    readonly RabbitMqProducer            _producer;
+    readonly TestEventHandler            _handler;
+    readonly string                      _exchange;
 
-            var loggerFactory =
-                LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
+    public SubscriptionSpec(ITestOutputHelper outputHelper) {
+        _exchange = Auto.Create<string>();
+        var queue = Auto.Create<string>();
 
-            _handler = new TestEventHandler(queue);
+        var loggerFactory =
+            LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
-            _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory);
+        _handler = new TestEventHandler(queue);
 
-            _subscription = new RabbitMqSubscriptionService(
-                RabbitMqFixture.ConnectionFactory,
-                new RabbitMqSubscriptionOptions {
-                    ConcurrencyLimit  = 10,
-                    SubscriptionQueue = queue,
-                    Exchange          = _exchange,
-                    SubscriptionId    = queue
-                },
-                new[] { _handler },
-                loggerFactory: loggerFactory
-            );
-        }
+        _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory);
 
-        [Fact]
-        public async Task SubscribeAndProduce() {
-            var testEvent = Auto.Create<TestEvent>();
+        _subscription = new RabbitMqSubscriptionService(
+            RabbitMqFixture.ConnectionFactory,
+            new RabbitMqSubscriptionOptions {
+                ConcurrencyLimit  = 10,
+                SubscriptionQueue = queue,
+                Exchange          = _exchange,
+                SubscriptionId    = queue
+            },
+            new[] { _handler },
+            loggerFactory: loggerFactory
+        );
+    }
 
-            _handler.AssertThat().Any(x => x as TestEvent == testEvent);
+    [Fact]
+    public async Task SubscribeAndProduce() {
+        var testEvent = Auto.Create<TestEvent>();
 
-            await _producer.Produce(_exchange, testEvent);
-            await _handler.Validate(10.Seconds());
-        }
+        _handler.AssertThat().Any(x => x as TestEvent == testEvent);
 
-        [Fact]
-        public async Task SubscribeAndProduceMany() {
-            const int count = 10000;
+        await _producer.Produce(_exchange, testEvent);
+        await _handler.Validate(10.Seconds());
+    }
 
-            var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
+    [Fact]
+    public async Task SubscribeAndProduceMany() {
+        const int count = 10000;
 
-            _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
 
-            await _producer.Produce(_exchange, testEvents);
-            await _handler.Validate(10.Seconds());
-        }
+        _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
-        public async Task InitializeAsync() {
-            await _subscription.StartAsync(CancellationToken.None);
-            await _producer.Initialize();
-        }
+        await _producer.Produce(_exchange, testEvents);
+        await _handler.Validate(10.Seconds());
+    }
 
-        public async Task DisposeAsync() {
-            await _producer.Shutdown();
-            await _subscription.StopAsync(CancellationToken.None);
-        }
+    public async Task InitializeAsync() {
+        await _subscription.StartAsync(CancellationToken.None);
+        await _producer.StartAsync();
+    }
+
+    public async Task DisposeAsync() {
+        await _producer.StopAsync();
+        await _subscription.StopAsync(CancellationToken.None);
     }
 }

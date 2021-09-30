@@ -1,25 +1,23 @@
-using System;
 using System.Text.Json;
-using JetBrains.Annotations;
 
-namespace Eventuous {
-    [PublicAPI]
-    public class DefaultMetadataSerializer : IMetadataSerializer {
-        public static IMetadataSerializer Instance { get; private set; } =
-            new DefaultMetadataSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+namespace Eventuous; 
 
-        public static void SetDefaultSerializer(IMetadataSerializer serializer)
-            => Instance = serializer;
+[PublicAPI]
+public class DefaultMetadataSerializer : IMetadataSerializer {
+    public static IMetadataSerializer Instance { get; private set; } =
+        new DefaultMetadataSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
-        readonly JsonSerializerOptions _options;
+    public static void SetDefaultSerializer(IMetadataSerializer serializer)
+        => Instance = serializer;
 
-        public DefaultMetadataSerializer(JsonSerializerOptions options)
-            => _options = options;
+    readonly JsonSerializerOptions _options;
 
-        public byte[] Serialize(Metadata evt)
-            => JsonSerializer.SerializeToUtf8Bytes(evt, _options);
+    public DefaultMetadataSerializer(JsonSerializerOptions options)
+        => _options = options;
 
-        public Metadata? Deserialize(ReadOnlySpan<byte> bytes)
-            => JsonSerializer.Deserialize<Metadata>(bytes, _options);
-    }
+    public byte[] Serialize(Metadata evt)
+        => JsonSerializer.SerializeToUtf8Bytes(evt, _options);
+
+    public Metadata? Deserialize(ReadOnlySpan<byte> bytes)
+        => JsonSerializer.Deserialize<Metadata>(bytes, _options);
 }

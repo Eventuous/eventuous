@@ -1,42 +1,42 @@
-using System;
 using static System.String;
 
-namespace Eventuous.Projections.MongoDB.Tools {
-    /// <summary>
-    /// Convention based mongo collection name.
-    /// Returns a camelCase collection from any type while removing some forbidden suffixes:
-    /// "Document", "Entity", "View", "Projection", "ProjectionDocument", "ProjectionEntity"
-    /// </summary>
-    public record MongoCollectionName {
-        static readonly MongoCollectionName Default = new("");
+namespace Eventuous.Projections.MongoDB.Tools; 
 
-        readonly string? _value;
+/// <summary>
+/// Convention based mongo collection name.
+/// Returns a camelCase collection from any type while removing some forbidden suffixes:
+/// "Document", "Entity", "View", "Projection", "ProjectionDocument", "ProjectionEntity"
+/// </summary>
+[PublicAPI]
+public record MongoCollectionName {
+    static readonly MongoCollectionName Default = new("");
 
-        MongoCollectionName(string value) => _value = value;
+    readonly string? _value;
 
-        public static MongoCollectionName For<T>(string? prefix = null) => For(typeof(T), prefix);
+    MongoCollectionName(string value) => _value = value;
 
-        public static MongoCollectionName For(Type type, string? prefix = null) {
-            var collectionName = type.Name;
+    public static MongoCollectionName For<T>(string? prefix = null) => For(typeof(T), prefix);
 
-            var suffixes = new[]
-                { "Document", "Entity", "View", "Projection", "ProjectionDocument", "ProjectionEntity" };
+    public static MongoCollectionName For(Type type, string? prefix = null) {
+        var collectionName = type.Name;
 
-            foreach (var suffix in suffixes) {
-                if (collectionName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-                    collectionName = collectionName[..^suffix.Length];
-            }
+        var suffixes = new[]
+            { "Document", "Entity", "View", "Projection", "ProjectionDocument", "ProjectionEntity" };
 
-            if (!IsNullOrWhiteSpace(prefix)) collectionName = $"{prefix}-{collectionName}";
-
-            return new MongoCollectionName(collectionName);
+        foreach (var suffix in suffixes) {
+            if (collectionName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                collectionName = collectionName[..^suffix.Length];
         }
 
-        public override string ToString() => _value ?? "";
+        if (!IsNullOrWhiteSpace(prefix)) collectionName = $"{prefix}-{collectionName}";
 
-        public static implicit operator string(MongoCollectionName self) => self._value ?? "";
-
-        public static implicit operator MongoCollectionName(string value)
-            => IsNullOrWhiteSpace(value) ? Default : new MongoCollectionName(value);
+        return new MongoCollectionName(collectionName);
     }
+
+    public override string ToString() => _value ?? "";
+
+    public static implicit operator string(MongoCollectionName self) => self._value ?? "";
+
+    public static implicit operator MongoCollectionName(string value)
+        => IsNullOrWhiteSpace(value) ? Default : new MongoCollectionName(value);
 }

@@ -1,133 +1,119 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
-using RabbitMQ.Client;
+using Microsoft.Extensions.Hosting;
 
-namespace Eventuous.Producers.RabbitMq {
+namespace Eventuous.Producers.RabbitMq;
+
+/// <summary>
+/// RabbitMQ producer
+/// </summary>
+[PublicAPI]
+public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedService {
+    readonly RabbitMqExchangeOptions? _options;
+    readonly IEventSerializer         _serializer;
+    readonly ConnectionFactory        _connectionFactory;
+
+    IConnection? _connection;
+    IModel?      _channel;
+
     /// <summary>
-    /// RabbitMQ producer
+    /// Creates a RabbitMQ producer instance
     /// </summary>
-    [PublicAPI]
-    public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions> {
-        readonly RabbitMqExchangeOptions? _options;
-        readonly IEventSerializer         _serializer;
-        readonly ConnectionFactory        _connectionFactory;
+    /// <param name="connectionFactory">RabbitMQ connection factory</param>
+    /// <param name="serializer">Optional: event serializer instance</param>
+    /// <param name="options">Optional: additional configuration for the exchange</param>
+    public RabbitMqProducer(
+        ConnectionFactory        connectionFactory,
+        IEventSerializer?        serializer = null,
+        RabbitMqExchangeOptions? options    = null
+    ) {
+        _options           = options;
+        _serializer        = serializer ?? DefaultEventSerializer.Instance;
+        _connectionFactory = Ensure.NotNull(connectionFactory, nameof(connectionFactory));
+    }
 
-        IConnection? _connection;
-        IModel?      _channel;
+    public Task StartAsync(CancellationToken cancellationToken = default) {
+        _connection = _connectionFactory.CreateConnection();
+        _channel    = _connection.CreateModel();
+        _channel.ConfirmSelect();
+            
+        ReadyNow();
 
-        /// <summary>
-        /// Creates a RabbitMQ producer instance
-        /// </summary>
-        /// <param name="connectionFactory">RabbitMQ connection factory</param>
-        /// <param name="serializer">Optional: event serializer instance</param>
-        /// <param name="options">Optional: additional configuration for the exchange</param>
-        public RabbitMqProducer(
-            ConnectionFactory        connectionFactory,
-            IEventSerializer?        serializer = null,
-            RabbitMqExchangeOptions? options    = null
-        ) {
-            _options           = options;
-            _serializer        = serializer ?? DefaultEventSerializer.Instance;
-            _connectionFactory = Ensure.NotNull(connectionFactory, nameof(connectionFactory));
+        return Task.CompletedTask;
+    }
+
+    public override async Task ProduceMessage(
+        string                       stream,
+        IEnumerable<ProducedMessage> messages,
+        RabbitMqProduceOptions?      options,
+        CancellationToken            cancellationToken = default
+    ) {
+        EnsureExchange(stream);
+
+        foreach (var message in messages) {
+            Publish(stream, message, options);
         }
 
-        public override Task Initialize(CancellationToken cancellationToken = default) {
-            _connection = _connectionFactory.CreateConnection();
-            _channel    = _connection.CreateModel();
-            _channel.ConfirmSelect();
+        await Confirm(cancellationToken).NoContext();
+    }
 
-            return Task.CompletedTask;
+    void Publish(string stream, ProducedMessage message, RabbitMqProduceOptions? options) {
+        if (_channel == null)
+            throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
+
+        var (msg, metadata)      = message;
+        var (eventType, payload) = _serializer.SerializeEvent(msg);
+
+        var prop = _channel.CreateBasicProperties();
+        prop.ContentType  = _serializer.ContentType;
+        prop.DeliveryMode = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
+        prop.Type         = eventType;
+
+        if (options != null) {
+            prop.Expiration    = options.Expiration;
+            prop.Headers       = metadata?.ToDictionary(x => x.Key, x => x.Value);
+            prop.Persistent    = options.Persisted;
+            prop.Priority      = options.Priority;
+            prop.AppId         = options.AppId;
+            prop.CorrelationId = options.CorrelationId;
+            prop.MessageId     = options.MessageId;
+            prop.ReplyTo       = options.ReplyTo;
         }
 
-        protected override async Task ProduceMany(
-            string                  stream,
-            IEnumerable<object>     messages,
-            RabbitMqProduceOptions? options,
-            CancellationToken       cancellationToken
-        ) {
-            EnsureExchange(stream);
+        _channel.BasicPublish(stream, options?.RoutingKey ?? "", true, prop, payload);
+    }
 
-            foreach (var message in messages) {
-                Publish(stream, message, message.GetType(), options);
-            }
+    readonly ExchangeCache _exchangeCache = new();
 
-            await Confirm(cancellationToken).NoContext();
+    void EnsureExchange(string exchange) {
+        _exchangeCache.EnsureExchange(
+            exchange,
+            () =>
+                _channel!.ExchangeDeclare(
+                    exchange,
+                    _options?.Type ?? ExchangeType.Fanout,
+                    _options?.Durable ?? true,
+                    _options?.AutoDelete ?? false,
+                    _options?.Arguments
+                )
+        );
+    }
+
+    async Task Confirm(CancellationToken cancellationToken) {
+        while (!_channel!.WaitForConfirms(ConfirmTimeout) && !cancellationToken.IsCancellationRequested) {
+            await Task.Delay(ConfirmIdle, cancellationToken).NoContext();
         }
+    }
 
-        protected override Task ProduceOne(
-            string                  stream,
-            object                  message,
-            Type                    type,
-            RabbitMqProduceOptions? options,
-            CancellationToken       cancellationToken
-        ) {
-            EnsureExchange(stream);
-            Publish(stream, message, type, options);
-            return Confirm(cancellationToken);
-        }
+    const string EventType = "event-type";
 
-        void Publish(string stream, object message, Type type, RabbitMqProduceOptions? options) {
-            if (_channel == null)
-                throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
+    static readonly TimeSpan ConfirmTimeout = TimeSpan.FromSeconds(1);
+    static readonly TimeSpan ConfirmIdle    = TimeSpan.FromMilliseconds(100);
 
-            var (eventType, payload) = _serializer.SerializeEvent(message);
+    public Task StopAsync(CancellationToken cancellationToken = default) {
+        _channel?.Close();
+        _channel?.Dispose();
+        _connection?.Close();
+        _connection?.Dispose();
 
-            var prop = _channel.CreateBasicProperties();
-            prop.ContentType  = _serializer.ContentType;
-            prop.DeliveryMode = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
-            prop.Type         = eventType;
-
-            if (options != null) {
-                prop.Expiration    = options.Expiration;
-                prop.Headers       = options.Headers;
-                prop.Persistent    = options.Persisted;
-                prop.Priority      = options.Priority;
-                prop.AppId         = options.AppId;
-                prop.CorrelationId = options.CorrelationId;
-                prop.MessageId     = options.MessageId;
-                prop.ReplyTo       = options.ReplyTo;
-            }
-
-            _channel.BasicPublish(stream, options?.RoutingKey ?? "", true, prop, payload);
-        }
-
-        readonly ExchangeCache _exchangeCache = new();
-
-        void EnsureExchange(string exchange) {
-            _exchangeCache.EnsureExchange(
-                exchange,
-                () =>
-                    _channel!.ExchangeDeclare(
-                        exchange,
-                        _options?.Type ?? ExchangeType.Fanout,
-                        _options?.Durable ?? true,
-                        _options?.AutoDelete ?? false,
-                        _options?.Arguments
-                    )
-            );
-        }
-
-        async Task Confirm(CancellationToken cancellationToken) {
-            while (!_channel!.WaitForConfirms(ConfirmTimeout) && !cancellationToken.IsCancellationRequested) {
-                await Task.Delay(ConfirmIdle, cancellationToken).NoContext();
-            }
-        }
-
-        const string EventType = "event-type";
-
-        static readonly TimeSpan ConfirmTimeout = TimeSpan.FromSeconds(1);
-        static readonly TimeSpan ConfirmIdle    = TimeSpan.FromMilliseconds(100);
-
-        public override Task Shutdown(CancellationToken cancellationToken = default) {
-            _channel?.Close();
-            _channel?.Dispose();
-            _connection?.Close();
-            _connection?.Dispose();
-
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
     }
 }

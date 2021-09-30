@@ -1,9 +1,9 @@
 using NodaTime;
 
-namespace Eventuous.Sut.App {
-    public static class Commands {
-        public record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);
+namespace Eventuous.Sut.App;
 
-        public record ImportBooking(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut);
-    }
+public static class Commands {
+    public record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);
+
+    public record ImportBooking(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut);
 }

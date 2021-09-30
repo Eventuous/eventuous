@@ -1,27 +1,26 @@
-using System;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace Eventuous.Tests.EventStore.Fixtures {
-    public class XunitLogger<T> : ILogger<T>, IDisposable {
-        readonly ITestOutputHelper _output;
+namespace Eventuous.Tests.EventStore.Fixtures;
 
-        public XunitLogger(ITestOutputHelper output)
-            => _output = output;
+public class XunitLogger<T> : ILogger<T>, IDisposable {
+    readonly ITestOutputHelper _output;
 
-        public void Log<TState>(
-            LogLevel                        logLevel,
-            EventId                         eventId,
-            TState                          state,
-            Exception                       exception,
-            Func<TState, Exception, string> formatter
-        )
-            => _output.WriteLine(state?.ToString());
+    public XunitLogger(ITestOutputHelper output)
+        => _output = output;
 
-        public bool IsEnabled(LogLevel logLevel) => true;
+    public void Log<TState>(
+        LogLevel                        logLevel,
+        EventId                         eventId,
+        TState                          state,
+        Exception                       exception,
+        Func<TState, Exception, string> formatter
+    )
+        => _output.WriteLine(state?.ToString());
 
-        public IDisposable BeginScope<TState>(TState state) => this;
+    public bool IsEnabled(LogLevel logLevel) => true;
 
-        public void Dispose() { }
-    }
+    public IDisposable BeginScope<TState>(TState state) => this;
+
+    public void Dispose() { }
 }

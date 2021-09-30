@@ -1,7 +1,7 @@
-namespace Eventuous.Subscriptions {
-    public delegate void Logging(string format, params object[] args);
+namespace Eventuous.Subscriptions; 
 
-    // public class Logger {
-    //     
-    // }
-}
+public delegate void Logging(string format, params object[] args);
+
+// public class Logger {
+//     
+// }

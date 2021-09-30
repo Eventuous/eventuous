@@ -1,9 +1,7 @@
-using System;
+namespace Eventuous; 
 
-namespace Eventuous {
-    public interface IMetadataSerializer {
-        byte[] Serialize(Metadata evt);
+public interface IMetadataSerializer {
+    byte[] Serialize(Metadata evt);
 
-        Metadata? Deserialize(ReadOnlySpan<byte> bytes);
-    }
+    Metadata? Deserialize(ReadOnlySpan<byte> bytes);
 }

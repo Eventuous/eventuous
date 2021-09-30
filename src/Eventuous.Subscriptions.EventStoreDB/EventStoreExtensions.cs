@@ -1,25 +1,24 @@
 using System.Reflection;
-using EventStore.Client;
 
-namespace Eventuous.Subscriptions.EventStoreDB {
-    static class EventStoreExtensions {
-        public static EventStoreClientSettings GetSettings(this EventStoreClient client) {
-            var prop =
-                typeof(EventStoreClient).GetProperty("Settings", BindingFlags.NonPublic | BindingFlags.Instance);
+namespace Eventuous.Subscriptions.EventStoreDB; 
 
-            var getter   = prop!.GetGetMethod(true);
-            return (EventStoreClientSettings) getter!.Invoke(client, null)!;
-        }
+static class EventStoreExtensions {
+    public static EventStoreClientSettings GetSettings(this EventStoreClient client) {
+        var prop =
+            typeof(EventStoreClient).GetProperty("Settings", BindingFlags.NonPublic | BindingFlags.Instance);
 
-        public static EventStoreClientSettings Copy(this EventStoreClientSettings settings)
-            => new() {
-                Interceptors             = settings.Interceptors,
-                ChannelCredentials       = settings.ChannelCredentials,
-                ConnectionName           = settings.ConnectionName,
-                ConnectivitySettings     = settings.ConnectivitySettings,
-                DefaultCredentials       = settings.DefaultCredentials,
-                LoggerFactory            = settings.LoggerFactory,
-                OperationOptions         = settings.OperationOptions,
-            };
+        var getter = prop!.GetGetMethod(true);
+        return (EventStoreClientSettings) getter!.Invoke(client, null)!;
     }
+
+    public static EventStoreClientSettings Copy(this EventStoreClientSettings settings)
+        => new() {
+            Interceptors         = settings.Interceptors,
+            ChannelCredentials   = settings.ChannelCredentials,
+            ConnectionName       = settings.ConnectionName,
+            ConnectivitySettings = settings.ConnectivitySettings,
+            DefaultCredentials   = settings.DefaultCredentials,
+            LoggerFactory        = settings.LoggerFactory,
+            OperationOptions     = settings.OperationOptions,
+        };
 }

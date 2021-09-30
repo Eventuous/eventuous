@@ -1,46 +1,39 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoFixture;
 using Eventuous.Tests.EventStore.Fixtures;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using FluentAssertions;
-using NodaTime;
-using Xunit;
 using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 
-namespace Eventuous.Tests.EventStore {
-    public class AppServiceTests {
-        static AppServiceTests() => BookingEvents.MapBookingEvents();
+namespace Eventuous.Tests.EventStore;
 
-        static BookingService Service { get; } = new(Instance.AggregateStore);
+public class AppServiceTests {
+    static AppServiceTests() => BookingEvents.MapBookingEvents();
 
-        [Fact]
-        public async Task ProcessAnyForNew() {
-            var cmd = DomainFixture.CreateImportBooking();
+    static BookingService Service { get; } = new(Instance.AggregateStore);
 
-            var expected = new object[] {
-                new BookingEvents.BookingImported(
-                    cmd.BookingId,
-                    cmd.RoomId,
-                    cmd.CheckIn,
-                    cmd.CheckOut
-                )
-            };
+    [Fact]
+    public async Task ProcessAnyForNew() {
+        var cmd = DomainFixture.CreateImportBooking();
 
-            await Service.Handle(cmd, default);
+        var expected = new object[] {
+            new BookingEvents.BookingImported(
+                cmd.BookingId,
+                cmd.RoomId,
+                cmd.CheckIn,
+                cmd.CheckOut
+            )
+        };
 
-            var events = await Instance.EventStore.ReadEvents(
-                StreamName.For<Booking>(cmd.BookingId),
-                StreamReadPosition.Start,
-                int.MaxValue,
-                default
-            );
+        await Service.Handle(cmd, default);
 
-            var result = events.Select(x => Serializer.Json.DeserializeEvent(x.Data, x.EventType)).ToArray();
+        var events = await Instance.EventStore.ReadEvents(
+            StreamName.For<Booking>(cmd.BookingId),
+            StreamReadPosition.Start,
+            int.MaxValue,
+            default
+        );
 
-            result.Should().BeEquivalentTo(expected);
-        }
+        var result = events.Select(x => Serializer.Json.DeserializeEvent(x.Data, x.EventType)).ToArray();
+
+        result.Should().BeEquivalentTo(expected);
     }
 }

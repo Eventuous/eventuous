@@ -1,10 +1,7 @@
-using System.Threading;
-using System.Threading.Tasks;
+namespace Eventuous.Subscriptions; 
 
-namespace Eventuous.Subscriptions {
-    public interface IEventHandler {
-        string SubscriptionId { get; }
+public interface IEventHandler {
+    string SubscriptionId { get; }
         
-        Task HandleEvent(object evt, long? position, CancellationToken cancellationToken);
-    }
+    Task HandleEvent(object evt, long? position, CancellationToken cancellationToken);
 }

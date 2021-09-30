@@ -1,12 +1,10 @@
-using System;
+namespace Eventuous; 
 
-namespace Eventuous {
-    public interface IEventSerializer {
-        object? DeserializeEvent(ReadOnlySpan<byte> data, string eventType);
+public interface IEventSerializer {
+    object? DeserializeEvent(ReadOnlySpan<byte> data, string eventType);
 
-        (string EventType, byte[] Payload) SerializeEvent(object evt);
+    (string EventType, byte[] Payload) SerializeEvent(object evt);
         
 
-        string ContentType { get; }
-    }
+    string ContentType { get; }
 }

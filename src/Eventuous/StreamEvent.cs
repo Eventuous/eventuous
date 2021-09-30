@@ -1,6 +1,4 @@
-using JetBrains.Annotations;
+namespace Eventuous; 
 
-namespace Eventuous {
-    [PublicAPI]
-    public record StreamEvent(string EventType, byte[] Data, byte[]? Metadata, string ContentType, long Position);
-}
+[PublicAPI]
+public record StreamEvent(string EventType, byte[] Data, byte[]? Metadata, string ContentType, long Position);

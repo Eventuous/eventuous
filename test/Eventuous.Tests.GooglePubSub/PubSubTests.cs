@@ -1,18 +1,13 @@
-using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using AutoFixture;
+using Eventuous.Producers;
 using Eventuous.Producers.GooglePubSub;
-using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.GooglePubSub;
 using Eventuous.Sut.Subs;
-using FluentAssertions;
 using FluentAssertions.Extensions;
 using Hypothesist;
 using Microsoft.Extensions.Logging;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Eventuous.Tests.GooglePubSub {
@@ -73,12 +68,12 @@ namespace Eventuous.Tests.GooglePubSub {
         }
 
         public async Task InitializeAsync() {
-            await _producer.Initialize();
+            await _producer.StartAsync();
             await _subscription.StartAsync(CancellationToken.None);
         }
 
         public async Task DisposeAsync() {
-            await _producer.Shutdown();
+            await _producer.StopAsync();
             await _subscription.StopAsync(CancellationToken.None);
             await PubSubFixture.DeleteSubscription(_pubsubSubscription);
             await PubSubFixture.DeleteTopic(_pubsubTopic);

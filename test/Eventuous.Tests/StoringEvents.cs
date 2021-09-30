@@ -1,42 +1,36 @@
-using System;
-using System.Threading.Tasks;
-using AutoFixture;
 using Eventuous.Tests.Fixtures;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using FluentAssertions;
-using NodaTime;
-using Xunit;
 
-namespace Eventuous.Tests {
-    public class StoringEvents : NaiveFixture {
-        public StoringEvents() => Service = new BookingService(AggregateStore);
+namespace Eventuous.Tests;
 
-        BookingService Service { get; }
+public class StoringEvents : NaiveFixture {
+    public StoringEvents() => Service = new BookingService(AggregateStore);
 
-        [Fact]
-        public async Task StoreInitial() {
-            var cmd = new Commands.BookRoom(
-                Auto.Create<string>(),
-                Auto.Create<string>(),
-                LocalDate.FromDateTime(DateTime.Today),
-                LocalDate.FromDateTime(DateTime.Today.AddDays(2)),
-                Auto.Create<decimal>()
-            );
+    BookingService Service { get; }
 
-            var expected = new object[] {
-                new BookingEvents.RoomBooked(
-                    cmd.BookingId,
-                    cmd.RoomId,
-                    cmd.CheckIn,
-                    cmd.CheckOut,
-                    cmd.Price
-                )
-            };
+    [Fact]
+    public async Task StoreInitial() {
+        var cmd = new Commands.BookRoom(
+            Auto.Create<string>(),
+            Auto.Create<string>(),
+            LocalDate.FromDateTime(DateTime.Today),
+            LocalDate.FromDateTime(DateTime.Today.AddDays(2)),
+            Auto.Create<decimal>()
+        );
 
-            var result = await Service.Handle(cmd, default);
+        var expected = new object[] {
+            new BookingEvents.RoomBooked(
+                cmd.BookingId,
+                cmd.RoomId,
+                cmd.CheckIn,
+                cmd.CheckOut,
+                cmd.Price
+            )
+        };
 
-            result.Changes.Should().BeEquivalentTo(expected);
-        }
+        var result = await Service.Handle(cmd, default);
+
+        result.Changes.Should().BeEquivalentTo(expected);
     }
 }

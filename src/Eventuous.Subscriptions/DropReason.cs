@@ -1,7 +1,7 @@
-namespace Eventuous.Subscriptions {
-    public enum DropReason {
-        Stopped,
-        ServerError,
-        SubscriptionError
-    }
+namespace Eventuous.Subscriptions; 
+
+public enum DropReason {
+    Stopped,
+    ServerError,
+    SubscriptionError
 }

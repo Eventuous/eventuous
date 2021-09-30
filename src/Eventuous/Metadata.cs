@@ -1,11 +1,8 @@
-using System.Collections.Generic;
-using JetBrains.Annotations;
+namespace Eventuous; 
 
-namespace Eventuous {
-    [PublicAPI]
-    public class Metadata : Dictionary<string, object> {
-        public Metadata() { }
+[PublicAPI]
+public class Metadata : Dictionary<string, object> {
+    public Metadata() { }
 
-        public Metadata(IDictionary<string, object> dictionary) : base(dictionary) { }
-    }
+    public Metadata(IDictionary<string, object> dictionary) : base(dictionary) { }
 }
