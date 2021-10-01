@@ -1,3 +1,4 @@
+using Google.Api.Gax;
 using Google.Cloud.Monitoring.V3;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
@@ -6,8 +7,6 @@ using Microsoft.Extensions.Logging;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
 namespace Eventuous.Subscriptions.GooglePubSub;
-
-using Google.Api.Gax;
 
 /// <summary>
 /// Google PubSub subscription service

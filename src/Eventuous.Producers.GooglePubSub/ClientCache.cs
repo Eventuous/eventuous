@@ -1,10 +1,9 @@
 using System.Collections.Concurrent;
+using Google.Api.Gax;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Producers.GooglePubSub;
-
-using Google.Api.Gax;
 
 class ClientCache {
     readonly string                _projectId;
