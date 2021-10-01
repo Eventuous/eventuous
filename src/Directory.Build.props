@@ -32,6 +32,10 @@
         <PackageReference Include="IsExternalInit" Version="1.0.1" PrivateAssets="All"/>
     </ItemGroup>
 
+    <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
     <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
         <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
