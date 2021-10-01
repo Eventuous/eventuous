@@ -1,3 +1,4 @@
+using Google.Api.Gax;
 using Eventuous.Subscriptions;
 using Google.Cloud.Monitoring.V3;
 using Google.Protobuf.Collections;
@@ -6,7 +7,7 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
-namespace Eventuous.GooglePubSub.Subscriptions; 
+namespace Eventuous.GooglePubSub.Subscriptions;
 
 /// <summary>
 /// Google PubSub subscription service
@@ -19,7 +20,7 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
         Exception        exception
     );
 
-    readonly PubSubSubscriptionOptions?   _options;
+    readonly PubSubSubscriptionOptions    _options;
     readonly HandleEventProcessingFailure _failureHandler;
     readonly SubscriptionName             _subscriptionName;
     readonly TopicName                    _topicName;
@@ -79,7 +80,7 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
         loggerFactory,
         measure
     ) {
-        _options = options;
+        _options = Ensure.NotNull(options, nameof(options));
 
         _failureHandler = Ensure.NotNull(options, nameof(options)).FailureHandler
                        ?? DefaultEventProcessingErrorHandler;
@@ -114,24 +115,30 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
         await CreateSubscription(
                 _subscriptionName,
                 _topicName,
-                _options?.ConfigureSubscription
+                _options.ConfigureSubscription,
+                cancellationToken
             )
             .NoContext();
 
         _client = await CreateAsync(
                 _subscriptionName,
-                _options?.ClientCreationSettings,
-                _options?.Settings
+                _options.ClientCreationSettings,
+                _options.Settings
             )
             .NoContext();
 
-        _metricClient   = await MetricServiceClient.CreateAsync(cancellationToken).NoContext();
+        var emulationEnabled =
+            !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PUBSUB_EMULATOR_HOST"));
+
+        if (!emulationEnabled)
+            _metricClient = await MetricServiceClient.CreateAsync(cancellationToken).NoContext();
+
         _subscriberTask = _client.StartAsync(Handle);
         return new EventSubscription(SubscriptionId, this);
 
         async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
-            var eventType   = msg.Attributes["eventType"];
-            var contentType = msg.Attributes["contentType"];
+            var eventType   = msg.Attributes[_options.Attributes.EventType];
+            var contentType = msg.Attributes[_options.Attributes.ContentType];
 
             var evt = DeserializeData(
                 contentType,
@@ -207,13 +214,22 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
     public async Task CreateSubscription(
         SubscriptionName      subscriptionName,
         TopicName             topicName,
-        Action<Subscription>? configureSubscription
+        Action<Subscription>? configureSubscription,
+        CancellationToken     cancellationToken
     ) {
         var subscriberServiceApiClient =
-            await SubscriberServiceApiClient.CreateAsync().NoContext();
+            await new SubscriberServiceApiClientBuilder {
+                    EmulatorDetection = _options.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
+                }
+                .BuildAsync(cancellationToken)
+                .NoContext();
 
         var publisherServiceApiClient =
-            await PublisherServiceApiClient.CreateAsync().NoContext();
+            await new PublisherServiceApiClientBuilder {
+                    EmulatorDetection = _options.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
+                }
+                .BuildAsync(cancellationToken)
+                .NoContext();
 
         try {
             Log?.LogInformation("Checking topic {Topic}", topicName);
