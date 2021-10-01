@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Producers.GooglePubSub;
 
+using Google.Api.Gax;
+
 class ClientCache {
     readonly string                _projectId;
     readonly PubSubProducerOptions _options;
@@ -26,7 +28,11 @@ class ClientCache {
     }
 
     async Task<PublisherClient> CreateTopicAndClient(string topicId, CancellationToken cancellationToken) {
-        var publisherServiceApiClient = await PublisherServiceApiClient.CreateAsync(cancellationToken).NoContext();
+        var publisherServiceApiClient = await new PublisherServiceApiClientBuilder {
+                EmulatorDetection = _options.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
+            }
+            .BuildAsync(cancellationToken)
+            .NoContext();
 
         var topicName = TopicName.FromProjectTopic(_projectId, topicId);
 

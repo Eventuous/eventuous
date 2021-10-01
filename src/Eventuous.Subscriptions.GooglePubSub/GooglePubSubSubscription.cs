@@ -5,7 +5,9 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
-namespace Eventuous.Subscriptions.GooglePubSub; 
+namespace Eventuous.Subscriptions.GooglePubSub;
+
+using Google.Api.Gax;
 
 /// <summary>
 /// Google PubSub subscription service
@@ -113,7 +115,8 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
         await CreateSubscription(
                 _subscriptionName,
                 _topicName,
-                _options?.ConfigureSubscription
+                _options?.ConfigureSubscription,
+                cancellationToken
             )
             .NoContext();
 
@@ -124,7 +127,12 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
             )
             .NoContext();
 
-        _metricClient   = await MetricServiceClient.CreateAsync(cancellationToken).NoContext();
+        var emulationEnabled =
+            !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PUBSUB_EMULATOR_HOST"));
+
+        if (!emulationEnabled)
+            _metricClient = await MetricServiceClient.CreateAsync(cancellationToken).NoContext();
+        
         _subscriberTask = _client.StartAsync(Handle);
         return new EventSubscription(SubscriptionId, this);
 
@@ -206,13 +214,22 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
     public async Task CreateSubscription(
         SubscriptionName      subscriptionName,
         TopicName             topicName,
-        Action<Subscription>? configureSubscription
+        Action<Subscription>? configureSubscription,
+        CancellationToken     cancellationToken
     ) {
         var subscriberServiceApiClient =
-            await SubscriberServiceApiClient.CreateAsync().NoContext();
+            await new SubscriberServiceApiClientBuilder {
+                    EmulatorDetection = _options?.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
+                }
+                .BuildAsync(cancellationToken)
+                .NoContext();
 
         var publisherServiceApiClient =
-            await PublisherServiceApiClient.CreateAsync().NoContext();
+            await new PublisherServiceApiClientBuilder {
+                    EmulatorDetection = _options?.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
+                }
+                .BuildAsync(cancellationToken)
+                .NoContext();
 
         try {
             Log?.LogInformation("Checking topic {Topic}", topicName);
