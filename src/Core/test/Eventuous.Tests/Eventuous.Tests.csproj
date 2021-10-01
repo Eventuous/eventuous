@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <IsTestProject>true</IsTestProject>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
-    <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
-    <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
-  </ItemGroup>
+    <PropertyGroup>
+        <IsTestProject>true</IsTestProject>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj"/>
+        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj"/>
+        <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj"/>
+    </ItemGroup>
 </Project>

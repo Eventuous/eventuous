@@ -1,0 +1,4 @@
+<Project>
+    <Target Name="GenerateNuspec" />
+    <Target Name="Pack" />
+</Project>
