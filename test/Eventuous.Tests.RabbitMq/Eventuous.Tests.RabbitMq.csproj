@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-        <ProjectReference Include="..\..\src\Eventuous.Producers.RabbitMq\Eventuous.Producers.RabbitMq.csproj" />
-        <ProjectReference Include="..\..\src\Eventuous.Producers\Eventuous.Producers.csproj" />
-        <ProjectReference Include="..\..\src\Eventuous.Subscriptions.RabbitMq\Eventuous.Subscriptions.RabbitMq.csproj" />
-        <ProjectReference Include="..\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
-    </ItemGroup>
-</Project>

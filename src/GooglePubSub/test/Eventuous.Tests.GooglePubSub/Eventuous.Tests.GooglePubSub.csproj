@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
+      <ProjectReference Include="..\..\..\Core\src\Eventuous\Eventuous.csproj" />
+      <ProjectReference Include="..\..\src\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj" />
+    </ItemGroup>
+</Project>

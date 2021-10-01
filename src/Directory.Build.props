@@ -4,6 +4,35 @@
         <LangVersion>10</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+        <None Include="..\..\..\..\e-logo.png" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+        <PackageReference Include="AutoFixture" Version="4.17.0"/>
+        <PackageReference Include="Bogus" Version="33.1.1"/>
+        <PackageReference Include="FluentAssertions" Version="6.1.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0"/>
+        <PackageReference Include="xunit" Version="2.4.1"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="All"/>
+        <PackageReference Include="coverlet.collector" Version="3.1.0" PrivateAssets="All"/>
+        <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="IsExternalInit" Version="1.0.1" PrivateAssets="All"/>
+    </ItemGroup>
+
+    <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
         <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
         <IncludeSymbols>true</IncludeSymbols>
@@ -17,21 +46,4 @@
         <Description>Opinionated and volatile Event Sourcing library</Description>
         <Authors>Alexey Zimarev</Authors>
     </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
-        <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
-    </ItemGroup>
-
-    <PropertyGroup>
-        <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="..\..\e-logo.png" Pack="true" PackagePath="\"/>
-        <Compile Include="..\IsExternalInit.cs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-            <Link>IsExternalInit.cs</Link>
-        </Compile>
-    </ItemGroup>
 </Project>

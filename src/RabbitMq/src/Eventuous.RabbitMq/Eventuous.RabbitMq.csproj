@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+        <PackageReference Include="RabbitMQ.Client" Version="6.2.1" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj" />
+      <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+    </ItemGroup>
+</Project>
