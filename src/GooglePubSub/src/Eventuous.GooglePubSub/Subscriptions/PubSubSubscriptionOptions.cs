@@ -35,4 +35,9 @@ public class PubSubSubscriptionOptions : SubscriptionOptions {
     /// A function to customise the subscription options when the subscription is created
     /// </summary>
     public Action<Subscription>? ConfigureSubscription { get; init; }
+
+    /// <summary>
+    /// Message attributes for system values like content type and event type
+    /// </summary>
+    public PubSubAttributes Attributes { get; init; } = new();
 }

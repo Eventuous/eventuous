@@ -1,4 +1,4 @@
-namespace Eventuous.GooglePubSub.Producers;
+namespace Eventuous.GooglePubSub;
 
 [PublicAPI]
 public class PubSubAttributes {

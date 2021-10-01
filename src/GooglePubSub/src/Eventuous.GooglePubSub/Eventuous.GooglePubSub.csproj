@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Google.Cloud.Monitoring.V3" Version="2.3.0"/>
-        <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.4.0"/>
+        <PackageReference Include="Google.Cloud.Monitoring.V3" Version="2.3.0" />
+        <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.4.0" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj"/>
-        <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
-        <ProjectReference Include="..\..\..\Core\src\Eventuous\Eventuous.csproj"/>
+        <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj" />
+        <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="..\..\..\Core\src\Eventuous\Eventuous.csproj" />
     </ItemGroup>
 </Project>

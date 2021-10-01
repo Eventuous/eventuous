@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Google.Api.Gax;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
@@ -13,7 +14,7 @@ class ClientCache {
 
     public ClientCache(PubSubProducerOptions options, ILogger? log) {
         _projectId = Ensure.NotEmptyString(options.ProjectId, nameof(options.ProjectId));
-        _options   = options;
+        _options   = Ensure.NotNull(options, nameof(options));
         _log       = log;
     }
 
@@ -26,7 +27,11 @@ class ClientCache {
     }
 
     async Task<PublisherClient> CreateTopicAndClient(string topicId, CancellationToken cancellationToken) {
-        var publisherServiceApiClient = await PublisherServiceApiClient.CreateAsync(cancellationToken).NoContext();
+        var publisherServiceApiClient = await new PublisherServiceApiClientBuilder {
+                EmulatorDetection = _options.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
+            }
+            .BuildAsync(cancellationToken)
+            .NoContext();
 
         var topicName = TopicName.FromProjectTopic(_projectId, topicId);
 
