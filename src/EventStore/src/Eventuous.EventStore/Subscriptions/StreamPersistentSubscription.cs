@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.EventStore.Subscriptions; 
+namespace Eventuous.EventStore.Subscriptions;
 
 /// <summary>
 /// Persistent subscription for EventStoreDB, for a specific stream
@@ -22,17 +22,13 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService {
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
         IEnumerable<IEventHandler>          eventHandlers,
-        IEventSerializer?                   eventSerializer = null,
-        IMetadataSerializer?                metaSerializer  = null,
-        ILoggerFactory?                     loggerFactory   = null,
-        ISubscriptionGapMeasure?            measure         = null
+        ILoggerFactory?                     loggerFactory = null,
+        ISubscriptionGapMeasure?            measure       = null
     ) : base(
         eventStoreClient,
         options,
         new NoOpCheckpointStore(),
         eventHandlers,
-        eventSerializer,
-        metaSerializer,
         loggerFactory,
         measure
     ) {
@@ -74,12 +70,12 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService {
     ) : this(
         eventStoreClient,
         new StreamPersistentSubscriptionOptions {
-            Stream         = streamName,
-            SubscriptionId = subscriptionId
+            Stream             = streamName,
+            SubscriptionId     = subscriptionId,
+            EventSerializer    = eventSerializer,
+            MetadataSerializer = metaSerializer
         },
         eventHandlers,
-        eventSerializer,
-        metaSerializer,
         loggerFactory,
         measure
     ) { }

@@ -12,20 +12,17 @@ public abstract class EventStoreSubscriptionService : SubscriptionService {
         EventStoreSubscriptionOptions options,
         ICheckpointStore              checkpointStore,
         IEnumerable<IEventHandler>    eventHandlers,
-        IEventSerializer?             eventSerializer = null,
-        IMetadataSerializer?          metaSerializer  = null,
         ILoggerFactory?               loggerFactory   = null,
         ISubscriptionGapMeasure?      measure         = null
     ) : base(
         options,
         checkpointStore,
         eventHandlers,
-        eventSerializer,
         loggerFactory,
         measure
     ) {
         EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
-        _metaSerializer  = metaSerializer ?? DefaultMetadataSerializer.Instance;
+        _metaSerializer  = options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
     protected override async Task<EventPosition> GetLastEventPosition(

@@ -32,15 +32,13 @@ public class RabbitMqSubscriptionService : SubscriptionService {
     /// <param name="connectionFactory"></param>
     /// <param name="options"></param>
     /// <param name="eventHandlers">Collection of event handlers</param>
-    /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="loggerFactory">Optional: logging factory</param>
     public RabbitMqSubscriptionService(
         ConnectionFactory                     connectionFactory,
         IOptions<RabbitMqSubscriptionOptions> options,
         IEnumerable<IEventHandler>            eventHandlers,
-        IEventSerializer?                     eventSerializer = null,
-        ILoggerFactory?                       loggerFactory   = null
-    ) : this(connectionFactory, options.Value, eventHandlers, eventSerializer, loggerFactory) { }
+        ILoggerFactory?                       loggerFactory = null
+    ) : this(connectionFactory, options.Value, eventHandlers, loggerFactory) { }
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
@@ -48,20 +46,17 @@ public class RabbitMqSubscriptionService : SubscriptionService {
     /// <param name="connectionFactory"></param>
     /// <param name="options"></param>
     /// <param name="eventHandlers">Collection of event handlers</param>
-    /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="loggerFactory">Optional: logging factory</param>
     public RabbitMqSubscriptionService(
         ConnectionFactory           connectionFactory,
         RabbitMqSubscriptionOptions options,
         IEnumerable<IEventHandler>  eventHandlers,
-        IEventSerializer?           eventSerializer = null,
-        ILoggerFactory?             loggerFactory   = null
+        ILoggerFactory?             loggerFactory = null
     )
         : base(
             Ensure.NotNull(options, nameof(options)),
             new NoOpCheckpointStore(),
             eventHandlers,
-            eventSerializer,
             loggerFactory,
             new NoOpGapMeasure()
         ) {
@@ -105,10 +100,10 @@ public class RabbitMqSubscriptionService : SubscriptionService {
         new RabbitMqSubscriptionOptions {
             SubscriptionQueue = subscriptionQueue,
             Exchange          = exchange,
-            SubscriptionId    = subscriptionId
+            SubscriptionId    = subscriptionId,
+            EventSerializer   = eventSerializer
         },
         eventHandlers,
-        eventSerializer,
         loggerFactory
     ) { }
 
@@ -168,7 +163,12 @@ public class RabbitMqSubscriptionService : SubscriptionService {
                 if (evt == null) continue;
 
                 try {
-                    _log.LogDebug("Handling message {MessageId} from {Queue}", evt.ReceivedEvent.EventId, _subscriptionQueue);
+                    _log.LogDebug(
+                        "Handling message {MessageId} from {Queue}",
+                        evt.ReceivedEvent.EventId,
+                        _subscriptionQueue
+                    );
+
                     await Handler(evt.ReceivedEvent, CancellationToken.None).NoContext();
                     _channel.BasicAck(evt.Original.DeliveryTag, false);
                 }
@@ -199,7 +199,7 @@ public class RabbitMqSubscriptionService : SubscriptionService {
             _channel.Dispose();
             _connection.Close();
             _connection.Dispose();
-            
+
             cts.Cancel();
             consumeChannel.Writer.Complete();
             consumeChannel.Reader.Completion.GetAwaiter().GetResult();

@@ -46,7 +46,8 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
             metaSerializer
         ) { }
 
-    public override async Task ProduceMessage(
+    /// <inheritdoc />
+    public override async Task ProduceMessages(
         string                       stream,
         IEnumerable<ProducedMessage> messages,
         EventStoreProduceOptions?    produceOptions,
@@ -56,7 +57,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         var data = Ensure.NotNull(messages, nameof(messages))
             .Select(x => CreateMessage(x.Message, x.Message.GetType(), x.Metadata));
 
-        foreach (var chunk in data.Chunks(options.MaxAppendEventsCound)) {
+        foreach (var chunk in data.Chunks(options.MaxAppendEventsCount)) {
             await _client.AppendToStreamAsync(
                     stream,
                     options.ExpectedState,

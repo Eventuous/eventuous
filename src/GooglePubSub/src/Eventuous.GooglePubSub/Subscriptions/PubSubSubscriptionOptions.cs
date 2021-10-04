@@ -5,7 +5,7 @@ using static Google.Cloud.PubSub.V1.SubscriberClient;
 namespace Eventuous.GooglePubSub.Subscriptions; 
 
 [PublicAPI]
-public class PubSubSubscriptionOptions : SubscriptionOptions {
+public record PubSubSubscriptionOptions : SubscriptionOptions {
     /// <summary>
     /// Google Cloud project id
     /// </summary>
@@ -15,6 +15,12 @@ public class PubSubSubscriptionOptions : SubscriptionOptions {
     /// PubSub topic id
     /// </summary>
     public string TopicId { get; init; } = null!;
+    
+    /// <summary>
+    /// Set to true to enable subscription monitoring using <see cref="ISubscriptionGapMeasure"/>
+    /// Disabled by default as you can monitor subscriptions using Google Cloud native monitoring tools
+    /// </summary>
+    public bool EnableMonitoring { get; init; }
 
     /// <summary>
     /// <see cref="ClientCreationSettings"/> for the <seealso cref="SubscriberClient"/> creation

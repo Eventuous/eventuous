@@ -68,7 +68,7 @@ public static class ProducerExtensions {
                 ? ConvertMany(collection)
                 : ConvertOne(message);
 
-        return producer.ProduceMessage(stream, producedMessages, options, cancellationToken);
+        return producer.ProduceMessages(stream, producedMessages, options, cancellationToken);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public static class ProducerExtensions {
         TProduceOptions?                     options,
         CancellationToken                    cancellationToken = default
     ) where TProduceOptions : class
-        => producer.ProduceMessage(stream, ConvertMany(messages), options, cancellationToken);
+        => producer.ProduceMessages(stream, ConvertMany(messages), options, cancellationToken);
 
     static IEnumerable<ProducedMessage> ConvertMany(IEnumerable<object> messages)
         => messages.Select(x => new ProducedMessage(x, null));

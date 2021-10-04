@@ -1,6 +1,6 @@
 namespace Eventuous.EventStore.Subscriptions; 
 
-public abstract class EventStoreSubscriptionOptions : SubscriptionOptions {
+public abstract record EventStoreSubscriptionOptions : SubscriptionOptions {
     /// <summary>
     /// Optional function to configure client operation options
     /// </summary>
@@ -15,16 +15,23 @@ public abstract class EventStoreSubscriptionOptions : SubscriptionOptions {
     /// Resolve link events
     /// </summary>
     public bool ResolveLinkTos { get; init; }
+    
+    /// <summary>
+    /// Metadata serializer. If not assigned, the default one will be used.
+    /// </summary>
+    public IMetadataSerializer? MetadataSerializer { get; init; }
 }
 
-public class StreamSubscriptionOptions : EventStoreSubscriptionOptions {
+public record StreamSubscriptionOptions : EventStoreSubscriptionOptions {
     public string StreamName { get; init; } = null!;
 }
 
-public class AllStreamSubscriptionOptions : EventStoreSubscriptionOptions { }
+public record AllStreamSubscriptionOptions : EventStoreSubscriptionOptions {
+    public IEventFilter? EventFilter { get; init; }
+}
 
 [PublicAPI]
-public class StreamPersistentSubscriptionOptions : EventStoreSubscriptionOptions {
+public record StreamPersistentSubscriptionOptions : EventStoreSubscriptionOptions {
     public string Stream { get; init; } = null!;
 
     /// <summary>

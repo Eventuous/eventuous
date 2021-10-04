@@ -6,7 +6,7 @@ using static Google.Cloud.PubSub.V1.PublisherClient;
 
 // ReSharper disable InvertIf
 
-namespace Eventuous.GooglePubSub.Producers; 
+namespace Eventuous.GooglePubSub.Producers;
 
 /// <summary>
 /// Producer for Google PubSub
@@ -64,7 +64,6 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     public GooglePubSubProducer(
         IOptions<PubSubProducerOptions> options,
         IEventSerializer?               serializer    = null,
-        TypeMapper?                     typeMapper    = null,
         ILoggerFactory?                 loggerFactory = null
     ) : this(options.Value, serializer, loggerFactory) { }
 
@@ -76,28 +75,22 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     public Task StopAsync(CancellationToken cancellationToken = default)
         => Task.WhenAll(_clientCache.GetAllClients().Select(x => x.ShutdownAsync(cancellationToken)));
 
-    public override async Task ProduceMessage(
+    /// <inheritdoc />
+    public override async Task ProduceMessages(
         string                       stream,
         IEnumerable<ProducedMessage> messages,
         PubSubProduceOptions?        options,
         CancellationToken            cancellationToken = default
     ) {
         var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
-        await Task.WhenAll(messages.Select(x => Produce(client, x, x.GetType(), options)));
+        await Task.WhenAll(messages.Select(x => Produce(x, x.GetType())));
+
+        Task Produce(ProducedMessage message, Type type)
+            => client.PublishAsync(CreateMessage(message, type, options));
     }
 
-    async Task Produce(
-        PublisherClient       client,
-        object                message,
-        Type                  type,
-        PubSubProduceOptions? options
-    ) {
-        var pubSubMessage = CreateMessage(message, type, options);
-        await client.PublishAsync(pubSubMessage).NoContext();
-    }
-
-    PubsubMessage CreateMessage(object message, Type type, PubSubProduceOptions? options) {
-        var (eventType, payload) = _serializer.SerializeEvent(message);
+    PubsubMessage CreateMessage(ProducedMessage message, Type type, PubSubProduceOptions? options) {
+        var (eventType, payload) = _serializer.SerializeEvent(message.Message);
 
         var psm = new PubsubMessage {
             Data        = ByteString.CopyFrom(payload),
@@ -107,6 +100,12 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
                 { _attributes.EventType, eventType }
             }
         };
+
+        if (message.Metadata != null) {
+            foreach (var (key, value) in message.Metadata) {
+                psm.Attributes.Add(key, value.ToString());
+            }
+        }
 
         var attrs = options?.AddAttributes?.Invoke(message);
 

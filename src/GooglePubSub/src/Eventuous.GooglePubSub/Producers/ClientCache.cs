@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
-using Google.Api.Gax;
-using Grpc.Core;
+using Eventuous.GooglePubSub.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.GooglePubSub.Producers;
@@ -27,22 +26,14 @@ class ClientCache {
     }
 
     async Task<PublisherClient> CreateTopicAndClient(string topicId, CancellationToken cancellationToken) {
-        var publisherServiceApiClient = await new PublisherServiceApiClientBuilder {
-                EmulatorDetection = _options.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
-            }
-            .BuildAsync(cancellationToken)
-            .NoContext();
-
         var topicName = TopicName.FromProjectTopic(_projectId, topicId);
 
-        try {
-            _log?.LogInformation("Checking topic {Topic}", topicName);
-            await publisherServiceApiClient.CreateTopicAsync(topicName, cancellationToken).NoContext();
-            _log?.LogInformation("Created topic {Topic}", topicName);
-        }
-        catch (RpcException e) when (e.Status.StatusCode == StatusCode.AlreadyExists) {
-            _log?.LogInformation("Topic {Topic} exists", topicName);
-        }
+        await PubSub.CreateTopic(
+            topicName,
+            _options.ClientCreationSettings.DetectEmulator(),
+            _log,
+            cancellationToken
+        ).NoContext();
 
         return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings).NoContext();
     }

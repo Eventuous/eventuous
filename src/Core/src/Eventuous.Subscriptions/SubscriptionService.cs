@@ -27,12 +27,11 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
         SubscriptionOptions        options,
         ICheckpointStore           checkpointStore,
         IEnumerable<IEventHandler> eventHandlers,
-        IEventSerializer?          eventSerializer = null,
-        ILoggerFactory?            loggerFactory   = null,
-        ISubscriptionGapMeasure?   measure         = null
+        ILoggerFactory?            loggerFactory = null,
+        ISubscriptionGapMeasure?   measure       = null
     ) {
         _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
-        _eventSerializer = eventSerializer ?? DefaultEventSerializer.Instance;
+        _eventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
         SubscriptionId   = Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
         _measure         = measure;
         FailOnError      = options.ThrowOnError;

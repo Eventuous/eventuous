@@ -34,13 +34,15 @@ public class AllStreamSubscription : EventStoreSubscriptionService {
         ISubscriptionGapMeasure?   measure         = null
     ) : this(
         eventStoreClient,
-        new AllStreamSubscriptionOptions { SubscriptionId = subscriptionId },
+        new AllStreamSubscriptionOptions {
+            SubscriptionId     = subscriptionId,
+            EventSerializer    = eventSerializer,
+            MetadataSerializer = metaSerializer,
+            EventFilter        = eventFilter
+        },
         checkpointStore,
         eventHandlers,
-        eventSerializer,
-        metaSerializer,
         loggerFactory,
-        eventFilter,
         measure
     ) { }
 
@@ -50,33 +52,25 @@ public class AllStreamSubscription : EventStoreSubscriptionService {
     /// <param name="eventStoreClient"></param>
     /// <param name="options"></param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
-    /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="eventHandlers">Collection of event handlers</param>
-    /// <param name="metaSerializer"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
-    /// <param name="eventFilter">Optional: server-side event filter</param>
     /// <param name="measure">Optional: gap measurement for metrics</param>
     public AllStreamSubscription(
         EventStoreClient             eventStoreClient,
         AllStreamSubscriptionOptions options,
         ICheckpointStore             checkpointStore,
         IEnumerable<IEventHandler>   eventHandlers,
-        IEventSerializer?            eventSerializer = null,
-        IMetadataSerializer?         metaSerializer  = null,
-        ILoggerFactory?              loggerFactory   = null,
-        IEventFilter?                eventFilter     = null,
-        ISubscriptionGapMeasure?     measure         = null
+        ILoggerFactory?              loggerFactory = null,
+        ISubscriptionGapMeasure?     measure       = null
     ) : base(
         eventStoreClient,
         options,
         checkpointStore,
         eventHandlers,
-        eventSerializer,
-        metaSerializer,
         loggerFactory,
         measure
     ) {
-        _eventFilter = eventFilter ?? EventTypeFilter.ExcludeSystemEvents();
+        _eventFilter = options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents();
         _options     = options;
     }
 

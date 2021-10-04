@@ -36,14 +36,14 @@ public class StreamSubscription : EventStoreSubscriptionService {
     ) : this(
         eventStoreClient,
         new StreamSubscriptionOptions {
-            StreamName     = streamName,
-            SubscriptionId = subscriptionId,
-            ThrowOnError   = throwOnError
+            StreamName         = streamName,
+            SubscriptionId     = subscriptionId,
+            ThrowOnError       = throwOnError,
+            EventSerializer    = eventSerializer,
+            MetadataSerializer = metaSerializer
         },
         checkpointStore,
         eventHandlers,
-        eventSerializer,
-        metaSerializer,
         loggerFactory,
         measure
     ) { }
@@ -53,10 +53,8 @@ public class StreamSubscription : EventStoreSubscriptionService {
     /// </summary>
     /// <param name="client"></param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
-    /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="eventHandlers">Collection of event handlers</param>
     /// <param name="options">Subscription options</param>
-    /// <param name="metaSerializer"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
     /// <param name="measure">Optional: gap measurement for metrics</param>
     public StreamSubscription(
@@ -64,8 +62,6 @@ public class StreamSubscription : EventStoreSubscriptionService {
         StreamSubscriptionOptions  options,
         ICheckpointStore           checkpointStore,
         IEnumerable<IEventHandler> eventHandlers,
-        IEventSerializer?          eventSerializer = null,
-        IMetadataSerializer?       metaSerializer  = null,
         ILoggerFactory?            loggerFactory   = null,
         ISubscriptionGapMeasure?   measure         = null
     ) : base(
@@ -73,8 +69,6 @@ public class StreamSubscription : EventStoreSubscriptionService {
         options,
         checkpointStore,
         eventHandlers,
-        eventSerializer,
-        metaSerializer,
         loggerFactory,
         measure
     ) {

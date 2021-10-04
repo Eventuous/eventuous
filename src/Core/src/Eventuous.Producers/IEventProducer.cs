@@ -30,7 +30,7 @@ public interface IEventProducer<in TProduceOptions> : IEventProducer where TProd
     /// <param name="options">Produce options</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task ProduceMessage(
+    Task ProduceMessages(
         string                       stream,
         IEnumerable<ProducedMessage> messages,
         TProduceOptions?             options,

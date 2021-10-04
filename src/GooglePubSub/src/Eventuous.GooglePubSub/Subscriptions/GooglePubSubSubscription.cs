@@ -1,3 +1,4 @@
+using Eventuous.GooglePubSub.Shared;
 using Google.Api.Gax;
 using Eventuous.Subscriptions;
 using Google.Cloud.Monitoring.V3;
@@ -24,6 +25,7 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
     readonly HandleEventProcessingFailure _failureHandler;
     readonly SubscriptionName             _subscriptionName;
     readonly TopicName                    _topicName;
+    readonly bool                         _monitoringEnabled;
 
     SubscriberClient?    _client;
     MetricServiceClient? _metricClient;
@@ -48,12 +50,12 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
         ISubscriptionGapMeasure?   measure         = null
     ) : this(
         new PubSubSubscriptionOptions {
-            SubscriptionId = subscriptionId,
-            ProjectId      = projectId,
-            TopicId        = topicId
+            SubscriptionId  = subscriptionId,
+            ProjectId       = projectId,
+            TopicId         = topicId,
+            EventSerializer = eventSerializer
         },
         eventHandlers,
-        eventSerializer,
         loggerFactory,
         measure
     ) { }
@@ -63,20 +65,17 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
     /// </summary>
     /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
     /// <param name="eventHandlers">Collection of event handlers</param>
-    /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="loggerFactory">Optional: logger factory</param>
     /// <param name="measure">Callback for measuring the subscription gap</param>
     public GooglePubSubSubscription(
         PubSubSubscriptionOptions  options,
         IEnumerable<IEventHandler> eventHandlers,
-        IEventSerializer?          eventSerializer = null,
-        ILoggerFactory?            loggerFactory   = null,
-        ISubscriptionGapMeasure?   measure         = null
+        ILoggerFactory?            loggerFactory = null,
+        ISubscriptionGapMeasure?   measure       = null
     ) : base(
         options,
         new NoOpCheckpointStore(),
         eventHandlers,
-        eventSerializer,
         loggerFactory,
         measure
     ) {
@@ -94,6 +93,11 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
             options.ProjectId,
             Ensure.NotEmptyString(options.TopicId, nameof(options.TopicId))
         );
+
+        var emulationEnabled =
+            !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PUBSUB_EMULATOR_HOST"));
+
+        _monitoringEnabled = !emulationEnabled && options.EnableMonitoring && measure != null;
 
         _undeliveredCountRequest = GetFilteredRequest(PubSubMetricUndeliveredMessagesCount);
         _oldestAgeRequest        = GetFilteredRequest(PubSubMetricOldestUnackedMessageAge);
@@ -127,10 +131,7 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
             )
             .NoContext();
 
-        var emulationEnabled =
-            !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PUBSUB_EMULATOR_HOST"));
-
-        if (!emulationEnabled)
+        if (_monitoringEnabled)
             _metricClient = await MetricServiceClient.CreateAsync(cancellationToken).NoContext();
 
         _subscriberTask = _client.StartAsync(Handle);
@@ -182,6 +183,8 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
     protected override async Task<EventPosition> GetLastEventPosition(
         CancellationToken cancellationToken
     ) {
+        if (!_monitoringEnabled) return new EventPosition(0, DateTime.Now);
+
         // Subscription metrics are sampled each 60 sec, so we need to use an extended period
         var interval = new TimeInterval {
             StartTime = Timestamp.FromDateTime(DateTime.UtcNow - TimeSpan.FromMinutes(2)),
@@ -217,60 +220,18 @@ public class GooglePubSubSubscription : SubscriptionService, ICanStop {
         Action<Subscription>? configureSubscription,
         CancellationToken     cancellationToken
     ) {
-        var subscriberServiceApiClient =
-            await new SubscriberServiceApiClientBuilder {
-                    EmulatorDetection = _options.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
-                }
-                .BuildAsync(cancellationToken)
-                .NoContext();
+        var emulator = _options.ClientCreationSettings.DetectEmulator();
 
-        var publisherServiceApiClient =
-            await new PublisherServiceApiClientBuilder {
-                    EmulatorDetection = _options.ClientCreationSettings?.EmulatorDetection ?? EmulatorDetection.None
-                }
-                .BuildAsync(cancellationToken)
-                .NoContext();
+        await PubSub.CreateTopic(topicName, emulator, Log, cancellationToken).NoContext();
 
-        try {
-            Log?.LogInformation("Checking topic {Topic}", topicName);
-            await publisherServiceApiClient.CreateTopicAsync(topicName).NoContext();
-            Log?.LogInformation("Created topic {Topic}", topicName);
-        }
-        catch (RpcException e) when (e.Status.StatusCode == StatusCode.AlreadyExists) {
-            Log?.LogInformation("Topic {Topic} exists", topicName);
-        }
-
-        try {
-            Log?.LogInformation(
-                "Checking subscription {Subscription} for {Topic}",
-                subscriptionName,
-                topicName
-            );
-
-            var subscriptionRequest = new Subscription { AckDeadlineSeconds = 60 };
-
-            configureSubscription?.Invoke(subscriptionRequest);
-            subscriptionRequest.SubscriptionName = subscriptionName;
-            subscriptionRequest.TopicAsTopicName = topicName;
-
-            await subscriberServiceApiClient.CreateSubscriptionAsync(
-                    subscriptionRequest
-                )
-                .NoContext();
-
-            Log?.LogInformation(
-                "Created subscription {Subscription} for {Topic}",
-                subscriptionName,
-                topicName
-            );
-        }
-        catch (RpcException e) when (e.Status.StatusCode == StatusCode.AlreadyExists) {
-            Log?.LogInformation(
-                "Subscription {Subscription} for {Topic} exists",
-                subscriptionName,
-                topicName
-            );
-        }
+        await PubSub.CreateSubscription(
+            subscriptionName,
+            topicName,
+            configureSubscription,
+            emulator,
+            Log,
+            cancellationToken
+        ).NoContext();
     }
 
     static ValueTask<Reply> DefaultEventProcessingErrorHandler(

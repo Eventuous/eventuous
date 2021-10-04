@@ -35,13 +35,14 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         _connection = _connectionFactory.CreateConnection();
         _channel    = _connection.CreateModel();
         _channel.ConfirmSelect();
-            
+
         ReadyNow();
 
         return Task.CompletedTask;
     }
 
-    public override async Task ProduceMessage(
+    /// <inheritdoc />
+    public override async Task ProduceMessages(
         string                       stream,
         IEnumerable<ProducedMessage> messages,
         RabbitMqProduceOptions?      options,

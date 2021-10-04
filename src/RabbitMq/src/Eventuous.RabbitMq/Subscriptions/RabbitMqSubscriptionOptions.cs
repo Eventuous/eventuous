@@ -4,7 +4,7 @@ using static Eventuous.RabbitMq.Subscriptions.RabbitMqSubscriptionService;
 namespace Eventuous.RabbitMq.Subscriptions; 
 
 [PublicAPI]
-public class RabbitMqSubscriptionOptions : SubscriptionOptions {
+public record RabbitMqSubscriptionOptions : SubscriptionOptions {
     public string                        SubscriptionQueue { get; init; } = null!;
     public string                        Exchange          { get; init; } = null!;
     public HandleEventProcessingFailure? FailureHandler    { get; init; }
@@ -15,7 +15,7 @@ public class RabbitMqSubscriptionOptions : SubscriptionOptions {
     public int ConcurrencyLimit { get; init; } = 1;
 
     [PublicAPI]
-    public class RabbitMqExchangeOptions {
+    public record RabbitMqExchangeOptions {
         public string Type       { get; init; } = ExchangeType.Fanout;
         public bool   AutoDelete { get; init; }
         public bool   Durable    { get; init; } = true;
@@ -24,7 +24,7 @@ public class RabbitMqSubscriptionOptions : SubscriptionOptions {
     }
 
     [PublicAPI]
-    public class RabbitMqQueueOptions {
+    public record RabbitMqQueueOptions {
         public bool Durable    { get; init; } = true;
         public bool Exclusive  { get; init; }
         public bool AutoDelete { get; init; }
@@ -33,7 +33,7 @@ public class RabbitMqSubscriptionOptions : SubscriptionOptions {
     }
 
     [PublicAPI]
-    public class RabbitMqBindingOptions {
+    public record RabbitMqBindingOptions {
         public string? RoutingKey { get; init; }
 
         public IDictionary<string, object>? Arguments { get; init; }
