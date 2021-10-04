@@ -13,7 +13,7 @@ public class SubscriptionHealthCheck : IHealthCheck {
         CancellationToken  cancellationToken = default
     ) {
         var unhealthy = _subscriptions
-            .Select(x => (x.SubscriptionId, x.Health))
+            .Select(x => (SubscriptionId: x.ServiceId, Health: x.HealthReport))
             .Where(x => !x.Health.IsHealthy)
             .Select(x => (x.SubscriptionId, x.Health.LastException))
             .ToList();

@@ -6,9 +6,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Catch-up subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamSubscription : EventStoreSubscriptionService {
-    readonly StreamSubscriptionOptions _options;
-
+public class StreamSubscription : EventStoreSubscriptionService<StreamSubscriptionOptions> {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
     /// </summary>
@@ -71,40 +69,39 @@ public class StreamSubscription : EventStoreSubscriptionService {
         eventHandlers,
         loggerFactory,
         measure
-    ) {
-        Ensure.NotEmptyString(options.StreamName, nameof(options.StreamName));
-
-        _options = options;
-    }
+    )
+        => Ensure.NotEmptyString(options.StreamName, nameof(options.StreamName));
 
     protected override async Task<EventSubscription> Subscribe(
         Checkpoint        checkpoint,
         CancellationToken cancellationToken
     ) {
-        var subTask = checkpoint.Position == null
+        var (_, position) = checkpoint;
+
+        var subTask = position == null
             ? EventStoreClient.SubscribeToStreamAsync(
-                _options.StreamName,
+                Options.StreamName,
                 HandleEvent,
-                _options.ResolveLinkTos,
+                Options.ResolveLinkTos,
                 HandleDrop,
-                _options.ConfigureOperation,
-                _options.Credentials,
+                Options.ConfigureOperation,
+                Options.Credentials,
                 cancellationToken
             )
             : EventStoreClient.SubscribeToStreamAsync(
-                _options.StreamName,
-                StreamPosition.FromInt64((long)checkpoint.Position),
+                Options.StreamName,
+                StreamPosition.FromInt64((long)position),
                 HandleEvent,
-                _options.ResolveLinkTos,
+                Options.ResolveLinkTos,
                 HandleDrop,
-                _options.ConfigureOperation,
-                _options.Credentials,
+                Options.ConfigureOperation,
+                Options.Credentials,
                 cancellationToken
             );
 
         var sub = await subTask.NoContext();
 
-        return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
+        return new EventSubscription(Options.SubscriptionId, new Stoppable(() => sub.Dispose()));
 
         Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,

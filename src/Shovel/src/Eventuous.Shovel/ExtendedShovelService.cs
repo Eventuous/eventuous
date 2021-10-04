@@ -4,10 +4,11 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Shovel; 
 
 [PublicAPI]
-public class ShovelService<TSubscription, TProducer, TProduceOptions> : IHostedService
-    where TSubscription : SubscriptionService
+public class ShovelService<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions> : IHostedService
+    where TSubscription : SubscriptionService<TSubscriptionOptions>
     where TProducer : class, IEventProducer<TProduceOptions>
-    where TProduceOptions : class {
+    where TProduceOptions : class
+    where TSubscriptionOptions : SubscriptionOptions {
     readonly TSubscription _subscription;
     readonly TProducer     _producer;
 

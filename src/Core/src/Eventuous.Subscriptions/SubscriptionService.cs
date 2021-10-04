@@ -4,14 +4,13 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Subscriptions;
 
 [PublicAPI]
-public abstract class SubscriptionService : IHostedService, IReportHealth {
-    internal  bool              IsRunning      { get; set; }
-    internal  bool              IsDropped      { get; set; }
-    public    string            SubscriptionId { get; }
-    protected EventSubscription Subscription   { get; set; } = null!;
-    protected Logging?          DebugLog       { get; }
-    protected ILogger?          Log            { get; }
-    protected bool              FailOnError    { get; }
+public abstract class SubscriptionService<T> : IHostedService, IReportHealth where T : SubscriptionOptions {
+    internal  bool              IsRunning    { get; set; }
+    internal  bool              IsDropped    { get; set; }
+    protected EventSubscription Subscription { get; set; } = null!;
+    protected Logging?          DebugLog     { get; }
+    protected ILogger?          Log          { get; }
+    protected T                 Options      { get; }
 
     readonly ICheckpointStore         _checkpointStore;
     readonly IEventSerializer         _eventSerializer;
@@ -23,8 +22,10 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
     EventPosition?           _lastProcessed;
     ulong                    _gap;
 
+    public string ServiceId => Options.SubscriptionId;
+
     protected SubscriptionService(
-        SubscriptionOptions        options,
+        T                          options,
         ICheckpointStore           checkpointStore,
         IEnumerable<IEventHandler> eventHandlers,
         ILoggerFactory?            loggerFactory = null,
@@ -32,13 +33,12 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
     ) {
         _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
         _eventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
-        SubscriptionId   = Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
         _measure         = measure;
-        FailOnError      = options.ThrowOnError;
 
-        _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers))
-            .Where(x => x.SubscriptionId == options.SubscriptionId)
-            .ToArray();
+        Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
+        Options = options;
+
+        _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers)).ToArray();
 
         Log = loggerFactory?.CreateLogger($"StreamSubscription-{options.SubscriptionId}");
 
@@ -52,7 +52,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
         }
 
         var checkpoint = await _checkpointStore
-            .GetLastCheckpoint(SubscriptionId, cancellationToken)
+            .GetLastCheckpoint(Options.SubscriptionId, cancellationToken)
             .NoContext();
 
         _lastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
@@ -61,13 +61,13 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
 
         IsRunning = true;
 
-        Log?.LogInformation("Started subscription {Subscription}", SubscriptionId);
+        Log?.LogInformation("Started subscription");
     }
 
     protected async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
         DebugLog?.Invoke(
             "Subscription {Subscription} got an event {EventType}",
-            SubscriptionId,
+            Options.SubscriptionId,
             re.EventType
         );
 
@@ -96,7 +96,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
         }
         catch (Exception e) {
             Log?.Log(
-                FailOnError ? LogLevel.Error : LogLevel.Warning,
+                Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning,
                 e,
                 "Error when handling the event {Stream} {Position} {Type}",
                 re.Stream,
@@ -104,7 +104,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
                 re.EventType
             );
 
-            if (FailOnError)
+            if (Options.ThrowOnError)
                 throw new SubscriptionException(
                     re.Stream,
                     re.EventType,
@@ -128,7 +128,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
         CancellationToken cancellationToken
     ) {
         _lastProcessed = position;
-        var checkpoint = new Checkpoint(SubscriptionId, position.Position);
+        var checkpoint = new Checkpoint(Options.SubscriptionId, position.Position);
 
         await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
     }
@@ -154,7 +154,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
                 eventType
             );
 
-            if (FailOnError)
+            if (Options.ThrowOnError)
                 throw new InvalidOperationException($"Unknown content type {contentType}");
         }
 
@@ -170,7 +170,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
                 eventType
             );
 
-            if (FailOnError)
+            if (Options.ThrowOnError)
                 throw new DeserializationException(stream, eventType, position, e);
 
             return null;
@@ -198,7 +198,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
 
         await Subscription.Stop(cancellationToken).NoContext();
 
-        Log?.LogInformation("Stopped subscription {Subscription}", SubscriptionId);
+        Log?.LogInformation("Stopped subscription");
     }
 
     readonly InterlockedSemaphore _resubscribing = new();
@@ -206,7 +206,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
     protected async Task Resubscribe(TimeSpan delay) {
         if (_resubscribing.IsClosed()) return;
 
-        Log?.LogWarning("Resubscribing {Subscription}", SubscriptionId);
+        Log?.LogWarning("Resubscribing");
 
         await Task.Delay(delay).NoContext();
 
@@ -214,20 +214,16 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
             try {
                 _resubscribing.Close();
 
-                var checkpoint = new Checkpoint(SubscriptionId, _lastProcessed?.Position);
+                var checkpoint = new Checkpoint(Options.SubscriptionId, _lastProcessed?.Position);
 
                 Subscription = await Subscribe(checkpoint, default).NoContext();
 
                 IsDropped = false;
 
-                Log?.LogInformation("Subscription {Subscription} restored", SubscriptionId);
+                Log?.LogInformation("Subscription  restored");
             }
             catch (Exception e) {
-                Log?.LogError(
-                    e,
-                    "Unable to restart the subscription {Subscription}",
-                    SubscriptionId
-                );
+                Log?.LogError(e, "Unable to restart the subscription");
 
                 await Task.Delay(1000).NoContext();
             }
@@ -240,12 +236,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning || _resubscribing.IsClosed()) return;
 
-        Log?.LogWarning(
-            exception,
-            "Subscription {Subscription} dropped {Reason}",
-            SubscriptionId,
-            reason
-        );
+        Log?.LogWarning(exception, "Subscription  dropped {Reason}", reason);
 
         IsDropped      = true;
         _lastException = exception;
@@ -265,7 +256,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
             if (_lastProcessed?.Position != null && position != null) {
                 _gap = (ulong)position - _lastProcessed.Position.Value;
 
-                _measure!.PutGap(SubscriptionId, _gap, created);
+                _measure!.PutGap(Options.SubscriptionId, _gap, created);
             }
 
             await Task.Delay(1000, cancellationToken).NoContext();
@@ -278,7 +269,7 @@ public abstract class SubscriptionService : IHostedService, IReportHealth {
 
     Exception? _lastException;
 
-    public SubscriptionHealth Health => new(!(IsRunning && IsDropped), _lastException);
+    public HealthReport HealthReport => new(!(IsRunning && IsDropped), _lastException);
 }
 
 public record EventPosition(ulong? Position, DateTime Created);

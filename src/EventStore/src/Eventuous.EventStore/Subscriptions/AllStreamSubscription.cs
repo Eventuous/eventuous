@@ -6,10 +6,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Catch-up subscription for EventStoreDB, using the $all global stream
 /// </summary>
 [PublicAPI]
-public class AllStreamSubscription : EventStoreSubscriptionService {
-    readonly IEventFilter                 _eventFilter;
-    readonly AllStreamSubscriptionOptions _options;
-
+public class AllStreamSubscription : EventStoreSubscriptionService<AllStreamSubscriptionOptions> {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for $all
     /// </summary>
@@ -69,30 +66,29 @@ public class AllStreamSubscription : EventStoreSubscriptionService {
         eventHandlers,
         loggerFactory,
         measure
-    ) {
-        _eventFilter = options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents();
-        _options     = options;
-    }
+    ) { }
 
     protected override async Task<EventSubscription> Subscribe(
         Checkpoint        checkpoint,
         CancellationToken cancellationToken
     ) {
         var filterOptions = new SubscriptionFilterOptions(
-            _eventFilter,
+            Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
             10,
             (_, p, ct) => StoreCheckpoint(new EventPosition(p.CommitPosition, DateTime.Now), ct)
         );
 
-        var subTask = checkpoint.Position != null
+        var (_, position) = checkpoint;
+
+        var subTask = position != null
             ? EventStoreClient.SubscribeToAllAsync(
-                new Position(checkpoint.Position.Value, checkpoint.Position.Value),
+                new Position(position.Value, position.Value),
                 HandleEvent,
                 false,
                 HandleDrop,
                 filterOptions,
-                _options.ConfigureOperation,
-                _options.Credentials,
+                Options.ConfigureOperation,
+                Options.Credentials,
                 cancellationToken
             )
             : EventStoreClient.SubscribeToAllAsync(
@@ -100,14 +96,14 @@ public class AllStreamSubscription : EventStoreSubscriptionService {
                 false,
                 HandleDrop,
                 filterOptions,
-                _options.ConfigureOperation,
-                _options.Credentials,
+                Options.ConfigureOperation,
+                Options.Credentials,
                 cancellationToken
             );
 
         var sub = await subTask.NoContext();
 
-        return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
+        return new EventSubscription(Options.SubscriptionId, new Stoppable(() => sub.Dispose()));
 
         Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,

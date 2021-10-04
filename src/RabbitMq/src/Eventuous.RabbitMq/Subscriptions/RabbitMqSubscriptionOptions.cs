@@ -5,37 +5,37 @@ namespace Eventuous.RabbitMq.Subscriptions;
 
 [PublicAPI]
 public record RabbitMqSubscriptionOptions : SubscriptionOptions {
-    public string                        SubscriptionQueue { get; init; } = null!;
-    public string                        Exchange          { get; init; } = null!;
-    public HandleEventProcessingFailure? FailureHandler    { get; init; }
-    public RabbitMqExchangeOptions?      ExchangeOptions   { get; init; } = new();
-    public RabbitMqQueueOptions?         QueueOptions      { get; init; } = new();
-    public RabbitMqBindingOptions?       BindingOptions    { get; init; } = new();
+    public string                        SubscriptionQueue { get; set; } = null!;
+    public string                        Exchange          { get; set; } = null!;
+    public HandleEventProcessingFailure? FailureHandler    { get; set; }
+    public RabbitMqExchangeOptions?      ExchangeOptions   { get; set; } = new();
+    public RabbitMqQueueOptions?         QueueOptions      { get; set; } = new();
+    public RabbitMqBindingOptions?       BindingOptions    { get; set; } = new();
 
-    public int ConcurrencyLimit { get; init; } = 1;
+    public int ConcurrencyLimit { get; set; } = 1;
 
     [PublicAPI]
     public record RabbitMqExchangeOptions {
-        public string Type       { get; init; } = ExchangeType.Fanout;
-        public bool   AutoDelete { get; init; }
-        public bool   Durable    { get; init; } = true;
+        public string Type       { get; set; } = ExchangeType.Fanout;
+        public bool   AutoDelete { get; set; }
+        public bool   Durable    { get; set; } = true;
 
-        public IDictionary<string, object>? Arguments { get; init; }
+        public IDictionary<string, object>? Arguments { get; set; }
     }
 
     [PublicAPI]
     public record RabbitMqQueueOptions {
-        public bool Durable    { get; init; } = true;
-        public bool Exclusive  { get; init; }
-        public bool AutoDelete { get; init; }
+        public bool Durable    { get; set; } = true;
+        public bool Exclusive  { get; set; }
+        public bool AutoDelete { get; set; }
 
-        public IDictionary<string, object>? Arguments { get; init; }
+        public IDictionary<string, object>? Arguments { get; set; }
     }
 
     [PublicAPI]
     public record RabbitMqBindingOptions {
-        public string? RoutingKey { get; init; }
+        public string? RoutingKey { get; set; }
 
-        public IDictionary<string, object>? Arguments { get; init; }
+        public IDictionary<string, object>? Arguments { get; set; }
     }
 }

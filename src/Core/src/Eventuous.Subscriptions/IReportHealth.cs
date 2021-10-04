@@ -1,8 +1,8 @@
-namespace Eventuous.Subscriptions; 
+namespace Eventuous.Subscriptions;
 
 public interface IReportHealth {
-    string             SubscriptionId { get; }
-    SubscriptionHealth Health         { get; }
+    string       ServiceId    { get; }
+    HealthReport HealthReport { get; }
 }
 
-public record SubscriptionHealth(bool IsHealthy, Exception? LastException);
+public record HealthReport(bool IsHealthy, Exception? LastException);

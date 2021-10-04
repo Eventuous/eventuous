@@ -1,19 +1,20 @@
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.EventStore.Subscriptions; 
+namespace Eventuous.EventStore.Subscriptions;
 
 [PublicAPI]
-public abstract class EventStoreSubscriptionService : SubscriptionService {
+public abstract class EventStoreSubscriptionService<T> : SubscriptionService<T>
+    where T : EventStoreSubscriptionOptions {
     readonly  IMetadataSerializer _metaSerializer;
     protected EventStoreClient    EventStoreClient { get; }
 
     protected EventStoreSubscriptionService(
-        EventStoreClient              eventStoreClient,
-        EventStoreSubscriptionOptions options,
-        ICheckpointStore              checkpointStore,
-        IEnumerable<IEventHandler>    eventHandlers,
-        ILoggerFactory?               loggerFactory   = null,
-        ISubscriptionGapMeasure?      measure         = null
+        EventStoreClient           eventStoreClient,
+        T                          options,
+        ICheckpointStore           checkpointStore,
+        IEnumerable<IEventHandler> eventHandlers,
+        ILoggerFactory?            loggerFactory = null,
+        ISubscriptionGapMeasure?   measure       = null
     ) : base(
         options,
         checkpointStore,
@@ -22,7 +23,7 @@ public abstract class EventStoreSubscriptionService : SubscriptionService {
         measure
     ) {
         EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
-        _metaSerializer  = options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
+        _metaSerializer  = Options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
     protected override async Task<EventPosition> GetLastEventPosition(
@@ -42,7 +43,6 @@ public abstract class EventStoreSubscriptionService : SubscriptionService {
             events[0].Event.Created
         );
     }
-        
 
     protected Metadata? DeserializeMeta(
         ReadOnlyMemory<byte> meta,
@@ -62,7 +62,7 @@ public abstract class EventStoreSubscriptionService : SubscriptionService {
                 position
             );
 
-            if (FailOnError)
+            if (Options.ThrowOnError)
                 throw new DeserializationException(stream, "metadata", position, e);
 
             return null;

@@ -9,14 +9,13 @@ namespace Eventuous.RabbitMq.Subscriptions;
 /// RabbitMQ subscription service
 /// </summary>
 [PublicAPI]
-public class RabbitMqSubscriptionService : SubscriptionService {
+public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscriptionOptions> {
     public delegate void HandleEventProcessingFailure(
         IModel                channel,
         BasicDeliverEventArgs message,
         Exception             exception
     );
 
-    readonly RabbitMqSubscriptionOptions? _options;
     readonly HandleEventProcessingFailure _failureHandler;
     readonly IConnection                  _connection;
     readonly IModel                       _channel;
@@ -60,8 +59,6 @@ public class RabbitMqSubscriptionService : SubscriptionService {
             loggerFactory,
             new NoOpGapMeasure()
         ) {
-        _options = options;
-
         _log              = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
         _failureHandler   = options.FailureHandler ?? DefaultEventFailureHandler;
         _concurrencyLimit = options.ConcurrencyLimit;
@@ -117,20 +114,20 @@ public class RabbitMqSubscriptionService : SubscriptionService {
 
         _channel.ExchangeDeclare(
             _exchange,
-            _options?.ExchangeOptions?.Type ?? ExchangeType.Fanout,
-            _options?.ExchangeOptions?.Durable ?? true,
-            _options?.ExchangeOptions?.AutoDelete ?? true,
-            _options?.ExchangeOptions?.Arguments
+            Options.ExchangeOptions?.Type ?? ExchangeType.Fanout,
+            Options.ExchangeOptions?.Durable ?? true,
+            Options.ExchangeOptions?.AutoDelete ?? true,
+            Options.ExchangeOptions?.Arguments
         );
 
         Log.LogDebug("Ensuring queue {Queue}", _subscriptionQueue);
 
         _channel.QueueDeclare(
             _subscriptionQueue,
-            _options?.QueueOptions?.Durable ?? true,
-            _options?.QueueOptions?.Exclusive ?? false,
-            _options?.QueueOptions?.AutoDelete ?? false,
-            _options?.QueueOptions?.Arguments
+            Options.QueueOptions?.Durable ?? true,
+            Options.QueueOptions?.Exclusive ?? false,
+            Options.QueueOptions?.AutoDelete ?? false,
+            Options.QueueOptions?.Arguments
         );
 
         Log.LogDebug("Binding {Exchange} to {Queue}", _exchange, _subscriptionQueue);
@@ -138,8 +135,8 @@ public class RabbitMqSubscriptionService : SubscriptionService {
         _channel.QueueBind(
             _subscriptionQueue,
             _exchange,
-            _options?.BindingOptions?.RoutingKey ?? "",
-            _options?.BindingOptions?.Arguments
+            Options.BindingOptions?.RoutingKey ?? "",
+            Options.BindingOptions?.Arguments
         );
 
         var consumeChannel = Channel.CreateBounded<Event>(_concurrencyLimit * 10);
@@ -153,7 +150,7 @@ public class RabbitMqSubscriptionService : SubscriptionService {
 
         _channel.BasicConsume(consumer, _subscriptionQueue);
 
-        return Task.FromResult(new EventSubscription(SubscriptionId, new Stoppable(CloseConnection)));
+        return Task.FromResult(new EventSubscription(Options.SubscriptionId, new Stoppable(CloseConnection)));
 
         async Task RunConsumer() {
             _log.LogDebug("Started consumer instance for {Queue}", _subscriptionQueue);
@@ -219,10 +216,10 @@ public class RabbitMqSubscriptionService : SubscriptionService {
             await writer.WriteAsync(new Event(received, receivedEvent)).NoContext();
         }
         catch (Exception e) {
-            Log.Log(FailOnError ? LogLevel.Error : LogLevel.Warning, e, "Deserialization failed");
+            Log.Log(Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning, e, "Deserialization failed");
 
             // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
-            if (FailOnError) throw;
+            if (Options.ThrowOnError) throw;
         }
     }
 

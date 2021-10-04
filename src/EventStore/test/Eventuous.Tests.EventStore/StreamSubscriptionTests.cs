@@ -71,7 +71,7 @@ public class StreamSubscriptionTests {
             },
             new NoOpCheckpointStore(startPosition),
             new[] { handler },
-            loggerFactory: _loggerFactory
+            _loggerFactory
         );
 
         await subscription.StartAsync(CancellationToken.None);

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.Shovel; 
+namespace Eventuous.Shovel;
 
 /// <summary>
 /// Super-simple shovel, which allows to use a subscription to receive events, and then
@@ -11,10 +11,12 @@ namespace Eventuous.Shovel;
 /// </summary>
 /// <typeparam name="TSubscription">Subscription service, the source of event</typeparam>
 /// <typeparam name="TProducer">Producer, which will publish events</typeparam>
+/// <typeparam name="TSubscriptionOptions">Subscription options type</typeparam>
 [PublicAPI]
-public class ShovelService<TSubscription, TProducer> : IHostedService
-    where TSubscription : SubscriptionService
-    where TProducer : class, IEventProducer {
+public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHostedService
+    where TSubscription : SubscriptionService<TSubscriptionOptions>
+    where TProducer : class, IEventProducer
+    where TSubscriptionOptions : SubscriptionOptions {
     readonly TSubscription _subscription;
     readonly TProducer     _producer;
 

@@ -6,7 +6,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Persistent subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamPersistentSubscription : EventStoreSubscriptionService {
+public class StreamPersistentSubscription : EventStoreSubscriptionService<StreamPersistentSubscriptionOptions> {
     public delegate Task HandleEventProcessingFailure(
         EventStoreClient       client,
         PersistentSubscription subscription,
@@ -15,7 +15,6 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService {
     );
 
     readonly EventStorePersistentSubscriptionsClient _subscriptionClient;
-    readonly StreamPersistentSubscriptionOptions     _options;
     readonly HandleEventProcessingFailure            _handleEventProcessingFailure;
 
     public StreamPersistentSubscription(
@@ -41,10 +40,7 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService {
 
         _subscriptionClient = new EventStorePersistentSubscriptionsClient(settings);
 
-        _handleEventProcessingFailure =
-            options.FailureHandler ?? DefaultEventProcessingFailureHandler;
-
-        _options = options;
+        _handleEventProcessingFailure = options.FailureHandler ?? DefaultEventProcessingFailureHandler;
     }
 
     /// <summary>
@@ -84,10 +80,10 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService {
         Checkpoint        _,
         CancellationToken cancellationToken
     ) {
-        var settings = _options.SubscriptionSettings
-                    ?? new PersistentSubscriptionSettings(_options.ResolveLinkTos);
+        var settings = Options.SubscriptionSettings
+                    ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
 
-        var autoAck = _options.AutoAck;
+        var autoAck = Options.AutoAck;
 
         PersistentSubscription sub;
 
@@ -96,10 +92,10 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService {
         }
         catch (PersistentSubscriptionNotFoundException) {
             await _subscriptionClient.CreateAsync(
-                    _options.Stream,
-                    SubscriptionId,
+                    Options.Stream,
+                    Options.SubscriptionId,
                     settings,
-                    _options.Credentials,
+                    Options.Credentials,
                     cancellationToken
                 )
                 .NoContext();
@@ -107,7 +103,7 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService {
             sub = await LocalSubscribe().NoContext();
         }
 
-        return new EventSubscription(SubscriptionId, new Stoppable(() => sub.Dispose()));
+        return new EventSubscription(Options.SubscriptionId, new Stoppable(() => sub.Dispose()));
 
         void HandleDrop(
             PersistentSubscription    __,
@@ -137,13 +133,13 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService {
 
         Task<PersistentSubscription> LocalSubscribe()
             => _subscriptionClient.SubscribeAsync(
-                _options.Stream,
-                SubscriptionId,
+                Options.Stream,
+                Options.SubscriptionId,
                 HandleEvent,
                 HandleDrop,
-                _options.Credentials,
-                _options.BufferSize,
-                _options.AutoAck,
+                Options.Credentials,
+                Options.BufferSize,
+                Options.AutoAck,
                 cancellationToken
             );
 

@@ -18,7 +18,7 @@ public class EsdbEventStore : IEventStore {
     ) {
         var proposedEvents = events.Select(ToEventData);
 
-        Task<IWriteResult> resultTask = expectedVersion == ExpectedStreamVersion.NoStream
+        var resultTask = expectedVersion == ExpectedStreamVersion.NoStream
             ? _client.AppendToStreamAsync(
                 stream,
                 StreamState.NoStream,
