@@ -63,7 +63,7 @@ public class AggregateStore : IAggregateStore {
         Ensure.NotEmptyString(id, nameof(id));
 
         var stream    = StreamName.For<T>(id);
-        var aggregate = new T();
+        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<T>();
 
         try {
             await _eventStore.ReadStream(

@@ -1,4 +1,4 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 /// <summary>
 /// Application service base class. A derived class should be scoped to handle commands for one aggregate type only.
@@ -7,7 +7,7 @@ namespace Eventuous;
 /// <typeparam name="TState">The aggregate state type</typeparam>
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 [PublicAPI]
-public abstract class ApplicationService<T, TState, TId>
+public abstract class ApplicationService<T, TState, TId> : IApplicationService<TState, TId>, IApplicationService<T>
     where T : Aggregate<TState, TId>, new()
     where TState : AggregateState<TState, TId>, new()
     where TId : AggregateId {
@@ -21,37 +21,31 @@ public abstract class ApplicationService<T, TState, TId>
     /// <summary>
     /// Register a handler for a command, which is expected to create a new aggregate instance.
     /// </summary>
-    /// <param name="getId">A function to get the aggregate id from the command</param>
     /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnNew<TCommand>(Func<TCommand, TId> getId, Action<T, TCommand> action) where TCommand : class {
-        _handlers.Add(
-            typeof(TCommand),
-            new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action))
-        );
-
-        _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
-    }
+    protected void OnNew<TCommand>(ActOnAggregate<TCommand> action)
+        where TCommand : class => _handlers.Add(
+        typeof(TCommand),
+        new RegisteredHandler<T>(
+            ExpectedState.New,
+            (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
+        )
+    );
 
     /// <summary>
     /// Register an asynchronous handler for a command, which is expected to create a new aggregate instance.
     /// </summary>
-    /// <param name="getId">A function to get the aggregate id from the command</param>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnNewAsync<TCommand>(
-        Func<TCommand, TId>                        getId,
-        Func<T, TCommand, CancellationToken, Task> action
-    )
-        where TCommand : class {
-        _handlers.Add(
-            typeof(TCommand),
-            new RegisteredHandler<T>(ExpectedState.New, (aggregate, cmd, ct) => AsTask(aggregate, cmd, ct, action))
-        );
-
-        _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
-    }
+    protected void OnNewAsync<TCommand>(ActOnAggregateAsync<TCommand> action)
+        where TCommand : class => _handlers.Add(
+        typeof(TCommand),
+        new RegisteredHandler<T>(
+            ExpectedState.New,
+            (aggregate, cmd, ct) => AsTask(aggregate, cmd, action, ct)
+        )
+    );
 
     /// <summary>
     /// Register a handler for a command, which is expected to use an existing aggregate instance.
@@ -59,7 +53,10 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="getId">A function to get the aggregate id from the command</param>
     /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnExisting<TCommand>(Func<TCommand, TId> getId, Action<T, TCommand> action)
+    protected void OnExisting<TCommand>(
+        GetIdFromCommand<TCommand> getId,
+        ActOnAggregate<TCommand>   action
+    )
         where TCommand : class {
         _handlers.Add(
             typeof(TCommand),
@@ -80,15 +77,15 @@ public abstract class ApplicationService<T, TState, TId>
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     protected void OnExistingAsync<TCommand>(
-        Func<TCommand, TId>                        getId,
-        Func<T, TCommand, CancellationToken, Task> action
+        GetIdFromCommand<TCommand>    getId,
+        ActOnAggregateAsync<TCommand> action
     )
         where TCommand : class {
         _handlers.Add(
             typeof(TCommand),
             new RegisteredHandler<T>(
                 ExpectedState.Existing,
-                (aggregate, cmd, ct) => AsTask(aggregate, cmd, ct, action)
+                (aggregate, cmd, ct) => AsTask(aggregate, cmd, action, ct)
             )
         );
 
@@ -102,11 +99,17 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAny<TCommand>(Func<TCommand, TId> getId, Action<T, TCommand> action)
+    protected void OnAny<TCommand>(
+        GetIdFromCommand<TCommand> getId,
+        ActOnAggregate<TCommand>   action
+    )
         where TCommand : class {
         _handlers.Add(
             typeof(TCommand),
-            new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action))
+            new RegisteredHandler<T>(
+                ExpectedState.Any,
+                (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
+            )
         );
 
         _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
@@ -120,13 +123,16 @@ public abstract class ApplicationService<T, TState, TId>
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     protected void OnAnyAsync<TCommand>(
-        Func<TCommand, TId>                        getId,
-        Func<T, TCommand, CancellationToken, Task> action
+        GetIdFromCommand<TCommand>    getId,
+        ActOnAggregateAsync<TCommand> action
     )
         where TCommand : class {
         _handlers.Add(
             typeof(TCommand),
-            new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, ct) => AsTask(aggregate, cmd, ct, action))
+            new RegisteredHandler<T>(
+                ExpectedState.Any,
+                (aggregate, cmd, ct) => AsTask(aggregate, cmd, action, ct)
+            )
         );
 
         _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
@@ -139,14 +145,23 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAny<TCommand>(Func<TCommand, CancellationToken, Task<TId>> getId, Action<T, TCommand> action)
+    protected void OnAny<TCommand>(
+        GetIdFromCommandAsync<TCommand> getId,
+        ActOnAggregate<TCommand>        action
+    )
         where TCommand : class {
         _handlers.Add(
             typeof(TCommand),
-            new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action))
+            new RegisteredHandler<T>(
+                ExpectedState.Any,
+                (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
+            )
         );
 
-        _getId.TryAdd(typeof(TCommand), async (cmd, ct) => await getId((TCommand)cmd, ct).NoContext());
+        _getId.TryAdd(
+            typeof(TCommand),
+            async (cmd, ct) => await getId((TCommand)cmd, ct).NoContext()
+        );
     }
 
     /// <summary>
@@ -157,16 +172,22 @@ public abstract class ApplicationService<T, TState, TId>
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     protected void OnAnyAsync<TCommand>(
-        Func<TCommand, CancellationToken, Task<TId>> getId,
-        Func<T, TCommand, CancellationToken, Task>   action
+        GetIdFromCommandAsync<TCommand> getId,
+        ActOnAggregateAsync<TCommand>   action
     )
         where TCommand : class {
         _handlers.Add(
             typeof(TCommand),
-            new RegisteredHandler<T>(ExpectedState.Any, (aggregate, cmd, ct) => AsTask(aggregate, cmd, ct, action))
+            new RegisteredHandler<T>(
+                ExpectedState.Any,
+                (aggregate, cmd, ct) => AsTask(aggregate, cmd, action, ct)
+            )
         );
 
-        _getId.TryAdd(typeof(TCommand), async (cmd, ct) => await getId((TCommand)cmd, ct).NoContext());
+        _getId.TryAdd(
+            typeof(TCommand),
+            async (cmd, ct) => await getId((TCommand)cmd, ct).NoContext()
+        );
     }
 
     /// <summary>
@@ -174,25 +195,29 @@ public abstract class ApplicationService<T, TState, TId>
     /// </summary>
     /// <param name="action">Function, which returns some aggregate instance to store</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAsync<TCommand>(Func<TCommand, CancellationToken, Task<T>> action) where TCommand : class
-        => _handlers.Add(
-            typeof(TCommand),
-            new RegisteredHandler<T>(
-                ExpectedState.Unknown,
-                async (_, cmd, ct) => await action((TCommand)cmd, ct).NoContext()
-            )
-        );
+    protected void OnAsync<TCommand>(ArbitraryActAsync<TCommand> action)
+        where TCommand : class => _handlers.Add(
+        typeof(TCommand),
+        new RegisteredHandler<T>(
+            ExpectedState.Unknown,
+            async (_, cmd, ct) => await action((TCommand)cmd, ct).NoContext()
+        )
+    );
 
-    static ValueTask<T> SyncAsTask<TCommand>(T aggregate, object cmd, Action<T, TCommand> action) {
+    static ValueTask<T> SyncAsTask<TCommand>(
+        T                        aggregate,
+        object                   cmd,
+        ActOnAggregate<TCommand> action
+    ) {
         action(aggregate, (TCommand)cmd);
         return new ValueTask<T>(aggregate);
     }
 
     static async ValueTask<T> AsTask<TCommand>(
-        T                                          aggregate,
-        object                                     cmd,
-        CancellationToken                          cancellationToken,
-        Func<T, TCommand, CancellationToken, Task> action
+        T                             aggregate,
+        object                        cmd,
+        ActOnAggregateAsync<TCommand> action,
+        CancellationToken             cancellationToken
     ) {
         await action(aggregate, (TCommand)cmd, cancellationToken).NoContext();
         return aggregate;
@@ -218,7 +243,7 @@ public abstract class ApplicationService<T, TState, TId>
         var aggregate = registeredHandler.ExpectedState switch {
             ExpectedState.Any      => await TryLoad().NoContext(),
             ExpectedState.Existing => await Load().NoContext(),
-            ExpectedState.New      => await Create().NoContext(),
+            ExpectedState.New      => Create(),
             ExpectedState.Unknown  => default,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(registeredHandler.ExpectedState),
@@ -226,7 +251,8 @@ public abstract class ApplicationService<T, TState, TId>
             )
         };
 
-        var result = await registeredHandler.Handler(aggregate!, command, cancellationToken).NoContext();
+        var result = await registeredHandler.Handler(aggregate!, command, cancellationToken)
+            .NoContext();
 
         var storeResult = await Store.Store(result, cancellationToken).NoContext();
 
@@ -242,21 +268,43 @@ public abstract class ApplicationService<T, TState, TId>
                 return await Load().NoContext();
             }
             catch (Exceptions.AggregateNotFound<T>) {
-                return await Create().NoContext();
+                return Create();
             }
         }
 
-        async ValueTask<T> Create() {
-            var newInstance = new T();
+        T Create() => AggregateFactoryRegistry.Instance.CreateInstance<T, TState, TId>();
+    }
 
-            var id = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();
-            newInstance.State = newInstance.State.SetId(id);
-            return newInstance;
-        }
+    public delegate Task ActOnAggregateAsync<in TCommand>(
+        T                 aggregate,
+        TCommand          command,
+        CancellationToken cancellationToken
+    );
+
+    public delegate void ActOnAggregate<in TCommand>(T aggregate, TCommand command);
+
+    public delegate Task<T> ArbitraryActAsync<in TCommand>(
+        TCommand          command,
+        CancellationToken cancellationToken
+    );
+
+    public delegate TId GetIdFromCommand<in TCommand>(TCommand command);
+
+    public delegate Task<TId> GetIdFromCommandAsync<in TCommand>(
+        TCommand          command,
+        CancellationToken cancellationToken
+    );
+
+    async Task<Result> IApplicationService<T>.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) {
+        var (state, enumerable) = await Handle(command, cancellationToken);
+        return new Result(state, enumerable);
     }
 }
 
-record RegisteredHandler<T>(ExpectedState ExpectedState, Func<T, object, CancellationToken, ValueTask<T>> Handler);
+record RegisteredHandler<T>(
+    ExpectedState                                    ExpectedState,
+    Func<T, object, CancellationToken, ValueTask<T>> Handler
+);
 
 class HandlersMap<T> : Dictionary<Type, RegisteredHandler<T>> { }
 

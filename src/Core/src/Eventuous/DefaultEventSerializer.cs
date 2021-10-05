@@ -10,8 +10,7 @@ public class DefaultEventSerializer : IEventSerializer {
     readonly JsonSerializerOptions _options;
     readonly TypeMapper            _typeMapper;
 
-    public static void SetDefaultSerializer(IEventSerializer serializer)
-        => Instance = serializer;
+    public static void SetDefaultSerializer(IEventSerializer serializer) => Instance = serializer;
 
     public DefaultEventSerializer(JsonSerializerOptions options, TypeMapper? typeMapper = null) {
         _options    = options;
