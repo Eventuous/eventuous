@@ -71,8 +71,6 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer, TProd
 
         readonly RouteAndTransform<TProduceOptions> _transform;
 
-        public string SubscriptionId { get; }
-
         public ShovelHandler(
             string                             subscriptionId,
             TProducer                          eventProducer,
@@ -80,7 +78,6 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer, TProd
         ) {
             _eventProducer = eventProducer;
             _transform     = transform;
-            SubscriptionId = subscriptionId;
         }
 
         public async Task HandleEvent(

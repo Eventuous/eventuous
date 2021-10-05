@@ -65,7 +65,7 @@ public class StreamSubscriptionTests {
             Instance.Client,
             new StreamSubscriptionOptions {
                 StreamName     = categoryStream,
-                SubscriptionId = handler.SubscriptionId,
+                SubscriptionId = "TestSub",
                 ResolveLinkTos = true,
                 ThrowOnError   = true
             },
@@ -89,8 +89,6 @@ public class StreamSubscriptionTests {
     }
 
     class TestHandler : IEventHandler {
-        public string SubscriptionId => "TestSub";
-
         public long Position { get; private set; }
         public int  Count    { get; private set; }
 

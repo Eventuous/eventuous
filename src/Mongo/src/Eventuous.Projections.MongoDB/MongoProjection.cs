@@ -10,14 +10,11 @@ public abstract class MongoProjection<T> : IEventHandler
 
     protected IMongoCollection<T> Collection { get; }
 
-    protected MongoProjection(IMongoDatabase database, string subscriptionGroup, ILoggerFactory? loggerFactory) {
+    protected MongoProjection(IMongoDatabase database, ILoggerFactory? loggerFactory) {
         var log = loggerFactory?.CreateLogger(GetType());
         _log           = log?.IsEnabled(LogLevel.Debug) == true ? log : null;
-        SubscriptionId = Ensure.NotEmptyString(subscriptionGroup, nameof(subscriptionGroup));
         Collection     = Ensure.NotNull(database, nameof(database)).GetDocumentCollection<T>();
     }
-
-    public string SubscriptionId { get; }
 
     public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
         var updateTask = GetUpdate(evt, position);
@@ -31,7 +28,7 @@ public abstract class MongoProjection<T> : IEventHandler
         _log?.LogDebug("Projecting {Event}", evt.GetType().Name);
 
         var task = update switch {
-            OtherOperation<T> operation => operation.Task,
+            OtherOperation<T> operation => operation.Execute(),
             CollectionOperation<T> col  => col.Execute(Collection, cancellationToken),
             UpdateOperation<T> upd      => ExecuteUpdate(upd),
             _                           => Task.CompletedTask
@@ -69,6 +66,6 @@ public abstract record Operation<T>;
 
 public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update) : Operation<T>;
 
-public record OtherOperation<T>(Task Task) : Operation<T>;
+public record OtherOperation<T>(Func<Task> Execute) : Operation<T>;
 
 public record CollectionOperation<T>(Func<IMongoCollection<T>, CancellationToken, Task> Execute) : Operation<T>;
