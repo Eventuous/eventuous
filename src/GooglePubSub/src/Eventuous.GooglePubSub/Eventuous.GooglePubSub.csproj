@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
+<!--        <PackageReadmeFile>README.md</PackageReadmeFile>-->
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Google.Cloud.Monitoring.V3" Version="2.3.0" />

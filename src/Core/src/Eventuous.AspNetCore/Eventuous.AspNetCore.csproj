@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
+<!--        <PackageReadmeFile>README.md</PackageReadmeFile>-->
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -9,6 +9,6 @@
         <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\"/>
+        <None Include=".\README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 </Project>
