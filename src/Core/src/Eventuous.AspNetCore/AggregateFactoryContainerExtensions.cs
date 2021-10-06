@@ -31,7 +31,7 @@ public static class AggregateFactoryContainerExtensions {
     /// <summary>
     /// Add a default aggregate factory to the container, allowing to resolve aggregate dependencies.
     /// Do not use this if your aggregate has no dependencies and has a parameterless constructor.
-    /// Must be followed by <see cref="UseAggregateFactory"/> in Startup.Configure.
+    /// Must be followed by builder.UseAggregateFactory() in Startup.Configure.
     /// </summary>
     /// <param name="services"></param>
     /// <typeparam name="T">Aggregate type</typeparam>

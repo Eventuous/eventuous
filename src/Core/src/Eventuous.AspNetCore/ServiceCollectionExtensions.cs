@@ -2,6 +2,7 @@
 
 using Eventuous;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -18,7 +19,11 @@ public static class ServiceCollectionExtensions {
         this IServiceCollection services
     )
         where T : class, IApplicationService<TAggregate>
-        where TAggregate : Aggregate => services.AddSingleton<T>();
+        where TAggregate : Aggregate {
+        services.TryAddSingleton<AggregateFactoryRegistry>();
+        services.AddSingleton<T>();
+        return services;
+    }
 
     /// <summary>
     /// Registers the application service in the container
@@ -32,7 +37,11 @@ public static class ServiceCollectionExtensions {
         this IServiceCollection services, Func<IServiceProvider, T> getService
     )
         where T : class, IApplicationService<TAggregate>
-        where TAggregate : Aggregate => services.AddSingleton(getService);
+        where TAggregate : Aggregate {
+        services.TryAddSingleton<AggregateFactoryRegistry>();
+        services.AddSingleton(getService);
+        return services;
+    }
 
     /// <summary>
     /// Registers the aggregate store using the supplied <see cref="IEventStore"/> type
@@ -42,6 +51,7 @@ public static class ServiceCollectionExtensions {
     /// <returns></returns>
     public static IServiceCollection AddAggregateStore<T>(this IServiceCollection services)
         where T : class, IEventStore {
+        services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<IEventStore, T>();
         services.AddSingleton<AggregateStore>();
         return services;
@@ -57,6 +67,7 @@ public static class ServiceCollectionExtensions {
     public static IServiceCollection AddAggregateStore<T>(this IServiceCollection services,
         Func<IServiceProvider, T> getService)
         where T : class, IEventStore {
+        services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<IEventStore>(getService);
         services.AddSingleton<AggregateStore>();
         return services;
