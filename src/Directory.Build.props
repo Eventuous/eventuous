@@ -4,6 +4,8 @@
         <LangVersion>10</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' != 'true'">
@@ -38,7 +40,6 @@
 
     <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
         <IsPackable>true</IsPackable>
-        <Nullable>enable</Nullable>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <UpdateVersionProperties>true</UpdateVersionProperties>

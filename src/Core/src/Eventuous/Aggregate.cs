@@ -1,4 +1,4 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 [PublicAPI]
 public abstract class Aggregate {
@@ -10,8 +10,7 @@ public abstract class Aggregate {
     /// <summary>
     /// Clears all the pending changes. Normally not used. Can be used for testing purposes.
     /// </summary>
-    public void ClearChanges()
-        => _changes.Clear();
+    public void ClearChanges() => _changes.Clear();
 
     /// <summary>
     /// The original version is the aggregate version we got from the store.
@@ -51,8 +50,7 @@ public abstract class Aggregate {
     /// Adds an event to the list of pending changes.
     /// </summary>
     /// <param name="evt">New domain event</param>
-    protected void AddChange(object evt)
-        => _changes.Add(evt);
+    protected void AddChange(object evt) => _changes.Add(evt);
 
     /// <summary>
     /// Use this method to ensure you are operating on a new aggregate.
@@ -77,9 +75,8 @@ public abstract class Aggregate {
 
 [PublicAPI]
 public abstract class Aggregate<T> : Aggregate where T : AggregateState<T>, new() {
-    protected Aggregate()
-        => State = new T();
-
+    protected Aggregate() => State = new T();
+    
     /// <summary>
     /// Applies a new event to the state, adds the event to the list of pending changes,
     /// and increases the current version.
@@ -99,8 +96,7 @@ public abstract class Aggregate<T> : Aggregate where T : AggregateState<T>, new(
         => State = events.Where(x => x != null).Aggregate(new T(), Fold!);
 
     /// <inheritdoc />
-    public override void Fold(object evt)
-        => State = Fold(State, evt);
+    public override void Fold(object evt) => State = Fold(State, evt);
 
     T Fold(T state, object evt) {
         OriginalVersion++;
@@ -118,6 +114,5 @@ public abstract class Aggregate<T, TId> : Aggregate<T>
     where T : AggregateState<T, TId>, new()
     where TId : AggregateId {
     /// <inheritdoc />
-    public override string GetId()
-        => State.Id;
+    public override string GetId() => State.Id;
 }

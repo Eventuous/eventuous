@@ -40,7 +40,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
         _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers)).ToArray();
 
-        Log = loggerFactory?.CreateLogger($"StreamSubscription-{options.SubscriptionId}");
+        Log = loggerFactory?.CreateLogger($"Subscription-{options.SubscriptionId}");
 
         DebugLog = Log?.IsEnabled(LogLevel.Debug) == true ? Log.LogDebug : null;
     }

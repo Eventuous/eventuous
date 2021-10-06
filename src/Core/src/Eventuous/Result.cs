@@ -1,4 +1,6 @@
-namespace Eventuous; 
+namespace Eventuous;
+
+public record Result(object State, IEnumerable<object>? Changes = null);
 
 [PublicAPI]
 public abstract record Result<TState, TId>(TState State, IEnumerable<object>? Changes = null)

@@ -19,11 +19,6 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
     readonly HandleEventProcessingFailure _failureHandler;
     readonly IConnection                  _connection;
     readonly IModel                       _channel;
-    readonly string                       _subscriptionQueue;
-    readonly string                       _exchange;
-    readonly int                          _concurrencyLimit;
-
-    ILogger<RabbitMqSubscriptionService>? _log;
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
@@ -59,26 +54,20 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
             loggerFactory,
             new NoOpGapMeasure()
         ) {
-        _log              = loggerFactory?.CreateLogger<RabbitMqSubscriptionService>();
-        _failureHandler   = options.FailureHandler ?? DefaultEventFailureHandler;
-        _concurrencyLimit = options.ConcurrencyLimit;
+        _failureHandler = options.FailureHandler ?? DefaultEventFailureHandler;
 
         _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
 
         _channel = _connection.CreateModel();
 
-        var prefetch = _concurrencyLimit * 10;
+        var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount : Options.ConcurrencyLimit * 2;
         _channel.BasicQos(0, (ushort)prefetch, false);
-
-        _subscriptionQueue = Ensure.NotEmptyString(options.SubscriptionQueue, nameof(options.SubscriptionQueue));
-        _exchange          = Ensure.NotEmptyString(options.Exchange, nameof(options.Exchange));
     }
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
     /// </summary>
     /// <param name="connectionFactory">RabbitMQ connection factory</param>
-    /// <param name="subscriptionQueue">Subscription queue, will be created it doesn't exist</param>
     /// <param name="exchange">Exchange to consume events from, the queue will get bound to this exchange</param>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="eventSerializer">Event serializer instance</param>
@@ -86,7 +75,6 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
     /// <param name="loggerFactory">Optional: logging factory</param>
     public RabbitMqSubscriptionService(
         ConnectionFactory          connectionFactory,
-        string                     subscriptionQueue,
         string                     exchange,
         string                     subscriptionId,
         IEnumerable<IEventHandler> eventHandlers,
@@ -95,10 +83,9 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
     ) : this(
         connectionFactory,
         new RabbitMqSubscriptionOptions {
-            SubscriptionQueue = subscriptionQueue,
-            Exchange          = exchange,
-            SubscriptionId    = subscriptionId,
-            EventSerializer   = eventSerializer
+            Exchange        = exchange,
+            SubscriptionId  = subscriptionId,
+            EventSerializer = eventSerializer
         },
         eventHandlers,
         loggerFactory
@@ -108,63 +95,60 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
         Checkpoint        checkpoint,
         CancellationToken cancellationToken
     ) {
-        var cts = new CancellationTokenSource();
+        var cts      = new CancellationTokenSource();
+        var exchange = Ensure.NotEmptyString(Options.Exchange, nameof(Options.Exchange));
 
-        Log.LogDebug("Ensuring exchange {Exchange}", _exchange);
+        Log?.LogDebug("Ensuring exchange {Exchange}", exchange);
 
         _channel.ExchangeDeclare(
-            _exchange,
+            exchange,
             Options.ExchangeOptions?.Type ?? ExchangeType.Fanout,
             Options.ExchangeOptions?.Durable ?? true,
             Options.ExchangeOptions?.AutoDelete ?? true,
             Options.ExchangeOptions?.Arguments
         );
 
-        Log.LogDebug("Ensuring queue {Queue}", _subscriptionQueue);
+        Log?.LogDebug("Ensuring queue {Queue}", Options.SubscriptionId);
 
         _channel.QueueDeclare(
-            _subscriptionQueue,
+            Options.SubscriptionId,
             Options.QueueOptions?.Durable ?? true,
             Options.QueueOptions?.Exclusive ?? false,
             Options.QueueOptions?.AutoDelete ?? false,
             Options.QueueOptions?.Arguments
         );
 
-        Log.LogDebug("Binding {Exchange} to {Queue}", _exchange, _subscriptionQueue);
+        Log.LogDebug("Binding {Exchange} to {Queue}", exchange, Options.SubscriptionId);
 
         _channel.QueueBind(
-            _subscriptionQueue,
-            _exchange,
+            Options.SubscriptionId,
+            exchange,
             Options.BindingOptions?.RoutingKey ?? "",
             Options.BindingOptions?.Arguments
         );
 
-        var consumeChannel = Channel.CreateBounded<Event>(_concurrencyLimit * 10);
+        var consumeChannel = Channel.CreateBounded<Event>(Options.ConcurrencyLimit * 10);
 
-        for (var i = 0; i < _concurrencyLimit; i++) {
+        for (var i = 0; i < Options.ConcurrencyLimit; i++) {
             Task.Run(RunConsumer, CancellationToken.None);
         }
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.Received += (sender, args) => HandleReceived(sender, args, consumeChannel.Writer);
 
-        _channel.BasicConsume(consumer, _subscriptionQueue);
+        _channel.BasicConsume(consumer, Options.SubscriptionId);
 
         return Task.FromResult(new EventSubscription(Options.SubscriptionId, new Stoppable(CloseConnection)));
 
         async Task RunConsumer() {
-            _log.LogDebug("Started consumer instance for {Queue}", _subscriptionQueue);
+            Log?.LogDebug("Started consumer instance");
 
             while (!consumeChannel.Reader.Completion.IsCompleted) {
                 var evt = await TryGetMessage();
                 if (evt == null) continue;
 
                 try {
-                    _log.LogDebug(
-                        "Handling message {MessageId} from {Queue}",
-                        evt.ReceivedEvent.EventId,
-                        _subscriptionQueue
-                    );
+                    Log?.LogDebug("Handling message {MessageId}", evt.ReceivedEvent.EventId);
 
                     await Handler(evt.ReceivedEvent, CancellationToken.None).NoContext();
                     _channel.BasicAck(evt.Original.DeliveryTag, false);
@@ -174,7 +158,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
                 }
             }
 
-            _log.LogDebug("Stopped consumer instance for {Queue}", _subscriptionQueue);
+            Log?.LogDebug("Stopped consumer instance for");
         }
 
         async Task<Event?> TryGetMessage() {
@@ -186,7 +170,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
                 return null;
             }
             catch (Exception e) {
-                Log.LogError(e, "Unable to read message from the channel: {Message}", e.Message);
+                Log?.LogError(e, "Unable to read message from the channel: {Message}", e.Message);
                 throw;
             }
         }
@@ -209,14 +193,14 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
         BasicDeliverEventArgs received,
         ChannelWriter<Event>  writer
     ) {
-        Log.LogTrace("Received message {MessageType}", received.BasicProperties.Type);
+        Log?.LogTrace("Received message {MessageType}", received.BasicProperties.Type);
 
         try {
             var receivedEvent = TryHandleReceived(sender, received);
             await writer.WriteAsync(new Event(received, receivedEvent)).NoContext();
         }
         catch (Exception e) {
-            Log.Log(Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning, e, "Deserialization failed");
+            Log?.Log(Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning, e, "Deserialization failed");
 
             // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
             if (Options.ThrowOnError) throw;
@@ -256,7 +240,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
     }
 
     void DefaultEventFailureHandler(IModel channel, BasicDeliverEventArgs message, Exception exception) {
-        _log?.LogWarning(exception, "Error in the consumer, will redeliver");
+        Log?.LogWarning(exception, "Error in the consumer, will redeliver");
         _channel.BasicReject(message.DeliveryTag, true);
     }
 

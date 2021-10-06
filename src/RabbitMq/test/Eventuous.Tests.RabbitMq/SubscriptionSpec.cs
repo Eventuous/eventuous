@@ -39,14 +39,13 @@ public class SubscriptionSpec : IAsyncLifetime {
         _subscription = new RabbitMqSubscriptionService(
             RabbitMqFixture.ConnectionFactory,
             new RabbitMqSubscriptionOptions {
-                ConcurrencyLimit  = 10,
-                SubscriptionQueue = queue,
-                Exchange          = _exchange,
-                SubscriptionId    = queue,
-                ThrowOnError      = true
+                ConcurrencyLimit = 10,
+                SubscriptionId   = queue,
+                Exchange         = _exchange,
+                ThrowOnError     = true
             },
             new[] { _handler },
-            loggerFactory: loggerFactory
+            loggerFactory
         );
     }
 
