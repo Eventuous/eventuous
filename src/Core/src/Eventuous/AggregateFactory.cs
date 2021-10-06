@@ -20,21 +20,14 @@ public class AggregateFactoryRegistry {
     /// </summary>
     /// <param name="factory">Function to create a given aggregate type instance</param>
     /// <typeparam name="T"></typeparam>
-    /// <typeparam name="TState"></typeparam>
-    /// <typeparam name="TId"></typeparam>
     /// <returns></returns>
-    public AggregateFactoryRegistry CreateAggregateUsing<T, TState, TId>(
-        AggregateFactory<T, TState, TId> factory
-    )
-        where T : Aggregate<TState, TId>
-        where TState : AggregateState<TState, TId>, new()
-        where TId : AggregateId {
+    public AggregateFactoryRegistry CreateAggregateUsing<T>(AggregateFactory<T> factory)
+        where T : Aggregate {
         _registry.TryAdd(typeof(T), () => factory());
         return this;
     }
 
-    public void UnsafeCreateAggregateUsing(Type type, Func<Aggregate> factory)
-        => _registry.TryAdd(type, factory);
+    public void UnsafeCreateAggregateUsing(Type type, Func<Aggregate> factory) => _registry.TryAdd(type, factory);
 
     internal T CreateInstance<T, TState, TId>()
         where T : Aggregate<TState, TId>
@@ -49,7 +42,4 @@ public class AggregateFactoryRegistry {
             : Activator.CreateInstance<T>();
 }
 
-public delegate T AggregateFactory<out T, TState, TId>()
-    where T : Aggregate<TState, TId>
-    where TState : AggregateState<TState, TId>, new()
-    where TId : AggregateId;
+public delegate T AggregateFactory<out T>() where T : Aggregate;

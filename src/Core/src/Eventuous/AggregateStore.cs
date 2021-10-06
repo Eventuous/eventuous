@@ -1,13 +1,14 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 public delegate Metadata? GetEventMetadata(string stream, object evt);
 
 [PublicAPI]
 public class AggregateStore : IAggregateStore {
-    readonly GetEventMetadata?   _getEventMetadata;
-    readonly IMetadataSerializer _metaSerializer;
-    readonly IEventStore         _eventStore;
-    readonly IEventSerializer    _serializer;
+    readonly GetEventMetadata?        _getEventMetadata;
+    readonly AggregateFactoryRegistry _factoryRegistry;
+    readonly IMetadataSerializer      _metaSerializer;
+    readonly IEventStore              _eventStore;
+    readonly IEventSerializer         _serializer;
 
     /// <summary>
     /// Creates a new instance of the default aggregate store
@@ -16,15 +17,18 @@ public class AggregateStore : IAggregateStore {
     /// <param name="serializer">Optional: event payload serializer</param>
     /// <param name="metaSerializer">Optional: metadata serializer</param>
     /// <param name="getEventMetadata">Optional: a function to produce metadata</param>
+    /// <param name="factoryRegistry"></param>
     public AggregateStore(
-        IEventStore          eventStore,
-        IEventSerializer?    serializer       = null,
-        IMetadataSerializer? metaSerializer   = null,
-        GetEventMetadata?    getEventMetadata = null
+        IEventStore               eventStore,
+        IEventSerializer?         serializer       = null,
+        IMetadataSerializer?      metaSerializer   = null,
+        GetEventMetadata?         getEventMetadata = null,
+        AggregateFactoryRegistry? factoryRegistry  = null
     ) {
         _getEventMetadata = getEventMetadata;
+        _factoryRegistry  = factoryRegistry ?? AggregateFactoryRegistry.Instance;
         _eventStore       = Ensure.NotNull(eventStore, nameof(eventStore));
-        _serializer       = serializer     ?? DefaultEventSerializer.Instance;
+        _serializer       = serializer ?? DefaultEventSerializer.Instance;
         _metaSerializer   = metaSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
@@ -63,7 +67,7 @@ public class AggregateStore : IAggregateStore {
         Ensure.NotEmptyString(id, nameof(id));
 
         var stream    = StreamName.For<T>(id);
-        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<T>();
+        var aggregate = _factoryRegistry.CreateInstance<T>();
 
         try {
             await _eventStore.ReadStream(

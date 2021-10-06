@@ -1,18 +1,18 @@
 using Eventuous.Subscriptions;
 using static Eventuous.RabbitMq.Subscriptions.RabbitMqSubscriptionService;
 
-namespace Eventuous.RabbitMq.Subscriptions; 
+namespace Eventuous.RabbitMq.Subscriptions;
 
 [PublicAPI]
 public record RabbitMqSubscriptionOptions : SubscriptionOptions {
-    public string                        SubscriptionQueue { get; set; } = null!;
-    public string                        Exchange          { get; set; } = null!;
-    public HandleEventProcessingFailure? FailureHandler    { get; set; }
-    public RabbitMqExchangeOptions?      ExchangeOptions   { get; set; } = new();
-    public RabbitMqQueueOptions?         QueueOptions      { get; set; } = new();
-    public RabbitMqBindingOptions?       BindingOptions    { get; set; } = new();
+    public string                        Exchange        { get; set; } = null!;
+    public HandleEventProcessingFailure? FailureHandler  { get; set; }
+    public RabbitMqExchangeOptions?      ExchangeOptions { get; set; } = new();
+    public RabbitMqQueueOptions?         QueueOptions    { get; set; } = new();
+    public RabbitMqBindingOptions?       BindingOptions  { get; set; } = new();
 
-    public int ConcurrencyLimit { get; set; } = 1;
+    public int    ConcurrencyLimit { get; set; } = 1;
+    public ushort PrefetchCount    { get; set; }
 
     [PublicAPI]
     public record RabbitMqExchangeOptions {

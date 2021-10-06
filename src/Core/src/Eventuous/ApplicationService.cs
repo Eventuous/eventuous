@@ -13,10 +13,14 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
     where TId : AggregateId {
     protected IAggregateStore Store { get; }
 
-    readonly HandlersMap<T> _handlers = new();
-    readonly IdMap<TId>     _getId    = new();
+    readonly HandlersMap<T>           _handlers = new();
+    readonly IdMap<TId>               _getId    = new();
+    readonly AggregateFactoryRegistry _factoryRegistry;
 
-    protected ApplicationService(IAggregateStore store) => Store = store;
+    protected ApplicationService(IAggregateStore store, AggregateFactoryRegistry? factoryRegistry = null) {
+        _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
+        Store            = store;
+    }
 
     /// <summary>
     /// Register a handler for a command, which is expected to create a new aggregate instance.
@@ -272,7 +276,7 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
             }
         }
 
-        T Create() => AggregateFactoryRegistry.Instance.CreateInstance<T, TState, TId>();
+        T Create() => _factoryRegistry.CreateInstance<T, TState, TId>();
     }
 
     public delegate Task ActOnAggregateAsync<in TCommand>(
