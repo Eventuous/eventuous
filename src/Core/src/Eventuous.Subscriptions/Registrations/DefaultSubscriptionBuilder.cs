@@ -32,7 +32,7 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
         if (constructors.Length is 0 or > 1)
             throw new ArgumentOutOfRangeException(
                 typeof(T).Name,
-                "Expected only one constructor with options argument"
+                $"Subscription type must have {(constructors.Length > 1 ? "only " : "")} one constructor with options argument"
             );
 
         var (ctor, optionsParameter) = constructors[0];
