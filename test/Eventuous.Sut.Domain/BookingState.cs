@@ -1,8 +1,21 @@
 using System.Collections.Immutable;
+using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Sut.Domain;
 
 public record BookingState : AggregateState<BookingState, BookingId> {
+    public BookingState() {
+        On<RoomBooked>((state, booked) => state with { Id = new BookingId(booked.BookingId), Price = booked.Price });
+        On<BookingImported>((state, imported) => state with { Id = new BookingId(imported.BookingId) });
+
+        On<BookingPaymentRegistered>(
+            (state, paid) => state with {
+                PaymentRecords = state.PaymentRecords.Add(new PaymentRecord(paid.PaymentId, paid.AmountPaid)),
+                AmountPaid = state.AmountPaid + paid.AmountPaid
+            }
+        );
+    }
+
     decimal                      Price          { get; init; }
     decimal                      AmountPaid     { get; init; }
     ImmutableList<PaymentRecord> PaymentRecords { get; init; } = ImmutableList<PaymentRecord>.Empty;
@@ -12,17 +25,6 @@ public record BookingState : AggregateState<BookingState, BookingId> {
     public bool IsFullyPaid() => AmountPaid >= Price;
 
     public bool IsOverpaid() => AmountPaid > Price;
-
-    public override BookingState When(object @event)
-        => @event switch {
-            BookingEvents.RoomBooked booked        => this with { Id = new BookingId(booked.BookingId), Price = booked.Price },
-            BookingEvents.BookingImported imported => this with { Id = new BookingId(imported.BookingId) },
-            BookingEvents.BookingPaymentRegistered paid => this with {
-                PaymentRecords = PaymentRecords.Add(new PaymentRecord(paid.PaymentId, paid.AmountPaid)),
-                AmountPaid = AmountPaid + paid.AmountPaid
-            },
-            _ => this
-        };
 
     record PaymentRecord(string PaymentId, decimal Amount);
 }
