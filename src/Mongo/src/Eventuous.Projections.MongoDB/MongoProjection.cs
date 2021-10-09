@@ -17,7 +17,7 @@ public abstract class MongoProjection<T> : IEventHandler
     }
 
     public async Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
-        var updateTask = GetUpdate(evt);
+        var updateTask = GetUpdate(evt.Payload!, (long?)evt.StreamPosition);
         var update     = updateTask == NoOp ? null : await updateTask.NoContext();
 
         if (update == null) {
@@ -47,9 +47,9 @@ public abstract class MongoProjection<T> : IEventHandler
     
     protected abstract ValueTask<Operation<T>> GetUpdate(object evt, long? position);
 
-    protected virtual ValueTask<Operation<T>> GetUpdate(ReceivedEvent receivedEvent) {
-        return GetUpdate(receivedEvent.Payload!, (long?)receivedEvent.StreamPosition);
-    }
+    // protected virtual ValueTask<Operation<T>> GetUpdate(ReceivedEvent receivedEvent) {
+    //     return GetUpdate(receivedEvent.Payload!, (long?)receivedEvent.StreamPosition);
+    // }
 
     protected Operation<T> UpdateOperation(BuildFilter<T> filter, BuildUpdate<T> update)
         => new UpdateOperation<T>(filter(Builders<T>.Filter), update(Builders<T>.Update));
