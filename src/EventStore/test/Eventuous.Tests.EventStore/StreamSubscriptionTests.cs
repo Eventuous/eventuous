@@ -1,6 +1,7 @@
 using Eventuous.Subscriptions;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.EventStore.Fixtures;
@@ -94,6 +95,8 @@ public class StreamSubscriptionTests {
         public int   Count    { get; private set; }
 
         public List<object> Processed { get; } = new();
+
+        public void SetLogger(SubscriptionLog subscriptionLogger) { }
 
         public Task HandleEvent(
             ReceivedEvent     evt,

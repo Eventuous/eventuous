@@ -1,4 +1,6 @@
-namespace Eventuous.Subscriptions; 
+using Eventuous.Subscriptions.Logging;
+
+namespace Eventuous.Subscriptions;
 
 /// <summary>
 /// Base class for event handlers, which allows registering typed handlers for different event types
@@ -18,19 +20,36 @@ public abstract class EventHandler : IEventHandler {
             throw new ArgumentException($"Type {typeof(T).Name} already has a handler");
         }
 
-        Task Handle(ReceivedEvent evt,  CancellationToken cancellationToken) {
-            return evt.Payload is not T ? Task.CompletedTask : HandleTypedEvent();
+        Task Handle(ReceivedEvent evt, CancellationToken cancellationToken) {
+            return evt.Payload is not T ? NoHandler() : HandleTypedEvent();
 
             Task HandleTypedEvent() {
                 var typedEvent = new ReceivedEvent<T>(evt);
                 return handler(typedEvent, cancellationToken);
             }
+
+            Task NoHandler() {
+                Log?.Warn("Handler can't process {Event}", typeof(T).Name);
+                return Task.CompletedTask;
+            }
         }
     }
 
-    public virtual Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) =>
-        !_handlersMap.TryGetValue(evt.Payload!.GetType(), out var handler)
-            ? Task.CompletedTask : handler(evt, cancellationToken);
+    public void SetLogger(SubscriptionLog subscriptionLogger) {
+        Log = subscriptionLogger;
+    }
+
+    protected SubscriptionLog? Log { get; set; }
+
+    public virtual Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
+        return !_handlersMap.TryGetValue(evt.Payload!.GetType(), out var handler)
+            ? NoHandler() : handler(evt, cancellationToken);
+
+        Task NoHandler() {
+            Log?.Debug?.Invoke("No handler for {Event}", evt.Payload.GetType().Name);
+            return Task.CompletedTask;
+        }
+    }
 
     delegate Task HandleUntypedEvent(ReceivedEvent evt, CancellationToken cancellationToken);
 }

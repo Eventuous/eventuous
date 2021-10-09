@@ -1,4 +1,5 @@
 ﻿using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Eventuous.Subscriptions.Monitoring;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
@@ -54,7 +55,7 @@ public class RegistrationTests {
     [Fact]
     public void ShouldRegisterBothAsHealthReporters() {
         var services = _provider.GetServices<IReportHealth>().ToArray();
-        var subs = _provider.GetServices<TestSub>().ToArray();
+        var subs     = _provider.GetServices<TestSub>().ToArray();
 
         services.Length.Should().Be(2);
         services[0].Should().BeSameAs(subs[0]);
@@ -64,7 +65,7 @@ public class RegistrationTests {
     [Fact]
     public void ShouldRegisterBothAsHostedServices() {
         var services = _provider.GetServices<IHostedService>().ToArray();
-        var subs = _provider.GetServices<TestSub>().ToArray();
+        var subs     = _provider.GetServices<TestSub>().ToArray();
 
         services.Length.Should().Be(2);
         services[0].Should().BeSameAs(subs[0]);
@@ -105,10 +106,14 @@ public class RegistrationTests {
     }
 
     class Handler1 : IEventHandler {
+        public void SetLogger(SubscriptionLog subscriptionLogger) { }
+
         public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     class Handler2 : IEventHandler {
-        public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public void SetLogger(SubscriptionLog subscriptionLogger) { }
+
+        public Task HandleEvent(ReceivedEvent         evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

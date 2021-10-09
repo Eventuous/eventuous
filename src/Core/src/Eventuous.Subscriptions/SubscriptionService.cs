@@ -51,6 +51,10 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
             Log.Warn("No handlers provided, subscription won't start");
             return;
         }
+
+        foreach (var handler in EventHandlers) {
+            handler.SetLogger(Log);
+        }
         
         if (Measure != null) {
             _cts         = new CancellationTokenSource();
