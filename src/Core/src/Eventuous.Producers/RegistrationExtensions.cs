@@ -22,4 +22,13 @@ public static class RegistrationExtensions {
             services.AddSingleton(sp => (sp.GetRequiredService<T>() as IHostedService)!);
         }
     }
+
+    public static void AddEventProducer<T>(this IServiceCollection services)
+        where T : class, IEventProducer {
+        services.AddSingleton<T>();
+        services.AddSingleton<IEventProducer>(sp => sp.GetRequiredService<T>());
+        if (typeof(T).GetInterfaces().Contains(typeof(IHostedService))) {
+            services.AddSingleton(sp => (sp.GetRequiredService<T>() as IHostedService)!);
+        }
+    }
 }

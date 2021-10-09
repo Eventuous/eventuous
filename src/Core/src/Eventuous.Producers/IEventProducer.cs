@@ -1,4 +1,4 @@
-namespace Eventuous.Producers; 
+namespace Eventuous.Producers;
 
 [PublicAPI]
 public interface IEventProducer {
@@ -15,7 +15,7 @@ public interface IEventProducer {
         IEnumerable<ProducedMessage> messages,
         CancellationToken            cancellationToken = default
     );
-        
+
     bool Ready { get; }
 }
 

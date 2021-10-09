@@ -32,8 +32,7 @@ public class SubscriptionSpec : IAsyncLifetime {
                     .AddXunit(outputHelper, LogLevel.Trace)
             );
 
-        _handler = new TestEventHandler(queue);
-
+        _handler  = new TestEventHandler();
         _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory);
 
         _subscription = new RabbitMqSubscriptionService(

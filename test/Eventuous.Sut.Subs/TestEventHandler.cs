@@ -13,10 +13,6 @@ public record TestEvent(string Data, int Number);
 public class TestEventHandler : IEventHandler {
     IHypothesis<object>? _hypothesis;
 
-    public TestEventHandler(string queue) => SubscriptionId = queue;
-
-    public string SubscriptionId { get; }
-
     public IHypothesis<object> AssertThat() {
         _hypothesis = Hypothesis.For<object>();
         return _hypothesis;
@@ -24,8 +20,8 @@ public class TestEventHandler : IEventHandler {
 
     public Task Validate(TimeSpan timeout) => EnsureHypothesis.Validate(timeout);
 
-    public Task HandleEvent(object evt, long? position, CancellationToken cancellationToken)
-        => EnsureHypothesis.Test(evt, cancellationToken);
+    public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken)
+        => EnsureHypothesis.Test(evt.Payload!, cancellationToken);
 
     IHypothesis<object> EnsureHypothesis =>
         _hypothesis ?? throw new InvalidOperationException("Test handler not specified");

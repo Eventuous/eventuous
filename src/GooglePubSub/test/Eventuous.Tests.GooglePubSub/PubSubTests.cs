@@ -26,7 +26,7 @@ namespace Eventuous.Tests.GooglePubSub {
             _pubsubTopic        = $"test-{Guid.NewGuid():N}";
             _pubsubSubscription = $"test-{Guid.NewGuid():N}";
 
-            _handler = new TestEventHandler(_pubsubSubscription);
+            _handler = new TestEventHandler();
 
             _producer = new GooglePubSubProducer(
                 PubSubFixture.ProjectId,

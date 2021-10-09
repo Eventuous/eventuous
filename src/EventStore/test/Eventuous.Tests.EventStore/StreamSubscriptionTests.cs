@@ -89,20 +89,19 @@ public class StreamSubscriptionTests {
     }
 
     class TestHandler : IEventHandler {
-        public long Position { get; private set; }
-        public int  Count    { get; private set; }
+        public ulong Position { get; private set; }
+        public int   Count    { get; private set; }
 
         public List<object> Processed { get; } = new();
 
         public Task HandleEvent(
-            object            evt,
-            long?             position,
+            ReceivedEvent     evt,
             CancellationToken cancellationToken
         ) {
-            Position = position ?? 0;
+            Position = evt.StreamPosition;
             Count++;
             if (evt == null) throw new InvalidOperationException();
-                
+
             Processed.Add(evt);
 
             return Task.CompletedTask;

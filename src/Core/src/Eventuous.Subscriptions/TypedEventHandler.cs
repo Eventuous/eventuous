@@ -5,8 +5,6 @@ namespace Eventuous.Subscriptions;
 /// </summary>
 [PublicAPI]
 public abstract class EventHandler : IEventHandler {
-    public abstract string SubscriptionId { get; }
-
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
 
     /// <summary>
@@ -20,19 +18,25 @@ public abstract class EventHandler : IEventHandler {
             throw new ArgumentException($"Type {typeof(T).Name} already has a handler");
         }
 
-        Task Handle(object evt, long? pos, CancellationToken cancellationToken)
-            => evt is not T typed ? Task.CompletedTask : handler(typed, pos, cancellationToken);
+        Task Handle(ReceivedEvent evt,  CancellationToken cancellationToken) {
+            return evt.Payload is not T ? Task.CompletedTask : HandleTypedEvent();
+
+            Task HandleTypedEvent() {
+                var typedEvent = new ReceivedEvent<T>(evt);
+                return handler(typedEvent, cancellationToken);
+            }
+        }
     }
 
-    public virtual Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) =>
+    public virtual Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) =>
         !_handlersMap.TryGetValue(evt.GetType(), out var handler)
-            ? Task.CompletedTask : handler(evt, position, cancellationToken);
+            ? Task.CompletedTask : handler(evt, cancellationToken);
 
-    delegate Task HandleUntypedEvent(object evt, long? position, CancellationToken cancellationToken);
+    delegate Task HandleUntypedEvent(ReceivedEvent evt, CancellationToken cancellationToken);
 }
 
 [PublicAPI]
 [Obsolete("Use EventHandler instead")]
 public abstract class TypedEventHandler : EventHandler { }
 
-public delegate Task HandleTypedEvent<in T>(T evt, long? position, CancellationToken cancellationToken);
+public delegate Task HandleTypedEvent<T>(ReceivedEvent<T> evt, CancellationToken cancellationToken);

@@ -92,7 +92,7 @@ public class RegistrationTests {
 }
 
 public class TestHandler : IEventHandler {
-    public Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
+    public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
         return Task.CompletedTask;
     }
 }

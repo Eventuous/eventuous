@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.*"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.*"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.*" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj"/>
-        <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
-        <ProjectReference Include="..\..\..\Core\src\Eventuous\Eventuous.csproj"/>
+        <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj" />
+        <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="..\..\..\Core\src\Eventuous\Eventuous.csproj" />
     </ItemGroup>
 </Project>
