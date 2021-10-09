@@ -1,3 +1,4 @@
+using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 

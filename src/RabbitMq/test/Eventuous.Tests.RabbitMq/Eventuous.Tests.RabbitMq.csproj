@@ -4,7 +4,7 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj"/>
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj"/>
         <ProjectReference Include="..\..\src\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj"/>
     </ItemGroup>
 </Project>

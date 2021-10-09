@@ -2,6 +2,7 @@ using System.Reflection;
 using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Tests.EventStore.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

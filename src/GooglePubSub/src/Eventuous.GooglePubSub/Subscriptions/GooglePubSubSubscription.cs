@@ -1,5 +1,7 @@
 using Eventuous.GooglePubSub.Shared;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Monitoring;
 using Google.Cloud.Monitoring.V3;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
@@ -204,9 +206,8 @@ public class GooglePubSubSubscription : SubscriptionService<PubSubSubscriptionOp
     }
 
     public async Task Stop(CancellationToken cancellationToken = default) {
-        if (_client != null) await _client.StopAsync(cancellationToken).NoContext();
-
         await _subscriberTask.NoContext();
+        if (_client != null) await _client.StopAsync(cancellationToken).NoContext();
     }
 
     public async Task CreateSubscription(

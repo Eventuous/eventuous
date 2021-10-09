@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace Eventuous.Subscriptions; 
+namespace Eventuous.Subscriptions.Monitoring; 
 
 public class SubscriptionHealthCheck : IHealthCheck {
     readonly IReportHealth[] _subscriptions;

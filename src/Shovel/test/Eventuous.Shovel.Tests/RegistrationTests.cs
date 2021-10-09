@@ -1,9 +1,11 @@
 ﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Checkpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit;
 
 namespace Eventuous.Shovel.Tests;
 
@@ -16,6 +18,7 @@ public class RegistrationTests {
         _provider = host.Services;
     }
 
+    [Fact]
     public void Test() {
         
     }

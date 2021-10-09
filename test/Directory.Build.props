@@ -4,6 +4,9 @@
         <IsPackable>false</IsPackable>
         <LangVersion>10</LangVersion>
         <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
+        <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
     </PropertyGroup>
 
     <ItemGroup>

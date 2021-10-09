@@ -1,5 +1,7 @@
 using Eventuous;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable CheckNamespace

@@ -1,5 +1,6 @@
 using Eventuous.Subscriptions;
 using Eventuous.EventStore.Subscriptions;
+using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.EventStore.Fixtures;

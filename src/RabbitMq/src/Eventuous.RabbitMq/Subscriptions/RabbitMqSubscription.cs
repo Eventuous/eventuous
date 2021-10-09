@@ -1,5 +1,7 @@
 using System.Threading.Channels;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

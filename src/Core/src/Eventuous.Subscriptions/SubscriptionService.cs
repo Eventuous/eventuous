@@ -1,3 +1,5 @@
+using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -220,7 +222,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
                 IsDropped = false;
 
-                Log?.LogInformation("Subscription  restored");
+                Log?.LogInformation("Subscription restored");
             }
             catch (Exception e) {
                 Log?.LogError(e, "Unable to restart the subscription");
@@ -236,16 +238,13 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning || _resubscribing.IsClosed()) return;
 
-        Log?.LogWarning(exception, "Subscription  dropped {Reason}", reason);
+        Log?.LogWarning(exception, "Subscription dropped {Reason}", reason);
 
         IsDropped      = true;
         _lastException = exception;
 
         Task.Run(
-            () => Resubscribe(
-                reason == DropReason.Stopped ? TimeSpan.FromSeconds(10)
-                    : TimeSpan.FromSeconds(2)
-            )
+            () => Resubscribe(reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2))
         );
     }
 

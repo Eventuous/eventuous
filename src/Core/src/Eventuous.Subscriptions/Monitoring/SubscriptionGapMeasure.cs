@@ -1,11 +1,12 @@
-namespace Eventuous.Subscriptions; 
+namespace Eventuous.Subscriptions.Monitoring; 
 
+[PublicAPI]
 public interface ISubscriptionGapMeasure {
     void PutGap(string subscriptionId, ulong gap, DateTime created);
 
     SubscriptionGap GetGap(string subscriptionId);
 }
-    
+
 /// <summary>
 /// The gap measurement tool, which can be used for metrics and alerts when the subscription
 /// is lagging behind real-time updates.
@@ -25,4 +26,5 @@ public class SubscriptionGapMeasure : ISubscriptionGapMeasure {
     public SubscriptionGap GetGap(string subscriptionId) => _gaps[subscriptionId];
 }
 
+[PublicAPI]
 public record SubscriptionGap(ulong PositionGap, TimeSpan TimeGap);

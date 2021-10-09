@@ -6,13 +6,15 @@
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
+        <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' != 'true'">
         <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
         <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
-        <None Include="..\..\..\..\e-logo.png" Pack="true" PackagePath="\"/>
+        <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">

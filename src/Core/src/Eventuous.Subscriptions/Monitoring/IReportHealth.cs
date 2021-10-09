@@ -1,4 +1,4 @@
-namespace Eventuous.Subscriptions;
+namespace Eventuous.Subscriptions.Monitoring;
 
 public interface IReportHealth {
     string       ServiceId    { get; }
