@@ -29,7 +29,7 @@ public abstract class EventHandler : IEventHandler {
     }
 
     public virtual Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) =>
-        !_handlersMap.TryGetValue(evt.GetType(), out var handler)
+        !_handlersMap.TryGetValue(evt.Payload!.GetType(), out var handler)
             ? Task.CompletedTask : handler(evt, cancellationToken);
 
     delegate Task HandleUntypedEvent(ReceivedEvent evt, CancellationToken cancellationToken);

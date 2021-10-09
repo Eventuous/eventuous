@@ -47,6 +47,11 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
     }
 
     public async Task StartAsync(CancellationToken cancellationToken) {
+        if (EventHandlers.Length == 0) {
+            Log.Warn("No handlers provided, subscription won't start");
+            return;
+        }
+        
         if (Measure != null) {
             _cts         = new CancellationTokenSource();
             _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
@@ -61,6 +66,11 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
         Subscription = await Subscribe(checkpoint, cancellationToken).NoContext();
 
         IsRunning = true;
+
+        Log.Info(
+            "Handlers: {Handlers}",
+            string.Join(",", EventHandlers.Select(x => x.GetType().Name))
+        );
 
         Log.Info("Started subscription");
     }
