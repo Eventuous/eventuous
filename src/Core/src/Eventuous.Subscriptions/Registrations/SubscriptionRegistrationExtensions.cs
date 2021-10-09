@@ -3,6 +3,7 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 // ReSharper disable CheckNamespace
 
@@ -33,10 +34,10 @@ public static class SubscriptionRegistrationExtensions {
         services.Configure<TOptions>(subscriptionId, ConfigureOptions);
 
         services.AddSingleton(sp => builder.Resolve(sp));
-        services.AddHostedService(sp => sp.GetRequiredService<T>());
+        services.AddSingleton<IHostedService>(sp => builder.Resolve(sp));
 
         services.TryAddSingleton<SubscriptionHealthCheck>();
-        services.AddSingleton<IReportHealth>(sp => sp.GetRequiredService<T>());
+        services.AddSingleton<IReportHealth>(sp => builder.Resolve(sp));
 
         return builder;
 

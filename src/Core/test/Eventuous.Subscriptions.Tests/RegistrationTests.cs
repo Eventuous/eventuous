@@ -1,9 +1,11 @@
 ﻿using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Monitoring;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 
 namespace Eventuous.Subscriptions.Tests;
@@ -15,6 +17,14 @@ public class RegistrationTests {
         SubscriptionRegistrationExtensions.Builders.Clear();
         var host = new TestServer(BuildHost());
         _provider = host.Services;
+    }
+
+    [Fact]
+    public void ShouldBeSingletons() {
+        var subs1 = _provider.GetServices<TestSub>().ToArray();
+        var subs2 = _provider.GetServices<TestSub>().ToArray();
+        subs1[0].Should().BeSameAs(subs2[0]);
+        subs1[1].Should().BeSameAs(subs2[1]);
     }
 
     [Fact]
@@ -39,6 +49,26 @@ public class RegistrationTests {
 
         handlers.Length.Should().Be(1);
         handlers[0].Should().BeOfType(handlerType);
+    }
+
+    [Fact]
+    public void ShouldRegisterBothAsHealthReporters() {
+        var services = _provider.GetServices<IReportHealth>().ToArray();
+        var subs = _provider.GetServices<TestSub>().ToArray();
+
+        services.Length.Should().Be(2);
+        services[0].Should().BeSameAs(subs[0]);
+        services[1].Should().BeSameAs(subs[1]);
+    }
+
+    [Fact]
+    public void ShouldRegisterBothAsHostedServices() {
+        var services = _provider.GetServices<IHostedService>().ToArray();
+        var subs = _provider.GetServices<TestSub>().ToArray();
+
+        services.Length.Should().Be(2);
+        services[0].Should().BeSameAs(subs[0]);
+        services[1].Should().BeSameAs(subs[1]);
     }
 
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();

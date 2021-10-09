@@ -17,9 +17,13 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
 
     public string             SubscriptionId { get; }
     public IServiceCollection Services       { get; }
+    
+    T? Resolved { get; set; }
 
     public T Resolve(IServiceProvider sp) {
         const string subscriptionIdParameterName = "subscriptionId";
+
+        if (Resolved != null) return Resolved;
         
         var constructors = typeof(T).GetConstructors<TOptions>();
 
@@ -53,6 +57,7 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
         if (ctor.Invoke(args) is not T instance)
             throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
 
+        Resolved = instance;
         return instance;
 
         object? CreateArg(ParameterInfo parameterInfo) {
