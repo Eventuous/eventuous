@@ -17,14 +17,14 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
 
     public string             SubscriptionId { get; }
     public IServiceCollection Services       { get; }
-    
+
     T? Resolved { get; set; }
 
     public T Resolve(IServiceProvider sp) {
         const string subscriptionIdParameterName = "subscriptionId";
 
         if (Resolved != null) return Resolved;
-        
+
         var constructors = typeof(T).GetConstructors<TOptions>();
 
         switch (constructors.Length) {
@@ -66,8 +66,6 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
                     return SubscriptionId;
                 }
 
-                var options = Ensure.NotNull(sp.GetService<IOptionsSnapshot<TOptions>>(), typeof(TOptions).Name);
-            if (parameterInfo == optionsParameter) {
                 var options = Ensure.NotNull(sp.GetService<IOptionsMonitor<TOptions>>(), typeof(TOptions).Name);
                 return options.Get(SubscriptionId);
             }
