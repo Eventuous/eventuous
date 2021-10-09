@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Monitoring;
 using static Eventuous.GooglePubSub.Subscriptions.GooglePubSubSubscription;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 

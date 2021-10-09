@@ -7,7 +7,7 @@
         <PackageReference Include="MongoDB.Driver" Version="2.12.2" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     </ItemGroup>
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\"/>

@@ -1,6 +1,7 @@
-namespace Eventuous.Producers; 
+namespace Eventuous.Producers;
 
-public abstract class BaseProducer<TProduceOptions> : IEventProducer<TProduceOptions> where TProduceOptions : class {
+public abstract class
+    BaseProducer<TProduceOptions> : IEventProducer<TProduceOptions> where TProduceOptions : class {
     /// <inheritdoc />
     public abstract Task ProduceMessages(
         string                       stream,

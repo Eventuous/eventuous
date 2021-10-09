@@ -2,6 +2,7 @@ using System.Reflection;
 using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Tests.EventStore.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -92,7 +93,7 @@ public class RegistrationTests {
 }
 
 public class TestHandler : IEventHandler {
-    public Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
+    public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
         return Task.CompletedTask;
     }
 }

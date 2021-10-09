@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Eventuous.Subscriptions.Checkpoints;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver.Linq;
 using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;

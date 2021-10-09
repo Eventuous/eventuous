@@ -1,7 +1,8 @@
+using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.Shovel; 
+namespace Eventuous.Shovel;
 
 [PublicAPI]
 public class ShovelService<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions> : IHostedService
@@ -44,8 +45,7 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer, TProd
         _subscription = createSubscription(
             Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId)),
             new[] {
-                new ShovelHandler(
-                    subscriptionId,
+                new ShovelHandler<TProducer, TProduceOptions>(
                     producer,
                     Ensure.NotNull(routeAndTransform, nameof(routeAndTransform))
                 )
@@ -60,52 +60,14 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer, TProd
         while (!_producer.Ready) {
             await Task.Delay(100, cancellationToken);
         }
+
         await _subscription.StartAsync(cancellationToken).NoContext();
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
         => _subscription.StopAsync(cancellationToken);
-
-    class ShovelHandler : IEventHandler {
-        readonly TProducer _eventProducer;
-
-        readonly RouteAndTransform<TProduceOptions> _transform;
-
-        public ShovelHandler(
-            string                             subscriptionId,
-            TProducer                          eventProducer,
-            RouteAndTransform<TProduceOptions> transform
-        ) {
-            _eventProducer = eventProducer;
-            _transform     = transform;
-        }
-
-        public async Task HandleEvent(
-            object            evt,
-            long?             position,
-            CancellationToken cancellationToken
-        ) {
-            var shovelMessage = await _transform(evt).NoContext();
-            if (shovelMessage?.Message == null) return;
-
-            await _eventProducer.Produce(
-                    shovelMessage.TargetStream,
-                    new[] { shovelMessage.Message },
-                    shovelMessage.ProduceOptions,
-                    cancellationToken
-                )
-                .NoContext();
-        }
-    }
 }
 
-[PublicAPI]
-public record ShovelMessage<TProduceOptions>(
-    string          TargetStream,
-    object?         Message,
-    TProduceOptions ProduceOptions
-);
-
 public delegate ValueTask<ShovelMessage<TProduceOptions>?> RouteAndTransform<TProduceOptions>(
-    object message
+    ReceivedEvent message
 );

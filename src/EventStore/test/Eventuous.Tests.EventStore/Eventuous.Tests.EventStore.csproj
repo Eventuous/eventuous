@@ -4,8 +4,8 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
-        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
         <ProjectReference Include="..\..\src\Eventuous.EventStore\Eventuous.EventStore.csproj" />
     </ItemGroup>
     <ItemGroup>

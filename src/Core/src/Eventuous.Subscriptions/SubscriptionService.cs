@@ -1,3 +1,5 @@
+using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -10,12 +12,13 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
     protected EventSubscription Subscription { get; set; } = null!;
     protected Logging?          DebugLog     { get; }
     protected ILogger?          Log          { get; }
-    protected T                 Options      { get; }
 
-    readonly ICheckpointStore         _checkpointStore;
-    readonly IEventSerializer         _eventSerializer;
-    readonly IEventHandler[]          _eventHandlers;
-    readonly ISubscriptionGapMeasure? _measure;
+    protected internal T Options { get; }
+
+    internal ICheckpointStore         CheckpointStore { get; }
+    internal IEventSerializer         EventSerializer { get; }
+    internal IEventHandler[]          EventHandlers   { get; }
+    internal ISubscriptionGapMeasure? Measure         { get; }
 
     CancellationTokenSource? _cts;
     Task?                    _measureTask;
@@ -31,14 +34,14 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
         ILoggerFactory?            loggerFactory = null,
         ISubscriptionGapMeasure?   measure       = null
     ) {
-        _checkpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
-        _eventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
-        _measure         = measure;
+        CheckpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
+        EventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
+        Measure         = measure;
 
         Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
         Options = options;
 
-        _eventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers)).ToArray();
+        EventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers)).ToArray();
 
         Log = loggerFactory?.CreateLogger($"Subscription-{options.SubscriptionId}");
 
@@ -46,12 +49,12 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
     }
 
     public async Task StartAsync(CancellationToken cancellationToken) {
-        if (_measure != null) {
+        if (Measure != null) {
             _cts         = new CancellationTokenSource();
             _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
         }
 
-        var checkpoint = await _checkpointStore
+        var checkpoint = await CheckpointStore
             .GetLastCheckpoint(Options.SubscriptionId, cancellationToken)
             .NoContext();
 
@@ -81,10 +84,9 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
         try {
             if (re.Payload != null) {
                 await Task.WhenAll(
-                        _eventHandlers.Select(
+                        EventHandlers.Select(
                             x => x.HandleEvent(
-                                re.Payload,
-                                (long?)re.StreamPosition,
+                                re,
                                 cancellationToken
                             )
                         )
@@ -116,8 +118,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
         await Store().NoContext();
 
-        Task Store()
-            => StoreCheckpoint(GetPosition(re), cancellationToken);
+        Task Store() => StoreCheckpoint(GetPosition(re), cancellationToken);
 
         static EventPosition GetPosition(ReceivedEvent receivedEvent)
             => new(receivedEvent.StreamPosition, receivedEvent.Created);
@@ -130,7 +131,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
         _lastProcessed = position;
         var checkpoint = new Checkpoint(Options.SubscriptionId, position.Position);
 
-        await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
+        await CheckpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
     }
 
     protected object? DeserializeData(
@@ -145,7 +146,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
         var contentType = string.IsNullOrWhiteSpace(eventType) ? "application/json"
             : eventContentType;
 
-        if (contentType != _eventSerializer.ContentType) {
+        if (contentType != EventSerializer.ContentType) {
             Log?.LogError(
                 "Unknown content type {ContentType} for event {Stream} {Position} {Type}",
                 contentType,
@@ -159,7 +160,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
         }
 
         try {
-            return _eventSerializer.DeserializeEvent(data.Span, eventType);
+            return EventSerializer.DeserializeEvent(data.Span, eventType);
         }
         catch (Exception e) {
             Log?.LogError(
@@ -177,6 +178,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
         }
     }
 
+    // TODO: Passing the handler function would allow decoupling subscribers from handlers
     protected abstract Task<EventSubscription> Subscribe(
         Checkpoint        checkpoint,
         CancellationToken cancellationToken
@@ -220,7 +222,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
                 IsDropped = false;
 
-                Log?.LogInformation("Subscription  restored");
+                Log?.LogInformation("Subscription restored");
             }
             catch (Exception e) {
                 Log?.LogError(e, "Unable to restart the subscription");
@@ -236,16 +238,13 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning || _resubscribing.IsClosed()) return;
 
-        Log?.LogWarning(exception, "Subscription  dropped {Reason}", reason);
+        Log?.LogWarning(exception, "Subscription dropped {Reason}", reason);
 
         IsDropped      = true;
         _lastException = exception;
 
         Task.Run(
-            () => Resubscribe(
-                reason == DropReason.Stopped ? TimeSpan.FromSeconds(10)
-                    : TimeSpan.FromSeconds(2)
-            )
+            () => Resubscribe(reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2))
         );
     }
 
@@ -256,7 +255,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
             if (_lastProcessed?.Position != null && position != null) {
                 _gap = (ulong)position - _lastProcessed.Position.Value;
 
-                _measure!.PutGap(Options.SubscriptionId, _gap, created);
+                Measure!.PutGap(Options.SubscriptionId, _gap, created);
             }
 
             await Task.Delay(1000, cancellationToken).NoContext();

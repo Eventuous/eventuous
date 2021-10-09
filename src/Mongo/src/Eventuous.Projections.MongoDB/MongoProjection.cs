@@ -16,8 +16,8 @@ public abstract class MongoProjection<T> : IEventHandler
         Collection     = Ensure.NotNull(database, nameof(database)).GetDocumentCollection<T>();
     }
 
-    public async Task HandleEvent(object evt, long? position, CancellationToken cancellationToken) {
-        var updateTask = GetUpdate(evt, position);
+    public async Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
+        var updateTask = GetUpdate(evt);
         var update     = updateTask == NoOp ? null : await updateTask.NoContext();
 
         if (update == null) {
@@ -39,13 +39,17 @@ public abstract class MongoProjection<T> : IEventHandler
         Task ExecuteUpdate(UpdateOperation<T> upd)
             => Collection.UpdateOneAsync(
                 upd.Filter,
-                upd.Update.Set(x => x.Position, position),
+                upd.Update.Set(x => x.Position, (long)evt.StreamPosition),
                 new UpdateOptions { IsUpsert = true },
                 cancellationToken
             );
     }
-
+    
     protected abstract ValueTask<Operation<T>> GetUpdate(object evt, long? position);
+
+    protected virtual ValueTask<Operation<T>> GetUpdate(ReceivedEvent receivedEvent) {
+        return GetUpdate(receivedEvent.Payload!, (long?)receivedEvent.StreamPosition);
+    }
 
     protected Operation<T> UpdateOperation(BuildFilter<T> filter, BuildUpdate<T> update)
         => new UpdateOperation<T>(filter(Builders<T>.Filter), update(Builders<T>.Update));

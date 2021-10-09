@@ -13,7 +13,7 @@ public class AggregateFactoryRegistrationTests {
 
     public AggregateFactoryRegistrationTests() {
         var host = new TestServer(BuildHost());
-        _registry = host.Host.Services.GetService<AggregateFactoryRegistry>();
+        _registry = host.Host.Services.GetRequiredService<AggregateFactoryRegistry>();
     }
 
     [Fact]
