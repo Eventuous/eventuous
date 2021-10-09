@@ -1,3 +1,4 @@
+using System.Text;
 using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions;
@@ -49,6 +50,17 @@ public abstract class EventHandler : IEventHandler {
             Log?.Debug?.Invoke("No handler for {Event}", evt.Payload.GetType().Name);
             return Task.CompletedTask;
         }
+    }
+
+    public override string ToString() {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Handler: {GetType().Name}");
+
+        foreach (var handler in _handlersMap) {
+            sb.AppendLine($"Event: {handler.Key.Name}");
+        }
+
+        return sb.ToString();
     }
 
     delegate Task HandleUntypedEvent(ReceivedEvent evt, CancellationToken cancellationToken);

@@ -73,8 +73,13 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
         Log.Info(
             "Handlers: {Handlers}",
-            string.Join(",", EventHandlers.Select(x => x.GetType().Name))
+            string.Join(", ", EventHandlers.Select(x => x.GetType().Name))
         );
+
+        foreach (var handler in EventHandlers) {
+            var handlerInfo = handler.ToString();
+            if (handlerInfo != null) Log.Info(handlerInfo);
+        }
 
         Log.Info("Started subscription");
     }
