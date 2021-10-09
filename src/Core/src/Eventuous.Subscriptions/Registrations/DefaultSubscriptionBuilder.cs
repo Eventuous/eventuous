@@ -51,7 +51,7 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
 
         object? CreateArg(ParameterInfo parameterInfo) {
             if (parameterInfo == optionsParameter) {
-                var options = Ensure.NotNull(sp.GetService<IOptionsSnapshot<TOptions>>(), typeof(TOptions).Name);
+                var options = Ensure.NotNull(sp.GetService<IOptionsMonitor<TOptions>>(), typeof(TOptions).Name);
                 return options.Get(SubscriptionId);
             }
 
