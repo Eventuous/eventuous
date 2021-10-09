@@ -5,8 +5,6 @@ namespace Eventuous.Subscriptions;
 /// </summary>
 [PublicAPI]
 public abstract class EventHandler : IEventHandler {
-    public abstract string SubscriptionId { get; }
-
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
 
     /// <summary>
