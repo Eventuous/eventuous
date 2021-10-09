@@ -100,7 +100,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
         var cts      = new CancellationTokenSource();
         var exchange = Ensure.NotEmptyString(Options.Exchange, nameof(Options.Exchange));
 
-        Log?.LogDebug("Ensuring exchange {Exchange}", exchange);
+        Log.Info("Ensuring exchange {Exchange}", exchange);
 
         _channel.ExchangeDeclare(
             exchange,
@@ -110,7 +110,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
             Options.ExchangeOptions?.Arguments
         );
 
-        Log?.LogDebug("Ensuring queue {Queue}", Options.SubscriptionId);
+        Log.Info("Ensuring queue {Queue}", Options.SubscriptionId);
 
         _channel.QueueDeclare(
             Options.SubscriptionId,
@@ -120,7 +120,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
             Options.QueueOptions?.Arguments
         );
 
-        Log.LogDebug("Binding {Exchange} to {Queue}", exchange, Options.SubscriptionId);
+        Log.Info("Binding {Exchange} to {Queue}", exchange, Options.SubscriptionId);
 
         _channel.QueueBind(
             Options.SubscriptionId,
@@ -143,14 +143,14 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
         return Task.FromResult(new EventSubscription(Options.SubscriptionId, new Stoppable(CloseConnection)));
 
         async Task RunConsumer() {
-            Log?.LogDebug("Started consumer instance");
+            Log.Info("Started consumer instance");
 
             while (!consumeChannel.Reader.Completion.IsCompleted) {
                 var evt = await TryGetMessage();
                 if (evt == null) continue;
 
                 try {
-                    Log?.LogDebug("Handling message {MessageId}", evt.ReceivedEvent.EventId);
+                    Log.Debug?.Invoke("Handling message {MessageId}", evt.ReceivedEvent.EventId);
 
                     await Handler(evt.ReceivedEvent, CancellationToken.None).NoContext();
                     _channel.BasicAck(evt.Original.DeliveryTag, false);
@@ -160,7 +160,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
                 }
             }
 
-            Log?.LogDebug("Stopped consumer instance for");
+            Log.Info("Stopped consumer instance");
         }
 
         async Task<Event?> TryGetMessage() {
@@ -172,7 +172,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
                 return null;
             }
             catch (Exception e) {
-                Log?.LogError(e, "Unable to read message from the channel: {Message}", e.Message);
+                Log.Error(e, "Unable to read message from the channel: {Message}", e.Message);
                 throw;
             }
         }
@@ -195,7 +195,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
         BasicDeliverEventArgs received,
         ChannelWriter<Event>  writer
     ) {
-        Log?.LogTrace("Received message {MessageType}", received.BasicProperties.Type);
+        Log.Debug?.Invoke("Received message {MessageType}", received.BasicProperties.Type);
 
         try {
             var receivedEvent = TryHandleReceived(sender, received);
@@ -242,7 +242,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
     }
 
     void DefaultEventFailureHandler(IModel channel, BasicDeliverEventArgs message, Exception exception) {
-        Log?.LogWarning(exception, "Error in the consumer, will redeliver");
+        Log.Warn(exception, "Error in the consumer, will redeliver");
         _channel.BasicReject(message.DeliveryTag, true);
     }
 

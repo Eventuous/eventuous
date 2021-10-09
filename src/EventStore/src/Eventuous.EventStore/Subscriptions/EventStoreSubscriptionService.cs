@@ -57,7 +57,7 @@ public abstract class EventStoreSubscriptionService<T> : SubscriptionService<T>
             return _metaSerializer.Deserialize(meta.Span);
         }
         catch (Exception e) {
-            Log?.LogError(
+            Log.Error(
                 e,
                 "Error deserializing metadata {Stream} {Position}",
                 stream,

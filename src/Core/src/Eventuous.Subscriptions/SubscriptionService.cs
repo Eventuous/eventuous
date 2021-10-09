@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,8 +11,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
     internal  bool              IsRunning    { get; set; }
     internal  bool              IsDropped    { get; set; }
     protected EventSubscription Subscription { get; set; } = null!;
-    protected Logging?          DebugLog     { get; }
-    protected ILogger?          Log          { get; }
+    protected SubscriptionLog   Log          { get; }
 
     protected internal T Options { get; }
 
@@ -43,9 +43,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
         EventHandlers = Ensure.NotNull(eventHandlers, nameof(eventHandlers)).ToArray();
 
-        Log = loggerFactory?.CreateLogger($"Subscription-{options.SubscriptionId}");
-
-        DebugLog = Log?.IsEnabled(LogLevel.Debug) == true ? Log.LogDebug : null;
+        Log = new SubscriptionLog(loggerFactory, options.SubscriptionId);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken) {
@@ -64,11 +62,11 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
         IsRunning = true;
 
-        Log?.LogInformation("Started subscription");
+        Log.Info("Started subscription");
     }
 
     protected async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
-        DebugLog?.Invoke(
+        Log.Debug?.Invoke(
             "Subscription {Subscription} got an event {EventType}",
             Options.SubscriptionId,
             re.EventType
@@ -97,7 +95,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
             _lastProcessed = GetPosition(re);
         }
         catch (Exception e) {
-            Log?.Log(
+            Log.Log(
                 Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning,
                 e,
                 "Error when handling the event {Stream} {Position} {Type}",
@@ -147,7 +145,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
             : eventContentType;
 
         if (contentType != EventSerializer.ContentType) {
-            Log?.LogError(
+            Log.Error(
                 "Unknown content type {ContentType} for event {Stream} {Position} {Type}",
                 contentType,
                 stream,
@@ -163,7 +161,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
             return EventSerializer.DeserializeEvent(data.Span, eventType);
         }
         catch (Exception e) {
-            Log?.LogError(
+            Log.Error(
                 e,
                 "Error deserializing event {Stream} {Position} {Type}",
                 stream,
@@ -200,7 +198,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
         await Subscription.Stop(cancellationToken).NoContext();
 
-        Log?.LogInformation("Stopped subscription");
+        Log.Info("Stopped subscription");
     }
 
     readonly InterlockedSemaphore _resubscribing = new();
@@ -208,7 +206,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
     protected async Task Resubscribe(TimeSpan delay) {
         if (_resubscribing.IsClosed()) return;
 
-        Log?.LogWarning("Resubscribing");
+        Log.Warn("Resubscribing");
 
         await Task.Delay(delay).NoContext();
 
@@ -222,10 +220,10 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
 
                 IsDropped = false;
 
-                Log?.LogInformation("Subscription restored");
+                Log.Info("Subscription restored");
             }
             catch (Exception e) {
-                Log?.LogError(e, "Unable to restart the subscription");
+                Log.Error(e, "Unable to restart the subscription");
 
                 await Task.Delay(1000).NoContext();
             }
@@ -238,7 +236,7 @@ public abstract class SubscriptionService<T> : IHostedService, IReportHealth whe
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning || _resubscribing.IsClosed()) return;
 
-        Log?.LogWarning(exception, "Subscription dropped {Reason}", reason);
+        Log.Warn(exception, "Subscription dropped {Reason}", reason);
 
         IsDropped      = true;
         _lastException = exception;
