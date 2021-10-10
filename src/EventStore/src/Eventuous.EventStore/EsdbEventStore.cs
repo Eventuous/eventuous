@@ -57,7 +57,8 @@ public class EsdbEventStore : IEventStore {
                 );
             },
             stream,
-            () => new ErrorInfo("Unable to appends events to {Stream}", stream)
+            () => new ErrorInfo("Unable to appends events to {Stream}", stream),
+            (s, ex) => new EventStoreExceptions.AppendToStreamException(s, ex)
         );
 
         static EventData ToEventData(StreamEvent streamEvent)
@@ -89,7 +90,13 @@ public class EsdbEventStore : IEventStore {
                 return ToStreamEvents(resolvedEvents);
             },
             stream,
-            () => new ErrorInfo("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream)
+            () => new ErrorInfo(
+                "Unable to read {Count} starting at {Start} events from {Stream}",
+                count,
+                start,
+                stream
+            ),
+            (s, ex) => new EventStoreExceptions.ReadFromStreamException(s, ex)
         );
     }
 
@@ -112,7 +119,8 @@ public class EsdbEventStore : IEventStore {
                 return ToStreamEvents(resolvedEvents);
             },
             stream,
-            () => new ErrorInfo("Unable to read {Count} events backwards from {Stream}", count, stream)
+            () => new ErrorInfo("Unable to read {Count} events backwards from {Stream}", count, stream),
+            (s, ex) => new EventStoreExceptions.ReadFromStreamException(s, ex)
         );
     }
 
@@ -138,7 +146,8 @@ public class EsdbEventStore : IEventStore {
                 return 1;
             },
             stream,
-            () => new ErrorInfo("Unable to read stream {Stream} from {Start}", stream, start)
+            () => new ErrorInfo("Unable to read stream {Stream} from {Start}", stream, start),
+            (s, ex) => new EventStoreExceptions.ReadFromStreamException(s, ex)
         );
     }
 
@@ -167,7 +176,8 @@ public class EsdbEventStore : IEventStore {
                 )
             ),
             stream,
-            () => new ErrorInfo("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition)
+            () => new ErrorInfo("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition),
+            (s, ex) => new EventStoreExceptions.TruncateStreamException(s, ex)
         );
     }
 
@@ -190,21 +200,27 @@ public class EsdbEventStore : IEventStore {
             )
         ),
         stream,
-        () => new ErrorInfo("Unable to delete stream {Stream}", stream)
+        () => new ErrorInfo("Unable to delete stream {Stream}", stream),
+        (s, ex) => new EventStoreExceptions.DeleteStreamException(s, ex)
     );
 
-    async Task<T> TryExecute<T>(Func<Task<T>> func, string stream, Func<ErrorInfo> getError) {
+    async Task<T> TryExecute<T>(
+        Func<Task<T>>                      func,
+        string                             stream,
+        Func<ErrorInfo>                    getError,
+        Func<string, Exception, Exception> getException
+    ) {
         try {
             return await func();
         }
         catch (StreamNotFoundException) {
             _logger?.LogError("Stream {Stream} not found", stream);
-            throw new Exceptions.StreamNotFound(stream);
+            throw new EventStoreExceptions.StreamNotFound(stream);
         }
         catch (Exception ex) {
             var (message, args) = getError();
             _logger?.LogError(ex, message, args);
-            throw;
+            throw getException(stream, ex);
         }
     }
 

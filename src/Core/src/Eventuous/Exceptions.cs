@@ -1,4 +1,4 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 public static class Exceptions {
     public class InvalidIdException : Exception {
@@ -17,9 +17,31 @@ public static class Exceptions {
     public class CommandHandlerNotFound : Exception {
         public CommandHandlerNotFound(Type type) : base($"Handler not found for command {type.Name}") { }
     }
+}
 
+public static class EventStoreExceptions {
     public class StreamNotFound : Exception {
         public StreamNotFound(string stream) : base($"Stream {stream} does not exist") { }
+    }
+
+    public class AppendToStreamException : Exception {
+        public AppendToStreamException(string stream, Exception inner)
+            : base($"Unable to append events to {stream}", inner) { }
+    }
+
+    public class ReadFromStreamException : Exception {
+        public ReadFromStreamException(string stream, Exception inner)
+            : base($"Unable to read events from {stream}", inner) { }
+    }
+
+    public class DeleteStreamException : Exception {
+        public DeleteStreamException(string stream, Exception inner)
+            : base($"Unable to delete stream {stream}", inner) { }
+    }
+
+    public class TruncateStreamException : Exception {
+        public TruncateStreamException(string stream, Exception inner)
+            : base($"Unable to truncate stream {stream}", inner) { }
     }
 }
 
