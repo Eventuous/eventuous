@@ -4,7 +4,7 @@
 # Microsoft .NET properties
 csharp_indent_braces = false
 csharp_new_line_before_members_in_object_initializers = false
-csharp_new_line_before_open_brace = accessors,anonymous_methods,control_blocks,events,indexers,lambdas,properties
+csharp_new_line_before_open_brace = accessors,control_blocks,events,indexers,properties
 csharp_using_directive_placement = outside_namespace
 
 # ReSharper properties

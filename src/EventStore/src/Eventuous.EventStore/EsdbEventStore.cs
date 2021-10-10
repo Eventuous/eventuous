@@ -15,7 +15,7 @@ public class EsdbEventStore : IEventStore {
     public EsdbEventStore(EventStoreClientSettings clientSettings, ILogger<EsdbEventStore>? logger)
         : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), logger) { }
 
-    public async Task<AppendEventsResult> AppendEvents(
+    public Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
         ExpectedStreamVersion            expectedVersion,
         IReadOnlyCollection<StreamEvent> events,
@@ -45,18 +45,16 @@ public class EsdbEventStore : IEventStore {
                 )
             );
 
-        try {
-            var result = await resultTask.NoContext();
+        return TryExecute(
+            async () => {
+                var result = await resultTask.NoContext();
 
-            return new AppendEventsResult(
-                result.LogPosition.CommitPosition,
-                result.NextExpectedStreamRevision.ToInt64()
-            );
-        }
-        catch (Exception ex) {
-            _logger?.LogError(ex, "Unable to append events to {Stream}", stream);
-            throw;
-        }
+                return new AppendEventsResult(
+                    result.LogPosition.CommitPosition,
+                    result.NextExpectedStreamRevision.ToInt64()
+                );
+            }
+        );
 
         static EventData ToEventData(StreamEvent streamEvent)
             => new(
@@ -67,7 +65,7 @@ public class EsdbEventStore : IEventStore {
             );
     }
 
-    public async Task<StreamEvent[]> ReadEvents(
+    public Task<StreamEvent[]> ReadEvents(
         StreamName         stream,
         StreamReadPosition start,
         int                count,
@@ -81,21 +79,15 @@ public class EsdbEventStore : IEventStore {
             cancellationToken: cancellationToken
         );
 
-        try {
-            var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
-            return ToStreamEvents(resolvedEvents);
-        }
-        catch (StreamNotFoundException) {
-            _logger?.LogError("Stream {Stream} not found", stream);
-            throw new Exceptions.StreamNotFound(stream);
-        }
-        catch (Exception ex) {
-            _logger?.LogError(ex, "Unable to read {Count} events from {Stream} from {Start}", count, stream, start);
-            throw;
-        }
+        return TryExecute(
+            async () => {
+                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
+                return ToStreamEvents(resolvedEvents);
+            }
+        );
     }
 
-    public async Task<StreamEvent[]> ReadEventsBackwards(
+    public Task<StreamEvent[]> ReadEventsBackwards(
         StreamName        stream,
         int               count,
         CancellationToken cancellationToken
@@ -108,18 +100,12 @@ public class EsdbEventStore : IEventStore {
             cancellationToken: cancellationToken
         );
 
-        try {
-            var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
-            return ToStreamEvents(resolvedEvents);
-        }
-        catch (StreamNotFoundException) {
-            _logger?.LogError("Stream {Stream} not found", stream);
-            throw new Exceptions.StreamNotFound(stream);
-        }
-        catch (Exception ex) {
-            _logger?.LogError(ex, "Unable to read {Count} events from {Stream} backwards", count, stream);
-            throw;
-        }
+        return TryExecute(
+            async () => {
+                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
+                return ToStreamEvents(resolvedEvents);
+            }
+        );
     }
 
     public async Task ReadStream(
@@ -135,14 +121,15 @@ public class EsdbEventStore : IEventStore {
             cancellationToken: cancellationToken
         );
 
-        try {
-            await foreach (var re in read.IgnoreWithCancellation(cancellationToken)) {
-                callback(ToStreamEvent(re));
+        await TryExecute(
+            async () => {
+                await foreach (var re in read.IgnoreWithCancellation(cancellationToken)) {
+                    callback(ToStreamEvent(re));
+                }
+
+                return 1;
             }
-        }
-        catch (StreamNotFoundException) {
-            throw new Exceptions.StreamNotFound(stream);
-        }
+        );
     }
 
     public Task TruncateStream(
@@ -153,19 +140,21 @@ public class EsdbEventStore : IEventStore {
     ) {
         var meta = new StreamMetadata(truncateBefore: truncatePosition.AsStreamPosition());
 
-        return AnyOrNot(
-            expectedVersion,
-            () => _client.SetStreamMetadataAsync(
-                stream,
-                StreamState.Any,
-                meta,
-                cancellationToken: cancellationToken
-            ),
-            () => _client.SetStreamMetadataAsync(
-                stream,
-                expectedVersion.AsStreamRevision(),
-                meta,
-                cancellationToken: cancellationToken
+        return TryExecute(
+            () => AnyOrNot(
+                expectedVersion,
+                () => _client.SetStreamMetadataAsync(
+                    stream,
+                    StreamState.Any,
+                    meta,
+                    cancellationToken: cancellationToken
+                ),
+                () => _client.SetStreamMetadataAsync(
+                    stream,
+                    expectedVersion.AsStreamRevision(),
+                    meta,
+                    cancellationToken: cancellationToken
+                )
             )
         );
     }
@@ -174,8 +163,8 @@ public class EsdbEventStore : IEventStore {
         StreamName            stream,
         ExpectedStreamVersion expectedVersion,
         CancellationToken     cancellationToken
-    )
-        => AnyOrNot(
+    ) => TryExecute(
+        () => AnyOrNot(
             expectedVersion,
             () => _client.SoftDeleteAsync(
                 stream,
@@ -187,7 +176,22 @@ public class EsdbEventStore : IEventStore {
                 expectedVersion.AsStreamRevision(),
                 cancellationToken: cancellationToken
             )
-        );
+        )
+    );
+
+    async Task<T> TryExecute<T>(Func<Task<T>> func) {
+        try {
+            return await func();
+        }
+        catch (StreamNotFoundException) {
+            _logger?.LogError("Stream {Stream} not found", stream);
+            throw new Exceptions.StreamNotFound(stream);
+        }
+        catch (Exception ex) {
+            _logger?.LogError(ex, "Unable to read {Count} events from {Stream} backwards", count, stream);
+            throw;
+        }
+    }
 
     static Task<T> AnyOrNot<T>(
         ExpectedStreamVersion version,
