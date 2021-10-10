@@ -124,9 +124,10 @@ public class EsdbEventStore : IEventStore {
         );
     }
 
-    public async Task ReadStream(
+    public async Task<long> ReadStream(
         StreamName          stream,
         StreamReadPosition  start,
+        int                 count,
         Action<StreamEvent> callback,
         CancellationToken   cancellationToken
     ) {
@@ -134,16 +135,19 @@ public class EsdbEventStore : IEventStore {
             Direction.Forwards,
             stream,
             start.AsStreamPosition(),
+            count,
             cancellationToken: cancellationToken
         );
 
-        await TryExecute(
+        return await TryExecute(
             async () => {
+                long readCount = 0;
                 await foreach (var re in read.IgnoreWithCancellation(cancellationToken)) {
                     callback(ToStreamEvent(re));
+                    readCount++;
                 }
 
-                return 1;
+                return readCount;
             },
             stream,
             () => new ErrorInfo("Unable to read stream {Stream} from {Start}", stream, start),

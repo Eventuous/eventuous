@@ -5,7 +5,10 @@ namespace Eventuous.Tests;
 public class TypeRegistrationTests {
     readonly TypeMapper _typeMapper;
 
-    public TypeRegistrationTests() => _typeMapper = new TypeMapper();
+    public TypeRegistrationTests() {
+        _typeMapper = new TypeMapper();
+        _typeMapper.RegisterKnownEventTypes(typeof(BookingCancelled).Assembly);
+    }
 
     [Fact]
     public void ShouldResolveDecoratedEvent() {

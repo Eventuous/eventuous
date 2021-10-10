@@ -66,17 +66,28 @@ public class AggregateStore : IAggregateStore {
         where T : Aggregate, new() {
         Ensure.NotEmptyString(id, nameof(id));
 
+        const int pageSize = 500;
+
         var stream    = StreamName.For<T>(id);
         var aggregate = _factoryRegistry.CreateInstance<T>();
 
         try {
-            await _eventStore.ReadStream(
-                    stream,
-                    StreamReadPosition.Start,
-                    Fold,
-                    cancellationToken
-                )
-                .NoContext();
+            var position = StreamReadPosition.Start;
+
+            while (true) {
+                var readCount = await _eventStore.ReadStream(
+                        stream,
+                        position,
+                        pageSize,
+                        Fold,
+                        cancellationToken
+                    )
+                    .NoContext();
+
+                if (readCount == 0) break;
+
+                position = new StreamReadPosition(position.Value + readCount);
+            }
         }
         catch (StreamNotFound e) {
             throw new Exceptions.AggregateNotFound<T>(id, e);

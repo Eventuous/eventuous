@@ -21,9 +21,10 @@ public class FakeStore : IEventStore {
         CancellationToken cancellationToken
     ) => throw new NotImplementedException();
 
-    public Task ReadStream(
+    public Task<long> ReadStream(
         StreamName          stream,
         StreamReadPosition  start,
+        int                 count,
         Action<StreamEvent> callback,
         CancellationToken   cancellationToken
     ) => throw new NotImplementedException();

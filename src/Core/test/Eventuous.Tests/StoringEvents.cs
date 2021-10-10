@@ -5,7 +5,10 @@ using Eventuous.Sut.Domain;
 namespace Eventuous.Tests;
 
 public class StoringEvents : NaiveFixture {
-    public StoringEvents() => Service = new BookingService(AggregateStore);
+    public StoringEvents() {
+        TypeMap.Instance.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
+        Service = new BookingService(AggregateStore);
+    }
 
     BookingService Service { get; }
 
