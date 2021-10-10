@@ -231,12 +231,12 @@ public class EsdbEventStore : IEventStore {
             return await func();
         }
         catch (StreamNotFoundException) {
-            _logger?.LogError("Stream {Stream} not found", stream);
+            _logger?.LogWarning("Stream {Stream} not found", stream);
             throw new StreamNotFound(stream);
         }
         catch (Exception ex) {
             var (message, args) = getError();
-            _logger?.LogError(ex, message, args);
+            _logger?.LogWarning(ex, message, args);
             throw getException(stream, ex);
         }
     }
