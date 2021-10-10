@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Eventuous; 
+namespace Eventuous;
 
 /// <summary>
 /// The TypeMap maintains event type names for known event types so we avoid using CLR type names
@@ -42,13 +42,17 @@ public class TypeMapper {
     readonly Dictionary<string, Type> _reverseMap = new();
     readonly Dictionary<Type, string> _map        = new();
 
-    public string GetTypeName<T>() => _map[typeof(T)];
+    public string GetTypeName<T>()
+        => _map.TryGetValue(typeof(T), out var name) ? name : throw new UnregisteredTypeException(typeof(T));
 
-    public string GetTypeName(object o) => _map[o.GetType()];
+    public string GetTypeName(object o) 
+        => _map.TryGetValue(o.GetType(), out var name) ? name : throw new UnregisteredTypeException(o.GetType());
 
-    public string GetTypeNameByType(Type type) => _map[type];
+    public string GetTypeNameByType(Type type) 
+        => _map.TryGetValue(type, out var name) ? name : throw new UnregisteredTypeException(type);
 
-    public Type GetType(string typeName) => _reverseMap[typeName];
+    public Type GetType(string typeName) 
+        => _reverseMap.TryGetValue(typeName, out var type) ? type : throw new UnregisteredTypeException(typeName);
 
     public bool TryGetType(string typeName, out Type? type) => _reverseMap.TryGetValue(typeName, out type);
 
@@ -82,6 +86,12 @@ public class TypeMapper {
             AddType(type, attr.EventType);
         }
     }
+
+    public void EnsureTypesRegistered(IEnumerable<Type> types) {
+        foreach (var type in types) {
+            GetTypeNameByType(type);
+        }
+    }
 }
 
 [AttributeUsage(AttributeTargets.Class)]
@@ -89,4 +99,11 @@ public class EventTypeAttribute : Attribute {
     public string EventType { get; }
 
     public EventTypeAttribute(string eventType) => EventType = eventType;
+}
+
+public class UnregisteredTypeException : Exception {
+    // ReSharper disable once SuggestBaseTypeForParameterInConstructor
+    public UnregisteredTypeException(Type type) : base($"Type {type.Name} is not registered in the type map") { }
+
+    public UnregisteredTypeException(string type) : base($"Type name {type} is not registered in the type map") { }
 }

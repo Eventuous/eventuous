@@ -10,6 +10,11 @@ namespace Eventuous.Subscriptions;
 public abstract class EventHandler : IEventHandler {
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
 
+    protected EventHandler(TypeMapper? mapper = null) {
+        var map = mapper ?? TypeMap.Instance;
+        map.EnsureTypesRegistered(_handlersMap.Keys);
+    }
+
     /// <summary>
     /// Register a handler for a particular event type
     /// </summary>
