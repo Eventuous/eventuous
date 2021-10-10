@@ -7,6 +7,14 @@ namespace Eventuous;
 [PublicAPI]
 public interface IEventStore {
     /// <summary>
+    /// Checks if a given stream exists in the store
+    /// </summary>
+    /// <param name="stream">Stream name</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>True of stream exists</returns>
+    Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken);
+    
+    /// <summary>
     /// Append one or more events to a stream
     /// </summary>
     /// <param name="stream">Stream name</param>

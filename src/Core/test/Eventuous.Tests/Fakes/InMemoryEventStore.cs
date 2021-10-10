@@ -6,6 +6,9 @@ public class InMemoryEventStore : IEventStore {
     readonly Dictionary<StreamName, InMemoryStream> _storage = new();
     readonly List<StreamEvent>                      _global  = new();
 
+    public Task<bool> StreamExists(StreamName streamName, CancellationToken cancellationToken)
+        => Task.FromResult(_storage.ContainsKey(streamName));
+
     public Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
         ExpectedStreamVersion            expectedVersion,
@@ -48,6 +51,7 @@ public class InMemoryEventStore : IEventStore {
         CancellationToken   cancellationToken
     ) {
         var readCount = 0L;
+
         foreach (var streamEvent in FindStream(stream).GetEvents(start, count)) {
             callback(streamEvent);
             readCount++;

@@ -1,6 +1,9 @@
 namespace Eventuous.AspNetCore.Tests.Sut;
 
 public class FakeStore : IEventStore {
+    public Task<bool> StreamExists(StreamName streamName, CancellationToken cancellationToken)
+        => throw new NotImplementedException();
+
     public Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
         ExpectedStreamVersion            expectedVersion,

@@ -63,7 +63,7 @@ public class AggregateStore : IAggregateStore {
     }
 
     public async Task<T> Load<T>(string id, CancellationToken cancellationToken)
-        where T : Aggregate, new() {
+        where T : Aggregate {
         Ensure.NotEmptyString(id, nameof(id));
 
         const int pageSize = 500;
@@ -104,5 +104,10 @@ public class AggregateStore : IAggregateStore {
 
         object? Deserialize(StreamEvent streamEvent)
             => _serializer.DeserializeEvent(streamEvent.Data.AsSpan(), streamEvent.EventType);
+    }
+
+    public Task<bool> Exists<T>(string id, CancellationToken cancellationToken) where T : Aggregate {
+        var stream    = StreamName.For<T>(id);
+        return _eventStore.StreamExists(stream, cancellationToken);
     }
 }

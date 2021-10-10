@@ -17,6 +17,19 @@ public class EsdbEventStore : IEventStore {
     public EsdbEventStore(EventStoreClientSettings clientSettings, ILogger<EsdbEventStore>? logger)
         : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), logger) { }
 
+    public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
+        var read = _client.ReadStreamAsync(
+            Direction.Backwards,
+            stream,
+            StreamPosition.End,
+            1,
+            cancellationToken: cancellationToken
+        );
+
+        var state = await read.ReadState;
+        return state == ReadState.Ok;
+    }
+
     public Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
         ExpectedStreamVersion            expectedVersion,
