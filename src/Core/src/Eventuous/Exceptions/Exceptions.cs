@@ -18,7 +18,3 @@ public static class Exceptions {
         public CommandHandlerNotFound(Type type) : base($"Handler not found for command {type.Name}") { }
     }
 }
-
-public class DomainException : Exception {
-    public DomainException(string message) : base(message) { }
-}
