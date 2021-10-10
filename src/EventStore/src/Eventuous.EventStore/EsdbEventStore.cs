@@ -58,7 +58,7 @@ public class EsdbEventStore : IEventStore {
             },
             stream,
             () => new ErrorInfo("Unable to appends events to {Stream}", stream),
-            (s, ex) => new EventStoreExceptions.AppendToStreamException(s, ex)
+            (s, ex) => new AppendToStreamException(s, ex)
         );
 
         static EventData ToEventData(StreamEvent streamEvent)
@@ -96,7 +96,7 @@ public class EsdbEventStore : IEventStore {
                 start,
                 stream
             ),
-            (s, ex) => new EventStoreExceptions.ReadFromStreamException(s, ex)
+            (s, ex) => new ReadFromStreamException(s, ex)
         );
     }
 
@@ -120,7 +120,7 @@ public class EsdbEventStore : IEventStore {
             },
             stream,
             () => new ErrorInfo("Unable to read {Count} events backwards from {Stream}", count, stream),
-            (s, ex) => new EventStoreExceptions.ReadFromStreamException(s, ex)
+            (s, ex) => new ReadFromStreamException(s, ex)
         );
     }
 
@@ -147,7 +147,7 @@ public class EsdbEventStore : IEventStore {
             },
             stream,
             () => new ErrorInfo("Unable to read stream {Stream} from {Start}", stream, start),
-            (s, ex) => new EventStoreExceptions.ReadFromStreamException(s, ex)
+            (s, ex) => new ReadFromStreamException(s, ex)
         );
     }
 
@@ -177,7 +177,7 @@ public class EsdbEventStore : IEventStore {
             ),
             stream,
             () => new ErrorInfo("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition),
-            (s, ex) => new EventStoreExceptions.TruncateStreamException(s, ex)
+            (s, ex) => new TruncateStreamException(s, ex)
         );
     }
 
@@ -201,7 +201,7 @@ public class EsdbEventStore : IEventStore {
         ),
         stream,
         () => new ErrorInfo("Unable to delete stream {Stream}", stream),
-        (s, ex) => new EventStoreExceptions.DeleteStreamException(s, ex)
+        (s, ex) => new DeleteStreamException(s, ex)
     );
 
     async Task<T> TryExecute<T>(
@@ -215,7 +215,7 @@ public class EsdbEventStore : IEventStore {
         }
         catch (StreamNotFoundException) {
             _logger?.LogError("Stream {Stream} not found", stream);
-            throw new EventStoreExceptions.StreamNotFound(stream);
+            throw new StreamNotFound(stream);
         }
         catch (Exception ex) {
             var (message, args) = getError();

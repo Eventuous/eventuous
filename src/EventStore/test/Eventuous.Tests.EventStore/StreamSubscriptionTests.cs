@@ -38,7 +38,7 @@ public class StreamSubscriptionTests {
 
             startPosition = (ulong?)last[0].Position;
         }
-        catch (EventStoreExceptions.StreamNotFound) { }
+        catch (StreamNotFound) { }
 
         var commands = Enumerable.Range(0, 100)
             .Select(_ => DomainFixture.CreateImportBooking())

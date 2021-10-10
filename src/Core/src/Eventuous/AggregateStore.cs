@@ -78,7 +78,7 @@ public class AggregateStore : IAggregateStore {
                 )
                 .NoContext();
         }
-        catch (EventStoreExceptions.StreamNotFound e) {
+        catch (StreamNotFound e) {
             throw new Exceptions.AggregateNotFound<T>(id, e);
         }
 
