@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 
+// ReSharper disable CoVariantArrayConversion
+
 namespace Eventuous.EventStore;
 
 [PublicAPI]
@@ -53,7 +55,9 @@ public class EsdbEventStore : IEventStore {
                     result.LogPosition.CommitPosition,
                     result.NextExpectedStreamRevision.ToInt64()
                 );
-            }
+            },
+            stream,
+            () => new ErrorInfo("Unable to appends events to {Stream}", stream)
         );
 
         static EventData ToEventData(StreamEvent streamEvent)
@@ -83,7 +87,9 @@ public class EsdbEventStore : IEventStore {
             async () => {
                 var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
                 return ToStreamEvents(resolvedEvents);
-            }
+            },
+            stream,
+            () => new ErrorInfo("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream)
         );
     }
 
@@ -104,7 +110,9 @@ public class EsdbEventStore : IEventStore {
             async () => {
                 var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
                 return ToStreamEvents(resolvedEvents);
-            }
+            },
+            stream,
+            () => new ErrorInfo("Unable to read {Count} events backwards from {Stream}", count, stream)
         );
     }
 
@@ -128,7 +136,9 @@ public class EsdbEventStore : IEventStore {
                 }
 
                 return 1;
-            }
+            },
+            stream,
+            () => new ErrorInfo("Unable to read stream {Stream} from {Start}", stream, start)
         );
     }
 
@@ -155,7 +165,9 @@ public class EsdbEventStore : IEventStore {
                     meta,
                     cancellationToken: cancellationToken
                 )
-            )
+            ),
+            stream,
+            () => new ErrorInfo("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition)
         );
     }
 
@@ -176,10 +188,12 @@ public class EsdbEventStore : IEventStore {
                 expectedVersion.AsStreamRevision(),
                 cancellationToken: cancellationToken
             )
-        )
+        ),
+        stream,
+        () => new ErrorInfo("Unable to delete stream {Stream}", stream)
     );
 
-    async Task<T> TryExecute<T>(Func<Task<T>> func) {
+    async Task<T> TryExecute<T>(Func<Task<T>> func, string stream, Func<ErrorInfo> getError) {
         try {
             return await func();
         }
@@ -188,7 +202,8 @@ public class EsdbEventStore : IEventStore {
             throw new Exceptions.StreamNotFound(stream);
         }
         catch (Exception ex) {
-            _logger?.LogError(ex, "Unable to read {Count} events from {Stream} backwards", count, stream);
+            var (message, args) = getError();
+            _logger?.LogError(ex, message, args);
             throw;
         }
     }
@@ -211,4 +226,6 @@ public class EsdbEventStore : IEventStore {
 
     static StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents.Select(ToStreamEvent).ToArray();
+
+    record ErrorInfo(string Message, params object[] Args);
 }
