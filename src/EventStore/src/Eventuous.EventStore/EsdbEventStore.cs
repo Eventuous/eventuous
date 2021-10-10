@@ -1,14 +1,19 @@
-namespace Eventuous.EventStore; 
+using Microsoft.Extensions.Logging;
+
+namespace Eventuous.EventStore;
 
 [PublicAPI]
 public class EsdbEventStore : IEventStore {
-    readonly EventStoreClient _client;
+    readonly ILogger<EsdbEventStore>? _logger;
+    readonly EventStoreClient         _client;
 
-    public EsdbEventStore(EventStoreClient client)
-        => _client = Ensure.NotNull(client, nameof(client));
+    public EsdbEventStore(EventStoreClient client, ILogger<EsdbEventStore>? logger) {
+        _logger = logger;
+        _client = Ensure.NotNull(client, nameof(client));
+    }
 
-    public EsdbEventStore(EventStoreClientSettings clientSettings)
-        : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings)))) { }
+    public EsdbEventStore(EventStoreClientSettings clientSettings, ILogger<EsdbEventStore>? logger)
+        : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), logger) { }
 
     public async Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
@@ -40,12 +45,18 @@ public class EsdbEventStore : IEventStore {
                 )
             );
 
-        var result = await resultTask.NoContext();
+        try {
+            var result = await resultTask.NoContext();
 
-        return new AppendEventsResult(
-            result.LogPosition.CommitPosition,
-            result.NextExpectedStreamRevision.ToInt64()
-        );
+            return new AppendEventsResult(
+                result.LogPosition.CommitPosition,
+                result.NextExpectedStreamRevision.ToInt64()
+            );
+        }
+        catch (Exception ex) {
+            _logger?.LogError(ex, "Unable to append events to {Stream}", stream);
+            throw;
+        }
 
         static EventData ToEventData(StreamEvent streamEvent)
             => new(
@@ -75,7 +86,12 @@ public class EsdbEventStore : IEventStore {
             return ToStreamEvents(resolvedEvents);
         }
         catch (StreamNotFoundException) {
+            _logger?.LogError("Stream {Stream} not found", stream);
             throw new Exceptions.StreamNotFound(stream);
+        }
+        catch (Exception ex) {
+            _logger?.LogError(ex, "Unable to read {Count} events from {Stream} from {Start}", count, stream, start);
+            throw;
         }
     }
 
@@ -97,7 +113,12 @@ public class EsdbEventStore : IEventStore {
             return ToStreamEvents(resolvedEvents);
         }
         catch (StreamNotFoundException) {
+            _logger?.LogError("Stream {Stream} not found", stream);
             throw new Exceptions.StreamNotFound(stream);
+        }
+        catch (Exception ex) {
+            _logger?.LogError(ex, "Unable to read {Count} events from {Stream} backwards", count, stream);
+            throw;
         }
     }
 

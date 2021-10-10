@@ -23,7 +23,7 @@ public class IntegrationFixture {
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
         var settings = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
         Client         = new EventStoreClient(settings);
-        EventStore     = new EsdbEventStore(Client);
+        EventStore     = new EsdbEventStore(Client, null);
         AggregateStore = new AggregateStore(EventStore);
 
     }
