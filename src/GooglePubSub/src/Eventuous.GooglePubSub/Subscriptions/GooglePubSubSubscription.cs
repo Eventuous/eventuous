@@ -206,8 +206,8 @@ public class GooglePubSubSubscription : SubscriptionService<PubSubSubscriptionOp
     }
 
     public async Task Stop(CancellationToken cancellationToken = default) {
-        await _subscriberTask.NoContext();
         if (_client != null) await _client.StopAsync(cancellationToken).NoContext();
+        await _subscriberTask.NoContext();
     }
 
     public async Task CreateSubscription(
