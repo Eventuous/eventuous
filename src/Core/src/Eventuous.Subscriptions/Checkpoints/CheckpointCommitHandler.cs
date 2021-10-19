@@ -1,37 +1,25 @@
 using System.Threading.Channels;
+using Eventuous.Subscriptions.Channels;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
 public class CheckpointCommitHandler : IAsyncDisposable {
-    readonly string                  _subscriptionId;
-    readonly CommitCheckpoint        _commitCheckpoint;
-    readonly int                     _batchSize;
-    readonly CommitPositionSequence      _positions = new();
-    readonly Channel<CommitPosition> _channel;
-    readonly CancellationTokenSource _cts;
+    readonly string                        _subscriptionId;
+    readonly CommitCheckpoint              _commitCheckpoint;
+    readonly CommitPositionSequence        _positions = new();
+    readonly ChannelWorker<CommitPosition> _worker;
 
     public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1) {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
-        _batchSize        = batchSize;
-        _channel          = Channel.CreateBounded<CommitPosition>(batchSize * 10);
+        var channel = Channel.CreateBounded<CommitPosition>(batchSize * 10);
+        _worker = new ChannelWorker<CommitPosition>(channel, Process);
 
-        _cts = new CancellationTokenSource();
-        Task.Run(() => Reader(_cts.Token));
-    }
+        async ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
+            _positions.Add(position);
+            if (_positions.Count < batchSize) return;
 
-    async Task Reader(CancellationToken cancellationToken) {
-        try {
-            while (!cancellationToken.IsCancellationRequested && !_channel.Reader.Completion.IsCompleted) {
-                var position = await _channel.Reader.ReadAsync(cancellationToken);
-                _positions.Add(position);
-                if (_positions.Count < _batchSize) return;
-
-                await CommitInternal(cancellationToken);
-            }
-        }
-        catch (OperationCanceledException) {
-            // it's ok
+            await CommitInternal(cancellationToken);
         }
     }
 
@@ -46,7 +34,7 @@ public class CheckpointCommitHandler : IAsyncDisposable {
     /// <returns></returns>
     [PublicAPI]
     public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken)
-        => _channel.Writer.WriteAsync(position, cancellationToken);
+        => _worker.Write(position, cancellationToken);
 
     async ValueTask CommitInternal(CancellationToken cancellationToken) {
         var commitPosition = _positions.FirstBeforeGap();
@@ -57,26 +45,16 @@ public class CheckpointCommitHandler : IAsyncDisposable {
     }
 
     public async ValueTask DisposeAsync() {
-        _channel.Writer.Complete();
-        _cts.CancelAfter(TimeSpan.FromSeconds(1));
-
-        while (_channel.Reader.Completion.IsCompleted && !_cts.IsCancellationRequested) {
-            await Task.Delay(10);
-        }
-
-        if (!_cts.IsCancellationRequested) {
-            await CommitInternal(_cts.Token);
-        }
-
+        await _worker.Stop(CommitInternal);
         _positions.Clear();
         GC.SuppressFinalize(this);
     }
 }
 
 public record CommitPosition(ulong Position, ulong Sequence) {
-    public bool Valid { get; init; } = true;
+    public bool Valid { get; private init; } = true;
 
-    public static CommitPosition None = new(0, 0) { Valid = false };
+    public static readonly CommitPosition None = new(0, 0) { Valid = false };
 }
 
 public delegate ValueTask<Checkpoint> CommitCheckpoint(Checkpoint checkpoint, CancellationToken cancellationToken);
