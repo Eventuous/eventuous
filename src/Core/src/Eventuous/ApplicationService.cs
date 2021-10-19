@@ -268,12 +268,9 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
         }
 
         async Task<T> TryLoad() {
-            try {
-                return await Load().NoContext();
-            }
-            catch (Exceptions.AggregateNotFound<T>) {
-                return Create();
-            }
+            var id     = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();
+            var exists = await Store.Exists<T>(id, cancellationToken);
+            return exists ? await Load().NoContext() : Create();
         }
 
         T Create() => _factoryRegistry.CreateInstance<T, TState, TId>();

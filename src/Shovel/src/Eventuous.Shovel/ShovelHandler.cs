@@ -1,3 +1,5 @@
+using Eventuous.Subscriptions.Logging;
+
 namespace Eventuous.Shovel;
 
 class ShovelHandler<TProducer> : IEventHandler where TProducer : class, IEventProducer {
@@ -11,6 +13,10 @@ class ShovelHandler<TProducer> : IEventHandler where TProducer : class, IEventPr
         _eventProducer = eventProducer;
         _transform     = transform;
     }
+
+    public void SetLogger(SubscriptionLog subscriptionLogger) => Log = subscriptionLogger;
+
+    SubscriptionLog? Log { get; set; }
 
     public async Task HandleEvent(
         ReceivedEvent     evt,
@@ -43,6 +49,10 @@ class ShovelHandler<TProducer, TProduceOptions> : IEventHandler
         _eventProducer = eventProducer;
         _transform     = transform;
     }
+
+    public void SetLogger(SubscriptionLog subscriptionLogger) => Log = subscriptionLogger;
+
+    SubscriptionLog? Log { get; set; }
 
     public async Task HandleEvent(
         ReceivedEvent     evt,

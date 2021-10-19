@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Logging;
 using Hypothesist;
 
 namespace Eventuous.Sut.Subs;
@@ -16,6 +17,8 @@ public class TestEventHandler : IEventHandler {
     }
 
     public Task Validate(TimeSpan timeout) => EnsureHypothesis.Validate(timeout);
+
+    public void SetLogger(SubscriptionLog subscriptionLogger) { }
 
     public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken)
         => EnsureHypothesis.Test(evt.Payload!, cancellationToken);

@@ -21,5 +21,7 @@ public interface IAggregateStore {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <returns></returns>
-    Task<T> Load<T>(string id, CancellationToken cancellationToken) where T : Aggregate, new();
+    Task<T> Load<T>(string id, CancellationToken cancellationToken) where T : Aggregate;
+
+    Task<bool> Exists<T>(string id, CancellationToken cancellationToken) where T : Aggregate;
 }

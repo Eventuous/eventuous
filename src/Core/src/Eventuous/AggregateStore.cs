@@ -63,22 +63,33 @@ public class AggregateStore : IAggregateStore {
     }
 
     public async Task<T> Load<T>(string id, CancellationToken cancellationToken)
-        where T : Aggregate, new() {
+        where T : Aggregate {
         Ensure.NotEmptyString(id, nameof(id));
+
+        const int pageSize = 500;
 
         var stream    = StreamName.For<T>(id);
         var aggregate = _factoryRegistry.CreateInstance<T>();
 
         try {
-            await _eventStore.ReadStream(
-                    stream,
-                    StreamReadPosition.Start,
-                    Fold,
-                    cancellationToken
-                )
-                .NoContext();
+            var position = StreamReadPosition.Start;
+
+            while (true) {
+                var readCount = await _eventStore.ReadStream(
+                        stream,
+                        position,
+                        pageSize,
+                        Fold,
+                        cancellationToken
+                    )
+                    .NoContext();
+
+                if (readCount == 0) break;
+
+                position = new StreamReadPosition(position.Value + readCount);
+            }
         }
-        catch (Exceptions.StreamNotFound e) {
+        catch (StreamNotFound e) {
             throw new Exceptions.AggregateNotFound<T>(id, e);
         }
 
@@ -93,5 +104,10 @@ public class AggregateStore : IAggregateStore {
 
         object? Deserialize(StreamEvent streamEvent)
             => _serializer.DeserializeEvent(streamEvent.Data.AsSpan(), streamEvent.EventType);
+    }
+
+    public Task<bool> Exists<T>(string id, CancellationToken cancellationToken) where T : Aggregate {
+        var stream    = StreamName.For<T>(id);
+        return _eventStore.StreamExists(stream, cancellationToken);
     }
 }

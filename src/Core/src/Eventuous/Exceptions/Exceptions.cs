@@ -1,4 +1,4 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 public static class Exceptions {
     public class InvalidIdException : Exception {
@@ -17,12 +17,4 @@ public static class Exceptions {
     public class CommandHandlerNotFound : Exception {
         public CommandHandlerNotFound(Type type) : base($"Handler not found for command {type.Name}") { }
     }
-
-    public class StreamNotFound : Exception {
-        public StreamNotFound(string stream) : base($"Stream {stream} does not exist") { }
-    }
-}
-
-public class DomainException : Exception {
-    public DomainException(string message) : base(message) { }
 }

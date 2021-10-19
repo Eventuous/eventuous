@@ -200,8 +200,8 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        await _subscriberTask.NoContext();
         if (_client != null) await _client.StopAsync(cancellationToken).NoContext();
+        await _subscriberTask.NoContext();
     }
 
     public async Task CreateSubscription(
@@ -212,14 +212,14 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     ) {
         var emulator = Options.ClientCreationSettings.DetectEmulator();
 
-        await PubSub.CreateTopic(topicName, emulator, Log, cancellationToken).NoContext();
+        await PubSub.CreateTopic(topicName, emulator, Log.Logger, cancellationToken).NoContext();
 
         await PubSub.CreateSubscription(
             subscriptionName,
             topicName,
             configureSubscription,
             emulator,
-            Log,
+            Log.Logger,
             cancellationToken
         ).NoContext();
     }

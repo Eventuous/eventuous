@@ -97,7 +97,7 @@ public class RabbitMqSubscriptionService : EventSubscription<RabbitMqSubscriptio
     protected override Task Subscribe(CancellationToken cancellationToken) {
         var exchange = Ensure.NotEmptyString(Options.Exchange, nameof(Options.Exchange));
 
-        Log?.LogDebug("Ensuring exchange {Exchange}", exchange);
+        Log.Info("Ensuring exchange {Exchange}", exchange);
 
         _channel.ExchangeDeclare(
             exchange,
@@ -107,7 +107,7 @@ public class RabbitMqSubscriptionService : EventSubscription<RabbitMqSubscriptio
             Options.ExchangeOptions?.Arguments
         );
 
-        Log?.LogDebug("Ensuring queue {Queue}", Options.SubscriptionId);
+        Log.Info("Ensuring queue {Queue}", Options.SubscriptionId);
 
         _channel.QueueDeclare(
             Options.SubscriptionId,
@@ -117,7 +117,7 @@ public class RabbitMqSubscriptionService : EventSubscription<RabbitMqSubscriptio
             Options.QueueOptions?.Arguments
         );
 
-        Log.LogDebug("Binding {Exchange} to {Queue}", exchange, Options.SubscriptionId);
+        Log.Info("Binding {Exchange} to {Queue}", exchange, Options.SubscriptionId);
 
         _channel.QueueBind(
             Options.SubscriptionId,
@@ -160,7 +160,7 @@ public class RabbitMqSubscriptionService : EventSubscription<RabbitMqSubscriptio
         object                sender,
         BasicDeliverEventArgs received
     ) {
-        Log?.LogTrace("Received message {MessageType}", received.BasicProperties.Type);
+        Log.Debug?.Invoke("Received message {MessageType}", received.BasicProperties.Type);
 
         try {
             var receivedEvent = TryHandleReceived(sender, received);
@@ -216,7 +216,7 @@ public class RabbitMqSubscriptionService : EventSubscription<RabbitMqSubscriptio
     }
 
     void DefaultEventFailureHandler(IModel channel, BasicDeliverEventArgs message, Exception exception) {
-        Log?.LogWarning(exception, "Error in the consumer, will redeliver");
+        Log.Warn(exception, "Error in the consumer, will redeliver");
         _channel.BasicReject(message.DeliveryTag, true);
     }
 

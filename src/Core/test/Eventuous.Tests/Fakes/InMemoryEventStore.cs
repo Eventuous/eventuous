@@ -6,6 +6,9 @@ public class InMemoryEventStore : IEventStore {
     readonly Dictionary<StreamName, InMemoryStream> _storage = new();
     readonly List<StreamEvent>                      _global  = new();
 
+    public Task<bool> StreamExists(StreamName streamName, CancellationToken cancellationToken)
+        => Task.FromResult(_storage.ContainsKey(streamName));
+
     public Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
         ExpectedStreamVersion            expectedVersion,
@@ -40,17 +43,21 @@ public class InMemoryEventStore : IEventStore {
     )
         => Task.FromResult(FindStream(stream).GetEventsBackwards(count).ToArray());
 
-    public Task ReadStream(
+    public Task<long> ReadStream(
         StreamName          stream,
         StreamReadPosition  start,
+        int                 count,
         Action<StreamEvent> callback,
         CancellationToken   cancellationToken
     ) {
-        foreach (var streamEvent in FindStream(stream).GetEvents(start, 0)) {
+        var readCount = 0L;
+
+        foreach (var streamEvent in FindStream(stream).GetEvents(start, count)) {
             callback(streamEvent);
+            readCount++;
         }
 
-        return Task.CompletedTask;
+        return Task.FromResult(readCount);
     }
 
     public Task TruncateStream(
@@ -73,7 +80,6 @@ public class InMemoryEventStore : IEventStore {
         _storage.Remove(stream);
         return Task.CompletedTask;
     }
-            
 
     // ReSharper disable once ReturnTypeCanBeEnumerable.Local
     InMemoryStream FindStream(StreamName stream) {

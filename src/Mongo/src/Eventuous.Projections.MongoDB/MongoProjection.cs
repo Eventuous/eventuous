@@ -1,31 +1,32 @@
 using Eventuous.Projections.MongoDB.Tools;
-using Microsoft.Extensions.Logging;
+using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Projections.MongoDB; 
 
 [PublicAPI]
 public abstract class MongoProjection<T> : IEventHandler
     where T : ProjectedDocument {
-    readonly ILogger? _log;
 
     protected IMongoCollection<T> Collection { get; }
 
-    protected MongoProjection(IMongoDatabase database, ILoggerFactory? loggerFactory) {
-        var log = loggerFactory?.CreateLogger(GetType());
-        _log           = log?.IsEnabled(LogLevel.Debug) == true ? log : null;
+    protected MongoProjection(IMongoDatabase database) {
         Collection     = Ensure.NotNull(database, nameof(database)).GetDocumentCollection<T>();
     }
+
+    public void SetLogger(SubscriptionLog subscriptionLogger) => Log = subscriptionLogger;
+
+    public SubscriptionLog? Log { get; set; }
 
     public async Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
         var updateTask = GetUpdate(evt);
         var update     = updateTask == NoOp ? null : await updateTask.NoContext();
 
         if (update == null) {
-            _log?.LogDebug("No handler for {Event}", evt.GetType().Name);
+            Log?.Debug?.Invoke("No handler for {Event}", evt.Payload!.GetType().Name);
             return;
         }
 
-        _log?.LogDebug("Projecting {Event}", evt.GetType().Name);
+        Log?.Debug?.Invoke("Projecting {Event}", evt.Payload!.GetType().Name);
 
         var task = update switch {
             OtherOperation<T> operation => operation.Execute(),
@@ -66,6 +67,7 @@ public abstract class MongoProjection<T> : IEventHandler
     protected static readonly ValueTask<Operation<T>> NoOp = new((Operation<T>) null!);
 }
 
+// ReSharper disable once UnusedTypeParameter
 public abstract record Operation<T>;
 
 public record UpdateOperation<T>(FilterDefinition<T> Filter, UpdateDefinition<T> Update) : Operation<T>;

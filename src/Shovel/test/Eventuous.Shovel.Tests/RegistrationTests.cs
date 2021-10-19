@@ -1,5 +1,7 @@
 ﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -51,7 +53,9 @@ public class RegistrationTests {
     }
 
     class Handler : IEventHandler {
-        public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public void SetLogger(SubscriptionLog subscriptionLogger) { }
+
+        public Task HandleEvent(ReceivedEvent         evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {

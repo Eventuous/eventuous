@@ -1,6 +1,7 @@
 using Eventuous.Subscriptions;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.EventStore.Fixtures;
@@ -37,7 +38,7 @@ public class StreamSubscriptionTests {
 
             startPosition = (ulong?)last[0].Position;
         }
-        catch (Exceptions.StreamNotFound) { }
+        catch (StreamNotFound) { }
 
         var commands = Enumerable.Range(0, 100)
             .Select(_ => DomainFixture.CreateImportBooking())
@@ -96,6 +97,8 @@ public class StreamSubscriptionTests {
         public int   Count    { get; private set; }
 
         public List<ReceivedEvent> Processed { get; } = new();
+
+        public void SetLogger(SubscriptionLog subscriptionLogger) { }
 
         public Task HandleEvent(
             ReceivedEvent     evt,

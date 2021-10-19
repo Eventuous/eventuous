@@ -1,4 +1,4 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 /// <summary>
 /// Event Store is a place where events are stored. It is used by <see cref="AggregateStore"/> and
@@ -6,6 +6,14 @@ namespace Eventuous;
 /// </summary>
 [PublicAPI]
 public interface IEventStore {
+    /// <summary>
+    /// Checks if a given stream exists in the store
+    /// </summary>
+    /// <param name="stream">Stream name</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>True of stream exists</returns>
+    Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken);
+    
     /// <summary>
     /// Append one or more events to a stream
     /// </summary>
@@ -55,12 +63,14 @@ public interface IEventStore {
     /// </summary>
     /// <param name="stream">Stream name</param>
     /// <param name="start">Where to start reading events</param>
+    /// <param name="count">Number of events to read</param>
     /// <param name="callback">A function to be called for retrieved each event</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns></returns>
-    Task ReadStream(
+    /// <returns>Number of received events</returns>
+    Task<long> ReadStream(
         StreamName          stream,
         StreamReadPosition  start,
+        int                 count,
         Action<StreamEvent> callback,
         CancellationToken   cancellationToken
     );

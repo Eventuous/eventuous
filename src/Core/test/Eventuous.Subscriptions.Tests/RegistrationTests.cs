@@ -1,4 +1,5 @@
 ﻿using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Eventuous.Subscriptions.Monitoring;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
@@ -100,10 +101,14 @@ public class RegistrationTests {
     }
 
     class Handler1 : IEventHandler {
+        public void SetLogger(SubscriptionLog subscriptionLogger) { }
+
         public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     class Handler2 : IEventHandler {
-        public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public void SetLogger(SubscriptionLog subscriptionLogger) { }
+
+        public Task HandleEvent(ReceivedEvent         evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
