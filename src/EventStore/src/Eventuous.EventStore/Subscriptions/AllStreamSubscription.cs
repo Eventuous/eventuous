@@ -8,7 +8,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Catch-up subscription for EventStoreDB, using the $all global stream
 /// </summary>
 [PublicAPI]
-public class AllStreamSubscription : EventStoreSubscriptionService<AllStreamSubscriptionOptions> {
+public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStreamSubscriptionOptions> {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for $all
     /// </summary>
@@ -70,17 +70,14 @@ public class AllStreamSubscription : EventStoreSubscriptionService<AllStreamSubs
         measure
     ) { }
 
-    protected override async Task<EventSubscription> Subscribe(
-        Checkpoint        checkpoint,
-        CancellationToken cancellationToken
-    ) {
+    protected override async Task Subscribe(CancellationToken cancellationToken) {
         var filterOptions = new SubscriptionFilterOptions(
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
             10,
             (_, p, ct) => StoreCheckpoint(new EventPosition(p.CommitPosition, DateTime.Now), ct)
         );
 
-        var (_, position) = checkpoint;
+        var (_, position) = await GetCheckpoint(cancellationToken);
 
         var subTask = position != null
             ? EventStoreClient.SubscribeToAllAsync(
@@ -103,9 +100,7 @@ public class AllStreamSubscription : EventStoreSubscriptionService<AllStreamSubs
                 cancellationToken
             );
 
-        var sub = await subTask.NoContext();
-
-        return new EventSubscription(Options.SubscriptionId, new Stoppable(() => sub.Dispose()));
+        Subscription = await subTask.NoContext();
 
         Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,

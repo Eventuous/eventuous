@@ -10,7 +10,7 @@ public static class ShovelContainerRegistrations {
         string                             subscriptionId,
         RouteAndTransform<TProduceOptions> routeAndTransform
     )
-        where TSubscription : SubscriptionService<TSubscriptionOptions>
+        where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
         where TProduceOptions : class
         where TSubscriptionOptions : SubscriptionOptions {

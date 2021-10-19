@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Threading;
 using Eventuous.GooglePubSub.Producers;
 using Eventuous.GooglePubSub.Subscriptions;
 using Eventuous.Producers;

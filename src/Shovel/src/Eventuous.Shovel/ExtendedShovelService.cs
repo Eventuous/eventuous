@@ -6,7 +6,7 @@ namespace Eventuous.Shovel;
 
 [PublicAPI]
 public class ShovelService<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions> : IHostedService
-    where TSubscription : SubscriptionService<TSubscriptionOptions>
+    where TSubscription : EventSubscription<TSubscriptionOptions>
     where TProducer : class, IEventProducer<TProduceOptions>
     where TProduceOptions : class
     where TSubscriptionOptions : SubscriptionOptions {

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, TOptions>
-    where T : SubscriptionService<TOptions>
+    where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
     public DefaultSubscriptionBuilder(IServiceCollection services, string subscriptionId) {
         SubscriptionId = subscriptionId;

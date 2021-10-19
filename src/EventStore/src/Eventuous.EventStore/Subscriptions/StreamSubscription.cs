@@ -8,7 +8,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Catch-up subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamSubscription : EventStoreSubscriptionService<StreamSubscriptionOptions> {
+public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscriptionOptions> {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
     /// </summary>
@@ -62,8 +62,8 @@ public class StreamSubscription : EventStoreSubscriptionService<StreamSubscripti
         StreamSubscriptionOptions  options,
         ICheckpointStore           checkpointStore,
         IEnumerable<IEventHandler> eventHandlers,
-        ILoggerFactory?            loggerFactory   = null,
-        ISubscriptionGapMeasure?   measure         = null
+        ILoggerFactory?            loggerFactory = null,
+        ISubscriptionGapMeasure?   measure       = null
     ) : base(
         client,
         options,
@@ -74,11 +74,8 @@ public class StreamSubscription : EventStoreSubscriptionService<StreamSubscripti
     )
         => Ensure.NotEmptyString(options.StreamName, nameof(options.StreamName));
 
-    protected override async Task<EventSubscription> Subscribe(
-        Checkpoint        checkpoint,
-        CancellationToken cancellationToken
-    ) {
-        var (_, position) = checkpoint;
+    protected override async Task Subscribe(CancellationToken cancellationToken) {
+        var (_, position) = await GetCheckpoint(cancellationToken);
 
         var subTask = position == null
             ? EventStoreClient.SubscribeToStreamAsync(
@@ -101,9 +98,7 @@ public class StreamSubscription : EventStoreSubscriptionService<StreamSubscripti
                 cancellationToken
             );
 
-        var sub = await subTask.NoContext();
-
-        return new EventSubscription(Options.SubscriptionId, new Stoppable(() => sub.Dispose()));
+        Subscription = await subTask.NoContext();
 
         Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,

@@ -1,6 +1,5 @@
 using Eventuous.GooglePubSub.Shared;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Monitoring;
 using Google.Cloud.Monitoring.V3;
 using Google.Protobuf.Collections;
@@ -14,7 +13,7 @@ namespace Eventuous.GooglePubSub.Subscriptions;
 /// Google PubSub subscription service
 /// </summary>
 [PublicAPI]
-public class GooglePubSubSubscription : SubscriptionService<PubSubSubscriptionOptions>, ICanStop {
+public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOptions> {
     public delegate ValueTask<Reply> HandleEventProcessingFailure(
         SubscriberClient client,
         PubsubMessage    pubsubMessage,
@@ -73,7 +72,6 @@ public class GooglePubSubSubscription : SubscriptionService<PubSubSubscriptionOp
         ISubscriptionGapMeasure?   measure       = null
     ) : base(
         options,
-        new NoOpCheckpointStore(),
         eventHandlers,
         loggerFactory,
         measure
@@ -109,10 +107,7 @@ public class GooglePubSubSubscription : SubscriptionService<PubSubSubscriptionOp
 
     Task _subscriberTask = null!;
 
-    protected override async Task<EventSubscription> Subscribe(
-        Checkpoint        checkpoint,
-        CancellationToken cancellationToken
-    ) {
+    protected override async Task Subscribe(CancellationToken cancellationToken) {
         await CreateSubscription(
                 _subscriptionName,
                 _topicName,
@@ -132,7 +127,6 @@ public class GooglePubSubSubscription : SubscriptionService<PubSubSubscriptionOp
             _metricClient = await MetricServiceClient.CreateAsync(cancellationToken).NoContext();
 
         _subscriberTask = _client.StartAsync(Handle);
-        return new EventSubscription(Options.SubscriptionId, this);
 
         async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
             var eventType   = msg.Attributes[Options.Attributes.EventType];
@@ -205,7 +199,7 @@ public class GooglePubSubSubscription : SubscriptionService<PubSubSubscriptionOp
         }
     }
 
-    public async Task Stop(CancellationToken cancellationToken = default) {
+    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         await _subscriberTask.NoContext();
         if (_client != null) await _client.StopAsync(cancellationToken).NoContext();
     }

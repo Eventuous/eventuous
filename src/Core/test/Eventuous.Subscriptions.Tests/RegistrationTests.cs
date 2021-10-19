@@ -53,7 +53,7 @@ public class RegistrationTests {
     [Fact]
     public void ShouldRegisterBothAsHealthReporters() {
         var services = _provider.GetServices<IReportHealth>().ToArray();
-        var subs = _provider.GetServices<TestSub>().ToArray();
+        var subs     = _provider.GetServices<TestSub>().ToArray();
 
         services.Length.Should().Be(2);
         services[0].Should().BeSameAs(subs[0]);
@@ -63,7 +63,7 @@ public class RegistrationTests {
     [Fact]
     public void ShouldRegisterBothAsHostedServices() {
         var services = _provider.GetServices<IHostedService>().ToArray();
-        var subs = _provider.GetServices<TestSub>().ToArray();
+        var subs     = _provider.GetServices<TestSub>().ToArray();
 
         services.Length.Should().Be(2);
         services[0].Should().BeSameAs(subs[0]);
@@ -88,16 +88,12 @@ public class RegistrationTests {
         public string? Field { get; set; }
     }
 
-    class TestSub : SubscriptionService<TestOptions> {
-        public TestSub(
-            TestOptions                options,
-            IEnumerable<IEventHandler> eventHandlers
-        ) : base(options, new NoOpCheckpointStore(), eventHandlers) { }
+    class TestSub : EventSubscription<TestOptions> {
+        public TestSub(TestOptions options, IEnumerable<IEventHandler> eventHandlers) : base(options, eventHandlers) { }
 
-        protected override Task<EventSubscription> Subscribe(
-            Checkpoint        checkpoint,
-            CancellationToken cancellationToken
-        ) => Task.FromResult(new EventSubscription(Options.SubscriptionId, new Stoppable(() => { })));
+        protected override Task Subscribe(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
 
         protected override Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken)
             => Task.FromResult(new EventPosition(0, DateTime.Now));

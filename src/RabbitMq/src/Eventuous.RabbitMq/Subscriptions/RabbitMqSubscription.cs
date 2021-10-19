@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Channels;
 using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,7 +11,7 @@ namespace Eventuous.RabbitMq.Subscriptions;
 /// RabbitMQ subscription service
 /// </summary>
 [PublicAPI]
-public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscriptionOptions> {
+public class RabbitMqSubscriptionService : EventSubscription<RabbitMqSubscriptionOptions> {
     public delegate void HandleEventProcessingFailure(
         IModel                channel,
         BasicDeliverEventArgs message,
@@ -21,6 +21,8 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
     readonly HandleEventProcessingFailure _failureHandler;
     readonly IConnection                  _connection;
     readonly IModel                       _channel;
+
+    ChannelWorker<Event>? _worker;
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
@@ -51,7 +53,6 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
     )
         : base(
             Ensure.NotNull(options, nameof(options)),
-            new NoOpCheckpointStore(),
             eventHandlers,
             loggerFactory,
             new NoOpGapMeasure()
@@ -93,11 +94,7 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
         loggerFactory
     ) { }
 
-    protected override Task<EventSubscription> Subscribe(
-        Checkpoint        checkpoint,
-        CancellationToken cancellationToken
-    ) {
-        var cts      = new CancellationTokenSource();
+    protected override Task Subscribe(CancellationToken cancellationToken) {
         var exchange = Ensure.NotEmptyString(Options.Exchange, nameof(Options.Exchange));
 
         Log?.LogDebug("Ensuring exchange {Exchange}", exchange);
@@ -129,77 +126,45 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
             Options.BindingOptions?.Arguments
         );
 
-        var consumeChannel = Channel.CreateBounded<Event>(Options.ConcurrencyLimit * 10);
-
-        for (var i = 0; i < Options.ConcurrencyLimit; i++) {
-            Task.Run(RunConsumer, CancellationToken.None);
-        }
+        _worker = new ChannelWorker<Event>(
+            Channel.CreateBounded<Event>(Options.ConcurrencyLimit * 10),
+            Consume,
+            Options.ConcurrencyLimit
+        );
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.Received += (sender, args) => HandleReceived(sender, args, consumeChannel.Writer);
+        consumer.Received += HandleReceived;
 
         _channel.BasicConsume(consumer, Options.SubscriptionId);
 
-        return Task.FromResult(new EventSubscription(Options.SubscriptionId, new Stoppable(CloseConnection)));
+        return Task.CompletedTask;
 
-        async Task RunConsumer() {
-            Log?.LogDebug("Started consumer instance");
+        async ValueTask Consume(Event evt, CancellationToken ct) {
+            var (basicDeliverEventArgs, receivedEvent) = evt;
 
-            while (!consumeChannel.Reader.Completion.IsCompleted) {
-                var evt = await TryGetMessage();
-                if (evt == null) continue;
-
-                try {
-                    Log?.LogDebug("Handling message {MessageId}", evt.ReceivedEvent.EventId);
-
-                    await Handler(evt.ReceivedEvent, CancellationToken.None).NoContext();
-                    _channel.BasicAck(evt.Original.DeliveryTag, false);
-                }
-                catch (Exception e) {
-                    _failureHandler(_channel, evt.Original, e);
-                }
-            }
-
-            Log?.LogDebug("Stopped consumer instance for");
-        }
-
-        async Task<Event?> TryGetMessage() {
             try {
-                return await consumeChannel.Reader.ReadAsync(cts.Token);
+                Log?.LogDebug("Handling message {MessageId}", receivedEvent.EventId);
+                await Handler(receivedEvent, ct).NoContext();
+                _channel.BasicAck(basicDeliverEventArgs.DeliveryTag, false);
             }
             catch (OperationCanceledException) {
-                // Expected
-                return null;
+                // it's ok
             }
             catch (Exception e) {
-                Log?.LogError(e, "Unable to read message from the channel: {Message}", e.Message);
-                throw;
+                _failureHandler(_channel, basicDeliverEventArgs, e);
             }
-        }
-
-        void CloseConnection() {
-            _channel.Close();
-            _channel.Dispose();
-            _connection.Close();
-            _connection.Dispose();
-
-            cts.Cancel();
-            consumeChannel.Writer.Complete();
-            consumeChannel.Reader.Completion.GetAwaiter().GetResult();
-            cts.Dispose();
         }
     }
 
     async Task HandleReceived(
         object                sender,
-        BasicDeliverEventArgs received,
-        ChannelWriter<Event>  writer
+        BasicDeliverEventArgs received
     ) {
         Log?.LogTrace("Received message {MessageType}", received.BasicProperties.Type);
 
         try {
             var receivedEvent = TryHandleReceived(sender, received);
-            await writer.WriteAsync(new Event(received, receivedEvent)).NoContext();
+            await _worker!.Write(new Event(received, receivedEvent), CancellationToken.None).NoContext();
         }
         catch (Exception e) {
             Log?.Log(Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning, e, "Deserialization failed");
@@ -233,6 +198,15 @@ public class RabbitMqSubscriptionService : SubscriptionService<RabbitMqSubscript
             evt,
             meta
         );
+    }
+
+    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) {
+        _channel.Close();
+        _channel.Dispose();
+        _connection.Close();
+        _connection.Dispose();
+
+        return _worker?.Stop() ?? default;
     }
 
     protected override Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken) {

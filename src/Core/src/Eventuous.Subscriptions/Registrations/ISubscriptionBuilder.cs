@@ -20,7 +20,7 @@ public interface ISubscriptionBuilder {
 /// A builder for configuring named subscription instances
 /// </summary>
 public interface ISubscriptionBuilder<T, TOptions> : ISubscriptionBuilder
-    where T : SubscriptionService<TOptions>
+    where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
     T Resolve(IServiceProvider sp);
 }

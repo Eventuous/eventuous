@@ -15,7 +15,7 @@ namespace Eventuous.Shovel;
 /// <typeparam name="TSubscriptionOptions">Subscription options type</typeparam>
 [PublicAPI]
 public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHostedService
-    where TSubscription : SubscriptionService<TSubscriptionOptions>
+    where TSubscription : EventSubscription<TSubscriptionOptions>
     where TProducer : class, IEventProducer
     where TSubscriptionOptions : SubscriptionOptions {
     readonly TSubscription _subscription;

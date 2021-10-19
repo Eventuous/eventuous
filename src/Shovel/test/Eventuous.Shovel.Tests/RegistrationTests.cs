@@ -1,6 +1,5 @@
 ﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -18,10 +17,8 @@ public class RegistrationTests {
     }
 
     [Fact]
-    public void Test() {
-        
-    }
-    
+    public void Test() { }
+
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
 
     class Startup {
@@ -39,16 +36,15 @@ public class RegistrationTests {
 
     record TestOptions : SubscriptionOptions;
 
-    class TestSub : SubscriptionService<TestOptions> {
+    class TestSub : EventSubscription<TestOptions> {
         public TestSub(
             TestOptions                options,
             IEnumerable<IEventHandler> eventHandlers
-        ) : base(options, new NoOpCheckpointStore(), eventHandlers) { }
+        ) : base(options, eventHandlers) { }
 
-        protected override Task<EventSubscription> Subscribe(
-            Checkpoint        checkpoint,
-            CancellationToken cancellationToken
-        ) => Task.FromResult(new EventSubscription(Options.SubscriptionId, new Stoppable(() => { })));
+        protected override Task Subscribe(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
 
         protected override Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken)
             => Task.FromResult(new EventPosition(0, DateTime.Now));
@@ -57,10 +53,10 @@ public class RegistrationTests {
     class Handler : IEventHandler {
         public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
-    
+
     class TestProducer : BaseProducer<TestProduceOptions> {
         public List<ProducedMessage> ProducedMessages { get; } = new();
-        
+
         public override Task ProduceMessages(
             string                       stream,
             IEnumerable<ProducedMessage> messages,

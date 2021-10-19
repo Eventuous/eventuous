@@ -8,7 +8,7 @@ static class NamedRegistrationExtensions {
     public static void AddSubscriptionBuilder<T, TOptions>(
         this IServiceCollection           services,
         ISubscriptionBuilder<T, TOptions> builder
-    ) where T : SubscriptionService<TOptions> where TOptions : SubscriptionOptions {
+    ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
         if (services.Any(x => x is NamedDescriptor named && named.Name == builder.SubscriptionId)) {
             throw new InvalidOperationException(
                 $"Existing subscription builder with id {builder.SubscriptionId} already registered"
@@ -27,7 +27,7 @@ static class NamedRegistrationExtensions {
     public static ISubscriptionBuilder<T, TOptions> GetSubscriptionBuilder<T, TOptions>(
         this IServiceProvider provider,
         string                subscriptionId
-    ) where T : SubscriptionService<TOptions> where TOptions : SubscriptionOptions {
+    ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
         var services = provider.GetServices<ISubscriptionBuilder<T, TOptions>>();
         return services.Single(x => x.SubscriptionId == subscriptionId);
     }

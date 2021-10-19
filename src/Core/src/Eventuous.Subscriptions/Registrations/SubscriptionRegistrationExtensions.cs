@@ -16,7 +16,7 @@ public static class SubscriptionRegistrationExtensions {
         string                  subscriptionId,
         Action<TOptions>?       configureOptions = null
     )
-        where T : SubscriptionService<TOptions>
+        where T : EventSubscription<TOptions>
         where TOptions : SubscriptionOptions {
         ISubscriptionBuilder<T, TOptions> builder = new DefaultSubscriptionBuilder<T, TOptions>(
             Ensure.NotNull(services, nameof(services)),

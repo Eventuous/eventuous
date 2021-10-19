@@ -41,12 +41,7 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveTestHandler() {
-        var handlers =
-            GetPrivateMember<SubscriptionService<StreamSubscriptionOptions>, IEnumerable<IEventHandler>>(
-                    Sub,
-                    "_eventHandlers"
-                )
-                ?.ToArray();
+        var handlers = GetPrivateMember<IEnumerable<IEventHandler>>(Sub, "EventHandlers")?.ToArray();
 
         handlers.Should().HaveCount(1);
         handlers.Should().ContainSingle(x => x.GetType() == typeof(TestHandler));
@@ -57,16 +52,13 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveEventStoreClient() {
-        var client = GetPrivateMember<StreamSubscription, EventStoreClient>(Sub, "EventStoreClient");
+        var client = GetPrivateMember<EventStoreClient>(Sub, "EventStoreClient");
         client.Should().Be(IntegrationFixture.Instance.Client);
     }
 
     [Fact]
     public void ShouldHaveNoOpStore() {
-        var store = GetPrivateMember<SubscriptionService<StreamSubscriptionOptions>, ICheckpointStore>(
-            Sub,
-            "_checkpointStore"
-        );
+        var store = GetPrivateMember<ICheckpointStore>(Sub, "CheckpointStore");
 
         store.Should().BeOfType<NoOpCheckpointStore>();
     }
@@ -77,18 +69,21 @@ public class RegistrationTests {
         service.Should().Be(Sub);
     }
 
-    static TMember? GetPrivateMember<TInstance, TMember>(object instance, string name)
-        where TInstance : class where TMember : class {
+    static TMember? GetPrivateMember<TMember>(object instance, string name) where TMember : class
+        => GetMember<TMember>(instance.GetType(), instance, name);
+
+    static TMember? GetMember<TMember>(Type instanceType, object instance, string name) where TMember : class {
         const BindingFlags flags = BindingFlags.Instance
                                  | BindingFlags.Public
                                  | BindingFlags.NonPublic
                                  | BindingFlags.Static;
 
-        var field  = typeof(TInstance).GetField(name, flags);
-        var prop   = typeof(TInstance).GetProperty(name, flags);
+        var field  = instanceType.GetField(name, flags);
+        var prop   = instanceType.GetProperty(name, flags);
         var member = prop?.GetValue(instance) ?? field?.GetValue(instance);
 
-        return member as TMember;
+        return member == null && instanceType.BaseType != null
+            ? GetMember<TMember>(instanceType.BaseType, instance, name) : member as TMember;
     }
 }
 

@@ -16,7 +16,7 @@ public class StreamSubscriptionTests {
 
     public StreamSubscriptionTests(ITestOutputHelper output) {
         _loggerFactory = LoggerFactory.Create(
-            cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug)
+            cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug)
         );
     }
 
@@ -83,8 +83,10 @@ public class StreamSubscriptionTests {
 
         await subscription.StopAsync(CancellationToken.None);
 
-        handler.Processed
-            .Select(x => (x as BookingEvents.BookingImported)!.BookingId)
+        var actual = handler.Processed
+            .Select(x => (x.Payload as BookingEvents.BookingImported)!.BookingId);
+
+        actual
             .Should()
             .BeEquivalentTo(commands.Except(delete).Select(x => x.BookingId));
     }
@@ -93,7 +95,7 @@ public class StreamSubscriptionTests {
         public ulong Position { get; private set; }
         public int   Count    { get; private set; }
 
-        public List<object> Processed { get; } = new();
+        public List<ReceivedEvent> Processed { get; } = new();
 
         public Task HandleEvent(
             ReceivedEvent     evt,

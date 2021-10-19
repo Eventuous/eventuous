@@ -5,21 +5,19 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.EventStore.Subscriptions;
 
 [PublicAPI]
-public abstract class EventStoreSubscriptionService<T> : SubscriptionService<T>
+public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
     where T : EventStoreSubscriptionOptions {
     readonly  IMetadataSerializer _metaSerializer;
     protected EventStoreClient    EventStoreClient { get; }
 
-    protected EventStoreSubscriptionService(
+    protected EventStoreSubscriptionBase(
         EventStoreClient           eventStoreClient,
         T                          options,
-        ICheckpointStore           checkpointStore,
         IEnumerable<IEventHandler> eventHandlers,
         ILoggerFactory?            loggerFactory = null,
         ISubscriptionGapMeasure?   measure       = null
     ) : base(
         options,
-        checkpointStore,
         eventHandlers,
         loggerFactory,
         measure
