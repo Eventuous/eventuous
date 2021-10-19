@@ -137,11 +137,13 @@ public class AllStreamSubscription : EventStoreSubscriptionService<AllStreamSubs
                 re.Event.Position.CommitPosition,
                 re.Event.Position.CommitPosition,
                 re.OriginalStreamId,
-                re.Event.EventNumber,
+                _sequence++,
                 re.Event.Created,
                 evt,
                 DeserializeMeta(re.Event.Metadata, re.OriginalStreamId)
             );
         }
     }
+
+    ulong _sequence;
 }

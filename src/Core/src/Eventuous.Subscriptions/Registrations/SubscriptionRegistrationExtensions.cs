@@ -11,8 +11,6 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 [PublicAPI]
 public static class SubscriptionRegistrationExtensions {
-    internal static List<ISubscriptionBuilder> Builders { get; } = new();
-
     public static ISubscriptionBuilder AddSubscription<T, TOptions>(
         this IServiceCollection services,
         string                  subscriptionId,
@@ -24,20 +22,15 @@ public static class SubscriptionRegistrationExtensions {
             Ensure.NotNull(services, nameof(services)),
             Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId))
         );
-
-        if (Builders.Any(x => x.SubscriptionId == subscriptionId)) {
-            throw new InvalidOperationException($"Subscription with id {subscriptionId} has already been registered");
-        }
-
-        Builders.Add(builder);
+        services.AddSubscriptionBuilder(builder);
 
         services.Configure<TOptions>(subscriptionId, ConfigureOptions);
 
-        services.AddSingleton(sp => builder.Resolve(sp));
-        services.AddSingleton<IHostedService>(sp => builder.Resolve(sp));
+        services.AddSingleton(sp => GetBuilder(sp).Resolve(sp));
+        services.AddSingleton<IHostedService>(sp => GetBuilder(sp).Resolve(sp));
 
         services.TryAddSingleton<SubscriptionHealthCheck>();
-        services.AddSingleton<IReportHealth>(sp => builder.Resolve(sp));
+        services.AddSingleton<IReportHealth>(sp => GetBuilder(sp).Resolve(sp));
 
         return builder;
 
@@ -45,6 +38,9 @@ public static class SubscriptionRegistrationExtensions {
             options.SubscriptionId = subscriptionId;
             configureOptions?.Invoke(options);
         }
+
+        ISubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp)
+            => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId); 
     }
 
     public static ISubscriptionBuilder AddEventHandler<THandler>(this ISubscriptionBuilder builder)

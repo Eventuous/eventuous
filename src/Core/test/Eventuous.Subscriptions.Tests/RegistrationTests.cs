@@ -14,7 +14,6 @@ public class RegistrationTests {
     readonly IServiceProvider _provider;
 
     public RegistrationTests() {
-        SubscriptionRegistrationExtensions.Builders.Clear();
         var host = new TestServer(BuildHost());
         _provider = host.Services;
     }
