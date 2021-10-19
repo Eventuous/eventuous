@@ -6,38 +6,38 @@ public class FakeStore : IEventStore {
         ExpectedStreamVersion            expectedVersion,
         IReadOnlyCollection<StreamEvent> events,
         CancellationToken                cancellationToken
-    ) => throw new NotImplementedException();
+    ) => default!;
 
     public Task<StreamEvent[]> ReadEvents(
         StreamName         stream,
         StreamReadPosition start,
         int                count,
         CancellationToken  cancellationToken
-    ) => throw new NotImplementedException();
+    ) => default!;
 
     public Task<StreamEvent[]> ReadEventsBackwards(
         StreamName        stream,
         int               count,
         CancellationToken cancellationToken
-    ) => throw new NotImplementedException();
+    ) => default!;
 
     public Task ReadStream(
         StreamName          stream,
         StreamReadPosition  start,
         Action<StreamEvent> callback,
         CancellationToken   cancellationToken
-    ) => throw new NotImplementedException();
+    ) => default!;
 
     public Task TruncateStream(
         StreamName             stream,
         StreamTruncatePosition truncatePosition,
         ExpectedStreamVersion  expectedVersion,
         CancellationToken      cancellationToken
-    ) => throw new NotImplementedException();
+    ) => default!;
 
     public Task DeleteStream(
         StreamName            stream,
         ExpectedStreamVersion expectedVersion,
         CancellationToken     cancellationToken
-    ) => throw new NotImplementedException();
+    ) => default!;
 }
