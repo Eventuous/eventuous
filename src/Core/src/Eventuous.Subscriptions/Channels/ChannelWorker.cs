@@ -5,11 +5,12 @@ namespace Eventuous.Subscriptions.Channels;
 public class ChannelWorker<T> {
     readonly Channel<T>              _channel;
     readonly CancellationTokenSource _cts;
+    readonly Task                    _readerTask;
 
     public ChannelWorker(Channel<T> channel, Func<T, CancellationToken, ValueTask> process) {
-        _channel = channel;
-        _cts     = new CancellationTokenSource();
-        Task.Run(() => Read(_cts.Token));
+        _channel    = channel;
+        _cts        = new CancellationTokenSource();
+        _readerTask = Task.Run(() => Read(_cts.Token));
 
         async Task Read(CancellationToken cancellationToken) {
             try {
@@ -31,7 +32,7 @@ public class ChannelWorker<T> {
         _channel.Writer.Complete();
         _cts.CancelAfter(TimeSpan.FromSeconds(1));
 
-        while (_channel.Reader.Completion.IsCompleted && !_cts.IsCancellationRequested) {
+        while (!_readerTask.IsCompleted && !_readerTask.IsCanceled) {
             await Task.Delay(10);
         }
 
