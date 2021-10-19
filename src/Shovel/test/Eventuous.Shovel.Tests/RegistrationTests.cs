@@ -1,6 +1,5 @@
 ﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

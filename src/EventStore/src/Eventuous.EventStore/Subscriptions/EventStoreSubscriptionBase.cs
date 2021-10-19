@@ -1,4 +1,3 @@
-using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Monitoring;
 using Microsoft.Extensions.Logging;
 
@@ -55,7 +54,7 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
             return _metaSerializer.Deserialize(meta.Span);
         }
         catch (Exception e) {
-            Log.Error(
+            Log?.LogError(
                 e,
                 "Error deserializing metadata {Stream} {Position}",
                 stream,

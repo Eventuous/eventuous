@@ -6,10 +6,10 @@ namespace Eventuous.Subscriptions;
 
 [PublicAPI]
 public abstract class EventSubscription<T> : IHostedService, IReportHealth where T : SubscriptionOptions {
-    public    bool              IsRunning    { get; set; }
-    public    bool              IsDropped    { get; set; }
-    protected Logging?          DebugLog     { get; }
-    protected ILogger?          Log          { get; }
+    public    bool             IsRunning { get; set; }
+    public    bool             IsDropped { get; set; }
+    protected Logging.Logging? DebugLog  { get; }
+    protected ILogger?         Log       { get; }
 
     protected internal T Options { get; }
 

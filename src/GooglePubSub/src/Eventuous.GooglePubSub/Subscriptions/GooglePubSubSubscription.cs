@@ -212,14 +212,14 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     ) {
         var emulator = Options.ClientCreationSettings.DetectEmulator();
 
-        await PubSub.CreateTopic(topicName, emulator, Log.Logger, cancellationToken).NoContext();
+        await PubSub.CreateTopic(topicName, emulator, Log, cancellationToken).NoContext();
 
         await PubSub.CreateSubscription(
             subscriptionName,
             topicName,
             configureSubscription,
             emulator,
-            Log.Logger,
+            Log,
             cancellationToken
         ).NoContext();
     }
