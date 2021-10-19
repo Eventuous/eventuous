@@ -84,8 +84,13 @@ public class StreamSubscriptionTests {
 
         await subscription.StopAsync(CancellationToken.None);
 
+        var log = _loggerFactory.CreateLogger("Test");
+        log.LogInformation("Received {Count} events", handler.Count);
+        
         var actual = handler.Processed
-            .Select(x => (x.Payload as BookingEvents.BookingImported)!.BookingId);
+            .Select(x => (x.Payload as BookingEvents.BookingImported)!.BookingId)
+            .ToList();
+        log.LogInformation("Actual contains {Count} events", actual.Count);
 
         actual
             .Should()
