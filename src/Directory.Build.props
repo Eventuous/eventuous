@@ -52,5 +52,7 @@
         <RepositoryType>git</RepositoryType>
         <Description>Opinionated and volatile Event Sourcing library</Description>
         <Authors>Alexey Zimarev</Authors>
+        <Copyright>Eventuous contributors</Copyright>
+        <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
     </PropertyGroup>
 </Project>
