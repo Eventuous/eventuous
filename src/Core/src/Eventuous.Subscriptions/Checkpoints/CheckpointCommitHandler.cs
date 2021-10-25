@@ -13,7 +13,7 @@ public class CheckpointCommitHandler : IAsyncDisposable {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
         var channel = Channel.CreateBounded<CommitPosition>(batchSize * 10);
-        _worker = new ChannelWorker<CommitPosition>(channel, Process);
+        _worker = new ChannelWorker<CommitPosition>(channel, Process, true);
 
         async ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
             _positions.Add(position);
@@ -33,8 +33,10 @@ public class CheckpointCommitHandler : IAsyncDisposable {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
     [PublicAPI]
-    public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken)
-        => _worker.Write(position, cancellationToken);
+    public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken) {
+        
+        return _worker.Write(position, cancellationToken);
+    }
 
     async ValueTask CommitInternal(CancellationToken cancellationToken) {
         var commitPosition = _positions.FirstBeforeGap();

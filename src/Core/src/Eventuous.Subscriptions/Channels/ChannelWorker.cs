@@ -4,13 +4,25 @@ namespace Eventuous.Subscriptions.Channels;
 
 public class ChannelWorker<T> {
     readonly Channel<T>              _channel;
+    readonly bool                    _throwOnFull;
     readonly CancellationTokenSource _cts;
-    readonly Task[]                  _readerTasks;
+    readonly Task                    _readerTask;
 
-    public ChannelWorker(Channel<T> channel, Func<T, CancellationToken, ValueTask> process, int concurrencyLevel = 1) {
+    /// <summary>
+    /// Creates a new instance of the channel worker, starts a task for background reads
+    /// </summary>
+    /// <param name="channel">Channel to use for writes and reads</param>
+    /// <param name="process">Function to process each element the worker reads from the channel</param>
+    /// <param name="throwOnFull">Throw if the channel is full to prevent partition blocks</param>
+    public ChannelWorker(
+        Channel<T>                            channel,
+        Func<T, CancellationToken, ValueTask> process,
+        bool                                  throwOnFull = false
+    ) {
         _channel     = channel;
+        _throwOnFull = throwOnFull;
         _cts         = new CancellationTokenSource();
-        _readerTasks = Enumerable.Range(0, concurrencyLevel).Select(_ => Task.Run(() => Read(_cts.Token))).ToArray();
+        _readerTask  = Task.Run(() => Read(_cts.Token));
 
         async Task Read(CancellationToken cancellationToken) {
             try {
@@ -25,14 +37,23 @@ public class ChannelWorker<T> {
         }
     }
 
-    public ValueTask Write(T element, CancellationToken cancellationToken)
-        => _channel.Writer.WriteAsync(element, cancellationToken);
+    public ValueTask Write(T element, CancellationToken cancellationToken) {
+        return _throwOnFull ? WriteOrThrow() : _channel.Writer.WriteAsync(element, cancellationToken);
+
+        ValueTask WriteOrThrow() {
+            if (!_channel.Writer.TryWrite(element)) {
+                throw new ChannelFullException();
+            }
+
+            return default;
+        }
+    }
 
     public async ValueTask Stop(Func<CancellationToken, ValueTask>? finalize = null) {
         _channel.Writer.Complete();
         _cts.CancelAfter(TimeSpan.FromSeconds(1));
 
-        while (!_readerTasks.All(x => x.IsCompleted) && !_readerTasks.All(x => x.IsCanceled)) {
+        while (!_readerTask.IsCompleted && !_readerTask.IsCanceled) {
             await Task.Delay(10);
         }
 
