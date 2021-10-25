@@ -22,7 +22,7 @@ public class RabbitMqSubscriptionService : EventSubscription<RabbitMqSubscriptio
     readonly IConnection                  _connection;
     readonly IModel                       _channel;
 
-    ChannelWorker<Event>? _worker;
+    ConcurrentChannelWorker<Event>? _worker;
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
@@ -126,7 +126,7 @@ public class RabbitMqSubscriptionService : EventSubscription<RabbitMqSubscriptio
             Options.BindingOptions?.Arguments
         );
 
-        _worker = new ChannelWorker<Event>(
+        _worker = new ConcurrentChannelWorker<Event>(
             Channel.CreateBounded<Event>(Options.ConcurrencyLimit * 10),
             Consume,
             Options.ConcurrencyLimit

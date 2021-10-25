@@ -2,32 +2,32 @@ using System.Threading.Channels;
 
 namespace Eventuous.Subscriptions.Channels;
 
-public class ChannelWorker<T> {
+public class ConcurrentChannelWorker<T> {
     readonly Channel<T>              _channel;
-    readonly bool                    _throwOnFull;
     readonly CancellationTokenSource _cts;
-    readonly Task                    _readerTask;
+    readonly Task[]                  _readerTasks;
 
     /// <summary>
     /// Creates a new instance of the channel worker, starts a task for background reads
     /// </summary>
     /// <param name="channel">Channel to use for writes and reads</param>
     /// <param name="process">Function to process each element the worker reads from the channel</param>
-    /// <param name="throwOnFull">Throw if the channel is full to prevent partition blocks</param>
-    public ChannelWorker(
+    /// <param name="concurrencyLevel"></param>
+    public ConcurrentChannelWorker(
         Channel<T>        channel,
         ProcessElement<T> process,
-        bool              throwOnFull = false
+        int               concurrencyLevel
     ) {
-        _channel     = channel;
-        _throwOnFull = throwOnFull;
-        _cts         = new CancellationTokenSource();
-        _readerTask  = Task.Run(() => _channel.Read(process, _cts.Token));
+        _channel = channel;
+        _cts     = new CancellationTokenSource();
+
+        _readerTasks = Enumerable.Range(0, concurrencyLevel)
+            .Select(x => Task.Run(() => _channel.Read(process, _cts.Token))).ToArray();
     }
 
     public ValueTask Write(T element, CancellationToken cancellationToken)
-        => _channel.Write(element, _throwOnFull, cancellationToken);
+        => _channel.Write(element, false, cancellationToken);
 
     public ValueTask Stop(Func<CancellationToken, ValueTask>? finalize = null)
-        => _channel.Stop(_cts, new[] { _readerTask }, finalize);
+        => _channel.Stop(_cts, _readerTasks, finalize);
 }
