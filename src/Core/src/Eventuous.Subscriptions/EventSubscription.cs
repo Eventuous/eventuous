@@ -17,10 +17,12 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
     internal IEventHandler[]          EventHandlers   { get; }
     internal ISubscriptionGapMeasure? Measure         { get; }
 
-    CancellationTokenSource? _cts;
-    Task?                    _measureTask;
-    EventPosition?           _lastProcessed;
-    ulong                    _gap;
+    CancellationTokenSource _subscriptionCts = new();
+    CancellationTokenSource _monitoringCts   = new();
+    Task?                   _measureTask;
+    ulong                   _gap;
+
+    public EventPosition? LastProcessed { get; protected set; }
 
     public string ServiceId => Options.SubscriptionId;
 
@@ -41,12 +43,16 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
     }
 
     public async Task StartAsync(CancellationToken cancellationToken) {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _subscriptionCts.Token);
+
         if (Measure != null) {
-            _cts         = new CancellationTokenSource();
-            _measureTask = Task.Run(() => MeasureGap(_cts.Token), _cts.Token);
+            var monitoringCts =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _monitoringCts.Token);
+
+            _measureTask = Task.Run(() => MeasureGap(monitoringCts.Token), monitoringCts.Token);
         }
 
-        await Subscribe(cancellationToken).NoContext();
+        await Subscribe(cts.Token).NoContext();
 
         IsRunning = true;
 
@@ -73,7 +79,7 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
                     .NoContext();
             }
 
-            SetLastProcessedEventPosition(EventPosition.FromReceivedEvent(re));
+            LastProcessed = EventPosition.FromReceivedEvent(re);
         }
         catch (Exception e) {
             Log?.Log(
@@ -95,10 +101,6 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
                 );
         }
     }
-
-    protected void SetLastProcessedEventPosition(EventPosition position) => _lastProcessed = position;
-
-    protected EventPosition? GetLastProcessedEventPosition() => _lastProcessed;
 
     protected object? DeserializeData(
         string               eventContentType,
@@ -151,7 +153,7 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
         IsRunning = false;
 
         if (_measureTask != null) {
-            _cts?.Cancel();
+            _monitoringCts.Cancel();
 
             try {
                 await _measureTask.NoContext();
@@ -161,25 +163,26 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
             }
         }
 
-        await Unsubscribe(cancellationToken).NoContext();
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _subscriptionCts.Token);
+        await Unsubscribe(cts.Token).NoContext();
 
         Log?.LogInformation("Stopped subscription");
     }
 
     readonly InterlockedSemaphore _resubscribing = new();
 
-    protected virtual async Task Resubscribe(TimeSpan delay) {
+    protected virtual async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
         if (_resubscribing.IsClosed()) return;
 
         Log?.LogWarning("Resubscribing");
 
-        await Task.Delay(delay).NoContext();
+        await Task.Delay(delay, cancellationToken).NoContext();
 
         while (IsRunning && IsDropped) {
             try {
                 _resubscribing.Close();
 
-                await Subscribe(default).NoContext();
+                await Subscribe(cancellationToken).NoContext();
 
                 IsDropped = false;
 
@@ -188,7 +191,7 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
             catch (Exception e) {
                 Log?.LogError(e, "Unable to restart the subscription");
 
-                await Task.Delay(1000).NoContext();
+                await Task.Delay(1000, cancellationToken).NoContext();
             }
             finally {
                 _resubscribing.Open();
@@ -205,7 +208,10 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
         _lastException = exception;
 
         Task.Run(
-            () => Resubscribe(reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2))
+            () => {
+                var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2);
+                return Resubscribe(delay, _subscriptionCts.Token);
+            }
         );
     }
 
@@ -215,8 +221,8 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
         while (!cancellationToken.IsCancellationRequested) {
             var (position, created) = await GetLastEventPosition(cancellationToken).NoContext();
 
-            if (_lastProcessed?.Position != null && position != null) {
-                _gap = (ulong)position - _lastProcessed.Position.Value;
+            if (LastProcessed?.Position != null && position != null) {
+                _gap = (ulong)position - LastProcessed.Position.Value;
 
                 Measure!.PutGap(Options.SubscriptionId, _gap, created);
             }

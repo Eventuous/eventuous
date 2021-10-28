@@ -1,13 +1,10 @@
-﻿using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Logging;
+﻿using Eventuous.Subscriptions.Logging;
 using Eventuous.Subscriptions.Monitoring;
-using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Xunit;
 
 namespace Eventuous.Subscriptions.Tests;
 

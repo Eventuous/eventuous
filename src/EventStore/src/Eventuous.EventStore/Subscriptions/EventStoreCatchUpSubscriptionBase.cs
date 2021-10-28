@@ -1,6 +1,5 @@
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Monitoring;
-using Microsoft.Extensions.Logging;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -27,23 +26,22 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
     }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
-        var last = GetLastProcessedEventPosition();
-        if (IsRunning && last != null) {
-            return new Checkpoint(Options.SubscriptionId, last.Position);
+        if (IsRunning && LastProcessed != null) {
+            return new Checkpoint(Options.SubscriptionId, LastProcessed.Position);
         }
 
         var checkpoint = await CheckpointStore
             .GetLastCheckpoint(Options.SubscriptionId, cancellationToken)
             .NoContext();
 
-        SetLastProcessedEventPosition(new EventPosition(checkpoint.Position, DateTime.Now));
+        LastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
 
         return checkpoint;
     }
 
     protected override async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
         if (re.EventType.StartsWith("$")) {
-            SetLastProcessedEventPosition(EventPosition.FromReceivedEvent(re));
+            LastProcessed = EventPosition.FromReceivedEvent(re);
             await Store().NoContext();
             return;
         }
@@ -59,7 +57,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         EventPosition     position,
         CancellationToken cancellationToken
     ) {
-        SetLastProcessedEventPosition(position);
+        LastProcessed = position;
         var checkpoint = new Checkpoint(Options.SubscriptionId, position.Position);
         await CheckpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
     }

@@ -15,6 +15,8 @@
         <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
         <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
+        <Using Include="JetBrains.Annotations"/>
+        <Using Include="Eventuous"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
@@ -26,6 +28,10 @@
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="All"/>
         <PackageReference Include="coverlet.collector" Version="3.1.0" PrivateAssets="All"/>
         <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0"/>
+        <Using Include="Xunit"/>
+        <Using Include="FluentAssertions"/>
+        <Using Include="FluentAssertions.Extensions"/>
+        <Using Include="AutoFixture"/>
     </ItemGroup>
 
     <PropertyGroup>

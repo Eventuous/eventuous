@@ -11,5 +11,6 @@
 
     <ItemGroup>
         <PackageReference Include="IsExternalInit" Version="1.0.1" PrivateAssets="All"/>
+        <Using Include="Eventuous"/>
     </ItemGroup>
 </Project>

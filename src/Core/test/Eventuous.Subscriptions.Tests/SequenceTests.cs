@@ -1,6 +1,4 @@
 using Eventuous.Subscriptions.Checkpoints;
-using FluentAssertions;
-using Xunit;
 
 namespace Eventuous.Subscriptions.Tests;
 

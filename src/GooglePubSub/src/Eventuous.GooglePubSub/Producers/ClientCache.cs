@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using Eventuous.GooglePubSub.Shared;
-using Microsoft.Extensions.Logging;
 
 namespace Eventuous.GooglePubSub.Producers;
 

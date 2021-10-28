@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Eventuous.Tests.Fakes;
 
 public class InMemoryEventStore : IEventStore {

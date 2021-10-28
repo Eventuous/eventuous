@@ -1,5 +1,4 @@
 using Eventuous.Subscriptions.Monitoring;
-using Microsoft.Extensions.Logging;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -170,7 +169,7 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
     protected override Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
         // ReSharper disable once InvertIf
         if (re.EventType.StartsWith("$")) {
-            SetLastProcessedEventPosition(EventPosition.FromReceivedEvent(re));
+            LastProcessed = EventPosition.FromReceivedEvent(re);
             return Task.CompletedTask;
         }
 

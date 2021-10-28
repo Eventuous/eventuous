@@ -1,6 +1,5 @@
 using Google.Api.Gax;
 using Grpc.Core;
-using Microsoft.Extensions.Logging;
 
 namespace Eventuous.GooglePubSub.Shared;
 

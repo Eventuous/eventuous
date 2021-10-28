@@ -1,5 +1,3 @@
-using System.Threading.Channels;
-
 namespace Eventuous.Subscriptions.Channels;
 
 public class ConcurrentChannelWorker<T> {

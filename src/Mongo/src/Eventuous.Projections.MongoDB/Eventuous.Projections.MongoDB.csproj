@@ -10,6 +10,10 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\"/>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="MongoDB.Driver"/>
+        <Using Include="Eventuous.Subscriptions"/>
     </ItemGroup>
 </Project>

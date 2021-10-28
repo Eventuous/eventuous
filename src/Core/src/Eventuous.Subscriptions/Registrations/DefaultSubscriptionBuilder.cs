@@ -1,10 +1,8 @@
-// ReSharper disable CheckNamespace
-
 using System.Reflection;
-using Eventuous;
 using Eventuous.Subscriptions;
 using Microsoft.Extensions.Options;
 
+// ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, TOptions>

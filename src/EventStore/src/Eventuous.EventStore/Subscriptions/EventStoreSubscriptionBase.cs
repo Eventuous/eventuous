@@ -1,5 +1,4 @@
 using Eventuous.Subscriptions.Monitoring;
-using Microsoft.Extensions.Logging;
 
 namespace Eventuous.EventStore.Subscriptions;
 

@@ -1,4 +1,3 @@
-using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
 
 namespace Eventuous.Subscriptions.Checkpoints;

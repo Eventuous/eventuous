@@ -1,7 +1,6 @@
-// ReSharper disable CheckNamespace
-
 using Eventuous.Subscriptions;
 
+// ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 static class NamedRegistrationExtensions {

@@ -1,7 +1,4 @@
-using Microsoft.Extensions.Logging;
-
 // ReSharper disable CoVariantArrayConversion
-
 namespace Eventuous.EventStore;
 
 [PublicAPI]

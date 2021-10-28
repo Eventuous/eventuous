@@ -1,6 +1,5 @@
 using Eventuous.Producers;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using static Google.Cloud.PubSub.V1.PublisherClient;
 

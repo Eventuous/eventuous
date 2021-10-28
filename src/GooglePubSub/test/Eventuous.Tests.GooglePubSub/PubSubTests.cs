@@ -2,8 +2,8 @@ using Eventuous.GooglePubSub.Producers;
 using Eventuous.GooglePubSub.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
-using FluentAssertions.Extensions;
 using Hypothesist;
+using Xunit.Abstractions;
 
 namespace Eventuous.Tests.GooglePubSub {
     public class PubSubTests : IAsyncLifetime {

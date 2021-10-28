@@ -1,3 +1,4 @@
+global using NodaTime;
 using Eventuous.Tests.Fixtures;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;

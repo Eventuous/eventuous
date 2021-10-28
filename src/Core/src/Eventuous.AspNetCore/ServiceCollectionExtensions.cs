@@ -1,9 +1,4 @@
 ﻿// ReSharper disable CheckNamespace
-
-using Eventuous;
-using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-
 namespace Microsoft.Extensions.DependencyInjection;
 
 [PublicAPI]
