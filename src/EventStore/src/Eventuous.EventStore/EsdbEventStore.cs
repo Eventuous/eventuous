@@ -1,4 +1,8 @@
 // ReSharper disable CoVariantArrayConversion
+
+using System.Diagnostics;
+using Eventuous.Diagnostics;
+
 namespace Eventuous.EventStore;
 
 [PublicAPI]
@@ -13,8 +17,24 @@ public class EsdbEventStore : IEventStore {
 
     public EsdbEventStore(EventStoreClientSettings clientSettings, ILogger<EsdbEventStore>? logger)
         : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), logger) { }
+    
+    static readonly KeyValuePair<string, object?>[] DefaultTags = {
+        new(TelemetryTags.Db.System, "eventstoredb")
+    };
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
+        using var activity = SharedDiagnostics.ActivitySource.CreateActivity(
+            "stream-exists",
+            ActivityKind.Internal,
+            parentContext: default,
+            DefaultTags
+        );
+        
+        if (activity is { IsAllDataRequested: true }) {
+            activity.SetTag(TelemetryTags.Db.Operation, "read-stream");
+            activity.SetTag(TelemetryTags.EventStore.Stream, stream);
+        }
+        
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
             stream,

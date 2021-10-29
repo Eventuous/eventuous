@@ -53,14 +53,14 @@ public class RegistrationTests {
     class Handler : IEventHandler {
         public void SetLogger(SubscriptionLog subscriptionLogger) { }
 
-        public Task HandleEvent(ReceivedEvent         evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {
         public List<ProducedMessage> ProducedMessages { get; } = new();
 
         protected override Task ProduceMessages(
-            string                       stream,
+            StreamName                   stream,
             IEnumerable<ProducedMessage> messages,
             TestProduceOptions?          options,
             CancellationToken            cancellationToken = default

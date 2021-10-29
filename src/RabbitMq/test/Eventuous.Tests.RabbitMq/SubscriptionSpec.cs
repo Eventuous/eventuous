@@ -16,10 +16,10 @@ public class SubscriptionSpec : IAsyncLifetime {
     readonly RabbitMqSubscriptionService _subscription;
     readonly RabbitMqProducer            _producer;
     readonly TestEventHandler            _handler;
-    readonly string                      _exchange;
+    readonly StreamName                  _exchange;
 
     public SubscriptionSpec(ITestOutputHelper outputHelper) {
-        _exchange = Auto.Create<string>();
+        _exchange = new(Auto.Create<string>());
         var queue = Auto.Create<string>();
 
         var loggerFactory =

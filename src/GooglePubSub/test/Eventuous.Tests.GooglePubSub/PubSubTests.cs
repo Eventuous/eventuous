@@ -5,7 +5,7 @@ using Eventuous.Sut.Subs;
 using Hypothesist;
 using Xunit.Abstractions;
 
-namespace Eventuous.Tests.GooglePubSub; 
+namespace Eventuous.Tests.GooglePubSub;
 
 public class PubSubTests : IAsyncLifetime {
     static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
@@ -15,14 +15,14 @@ public class PubSubTests : IAsyncLifetime {
     readonly GooglePubSubSubscription _subscription;
     readonly GooglePubSubProducer     _producer;
     readonly TestEventHandler         _handler;
-    readonly string                   _pubsubTopic;
+    readonly StreamName               _pubsubTopic;
     readonly string                   _pubsubSubscription;
 
     public PubSubTests(ITestOutputHelper outputHelper) {
         var loggerFactory =
             LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
-        _pubsubTopic        = $"test-{Guid.NewGuid():N}";
+        _pubsubTopic        = new($"test-{Guid.NewGuid():N}");
         _pubsubSubscription = $"test-{Guid.NewGuid():N}";
 
         _handler = new TestEventHandler();
@@ -47,7 +47,7 @@ public class PubSubTests : IAsyncLifetime {
         _handler.AssertThat().Any(x => x as TestEvent == testEvent);
 
         await _producer.Produce(_pubsubTopic, testEvent);
-            
+
         await _handler.Validate(10.Seconds());
     }
 

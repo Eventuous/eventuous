@@ -1,5 +1,6 @@
 using Eventuous.Diagnostics;
 using Eventuous.Producers;
+using Eventuous.Producers.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using static Google.Cloud.PubSub.V1.PublisherClient;
@@ -52,7 +53,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
         PubSubProducerOptions options,
         IEventSerializer?     serializer    = null,
         ILoggerFactory?       loggerFactory = null
-    ) {
+    ) : base(TracingOptions) {
         Ensure.NotNull(options, nameof(options));
 
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
@@ -75,32 +76,27 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     public Task StopAsync(CancellationToken cancellationToken = default)
         => Task.WhenAll(_clientCache.GetAllClients().Select(x => x.ShutdownAsync(cancellationToken)));
 
-    static readonly KeyValuePair<string, object?>[] DefaultTags = {
-        new(TelemetryTags.Messaging.System, "google-pubsub"),
-        new(TelemetryTags.Messaging.DestinationKind, "topic"),
+    static readonly ProducerTracingOptions TracingOptions = new() {
+        MessagingSystem  = "google-pubsub",
+        DestinationKind  = "topc",
+        ProduceOperation = "publish"
     };
 
     protected override async Task ProduceMessages(
-        string                       stream,
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         PubSubProduceOptions?        options,
         CancellationToken            cancellationToken = default
     ) {
         var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
-        await Task.WhenAll(messages.Select(x => ProduceOne(x, x.GetType())));
 
-        Task ProduceOne(ProducedMessage message, Type type)
-            => Trace(
-                msg => client.PublishAsync(CreateMessage(msg, type, options)),
-                message,
-                DefaultTags,
-                activity => activity
-                    .SetTag(TelemetryTags.Messaging.Destination, stream)
-                    .SetTag(TelemetryTags.Messaging.Operation, "publish")
-            );
+        await Task.WhenAll(
+            messages
+                .Select(x => client.PublishAsync(CreateMessage(x, options)))
+        );
     }
 
-    PubsubMessage CreateMessage(ProducedMessage message, Type type, PubSubProduceOptions? options) {
+    PubsubMessage CreateMessage(ProducedMessage message, PubSubProduceOptions? options) {
         var (eventType, payload) = _serializer.SerializeEvent(message.Message);
 
         var psm = new PubsubMessage {
@@ -115,6 +111,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
 
         if (message.Metadata != null) {
             message.Metadata.Remove(MetaTags.MessageId);
+
             foreach (var (key, value) in message.Metadata) {
                 psm.Attributes.Add(key, value.ToString());
             }

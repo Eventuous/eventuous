@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
-using Eventuous.Diagnostics;
+﻿using Eventuous.Diagnostics;
 using Eventuous.Producers;
+using Eventuous.Producers.Diagnostics;
 
 namespace Eventuous.EventStore.Producers;
 
@@ -23,7 +23,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         EventStoreClient     eventStoreClient,
         IEventSerializer?    serializer     = null,
         IMetadataSerializer? metaSerializer = null
-    ) {
+    ) : base(TracingOptions) {
         _client         = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         _serializer     = serializer ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
@@ -48,13 +48,14 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
             metaSerializer
         ) { }
 
-    static readonly KeyValuePair<string, object?>[] DefaultTags = {
-        new(TelemetryTags.Messaging.System, "eventstoredb"),
-        new(TelemetryTags.Messaging.DestinationKind, "stream"),
+    static readonly ProducerTracingOptions TracingOptions = new() {
+        DestinationKind  = "stream",
+        MessagingSystem  = "eventstoredb",
+        ProduceOperation = "append"
     };
 
     protected override async Task ProduceMessages(
-        string                       stream,
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         EventStoreProduceOptions?    produceOptions,
         CancellationToken            cancellationToken = default
@@ -62,18 +63,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         var options = produceOptions ?? EventStoreProduceOptions.Default;
 
         foreach (var chunk in Ensure.NotNull(messages, nameof(messages)).Chunks(options.MaxAppendEventsCount)) {
-            await Trace(
-                ProduceChunk,
-                chunk,
-                DefaultTags,
-                activity => activity
-                    .SetTag(TelemetryTags.Messaging.Destination, stream)
-                    .SetTag(TelemetryTags.Messaging.Operation, "append")
-            ).NoContext();
-        }
-
-        Task ProduceChunk(IEnumerable<ProducedMessage> chunk)
-            => _client.AppendToStreamAsync(
+            await _client.AppendToStreamAsync(
                 stream,
                 options.ExpectedState,
                 chunk.Select(CreateMessage),
@@ -81,17 +71,19 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
                 options.Credentials,
                 cancellationToken
             );
+        }
     }
 
     EventData CreateMessage(ProducedMessage producedMessage) {
         var (message, metadata) = producedMessage;
         var msg = Ensure.NotNull(message, nameof(message));
         var (eventType, payload) = _serializer.SerializeEvent(msg);
+        var messageId = metadata!.GetMessageId();
         metadata!.Remove(MetaTags.MessageId);
         var metaBytes = _metaSerializer.Serialize(metadata);
 
         return new EventData(
-            Uuid.FromGuid(metadata.GetMessageId()),
+            Uuid.FromGuid(messageId),
             eventType,
             payload,
             metaBytes,

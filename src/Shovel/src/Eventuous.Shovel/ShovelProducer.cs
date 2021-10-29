@@ -6,7 +6,7 @@ class ShovelProducer<T> : BaseProducer<T> where T : class {
     public ShovelProducer(IEventProducer<T> inner) => _inner = inner;
 
     protected override async Task ProduceMessages(
-        string                       stream,
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         T?                           options,
         CancellationToken            cancellationToken = default

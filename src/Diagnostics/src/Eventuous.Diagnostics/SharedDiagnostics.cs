@@ -3,12 +3,11 @@ using System.Reflection;
 
 namespace Eventuous.Diagnostics;
 
-static class SharedDiagnostics {
+public static class SharedDiagnostics {
     static readonly AssemblyName AssemblyName = typeof(SharedDiagnostics).Assembly.GetName();
     static readonly Version?     Version      = AssemblyName.Version;
 
-    internal static ActivitySource GetActivitySource(string component)
-        => new($"eventuous.{component}", Version?.ToString());
+    public static readonly ActivitySource ActivitySource = new("eventuous", Version?.ToString());
 
     public static string? GetParentTag(this Activity activity, string tag)
         => activity.Parent?.Tags.FirstOrDefault(x => x.Key == tag).Value;

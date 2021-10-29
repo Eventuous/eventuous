@@ -1,4 +1,3 @@
-using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Shovel;

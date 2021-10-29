@@ -15,7 +15,7 @@ public static class ProducerExtensions {
     /// <returns></returns>
     public static Task Produce<TMessage>(
         this IEventProducer producer,
-        string              stream,
+        StreamName          stream,
         TMessage            message,
         Metadata?           metadata          = null,
         CancellationToken   cancellationToken = default
@@ -43,7 +43,7 @@ public static class ProducerExtensions {
     /// <returns></returns>
     public static Task Produce<TProduceOptions, TMessage>(
         this IEventProducer<TProduceOptions> producer,
-        string                               stream,
+        StreamName                           stream,
         TMessage                             message,
         Metadata?                            metadata          = null,
         TProduceOptions?                     options           = null,

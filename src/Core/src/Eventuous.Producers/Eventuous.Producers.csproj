@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeDiagnostics>true</IncludeDiagnostics>
-    </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\..\Diagnostics\src\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
         <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>

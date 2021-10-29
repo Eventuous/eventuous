@@ -20,7 +20,7 @@ public class PubSubTests : IAsyncLifetime {
     readonly EventStoreProducer _producer;
     readonly TestEventHandler   _handler;
 
-    readonly string           _stream = $"test-{Guid.NewGuid():N}";
+    readonly StreamName       _stream = new($"test-{Guid.NewGuid():N}");
     readonly ActivityListener _listener;
 
     public PubSubTests(ITestOutputHelper outputHelper) {
@@ -45,6 +45,7 @@ public class PubSubTests : IAsyncLifetime {
         );
 
         var log = loggerFactory.CreateLogger("PubSubTest");
+
         _listener = new ActivityListener {
             ShouldListenTo = _ => true, //_.Name == Instrumentation.Name,
             Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,

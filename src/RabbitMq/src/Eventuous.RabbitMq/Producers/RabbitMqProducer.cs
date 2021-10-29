@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Producers;
+using Eventuous.Producers.Diagnostics;
 using Eventuous.RabbitMq.Diagnostics;
 using Microsoft.Extensions.Hosting;
 
@@ -27,7 +29,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         ConnectionFactory        connectionFactory,
         IEventSerializer?        serializer = null,
         RabbitMqExchangeOptions? options    = null
-    ) {
+    ) : base(TracingOptions) {
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
         _connectionFactory = Ensure.NotNull(connectionFactory, nameof(connectionFactory));
@@ -43,13 +45,14 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         return Task.CompletedTask;
     }
 
-    static readonly KeyValuePair<string, object?>[] DefaultTags = {
-        new(TelemetryTags.Messaging.System, "rabbitmq"),
-        new(TelemetryTags.Messaging.DestinationKind, "exchange")
+    static readonly ProducerTracingOptions TracingOptions = new() {
+        MessagingSystem  = "rabbitmq",
+        DestinationKind  = "exchange",
+        ProduceOperation = "publish"
     };
 
     protected override async Task ProduceMessages(
-        string                       stream,
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         RabbitMqProduceOptions?      options,
         CancellationToken            cancellationToken = default
@@ -57,15 +60,11 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         EnsureExchange(stream);
 
         foreach (var message in messages) {
-            Trace(
-                msg => Publish(stream, msg, options),
-                message,
-                DefaultTags,
-                activity => activity
-                    .SetTag(TelemetryTags.Messaging.Destination, stream)
-                    .SetTag(TelemetryTags.Messaging.Operation, "publish")
-                    .SetTag(RabbitMqTelemetryTags.RoutingKey, options?.RoutingKey)
-            );
+            if (Activity.Current is { IsAllDataRequested: true }) {
+                Activity.Current.SetTag(RabbitMqTelemetryTags.RoutingKey, options?.RoutingKey);
+            }
+
+            Publish(stream, message, options);
         }
 
         await Confirm(cancellationToken).NoContext();

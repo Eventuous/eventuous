@@ -4,14 +4,11 @@ using Eventuous.Diagnostics;
 namespace Eventuous.Producers.Diagnostics;
 
 public static class ProducerActivity {
-    public static readonly ActivitySource ActivitySource = SharedDiagnostics.GetActivitySource("producer");
-    
     public static (Activity?, ProducedMessage) Start(
         ProducedMessage                             message,
-        IEnumerable<KeyValuePair<string, object?>>? tags,
-        Action<Activity>?                           addInfraTags
+        IEnumerable<KeyValuePair<string, object?>>? tags
     ) {
-        var activity = GetActivity(tags, addInfraTags);
+        var activity = GetActivity(tags);
 
         var (msg, metadata) = message;
         var meta      = GetMeta(metadata);
@@ -33,10 +30,9 @@ public static class ProducerActivity {
 
     public static (Activity?, IEnumerable<ProducedMessage>) Start(
         IEnumerable<ProducedMessage>                messages,
-        IEnumerable<KeyValuePair<string, object?>>? tags,
-        Action<Activity>?                           addInfraTags
+        IEnumerable<KeyValuePair<string, object?>>? tags
     ) {
-        var activity = GetActivity(tags, addInfraTags);
+        var activity = GetActivity(tags);
 
         activity?
             .CopyParentTag(TelemetryTags.Messaging.ConversationId)
@@ -53,17 +49,13 @@ public static class ProducerActivity {
         }
     }
 
-    static Activity? GetActivity(IEnumerable<KeyValuePair<string, object?>>? tags, Action<Activity>? addInfraTags) {
-        var activity = ActivitySource.CreateActivity(
+    static Activity? GetActivity(IEnumerable<KeyValuePair<string, object?>>? tags)
+        => SharedDiagnostics.ActivitySource.CreateActivity(
             "produce",
             ActivityKind.Producer,
             parentContext: default,
             tags
         );
-
-        if (activity != null && activity.IsAllDataRequested) addInfraTags?.Invoke(activity);
-        return activity;
-    }
 
     static Metadata GetMeta(Metadata? metadata) {
         var messageId = metadata?.GetMessageId() ?? Guid.NewGuid();

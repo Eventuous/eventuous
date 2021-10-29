@@ -78,7 +78,7 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHo
         string                  subscriptionId,
         CreateSubscription      createSubscription,
         TProducer               producer,
-        string                  targetStream,
+        StreamName              targetStream,
         IEventSerializer?       eventSerializer = null,
         ILoggerFactory?         loggerFactory   = null,
         SubscriptionGapMeasure? measure         = null
@@ -110,9 +110,9 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHo
     public Task StopAsync(CancellationToken cancellationToken) => _subscription.StopAsync(cancellationToken);
 
     public class DefaultRoute {
-        readonly string _targetStream;
+        readonly StreamName _targetStream;
 
-        public DefaultRoute(string targetStream) => _targetStream = targetStream;
+        public DefaultRoute(StreamName targetStream) => _targetStream = targetStream;
 
         public ValueTask<ShovelMessage> Route(ReceivedEvent message)
             => new(new ShovelMessage(_targetStream, message.Payload, message.Metadata));
