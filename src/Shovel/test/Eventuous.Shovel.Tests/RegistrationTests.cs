@@ -59,7 +59,7 @@ public class RegistrationTests {
     class TestProducer : BaseProducer<TestProduceOptions> {
         public List<ProducedMessage> ProducedMessages { get; } = new();
 
-        public override Task ProduceMessages(
+        protected override Task ProduceMessages(
             string                       stream,
             IEnumerable<ProducedMessage> messages,
             TestProduceOptions?          options,

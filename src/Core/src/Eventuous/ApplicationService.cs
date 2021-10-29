@@ -260,7 +260,8 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
 
         var storeResult = await Store.Store(result, cancellationToken).NoContext();
 
-        return new OkResult<TState, TId>(result.State, result.Changes, storeResult.GlobalPosition);
+        var changes = result.Changes.Select(x => new Change(x, TypeMap.GetTypeName(x)));
+        return new OkResult<TState, TId>(result.State, changes, storeResult.GlobalPosition);
 
         async Task<T> Load() {
             var id = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();

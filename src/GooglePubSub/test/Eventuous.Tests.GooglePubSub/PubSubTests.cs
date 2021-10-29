@@ -5,73 +5,73 @@ using Eventuous.Sut.Subs;
 using Hypothesist;
 using Xunit.Abstractions;
 
-namespace Eventuous.Tests.GooglePubSub {
-    public class PubSubTests : IAsyncLifetime {
-        static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+namespace Eventuous.Tests.GooglePubSub; 
 
-        static readonly Fixture Auto = new();
+public class PubSubTests : IAsyncLifetime {
+    static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-        readonly GooglePubSubSubscription _subscription;
-        readonly GooglePubSubProducer     _producer;
-        readonly TestEventHandler         _handler;
-        readonly string                   _pubsubTopic;
-        readonly string                   _pubsubSubscription;
+    static readonly Fixture Auto = new();
 
-        public PubSubTests(ITestOutputHelper outputHelper) {
-            var loggerFactory =
-                LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
+    readonly GooglePubSubSubscription _subscription;
+    readonly GooglePubSubProducer     _producer;
+    readonly TestEventHandler         _handler;
+    readonly string                   _pubsubTopic;
+    readonly string                   _pubsubSubscription;
 
-            _pubsubTopic        = $"test-{Guid.NewGuid():N}";
-            _pubsubSubscription = $"test-{Guid.NewGuid():N}";
+    public PubSubTests(ITestOutputHelper outputHelper) {
+        var loggerFactory =
+            LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
-            _handler = new TestEventHandler();
+        _pubsubTopic        = $"test-{Guid.NewGuid():N}";
+        _pubsubSubscription = $"test-{Guid.NewGuid():N}";
 
-            _producer = new GooglePubSubProducer(
-                PubSubFixture.ProjectId,
-                loggerFactory: loggerFactory
-            );
+        _handler = new TestEventHandler();
 
-            _subscription = new GooglePubSubSubscription(
-                PubSubFixture.ProjectId,
-                _pubsubTopic,
-                _pubsubSubscription,
-                new[] { _handler },
-                loggerFactory: loggerFactory
-            );
-        }
+        _producer = new GooglePubSubProducer(
+            PubSubFixture.ProjectId,
+            loggerFactory: loggerFactory
+        );
 
-        [Fact]
-        public async Task SubscribeAndProduce() {
-            var testEvent = Auto.Create<TestEvent>();
-            _handler.AssertThat().Any(x => x as TestEvent == testEvent);
+        _subscription = new GooglePubSubSubscription(
+            PubSubFixture.ProjectId,
+            _pubsubTopic,
+            _pubsubSubscription,
+            new[] { _handler },
+            loggerFactory: loggerFactory
+        );
+    }
 
-            await _producer.Produce(_pubsubTopic, testEvent);
+    [Fact]
+    public async Task SubscribeAndProduce() {
+        var testEvent = Auto.Create<TestEvent>();
+        _handler.AssertThat().Any(x => x as TestEvent == testEvent);
+
+        await _producer.Produce(_pubsubTopic, testEvent);
             
-            await _handler.Validate(10.Seconds());
-        }
+        await _handler.Validate(10.Seconds());
+    }
 
-        [Fact]
-        public async Task SubscribeAndProduceMany() {
-            const int count = 10000;
+    [Fact]
+    public async Task SubscribeAndProduceMany() {
+        const int count = 10000;
 
-            var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
-            _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
+        _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
-            await _producer.Produce(_pubsubTopic, testEvents);
+        await _producer.Produce(_pubsubTopic, testEvents);
 
-            await _handler.Validate(10.Seconds());
-        }
+        await _handler.Validate(10.Seconds());
+    }
 
-        public async Task InitializeAsync() {
-            await _producer.StartAsync();
-            await _subscription.StartAsync(CancellationToken.None);
-        }
+    public async Task InitializeAsync() {
+        await _producer.StartAsync();
+        await _subscription.StartAsync(CancellationToken.None);
+    }
 
-        public async Task DisposeAsync() {
-            await _producer.StopAsync();
-            await _subscription.StopAsync(CancellationToken.None);
-            await PubSubFixture.DeleteSubscription(_pubsubSubscription);
-            await PubSubFixture.DeleteTopic(_pubsubTopic);
-        }
+    public async Task DisposeAsync() {
+        await _producer.StopAsync();
+        await _subscription.StopAsync(CancellationToken.None);
+        await PubSubFixture.DeleteSubscription(_pubsubSubscription);
+        await PubSubFixture.DeleteTopic(_pubsubTopic);
     }
 }

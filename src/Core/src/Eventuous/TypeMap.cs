@@ -82,7 +82,7 @@ public class TypeMapper {
         );
 
         foreach (var type in decoratedTypes) {
-            var attr = (EventTypeAttribute)Attribute.GetCustomAttribute(type, AttributeType)!;
+            var attr = type.GetAttribute<EventTypeAttribute>()!;
             AddType(type, attr.EventType);
         }
     }

@@ -19,6 +19,13 @@
         <Using Include="Eventuous"/>
     </ItemGroup>
 
+    <ItemGroup Condition="'$(IncludeDiagnostics)'=='true'">
+        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\SharedDiagnostics.cs" Link="Diagnostics\SharedDiagnostics.cs" />
+        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\TelemetryTags.cs" Link="Diagnostics\TelemetryTags.cs" />
+        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\MetaTags.cs" Link="Diagnostics\MetaTags.cs" />
+        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\MetadataExtensions.cs" Link="Diagnostics\MetadataExtensions.cs" />
+    </ItemGroup>
+
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
         <PackageReference Include="AutoFixture" Version="4.17.0"/>
         <PackageReference Include="Bogus" Version="33.1.1"/>
@@ -38,7 +45,7 @@
         <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
     </PropertyGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
         <PackageReference Include="IsExternalInit" Version="1.0.1" PrivateAssets="All"/>
     </ItemGroup>
 

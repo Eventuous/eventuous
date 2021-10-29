@@ -68,6 +68,4 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer, TProd
         => _subscription.StopAsync(cancellationToken);
 }
 
-public delegate ValueTask<ShovelMessage<TProduceOptions>?> RouteAndTransform<TProduceOptions>(
-    ReceivedEvent message
-);
+public delegate ValueTask<ShovelMessage<TProduceOptions>?> RouteAndTransform<TProduceOptions>(ReceivedEvent message);

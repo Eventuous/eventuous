@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -74,18 +75,29 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     public Task StopAsync(CancellationToken cancellationToken = default)
         => Task.WhenAll(_clientCache.GetAllClients().Select(x => x.ShutdownAsync(cancellationToken)));
 
-    /// <inheritdoc />
-    public override async Task ProduceMessages(
+    static readonly KeyValuePair<string, object?>[] DefaultTags = {
+        new(TelemetryTags.Messaging.System, "google-pubsub"),
+        new(TelemetryTags.Messaging.DestinationKind, "topic"),
+    };
+
+    protected override async Task ProduceMessages(
         string                       stream,
         IEnumerable<ProducedMessage> messages,
         PubSubProduceOptions?        options,
         CancellationToken            cancellationToken = default
     ) {
         var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
-        await Task.WhenAll(messages.Select(x => Produce(x, x.GetType())));
+        await Task.WhenAll(messages.Select(x => ProduceOne(x, x.GetType())));
 
-        Task Produce(ProducedMessage message, Type type)
-            => client.PublishAsync(CreateMessage(message, type, options));
+        Task ProduceOne(ProducedMessage message, Type type)
+            => Trace(
+                msg => client.PublishAsync(CreateMessage(msg, type, options)),
+                message,
+                DefaultTags,
+                activity => activity
+                    .SetTag(TelemetryTags.Messaging.Destination, stream)
+                    .SetTag(TelemetryTags.Messaging.Operation, "publish")
+            );
     }
 
     PubsubMessage CreateMessage(ProducedMessage message, Type type, PubSubProduceOptions? options) {
@@ -97,10 +109,12 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
             Attributes = {
                 { _attributes.ContentType, _serializer.ContentType },
                 { _attributes.EventType, eventType }
-            }
+            },
+            MessageId = message.Metadata?.GetMessageId().ToString()
         };
 
         if (message.Metadata != null) {
+            message.Metadata.Remove(MetaTags.MessageId);
             foreach (var (key, value) in message.Metadata) {
                 psm.Attributes.Add(key, value.ToString());
             }

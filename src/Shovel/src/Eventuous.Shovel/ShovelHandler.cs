@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Shovel;
@@ -28,7 +29,8 @@ class ShovelHandler<TProducer> : IEventHandler where TProducer : class, IEventPr
         await _eventProducer
             .Produce(
                 shovelMessage.TargetStream,
-                new[] { shovelMessage.Message },
+                shovelMessage.Message,
+                shovelMessage.GetMeta(evt),
                 cancellationToken
             )
             .NoContext();
@@ -63,10 +65,20 @@ class ShovelHandler<TProducer, TProduceOptions> : IEventHandler
 
         await _eventProducer.Produce(
                 shovelMessage.TargetStream,
-                new[] { shovelMessage.Message },
+                shovelMessage.Message,
+                shovelMessage.GetMeta(evt),
                 shovelMessage.ProduceOptions,
                 cancellationToken
             )
             .NoContext();
+    }
+}
+
+static class ShovelMetaHelper {
+    public static Metadata GetMeta(this ShovelMessage shovelMessage, ReceivedEvent evt) {
+        var (_, _, metadata) = shovelMessage;
+        var meta = metadata == null ? new Metadata() : new Metadata(metadata);
+        if (meta.GetMessageId() == evt.Metadata?.GetMessageId()) meta.WithMessageId(Guid.NewGuid());
+        return meta.WithCausationId(evt.EventId);
     }
 }

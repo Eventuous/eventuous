@@ -1,4 +1,6 @@
+using Eventuous.Diagnostics;
 using Eventuous.Producers;
+using Eventuous.RabbitMq.Diagnostics;
 using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.RabbitMq.Producers;
@@ -41,8 +43,12 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         return Task.CompletedTask;
     }
 
-    /// <inheritdoc />
-    public override async Task ProduceMessages(
+    static readonly KeyValuePair<string, object?>[] DefaultTags = {
+        new(TelemetryTags.Messaging.System, "rabbitmq"),
+        new(TelemetryTags.Messaging.DestinationKind, "exchange")
+    };
+
+    protected override async Task ProduceMessages(
         string                       stream,
         IEnumerable<ProducedMessage> messages,
         RabbitMqProduceOptions?      options,
@@ -51,7 +57,15 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         EnsureExchange(stream);
 
         foreach (var message in messages) {
-            Publish(stream, message, options);
+            Trace(
+                msg => Publish(stream, msg, options),
+                message,
+                DefaultTags,
+                activity => activity
+                    .SetTag(TelemetryTags.Messaging.Destination, stream)
+                    .SetTag(TelemetryTags.Messaging.Operation, "publish")
+                    .SetTag(RabbitMqTelemetryTags.RoutingKey, options?.RoutingKey)
+            );
         }
 
         await Confirm(cancellationToken).NoContext();
@@ -65,19 +79,21 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         var (eventType, payload) = _serializer.SerializeEvent(msg);
 
         var prop = _channel.CreateBasicProperties();
-        prop.ContentType  = _serializer.ContentType;
-        prop.DeliveryMode = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
-        prop.Type         = eventType;
+        prop.ContentType   = _serializer.ContentType;
+        prop.DeliveryMode  = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
+        prop.Type          = eventType;
+        prop.CorrelationId = metadata!.GetCorrelationId();
+        prop.MessageId     = metadata!.GetMessageId().ToString();
+
+        metadata!.Remove(MetaTags.MessageId);
+        prop.Headers = metadata.ToDictionary(x => x.Key, x => x.Value);
 
         if (options != null) {
-            prop.Expiration    = options.Expiration;
-            prop.Headers       = metadata?.ToDictionary(x => x.Key, x => x.Value);
-            prop.Persistent    = options.Persisted;
-            prop.Priority      = options.Priority;
-            prop.AppId         = options.AppId;
-            prop.CorrelationId = options.CorrelationId;
-            prop.MessageId     = options.MessageId;
-            prop.ReplyTo       = options.ReplyTo;
+            prop.Expiration = options.Expiration;
+            prop.Persistent = options.Persisted;
+            prop.Priority   = options.Priority;
+            prop.AppId      = options.AppId;
+            prop.ReplyTo    = options.ReplyTo;
         }
 
         _channel.BasicPublish(stream, options?.RoutingKey ?? "", true, prop, payload);

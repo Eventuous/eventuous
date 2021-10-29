@@ -1,10 +1,7 @@
-using System.Linq;
-using System.Threading;
 using Eventuous.Producers;
 using Eventuous.RabbitMq.Producers;
 using Eventuous.RabbitMq.Subscriptions;
 using Eventuous.Sut.Subs;
-using FluentAssertions.Extensions;
 using Hypothesist;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;

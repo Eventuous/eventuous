@@ -112,12 +112,11 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHo
     public class DefaultRoute {
         readonly string _targetStream;
 
-        public DefaultRoute(string targetStream)
-            => _targetStream = targetStream;
+        public DefaultRoute(string targetStream) => _targetStream = targetStream;
 
-        public ValueTask<ShovelMessage> Route(object message)
-            => new(new ShovelMessage(_targetStream, message));
+        public ValueTask<ShovelMessage> Route(ReceivedEvent message)
+            => new(new ShovelMessage(_targetStream, message.Payload, message.Metadata));
     }
 }
 
-public delegate ValueTask<ShovelMessage?> RouteAndTransform(object message);
+public delegate ValueTask<ShovelMessage?> RouteAndTransform(ReceivedEvent message);
