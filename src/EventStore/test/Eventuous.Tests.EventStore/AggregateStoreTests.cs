@@ -1,7 +1,4 @@
 using System.Collections.Immutable;
-using Eventuous.Tests.EventStore.Fixtures;
-using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
 
 namespace Eventuous.Tests.EventStore;
 

@@ -1,5 +1,5 @@
 using Eventuous.Subscriptions;
-using static Eventuous.RabbitMq.Subscriptions.RabbitMqSubscriptionService;
+using static Eventuous.RabbitMq.Subscriptions.RabbitMqSubscription;
 
 namespace Eventuous.RabbitMq.Subscriptions;
 

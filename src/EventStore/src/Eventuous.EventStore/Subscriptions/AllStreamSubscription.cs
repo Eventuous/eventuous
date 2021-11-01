@@ -1,5 +1,8 @@
+using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Monitoring;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -7,29 +10,28 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Catch-up subscription for EventStoreDB, using the $all global stream
 /// </summary>
 [PublicAPI]
-public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStreamSubscriptionOptions> {
+public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStreamSubscriptionOptions>,
+    IMeasuredSubscription {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for $all
     /// </summary>
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
+    /// <param name="consumer"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
-    /// <param name="eventHandlers">Collection of event handlers</param>
     /// <param name="metaSerializer"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
     /// <param name="eventFilter">Optional: server-side event filter</param>
-    /// <param name="measure">Optional: gap measurement for metrics</param>
     public AllStreamSubscription(
-        EventStoreClient           eventStoreClient,
-        string                     subscriptionId,
-        ICheckpointStore           checkpointStore,
-        IEnumerable<IEventHandler> eventHandlers,
-        IEventSerializer?          eventSerializer = null,
-        IMetadataSerializer?       metaSerializer  = null,
-        ILoggerFactory?            loggerFactory   = null,
-        IEventFilter?              eventFilter     = null,
-        ISubscriptionGapMeasure?   measure         = null
+        EventStoreClient     eventStoreClient,
+        string               subscriptionId,
+        ICheckpointStore     checkpointStore,
+        IMessageConsumer     consumer,
+        IEventSerializer?    eventSerializer = null,
+        IMetadataSerializer? metaSerializer  = null,
+        ILoggerFactory?      loggerFactory   = null,
+        IEventFilter?        eventFilter     = null
     ) : this(
         eventStoreClient,
         new AllStreamSubscriptionOptions {
@@ -39,9 +41,8 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             EventFilter        = eventFilter
         },
         checkpointStore,
-        eventHandlers,
-        loggerFactory,
-        measure
+        consumer,
+        loggerFactory
     ) { }
 
     /// <summary>
@@ -50,30 +51,31 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
     /// <param name="eventStoreClient"></param>
     /// <param name="options"></param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
-    /// <param name="eventHandlers">Collection of event handlers</param>
+    /// <param name="consumer"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
-    /// <param name="measure">Optional: gap measurement for metrics</param>
     public AllStreamSubscription(
         EventStoreClient             eventStoreClient,
         AllStreamSubscriptionOptions options,
         ICheckpointStore             checkpointStore,
-        IEnumerable<IEventHandler>   eventHandlers,
-        ILoggerFactory?              loggerFactory = null,
-        ISubscriptionGapMeasure?     measure       = null
+        IMessageConsumer             consumer,
+        ILoggerFactory?              loggerFactory = null
     ) : base(
         eventStoreClient,
         options,
         checkpointStore,
-        eventHandlers,
-        loggerFactory,
-        measure
+        consumer,
+        loggerFactory
     ) { }
 
-    protected override async Task Subscribe(CancellationToken cancellationToken) {
+    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var filterOptions = new SubscriptionFilterOptions(
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
-            10,
-            (_, p, ct) => StoreCheckpoint(new EventPosition(p.CommitPosition, DateTime.Now), ct)
+            Options.CheckpointInterval,
+            async (_, p, ct)
+                => await StoreCheckpoint(
+                    new EventPosition(p.CommitPosition, DateTime.Now),
+                    ct
+                )
         );
 
         var (_, position) = await GetCheckpoint(cancellationToken);
@@ -101,12 +103,12 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
 
         Subscription = await subTask.NoContext();
 
-        Task HandleEvent(
+        async Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,
             ResolvedEvent                                re,
             CancellationToken                            ct
         )
-            => Handler(AsReceivedEvent(re), ct);
+            => await HandleInt(CreateContext(re), ct);
 
         void HandleDrop(
             global::EventStore.Client.StreamSubscription _,
@@ -114,30 +116,34 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             Exception?                                   ex
         )
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
+    }
 
-        ReceivedEvent AsReceivedEvent(ResolvedEvent re) {
-            var evt = DeserializeData(
-                re.Event.ContentType,
-                re.Event.EventType,
-                re.Event.Data,
-                re.Event.EventStreamId,
-                re.Event.EventNumber
-            );
+    protected override IMessageConsumeContext CreateContext(ResolvedEvent re) {
+        var evt = DeserializeData(
+            re.Event.ContentType,
+            re.Event.EventType,
+            re.Event.Data,
+            re.Event.EventStreamId,
+            re.Event.EventNumber
+        );
 
-            return new ReceivedEvent(
-                re.Event.EventId.ToString(),
-                re.Event.EventType,
-                re.Event.ContentType,
-                re.Event.Position.CommitPosition,
-                re.Event.Position.CommitPosition,
-                re.OriginalStreamId,
-                _sequence++,
-                re.Event.Created,
-                evt,
-                DeserializeMeta(re.Event.Metadata, re.OriginalStreamId)
-            );
-        }
+        return new MessageConsumeContext(
+            re.Event.EventId.ToString(),
+            re.Event.EventType,
+            re.Event.ContentType,
+            re.OriginalStreamId,
+            _sequence++,
+            re.Event.Created,
+            evt,
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId)
+        ) {
+            GlobalPosition = re.Event.Position.CommitPosition,
+            StreamPosition = re.Event.Position.CommitPosition
+        };
     }
 
     ulong _sequence;
+    
+
+    public ISubscriptionGapMeasure GetMeasure() => new AllStreamSubscriptionMeasure(EventStoreClient, () => LastProcessed);
 }

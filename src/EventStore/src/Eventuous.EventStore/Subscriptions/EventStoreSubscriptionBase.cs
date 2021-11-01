@@ -1,46 +1,28 @@
-using Eventuous.Subscriptions.Monitoring;
+using Eventuous.EventStore.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.EventStore.Subscriptions;
 
 [PublicAPI]
 public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
     where T : EventStoreSubscriptionOptions {
-    readonly  IMetadataSerializer _metaSerializer;
-    protected EventStoreClient    EventStoreClient { get; }
+    readonly IMetadataSerializer _metaSerializer;
+
+    protected EventStoreClient EventStoreClient { get; }
 
     protected EventStoreSubscriptionBase(
-        EventStoreClient           eventStoreClient,
-        T                          options,
-        IEnumerable<IEventHandler> eventHandlers,
-        ILoggerFactory?            loggerFactory = null,
-        ISubscriptionGapMeasure?   measure       = null
-    ) : base(
-        options,
-        eventHandlers,
-        loggerFactory,
-        measure
-    ) {
+        EventStoreClient eventStoreClient,
+        T                options,
+        IMessageConsumer consumer,
+        ILoggerFactory?  loggerFactory = null
+    ) : base(options, consumer, loggerFactory) {
         EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         _metaSerializer  = Options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
-    protected override async Task<EventPosition> GetLastEventPosition(
-        CancellationToken cancellationToken
-    ) {
-        var read = EventStoreClient.ReadAllAsync(
-            Direction.Backwards,
-            Position.End,
-            1,
-            cancellationToken: cancellationToken
-        );
-
-        var events = await read.ToArrayAsync(cancellationToken).NoContext();
-
-        return new EventPosition(
-            events[0].Event.Position.CommitPosition,
-            events[0].Event.Created
-        );
-    }
+    protected abstract IMessageConsumeContext CreateContext(ResolvedEvent re);
 
     protected Metadata? DeserializeMeta(
         ReadOnlyMemory<byte> meta,
@@ -66,4 +48,6 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
             return null;
         }
     }
+    
+    protected EventPosition? LastProcessed { get; set; }
 }

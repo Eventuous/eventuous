@@ -1,6 +1,4 @@
-using System.Diagnostics;
-
-namespace Eventuous.Subscriptions.Monitoring; 
+namespace Eventuous.Subscriptions.Diagnostics; 
 
 public record UnprocessedEventsCount(string SubscriptionId, long Count);
 

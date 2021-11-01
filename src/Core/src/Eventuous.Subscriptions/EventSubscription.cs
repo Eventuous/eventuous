@@ -1,11 +1,11 @@
-using Eventuous.Subscriptions.Monitoring;
-using Microsoft.Extensions.Hosting;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
 
 [PublicAPI]
-public abstract class EventSubscription<T> : IHostedService, IReportHealth where T : SubscriptionOptions {
+public abstract class EventSubscription<T> : IMessageSubscription where T : SubscriptionOptions {
     public    bool             IsRunning { get; set; }
     public    bool             IsDropped { get; set; }
     protected Logging.Logging? DebugLog  { get; }
@@ -14,89 +14,78 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
     protected internal T Options { get; }
 
     internal IEventSerializer         EventSerializer { get; }
-    internal IEventHandler[]          EventHandlers   { get; }
-    internal ISubscriptionGapMeasure? Measure         { get; }
+    internal IMessageConsumer         Consumer        { get; }
 
     CancellationTokenSource _subscriptionCts = new();
     CancellationTokenSource _monitoringCts   = new();
     Task?                   _measureTask;
     ulong                   _gap;
 
-    public EventPosition? LastProcessed { get; protected set; }
-
     public string ServiceId => Options.SubscriptionId;
 
     protected EventSubscription(
-        T                          options,
-        IEnumerable<IEventHandler> eventHandlers,
-        ILoggerFactory?            loggerFactory = null,
-        ISubscriptionGapMeasure?   measure       = null
+        T                        options,
+        IMessageConsumer         consumer,
+        ILoggerFactory?          loggerFactory = null
     ) {
         Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
 
+        Consumer        = Ensure.NotNull(consumer, nameof(consumer));
         EventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
-        Measure         = measure;
         Options         = options;
-        EventHandlers   = Ensure.NotNull(eventHandlers, nameof(eventHandlers)).ToArray();
         Log             = loggerFactory?.CreateLogger($"Subscription-{options.SubscriptionId}");
         DebugLog        = Log?.IsEnabled(LogLevel.Debug) == true ? Log.LogDebug : null;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken) {
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _subscriptionCts.Token);
+    OnSubscribed? _onSubscribed;
+    OnDropped?    _onDropped;
 
-        if (Measure != null) {
-            var monitoringCts =
-                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _monitoringCts.Token);
-
-            _measureTask = Task.Run(() => MeasureGap(monitoringCts.Token), monitoringCts.Token);
-        }
-
-        await Subscribe(cts.Token).NoContext();
-
-        IsRunning = true;
-
-        Log?.LogInformation("Started subscription");
+    public async ValueTask Subscribe(
+        OnSubscribed      onSubscribed,
+        OnDropped         onDropped,
+        CancellationToken cancellationToken
+    ) {
+        _onSubscribed = onSubscribed;
+        _onDropped    = onDropped;
+        await Subscribe(cancellationToken);
+        onSubscribed(Options.SubscriptionId);
     }
 
-    protected virtual async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
+    public async ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken) {
+        await Unsubscribe(cancellationToken);
+        onUnsubscribed(Options.SubscriptionId);
+
+        if (Consumer is IAsyncDisposable disposable) {
+            await disposable.DisposeAsync();
+        }
+    }
+
+    protected async ValueTask Handler(IMessageConsumeContext context, CancellationToken cancellationToken) {
         DebugLog?.Invoke(
             "Subscription {Subscription} got an event {EventType}",
             Options.SubscriptionId,
-            re.EventType
+            context.EventType
         );
 
         try {
-            if (re.Payload != null) {
-                await Task.WhenAll(
-                        EventHandlers.Select(
-                            x => x.HandleEvent(
-                                re,
-                                cancellationToken
-                            )
-                        )
-                    )
-                    .NoContext();
+            if (context.Message != null) {
+                await Consumer.Consume(context, cancellationToken).NoContext();
             }
-
-            LastProcessed = EventPosition.FromReceivedEvent(re);
         }
         catch (Exception e) {
             Log?.Log(
                 Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning,
                 e,
-                "Error when handling the event {Stream} {Position} {Type}",
-                re.Stream,
-                re.StreamPosition,
-                re.EventType
+                "Error when handling the event {Stream} {Type}",
+                context.Stream,
+                context.EventType
             );
 
             if (Options.ThrowOnError)
                 throw new SubscriptionException(
-                    re.Stream,
-                    re.EventType,
-                    re.Sequence,
-                    re.Payload,
+                    context.Stream,
+                    context.EventType,
+                    context.Message,
                     e
                 );
         }
@@ -109,26 +98,8 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
         string               stream,
         ulong                position = 0
     ) {
-        if (data.IsEmpty) return null;
-
-        var contentType = string.IsNullOrWhiteSpace(eventType) ? "application/json"
-            : eventContentType;
-
-        if (contentType != EventSerializer.ContentType) {
-            Log?.LogError(
-                "Unknown content type {ContentType} for event {Stream} {Position} {Type}",
-                contentType,
-                stream,
-                position,
-                eventType
-            );
-
-            if (Options.ThrowOnError)
-                throw new InvalidOperationException($"Unknown content type {contentType}");
-        }
-
         try {
-            return EventSerializer.DeserializeEvent(data.Span, eventType);
+            return EventSerializer.DeserializeSubscriptionPayload(eventContentType, eventType, data, stream, position);
         }
         catch (Exception e) {
             Log?.LogError(
@@ -139,35 +110,16 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
                 eventType
             );
 
-            if (Options.ThrowOnError)
-                throw new DeserializationException(stream, eventType, position, e);
+            if (Options.ThrowOnError) throw;
 
             return null;
         }
     }
 
     // TODO: Passing the handler function would allow decoupling subscribers from handlers
-    protected abstract Task Subscribe(CancellationToken cancellationToken);
+    protected abstract ValueTask Subscribe(CancellationToken cancellationToken);
 
-    public async Task StopAsync(CancellationToken cancellationToken) {
-        IsRunning = false;
-
-        if (_measureTask != null) {
-            _monitoringCts.Cancel();
-
-            try {
-                await _measureTask.NoContext();
-            }
-            catch (OperationCanceledException) {
-                // Expected
-            }
-        }
-
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _subscriptionCts.Token);
-        await Unsubscribe(cts.Token).NoContext();
-
-        Log?.LogInformation("Stopped subscription");
-    }
+    protected abstract ValueTask Unsubscribe(CancellationToken cancellationToken);
 
     readonly InterlockedSemaphore _resubscribing = new();
 
@@ -185,6 +137,7 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
                 await Subscribe(cancellationToken).NoContext();
 
                 IsDropped = false;
+                _onSubscribed?.Invoke(Options.SubscriptionId);
 
                 Log?.LogInformation("Subscription restored");
             }
@@ -204,8 +157,8 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
 
         Log?.LogWarning(exception, "Subscription dropped {Reason}", reason);
 
-        IsDropped      = true;
-        _lastException = exception;
+        IsDropped = true;
+        _onDropped?.Invoke(Options.SubscriptionId, reason, exception);
 
         Task.Run(
             () => {
@@ -214,33 +167,12 @@ public abstract class EventSubscription<T> : IHostedService, IReportHealth where
             }
         );
     }
-
-    protected abstract ValueTask Unsubscribe(CancellationToken cancellationToken);
-
-    async Task MeasureGap(CancellationToken cancellationToken) {
-        while (!cancellationToken.IsCancellationRequested) {
-            var (position, created) = await GetLastEventPosition(cancellationToken).NoContext();
-
-            if (LastProcessed?.Position != null && position != null) {
-                _gap = (ulong)position - LastProcessed.Position.Value;
-
-                Measure!.PutGap(Options.SubscriptionId, _gap, created);
-            }
-
-            await Task.Delay(1000, cancellationToken).NoContext();
-        }
-    }
-
-    protected abstract Task<EventPosition> GetLastEventPosition(
-        CancellationToken cancellationToken
-    );
-
-    Exception? _lastException;
-
-    public HealthReport HealthReport => new(!(IsRunning && IsDropped), _lastException);
 }
 
 public record EventPosition(ulong? Position, DateTime Created) {
-    public static EventPosition FromReceivedEvent(ReceivedEvent receivedEvent)
-        => new(receivedEvent.StreamPosition, receivedEvent.Created);
+    public static EventPosition FromContext(MessageConsumeContext context)
+        => new(context.StreamPosition, context.Created);
+
+    public static EventPosition FromContext(IMessageConsumeContext context)
+        => FromContext((context as MessageConsumeContext)!);
 }

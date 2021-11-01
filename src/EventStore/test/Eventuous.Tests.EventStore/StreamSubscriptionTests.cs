@@ -1,12 +1,9 @@
-using Eventuous.Subscriptions;
 using Eventuous.EventStore.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Logging;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using Eventuous.Tests.EventStore.Fixtures;
-using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
+using Eventuous.Sut.Subs;
 using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
@@ -63,33 +60,36 @@ public class StreamSubscriptionTests {
 
         var handler = new TestHandler();
 
+        const string subscriptionId = "TestSub";
         var subscription = new StreamSubscription(
             Instance.Client,
             new StreamSubscriptionOptions {
                 StreamName     = categoryStream,
-                SubscriptionId = "TestSub",
+                SubscriptionId = subscriptionId,
                 ResolveLinkTos = true,
                 ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
-            new[] { handler },
+            new DefaultConsumer(new[] { handler }, true),
             _loggerFactory
         );
 
-        await subscription.StartAsync(CancellationToken.None);
+        var log = _loggerFactory.CreateLogger("Test");
+
+        await subscription.SubscribeWithLog(log);
 
         while (handler.Count < 90) {
             await Task.Delay(100);
         }
 
-        await subscription.StopAsync(CancellationToken.None);
+        await subscription.UnsubscribeWithLog(log);
 
-        var log = _loggerFactory.CreateLogger("Test");
         log.LogInformation("Received {Count} events", handler.Count);
-        
+
         var actual = handler.Processed
-            .Select(x => (x.Payload as BookingEvents.BookingImported)!.BookingId)
+            .Select(x => (x.Message as BookingEvents.BookingImported)!.BookingId)
             .ToList();
+
         log.LogInformation("Actual contains {Count} events", actual.Count);
 
         actual
@@ -98,18 +98,14 @@ public class StreamSubscriptionTests {
     }
 
     class TestHandler : IEventHandler {
-        public ulong Position { get; private set; }
         public int   Count    { get; private set; }
 
-        public List<ReceivedEvent> Processed { get; } = new();
-
-        public void SetLogger(SubscriptionLog subscriptionLogger) { }
+        public List<IMessageConsumeContext> Processed { get; } = new();
 
         public Task HandleEvent(
-            ReceivedEvent     evt,
+            IMessageConsumeContext     evt,
             CancellationToken cancellationToken
         ) {
-            Position = evt.StreamPosition;
             Count++;
             if (evt == null) throw new InvalidOperationException();
 

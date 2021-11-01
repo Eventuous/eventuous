@@ -1,9 +1,11 @@
 using Eventuous.GooglePubSub.Producers;
 using Eventuous.GooglePubSub.Subscriptions;
 using Eventuous.Producers;
+using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Consumers;
 using Eventuous.Sut.Subs;
+using FluentAssertions.Execution;
 using Hypothesist;
-using Xunit.Abstractions;
 
 namespace Eventuous.Tests.GooglePubSub;
 
@@ -17,12 +19,14 @@ public class PubSubTests : IAsyncLifetime {
     readonly TestEventHandler         _handler;
     readonly StreamName               _pubsubTopic;
     readonly string                   _pubsubSubscription;
+    readonly ILogger<PubSubTests>     _log;
 
     public PubSubTests(ITestOutputHelper outputHelper) {
         var loggerFactory =
             LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
-        _pubsubTopic        = new($"test-{Guid.NewGuid():N}");
+        _log                = loggerFactory.CreateLogger<PubSubTests>();
+        _pubsubTopic        = new StreamName($"test-{Guid.NewGuid():N}");
         _pubsubSubscription = $"test-{Guid.NewGuid():N}";
 
         _handler = new TestEventHandler();
@@ -36,7 +40,7 @@ public class PubSubTests : IAsyncLifetime {
             PubSubFixture.ProjectId,
             _pubsubTopic,
             _pubsubSubscription,
-            new[] { _handler },
+            new DefaultConsumer(new IEventHandler[] { _handler }, true),
             loggerFactory: loggerFactory
         );
     }
@@ -65,12 +69,13 @@ public class PubSubTests : IAsyncLifetime {
 
     public async Task InitializeAsync() {
         await _producer.StartAsync();
-        await _subscription.StartAsync(CancellationToken.None);
+        await _subscription.SubscribeWithLog(_log);
     }
 
     public async Task DisposeAsync() {
         await _producer.StopAsync();
-        await _subscription.StopAsync(CancellationToken.None);
+        await _subscription.UnsubscribeWithLog(_log);
+
         await PubSubFixture.DeleteSubscription(_pubsubSubscription);
         await PubSubFixture.DeleteTopic(_pubsubTopic);
     }

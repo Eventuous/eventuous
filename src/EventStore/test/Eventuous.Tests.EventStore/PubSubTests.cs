@@ -2,12 +2,9 @@ using System.Diagnostics;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
-using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Consumers;
 using Eventuous.Sut.Subs;
-using Eventuous.Tests.EventStore.Fixtures;
 using Hypothesist;
-using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -20,8 +17,10 @@ public class PubSubTests : IAsyncLifetime {
     readonly EventStoreProducer _producer;
     readonly TestEventHandler   _handler;
 
-    readonly StreamName       _stream = new($"test-{Guid.NewGuid():N}");
-    readonly ActivityListener _listener;
+    readonly StreamName           _stream = new($"test-{Guid.NewGuid():N}");
+    readonly ActivityListener     _listener;
+    readonly ILogger<PubSubTests> _log;
+    readonly TestCheckpointStore  _checkpointStore;
 
     public PubSubTests(ITestOutputHelper outputHelper) {
         var loggerFactory =
@@ -29,9 +28,10 @@ public class PubSubTests : IAsyncLifetime {
 
         var subscriptionId = $"test-{Guid.NewGuid():N}";
 
-        _handler = new TestEventHandler();
-
-        _producer = new EventStoreProducer(IntegrationFixture.Instance.Client);
+        _handler         = new TestEventHandler();
+        _producer        = new EventStoreProducer(IntegrationFixture.Instance.Client);
+        _log             = loggerFactory.CreateLogger<PubSubTests>();
+        _checkpointStore = new TestCheckpointStore();
 
         _subscription = new StreamSubscription(
             IntegrationFixture.Instance.Client,
@@ -39,8 +39,8 @@ public class PubSubTests : IAsyncLifetime {
                 StreamName     = _stream,
                 SubscriptionId = subscriptionId
             },
-            new NoOpCheckpointStore(),
-            new[] { _handler },
+            _checkpointStore,
+            new DefaultConsumer(new IEventHandler[] { _handler }, true),
             loggerFactory
         );
 
@@ -69,6 +69,8 @@ public class PubSubTests : IAsyncLifetime {
         await _producer.Produce(_stream, testEvent);
 
         await _handler.Validate(10.Seconds());
+
+        _checkpointStore.Last.Position.Should().Be(0);
     }
 
     [Fact]
@@ -81,13 +83,15 @@ public class PubSubTests : IAsyncLifetime {
         await _producer.Produce(_stream, testEvents);
 
         await _handler.Validate(10.Seconds());
+        
+        _checkpointStore.Last.Position.Should().Be(count - 1);
     }
 
     public async Task InitializeAsync() {
-        await _subscription.StartAsync(CancellationToken.None);
+        await _subscription.SubscribeWithLog(_log);
     }
 
     public async Task DisposeAsync() {
-        await _subscription.StopAsync(CancellationToken.None);
+        await _subscription.UnsubscribeWithLog(_log);
     }
 }

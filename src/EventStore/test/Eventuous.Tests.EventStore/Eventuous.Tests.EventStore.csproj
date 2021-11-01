@@ -12,4 +12,11 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
     </ItemGroup>
+    <ItemGroup>
+        <Using Include="NodaTime" />
+        <Using Include="Eventuous.Subscriptions" />
+        <Using Include="Eventuous.Subscriptions.Checkpoints" />
+        <Using Include="Eventuous.Subscriptions.Logging" />
+        <Using Include="Eventuous.Tests.EventStore.Fixtures" />
+    </ItemGroup>
 </Project>

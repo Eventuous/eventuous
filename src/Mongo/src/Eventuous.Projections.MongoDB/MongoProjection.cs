@@ -1,32 +1,32 @@
 using Eventuous.Projections.MongoDB.Tools;
+using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
 
-namespace Eventuous.Projections.MongoDB; 
+namespace Eventuous.Projections.MongoDB;
 
 [PublicAPI]
 public abstract class MongoProjection<T> : IEventHandler
     where T : ProjectedDocument {
-
     protected IMongoCollection<T> Collection { get; }
 
     protected MongoProjection(IMongoDatabase database) {
-        Collection     = Ensure.NotNull(database, nameof(database)).GetDocumentCollection<T>();
+        Collection = Ensure.NotNull(database, nameof(database)).GetDocumentCollection<T>();
     }
 
     public void SetLogger(SubscriptionLog subscriptionLogger) => Log = subscriptionLogger;
 
     public SubscriptionLog? Log { get; set; }
 
-    public async Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
-        var updateTask = GetUpdate(evt);
+    public async Task HandleEvent(IMessageConsumeContext context, CancellationToken cancellationToken) {
+        var updateTask = GetUpdate(context);
         var update     = updateTask == NoOp ? null : await updateTask.NoContext();
 
         if (update == null) {
-            Log?.Debug?.Invoke("No handler for {Event}", evt.Payload!.GetType().Name);
+            Log?.Debug?.Invoke("No handler for {Event}", context.Message!.GetType().Name);
             return;
         }
 
-        Log?.Debug?.Invoke("Projecting {Event}", evt.Payload!.GetType().Name);
+        Log?.Debug?.Invoke("Projecting {Event}", context.Message!.GetType().Name);
 
         var task = update switch {
             OtherOperation<T> operation => operation.Execute(),
@@ -37,19 +37,29 @@ public abstract class MongoProjection<T> : IEventHandler
 
         await task.NoContext();
 
-        Task ExecuteUpdate(UpdateOperation<T> upd)
-            => Collection.UpdateOneAsync(
-                upd.Filter,
-                upd.Update.Set(x => x.Position, (long)evt.StreamPosition),
+        Task ExecuteUpdate(UpdateOperation<T> upd) {
+            var streamPosition = context is MessageConsumeContext ctx ? (long)ctx.StreamPosition : 0;
+
+            var (filterDefinition, updateDefinition) = upd;
+
+            return Collection.UpdateOneAsync(
+                filterDefinition,
+                updateDefinition.Set(x => x.Position, streamPosition),
                 new UpdateOptions { IsUpsert = true },
                 cancellationToken
             );
+        }
     }
-    
+
     protected abstract ValueTask<Operation<T>> GetUpdate(object evt, long? position);
 
-    protected virtual ValueTask<Operation<T>> GetUpdate(ReceivedEvent receivedEvent) {
-        return GetUpdate(receivedEvent.Payload!, (long?)receivedEvent.StreamPosition);
+    protected virtual ValueTask<Operation<T>> GetUpdate(IMessageConsumeContext context) {
+        var streamPosition = context is MessageConsumeContext ctx ? (long?)ctx.StreamPosition : null;
+
+        return GetUpdate(
+            context.Message!,
+            streamPosition
+        );
     }
 
     protected Operation<T> UpdateOperation(BuildFilter<T> filter, BuildUpdate<T> update)
@@ -64,7 +74,7 @@ public abstract class MongoProjection<T> : IEventHandler
     protected ValueTask<Operation<T>> UpdateOperationTask(string id, BuildUpdate<T> update)
         => new(UpdateOperation(id, update));
 
-    protected static readonly ValueTask<Operation<T>> NoOp = new((Operation<T>) null!);
+    protected static readonly ValueTask<Operation<T>> NoOp = new((Operation<T>)null!);
 }
 
 // ReSharper disable once UnusedTypeParameter

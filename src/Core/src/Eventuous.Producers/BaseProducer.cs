@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Producers.Diagnostics;
 

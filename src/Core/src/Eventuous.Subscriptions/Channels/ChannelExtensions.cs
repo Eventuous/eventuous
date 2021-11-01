@@ -40,7 +40,7 @@ static class ChannelExtensions {
         this Channel<T>                     channel,
         CancellationTokenSource             cts,
         Task[]                              readers,
-        Func<CancellationToken, ValueTask>? finalize
+        Func<CancellationToken, ValueTask>? finalize = null
     ) {
         channel.Writer.Complete();
         cts.CancelAfter(TimeSpan.FromSeconds(1));

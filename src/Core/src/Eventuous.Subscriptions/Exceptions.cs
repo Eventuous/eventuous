@@ -6,11 +6,15 @@ public class DeserializationException : Exception {
     public DeserializationException(string stream, string eventType, ulong position, Exception e)
         : base($"Error deserializing event {stream} {position} {eventType}", e) {
     }
+    
+    public DeserializationException(string stream, string eventType, ulong position, string message)
+        : base($"Error deserializing event {stream} {position} {eventType}: {message}") {
+    }
 }
 
 public class SubscriptionException : Exception {
-    public SubscriptionException(string stream, string eventType, ulong position, object? evt, Exception e)
-        : base($"Error processing event {stream} {position} {eventType}", e) {
+    public SubscriptionException(string stream, string eventType, object? evt, Exception e)
+        : base($"Error processing event {stream} {eventType}", e) {
         Data.Add("Event", evt);
     }
 

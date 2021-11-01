@@ -1,5 +1,5 @@
-using Eventuous.Subscriptions.Monitoring;
-using Microsoft.Extensions.Hosting;
+using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Shovel;
@@ -14,19 +14,17 @@ namespace Eventuous.Shovel;
 /// <typeparam name="TProducer">Producer, which will publish events</typeparam>
 /// <typeparam name="TSubscriptionOptions">Subscription options type</typeparam>
 [PublicAPI]
-public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHostedService
+public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : SubscriptionHostedService
     where TSubscription : EventSubscription<TSubscriptionOptions>
     where TProducer : class, IEventProducer
     where TSubscriptionOptions : SubscriptionOptions {
-    readonly TSubscription _subscription;
-    readonly TProducer     _producer;
+    readonly TProducer _producer;
 
     public delegate TSubscription CreateSubscription(
         string                     subscriptionId,
         IEnumerable<IEventHandler> eventHandlers,
         IEventSerializer?          serializer,
-        ILoggerFactory?            loggerFactory,
-        SubscriptionGapMeasure?    measure
+        ILoggerFactory?            loggerFactory
     );
 
     /// <summary>
@@ -37,20 +35,18 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHo
     /// <param name="createSubscription">Function to create a subscription</param>
     /// <param name="producer">Producer instance</param>
     /// <param name="routeAndTransform">Routing and transformation function</param>
+    /// <param name="subscriptionHealth"></param>
     /// <param name="loggerFactory">Logger factory</param>
-    /// <param name="measure">Subscription gap measurement</param>
     public ShovelService(
         string                  subscriptionId,
         CreateSubscription      createSubscription,
         TProducer               producer,
         RouteAndTransform       routeAndTransform,
-        IEventSerializer?       eventSerializer = null,
-        ILoggerFactory?         loggerFactory   = null,
-        SubscriptionGapMeasure? measure         = null
-    ) {
-        _producer = Ensure.NotNull(producer, nameof(producer));
-
-        _subscription = createSubscription(
+        IEventSerializer?       eventSerializer    = null,
+        ISubscriptionHealth?    subscriptionHealth = null,
+        ILoggerFactory?         loggerFactory      = null
+    ) : base(
+        createSubscription(
             Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId)),
             new[] {
                 new ShovelHandler<TProducer>(
@@ -59,9 +55,12 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHo
                 )
             },
             eventSerializer,
-            loggerFactory,
-            measure
-        );
+            loggerFactory
+        ),
+        subscriptionHealth,
+        loggerFactory
+    ) {
+        _producer = Ensure.NotNull(producer, nameof(producer));
     }
 
     /// <summary>
@@ -72,20 +71,18 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHo
     /// <param name="targetStream">The stream where events will be produced</param>
     /// <param name="producer">Producer instance</param>
     /// <param name="eventSerializer">Event serializer</param>
+    /// <param name="subscriptionHealth"></param>
     /// <param name="loggerFactory">Logger factory</param>
-    /// <param name="measure">Subscription gap measurement</param>
     public ShovelService(
         string                  subscriptionId,
         CreateSubscription      createSubscription,
         TProducer               producer,
         StreamName              targetStream,
-        IEventSerializer?       eventSerializer = null,
-        ILoggerFactory?         loggerFactory   = null,
-        SubscriptionGapMeasure? measure         = null
-    ) {
-        _producer = Ensure.NotNull(producer, nameof(producer));
-
-        _subscription = createSubscription(
+        IEventSerializer?       eventSerializer    = null,
+        ISubscriptionHealth?    subscriptionHealth = null,
+        ILoggerFactory?         loggerFactory      = null
+    ) : base(
+        createSubscription(
             Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId)),
             new[] {
                 new ShovelHandler<TProducer>(
@@ -94,29 +91,30 @@ public class ShovelService<TSubscription, TSubscriptionOptions, TProducer> : IHo
                 )
             },
             eventSerializer ?? DefaultEventSerializer.Instance,
-            loggerFactory,
-            measure
-        );
+            loggerFactory
+        ),
+        subscriptionHealth,
+        loggerFactory
+    ) {
+        _producer = Ensure.NotNull(producer, nameof(producer));
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken) {
+    public override async Task StartAsync(CancellationToken cancellationToken) {
         while (!_producer.Ready) {
             await Task.Delay(100, cancellationToken);
         }
 
-        await _subscription.StartAsync(cancellationToken).NoContext();
+        await base.StartAsync(cancellationToken).NoContext();
     }
-
-    public Task StopAsync(CancellationToken cancellationToken) => _subscription.StopAsync(cancellationToken);
 
     public class DefaultRoute {
         readonly StreamName _targetStream;
 
         public DefaultRoute(StreamName targetStream) => _targetStream = targetStream;
 
-        public ValueTask<ShovelMessage> Route(ReceivedEvent message)
-            => new(new ShovelMessage(_targetStream, message.Payload, message.Metadata));
+        public ValueTask<ShovelContext> Route(IMessageConsumeContext context)
+            => new(new ShovelContext(_targetStream, context.Message, context.Metadata));
     }
 }
 
-public delegate ValueTask<ShovelMessage?> RouteAndTransform(ReceivedEvent message);
+public delegate ValueTask<ShovelContext?> RouteAndTransform(IMessageConsumeContext context);

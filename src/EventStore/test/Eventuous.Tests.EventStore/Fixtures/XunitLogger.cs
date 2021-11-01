@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
-
 namespace Eventuous.Tests.EventStore.Fixtures;
 
 public class XunitLogger<T> : ILogger<T>, IDisposable {

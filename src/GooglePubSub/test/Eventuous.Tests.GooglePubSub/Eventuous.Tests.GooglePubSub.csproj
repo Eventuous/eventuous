@@ -4,12 +4,11 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
-        <ProjectReference Include="..\..\src\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj" />
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
+        <ProjectReference Include="..\..\src\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="Google.Cloud.PubSub.V1" />
-        <Using Include="Microsoft.Extensions.Logging" />
+        <Using Include="Google.Cloud.PubSub.V1"/>
     </ItemGroup>
 </Project>

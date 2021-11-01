@@ -1,10 +1,7 @@
 using System.Reflection;
 using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
-using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Logging;
-using Eventuous.Tests.EventStore.Fixtures;
+using Eventuous.Subscriptions.Context;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
@@ -89,9 +86,7 @@ public class RegistrationTests {
 }
 
 public class TestHandler : IEventHandler {
-    public void SetLogger(SubscriptionLog subscriptionLogger) { }
-
-    public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
+    public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken) {
         return Task.CompletedTask;
     }
 }

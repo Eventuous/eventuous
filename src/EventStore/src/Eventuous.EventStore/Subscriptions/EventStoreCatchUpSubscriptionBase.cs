@@ -1,28 +1,43 @@
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Monitoring;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.EventStore.Subscriptions;
 
 [PublicAPI]
 public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscriptionBase<T>
     where T : EventStoreSubscriptionOptions {
-    protected ICheckpointStore    CheckpointStore  { get; }
+    protected ICheckpointStore CheckpointStore { get; }
 
     protected EventStoreCatchUpSubscriptionBase(
-        EventStoreClient           eventStoreClient,
-        T                          options,
-        ICheckpointStore           checkpointStore,
-        IEnumerable<IEventHandler> eventHandlers,
-        ILoggerFactory?            loggerFactory = null,
-        ISubscriptionGapMeasure?   measure       = null
+        EventStoreClient eventStoreClient,
+        T                options,
+        ICheckpointStore checkpointStore,
+        IMessageConsumer consumer,
+        ILoggerFactory?  loggerFactory = null
     ) : base(
         eventStoreClient,
         options,
-        eventHandlers,
-        loggerFactory,
-        measure
+        GetConsumer(consumer),
+        loggerFactory
     ) {
-        CheckpointStore  = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
+        CheckpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
+    }
+
+    static IMessageConsumer GetConsumer(IMessageConsumer inner)
+        => new FilterConsumer(
+            new ConcurrentConsumer(inner, 1, 1),
+            ctx => !ctx.EventType.StartsWith("$")
+        );
+
+    protected ValueTask HandleInt(IMessageConsumeContext context, CancellationToken cancellationToken) {
+        var ctx = new DelayedAckConsumeContext(Ack, context);
+        return Handler(ctx, cancellationToken);
+
+        ValueTask Ack(CancellationToken ct) {
+            var position = EventPosition.FromContext(context);
+            return StoreCheckpoint(position, ct);
+        }
     }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
@@ -39,29 +54,15 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         return checkpoint;
     }
 
-    protected override async Task Handler(ReceivedEvent re, CancellationToken cancellationToken) {
-        if (re.EventType.StartsWith("$")) {
-            LastProcessed = EventPosition.FromReceivedEvent(re);
-            await Store().NoContext();
-            return;
-        }
-
-        await base.Handler(re, cancellationToken);
-
-        await Store().NoContext();
-
-        Task Store() => StoreCheckpoint(EventPosition.FromReceivedEvent(re), cancellationToken);
-    }
-
-    protected async Task StoreCheckpoint(
+    protected async ValueTask StoreCheckpoint(
         EventPosition     position,
         CancellationToken cancellationToken
     ) {
-        LastProcessed = position;
         var checkpoint = new Checkpoint(Options.SubscriptionId, position.Position);
         await CheckpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
+        LastProcessed = position;
     }
-    
+
     protected override ValueTask Unsubscribe(CancellationToken cancellationToken) {
         Subscription?.Dispose();
         return default;

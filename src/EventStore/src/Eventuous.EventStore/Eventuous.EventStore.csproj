@@ -10,8 +10,8 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Using Include="EventStore.Client"/>
-        <Using Include="Eventuous.Subscriptions"/>
-        <Using Include="Microsoft.Extensions.Logging"/>
+        <Using Include="EventStore.Client" />
+        <Using Include="Eventuous.Subscriptions" />
+        <Using Include="Microsoft.Extensions.Logging" />
     </ItemGroup>
 </Project>

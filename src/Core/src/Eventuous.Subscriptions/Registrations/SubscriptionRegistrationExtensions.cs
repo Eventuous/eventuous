@@ -1,8 +1,10 @@
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Monitoring;
+using Eventuous.Subscriptions.Diagnostics;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -12,7 +14,8 @@ public static class SubscriptionRegistrationExtensions {
     public static ISubscriptionBuilder AddSubscription<T, TOptions>(
         this IServiceCollection services,
         string                  subscriptionId,
-        Action<TOptions>?       configureOptions = null
+        Action<TOptions>?       configureOptions = null,
+        IEnumerable<string>?    healthTags       = null
     )
         where T : EventSubscription<TOptions>
         where TOptions : SubscriptionOptions {
@@ -20,15 +23,33 @@ public static class SubscriptionRegistrationExtensions {
             Ensure.NotNull(services, nameof(services)),
             Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId))
         );
+
         services.AddSubscriptionBuilder(builder);
 
         services.Configure<TOptions>(subscriptionId, ConfigureOptions);
 
         services.AddSingleton(sp => GetBuilder(sp).Resolve(sp));
-        services.AddSingleton<IHostedService>(sp => GetBuilder(sp).Resolve(sp));
+
+        services.AddSingleton<IHostedService>(
+            sp =>
+                new SubscriptionHostedService(
+                    GetBuilder(sp).Resolve(sp),
+                    sp.GetService<ISubscriptionHealth>(),
+                    sp.GetService<ILoggerFactory>()
+                )
+        );
 
         services.TryAddSingleton<SubscriptionHealthCheck>();
-        services.AddSingleton<IReportHealth>(sp => GetBuilder(sp).Resolve(sp));
+        services.TryAddSingleton<ISubscriptionHealth>(sp => sp.GetRequiredService<SubscriptionHealthCheck>());
+
+        services.AddHealthChecks().Add(
+            new HealthCheckRegistration(
+                "eventuous_subscription",
+                sp => sp.GetRequiredService<SubscriptionHealthCheck>(),
+                HealthStatus.Unhealthy,
+                healthTags
+            )
+        );
 
         return builder;
 
@@ -38,7 +59,7 @@ public static class SubscriptionRegistrationExtensions {
         }
 
         ISubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp)
-            => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId); 
+            => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);
     }
 
     public static ISubscriptionBuilder AddEventHandler<THandler>(this ISubscriptionBuilder builder)

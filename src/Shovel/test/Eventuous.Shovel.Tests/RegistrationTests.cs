@@ -1,5 +1,7 @@
 ﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,7 +29,7 @@ public class RegistrationTests {
             services.AddSubscription<TestSub, TestOptions>("sub1").AddEventHandler<Handler>();
         }
 
-        static ValueTask<ShovelMessage<TestProduceOptions>?> RouteAndTransform(object message) {
+        static ValueTask<ShovelContext<TestProduceOptions>?> RouteAndTransform(object message) {
             throw new NotImplementedException();
         }
 
@@ -38,22 +40,17 @@ public class RegistrationTests {
 
     class TestSub : EventSubscription<TestOptions> {
         public TestSub(
-            TestOptions                options,
-            IEnumerable<IEventHandler> eventHandlers
-        ) : base(options, eventHandlers) { }
+            TestOptions      options,
+            IMessageConsumer consumer
+        ) : base(options, consumer) { }
 
-        protected override Task Subscribe(CancellationToken cancellationToken) => Task.CompletedTask;
+        protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
-
-        protected override Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken)
-            => Task.FromResult(new EventPosition(0, DateTime.Now));
     }
 
     class Handler : IEventHandler {
-        public void SetLogger(SubscriptionLog subscriptionLogger) { }
-
-        public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {
