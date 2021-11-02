@@ -1,13 +1,19 @@
 using Eventuous.Subscriptions.Diagnostics;
 
-namespace Eventuous.EventStore.Subscriptions.Diagnostics; 
+namespace Eventuous.EventStore.Subscriptions.Diagnostics;
 
 public class AllStreamSubscriptionMeasure : ISubscriptionGapMeasure {
-    public AllStreamSubscriptionMeasure(EventStoreClient eventStoreClient, Func<EventPosition?> getLast) {
+    public AllStreamSubscriptionMeasure(
+        string               subscriptionId,
+        EventStoreClient     eventStoreClient,
+        Func<EventPosition?> getLast
+    ) {
+        _subscriptionId   = subscriptionId;
         _eventStoreClient = eventStoreClient;
-        _getLast     = getLast;
+        _getLast          = getLast;
     }
 
+    readonly string               _subscriptionId;
     readonly EventStoreClient     _eventStoreClient;
     readonly Func<EventPosition?> _getLast;
 
@@ -23,6 +29,7 @@ public class AllStreamSubscriptionMeasure : ISubscriptionGapMeasure {
         var last   = _getLast();
 
         return new SubscriptionGap(
+            _subscriptionId,
             events[0].Event.Position.CommitPosition - last?.Position ?? 0,
             DateTime.UtcNow - events[0].Event.Created
         );

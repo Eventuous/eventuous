@@ -1,7 +1,7 @@
 using Eventuous.Subscriptions.Context;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.Subscriptions.Consumers; 
+namespace Eventuous.Subscriptions.Consumers;
 
 public class DefaultConsumer : IMessageConsumer {
     readonly IEventHandler[] _eventHandlers;
@@ -9,11 +9,11 @@ public class DefaultConsumer : IMessageConsumer {
     readonly ILogger?        _log;
 
     public DefaultConsumer(IEventHandler[] eventHandlers, bool throwOnError, ILogger? log = null) {
-        _eventHandlers     = eventHandlers;
-        _throwOnError = throwOnError;
-        _log               = log;
+        _eventHandlers = eventHandlers;
+        _throwOnError  = throwOnError;
+        _log           = log;
     }
-    
+
     public async ValueTask Consume(IMessageConsumeContext context, CancellationToken cancellationToken) {
         try {
             if (context.Message != null) {

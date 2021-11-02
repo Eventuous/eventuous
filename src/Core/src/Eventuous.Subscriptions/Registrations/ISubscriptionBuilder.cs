@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Consumers;
 
 // ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -21,5 +22,7 @@ public interface ISubscriptionBuilder {
 public interface ISubscriptionBuilder<T, TOptions> : ISubscriptionBuilder
     where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
-    T Resolve(IServiceProvider sp);
+    T ResolveSubscription(IServiceProvider sp);
+
+    IMessageConsumer ResolveConsumer(IServiceProvider sp);
 }

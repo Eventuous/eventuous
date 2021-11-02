@@ -1,6 +1,7 @@
 using System.Reflection;
 using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
+using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -39,7 +40,17 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveTestHandler() {
-        var handlers = GetPrivateMember<IEnumerable<IEventHandler>>(Sub, "EventHandlers")?.ToArray();
+        var consumer = GetPrivateMember<IMessageConsumer>(Sub, "Consumer");
+
+        IEventHandler[]? handlers = null;
+
+        while (consumer != null) {
+            handlers = GetPrivateMember<IEventHandler[]>(consumer, "_eventHandlers");
+
+            if (handlers != null) break;
+
+            consumer = GetPrivateMember<IMessageConsumer>(consumer, "_inner");
+        }
 
         handlers.Should().HaveCount(1);
         handlers.Should().ContainSingle(x => x.GetType() == typeof(TestHandler));
@@ -51,6 +62,7 @@ public class RegistrationTests {
     [Fact]
     public void ShouldHaveEventStoreClient() {
         var client = GetPrivateMember<EventStoreClient>(Sub, "EventStoreClient");
+
         client.Should().Be(IntegrationFixture.Instance.Client);
     }
 
@@ -63,8 +75,11 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldResolveAsHostedService() {
-        var service = Provider.GetService<IHostedService>();
-        service.Should().Be(Sub);
+        var services = Provider.GetServices<IHostedService>().ToArray();
+        services.Length.Should().Be(1);
+
+        var sub = GetPrivateMember<IMessageSubscription>(services[0], "_subscription");
+        sub.Should().Be(Sub);
     }
 
     static TMember? GetPrivateMember<TMember>(object instance, string name) where TMember : class

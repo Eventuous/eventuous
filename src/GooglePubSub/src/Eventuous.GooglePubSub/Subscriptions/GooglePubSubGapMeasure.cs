@@ -4,19 +4,20 @@ using Google.Protobuf.WellKnownTypes;
 
 namespace Eventuous.GooglePubSub.Subscriptions;
 
-[PublicAPI]
 public class GooglePubSubGapMeasure : ISubscriptionGapMeasure {
     const string PubSubMetricUndeliveredMessagesCount = "num_undelivered_messages";
     const string PubSubMetricOldestUnackedMessageAge  = "oldest_unacked_message_age";
 
-    ListTimeSeriesRequest _undeliveredCountRequest = null!;
-    ListTimeSeriesRequest _oldestAgeRequest        = null!;
-    MetricServiceClient   _metricClient            = null!;
-    bool                  _monitoringEnabled;
+    readonly ListTimeSeriesRequest _undeliveredCountRequest;
+    readonly ListTimeSeriesRequest _oldestAgeRequest;
+
+    // ReSharper disable once MemberInitializerValueIgnored
+    readonly MetricServiceClient _metricClient = null!;
+    readonly bool                _monitoringEnabled;
+    readonly string              _subscriptionId;
 
     public GooglePubSubGapMeasure(PubSubSubscriptionOptions options) {
-        _undeliveredCountRequest = GetFilteredRequest(PubSubMetricUndeliveredMessagesCount);
-        _oldestAgeRequest        = GetFilteredRequest(PubSubMetricOldestUnackedMessageAge);
+        _subscriptionId = options.SubscriptionId;
 
         var emulationEnabled =
             !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PUBSUB_EMULATOR_HOST"));
@@ -25,6 +26,9 @@ public class GooglePubSubGapMeasure : ISubscriptionGapMeasure {
 
         if (_monitoringEnabled)
             _metricClient = MetricServiceClient.Create();
+
+        _undeliveredCountRequest = GetFilteredRequest(PubSubMetricUndeliveredMessagesCount);
+        _oldestAgeRequest        = GetFilteredRequest(PubSubMetricOldestUnackedMessageAge);
 
         ListTimeSeriesRequest GetFilteredRequest(string metric)
             => new() {
@@ -35,7 +39,7 @@ public class GooglePubSubGapMeasure : ISubscriptionGapMeasure {
     }
 
     public async Task<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken) {
-        if (!_monitoringEnabled) return new SubscriptionGap(0, TimeSpan.Zero);
+        if (!_monitoringEnabled) return new SubscriptionGap(_subscriptionId, 0, TimeSpan.Zero);
 
         var now = DateTime.UtcNow;
 
@@ -52,7 +56,7 @@ public class GooglePubSubGapMeasure : ISubscriptionGapMeasure {
             ? TimeSpan.Zero
             : TimeSpan.FromSeconds(oldestAge.Value.Int64Value);
 
-        return new SubscriptionGap((ulong)(undelivered?.Value?.Int64Value ?? 0), age);
+        return new SubscriptionGap(_subscriptionId, (ulong)(undelivered?.Value?.Int64Value ?? 0), age);
 
         async Task<Point?> GetPoint(ListTimeSeriesRequest request) {
             request.Interval = interval;

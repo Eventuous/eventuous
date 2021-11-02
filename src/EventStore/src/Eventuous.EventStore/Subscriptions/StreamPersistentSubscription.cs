@@ -10,7 +10,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// </summary>
 [PublicAPI]
 public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
-IMeasuredSubscription{
+    IMeasuredSubscription {
     public delegate Task HandleEventProcessingFailure(
         EventStoreClient       client,
         PersistentSubscription subscription,
@@ -117,7 +117,7 @@ IMeasuredSubscription{
                 await Handler(receivedEvent, ct).NoContext();
 
                 if (!autoAck) await subscription.Ack(re).NoContext();
-                
+
                 LastProcessed = EventPosition.FromContext(receivedEvent);
             }
             catch (Exception e) {
@@ -180,6 +180,11 @@ IMeasuredSubscription{
             resolvedEvent
         );
 
-    public ISubscriptionGapMeasure GetMeasure() 
-        => new StreamSubscriptionMeasure(EventStoreClient, Options.ResolveLinkTos, () => LastProcessed);
+    public ISubscriptionGapMeasure GetMeasure()
+        => new StreamSubscriptionMeasure(
+            Options.SubscriptionId,
+            EventStoreClient,
+            Options.ResolveLinkTos,
+            () => LastProcessed
+        );
 }

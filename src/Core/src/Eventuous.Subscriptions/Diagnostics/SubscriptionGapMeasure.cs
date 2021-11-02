@@ -6,4 +6,4 @@ public interface ISubscriptionGapMeasure {
 }
 
 [PublicAPI]
-public record SubscriptionGap(ulong PositionGap, TimeSpan TimeGap);
+public record SubscriptionGap(string SubscriptionId, ulong PositionGap, TimeSpan TimeGap);

@@ -2,11 +2,13 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
+        <IncludeTestHost>true</IncludeTestHost>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
+        <ProjectReference Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
         <ProjectReference Include="..\..\src\Eventuous.EventStore\Eventuous.EventStore.csproj" />
     </ItemGroup>
     <ItemGroup>

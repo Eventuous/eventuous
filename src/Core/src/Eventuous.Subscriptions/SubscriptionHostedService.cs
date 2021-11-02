@@ -22,40 +22,23 @@ public class SubscriptionHostedService : IHostedService {
 
     ILogger<SubscriptionHostedService>? Log { get; }
 
+    readonly InterlockedSemaphore _semaphore = new();
+
     public virtual async Task StartAsync(CancellationToken cancellationToken) {
+        if (!_semaphore.CanMove()) return;
+        
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _subscriptionCts.Token);
-
-        // if (Measure != null) {
-        //     var monitoringCts =
-        //         CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _monitoringCts.Token);
-        //
-        //     _measureTask = Task.Run(() => MeasureGap(monitoringCts.Token), monitoringCts.Token);
-        // }
-
         await _subscription.Subscribe(
             id => _subscriptionHealth?.ReportHealthy(id),
             (id, _, ex) => _subscriptionHealth?.ReportUnhealthy(id, ex),
             cts.Token
         ).NoContext();
-
         Log?.LogInformation("Started subscription");
     }
 
     public virtual async Task StopAsync(CancellationToken cancellationToken) {
-        // if (_measureTask != null) {
-        //     _monitoringCts.Cancel();
-        //
-        //     try {
-        //         await _measureTask.NoContext();
-        //     }
-        //     catch (OperationCanceledException) {
-        //         // Expected
-        //     }
-        // }
-
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _subscriptionCts.Token);
         await _subscription.Unsubscribe(_ => { }, cts.Token).NoContext();
-
         Log?.LogInformation("Stopped subscription");
     }
 }

@@ -12,5 +12,7 @@ public static class EventuousDiagnostics  {
 
     public static readonly ActivitySource ActivitySource = new(InstrumentationName, Version?.ToString());
 
-    public static Meter GetMeter(string category) => new($"{InstrumentationName}.{category}", AssemblyName.Version?.ToString());
+    public static Meter GetMeter(string category) => new(GetMeterName(category), AssemblyName.Version?.ToString());
+
+    public static string GetMeterName(string category) => $"{InstrumentationName}.{category}";
 }

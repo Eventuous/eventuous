@@ -2,9 +2,8 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
-        <IncludeTestHost>true</IncludeTestHost>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
+        <ProjectReference Include="..\..\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
     </ItemGroup>
 </Project>

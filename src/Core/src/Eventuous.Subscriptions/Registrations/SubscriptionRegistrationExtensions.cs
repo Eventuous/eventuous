@@ -28,28 +28,20 @@ public static class SubscriptionRegistrationExtensions {
 
         services.Configure<TOptions>(subscriptionId, ConfigureOptions);
 
-        services.AddSingleton(sp => GetBuilder(sp).Resolve(sp));
+        services.AddSingleton(sp => GetBuilder(sp).ResolveSubscription(sp));
+        
 
         services.AddSingleton<IHostedService>(
             sp =>
                 new SubscriptionHostedService(
-                    GetBuilder(sp).Resolve(sp),
+                    GetBuilder(sp).ResolveSubscription(sp),
                     sp.GetService<ISubscriptionHealth>(),
                     sp.GetService<ILoggerFactory>()
                 )
         );
 
-        services.TryAddSingleton<SubscriptionHealthCheck>();
-        services.TryAddSingleton<ISubscriptionHealth>(sp => sp.GetRequiredService<SubscriptionHealthCheck>());
-
-        services.AddHealthChecks().Add(
-            new HealthCheckRegistration(
-                "eventuous_subscription",
-                sp => sp.GetRequiredService<SubscriptionHealthCheck>(),
-                HealthStatus.Unhealthy,
-                healthTags
-            )
-        );
+        if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T)))
+            services.AddSingleton(GetGapMeasure);
 
         return builder;
 
@@ -60,6 +52,11 @@ public static class SubscriptionRegistrationExtensions {
 
         ISubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp)
             => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);
+
+        ISubscriptionGapMeasure GetGapMeasure(IServiceProvider sp) {
+             var subscription = GetBuilder(sp).ResolveSubscription(sp) as IMeasuredSubscription;
+             return subscription!.GetMeasure();
+        }
     }
 
     public static ISubscriptionBuilder AddEventHandler<THandler>(this ISubscriptionBuilder builder)
@@ -85,14 +82,28 @@ public static class SubscriptionRegistrationExtensions {
             => id == builder.SubscriptionId ? sp.GetService<THandler>() : null;
     }
 
+    /// <summary>
+    /// Adds a health check for subscriptions. All subscriptions will be monitored by one check.
+    /// </summary>
+    /// <param name="builder">Health checks builder</param>
+    /// <param name="checkName">Name of the health check</param>
+    /// <param name="failureStatus">Health status for unhealthy subscriptions</param>
+    /// <param name="tags">Health check tags list</param>
+    /// <returns></returns>
     public static IHealthChecksBuilder AddSubscriptionsCheck(
         this IHealthChecksBuilder builder,
         string                    checkName,
+        HealthStatus?             failureStatus,
         string[]                  tags
-    ) => builder.AddCheck<SubscriptionHealthCheck>(checkName, null, tags);
+    ) {
+        builder.Services.TryAddSingleton<SubscriptionHealthCheck>();
+        builder.Services.TryAddSingleton<ISubscriptionHealth>(sp => sp.GetRequiredService<SubscriptionHealthCheck>());
+        return builder.AddCheck<SubscriptionHealthCheck>(checkName, failureStatus, tags);
+    }
 
     public static IServiceCollection AddCheckpointStore<T>(this IServiceCollection services)
         where T : class, ICheckpointStore {
+        services.AddSingleton<T>();
         services.AddSingleton<ICheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()));
         return services;
     }

@@ -1,47 +1,34 @@
-using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Checkpoints;
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
-public class SubscriptionGapMetric : IDisposable {
-    public SubscriptionGapMetric() {
+public sealed class SubscriptionGapMetric : IDisposable {
+    const string Category = "subscription";
+
+    public static string MeterName = EventuousDiagnostics.GetMeterName(Category);
+    
+    public SubscriptionGapMetric(IEnumerable<ISubscriptionGapMeasure> measures) {
         Meter = EventuousDiagnostics.GetMeter("subscription");
-        ActivitySource.AddActivityListener(new ActivityListener {
-            Sample = _ => ActivitySamplingResult.AllData,
-            ShouldListenTo = x => x.Name == EventuousDiagnostics.InstrumentationName,
-            ActivityStopped = Stopped
-        });
-        // diagnostics.Meter.CreateObservableGauge(
-        //     $"subscription-{subscriptionId}",
-        //     ObserveValues,
-        //     "events",
-        //     "Number of unprocessed events"
-        // );
-        //
-        // IEnumerable<Measurement<long>> ObserveValues() {
-        //     var cts = new CancellationTokenSource(5000);
-        //     var gap = gapMeasure.GetSubscriptionGap(cts.Token).GetAwaiter().GetResult();
-        //     return new[] { new Measurement<long>((long)gap.PositionGap) };
-        // }
-    }
 
-    void Stopped(Activity activity) {
-        switch (activity.OperationName) {
-            case MeasuredCheckpointStore.ReadOperationName:
-                break;
-            case MeasuredCheckpointStore.WriteOperationName:
-                break;
+        foreach (var measure in measures) {
+            var gap = GetGap(measure);
+
+            Meter.CreateObservableGauge(
+                $"subscription-{gap.SubscriptionId}",
+                () => ObserveValues(measure),
+                "events",
+                "Number of unprocessed events"
+            );
         }
-    }
 
-    Dictionary<string, ObservableGauge<long>> _gauges = new();
+        IEnumerable<Measurement<long>> ObserveValues(ISubscriptionGapMeasure gapMeasure)
+            => new[] { new Measurement<long>((long)GetGap(gapMeasure).PositionGap) };
 
-    ObservableGauge<long> GetGauge(string id) {
-        // var gauge = Meter.C
-        if (!_gauges.ContainsKey(id))
-            _gauges.TryAdd(id, Meter.CreateObservableGauge(id))
+        SubscriptionGap GetGap(ISubscriptionGapMeasure gapMeasure) {
+            var cts = new CancellationTokenSource(5000);
+            return gapMeasure.GetSubscriptionGap(cts.Token).GetAwaiter().GetResult();
+        }
     }
 
     Meter Meter { get; }

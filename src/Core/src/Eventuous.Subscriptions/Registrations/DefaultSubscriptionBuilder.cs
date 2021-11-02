@@ -1,5 +1,7 @@
 using System.Reflection;
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Consumers;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable CheckNamespace
@@ -16,12 +18,13 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
     public string             SubscriptionId { get; }
     public IServiceCollection Services       { get; }
 
-    T? Resolved { get; set; }
+    T?                ResolvedSub      { get; set; }
+    IMessageConsumer? ResolvedConsumer { get; set; }
 
-    public T Resolve(IServiceProvider sp) {
+    public T ResolveSubscription(IServiceProvider sp) {
         const string subscriptionIdParameterName = "subscriptionId";
 
-        if (Resolved != null) return Resolved;
+        if (ResolvedSub != null) return ResolvedSub;
 
         var constructors = typeof(T).GetConstructors<TOptions>();
 
@@ -45,17 +48,12 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
 
         var (ctor, parameter) = constructors[0];
 
-        IEnumerable<IEventHandler> handlers = sp.GetServices<ResolveHandler>()
-            .Select(x => x(sp, SubscriptionId))
-            .Where(x => x != null)
-            .ToArray()!;
-
         var args = ctor.GetParameters().Select(CreateArg).ToArray();
 
         if (ctor.Invoke(args) is not T instance)
             throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
 
-        Resolved = instance;
+        ResolvedSub = instance;
         return instance;
 
         object? CreateArg(ParameterInfo parameterInfo) {
@@ -69,10 +67,30 @@ public class DefaultSubscriptionBuilder<T, TOptions> : ISubscriptionBuilder<T, T
             }
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
-            if (parameterInfo.ParameterType == typeof(IEnumerable<IEventHandler>)) return handlers;
+            if (parameterInfo.ParameterType == typeof(IMessageConsumer)) return ResolveConsumer(sp);
 
             return sp.GetService(parameterInfo.ParameterType);
         }
+    }
+
+    public IMessageConsumer ResolveConsumer(IServiceProvider sp) {
+        if (ResolvedConsumer != null) return ResolvedConsumer;
+        
+        IEventHandler[] handlers = sp.GetServices<ResolveHandler>()
+            .Select(x => x(sp, SubscriptionId))
+            .Where(x => x != null)
+            .ToArray()!;
+
+        ResolvedConsumer = new DefaultConsumer(handlers, false, sp.GetService<ILogger>());
+
+        return ResolvedConsumer;
+
+        // object? CreateArg(ParameterInfo parameterInfo) {
+        //     // ReSharper disable once ConvertIfStatementToReturnStatement
+        //     if (parameterInfo.ParameterType == typeof(IEnumerable<IEventHandler>)) return handlers;
+        //
+        //     return sp.GetService(parameterInfo.ParameterType);
+        // }
     }
 }
 
@@ -90,3 +108,5 @@ static class TypeExtensionsForRegistrations {
 }
 
 public delegate IEventHandler? ResolveHandler(IServiceProvider sp, string subscriptionId);
+
+public delegate IMessageConsumer? ResolveConsumer(IServiceProvider sp, string subscriptionId);

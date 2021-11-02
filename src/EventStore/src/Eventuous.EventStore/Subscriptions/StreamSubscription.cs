@@ -141,5 +141,10 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
     }
 
     public ISubscriptionGapMeasure GetMeasure()
-        => new StreamSubscriptionMeasure(EventStoreClient, Options.ResolveLinkTos, () => LastProcessed);
+        => new StreamSubscriptionMeasure(
+            Options.SubscriptionId,
+            EventStoreClient,
+            Options.ResolveLinkTos,
+            () => LastProcessed
+        );
 }

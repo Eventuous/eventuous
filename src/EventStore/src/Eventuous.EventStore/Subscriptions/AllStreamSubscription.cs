@@ -143,7 +143,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
     }
 
     ulong _sequence;
-    
 
-    public ISubscriptionGapMeasure GetMeasure() => new AllStreamSubscriptionMeasure(EventStoreClient, () => LastProcessed);
+    public ISubscriptionGapMeasure GetMeasure()
+        => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient, () => LastProcessed);
 }
