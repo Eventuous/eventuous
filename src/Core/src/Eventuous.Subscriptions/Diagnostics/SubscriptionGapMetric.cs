@@ -6,24 +6,35 @@ namespace Eventuous.Subscriptions.Diagnostics;
 public sealed class SubscriptionGapMetric : IDisposable {
     const string Category = "subscription";
 
-    public static string MeterName = EventuousDiagnostics.GetMeterName(Category);
-    
+    public static readonly string MeterName = EventuousDiagnostics.GetMeterName(Category);
+
+    public const string MetricName = "subscription-gap-count";
+
     public SubscriptionGapMetric(IEnumerable<ISubscriptionGapMeasure> measures) {
-        Meter = EventuousDiagnostics.GetMeter("subscription");
+        Meter = EventuousDiagnostics.GetMeter(MeterName);
 
         foreach (var measure in measures) {
             var gap = GetGap(measure);
 
+            var tags = new[] {
+                new KeyValuePair<string, object?>("subscription-id", gap.SubscriptionId)
+            };
+
             Meter.CreateObservableGauge(
-                $"subscription-{gap.SubscriptionId}",
-                () => ObserveValues(measure),
+                MetricName,
+                () => ObserveValues(measure, tags),
                 "events",
                 "Number of unprocessed events"
             );
         }
 
-        IEnumerable<Measurement<long>> ObserveValues(ISubscriptionGapMeasure gapMeasure)
-            => new[] { new Measurement<long>((long)GetGap(gapMeasure).PositionGap) };
+        IEnumerable<Measurement<long>> ObserveValues(
+            ISubscriptionGapMeasure         gapMeasure,
+            KeyValuePair<string, object?>[] tags
+        ) {
+            var gap = GetGap(gapMeasure);
+            return new[] { new Measurement<long>((long)gap.PositionGap, tags) };
+        }
 
         SubscriptionGap GetGap(ISubscriptionGapMeasure gapMeasure) {
             var cts = new CancellationTokenSource(5000);

@@ -9,8 +9,9 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Persistent subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
-    IMeasuredSubscription {
+public class StreamPersistentSubscription
+    : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
+        IMeasuredSubscription {
     public delegate Task HandleEventProcessingFailure(
         EventStoreClient       client,
         PersistentSubscription subscription,
@@ -43,7 +44,8 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
 
         _subscriptionClient = new EventStorePersistentSubscriptionsClient(settings);
 
-        _handleEventProcessingFailure = options.FailureHandler ?? DefaultEventProcessingFailureHandler;
+        _handleEventProcessingFailure =
+            options.FailureHandler ?? DefaultEventProcessingFailureHandler;
     }
 
     /// <summary>
@@ -58,7 +60,7 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
     /// <param name="loggerFactory">Optional: logger factory</param>
     public StreamPersistentSubscription(
         EventStoreClient     eventStoreClient,
-        string               streamName,
+        StreamName           streamName,
         string               subscriptionId,
         IMessageConsumer     consumer,
         IEventSerializer?    eventSerializer = null,
@@ -183,6 +185,7 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
     public ISubscriptionGapMeasure GetMeasure()
         => new StreamSubscriptionMeasure(
             Options.SubscriptionId,
+            Options.Stream,
             EventStoreClient,
             Options.ResolveLinkTos,
             () => LastProcessed

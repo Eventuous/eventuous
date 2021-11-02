@@ -10,8 +10,9 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Catch-up subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscriptionOptions>,
-    IMeasuredSubscription {
+public class StreamSubscription
+    : EventStoreCatchUpSubscriptionBase<StreamSubscriptionOptions>,
+        IMeasuredSubscription {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
     /// </summary>
@@ -26,7 +27,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
     /// <param name="throwOnError"></param>
     public StreamSubscription(
         EventStoreClient     eventStoreClient,
-        string               streamName,
+        StreamName           streamName,
         string               subscriptionId,
         ICheckpointStore     checkpointStore,
         IMessageConsumer     consumer,
@@ -104,8 +105,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
         ) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (re.Event is not null)
-                await HandleInt(CreateContext(re), ct);
+            if (re.Event is not null) await HandleInt(CreateContext(re), ct);
         }
 
         void HandleDrop(
@@ -143,6 +143,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
     public ISubscriptionGapMeasure GetMeasure()
         => new StreamSubscriptionMeasure(
             Options.SubscriptionId,
+            Options.StreamName,
             EventStoreClient,
             Options.ResolveLinkTos,
             () => LastProcessed

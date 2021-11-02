@@ -24,7 +24,7 @@ public abstract record EventStoreSubscriptionOptions : SubscriptionOptions {
 }
 
 public record StreamSubscriptionOptions : EventStoreSubscriptionOptions {
-    public string StreamName { get; set; } = null!;
+    public StreamName StreamName { get; set; } = null!;
 }
 
 [PublicAPI]
@@ -35,7 +35,7 @@ public record AllStreamSubscriptionOptions : EventStoreSubscriptionOptions {
 
 [PublicAPI]
 public record StreamPersistentSubscriptionOptions : EventStoreSubscriptionOptions {
-    public string Stream { get; set; } = null!;
+    public StreamName Stream { get; set; } = null!;
 
     /// <summary>
     /// Detailed settings for the subscription

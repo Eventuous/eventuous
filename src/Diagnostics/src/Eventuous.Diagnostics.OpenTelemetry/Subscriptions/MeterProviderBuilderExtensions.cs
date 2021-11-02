@@ -14,12 +14,15 @@ public static class MeterProviderBuilderExtensions {
     public static MeterProviderBuilder AddEventuousSubscriptions(this MeterProviderBuilder builder) {
         Ensure.NotNull(builder, nameof(builder));
 
+        var meterName = SubscriptionGapMetric.MeterName;
+
+        builder.AddMeter(meterName);
         builder.GetServices().AddSingleton<SubscriptionGapMetric>();
-        builder.AddMeter(EventuousDiagnostics.GetMeterName(SubscriptionGapMetric.MeterName));
 
         return builder is IDeferredMeterProviderBuilder deferredMeterProviderBuilder
             ? deferredMeterProviderBuilder.Configure(
-                (sp, b) => b.AddInstrumentation(sp.GetRequiredService<SubscriptionGapMetric>)
+                (sp, b) =>
+                    b.AddInstrumentation(sp.GetRequiredService<SubscriptionGapMetric>)
             ) : builder.AddInstrumentation<SubscriptionGapMetric>();
     }
 }

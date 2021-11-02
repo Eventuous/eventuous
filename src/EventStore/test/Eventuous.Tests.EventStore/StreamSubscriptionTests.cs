@@ -22,13 +22,13 @@ public class StreamSubscriptionTests {
     public async Task StreamSubscriptionGetsDeletedEvents() {
         var service = new BookingService(Instance.AggregateStore);
 
-        const string categoryStream = "$ce-Booking";
+        var categoryStream = new StreamName("$ce-Booking");
 
         ulong? startPosition = null;
 
         try {
             var last = await Instance.EventStore.ReadEventsBackwards(
-                new StreamName(categoryStream),
+                categoryStream,
                 1,
                 CancellationToken.None
             );
@@ -61,6 +61,7 @@ public class StreamSubscriptionTests {
         var handler = new TestHandler();
 
         const string subscriptionId = "TestSub";
+
         var subscription = new StreamSubscription(
             Instance.Client,
             new StreamSubscriptionOptions {
@@ -70,7 +71,7 @@ public class StreamSubscriptionTests {
                 ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
-            new DefaultConsumer(new[] { handler }, true),
+            new DefaultConsumer(new IEventHandler[] { handler }, true),
             _loggerFactory
         );
 
@@ -98,13 +99,13 @@ public class StreamSubscriptionTests {
     }
 
     class TestHandler : IEventHandler {
-        public int   Count    { get; private set; }
+        public int Count { get; private set; }
 
         public List<IMessageConsumeContext> Processed { get; } = new();
 
         public Task HandleEvent(
-            IMessageConsumeContext     evt,
-            CancellationToken cancellationToken
+            IMessageConsumeContext evt,
+            CancellationToken      cancellationToken
         ) {
             Count++;
             if (evt == null) throw new InvalidOperationException();

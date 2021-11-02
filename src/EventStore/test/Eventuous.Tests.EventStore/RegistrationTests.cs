@@ -12,8 +12,8 @@ namespace Eventuous.Tests.EventStore;
 public class RegistrationTests {
     ServiceProvider Provider { get; }
 
-    const string SubId  = "Test";
-    const string Stream = "teststream";
+    const string     SubId  = "Test";
+    static readonly StreamName Stream = new("teststream");
 
     public RegistrationTests() {
         var services = new ServiceCollection();
@@ -22,7 +22,10 @@ public class RegistrationTests {
         services.AddSingleton<ICheckpointStore, NoOpCheckpointStore>();
 
         services
-            .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(SubId, x => x.StreamName = Stream)
+            .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
+                SubId,
+                x => x.StreamName = Stream
+            )
             .AddEventHandler<TestHandler>();
 
         Provider = services.BuildServiceProvider();
@@ -85,7 +88,8 @@ public class RegistrationTests {
     static TMember? GetPrivateMember<TMember>(object instance, string name) where TMember : class
         => GetMember<TMember>(instance.GetType(), instance, name);
 
-    static TMember? GetMember<TMember>(Type instanceType, object instance, string name) where TMember : class {
+    static TMember? GetMember<TMember>(Type instanceType, object instance, string name)
+        where TMember : class {
         const BindingFlags flags = BindingFlags.Instance
                                  | BindingFlags.Public
                                  | BindingFlags.NonPublic
