@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Producers.Diagnostics;
 
@@ -65,7 +66,12 @@ public abstract class BaseProducer : IEventProducer {
         IEnumerable<ProducedMessage> messages,
         CancellationToken            cancellationToken = default
     ) {
-        var (activity, msgs) = ProducerActivity.Start(messages, DefaultTags);
+        var messagesArray = messages.ToArray();
+        if (messagesArray.Length == 0) return;
+
+        var (activity, msgs) = messagesArray.Length == 1
+            ? ForOne()
+            : ProducerActivity.Start(messagesArray, DefaultTags);
 
         if (activity is { IsAllDataRequested: true }) {
             activity.SetTag(TelemetryTags.Messaging.Destination, stream);
@@ -74,6 +80,11 @@ public abstract class BaseProducer : IEventProducer {
         await ProduceMessages(stream, msgs, cancellationToken);
 
         activity?.Dispose();
+
+        (Activity? act, ProducedMessage[]) ForOne() {
+            var (act, producedMessage) = ProducerActivity.Start(messagesArray[0], DefaultTags);
+            return (act, new[] { producedMessage });
+        }
     }
 
     public bool Ready { get; private set; }

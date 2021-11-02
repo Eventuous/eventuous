@@ -93,7 +93,7 @@ public static class SubscriptionRegistrationExtensions {
 
     public static IServiceCollection AddCheckpointStore<T>(this IServiceCollection services)
         where T : class, ICheckpointStore {
-        services.AddSingleton<ICheckpointStore, T>();
+        services.AddSingleton<ICheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()));
         return services;
     }
 }

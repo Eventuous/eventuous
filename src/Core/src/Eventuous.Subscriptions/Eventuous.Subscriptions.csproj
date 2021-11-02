@@ -6,6 +6,7 @@
         <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0-rc.2.21480.5" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\..\Diagnostics\src\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
         <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>

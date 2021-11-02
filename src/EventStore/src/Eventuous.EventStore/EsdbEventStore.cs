@@ -23,7 +23,7 @@ public class EsdbEventStore : IEventStore {
     };
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
-        using var activity = SharedDiagnostics.ActivitySource.CreateActivity(
+        using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
             "stream-exists",
             ActivityKind.Internal,
             parentContext: default,

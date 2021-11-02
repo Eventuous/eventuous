@@ -50,7 +50,7 @@ public static class ProducerActivity {
     }
 
     static Activity? GetActivity(IEnumerable<KeyValuePair<string, object?>>? tags)
-        => SharedDiagnostics.ActivitySource.CreateActivity(
+        => EventuousDiagnostics.ActivitySource.CreateActivity(
             "produce",
             ActivityKind.Producer,
             parentContext: default,
