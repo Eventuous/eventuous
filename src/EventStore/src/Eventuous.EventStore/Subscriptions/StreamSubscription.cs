@@ -105,7 +105,7 @@ public class StreamSubscription
         ) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (re.Event is not null) await HandleInt(CreateContext(re), ct);
+            if (re.Event is not null) await HandleInternal(CreateContext(re), ct);
         }
 
         void HandleDrop(
@@ -116,7 +116,7 @@ public class StreamSubscription
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
-    protected override IMessageConsumeContext CreateContext(ResolvedEvent re) {
+    IMessageConsumeContext CreateContext(ResolvedEvent re) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,

@@ -74,16 +74,14 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         }
     }
 
-    EventData CreateMessage(ProducedMessage producedMessage) {
-        var (message, metadata) = producedMessage;
-        var msg = Ensure.NotNull(message, nameof(message));
+    EventData CreateMessage(ProducedMessage message) {
+        var msg = Ensure.NotNull(message.Message, nameof(message));
         var (eventType, payload) = _serializer.SerializeEvent(msg);
-        var messageId = metadata!.GetMessageId();
-        metadata!.Remove(MetaTags.MessageId);
-        var metaBytes = _metaSerializer.Serialize(metadata);
+        message.Metadata!.Remove(MetaTags.MessageId);
+        var metaBytes = _metaSerializer.Serialize(message.Metadata);
 
         return new EventData(
-            Uuid.FromGuid(messageId),
+            Uuid.FromGuid(message.MessageId),
             eventType,
             payload,
             metaBytes,

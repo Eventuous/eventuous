@@ -1,6 +1,11 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Microsoft.Extensions.Logging;
+using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 
 namespace Eventuous.Subscriptions;
 
@@ -13,8 +18,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     protected internal T Options { get; }
 
-    internal IEventSerializer         EventSerializer { get; }
-    internal IMessageConsumer         Consumer        { get; }
+    internal IEventSerializer EventSerializer { get; }
+    internal IMessageConsumer Consumer        { get; }
 
     CancellationTokenSource _subscriptionCts = new();
     CancellationTokenSource _monitoringCts   = new();
@@ -24,9 +29,9 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     public string ServiceId => Options.SubscriptionId;
 
     protected EventSubscription(
-        T                        options,
-        IMessageConsumer         consumer,
-        ILoggerFactory?          loggerFactory = null
+        T                options,
+        IMessageConsumer consumer,
+        ILoggerFactory?  loggerFactory = null
     ) {
         Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
 
@@ -51,7 +56,10 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         onSubscribed(Options.SubscriptionId);
     }
 
-    public async ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken) {
+    public async ValueTask Unsubscribe(
+        OnUnsubscribed    onUnsubscribed,
+        CancellationToken cancellationToken
+    ) {
         await Unsubscribe(cancellationToken);
         onUnsubscribed(Options.SubscriptionId);
 
@@ -60,7 +68,13 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         }
     }
 
-    protected async ValueTask Handler(IMessageConsumeContext context, CancellationToken cancellationToken) {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected async ValueTask Handler(
+        IMessageConsumeContext context,
+        CancellationToken      cancellationToken
+    ) {
+        using var activity = SubscriptionActivity.Start(context);
+
         DebugLog?.Invoke(
             "Subscription {Subscription} got an event {EventType}",
             Options.SubscriptionId,
@@ -73,6 +87,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             }
         }
         catch (Exception e) {
+            activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.EventType}"));
+
             Log?.Log(
                 Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning,
                 e,
@@ -91,6 +107,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected object? DeserializeData(
         string               eventContentType,
         string               eventType,
@@ -99,7 +116,13 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         ulong                position = 0
     ) {
         try {
-            return EventSerializer.DeserializeSubscriptionPayload(eventContentType, eventType, data, stream, position);
+            return EventSerializer.DeserializeSubscriptionPayload(
+                eventContentType,
+                eventType,
+                data,
+                stream,
+                position
+            );
         }
         catch (Exception e) {
             Log?.LogError(
@@ -162,7 +185,9 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         Task.Run(
             () => {
-                var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2);
+                var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10)
+                    : TimeSpan.FromSeconds(2);
+
                 return Resubscribe(delay, _subscriptionCts.Token);
             }
         );

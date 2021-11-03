@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
@@ -30,7 +31,11 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
             ctx => !ctx.EventType.StartsWith("$")
         );
 
-    protected ValueTask HandleInt(IMessageConsumeContext context, CancellationToken cancellationToken) {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected ValueTask HandleInternal(
+        IMessageConsumeContext context,
+        CancellationToken      cancellationToken
+    ) {
         var ctx = new DelayedAckConsumeContext(Ack, context);
         return Handler(ctx, cancellationToken);
 

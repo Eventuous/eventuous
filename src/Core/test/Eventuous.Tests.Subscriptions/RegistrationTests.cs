@@ -1,4 +1,5 @@
-﻿using Eventuous.Subscriptions.Consumers;
+﻿using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Logging;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Eventuous.Subscriptions.Tests;
+namespace Eventuous.Tests.Subscriptions;
 
 public class RegistrationTests {
     readonly IServiceProvider _provider;

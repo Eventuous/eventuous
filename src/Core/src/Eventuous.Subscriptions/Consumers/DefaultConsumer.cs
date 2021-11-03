@@ -1,4 +1,7 @@
+using System.Diagnostics;
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions.Consumers;
@@ -14,7 +17,13 @@ public class DefaultConsumer : IMessageConsumer {
         _log           = log;
     }
 
-    public async ValueTask Consume(IMessageConsumeContext context, CancellationToken cancellationToken) {
+    public async ValueTask Consume(
+        IMessageConsumeContext context,
+        CancellationToken      cancellationToken
+    ) {
+        using var activity = Activity.Current?.Context != context.ParentContext
+            ? SubscriptionActivity.Start(context) : Activity.Current;
+
         try {
             if (context.Message != null) {
                 await Task.WhenAll(
@@ -27,10 +36,10 @@ public class DefaultConsumer : IMessageConsumer {
                     )
                     .NoContext();
             }
-
-            // LastProcessed = EventPosition.FromReceivedEvent(re);
         }
         catch (Exception e) {
+            activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.EventType}"));
+
             _log?.Log(
                 _throwOnError ? LogLevel.Error : LogLevel.Warning,
                 e,

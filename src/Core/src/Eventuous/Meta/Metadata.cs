@@ -16,4 +16,9 @@ public class Metadata : Dictionary<string, object> {
     public string? GetString(string key) => TryGetValue(key, out var value) ? value.ToString() : default;
     
     public T? Get<T>(string key) => TryGetValue(key, out var value) && value is T v ? v : default;
+
+    public Metadata AddNotNull(string key, string? value) {
+        if (!string.IsNullOrEmpty(value)) Add(key, value);
+        return this;
+    }
 }

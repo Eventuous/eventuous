@@ -1,8 +1,8 @@
-using Eventuous.Subscriptions.Consumers;
+using System.Diagnostics;
 
 namespace Eventuous.Subscriptions.Context;
 
-public class MessageConsumeContext : BaseConsumeContext, IMessageConsumeContext {
+public class MessageConsumeContext : IMessageConsumeContext {
     public MessageConsumeContext(
         string    eventId,
         string    eventType,
@@ -12,19 +12,33 @@ public class MessageConsumeContext : BaseConsumeContext, IMessageConsumeContext 
         DateTime  created,
         object?   message,
         Metadata? metadata
-    ) : base(eventId, eventType, contentType, stream, created, metadata) {
-        Sequence = sequence;
-        Message  = message;
+    ) {
+        EventId     = eventId;
+        EventType   = eventType;
+        ContentType = contentType;
+        Stream      = stream;
+        Created     = created;
+        Metadata    = metadata;
+        Sequence    = sequence;
+        Message     = message;
     }
 
-    public object?      Message        { get; }
-    public ContextItems Items          { get; } = new();
-    public ulong        Sequence       { get; init; }
-    public ulong        GlobalPosition { get; init; }
-    public ulong        StreamPosition { get; init; }
+    public string           EventId        { get; }
+    public string           EventType      { get; }
+    public string           ContentType    { get; }
+    public string           Stream         { get; }
+    public DateTime         Created        { get; }
+    public Metadata?        Metadata       { get; }
+    public object?          Message        { get; }
+    public ContextItems     Items          { get; } = new();
+    public ActivityContext? ParentContext  { get; set; }
+    public ulong            Sequence       { get; init; }
+    public ulong            GlobalPosition { get; init; }
+    public ulong            StreamPosition { get; init; }
 }
 
-public class MessageConsumeContext<T> : WrappedContext, IMessageConsumeContext<T> where T : class {
+public class MessageConsumeContext<T> : WrappedConsumeContext, IMessageConsumeContext<T>
+    where T : class {
     public MessageConsumeContext(IMessageConsumeContext innerContext) : base(innerContext) { }
 
     [PublicAPI]

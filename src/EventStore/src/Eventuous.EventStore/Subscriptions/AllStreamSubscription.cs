@@ -108,7 +108,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             ResolvedEvent                                re,
             CancellationToken                            ct
         )
-            => await HandleInt(CreateContext(re), ct);
+            => await HandleInternal(CreateContext(re), ct);
 
         void HandleDrop(
             global::EventStore.Client.StreamSubscription _,
@@ -118,7 +118,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
-    protected override IMessageConsumeContext CreateContext(ResolvedEvent re) {
+    IMessageConsumeContext CreateContext(ResolvedEvent re) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,

@@ -141,7 +141,7 @@ public class StreamPersistentSubscription
             );
     }
 
-    protected override IMessageConsumeContext CreateContext(ResolvedEvent re) {
+    IMessageConsumeContext CreateContext(ResolvedEvent re) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,

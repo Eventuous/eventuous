@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <ProjectReference Include="..\..\..\Diagnostics\src\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
         <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.*" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.*" />
-        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0-rc.2.21480.5" />
     </ItemGroup>
 </Project>

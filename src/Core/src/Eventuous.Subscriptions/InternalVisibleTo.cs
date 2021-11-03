@@ -1,3 +1,3 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Eventuous.Subscriptions.Tests")]
+[assembly: InternalsVisibleTo("Eventuous.Tests.Subscriptions")]

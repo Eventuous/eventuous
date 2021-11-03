@@ -70,7 +70,6 @@ static class ShovelMetaHelper {
     public static Metadata GetMeta(this ShovelContext shovelContext, IMessageConsumeContext context) {
         var (_, _, metadata) = shovelContext;
         var meta = metadata == null ? new Metadata() : new Metadata(metadata);
-        if (meta.GetMessageId() == context.Metadata?.GetMessageId()) meta.WithMessageId(Guid.NewGuid());
         return meta.WithCausationId(context.EventId);
     }
 }

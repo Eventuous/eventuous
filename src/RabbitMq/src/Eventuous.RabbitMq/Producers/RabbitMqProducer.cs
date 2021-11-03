@@ -74,7 +74,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         if (_channel == null)
             throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
 
-        var (msg, metadata)      = message;
+        var (msg, metadata)      = (message.Message, message.Metadata);
         var (eventType, payload) = _serializer.SerializeEvent(msg);
 
         var prop = _channel.CreateBasicProperties();
@@ -82,7 +82,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         prop.DeliveryMode  = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
         prop.Type          = eventType;
         prop.CorrelationId = metadata!.GetCorrelationId();
-        prop.MessageId     = metadata!.GetMessageId().ToString();
+        prop.MessageId     = message.MessageId.ToString();
 
         metadata!.Remove(MetaTags.MessageId);
         prop.Headers = metadata.ToDictionary(x => x.Key, x => x.Value);

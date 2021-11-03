@@ -1,3 +1,5 @@
+using System.Threading.Channels;
+
 namespace Eventuous.Subscriptions.Channels;
 
 public delegate ValueTask ProcessElement<T>(T element, CancellationToken cancellationToken);

@@ -8,6 +8,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
         <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
+        <DiagRoot>$(RepoRoot)\src\Diagnostics\src</DiagRoot>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' != 'true'">

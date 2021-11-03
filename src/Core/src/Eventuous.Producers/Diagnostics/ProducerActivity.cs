@@ -10,22 +10,25 @@ public static class ProducerActivity {
     ) {
         var activity = GetActivity(tags);
 
-        var (msg, metadata) = message;
-        var meta      = GetMeta(metadata);
-        var messageId = meta.GetMessageId();
+        var meta      = GetMeta(message.Metadata);
+        var messageId = message.MessageId.ToString();
 
         activity?
-            .SetTag(TelemetryTags.Message.Type, TypeMap.GetTypeName(msg))
-            .SetTag(TelemetryTags.Message.Id, messageId.ToString())
-            .SetTag(TelemetryTags.Messaging.MessageId, messageId.ToString())
+            .SetTag(TelemetryTags.Message.Type, TypeMap.GetTypeName(message.Message))
+            .SetTag(TelemetryTags.Message.Id, messageId)
+            .SetTag(TelemetryTags.Messaging.MessageId, messageId)
             .CopyParentTag(TelemetryTags.Messaging.ConversationId)
-            .SetOrCopyParentTag(TelemetryTags.Messaging.CausationId, meta.GetCausationId(), TelemetryTags.Message.Id)
+            .SetOrCopyParentTag(
+                TelemetryTags.Messaging.CausationId,
+                meta.GetCausationId(),
+                TelemetryTags.Message.Id
+            )
             .SetOrCopyParentTag(TelemetryTags.Messaging.CorrelationId, meta.GetCorrelationId())
             .Start();
 
         meta.AddActivityTags(activity);
 
-        return (activity, new ProducedMessage(msg, meta));
+        return (activity, new ProducedMessage(message.Message, message.Metadata, message.MessageId));
     }
 
     public static (Activity?, IEnumerable<ProducedMessage>) Start(
@@ -36,17 +39,18 @@ public static class ProducerActivity {
 
         activity?
             .CopyParentTag(TelemetryTags.Messaging.ConversationId)
-            .CopyParentTag(TelemetryTags.Messaging.CausationId)
             .CopyParentTag(TelemetryTags.Messaging.CausationId, TelemetryTags.Message.Id)
             .CopyParentTag(TelemetryTags.Messaging.CorrelationId)
             .Start();
 
         return (activity, messages.Select(GetMessage));
 
-        ProducedMessage GetMessage(ProducedMessage message) {
-            var (msg, metadata) = message;
-            return new ProducedMessage(msg, GetMeta(metadata).AddActivityTags(activity));
-        }
+        ProducedMessage GetMessage(ProducedMessage message)
+            => new(
+                message.Message,
+                GetMeta(message.Metadata).AddActivityTags(activity),
+                message.MessageId
+            );
     }
 
     static Activity? GetActivity(IEnumerable<KeyValuePair<string, object?>>? tags)
@@ -54,15 +58,12 @@ public static class ProducerActivity {
             "produce",
             ActivityKind.Producer,
             parentContext: default,
-            tags
+            tags,
+            idFormat: ActivityIdFormat.W3C
         );
 
-    static Metadata GetMeta(Metadata? metadata) {
-        var messageId = metadata?.GetMessageId() ?? Guid.NewGuid();
-
-        return Metadata
+    static Metadata GetMeta(Metadata? metadata)
+        => Metadata
             .FromMeta(metadata)
-            .WithMessageId(messageId)
             .WithCorrelationId(metadata?.GetCorrelationId());
-    }
 }

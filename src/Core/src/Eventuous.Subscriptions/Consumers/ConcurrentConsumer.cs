@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
 using Eventuous.Subscriptions.Context;
 
@@ -12,19 +14,25 @@ public sealed class ConcurrentConsumer : IMessageConsumer, IAsyncDisposable {
 
         _worker = new ConcurrentChannelWorker<DelayedAckConsumeContext>(
             Channel.CreateBounded<DelayedAckConsumeContext>(concurrencyLimit * bufferSize),
-            ConsumeInt,
+            DelayedConsume,
             concurrencyLimit
         );
     }
 
-    async ValueTask ConsumeInt(DelayedAckConsumeContext ctx, CancellationToken cancellationToken) {
+    async ValueTask DelayedConsume(
+        DelayedAckConsumeContext ctx,
+        CancellationToken        cancellationToken
+    ) {
         await _inner.Consume(ctx, cancellationToken).NoContext();
         await ctx.Acknowledge(cancellationToken).NoContext();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ValueTask Consume(IMessageConsumeContext context, CancellationToken cancellationToken) {
         if (context is not DelayedAckConsumeContext ctx) {
-            throw new InvalidCastException("Round robin consumer only works with delayed acknowledgement");
+            throw new InvalidCastException(
+                "Round robin consumer only works with delayed acknowledgement"
+            );
         }
 
         return _worker.Write(ctx, cancellationToken);

@@ -8,13 +8,12 @@
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
         <ProjectReference Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
         <ProjectReference Include="..\..\src\Eventuous.EventStore\Eventuous.EventStore.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
-        <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.2.0-beta1" />
-        <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.2.0-beta1" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime" />

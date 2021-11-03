@@ -1,10 +1,10 @@
-﻿using Eventuous.AspNetCore.Tests.Sut;
+﻿using Eventuous.Tests.AspNetCore.Sut;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Eventuous.AspNetCore.Tests;
+namespace Eventuous.Tests.AspNetCore;
 
 public class AggregateFactoryRegistrationTests {
     readonly AggregateFactoryRegistry _registry;

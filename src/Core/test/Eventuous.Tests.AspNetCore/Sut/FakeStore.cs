@@ -1,4 +1,4 @@
-namespace Eventuous.AspNetCore.Tests.Sut;
+namespace Eventuous.Tests.AspNetCore.Sut;
 
 public class FakeStore : IEventStore {
     public Task<bool> StreamExists(StreamName streamName, CancellationToken cancellationToken)

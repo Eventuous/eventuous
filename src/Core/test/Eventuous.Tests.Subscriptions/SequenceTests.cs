@@ -1,6 +1,6 @@
 using Eventuous.Subscriptions.Checkpoints;
 
-namespace Eventuous.Subscriptions.Tests;
+namespace Eventuous.Tests.Subscriptions;
 
 public class SequenceTests {
     [Theory]

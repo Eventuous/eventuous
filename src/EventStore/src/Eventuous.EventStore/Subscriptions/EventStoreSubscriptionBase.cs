@@ -1,7 +1,5 @@
-using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -21,8 +19,6 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
         EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         _metaSerializer  = Options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
     }
-
-    protected abstract IMessageConsumeContext CreateContext(ResolvedEvent re);
 
     protected Metadata? DeserializeMeta(
         ReadOnlyMemory<byte> meta,

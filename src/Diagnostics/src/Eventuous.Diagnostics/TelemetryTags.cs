@@ -69,9 +69,14 @@ public static class TelemetryTags {
     }
 
     public static class Exception {
-        public const string EventName        = "exception";
-        public const string Type             = "exception.type";
-        public const string ExceptionMessage = "exception.message";
-        public const string Stacktrace       = "exception.stacktrace";
+        public const string EventName  = "exception";
+        public const string Type       = "exception.type";
+        public const string Message    = "exception.message";
+        public const string Stacktrace = "exception.stacktrace";
+    }
+
+    public static class Otel {
+        public const string StatusCode        = "otel.status_code";
+        public const string StatusDescription = "otel.status_description";
     }
 }

@@ -1,6 +1,9 @@
+using System.Runtime.CompilerServices;
+
 namespace Eventuous.Subscriptions;
 
 public static class SubscriptionSerialization {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static object? DeserializeSubscriptionPayload(
         this IEventSerializer serializer,
         string                eventContentType,

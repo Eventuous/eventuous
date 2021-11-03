@@ -1,8 +1,11 @@
+using System.Runtime.CompilerServices;
+
 namespace Eventuous.Subscriptions.Checkpoints;
 
 public class CommitPositionSequence : SortedSet<CommitPosition> {
     public CommitPositionSequence() : base(new PositionsComparer()) { }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CommitPosition FirstBeforeGap() => Count switch {
         0 => CommitPosition.None,
         1 => Min!,
@@ -12,6 +15,7 @@ public class CommitPositionSequence : SortedSet<CommitPosition> {
     };
 
     class PositionsComparer : IComparer<CommitPosition> {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Compare(CommitPosition? x, CommitPosition? y) {
             if (x == null || y == null || x.Sequence == y.Sequence) return 0;
 

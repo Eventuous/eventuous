@@ -5,12 +5,12 @@ using Eventuous.Producers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Sut.Subs;
+using Eventuous.TestHelpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
-using Logging = Eventuous.Tests.EventStore.Fixtures.Logging;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -26,7 +26,7 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
         _stream   = new StreamName($"test-{Guid.NewGuid():N}");
         _output   = outputHelper;
 
-        _es = new Logging.EventuousEventListener(outputHelper);
+        _es = new TestEventListener(outputHelper, "eventuous", "OpenTelemetry");
 
         var builder = new WebHostBuilder()
             .Configure(_ => { })
@@ -76,10 +76,10 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
         gapCount.Values[0].Should().Be(SubscriptionId);
     }
 
-    readonly TestServer                     _host;
-    readonly TestExporter                   _exporter;
-    readonly Logging.EventuousEventListener _es;
-    readonly ITestOutputHelper              _output;
+    readonly TestServer        _host;
+    readonly TestExporter      _exporter;
+    readonly TestEventListener _es;
+    readonly ITestOutputHelper _output;
 
     public Task InitializeAsync() => _host.Host.StartAsync();
 
@@ -102,7 +102,7 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
 
         Batch<Metric> Batch { get; set; }
 
-        public Func<int, bool> Collect { get; set; }
+        public Func<int, bool> Collect { get; set; } = null!;
 
         public MetricValue[] CollectValues() {
             var values = new List<MetricValue>();

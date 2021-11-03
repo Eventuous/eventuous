@@ -1,28 +1,12 @@
-using System.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
 using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
-public class PublishAndSubscribeOneTests : SubscriptionFixture {
-    readonly ActivityListener _listener;
-
-    public PublishAndSubscribeOneTests(ITestOutputHelper outputHelper) : base(outputHelper) {
-        _listener = new ActivityListener {
-            ShouldListenTo = _ => true, //_.Name == Instrumentation.Name,
-            Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-            ActivityStarted = activity => Log.LogInformation(
-                "Started {Activity} with {Id}, parent {ParentId}",
-                activity.DisplayName,
-                activity.Id,
-                activity.ParentId
-            ),
-            ActivityStopped = activity => Log.LogInformation("Stopped {Activity}", activity.DisplayName)
-        };
-
-        ActivitySource.AddActivityListener(_listener);
-    }
+public class PublishAndSubscribeOneTests : SubscriptionFixture<TestEventHandler> {
+    public PublishAndSubscribeOneTests(ITestOutputHelper outputHelper) 
+        : base(outputHelper, new TestEventHandler()) { }
 
     [Fact]
     public async Task SubscribeAndProduce() {

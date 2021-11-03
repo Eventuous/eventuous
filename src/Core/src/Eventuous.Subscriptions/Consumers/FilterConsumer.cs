@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Subscriptions.Consumers;
@@ -13,6 +14,7 @@ public class FilterConsumer : IMessageConsumer {
         _filter = Ensure.NotNull(filter, nameof(filter));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ValueTask Consume(IMessageConsumeContext context, CancellationToken cancellationToken)
         => _filter(context) ? _inner.Consume(context, cancellationToken) : default;
 }

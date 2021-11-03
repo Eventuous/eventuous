@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
 
 namespace Eventuous.Subscriptions.Checkpoints;
@@ -12,11 +13,13 @@ public class MeasuredCheckpointStore : ICheckpointStore {
 
     readonly ICheckpointStore _checkpointStore;
 
-    public MeasuredCheckpointStore(ICheckpointStore checkpointStore) {
-        _checkpointStore = checkpointStore;
-    }
+    public MeasuredCheckpointStore(ICheckpointStore checkpointStore)
+        => _checkpointStore = checkpointStore;
 
-    public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+    public async ValueTask<Checkpoint> GetLastCheckpoint(
+        string            checkpointId,
+        CancellationToken cancellationToken
+    ) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
             ReadOperationName,
             ActivityKind.Internal,
@@ -30,7 +33,11 @@ public class MeasuredCheckpointStore : ICheckpointStore {
         return checkpoint;
     }
 
-    public async ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, CancellationToken cancellationToken) {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public async ValueTask<Checkpoint> StoreCheckpoint(
+        Checkpoint        checkpoint,
+        CancellationToken cancellationToken
+    ) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
                 WriteOperationName,
                 ActivityKind.Internal,

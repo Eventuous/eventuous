@@ -1,6 +1,7 @@
 // ReSharper disable CoVariantArrayConversion
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
 
 namespace Eventuous.EventStore;
@@ -238,6 +239,7 @@ public class EsdbEventStore : IEventStore {
         (s, ex) => new DeleteStreamException(s, ex)
     );
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     async Task<T> TryExecute<T>(
         Func<Task<T>>                      func,
         string                             stream,
@@ -253,6 +255,7 @@ public class EsdbEventStore : IEventStore {
         }
         catch (Exception ex) {
             var (message, args) = getError();
+            // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             _logger?.LogWarning(ex, message, args);
             throw getException(stream, ex);
         }

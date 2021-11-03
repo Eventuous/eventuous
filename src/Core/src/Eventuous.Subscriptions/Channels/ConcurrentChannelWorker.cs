@@ -1,3 +1,5 @@
+using System.Threading.Channels;
+
 namespace Eventuous.Subscriptions.Channels;
 
 public sealed class ConcurrentChannelWorker<T> : IAsyncDisposable {

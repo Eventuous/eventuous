@@ -4,8 +4,9 @@ using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
-public class PublishAndSubscribeManyTests : SubscriptionFixture {
-    public PublishAndSubscribeManyTests(ITestOutputHelper outputHelper) : base(outputHelper, false) { }
+public class PublishAndSubscribeManyTests : SubscriptionFixture<TestEventHandler> {
+    public PublishAndSubscribeManyTests(ITestOutputHelper outputHelper) 
+        : base(outputHelper, new TestEventHandler(), false) { }
 
     [Fact]
     public async Task SubscribeAndProduceMany() {

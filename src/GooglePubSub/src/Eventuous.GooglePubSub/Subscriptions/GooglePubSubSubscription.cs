@@ -12,7 +12,8 @@ namespace Eventuous.GooglePubSub.Subscriptions;
 /// Google PubSub subscription service
 /// </summary>
 [PublicAPI]
-public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOptions>, IMeasuredSubscription {
+public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOptions>,
+    IMeasuredSubscription {
     public delegate ValueTask<Reply> HandleEventProcessingFailure(
         SubscriberClient client,
         PubsubMessage    pubsubMessage,

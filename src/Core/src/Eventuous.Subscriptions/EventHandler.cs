@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
@@ -27,6 +28,7 @@ public abstract class EventHandler : IEventHandler {
             throw new ArgumentException($"Type {typeof(T).Name} already has a handler");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Task Handle(IMessageConsumeContext context, CancellationToken cancellationToken) {
             return context.Message is not T ? NoHandler() : HandleTypedEvent();
 
@@ -45,7 +47,10 @@ public abstract class EventHandler : IEventHandler {
     // TODO: This one is always null
     protected SubscriptionLog? Log { get; set; }
 
-    public virtual Task HandleEvent(IMessageConsumeContext context, CancellationToken cancellationToken) {
+    public virtual Task HandleEvent(
+        IMessageConsumeContext context,
+        CancellationToken      cancellationToken
+    ) {
         return !_handlersMap.TryGetValue(context.Message!.GetType(), out var handler)
             ? NoHandler() : handler(context, cancellationToken);
 
@@ -66,12 +71,18 @@ public abstract class EventHandler : IEventHandler {
         return sb.ToString();
     }
 
-    delegate Task HandleUntypedEvent(IMessageConsumeContext evt, CancellationToken cancellationToken);
+    delegate Task HandleUntypedEvent(
+        IMessageConsumeContext evt,
+        CancellationToken      cancellationToken
+    );
 }
 
 [PublicAPI]
 [Obsolete("Use EventHandler instead")]
 public abstract class TypedEventHandler : EventHandler { }
 
-public delegate Task HandleTypedEvent<T>(MessageConsumeContext<T> context, CancellationToken cancellationToken)
+public delegate Task HandleTypedEvent<T>(
+    MessageConsumeContext<T> consumeContext,
+    CancellationToken        cancellationToken
+)
     where T : class;

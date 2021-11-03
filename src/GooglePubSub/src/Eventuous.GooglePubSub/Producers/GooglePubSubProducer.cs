@@ -106,7 +106,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
                 { _attributes.ContentType, _serializer.ContentType },
                 { _attributes.EventType, eventType }
             },
-            MessageId = message.Metadata?.GetMessageId().ToString()
+            MessageId = message.MessageId.ToString()
         };
 
         if (message.Metadata != null) {
