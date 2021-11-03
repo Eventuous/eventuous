@@ -9,4 +9,9 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
         <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
+    <ItemGroup>
+        <Using Include="EventStore.Client" />
+        <Using Include="Eventuous.Subscriptions" />
+        <Using Include="Microsoft.Extensions.Logging" />
+    </ItemGroup>
 </Project>

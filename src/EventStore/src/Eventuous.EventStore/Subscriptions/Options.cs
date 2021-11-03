@@ -1,4 +1,4 @@
-namespace Eventuous.EventStore.Subscriptions; 
+namespace Eventuous.EventStore.Subscriptions;
 
 [PublicAPI]
 public abstract record EventStoreSubscriptionOptions : SubscriptionOptions {
@@ -16,7 +16,7 @@ public abstract record EventStoreSubscriptionOptions : SubscriptionOptions {
     /// Resolve link events
     /// </summary>
     public bool ResolveLinkTos { get; set; }
-    
+
     /// <summary>
     /// Metadata serializer. If not assigned, the default one will be used.
     /// </summary>
@@ -24,17 +24,18 @@ public abstract record EventStoreSubscriptionOptions : SubscriptionOptions {
 }
 
 public record StreamSubscriptionOptions : EventStoreSubscriptionOptions {
-    public string StreamName { get; set; } = null!;
+    public StreamName StreamName { get; set; } = null!;
 }
 
 [PublicAPI]
 public record AllStreamSubscriptionOptions : EventStoreSubscriptionOptions {
-    public IEventFilter? EventFilter { get; set; }
+    public IEventFilter? EventFilter        { get; set; }
+    public uint          CheckpointInterval { get; set; } = 10;
 }
 
 [PublicAPI]
 public record StreamPersistentSubscriptionOptions : EventStoreSubscriptionOptions {
-    public string Stream { get; set; } = null!;
+    public StreamName Stream { get; set; } = null!;
 
     /// <summary>
     /// Detailed settings for the subscription

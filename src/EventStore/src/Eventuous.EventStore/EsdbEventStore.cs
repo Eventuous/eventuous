@@ -1,6 +1,8 @@
-using Microsoft.Extensions.Logging;
-
 // ReSharper disable CoVariantArrayConversion
+
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using Eventuous.Diagnostics;
 
 namespace Eventuous.EventStore;
 
@@ -16,8 +18,24 @@ public class EsdbEventStore : IEventStore {
 
     public EsdbEventStore(EventStoreClientSettings clientSettings, ILogger<EsdbEventStore>? logger)
         : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), logger) { }
+    
+    static readonly KeyValuePair<string, object?>[] DefaultTags = {
+        new(TelemetryTags.Db.System, "eventstoredb")
+    };
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
+        using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
+            "stream-exists",
+            ActivityKind.Internal,
+            parentContext: default,
+            DefaultTags
+        );
+        
+        if (activity is { IsAllDataRequested: true }) {
+            activity.SetTag(TelemetryTags.Db.Operation, "read-stream");
+            activity.SetTag(TelemetryTags.EventStore.Stream, stream);
+        }
+        
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
             stream,
@@ -221,6 +239,7 @@ public class EsdbEventStore : IEventStore {
         (s, ex) => new DeleteStreamException(s, ex)
     );
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     async Task<T> TryExecute<T>(
         Func<Task<T>>                      func,
         string                             stream,
@@ -236,6 +255,7 @@ public class EsdbEventStore : IEventStore {
         }
         catch (Exception ex) {
             var (message, args) = getError();
+            // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             _logger?.LogWarning(ex, message, args);
             throw getException(stream, ex);
         }

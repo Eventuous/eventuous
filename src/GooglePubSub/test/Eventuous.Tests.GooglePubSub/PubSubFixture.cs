@@ -1,7 +1,8 @@
 namespace Eventuous.Tests.GooglePubSub;
 
 public static class PubSubFixture {
-    public static readonly string ProjectId = "master-works-208819";
+    public const string ProjectId = "master-works-208819";
+
     //Environment.GetEnvironmentVariable("PUBSUB_PROJECT_ID");
 
     static PubSubFixture() {

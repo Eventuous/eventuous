@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
         <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>

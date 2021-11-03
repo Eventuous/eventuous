@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Threading;
 using Eventuous.Subscriptions;
 using Google.Cloud.Monitoring.V3;
 using Google.Protobuf.WellKnownTypes;

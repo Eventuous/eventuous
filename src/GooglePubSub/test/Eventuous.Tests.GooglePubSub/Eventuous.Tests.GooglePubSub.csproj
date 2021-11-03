@@ -8,4 +8,7 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
         <ProjectReference Include="..\..\src\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj"/>
     </ItemGroup>
+    <ItemGroup>
+        <Using Include="Google.Cloud.PubSub.V1"/>
+    </ItemGroup>
 </Project>

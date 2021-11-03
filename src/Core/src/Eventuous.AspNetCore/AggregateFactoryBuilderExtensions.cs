@@ -1,8 +1,6 @@
-using Eventuous;
-using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-// ReSharper disable CheckNamespace
 
+// ReSharper disable CheckNamespace
 namespace Microsoft.AspNetCore.Builder;
 
 [PublicAPI]
@@ -28,5 +26,4 @@ public static class AggregateFactoryBuilderExtensions {
 
         return builder;
     }
-
 }

@@ -1,3 +1,4 @@
+global using NodaTime;
 using Eventuous.Tests.Fixtures;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
@@ -6,8 +7,8 @@ namespace Eventuous.Tests;
 
 public class StoringEvents : NaiveFixture {
     public StoringEvents() {
-        TypeMap.Instance.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
         Service = new BookingService(AggregateStore);
+        TypeMap.RegisterKnownEventTypes();
     }
 
     BookingService Service { get; }

@@ -5,14 +5,14 @@ class ShovelProducer<T> : BaseProducer<T> where T : class {
 
     public ShovelProducer(IEventProducer<T> inner) => _inner = inner;
 
-    public override async Task ProduceMessages(
-        string                       stream,
+    protected override async Task ProduceMessages(
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         T?                           options,
         CancellationToken            cancellationToken = default
     ) {
         while (!_inner.Ready) await Task.Delay(10, cancellationToken);
 
-        await _inner.ProduceMessages(stream, messages, options, cancellationToken);
+        await _inner.Produce(stream, messages, options, cancellationToken);
     }
 }

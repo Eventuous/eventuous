@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-<!--        <PackageReadmeFile>README.md</PackageReadmeFile>-->
+        <!--        <PackageReadmeFile>README.md</PackageReadmeFile>-->
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Google.Cloud.Monitoring.V3" Version="2.3.0" />
@@ -13,5 +13,10 @@
     </ItemGroup>
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Google.Cloud.PubSub.V1" />
+        <Using Include="Google.Protobuf" />
+        <Using Include="Microsoft.Extensions.Logging" />
     </ItemGroup>
 </Project>

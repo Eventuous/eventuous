@@ -1,12 +1,9 @@
-using Eventuous.Subscriptions;
 using Eventuous.EventStore.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Logging;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using Eventuous.Tests.EventStore.Fixtures;
-using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
+using Eventuous.Sut.Subs;
 using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
@@ -17,7 +14,7 @@ public class StreamSubscriptionTests {
 
     public StreamSubscriptionTests(ITestOutputHelper output) {
         _loggerFactory = LoggerFactory.Create(
-            cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug)
+            cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug)
         );
     }
 
@@ -25,13 +22,13 @@ public class StreamSubscriptionTests {
     public async Task StreamSubscriptionGetsDeletedEvents() {
         var service = new BookingService(Instance.AggregateStore);
 
-        const string categoryStream = "$ce-Booking";
+        var categoryStream = new StreamName("$ce-Booking");
 
         ulong? startPosition = null;
 
         try {
             var last = await Instance.EventStore.ReadEventsBackwards(
-                new StreamName(categoryStream),
+                categoryStream,
                 1,
                 CancellationToken.None
             );
@@ -63,46 +60,53 @@ public class StreamSubscriptionTests {
 
         var handler = new TestHandler();
 
+        const string subscriptionId = "TestSub";
+
         var subscription = new StreamSubscription(
             Instance.Client,
             new StreamSubscriptionOptions {
                 StreamName     = categoryStream,
-                SubscriptionId = "TestSub",
+                SubscriptionId = subscriptionId,
                 ResolveLinkTos = true,
                 ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
-            new[] { handler },
+            new DefaultConsumer(new IEventHandler[] { handler }, true),
             _loggerFactory
         );
 
-        await subscription.StartAsync(CancellationToken.None);
+        var log = _loggerFactory.CreateLogger("Test");
+
+        await subscription.SubscribeWithLog(log);
 
         while (handler.Count < 90) {
             await Task.Delay(100);
         }
 
-        await subscription.StopAsync(CancellationToken.None);
+        await subscription.UnsubscribeWithLog(log);
 
-        handler.Processed
-            .Select(x => (x as BookingEvents.BookingImported)!.BookingId)
+        log.LogInformation("Received {Count} events", handler.Count);
+
+        var actual = handler.Processed
+            .Select(x => (x.Message as BookingEvents.BookingImported)!.BookingId)
+            .ToList();
+
+        log.LogInformation("Actual contains {Count} events", actual.Count);
+
+        actual
             .Should()
             .BeEquivalentTo(commands.Except(delete).Select(x => x.BookingId));
     }
 
     class TestHandler : IEventHandler {
-        public ulong Position { get; private set; }
-        public int   Count    { get; private set; }
+        public int Count { get; private set; }
 
-        public List<object> Processed { get; } = new();
-
-        public void SetLogger(SubscriptionLog subscriptionLogger) { }
+        public List<IMessageConsumeContext> Processed { get; } = new();
 
         public Task HandleEvent(
-            ReceivedEvent     evt,
-            CancellationToken cancellationToken
+            IMessageConsumeContext evt,
+            CancellationToken      cancellationToken
         ) {
-            Position = evt.StreamPosition;
             Count++;
             if (evt == null) throw new InvalidOperationException();
 

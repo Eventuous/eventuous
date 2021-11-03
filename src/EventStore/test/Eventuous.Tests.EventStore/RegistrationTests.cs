@@ -1,10 +1,8 @@
 using System.Reflection;
 using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
-using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Logging;
-using Eventuous.Tests.EventStore.Fixtures;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
@@ -14,8 +12,8 @@ namespace Eventuous.Tests.EventStore;
 public class RegistrationTests {
     ServiceProvider Provider { get; }
 
-    const string SubId  = "Test";
-    const string Stream = "teststream";
+    const string     SubId  = "Test";
+    static readonly StreamName Stream = new("teststream");
 
     public RegistrationTests() {
         var services = new ServiceCollection();
@@ -24,7 +22,10 @@ public class RegistrationTests {
         services.AddSingleton<ICheckpointStore, NoOpCheckpointStore>();
 
         services
-            .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(SubId, x => x.StreamName = Stream)
+            .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
+                SubId,
+                x => x.StreamName = Stream
+            )
             .AddEventHandler<TestHandler>();
 
         Provider = services.BuildServiceProvider();
@@ -42,12 +43,17 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveTestHandler() {
-        var handlers =
-            GetPrivateMember<SubscriptionService<StreamSubscriptionOptions>, IEnumerable<IEventHandler>>(
-                    Sub,
-                    "_eventHandlers"
-                )
-                ?.ToArray();
+        var consumer = GetPrivateMember<IMessageConsumer>(Sub, "Consumer");
+
+        IEventHandler[]? handlers = null;
+
+        while (consumer != null) {
+            handlers = GetPrivateMember<IEventHandler[]>(consumer, "_eventHandlers");
+
+            if (handlers != null) break;
+
+            consumer = GetPrivateMember<IMessageConsumer>(consumer, "_inner");
+        }
 
         handlers.Should().HaveCount(1);
         handlers.Should().ContainSingle(x => x.GetType() == typeof(TestHandler));
@@ -58,45 +64,48 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveEventStoreClient() {
-        var client = GetPrivateMember<StreamSubscription, EventStoreClient>(Sub, "EventStoreClient");
+        var client = GetPrivateMember<EventStoreClient>(Sub, "EventStoreClient");
+
         client.Should().Be(IntegrationFixture.Instance.Client);
     }
 
     [Fact]
     public void ShouldHaveNoOpStore() {
-        var store = GetPrivateMember<SubscriptionService<StreamSubscriptionOptions>, ICheckpointStore>(
-            Sub,
-            "_checkpointStore"
-        );
+        var store = GetPrivateMember<ICheckpointStore>(Sub, "CheckpointStore");
 
         store.Should().BeOfType<NoOpCheckpointStore>();
     }
 
     [Fact]
     public void ShouldResolveAsHostedService() {
-        var service = Provider.GetService<IHostedService>();
-        service.Should().Be(Sub);
+        var services = Provider.GetServices<IHostedService>().ToArray();
+        services.Length.Should().Be(1);
+
+        var sub = GetPrivateMember<IMessageSubscription>(services[0], "_subscription");
+        sub.Should().Be(Sub);
     }
 
-    static TMember? GetPrivateMember<TInstance, TMember>(object instance, string name)
-        where TInstance : class where TMember : class {
+    static TMember? GetPrivateMember<TMember>(object instance, string name) where TMember : class
+        => GetMember<TMember>(instance.GetType(), instance, name);
+
+    static TMember? GetMember<TMember>(Type instanceType, object instance, string name)
+        where TMember : class {
         const BindingFlags flags = BindingFlags.Instance
                                  | BindingFlags.Public
                                  | BindingFlags.NonPublic
                                  | BindingFlags.Static;
 
-        var field  = typeof(TInstance).GetField(name, flags);
-        var prop   = typeof(TInstance).GetProperty(name, flags);
+        var field  = instanceType.GetField(name, flags);
+        var prop   = instanceType.GetProperty(name, flags);
         var member = prop?.GetValue(instance) ?? field?.GetValue(instance);
 
-        return member as TMember;
+        return member == null && instanceType.BaseType != null
+            ? GetMember<TMember>(instanceType.BaseType, instance, name) : member as TMember;
     }
 }
 
 public class TestHandler : IEventHandler {
-    public void SetLogger(SubscriptionLog subscriptionLogger) { }
-
-    public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
+    public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken) {
         return Task.CompletedTask;
     }
 }

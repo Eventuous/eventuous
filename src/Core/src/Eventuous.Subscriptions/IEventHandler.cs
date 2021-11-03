@@ -1,9 +1,7 @@
-using Eventuous.Subscriptions.Logging;
+using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Subscriptions; 
 
 public interface IEventHandler {
-    void SetLogger(SubscriptionLog subscriptionLogger);
-    
-    Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken);
+    Task HandleEvent(IMessageConsumeContext context, CancellationToken cancellationToken);
 }

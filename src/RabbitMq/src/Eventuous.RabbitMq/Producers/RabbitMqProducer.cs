@@ -1,4 +1,8 @@
+using System.Diagnostics;
+using Eventuous.Diagnostics;
 using Eventuous.Producers;
+using Eventuous.Producers.Diagnostics;
+using Eventuous.RabbitMq.Diagnostics;
 using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.RabbitMq.Producers;
@@ -25,7 +29,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         ConnectionFactory        connectionFactory,
         IEventSerializer?        serializer = null,
         RabbitMqExchangeOptions? options    = null
-    ) {
+    ) : base(TracingOptions) {
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
         _connectionFactory = Ensure.NotNull(connectionFactory, nameof(connectionFactory));
@@ -41,9 +45,14 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         return Task.CompletedTask;
     }
 
-    /// <inheritdoc />
-    public override async Task ProduceMessages(
-        string                       stream,
+    static readonly ProducerTracingOptions TracingOptions = new() {
+        MessagingSystem  = "rabbitmq",
+        DestinationKind  = "exchange",
+        ProduceOperation = "publish"
+    };
+
+    protected override async Task ProduceMessages(
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         RabbitMqProduceOptions?      options,
         CancellationToken            cancellationToken = default
@@ -51,6 +60,10 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         EnsureExchange(stream);
 
         foreach (var message in messages) {
+            if (Activity.Current is { IsAllDataRequested: true }) {
+                Activity.Current.SetTag(RabbitMqTelemetryTags.RoutingKey, options?.RoutingKey);
+            }
+
             Publish(stream, message, options);
         }
 
@@ -61,23 +74,25 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         if (_channel == null)
             throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
 
-        var (msg, metadata)      = message;
+        var (msg, metadata)      = (message.Message, message.Metadata);
         var (eventType, payload) = _serializer.SerializeEvent(msg);
 
         var prop = _channel.CreateBasicProperties();
-        prop.ContentType  = _serializer.ContentType;
-        prop.DeliveryMode = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
-        prop.Type         = eventType;
+        prop.ContentType   = _serializer.ContentType;
+        prop.DeliveryMode  = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
+        prop.Type          = eventType;
+        prop.CorrelationId = metadata!.GetCorrelationId();
+        prop.MessageId     = message.MessageId.ToString();
+
+        metadata!.Remove(MetaTags.MessageId);
+        prop.Headers = metadata.ToDictionary(x => x.Key, x => x.Value);
 
         if (options != null) {
-            prop.Expiration    = options.Expiration;
-            prop.Headers       = metadata?.ToDictionary(x => x.Key, x => x.Value);
-            prop.Persistent    = options.Persisted;
-            prop.Priority      = options.Priority;
-            prop.AppId         = options.AppId;
-            prop.CorrelationId = options.CorrelationId;
-            prop.MessageId     = options.MessageId;
-            prop.ReplyTo       = options.ReplyTo;
+            prop.Expiration = options.Expiration;
+            prop.Persistent = options.Persisted;
+            prop.Priority   = options.Priority;
+            prop.AppId      = options.AppId;
+            prop.ReplyTo    = options.ReplyTo;
         }
 
         _channel.BasicPublish(stream, options?.RoutingKey ?? "", true, prop, payload);

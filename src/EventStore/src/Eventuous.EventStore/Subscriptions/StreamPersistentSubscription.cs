@@ -1,6 +1,7 @@
-using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Monitoring;
-using Microsoft.Extensions.Logging;
+using Eventuous.EventStore.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -8,7 +9,9 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Persistent subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamPersistentSubscription : EventStoreSubscriptionService<StreamPersistentSubscriptionOptions> {
+public class StreamPersistentSubscription
+    : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
+        IMeasuredSubscription {
     public delegate Task HandleEventProcessingFailure(
         EventStoreClient       client,
         PersistentSubscription subscription,
@@ -19,19 +22,18 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService<Stream
     readonly EventStorePersistentSubscriptionsClient _subscriptionClient;
     readonly HandleEventProcessingFailure            _handleEventProcessingFailure;
 
+    PersistentSubscription? _subscription;
+
     public StreamPersistentSubscription(
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
-        IEnumerable<IEventHandler>          eventHandlers,
-        ILoggerFactory?                     loggerFactory = null,
-        ISubscriptionGapMeasure?            measure       = null
+        IMessageConsumer                    consumer,
+        ILoggerFactory?                     loggerFactory = null
     ) : base(
         eventStoreClient,
         options,
-        new NoOpCheckpointStore(),
-        eventHandlers,
-        loggerFactory,
-        measure
+        consumer,
+        loggerFactory
     ) {
         Ensure.NotEmptyString(options.Stream, nameof(options.Stream));
 
@@ -42,7 +44,8 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService<Stream
 
         _subscriptionClient = new EventStorePersistentSubscriptionsClient(settings);
 
-        _handleEventProcessingFailure = options.FailureHandler ?? DefaultEventProcessingFailureHandler;
+        _handleEventProcessingFailure =
+            options.FailureHandler ?? DefaultEventProcessingFailureHandler;
     }
 
     /// <summary>
@@ -51,20 +54,18 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService<Stream
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
     /// <param name="streamName">Name of the stream to receive events from</param>
     /// <param name="subscriptionId">Subscription ID</param>
+    /// <param name="consumer"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
-    /// <param name="eventHandlers">Collection of event handlers</param>
     /// <param name="loggerFactory">Optional: logger factory</param>
-    /// <param name="measure">Optional: gap measurement for metrics</param>
     public StreamPersistentSubscription(
-        EventStoreClient           eventStoreClient,
-        string                     streamName,
-        string                     subscriptionId,
-        IEnumerable<IEventHandler> eventHandlers,
-        IEventSerializer?          eventSerializer = null,
-        IMetadataSerializer?       metaSerializer  = null,
-        ILoggerFactory?            loggerFactory   = null,
-        ISubscriptionGapMeasure?   measure         = null
+        EventStoreClient     eventStoreClient,
+        StreamName           streamName,
+        string               subscriptionId,
+        IMessageConsumer     consumer,
+        IEventSerializer?    eventSerializer = null,
+        IMetadataSerializer? metaSerializer  = null,
+        ILoggerFactory?      loggerFactory   = null
     ) : this(
         eventStoreClient,
         new StreamPersistentSubscriptionOptions {
@@ -73,24 +74,18 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService<Stream
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
-        eventHandlers,
-        loggerFactory,
-        measure
+        new FilterConsumer(consumer, re => !re.EventType.StartsWith("$")),
+        loggerFactory
     ) { }
 
-    protected override async Task<EventSubscription> Subscribe(
-        Checkpoint        _,
-        CancellationToken cancellationToken
-    ) {
+    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var settings = Options.SubscriptionSettings
                     ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
 
         var autoAck = Options.AutoAck;
 
-        PersistentSubscription sub;
-
         try {
-            sub = await LocalSubscribe().NoContext();
+            _subscription = await LocalSubscribe().NoContext();
         }
         catch (PersistentSubscriptionNotFoundException) {
             await _subscriptionClient.CreateAsync(
@@ -102,10 +97,8 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService<Stream
                 )
                 .NoContext();
 
-            sub = await LocalSubscribe().NoContext();
+            _subscription = await LocalSubscribe().NoContext();
         }
-
-        return new EventSubscription(Options.SubscriptionId, new Stoppable(() => sub.Dispose()));
 
         void HandleDrop(
             PersistentSubscription    __,
@@ -120,12 +113,14 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService<Stream
             int?                   retryCount,
             CancellationToken      ct
         ) {
-            var receivedEvent = AsReceivedEvent(re);
+            var receivedEvent = CreateContext(re);
 
             try {
                 await Handler(receivedEvent, ct).NoContext();
 
                 if (!autoAck) await subscription.Ack(re).NoContext();
+
+                LastProcessed = EventPosition.FromContext(receivedEvent);
             }
             catch (Exception e) {
                 await _handleEventProcessingFailure(EventStoreClient, subscription, re, e)
@@ -144,29 +139,35 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService<Stream
                 Options.AutoAck,
                 cancellationToken
             );
+    }
 
-        ReceivedEvent AsReceivedEvent(ResolvedEvent re) {
-            var evt = DeserializeData(
-                re.Event.ContentType,
-                re.Event.EventType,
-                re.Event.Data,
-                re.OriginalStreamId,
-                re.Event.Position.CommitPosition
-            );
+    IMessageConsumeContext CreateContext(ResolvedEvent re) {
+        var evt = DeserializeData(
+            re.Event.ContentType,
+            re.Event.EventType,
+            re.Event.Data,
+            re.OriginalStreamId,
+            re.Event.Position.CommitPosition
+        );
 
-            return new ReceivedEvent(
-                re.Event.EventId.ToString(),
-                re.Event.EventType,
-                re.Event.ContentType,
-                re.Event.Position.CommitPosition,
-                re.Event.EventNumber,
-                re.OriginalStreamId,
-                re.Event.EventNumber,
-                re.Event.Created,
-                evt,
-                DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber)
-            );
-        }
+        return new MessageConsumeContext(
+            re.Event.EventId.ToString(),
+            re.Event.EventType,
+            re.Event.ContentType,
+            re.OriginalStreamId,
+            re.Event.EventNumber,
+            re.Event.Created,
+            evt,
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber)
+        ) {
+            GlobalPosition = re.Event.Position.CommitPosition,
+            StreamPosition = re.Event.EventNumber
+        };
+    }
+
+    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) {
+        _subscription?.Dispose();
+        return default;
     }
 
     static Task DefaultEventProcessingFailureHandler(
@@ -179,5 +180,14 @@ public class StreamPersistentSubscription : EventStoreSubscriptionService<Stream
             PersistentSubscriptionNakEventAction.Retry,
             exception.Message,
             resolvedEvent
+        );
+
+    public ISubscriptionGapMeasure GetMeasure()
+        => new StreamSubscriptionMeasure(
+            Options.SubscriptionId,
+            Options.Stream,
+            EventStoreClient,
+            Options.ResolveLinkTos,
+            () => LastProcessed
         );
 }

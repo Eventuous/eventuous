@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
 using Hypothesist;
 
@@ -18,10 +19,8 @@ public class TestEventHandler : IEventHandler {
 
     public Task Validate(TimeSpan timeout) => EnsureHypothesis.Validate(timeout);
 
-    public void SetLogger(SubscriptionLog subscriptionLogger) { }
-
-    public Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken)
-        => EnsureHypothesis.Test(evt.Payload!, cancellationToken);
+    public Task HandleEvent(IMessageConsumeContext context, CancellationToken cancellationToken)
+        => EnsureHypothesis.Test(context.Message!, cancellationToken);
 
     IHypothesis<object> EnsureHypothesis =>
         _hypothesis ?? throw new InvalidOperationException("Test handler not specified");

@@ -1,9 +1,3 @@
-using Eventuous;
-using JetBrains.Annotations;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-
 // ReSharper disable CheckNamespace
 
 namespace Microsoft.Extensions.DependencyInjection;

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0-rc.2.21480.5" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Core\src\Eventuous\Eventuous.csproj" />
+    </ItemGroup>
+</Project>

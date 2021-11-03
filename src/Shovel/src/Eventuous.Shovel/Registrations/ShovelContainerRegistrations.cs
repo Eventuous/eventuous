@@ -10,16 +10,10 @@ public static class ShovelContainerRegistrations {
         string                             subscriptionId,
         RouteAndTransform<TProduceOptions> routeAndTransform
     )
-        where TSubscription : SubscriptionService<TSubscriptionOptions>
+        where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
         where TProduceOptions : class
         where TSubscriptionOptions : SubscriptionOptions {
-        if (SubscriptionRegistrationExtensions.Builders.Any(x => x.SubscriptionId == subscriptionId)) {
-            throw new InvalidOperationException(
-                $"Existing subscription with id {subscriptionId} registration detected"
-            );
-        }
-
         var subscriptionBuilder = services.AddSubscription<TSubscription, TSubscriptionOptions>(subscriptionId);
 
         subscriptionBuilder.AddEventHandler(

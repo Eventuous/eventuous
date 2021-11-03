@@ -1,12 +1,12 @@
 ﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Eventuous.Shovel.Tests;
 
@@ -14,16 +14,13 @@ public class RegistrationTests {
     readonly IServiceProvider _provider;
 
     public RegistrationTests() {
-        SubscriptionRegistrationExtensions.Builders.Clear();
         var host = new TestServer(BuildHost());
         _provider = host.Services;
     }
 
     [Fact]
-    public void Test() {
-        
-    }
-    
+    public void Test() { }
+
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
 
     class Startup {
@@ -32,7 +29,7 @@ public class RegistrationTests {
             services.AddSubscription<TestSub, TestOptions>("sub1").AddEventHandler<Handler>();
         }
 
-        static ValueTask<ShovelMessage<TestProduceOptions>?> RouteAndTransform(object message) {
+        static ValueTask<ShovelContext<TestProduceOptions>?> RouteAndTransform(object message) {
             throw new NotImplementedException();
         }
 
@@ -41,32 +38,26 @@ public class RegistrationTests {
 
     record TestOptions : SubscriptionOptions;
 
-    class TestSub : SubscriptionService<TestOptions> {
+    class TestSub : EventSubscription<TestOptions> {
         public TestSub(
-            TestOptions                options,
-            IEnumerable<IEventHandler> eventHandlers
-        ) : base(options, new NoOpCheckpointStore(), eventHandlers) { }
+            TestOptions      options,
+            IMessageConsumer consumer
+        ) : base(options, consumer) { }
 
-        protected override Task<EventSubscription> Subscribe(
-            Checkpoint        checkpoint,
-            CancellationToken cancellationToken
-        ) => Task.FromResult(new EventSubscription(Options.SubscriptionId, new Stoppable(() => { })));
+        protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
-        protected override Task<EventPosition> GetLastEventPosition(CancellationToken cancellationToken)
-            => Task.FromResult(new EventPosition(0, DateTime.Now));
+        protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
     }
 
     class Handler : IEventHandler {
-        public void SetLogger(SubscriptionLog subscriptionLogger) { }
-
-        public Task HandleEvent(ReceivedEvent         evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken) => Task.CompletedTask;
     }
-    
+
     class TestProducer : BaseProducer<TestProduceOptions> {
         public List<ProducedMessage> ProducedMessages { get; } = new();
-        
-        public override Task ProduceMessages(
-            string                       stream,
+
+        protected override Task ProduceMessages(
+            StreamName                   stream,
             IEnumerable<ProducedMessage> messages,
             TestProduceOptions?          options,
             CancellationToken            cancellationToken = default

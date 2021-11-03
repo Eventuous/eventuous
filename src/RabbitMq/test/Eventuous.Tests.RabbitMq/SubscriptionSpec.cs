@@ -1,13 +1,10 @@
-using System.Linq;
-using System.Threading;
 using Eventuous.Producers;
 using Eventuous.RabbitMq.Producers;
 using Eventuous.RabbitMq.Subscriptions;
+using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Consumers;
 using Eventuous.Sut.Subs;
-using FluentAssertions.Extensions;
 using Hypothesist;
-using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
 
 namespace Eventuous.Tests.RabbitMq;
 
@@ -16,13 +13,14 @@ public class SubscriptionSpec : IAsyncLifetime {
 
     static readonly Fixture Auto = new();
 
-    readonly RabbitMqSubscriptionService _subscription;
+    readonly RabbitMqSubscription _subscription;
     readonly RabbitMqProducer            _producer;
     readonly TestEventHandler            _handler;
-    readonly string                      _exchange;
+    readonly StreamName                  _exchange;
+    readonly ILogger<SubscriptionSpec>   _log;
 
     public SubscriptionSpec(ITestOutputHelper outputHelper) {
-        _exchange = Auto.Create<string>();
+        _exchange = new StreamName(Auto.Create<string>());
         var queue = Auto.Create<string>();
 
         var loggerFactory =
@@ -32,10 +30,11 @@ public class SubscriptionSpec : IAsyncLifetime {
                     .AddXunit(outputHelper, LogLevel.Trace)
             );
 
+        _log      = loggerFactory.CreateLogger<SubscriptionSpec>();
         _handler  = new TestEventHandler();
         _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory);
 
-        _subscription = new RabbitMqSubscriptionService(
+        _subscription = new RabbitMqSubscription(
             RabbitMqFixture.ConnectionFactory,
             new RabbitMqSubscriptionOptions {
                 ConcurrencyLimit = 10,
@@ -43,7 +42,7 @@ public class SubscriptionSpec : IAsyncLifetime {
                 Exchange         = _exchange,
                 ThrowOnError     = true
             },
-            new[] { _handler },
+            new DefaultConsumer(new IEventHandler[] { _handler }, true),
             loggerFactory
         );
     }
@@ -71,12 +70,12 @@ public class SubscriptionSpec : IAsyncLifetime {
     }
 
     public async Task InitializeAsync() {
-        await _subscription.StartAsync(CancellationToken.None);
+        await _subscription.SubscribeWithLog(_log);
         await _producer.StartAsync();
     }
 
     public async Task DisposeAsync() {
         await _producer.StopAsync();
-        await _subscription.StopAsync(CancellationToken.None);
+        await _subscription.UnsubscribeWithLog(_log);
     }
 }

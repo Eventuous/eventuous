@@ -8,6 +8,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
         <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
+        <DiagRoot>$(RepoRoot)\src\Diagnostics\src</DiagRoot>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' != 'true'">
@@ -15,6 +16,15 @@
         <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
         <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
+        <Using Include="JetBrains.Annotations"/>
+        <Using Include="Eventuous"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(IncludeDiagnostics)'=='true'">
+        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\SharedDiagnostics.cs" Link="Diagnostics\SharedDiagnostics.cs"/>
+        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\TelemetryTags.cs" Link="Diagnostics\TelemetryTags.cs"/>
+        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\MetaTags.cs" Link="Diagnostics\MetaTags.cs"/>
+        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\MetadataExtensions.cs" Link="Diagnostics\MetadataExtensions.cs"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
@@ -26,13 +36,25 @@
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="All"/>
         <PackageReference Include="coverlet.collector" Version="3.1.0" PrivateAssets="All"/>
         <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0"/>
+        <Using Include="Xunit"/>
+        <Using Include="Xunit.Abstractions"/>
+        <Using Include="FluentAssertions"/>
+        <Using Include="FluentAssertions.Extensions"/>
+        <Using Include="AutoFixture"/>
+        <Using Include="Microsoft.Extensions.Logging"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.10" Condition="'$(TargetFramework)' == 'net5.0'"/>
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.10" Condition="'$(TargetFramework)' == 'net6.0'"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="3.1.19" Condition="'$(TargetFramework)' == 'netcoreapp3.1'"/>
     </ItemGroup>
 
     <PropertyGroup>
         <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
     </PropertyGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
         <PackageReference Include="IsExternalInit" Version="1.0.1" PrivateAssets="All"/>
     </ItemGroup>
 
@@ -52,5 +74,7 @@
         <RepositoryType>git</RepositoryType>
         <Description>Opinionated and volatile Event Sourcing library</Description>
         <Authors>Alexey Zimarev</Authors>
+        <Copyright>Eventuous contributors</Copyright>
+        <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
     </PropertyGroup>
 </Project>

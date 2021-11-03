@@ -1,7 +1,6 @@
 using System.Text.Json;
 using EventStore.Client;
 using Eventuous.EventStore;
-using Microsoft.Extensions.DependencyInjection;
 using NodaTime.Serialization.SystemTextJson;
 
 namespace Eventuous.Tests.EventStore.Fixtures;

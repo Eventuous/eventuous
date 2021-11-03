@@ -1,6 +1,8 @@
-﻿using Eventuous.Producers;
+﻿using Eventuous.Diagnostics;
+using Eventuous.Producers;
+using Eventuous.Producers.Diagnostics;
 
-namespace Eventuous.EventStore.Producers; 
+namespace Eventuous.EventStore.Producers;
 
 /// <summary>
 /// Producer for EventStoreDB
@@ -21,11 +23,11 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         EventStoreClient     eventStoreClient,
         IEventSerializer?    serializer     = null,
         IMetadataSerializer? metaSerializer = null
-    ) {
+    ) : base(TracingOptions) {
         _client         = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         _serializer     = serializer ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
-            
+
         ReadyNow();
     }
 
@@ -46,37 +48,40 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
             metaSerializer
         ) { }
 
-    /// <inheritdoc />
-    public override async Task ProduceMessages(
-        string                       stream,
+    static readonly ProducerTracingOptions TracingOptions = new() {
+        DestinationKind  = "stream",
+        MessagingSystem  = "eventstoredb",
+        ProduceOperation = "append"
+    };
+
+    protected override async Task ProduceMessages(
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         EventStoreProduceOptions?    produceOptions,
         CancellationToken            cancellationToken = default
     ) {
         var options = produceOptions ?? EventStoreProduceOptions.Default;
-        var data = Ensure.NotNull(messages, nameof(messages))
-            .Select(x => CreateMessage(x.Message, x.Message.GetType(), x.Metadata));
 
-        foreach (var chunk in data.Chunks(options.MaxAppendEventsCount)) {
+        foreach (var chunk in Ensure.NotNull(messages, nameof(messages)).Chunks(options.MaxAppendEventsCount)) {
             await _client.AppendToStreamAsync(
-                    stream,
-                    options.ExpectedState,
-                    chunk,
-                    options.ConfigureOperation,
-                    options.Credentials,
-                    cancellationToken
-                )
-                .NoContext();
+                stream,
+                options.ExpectedState,
+                chunk.Select(CreateMessage),
+                options.ConfigureOperation,
+                options.Credentials,
+                cancellationToken
+            );
         }
     }
 
-    EventData CreateMessage(object message, Type type, Metadata? metadata) {
-        var msg = Ensure.NotNull(message, nameof(message));
+    EventData CreateMessage(ProducedMessage message) {
+        var msg = Ensure.NotNull(message.Message, nameof(message));
         var (eventType, payload) = _serializer.SerializeEvent(msg);
-        var metaBytes = metadata == null ? null : _metaSerializer.Serialize(metadata);
+        message.Metadata!.Remove(MetaTags.MessageId);
+        var metaBytes = _metaSerializer.Serialize(message.Metadata);
 
         return new EventData(
-            Uuid.NewUuid(),
+            Uuid.FromGuid(message.MessageId),
             eventType,
             payload,
             metaBytes,

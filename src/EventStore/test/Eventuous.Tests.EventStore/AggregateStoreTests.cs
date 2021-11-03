@@ -1,7 +1,4 @@
 using System.Collections.Immutable;
-using Eventuous.Tests.EventStore.Fixtures;
-using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -20,7 +17,7 @@ public class AggregateStoreTests {
 
     [Fact]
     public async Task ShouldReadLongAggregateStream() {
-        const int count = 14500;
+        const int count = 9500;
 
         var id      = Guid.NewGuid().ToString("N");
         var initial = Enumerable.Range(1, count).Select(x => new TestEvent(id, x.ToString())).ToArray();
@@ -39,6 +36,7 @@ public class AggregateStoreTests {
             aggregate = await Store.Load<TestAggregate>(id, CancellationToken.None);
             counter   = 0;
         }
+        await Store.Store(aggregate, CancellationToken.None);
 
         _log.LogInformation("Loading large aggregate stream..");
         var restored = await Store.Load<TestAggregate>(id, CancellationToken.None);

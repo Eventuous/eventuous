@@ -10,8 +10,8 @@ public interface IEventProducer {
     /// <param name="messages">Collection of messages to produce</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task ProduceMessages(
-        string                       stream,
+    Task Produce(
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         CancellationToken            cancellationToken = default
     );
@@ -30,8 +30,8 @@ public interface IEventProducer<in TProduceOptions> : IEventProducer where TProd
     /// <param name="options">Produce options</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task ProduceMessages(
-        string                       stream,
+    Task Produce(
+        StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         TProduceOptions?             options,
         CancellationToken            cancellationToken = default

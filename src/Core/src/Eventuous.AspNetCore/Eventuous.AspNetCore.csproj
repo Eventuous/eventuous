@@ -4,11 +4,11 @@
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-    <ItemGroup>
         <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
+        <Using Include="Eventuous" />
+        <Using Include="Microsoft.Extensions.DependencyInjection.Extensions" />
     </ItemGroup>
     <ItemGroup>
-        <None Include=".\README.md" Pack="true" PackagePath="\"/>
+        <None Include=".\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 </Project>

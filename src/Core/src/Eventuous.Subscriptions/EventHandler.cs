@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using System.Text;
+using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions;
@@ -26,12 +28,13 @@ public abstract class EventHandler : IEventHandler {
             throw new ArgumentException($"Type {typeof(T).Name} already has a handler");
         }
 
-        Task Handle(ReceivedEvent evt, CancellationToken cancellationToken) {
-            return evt.Payload is not T ? NoHandler() : HandleTypedEvent();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task Handle(IMessageConsumeContext context, CancellationToken cancellationToken) {
+            return context.Message is not T ? NoHandler() : HandleTypedEvent();
 
             Task HandleTypedEvent() {
-                var typedEvent = new ReceivedEvent<T>(evt);
-                return handler(typedEvent, cancellationToken);
+                var typedContext = new MessageConsumeContext<T>(context);
+                return handler(typedContext, cancellationToken);
             }
 
             Task NoHandler() {
@@ -41,18 +44,18 @@ public abstract class EventHandler : IEventHandler {
         }
     }
 
-    public void SetLogger(SubscriptionLog subscriptionLogger) {
-        Log = subscriptionLogger;
-    }
-
+    // TODO: This one is always null
     protected SubscriptionLog? Log { get; set; }
 
-    public virtual Task HandleEvent(ReceivedEvent evt, CancellationToken cancellationToken) {
-        return !_handlersMap.TryGetValue(evt.Payload!.GetType(), out var handler)
-            ? NoHandler() : handler(evt, cancellationToken);
+    public virtual Task HandleEvent(
+        IMessageConsumeContext context,
+        CancellationToken      cancellationToken
+    ) {
+        return !_handlersMap.TryGetValue(context.Message!.GetType(), out var handler)
+            ? NoHandler() : handler(context, cancellationToken);
 
         Task NoHandler() {
-            Log?.Debug?.Invoke("No handler for {Event}", evt.Payload.GetType().Name);
+            Log?.Debug?.Invoke("No handler for {Event}", context.Message.GetType().Name);
             return Task.CompletedTask;
         }
     }
@@ -68,11 +71,18 @@ public abstract class EventHandler : IEventHandler {
         return sb.ToString();
     }
 
-    delegate Task HandleUntypedEvent(ReceivedEvent evt, CancellationToken cancellationToken);
+    delegate Task HandleUntypedEvent(
+        IMessageConsumeContext evt,
+        CancellationToken      cancellationToken
+    );
 }
 
 [PublicAPI]
 [Obsolete("Use EventHandler instead")]
 public abstract class TypedEventHandler : EventHandler { }
 
-public delegate Task HandleTypedEvent<T>(ReceivedEvent<T> evt, CancellationToken cancellationToken);
+public delegate Task HandleTypedEvent<T>(
+    MessageConsumeContext<T> consumeContext,
+    CancellationToken        cancellationToken
+)
+    where T : class;

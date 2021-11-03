@@ -1,4 +1,3 @@
-using Eventuous.Tests.EventStore.Fixtures;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
