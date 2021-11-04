@@ -10,7 +10,7 @@ public sealed class SubscriptionGapMetric : IDisposable {
 
     public const string MetricName = "subscription-gap-count";
 
-    public SubscriptionGapMetric(IEnumerable<ISubscriptionGapMeasure> measures) {
+    public SubscriptionGapMetric(IEnumerable<GetSubscriptionGap> measures) {
         Meter = EventuousDiagnostics.GetMeter(MeterName);
 
         foreach (var measure in measures) {
@@ -29,16 +29,17 @@ public sealed class SubscriptionGapMetric : IDisposable {
         }
 
         IEnumerable<Measurement<long>> ObserveValues(
-            ISubscriptionGapMeasure         gapMeasure,
+            GetSubscriptionGap              gapMeasure,
             KeyValuePair<string, object?>[] tags
         ) {
             var gap = GetGap(gapMeasure);
             return new[] { new Measurement<long>((long)gap.PositionGap, tags) };
         }
 
-        SubscriptionGap GetGap(ISubscriptionGapMeasure gapMeasure) {
+        SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
             var cts = new CancellationTokenSource(5000);
-            return gapMeasure.GetSubscriptionGap(cts.Token).GetAwaiter().GetResult();
+            var t   = gapMeasure(cts.Token);
+            return t.IsCompleted ? t.Result : t.GetAwaiter().GetResult();
         }
     }
 

@@ -2,7 +2,7 @@ using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.EventStore.Subscriptions.Diagnostics;
 
-public class AllStreamSubscriptionMeasure : ISubscriptionGapMeasure {
+public class AllStreamSubscriptionMeasure {
     public AllStreamSubscriptionMeasure(
         string               subscriptionId,
         EventStoreClient     eventStoreClient,
@@ -17,7 +17,7 @@ public class AllStreamSubscriptionMeasure : ISubscriptionGapMeasure {
     readonly EventStoreClient     _eventStoreClient;
     readonly Func<EventPosition?> _getLast;
 
-    public async Task<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken) {
+    public async ValueTask<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken) {
         var read = _eventStoreClient.ReadAllAsync(
             Direction.Backwards,
             Position.End,

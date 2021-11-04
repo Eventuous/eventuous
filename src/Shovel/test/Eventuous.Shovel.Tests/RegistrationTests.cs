@@ -25,8 +25,15 @@ public class RegistrationTests {
 
     class Startup {
         public static void ConfigureServices(IServiceCollection services) {
-            services.AddShovel<TestSub, TestOptions, TestProducer, TestProduceOptions>("shovel", RouteAndTransform);
-            services.AddSubscription<TestSub, TestOptions>("sub1").AddEventHandler<Handler>();
+            services.AddShovel<TestSub, TestOptions, TestProducer, TestProduceOptions>(
+                "shovel",
+                RouteAndTransform
+            );
+
+            services.AddSubscription<TestSub, TestOptions>(
+                "sub1",
+                builder => builder.AddEventHandler<Handler>()
+            );
         }
 
         static ValueTask<ShovelContext<TestProduceOptions>?> RouteAndTransform(object message) {
@@ -50,7 +57,8 @@ public class RegistrationTests {
     }
 
     class Handler : IEventHandler {
-        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
+            => Task.CompletedTask;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {

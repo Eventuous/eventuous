@@ -3,6 +3,7 @@ using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
@@ -12,7 +13,8 @@ namespace Eventuous.Tests.EventStore;
 public class RegistrationTests {
     ServiceProvider Provider { get; }
 
-    const string     SubId  = "Test";
+    const string SubId = "Test";
+
     static readonly StreamName Stream = new("teststream");
 
     public RegistrationTests() {
@@ -24,9 +26,10 @@ public class RegistrationTests {
         services
             .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
                 SubId,
-                x => x.StreamName = Stream
-            )
-            .AddEventHandler<TestHandler>();
+                builder => builder
+                    .Configure(x => x.StreamName = Stream)
+                    .AddEventHandler<TestHandler>()
+            );
 
         Provider = services.BuildServiceProvider();
 
@@ -43,17 +46,8 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveTestHandler() {
-        var consumer = GetPrivateMember<IMessageConsumer>(Sub, "Consumer");
-
-        IEventHandler[]? handlers = null;
-
-        while (consumer != null) {
-            handlers = GetPrivateMember<IEventHandler[]>(consumer, "_eventHandlers");
-
-            if (handlers != null) break;
-
-            consumer = GetPrivateMember<IMessageConsumer>(consumer, "_inner");
-        }
+        var consumer = Sub.GetPrivateMember<IMessageConsumer>("Consumer");
+        var handlers = consumer.GetNestedConsumerHandlers();
 
         handlers.Should().HaveCount(1);
         handlers.Should().ContainSingle(x => x.GetType() == typeof(TestHandler));
@@ -64,14 +58,14 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveEventStoreClient() {
-        var client = GetPrivateMember<EventStoreClient>(Sub, "EventStoreClient");
+        var client = Sub.GetPrivateMember<EventStoreClient>("EventStoreClient");
 
         client.Should().Be(IntegrationFixture.Instance.Client);
     }
 
     [Fact]
     public void ShouldHaveNoOpStore() {
-        var store = GetPrivateMember<ICheckpointStore>(Sub, "CheckpointStore");
+        var store = Sub.GetPrivateMember<ICheckpointStore>("CheckpointStore");
 
         store.Should().BeOfType<NoOpCheckpointStore>();
     }
@@ -81,27 +75,10 @@ public class RegistrationTests {
         var services = Provider.GetServices<IHostedService>().ToArray();
         services.Length.Should().Be(1);
 
-        var sub = GetPrivateMember<IMessageSubscription>(services[0], "_subscription");
+        var sub = services[0].GetPrivateMember<IMessageSubscription>("_subscription");
         sub.Should().Be(Sub);
     }
 
-    static TMember? GetPrivateMember<TMember>(object instance, string name) where TMember : class
-        => GetMember<TMember>(instance.GetType(), instance, name);
-
-    static TMember? GetMember<TMember>(Type instanceType, object instance, string name)
-        where TMember : class {
-        const BindingFlags flags = BindingFlags.Instance
-                                 | BindingFlags.Public
-                                 | BindingFlags.NonPublic
-                                 | BindingFlags.Static;
-
-        var field  = instanceType.GetField(name, flags);
-        var prop   = instanceType.GetProperty(name, flags);
-        var member = prop?.GetValue(instance) ?? field?.GetValue(instance);
-
-        return member == null && instanceType.BaseType != null
-            ? GetMember<TMember>(instanceType.BaseType, instance, name) : member as TMember;
-    }
 }
 
 public class TestHandler : IEventHandler {

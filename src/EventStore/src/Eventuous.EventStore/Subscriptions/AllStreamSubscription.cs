@@ -10,8 +10,8 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Catch-up subscription for EventStoreDB, using the $all global stream
 /// </summary>
 [PublicAPI]
-public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStreamSubscriptionOptions>,
-    IMeasuredSubscription {
+public class AllStreamSubscription
+    : EventStoreCatchUpSubscriptionBase<AllStreamSubscriptionOptions>, IMeasuredSubscription {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for $all
     /// </summary>
@@ -144,6 +144,10 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
 
     ulong _sequence;
 
-    public ISubscriptionGapMeasure GetMeasure()
-        => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient, () => LastProcessed);
+    public GetSubscriptionGap GetMeasure()
+        => new AllStreamSubscriptionMeasure(
+            Options.SubscriptionId,
+            EventStoreClient,
+            () => LastProcessed
+        ).GetSubscriptionGap;
 }

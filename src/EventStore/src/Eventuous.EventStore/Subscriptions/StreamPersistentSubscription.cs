@@ -182,12 +182,12 @@ public class StreamPersistentSubscription
             resolvedEvent
         );
 
-    public ISubscriptionGapMeasure GetMeasure()
+    public GetSubscriptionGap GetMeasure()
         => new StreamSubscriptionMeasure(
             Options.SubscriptionId,
             Options.Stream,
             EventStoreClient,
             Options.ResolveLinkTos,
             () => LastProcessed
-        );
+        ).GetSubscriptionGap;
 }

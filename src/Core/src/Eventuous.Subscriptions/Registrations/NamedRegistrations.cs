@@ -1,12 +1,13 @@
 using Eventuous.Subscriptions;
+using Eventuous.Subscriptions.Registrations;
 
 // ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 static class NamedRegistrationExtensions {
-    public static void AddSubscriptionBuilder<T, TOptions>(
-        this IServiceCollection           services,
-        ISubscriptionBuilder<T, TOptions> builder
+    public static IServiceCollection AddSubscriptionBuilder<T, TOptions>(
+        this IServiceCollection          services,
+        SubscriptionBuilder<T, TOptions> builder
     ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
         if (services.Any(x => x is NamedDescriptor named && named.Name == builder.SubscriptionId)) {
             throw new InvalidOperationException(
@@ -16,18 +17,20 @@ static class NamedRegistrationExtensions {
 
         var descriptor = new NamedDescriptor(
             builder.SubscriptionId,
-            typeof(ISubscriptionBuilder<T, TOptions>),
+            typeof(SubscriptionBuilder<T, TOptions>),
             builder
         );
 
         services.Add(descriptor);
+        services.Configure(builder.SubscriptionId, builder.ConfigureOptions);
+        return services;
     }
 
-    public static ISubscriptionBuilder<T, TOptions> GetSubscriptionBuilder<T, TOptions>(
+    public static SubscriptionBuilder<T, TOptions> GetSubscriptionBuilder<T, TOptions>(
         this IServiceProvider provider,
         string                subscriptionId
     ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
-        var services = provider.GetServices<ISubscriptionBuilder<T, TOptions>>();
+        var services = provider.GetServices<SubscriptionBuilder<T, TOptions>>();
         return services.Single(x => x.SubscriptionId == subscriptionId);
     }
 }
@@ -35,5 +38,8 @@ static class NamedRegistrationExtensions {
 class NamedDescriptor : ServiceDescriptor {
     public string Name { get; }
 
-    public NamedDescriptor(string name, Type serviceType, object instance) : base(serviceType, instance) => Name = name;
+    public NamedDescriptor(string name, Type serviceType, object instance) : base(
+        serviceType,
+        instance
+    ) => Name = name;
 }

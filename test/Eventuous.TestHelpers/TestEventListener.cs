@@ -13,7 +13,7 @@ public class TestEventListener : EventListener {
     }
 
     protected override void OnEventSourceCreated(EventSource? eventSource) {
-        if (eventSource?.Name == null) {
+        if (_prefixes == null || eventSource?.Name == null) {
             return;
         }
 

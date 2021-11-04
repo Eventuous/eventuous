@@ -4,7 +4,7 @@ using Google.Protobuf.WellKnownTypes;
 
 namespace Eventuous.GooglePubSub.Subscriptions;
 
-public class GooglePubSubGapMeasure : ISubscriptionGapMeasure {
+public class GooglePubSubGapMeasure {
     const string PubSubMetricUndeliveredMessagesCount = "num_undelivered_messages";
     const string PubSubMetricOldestUnackedMessageAge  = "oldest_unacked_message_age";
 
@@ -38,7 +38,7 @@ public class GooglePubSubGapMeasure : ISubscriptionGapMeasure {
             };
     }
 
-    public async Task<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken) {
+    public async ValueTask<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken) {
         if (!_monitoringEnabled) return new SubscriptionGap(_subscriptionId, 0, TimeSpan.Zero);
 
         var now = DateTime.UtcNow;

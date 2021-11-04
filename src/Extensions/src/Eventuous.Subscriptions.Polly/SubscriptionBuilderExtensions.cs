@@ -1,3 +1,4 @@
+using Eventuous.Subscriptions.Registrations;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 
@@ -12,18 +13,13 @@ public static class SubscriptionBuilderExtensions {
     /// <param name="retryPolicy">Polly retry policy</param>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    public static ISubscriptionBuilder AddEventHandlerWithRetries<THandler>(
-        this ISubscriptionBuilder builder,
-        IAsyncPolicy              retryPolicy
-    ) where THandler : class, IEventHandler {
-        builder.Services.AddSingleton<THandler>();
-
-        builder.Services.AddSingleton<ResolveHandler>(
-            (sp, id) => Resolve<THandler>(builder.SubscriptionId, sp, id, retryPolicy)
+    public static SubscriptionBuilder AddEventHandlerWithRetries<THandler>(
+        this SubscriptionBuilder builder,
+        IAsyncPolicy             retryPolicy
+    ) where THandler : class, IEventHandler
+        => builder.AddCompositionEventHandler<THandler, PollyEventHandler>(
+            h => new PollyEventHandler(h, retryPolicy)
         );
-
-        return builder;
-    }
 
     /// <summary>
     /// Adds an event handler to the subscription, adding the specified retry policy
@@ -33,20 +29,15 @@ public static class SubscriptionBuilderExtensions {
     /// <param name="retryPolicy">Polly retry policy</param>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    public static ISubscriptionBuilder AddEventHandlerWithRetries<THandler>(
-        this ISubscriptionBuilder        builder,
+    public static SubscriptionBuilder AddEventHandlerWithRetries<THandler>(
+        this SubscriptionBuilder         builder,
         Func<IServiceProvider, THandler> getHandler,
         IAsyncPolicy                     retryPolicy
-    )
-        where THandler : class, IEventHandler {
-        builder.Services.AddSingleton(getHandler);
-
-        builder.Services.AddSingleton<ResolveHandler>(
-            (sp, id) => Resolve<THandler>(builder.SubscriptionId, sp, id, retryPolicy)
+    ) where THandler : class, IEventHandler
+        => builder.AddCompositionEventHandler(
+            getHandler,
+            h => new PollyEventHandler(h, retryPolicy)
         );
-
-        return builder;
-    }
 
     static IEventHandler? Resolve<THandler>(
         string           subscriptionId,

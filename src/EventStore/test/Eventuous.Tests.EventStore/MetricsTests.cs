@@ -38,10 +38,11 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
                     services.AddCheckpointStore<NoOpCheckpointStore>();
 
                     services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
-                            SubscriptionId,
-                            options => options.StreamName = _stream
-                        )
-                        .AddEventHandler<TestHandler>();
+                        SubscriptionId,
+                        builder => builder
+                            .Configure(options => options.StreamName = _stream)
+                            .AddEventHandler<TestHandler>()
+                    );
 
                     services.AddOpenTelemetryMetrics(
                         builder => builder

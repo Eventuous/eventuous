@@ -2,7 +2,7 @@ using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.EventStore.Subscriptions.Diagnostics;
 
-public class StreamSubscriptionMeasure : ISubscriptionGapMeasure {
+public class StreamSubscriptionMeasure {
     public StreamSubscriptionMeasure(
         string               subscriptionId,
         StreamName           streamName,
@@ -23,7 +23,7 @@ public class StreamSubscriptionMeasure : ISubscriptionGapMeasure {
     readonly bool                 _resolveLinkTos;
     readonly Func<EventPosition?> _getLast;
 
-    public async Task<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken) {
+    public async ValueTask<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken) {
         var read = _eventStoreClient.ReadStreamAsync(
             Direction.Backwards,
             _streamName,

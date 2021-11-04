@@ -2,7 +2,7 @@
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Subscriptions.Logging;
+using Eventuous.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -46,41 +46,62 @@ public class RegistrationTests {
     public void SubsShouldHaveHandlers(int position, Type handlerType) {
         var subs     = _provider.GetServices<TestSub>().ToArray();
         var consumer = subs[position].Consumer;
+        var handlers = consumer.GetNestedConsumerHandlers();
 
-        // handlers.Length.Should().Be(1);
-        // handlers[0].Should().BeOfType(handlerType);
+        handlers.Should().NotBeNull();
+        handlers!.Length.Should().Be(1);
+        handlers[0].Should().BeOfType(handlerType);
     }
 
     [Fact]
     public void ShouldRegisterBothAsHealthReporters() {
         var services = _provider.GetServices<ISubscriptionHealth>().ToArray();
-        var subs     = _provider.GetServices<TestSub>().ToArray();
-
         services.Length.Should().Be(1);
-        // services[0].Should().BeSameAs(subs[0]);
-        // services[1].Should().BeSameAs(subs[1]);
-        // Need to test the reporting
     }
 
     [Fact]
     public void ShouldRegisterBothAsHostedServices() {
         var services = _provider.GetServices<IHostedService>().ToArray();
         var subs     = _provider.GetServices<TestSub>().ToArray();
+        var health   = _provider.GetRequiredService<ISubscriptionHealth>();
 
         services.Length.Should().Be(2);
-        services[0].Should().BeSameAs(subs[0]);
-        services[1].Should().BeSameAs(subs[1]);
+
+        // Should have one sub each
+        services[0].GetPrivateMember<IMessageSubscription>("_subscription")
+            .Should()
+            .BeSameAs(subs[0]);
+
+        services[1].GetPrivateMember<IMessageSubscription>("_subscription")
+            .Should()
+            .BeSameAs(subs[1]);
+
+        // Should have the same health check
+        services[0].GetPrivateMember<ISubscriptionHealth>("_subscriptionHealth")
+            .Should()
+            .BeSameAs(health);
+
+        services[1].GetPrivateMember<ISubscriptionHealth>("_subscriptionHealth")
+            .Should()
+            .BeSameAs(health);
     }
 
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
 
     class Startup {
         public static void ConfigureServices(IServiceCollection services) {
-            services.AddSubscription<TestSub, TestOptions>("sub1", x => x.Field = "test")
-                .AddEventHandler<Handler1>();
+            services.AddSubscription<TestSub, TestOptions>(
+                "sub1",
+                builder => builder
+                    .Configure(x => x.Field = "test")
+                    .AddEventHandler<Handler1>()
+            );
 
-            services.AddSubscription<TestSub, TestOptions>("sub2")
-                .AddEventHandler<Handler2>();
+            services.AddSubscription<TestSub, TestOptions>(
+                "sub2",
+                builder => builder
+                    .AddEventHandler<Handler2>()
+            );
         }
 
         public void Configure(IApplicationBuilder app) { }
@@ -99,10 +120,12 @@ public class RegistrationTests {
     }
 
     class Handler1 : IEventHandler {
-        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
+            => Task.CompletedTask;
     }
 
     class Handler2 : IEventHandler {
-        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
+            => Task.CompletedTask;
     }
 }

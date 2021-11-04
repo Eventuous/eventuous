@@ -11,8 +11,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// </summary>
 [PublicAPI]
 public class StreamSubscription
-    : EventStoreCatchUpSubscriptionBase<StreamSubscriptionOptions>,
-        IMeasuredSubscription {
+    : EventStoreCatchUpSubscriptionBase<StreamSubscriptionOptions>, IMeasuredSubscription {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
     /// </summary>
@@ -140,12 +139,12 @@ public class StreamSubscription
         };
     }
 
-    public ISubscriptionGapMeasure GetMeasure()
+    public GetSubscriptionGap GetMeasure()
         => new StreamSubscriptionMeasure(
             Options.SubscriptionId,
             Options.StreamName,
             EventStoreClient,
             Options.ResolveLinkTos,
             () => LastProcessed
-        );
+        ).GetSubscriptionGap;
 }
