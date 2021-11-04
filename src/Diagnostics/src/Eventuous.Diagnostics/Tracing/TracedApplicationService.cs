@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Eventuous.Diagnostics.Tracing;
 
 public class TracedApplicationService<TState, TId> : IApplicationService<TState, TId>
@@ -14,6 +16,12 @@ public class TracedApplicationService<TState, TId> : IApplicationService<TState,
         TCommand          command,
         CancellationToken cancellationToken
     ) where TCommand : class {
+        using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
+            "hande-command",
+            ActivityKind.Internal,
+            parentContext: default
+        );
+        
         return await Inner.Handle(command, cancellationToken);
     }
 }

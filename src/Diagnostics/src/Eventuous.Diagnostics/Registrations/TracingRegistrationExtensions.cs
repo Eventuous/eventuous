@@ -21,5 +21,5 @@ public static class ApplicationServiceRegistration {
         where T : class, IEventStore
         => services
             .AddSingleton<T>()
-            .AddSingleton<IEventStore>(sp => sp.GetRequiredService<T>());
+            .AddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>()));
 }
