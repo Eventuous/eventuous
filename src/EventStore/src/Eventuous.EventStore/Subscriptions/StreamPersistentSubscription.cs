@@ -74,7 +74,7 @@ public class StreamPersistentSubscription
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
-        new FilterConsumer(consumer, re => !re.EventType.StartsWith("$")),
+        new FilterConsumer(consumer, re => !re.MessageType.StartsWith("$")),
         loggerFactory
     ) { }
 

@@ -10,27 +10,29 @@ public static class SubscriptionActivity {
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     ) {
         context.ParentContext ??= GetParentContext(context.Metadata);
-        
-        var activity  = CreateActivity(context.ParentContext, tags);
-        if (activity == null) return activity;
 
-        if (activity.IsAllDataRequested) {
-            activity
-                .SetTag(TelemetryTags.Message.Type, TypeMap.GetTypeName(context.Message!))
-                .SetTag(TelemetryTags.Message.Id, context.EventId)
-                .SetTag(TelemetryTags.Messaging.MessageId, context.EventId)
-                .CopyParentTag(TelemetryTags.Messaging.ConversationId)
-                .SetOrCopyParentTag(
-                    TelemetryTags.Messaging.CorrelationId,
-                    context.Metadata?.GetCorrelationId()
-                );
-        }
+        var activity = CreateActivity(context.ParentContext, tags);
 
-        return activity.Start();
+        return activity?.SetContextTags(context)?.Start();
+    }
+
+    public static Activity? SetContextTags(this Activity? activity, IMessageConsumeContext context) {
+        if (activity is not { IsAllDataRequested: true }) return activity;
+
+        return activity
+            .SetTag(TelemetryTags.Message.Type, context.MessageType)
+            .SetTag(TelemetryTags.Message.Id, context.MessageId)
+            .SetTag(TelemetryTags.Messaging.MessageId, context.MessageId)
+            .SetTag(TelemetryTags.Eventuous.Stream, context.Stream)
+            .CopyParentTag(TelemetryTags.Messaging.ConversationId)
+            .SetOrCopyParentTag(
+                TelemetryTags.Messaging.CorrelationId,
+                context.Metadata?.GetCorrelationId()
+            );
     }
 
     static ActivityContext? GetParentContext(Metadata? metadata) {
-        var tracingData   = metadata?.GetTracingMeta();
+        var tracingData = metadata?.GetTracingMeta();
         return tracingData?.ToActivityContext(true);
     }
 

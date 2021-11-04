@@ -3,8 +3,8 @@ using System.Diagnostics;
 namespace Eventuous.Subscriptions.Context;
 
 public interface IMessageConsumeContext {
-    string           EventId       { get; }
-    string           EventType     { get; }
+    string           MessageId     { get; }
+    string           MessageType   { get; }
     string           ContentType   { get; }
     string           Stream        { get; }
     DateTime         Created       { get; }

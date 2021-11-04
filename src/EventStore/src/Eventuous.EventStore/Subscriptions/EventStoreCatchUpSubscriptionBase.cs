@@ -28,7 +28,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
     static IMessageConsumer GetConsumer(IMessageConsumer inner)
         => new FilterConsumer(
             new ConcurrentConsumer(inner, 1, 1),
-            ctx => !ctx.EventType.StartsWith("$")
+            ctx => !ctx.MessageType.StartsWith("$")
         );
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -69,7 +69,17 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
     }
 
     protected override ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        Subscription?.Dispose();
+        try {
+            Subscription?.Dispose();
+        }
+        catch (Exception e) {
+            Log.LogInformation(
+                "Subscription {SubscriptionId} stopped: {Message}",
+                SubscriptionId,
+                e.Message
+            );
+        }
+
         return default;
     }
 

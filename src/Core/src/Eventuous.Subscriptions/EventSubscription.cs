@@ -79,7 +79,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         DebugLog?.Invoke(
             "Subscription {Subscription} got an event {EventType}",
             Options.SubscriptionId,
-            context.EventType
+            context.MessageType
         );
 
         try {
@@ -88,20 +88,20 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             }
         }
         catch (Exception e) {
-            activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.EventType}"));
+            activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
 
             Log?.Log(
                 Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning,
                 e,
                 "Error when handling the event {Stream} {Type}",
                 context.Stream,
-                context.EventType
+                context.MessageType
             );
 
             if (Options.ThrowOnError)
                 throw new SubscriptionException(
                     context.Stream,
-                    context.EventType,
+                    context.MessageType,
                     context.Message,
                     e
                 );

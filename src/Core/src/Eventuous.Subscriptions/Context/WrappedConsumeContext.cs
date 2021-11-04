@@ -8,8 +8,8 @@ public abstract class WrappedConsumeContext : IMessageConsumeContext {
     protected WrappedConsumeContext(IMessageConsumeContext innerContext)
         => InnerContext = innerContext;
 
-    public string           EventId       => InnerContext.EventId;
-    public string           EventType     => InnerContext.EventType;
+    public string           MessageId       => InnerContext.MessageId;
+    public string           MessageType     => InnerContext.MessageType;
     public string           ContentType   => InnerContext.ContentType;
     public string           Stream        => InnerContext.Stream;
     public DateTime         Created       => InnerContext.Created;

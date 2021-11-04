@@ -97,7 +97,7 @@ public class TracedEventStore : IEventStore {
 
         if (activity is { IsAllDataRequested: true }) {
             activity.SetTag(TelemetryTags.Db.Operation, activity.OperationName);
-            activity.SetTag(TelemetryTags.EventStore.Stream, stream);
+            activity.SetTag(TelemetryTags.Eventuous.Stream, stream);
         }
 
         return activity?.Start();

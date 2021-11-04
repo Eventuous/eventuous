@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Producers.Diagnostics;
+using static Eventuous.Diagnostics.TelemetryTags;
 
 namespace Eventuous.Producers;
 
@@ -23,7 +24,7 @@ public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProduc
         var (activity, msgs) = ProducerActivity.Start(messages, DefaultTags);
 
         if (activity is { IsAllDataRequested: true }) {
-            activity.SetTag(TelemetryTags.Messaging.Destination, stream);
+            activity.SetTag(Messaging.Destination, stream);
         }
 
         await ProduceMessages(stream, msgs, options, cancellationToken);
@@ -45,13 +46,13 @@ public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProduc
 public abstract class BaseProducer : IEventProducer {
     protected KeyValuePair<string, object?>[] DefaultTags { get; }
 
-    protected BaseProducer(ProducerTracingOptions? tracingOptions) {
+    protected BaseProducer(ProducerTracingOptions? tracingOptions = null) {
         var options = tracingOptions ?? new ProducerTracingOptions();
 
         DefaultTags = new[] {
-            new KeyValuePair<string, object?>(TelemetryTags.Messaging.System, options.MessagingSystem),
-            new KeyValuePair<string, object?>(TelemetryTags.Messaging.DestinationKind, options.DestinationKind),
-            new KeyValuePair<string, object?>(TelemetryTags.Messaging.Operation, options.ProduceOperation)
+            new KeyValuePair<string, object?>(Messaging.System, options.MessagingSystem),
+            new KeyValuePair<string, object?>(Messaging.DestinationKind, options.DestinationKind),
+            new KeyValuePair<string, object?>(Messaging.Operation, options.ProduceOperation)
         };
     }
 
@@ -74,7 +75,8 @@ public abstract class BaseProducer : IEventProducer {
             : ProducerActivity.Start(messagesArray, DefaultTags);
 
         if (activity is { IsAllDataRequested: true }) {
-            activity.SetTag(TelemetryTags.Messaging.Destination, stream);
+            activity.SetTag(Messaging.Destination, stream);
+            activity.SetTag(TelemetryTags.Eventuous.Stream, stream);
         }
 
         await ProduceMessages(stream, msgs, cancellationToken);
@@ -83,6 +85,14 @@ public abstract class BaseProducer : IEventProducer {
 
         (Activity? act, ProducedMessage[]) ForOne() {
             var (act, producedMessage) = ProducerActivity.Start(messagesArray[0], DefaultTags);
+
+            if (act is { IsAllDataRequested: true }) {
+                var messageId = producedMessage.MessageId.ToString();
+                act.SetTag(Message.Type, producedMessage.MessageType);
+                act.SetTag(Message.Id, messageId);
+                act.SetTag(Messaging.MessageId, messageId);
+            }
+
             return (act, new[] { producedMessage });
         }
     }

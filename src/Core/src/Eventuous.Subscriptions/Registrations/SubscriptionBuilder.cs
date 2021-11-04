@@ -2,7 +2,6 @@ using System.Reflection;
 using Eventuous.Subscriptions.Consumers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Eventuous.Subscriptions.Registrations;
@@ -32,7 +31,7 @@ public abstract class SubscriptionBuilder {
     public SubscriptionBuilder AddEventHandler<THandler>()
         where THandler : class, IEventHandler {
         Services.TryAddSingleton<THandler>();
-        _handlers.Add(sp => sp.GetRequiredService<THandler>());
+        AddHandlerResolve(sp => sp.GetRequiredService<THandler>());
         return this;
     }
 
@@ -47,7 +46,7 @@ public abstract class SubscriptionBuilder {
         Func<IServiceProvider, THandler> getHandler
     ) where THandler : class, IEventHandler {
         Services.TryAddSingleton(getHandler);
-        _handlers.Add(sp => sp.GetRequiredService<THandler>());
+        AddHandlerResolve(sp => sp.GetRequiredService<THandler>());
         return this;
     }
 
@@ -55,7 +54,7 @@ public abstract class SubscriptionBuilder {
         Func<THandler, TWrappingHandler> getWrappingHandler
     ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         Services.TryAddSingleton<THandler>();
-        _handlers.Add(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
+        AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
         return this;
     }
 
@@ -64,7 +63,7 @@ public abstract class SubscriptionBuilder {
         Func<THandler, TWrappingHandler> getWrappingHandler
     ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         Services.TryAddSingleton(getInnerHandler);
-        _handlers.Add(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
+        AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
         return this;
     }
 
@@ -82,6 +81,9 @@ public abstract class SubscriptionBuilder {
         ResolveConsumer = sp => getConsumer(sp, ResolveHandlers(sp));
         return this;
     }
+
+    void AddHandlerResolve(ResolveHandler resolveHandler)
+        => _handlers.Add(sp => new TracedEventHandler(resolveHandler(sp)));
 }
 
 public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
@@ -93,8 +95,8 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         ConfigureOptions = options => options.SubscriptionId = subscriptionId;
     }
 
-    T?                ResolvedSub      { get; set; }
-    IMessageConsumer? ResolvedConsumer { get; set; }
+    T?                _resolvedSubscription;
+    IMessageConsumer? _resolvedConsumer;
 
     internal Action<TOptions>? ConfigureOptions { get; private set; }
 
@@ -114,24 +116,28 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         }
     }
 
-    IMessageConsumer ResolveDefaultConsumer(IServiceProvider sp) {
-        if (ResolvedConsumer != null) return ResolvedConsumer;
+    IMessageConsumer GetConsumer(IServiceProvider sp) {
+        if (_resolvedConsumer != null) return _resolvedConsumer;
 
+        _resolvedConsumer = new TracedConsumer(ResolveConsumer(sp));
+        return _resolvedConsumer;
+    }
+
+    IMessageConsumer ResolveDefaultConsumer(IServiceProvider sp) {
         var options = sp.GetService<IOptionsMonitor<TOptions>>();
 
-        ResolvedConsumer = new DefaultConsumer(
+        _resolvedConsumer = new DefaultConsumer(
             ResolveHandlers(sp),
-            options?.Get(SubscriptionId)?.ThrowOnError == true,
-            sp.GetService<ILogger>()
+            options?.Get(SubscriptionId)?.ThrowOnError == true
         );
 
-        return ResolvedConsumer;
+        return _resolvedConsumer;
     }
 
     internal T ResolveSubscription(IServiceProvider sp) {
         const string subscriptionIdParameterName = "subscriptionId";
 
-        if (ResolvedSub != null) return ResolvedSub;
+        if (_resolvedSubscription != null) return _resolvedSubscription;
 
         var constructors = typeof(T).GetConstructors<TOptions>();
 
@@ -160,7 +166,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         if (ctor.Invoke(args) is not T instance)
             throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
 
-        ResolvedSub = instance;
+        _resolvedSubscription = instance;
         return instance;
 
         object? CreateArg(ParameterInfo parameterInfo) {
@@ -178,7 +184,8 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
             }
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
-            if (parameterInfo.ParameterType == typeof(IMessageConsumer)) return ResolveConsumer(sp);
+            if (parameterInfo.ParameterType == typeof(IMessageConsumer))
+                return new TracedConsumer(GetConsumer(sp));
 
             return sp.GetService(parameterInfo.ParameterType);
         }
@@ -200,7 +207,7 @@ static class TypeExtensionsForRegistrations {
                             y => y.ParameterType == typeof(T) && (name == null || y.Name == name)
                         )
                 )
-            ).Where(x => x.Options != null).ToArray()!;
+            ).Where(x => x.Options != null).ToArray();
 }
 
 public delegate IEventHandler ResolveHandler(IServiceProvider sp);

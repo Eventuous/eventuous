@@ -36,10 +36,6 @@ public static class TelemetryTags {
         public const string MongoDbCollection  = "db.mongodb.collection";
     }
 
-    public static class EventStore {
-        public const string Stream = "eventstore.stream";
-    }
-
     public static class Message {
         public const string Type = "message.type";
         public const string Id   = "message.id";
@@ -78,5 +74,11 @@ public static class TelemetryTags {
     public static class Otel {
         public const string StatusCode        = "otel.status_code";
         public const string StatusDescription = "otel.status_description";
+    }
+
+    public static class Eventuous {
+        public const string Consumer     = "eventuous.consumer";
+        public const string EventHandler = "eventuous.event-handler";
+        public const string Stream       = "eventuous.stream";
     }
 }

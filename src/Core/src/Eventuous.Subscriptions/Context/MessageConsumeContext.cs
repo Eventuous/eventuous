@@ -13,8 +13,8 @@ public class MessageConsumeContext : IMessageConsumeContext {
         object?   message,
         Metadata? metadata
     ) {
-        EventId     = eventId;
-        EventType   = eventType;
+        MessageId     = eventId;
+        MessageType   = eventType;
         ContentType = contentType;
         Stream      = stream;
         Created     = created;
@@ -23,8 +23,8 @@ public class MessageConsumeContext : IMessageConsumeContext {
         Message     = message;
     }
 
-    public string           EventId        { get; }
-    public string           EventType      { get; }
+    public string           MessageId        { get; }
+    public string           MessageType      { get; }
     public string           ContentType    { get; }
     public string           Stream         { get; }
     public DateTime         Created        { get; }
