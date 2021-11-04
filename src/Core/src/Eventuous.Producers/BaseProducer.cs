@@ -70,20 +70,20 @@ public abstract class BaseProducer : IEventProducer {
         var messagesArray = messages.ToArray();
         if (messagesArray.Length == 0) return;
 
-        var (activity, msgs) = messagesArray.Length == 1
+        var traced = messagesArray.Length == 1
             ? ForOne()
             : ProducerActivity.Start(messagesArray, DefaultTags);
+
+        using var activity = traced.act;
 
         if (activity is { IsAllDataRequested: true }) {
             activity.SetTag(Messaging.Destination, stream);
             activity.SetTag(TelemetryTags.Eventuous.Stream, stream);
         }
 
-        await ProduceMessages(stream, msgs, cancellationToken);
+        await ProduceMessages(stream, traced.msgs, cancellationToken);
 
-        activity?.Dispose();
-
-        (Activity? act, ProducedMessage[]) ForOne() {
+        (Activity? act, ProducedMessage[] msgs) ForOne() {
             var (act, producedMessage) = ProducerActivity.Start(messagesArray[0], DefaultTags);
 
             if (act is { IsAllDataRequested: true }) {
@@ -93,7 +93,7 @@ public abstract class BaseProducer : IEventProducer {
                 act.SetTag(Messaging.MessageId, messageId);
             }
 
-            return (act, new[] { producedMessage });
+            return (act?.Start(), new[] { producedMessage });
         }
     }
 

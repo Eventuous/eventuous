@@ -4,7 +4,7 @@ using Eventuous.Diagnostics;
 namespace Eventuous.Producers.Diagnostics;
 
 public static class ProducerActivity {
-    public static (Activity?, ProducedMessage) Start(
+    public static (Activity? act, ProducedMessage msgs) Start(
         ProducedMessage                             message,
         IEnumerable<KeyValuePair<string, object?>>? tags
     ) {
@@ -28,10 +28,10 @@ public static class ProducerActivity {
 
         meta.AddActivityTags(activity);
 
-        return (activity, new ProducedMessage(message.Message, message.Metadata, message.MessageId));
+        return (activity, message with { Metadata = meta });
     }
 
-    public static (Activity?, IEnumerable<ProducedMessage>) Start(
+    public static (Activity? act, IEnumerable<ProducedMessage> msgs) Start(
         IEnumerable<ProducedMessage>                messages,
         IEnumerable<KeyValuePair<string, object?>>? tags
     ) {

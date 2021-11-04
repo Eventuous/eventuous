@@ -2,7 +2,7 @@ using System.Diagnostics.Tracing;
 
 namespace Eventuous.TestHelpers;
 
-public class TestEventListener : EventListener {
+public sealed class TestEventListener : EventListener {
     readonly ITestOutputHelper _outputHelper;
     readonly string[]          _prefixes;
     readonly List<EventSource> _eventSources = new();
@@ -43,7 +43,7 @@ public class TestEventListener : EventListener {
     #nullable enable
 
     public override void Dispose() {
-        foreach (var eventSource in this._eventSources) {
+        foreach (var eventSource in _eventSources) {
             DisableEvents(eventSource);
         }
 

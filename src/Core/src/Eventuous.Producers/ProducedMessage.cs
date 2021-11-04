@@ -9,7 +9,7 @@ public record ProducedMessage {
     }
 
     public object    Message     { get; }
-    public Metadata? Metadata    { get; }
+    public Metadata? Metadata    { get; init; }
     public Guid      MessageId   { get; }
     public string    MessageType { get; }
 }
