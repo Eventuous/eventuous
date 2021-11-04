@@ -9,7 +9,7 @@ public class Metadata : Dictionary<string, object> {
     public Metadata(IDictionary<string, object> dictionary) : base(dictionary) { }
 
     public Metadata With<T>(string key, T? value) {
-        if (value != null) TryAdd(key, value);
+        if (value != null) this[key] = value;
         return this;
     }
 

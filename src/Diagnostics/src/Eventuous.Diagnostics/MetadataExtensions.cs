@@ -14,7 +14,7 @@ public static class MetadataExtensions {
             );
 
         foreach (var (key, value) in tags) {
-            metadata.Add(MetaMappings.TelemetryToInternalTagsMap[key], value!);
+            metadata.With(MetaMappings.TelemetryToInternalTagsMap[key], value!);
         }
 
         return metadata.AddTracingMeta(activity.GetTracingData());

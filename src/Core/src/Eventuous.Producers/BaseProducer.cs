@@ -85,14 +85,6 @@ public abstract class BaseProducer : IEventProducer {
 
         (Activity? act, ProducedMessage[] msgs) ForOne() {
             var (act, producedMessage) = ProducerActivity.Start(messagesArray[0], DefaultTags);
-
-            if (act is { IsAllDataRequested: true }) {
-                var messageId = producedMessage.MessageId.ToString();
-                act.SetTag(Message.Type, producedMessage.MessageType);
-                act.SetTag(Message.Id, messageId);
-                act.SetTag(Messaging.MessageId, messageId);
-            }
-
             return (act?.Start(), new[] { producedMessage });
         }
     }
