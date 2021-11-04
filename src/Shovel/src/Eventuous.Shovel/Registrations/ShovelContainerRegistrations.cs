@@ -1,5 +1,7 @@
 // ReSharper disable CheckNamespace
+
 using Eventuous.Shovel;
+using Eventuous.Subscriptions.Consumers;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -17,12 +19,14 @@ public static class ShovelContainerRegistrations {
         where TSubscriptionOptions : SubscriptionOptions {
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
-            builder => builder.AddEventHandler(
-                sp => new ShovelHandler<TProducer, TProduceOptions>(
-                    sp.GetRequiredService<TProducer>(),
-                    routeAndTransform
+            builder => builder
+                .Configure(options => options.ThrowOnError = true)
+                .AddEventHandler(
+                    sp => new ShovelHandler<TProducer, TProduceOptions>(
+                        sp.GetRequiredService<TProducer>(),
+                        routeAndTransform
+                    )
                 )
-            )
         );
 
         if (!services.AlreadyRegistered<ShovelProducer<TProduceOptions>>()) {
@@ -45,12 +49,14 @@ public static class ShovelContainerRegistrations {
         where TSubscriptionOptions : SubscriptionOptions {
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
-            builder => builder.AddEventHandler(
-                sp => new ShovelHandler<TProducer>(
-                    sp.GetRequiredService<TProducer>(),
-                    routeAndTransform
+            builder => builder
+                .Configure(options => options.ThrowOnError = true)
+                .AddEventHandler(
+                    sp => new ShovelHandler<TProducer>(
+                        sp.GetRequiredService<TProducer>(),
+                        routeAndTransform
+                    )
                 )
-            )
         );
 
         if (!services.AlreadyRegistered<ShovelProducer>()) {
