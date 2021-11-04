@@ -15,8 +15,8 @@ public interface IMessageConsumeContext {
 }
 
 public interface IMessageConsumeContext<out T> where T : class {
-    string       EventId     { get; }
-    string       EventType   { get; }
+    string       MessageId   { get; }
+    string       MessageType { get; }
     string       ContentType { get; }
     string       Stream      { get; }
     DateTime     Created     { get; }

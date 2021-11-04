@@ -21,9 +21,6 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     internal IMessageConsumer Consumer        { get; }
 
     CancellationTokenSource _subscriptionCts = new();
-    CancellationTokenSource _monitoringCts   = new();
-    Task?                   _measureTask;
-    ulong                   _gap;
 
     public string ServiceId => Options.SubscriptionId;
 

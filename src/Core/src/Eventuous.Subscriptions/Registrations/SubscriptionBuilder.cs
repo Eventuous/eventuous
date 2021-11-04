@@ -207,7 +207,7 @@ static class TypeExtensionsForRegistrations {
                             y => y.ParameterType == typeof(T) && (name == null || y.Name == name)
                         )
                 )
-            ).Where(x => x.Options != null).ToArray();
+            ).Where(x => x.Options != null).ToArray()!;
 }
 
 public delegate IEventHandler ResolveHandler(IServiceProvider sp);

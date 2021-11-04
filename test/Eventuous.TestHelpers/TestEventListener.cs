@@ -25,6 +25,7 @@ public class TestEventListener : EventListener {
         base.OnEventSourceCreated(eventSource);
     }
 
+    #nullable disable
     protected override void OnEventWritten(EventWrittenEventArgs evt) {
         string message;
 
@@ -39,6 +40,7 @@ public class TestEventListener : EventListener {
             $"{evt.EventSource.Name} - EventId: [{evt.EventId}], EventName: [{evt.EventName}], Message: [{message}]"
         );
     }
+    #nullable enable
 
     public override void Dispose() {
         foreach (var eventSource in this._eventSources) {
