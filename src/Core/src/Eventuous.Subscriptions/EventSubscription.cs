@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Consumers;
@@ -44,6 +43,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     OnSubscribed? _onSubscribed;
     OnDropped?    _onDropped;
+
+    public string SubscriptionId => Options.SubscriptionId;
 
     public async ValueTask Subscribe(
         OnSubscribed      onSubscribed,

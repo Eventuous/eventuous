@@ -22,22 +22,29 @@ public class SubscriptionHostedService : IHostedService {
 
     ILogger<SubscriptionHostedService>? Log { get; }
 
-    readonly InterlockedSemaphore _semaphore = new();
-
     public virtual async Task StartAsync(CancellationToken cancellationToken) {
-        if (!_semaphore.CanMove()) return;
-        
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _subscriptionCts.Token);
+        Log?.LogDebug("Starting subscription {SubscriptionId}", _subscription.SubscriptionId);
+
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            _subscriptionCts.Token
+        );
+
         await _subscription.Subscribe(
             id => _subscriptionHealth?.ReportHealthy(id),
             (id, _, ex) => _subscriptionHealth?.ReportUnhealthy(id, ex),
             cts.Token
         ).NoContext();
-        Log?.LogInformation("Started subscription");
+
+        Log?.LogInformation("Started subscription {SubscriptionId}", _subscription.SubscriptionId);
     }
 
     public virtual async Task StopAsync(CancellationToken cancellationToken) {
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _subscriptionCts.Token);
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            _subscriptionCts.Token
+        );
+
         await _subscription.Unsubscribe(_ => { }, cts.Token).NoContext();
         Log?.LogInformation("Stopped subscription");
     }

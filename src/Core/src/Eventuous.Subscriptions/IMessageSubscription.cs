@@ -9,6 +9,8 @@ public delegate void OnDropped(string subscriptionId, DropReason dropReason, Exc
 public delegate void OnUnsubscribed(string subscriptionId);
 
 public interface IMessageSubscription {
+    string SubscriptionId { get; }
+    
     ValueTask Subscribe(
         OnSubscribed      onSubscribed,
         OnDropped         onDropped,
