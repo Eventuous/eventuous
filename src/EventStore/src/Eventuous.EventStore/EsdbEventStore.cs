@@ -1,8 +1,6 @@
 // ReSharper disable CoVariantArrayConversion
 
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Eventuous.Diagnostics;
 
 namespace Eventuous.EventStore;
 
@@ -10,32 +8,35 @@ namespace Eventuous.EventStore;
 public class EsdbEventStore : IEventStore {
     readonly ILogger<EsdbEventStore>? _logger;
     readonly EventStoreClient         _client;
+    readonly IEventSerializer         _serializer;
+    readonly IMetadataSerializer      _metaSerializer;
 
-    public EsdbEventStore(EventStoreClient client, ILogger<EsdbEventStore>? logger) {
-        _logger = logger;
-        _client = Ensure.NotNull(client, nameof(client));
+    public EsdbEventStore(
+        EventStoreClient         client,
+        IEventSerializer?        serializer     = null,
+        IMetadataSerializer?     metaSerializer = null,
+        ILogger<EsdbEventStore>? logger         = null
+    ) {
+        _logger         = logger;
+        _client         = Ensure.NotNull(client, nameof(client));
+        _serializer     = serializer ?? DefaultEventSerializer.Instance;
+        _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
-    public EsdbEventStore(EventStoreClientSettings clientSettings, ILogger<EsdbEventStore>? logger)
-        : this(new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))), logger) { }
-    
-    static readonly KeyValuePair<string, object?>[] DefaultTags = {
-        new(TelemetryTags.Db.System, "eventstoredb")
-    };
+    public EsdbEventStore(
+        EventStoreClientSettings clientSettings,
+        IEventSerializer?        serializer     = null,
+        IMetadataSerializer?     metaSerializer = null,
+        ILogger<EsdbEventStore>? logger         = null
+    )
+        : this(
+            new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
+            serializer,
+            metaSerializer,
+            logger
+        ) { }
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
-        using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            "stream-exists",
-            ActivityKind.Internal,
-            parentContext: default,
-            DefaultTags
-        );
-        
-        if (activity is { IsAllDataRequested: true }) {
-            activity.SetTag(TelemetryTags.Db.Operation, "read-stream");
-            activity.SetTag(TelemetryTags.EventStore.Stream, stream);
-        }
-        
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
             stream,
@@ -92,13 +93,17 @@ public class EsdbEventStore : IEventStore {
             (s, ex) => new AppendToStreamException(s, ex)
         );
 
-        static EventData ToEventData(StreamEvent streamEvent)
-            => new(
+        EventData ToEventData(StreamEvent streamEvent) {
+            var (eventType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
+
+            return new EventData(
                 Uuid.NewUuid(),
-                streamEvent.EventType,
-                streamEvent.Data,
-                streamEvent.Metadata
+                eventType,
+                payload,
+                _metaSerializer.Serialize(streamEvent.Metadata),
+                _serializer.ContentType
             );
+        }
     }
 
     public Task<StreamEvent[]> ReadEvents(
@@ -150,7 +155,11 @@ public class EsdbEventStore : IEventStore {
                 return ToStreamEvents(resolvedEvents);
             },
             stream,
-            () => new ErrorInfo("Unable to read {Count} events backwards from {Stream}", count, stream),
+            () => new ErrorInfo(
+                "Unable to read {Count} events backwards from {Stream}",
+                count,
+                stream
+            ),
             (s, ex) => new ReadFromStreamException(s, ex)
         );
     }
@@ -173,6 +182,7 @@ public class EsdbEventStore : IEventStore {
         return await TryExecute(
             async () => {
                 long readCount = 0;
+
                 await foreach (var re in read.IgnoreWithCancellation(cancellationToken)) {
                     callback(ToStreamEvent(re));
                     readCount++;
@@ -211,7 +221,11 @@ public class EsdbEventStore : IEventStore {
                 )
             ),
             stream,
-            () => new ErrorInfo("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition),
+            () => new ErrorInfo(
+                "Unable to truncate stream {Stream} at {Position}",
+                stream,
+                truncatePosition
+            ),
             (s, ex) => new TruncateStreamException(s, ex)
         );
     }
@@ -268,16 +282,15 @@ public class EsdbEventStore : IEventStore {
     )
         => version == ExpectedStreamVersion.Any ? whenAny() : otherwise();
 
-    static StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent)
+    StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent)
         => new(
-            resolvedEvent.Event.EventType,
-            resolvedEvent.Event.Data.ToArray(),
-            resolvedEvent.Event.Metadata.ToArray(),
+            _serializer.DeserializeEvent(resolvedEvent.Event.Data.ToArray(), resolvedEvent.Event.EventType),
+            _metaSerializer.Deserialize(resolvedEvent.Event.Metadata.ToArray()) ?? new Metadata(),
             resolvedEvent.Event.ContentType,
             resolvedEvent.OriginalEventNumber.ToInt64()
         );
 
-    static StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
+    StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents.Select(ToStreamEvent).ToArray();
 
     record ErrorInfo(string Message, params object[] Args);

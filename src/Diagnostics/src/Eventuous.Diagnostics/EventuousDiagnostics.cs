@@ -5,7 +5,7 @@ using System.Reflection;
 namespace Eventuous.Diagnostics;
 
 public static class EventuousDiagnostics {
-    static readonly AssemblyName AssemblyName = typeof(EventuousDiagnostics).Assembly.GetName();
+    static readonly AssemblyName AssemblyName = typeof(Metadata).Assembly.GetName();
     static readonly Version?     Version      = AssemblyName.Version;
 
     public const string InstrumentationName = "eventuous";

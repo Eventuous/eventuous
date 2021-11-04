@@ -23,13 +23,16 @@ public class StoringEvents : NaiveFixture {
             Auto.Create<decimal>()
         );
 
-        var expected = new object[] {
-            new BookingEvents.RoomBooked(
-                cmd.BookingId,
-                cmd.RoomId,
-                cmd.CheckIn,
-                cmd.CheckOut,
-                cmd.Price
+        var expected = new Change[] {
+            new(
+                new BookingEvents.RoomBooked(
+                    cmd.BookingId,
+                    cmd.RoomId,
+                    cmd.CheckIn,
+                    cmd.CheckOut,
+                    cmd.Price
+                ),
+                "RoomBooked"
             )
         };
 

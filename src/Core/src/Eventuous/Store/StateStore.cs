@@ -28,13 +28,10 @@ public class StateStore : IStateStore {
         return state;
 
         void Fold(StreamEvent streamEvent) {
-            var evt = Deserialize(streamEvent);
+            var evt = streamEvent.Payload;
             if (evt == null) return;
 
             state = state.When(evt);
         }
-
-        object? Deserialize(StreamEvent streamEvent)
-            => _serializer.DeserializeEvent(streamEvent.Data.AsSpan(), streamEvent.EventType);
     }
 }

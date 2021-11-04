@@ -43,7 +43,7 @@ public class TracesTests : SubscriptionFixture<TracedHandler>, IDisposable {
             default
         ))[0];
 
-        var meta          = DefaultMetadataSerializer.Instance.Deserialize(writtenEvent.Metadata)!;
+        var meta          = writtenEvent.Metadata;
         var (traceId, spanId, _) = meta.GetTracingMeta();
 
         traceId.Should().NotBe(RecordedTrace.DefaultTraceId);

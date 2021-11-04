@@ -31,7 +31,7 @@ public class AppServiceTests {
             default
         );
 
-        var result = events.Select(x => Serializer.Json.DeserializeEvent(x.Data, x.EventType)).ToArray();
+        var result = events.Select(x => x.Payload).ToArray();
 
         result.Should().BeEquivalentTo(expected);
     }
