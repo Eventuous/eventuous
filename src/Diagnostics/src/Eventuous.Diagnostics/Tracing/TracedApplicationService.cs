@@ -20,7 +20,7 @@ public class TracedApplicationService<TState, TId> : IApplicationService<TState,
             "hande-command",
             ActivityKind.Internal,
             parentContext: default
-        );
+        )?.Start();
         
         return await Inner.Handle(command, cancellationToken);
     }
