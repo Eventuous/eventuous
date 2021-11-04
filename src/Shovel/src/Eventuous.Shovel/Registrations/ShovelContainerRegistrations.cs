@@ -1,7 +1,6 @@
 // ReSharper disable CheckNamespace
 
 using Eventuous.Shovel;
-using Eventuous.Subscriptions.Consumers;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -11,7 +10,8 @@ public static class ShovelContainerRegistrations {
         TProducer, TProduceOptions>(
         this IServiceCollection            services,
         string                             subscriptionId,
-        RouteAndTransform<TProduceOptions> routeAndTransform
+        RouteAndTransform<TProduceOptions> routeAndTransform,
+        Action<TSubscriptionOptions>?      configureSubscription = null
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
@@ -20,29 +20,23 @@ public static class ShovelContainerRegistrations {
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
             builder => builder
-                .Configure(options => options.ThrowOnError = true)
+                .Configure(configureSubscription)
                 .AddEventHandler(
-                    sp => new ShovelHandler<TProducer, TProduceOptions>(
-                        sp.GetRequiredService<TProducer>(),
+                    sp => new ShovelHandler<TProduceOptions>(
+                        new ShovelProducer<TProduceOptions>(sp.GetRequiredService<TProducer>()),
                         routeAndTransform
                     )
                 )
         );
 
-        if (!services.AlreadyRegistered<ShovelProducer<TProduceOptions>>()) {
-            services.AddEventProducer(
-                sp => new ShovelProducer<TProduceOptions>(sp.GetRequiredService<TProducer>())
-            );
-        }
-
         return services;
     }
 
-    public static IServiceCollection AddShovel<TSubscription, TSubscriptionOptions,
-        TProducer>(
-        this IServiceCollection services,
-        string                  subscriptionId,
-        RouteAndTransform       routeAndTransform
+    public static IServiceCollection AddShovel<TSubscription, TSubscriptionOptions, TProducer>(
+        this IServiceCollection       services,
+        string                        subscriptionId,
+        RouteAndTransform             routeAndTransform,
+        Action<TSubscriptionOptions>? configureSubscription = null
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer
@@ -50,24 +44,15 @@ public static class ShovelContainerRegistrations {
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
             builder => builder
-                .Configure(options => options.ThrowOnError = true)
+                .Configure(configureSubscription)
                 .AddEventHandler(
-                    sp => new ShovelHandler<TProducer>(
-                        sp.GetRequiredService<TProducer>(),
+                    sp => new ShovelHandler(
+                        new ShovelProducer(sp.GetRequiredService<TProducer>()),
                         routeAndTransform
                     )
                 )
         );
 
-        if (!services.AlreadyRegistered<ShovelProducer>()) {
-            services.AddEventProducer(
-                sp => new ShovelProducer(sp.GetRequiredService<TProducer>())
-            );
-        }
-
         return services;
     }
-
-    static bool AlreadyRegistered<T>(this IServiceCollection services)
-        => services.Any(x => x.ServiceType == typeof(T));
 }

@@ -1,11 +1,11 @@
 namespace Eventuous.Shovel;
 
-class ShovelProducer<T> : BaseProducer<T> where T : class {
+class ShovelProducer<T> : ShovelProducer, IEventProducer<T> where T : class {
     readonly IEventProducer<T> _inner;
 
-    public ShovelProducer(IEventProducer<T> inner) => _inner = inner;
+    public ShovelProducer(IEventProducer<T> inner) : base(inner) => _inner = inner;
 
-    protected override async Task ProduceMessages(
+    public async Task Produce(
         StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         T?                           options,
@@ -16,12 +16,13 @@ class ShovelProducer<T> : BaseProducer<T> where T : class {
         await _inner.Produce(stream, messages, options, cancellationToken);
     }
 }
-class ShovelProducer : BaseProducer {
+
+class ShovelProducer : IEventProducer {
     readonly IEventProducer _inner;
 
     public ShovelProducer(IEventProducer inner) => _inner = inner;
 
-    protected override async Task ProduceMessages(
+    public async Task Produce(
         StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
         CancellationToken            cancellationToken = default
@@ -30,4 +31,6 @@ class ShovelProducer : BaseProducer {
 
         await _inner.Produce(stream, messages, cancellationToken);
     }
+
+    public bool Ready => true;
 }

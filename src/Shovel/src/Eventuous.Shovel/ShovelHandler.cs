@@ -3,12 +3,12 @@ using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Shovel;
 
-class ShovelHandler<TProducer> : IEventHandler where TProducer : class, IEventProducer {
-    readonly TProducer         _eventProducer;
+class ShovelHandler : IEventHandler {
+    readonly IEventProducer    _eventProducer;
     readonly RouteAndTransform _transform;
 
     public ShovelHandler(
-        TProducer         eventProducer,
+        IEventProducer    eventProducer,
         RouteAndTransform transform
     ) {
         _eventProducer = eventProducer;
@@ -17,7 +17,7 @@ class ShovelHandler<TProducer> : IEventHandler where TProducer : class, IEventPr
 
     public async Task HandleEvent(
         IMessageConsumeContext context,
-        CancellationToken     cancellationToken
+        CancellationToken      cancellationToken
     ) {
         var shovelMessage = await _transform(context).NoContext();
         if (shovelMessage?.Message == null) return;
@@ -33,15 +33,14 @@ class ShovelHandler<TProducer> : IEventHandler where TProducer : class, IEventPr
     }
 }
 
-class ShovelHandler<TProducer, TProduceOptions> : IEventHandler
-    where TProducer : class, IEventProducer<TProduceOptions>
+class ShovelHandler<TProduceOptions> : IEventHandler
     where TProduceOptions : class {
-    readonly TProducer _eventProducer;
+    readonly IEventProducer<TProduceOptions> _eventProducer;
 
     readonly RouteAndTransform<TProduceOptions> _transform;
 
     public ShovelHandler(
-        TProducer                          eventProducer,
+        IEventProducer<TProduceOptions>    eventProducer,
         RouteAndTransform<TProduceOptions> transform
     ) {
         _eventProducer = eventProducer;
@@ -50,7 +49,7 @@ class ShovelHandler<TProducer, TProduceOptions> : IEventHandler
 
     public async Task HandleEvent(
         IMessageConsumeContext context,
-        CancellationToken     cancellationToken
+        CancellationToken      cancellationToken
     ) {
         var shovelMessage = await _transform(context).NoContext();
         if (shovelMessage?.Message == null) return;
@@ -67,7 +66,10 @@ class ShovelHandler<TProducer, TProduceOptions> : IEventHandler
 }
 
 static class ShovelMetaHelper {
-    public static Metadata GetMeta(this ShovelContext shovelContext, IMessageConsumeContext context) {
+    public static Metadata GetMeta(
+        this ShovelContext     shovelContext,
+        IMessageConsumeContext context
+    ) {
         var (_, _, metadata) = shovelContext;
         var meta = metadata == null ? new Metadata() : new Metadata(metadata);
         return meta.WithCausationId(context.MessageId);
