@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics;
+// ReSharper disable ParameterTypeCanBeEnumerable.Local
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
@@ -12,34 +13,29 @@ public sealed class SubscriptionGapMetric : IDisposable {
 
     public SubscriptionGapMetric(IEnumerable<GetSubscriptionGap> measures) {
         Meter = EventuousDiagnostics.GetMeter(MeterName);
+        var getGaps = measures.ToArray();
 
-        foreach (var measure in measures) {
-            var gap = GetGap(measure);
+        Meter.CreateObservableGauge(
+            MetricName,
+            () => ObserveValues(getGaps),
+            "events",
+            "Number of unprocessed events"
+        );
 
-            var tags = new[] {
-                new KeyValuePair<string, object?>("subscription-id", gap.SubscriptionId)
-            };
+        IEnumerable<Measurement<long>> ObserveValues(GetSubscriptionGap[] gapMeasure)
+            => gapMeasure.Select(GetGap);
 
-            Meter.CreateObservableGauge(
-                MetricName,
-                () => ObserveValues(measure, tags),
-                "events",
-                "Number of unprocessed events"
-            );
-        }
-
-        IEnumerable<Measurement<long>> ObserveValues(
-            GetSubscriptionGap              gapMeasure,
-            KeyValuePair<string, object?>[] tags
-        ) {
-            var gap = GetGap(gapMeasure);
-            return new[] { new Measurement<long>((long)gap.PositionGap, tags) };
-        }
-
-        SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
+        Measurement<long> GetGap(GetSubscriptionGap gapMeasure) {
             var cts = new CancellationTokenSource(5000);
             var t   = gapMeasure(cts.Token);
-            return t.IsCompleted ? t.Result : t.GetAwaiter().GetResult();
+
+            var (subscriptionId, positionGap, _) =
+                t.IsCompleted ? t.Result : t.GetAwaiter().GetResult();
+
+            return new Measurement<long>(
+                (long)positionGap,
+                new KeyValuePair<string, object?>("subscription-id", subscriptionId)
+            );
         }
     }
 

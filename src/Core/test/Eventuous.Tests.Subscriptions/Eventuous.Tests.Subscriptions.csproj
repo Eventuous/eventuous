@@ -5,7 +5,8 @@
         <IncludeTestHost>true</IncludeTestHost>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
-      <ProjectReference Include="..\..\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
+        <ProjectReference Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
+        <ProjectReference Include="..\..\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
     </ItemGroup>
 </Project>

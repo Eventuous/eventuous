@@ -22,8 +22,6 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     CancellationTokenSource _subscriptionCts = new();
 
-    public string ServiceId => Options.SubscriptionId;
-
     protected EventSubscription(
         T                options,
         IMessageConsumer consumer,

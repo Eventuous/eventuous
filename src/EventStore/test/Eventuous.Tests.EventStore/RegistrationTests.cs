@@ -54,7 +54,7 @@ public class RegistrationTests {
     }
 
     [Fact]
-    public void ShouldHaveProperId() => Sub.ServiceId.Should().Be(SubId);
+    public void ShouldHaveProperId() => Sub.SubscriptionId.Should().Be(SubId);
 
     [Fact]
     public void ShouldHaveEventStoreClient() {

@@ -42,5 +42,5 @@ public class MessageConsumeContext<T> : WrappedConsumeContext, IMessageConsumeCo
     public MessageConsumeContext(IMessageConsumeContext innerContext) : base(innerContext) { }
 
     [PublicAPI]
-    public new T? Message => (T?)InnerContext.Message;
+    public new T Message => (T)InnerContext.Message!;
 }

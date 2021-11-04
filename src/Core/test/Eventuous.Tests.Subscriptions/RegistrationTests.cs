@@ -1,4 +1,5 @@
-﻿using Eventuous.Subscriptions;
+﻿using Eventuous.Diagnostics.OpenTelemetry.Subscriptions;
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
@@ -86,6 +87,12 @@ public class RegistrationTests {
             .BeSameAs(health);
     }
 
+    [Fact]
+    public void ShouldRegisterTwoMeasures() {
+        var subs    = _provider.GetServices<TestSub>().ToArray();
+        var measure = _provider.GetRequiredService<SubscriptionGapMetric>();
+    }
+
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
 
     class Startup {
@@ -102,6 +109,8 @@ public class RegistrationTests {
                 builder => builder
                     .AddEventHandler<Handler2>()
             );
+
+            services.AddOpenTelemetryMetrics(builder => builder.AddEventuousSubscriptions());
         }
 
         public void Configure(IApplicationBuilder app) { }
@@ -111,12 +120,17 @@ public class RegistrationTests {
         public string? Field { get; set; }
     }
 
-    class TestSub : EventSubscription<TestOptions> {
+    class TestSub : EventSubscription<TestOptions>, IMeasuredSubscription {
         public TestSub(TestOptions options, IMessageConsumer consumer) : base(options, consumer) { }
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
+
+        public GetSubscriptionGap GetMeasure() => _
+            => new ValueTask<SubscriptionGap>(
+                new SubscriptionGap(SubscriptionId, 0, TimeSpan.Zero)
+            );
     }
 
     class Handler1 : IEventHandler {
