@@ -3,6 +3,7 @@ using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Sut.Subs;
 using Eventuous.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -50,7 +51,9 @@ public class RegistrationTests {
         var handlers = consumer.GetNestedConsumerHandlers();
 
         handlers.Should().HaveCount(1);
-        handlers.Should().ContainSingle(x => x.GetType() == typeof(TestHandler));
+        handlers![0].Should().BeOfType<TracedEventHandler>();
+        var innerHandler = handlers[0].GetPrivateMember<IEventHandler>("_inner");
+        innerHandler.Should().BeOfType(typeof(TestHandler));
     }
 
     [Fact]

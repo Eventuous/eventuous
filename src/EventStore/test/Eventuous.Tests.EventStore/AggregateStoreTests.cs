@@ -8,6 +8,7 @@ public class AggregateStoreTests {
     public AggregateStoreTests(ITestOutputHelper output) {
         Store = IntegrationFixture.Instance.AggregateStore;
         TypeMap.Instance.AddType<TestEvent>("testEvent");
+
         var loggerFactory = LoggerFactory.Create(
             cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug)
         );
@@ -16,15 +17,28 @@ public class AggregateStoreTests {
     }
 
     [Fact]
+    public async Task AppendedEventShouldBeTraced() {
+        var id        = Guid.NewGuid().ToString("N");
+        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
+        aggregate.DoIt(new TestId(id), "test");
+        await Store.Store(aggregate, CancellationToken.None);
+    }
+
+    [Fact]
     public async Task ShouldReadLongAggregateStream() {
         const int count = 9500;
 
-        var id      = Guid.NewGuid().ToString("N");
-        var initial = Enumerable.Range(1, count).Select(x => new TestEvent(id, x.ToString())).ToArray();
+        var id = Guid.NewGuid().ToString("N");
+
+        var initial = Enumerable
+            .Range(1, count)
+            .Select(x => new TestEvent(id, x.ToString()))
+            .ToArray();
 
         var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
 
         var counter = 0;
+
         foreach (var (i, data) in initial) {
             aggregate.DoIt(new TestId(i), data);
             counter++;
@@ -36,6 +50,7 @@ public class AggregateStoreTests {
             aggregate = await Store.Load<TestAggregate>(id, CancellationToken.None);
             counter   = 0;
         }
+
         await Store.Store(aggregate, CancellationToken.None);
 
         _log.LogInformation("Loading large aggregate stream..");
@@ -51,7 +66,11 @@ public class AggregateStoreTests {
 
     record TestState : AggregateState<TestState, TestId> {
         public TestState() {
-            On<TestEvent>((state, evt) => state with { Id = new TestId(evt.Id), Values = state.Values.Add(evt.Data) });
+            On<TestEvent>(
+                (state, evt) => state with {
+                    Id = new TestId(evt.Id), Values = state.Values.Add(evt.Data)
+                }
+            );
         }
 
         public ImmutableList<string> Values { get; init; } = ImmutableList<string>.Empty;

@@ -51,7 +51,9 @@ public class RegistrationTests {
 
         handlers.Should().NotBeNull();
         handlers!.Length.Should().Be(1);
-        handlers[0].Should().BeOfType(handlerType);
+        handlers[0].Should().BeOfType(typeof(TracedEventHandler));
+        var innerHandler = handlers[0].GetPrivateMember<IEventHandler>("_inner");
+        innerHandler.Should().BeOfType(handlerType);
     }
 
     [Fact]
@@ -62,9 +64,11 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldRegisterBothAsHostedServices() {
-        var services = _provider.GetServices<IHostedService>().ToArray();
-        var subs     = _provider.GetServices<TestSub>().ToArray();
-        var health   = _provider.GetRequiredService<ISubscriptionHealth>();
+        var services = _provider.GetServices<IHostedService>()
+            .Where(x => x is SubscriptionHostedService).ToArray();
+
+        var subs   = _provider.GetServices<TestSub>().ToArray();
+        var health = _provider.GetRequiredService<ISubscriptionHealth>();
 
         services.Length.Should().Be(2);
 

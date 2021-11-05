@@ -8,7 +8,7 @@ using Exception = System.Exception;
 
 namespace Eventuous.Subscriptions.Consumers;
 
-class TracedConsumer : IMessageConsumer {
+public class TracedConsumer : IMessageConsumer {
     public TracedConsumer(IMessageConsumer messageConsumer) {
         _inner = messageConsumer;
 
@@ -44,7 +44,7 @@ class TracedConsumer : IMessageConsumer {
     }
 }
 
-class TracedEventHandler : IEventHandler {
+public class TracedEventHandler : IEventHandler {
     public TracedEventHandler(IEventHandler eventHandler) {
         _inner = eventHandler;
 

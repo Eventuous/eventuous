@@ -19,7 +19,8 @@ public class TracedApplicationService<TState, TId> : IApplicationService<TState,
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
             "hande-command",
             ActivityKind.Internal,
-            parentContext: default
+            parentContext: default,
+            idFormat: ActivityIdFormat.W3C
         )?.Start();
         
         return await Inner.Handle(command, cancellationToken);

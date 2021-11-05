@@ -24,7 +24,8 @@ public class MeasuredCheckpointStore : ICheckpointStore {
             ReadOperationName,
             ActivityKind.Internal,
             parentContext: default,
-            new[] { new KeyValuePair<string, object?>(SubscriptionIdTag, checkpointId) }
+            new[] { new KeyValuePair<string, object?>(SubscriptionIdTag, checkpointId) },
+            idFormat: ActivityIdFormat.W3C
         )?.Start();
 
         var checkpoint = await _checkpointStore.GetLastCheckpoint(checkpointId, cancellationToken);
@@ -42,7 +43,8 @@ public class MeasuredCheckpointStore : ICheckpointStore {
                 WriteOperationName,
                 ActivityKind.Internal,
                 parentContext: default,
-                new[] { new KeyValuePair<string, object?>(SubscriptionIdTag, checkpoint.Id) }
+                new[] { new KeyValuePair<string, object?>(SubscriptionIdTag, checkpoint.Id) },
+                idFormat: ActivityIdFormat.W3C
             )?
             .AddBaggage(CheckpointBaggage, checkpoint.Position?.ToString())
             .Start();

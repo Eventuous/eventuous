@@ -7,7 +7,7 @@ namespace Eventuous.Diagnostics.Tracing;
 public class TracedEventStore : IEventStore {
     public static IEventStore Trace(IEventStore eventStore) => new TracedEventStore(eventStore);
 
-    TracedEventStore(IEventStore eventStore) => Inner = eventStore;
+    public TracedEventStore(IEventStore eventStore) => Inner = eventStore;
 
     IEventStore Inner { get; }
 
@@ -92,7 +92,8 @@ public class TracedEventStore : IEventStore {
             operationName,
             ActivityKind.Server,
             parentContext: default,
-            DefaultTags
+            DefaultTags,
+            idFormat: ActivityIdFormat.W3C
         );
 
         if (activity is { IsAllDataRequested: true }) {
