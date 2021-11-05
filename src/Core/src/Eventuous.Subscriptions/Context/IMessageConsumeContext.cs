@@ -2,25 +2,22 @@ using System.Diagnostics;
 
 namespace Eventuous.Subscriptions.Context;
 
-public interface IMessageConsumeContext {
-    string           MessageId     { get; }
-    string           MessageType   { get; }
-    string           ContentType   { get; }
-    string           Stream        { get; }
-    DateTime         Created       { get; }
-    object?          Message       { get; }
-    Metadata?        Metadata      { get; }
-    ContextItems     Items         { get; }
-    ActivityContext? ParentContext { get; set; }
+public interface IBaseConsumeContext {
+    string           MessageId       { get; }
+    string           MessageType     { get; }
+    string           ContentType     { get; }
+    string           Stream          { get; }
+    DateTime         Created         { get; }
+    Metadata?        Metadata        { get; }
+    ContextItems     Items           { get; }
+    ActivityContext? ParentContext   { get; set; }
+    HandlingResults  HandlingResults { get; }
 }
 
-public interface IMessageConsumeContext<out T> where T : class {
-    string       MessageId   { get; }
-    string       MessageType { get; }
-    string       ContentType { get; }
-    string       Stream      { get; }
-    DateTime     Created     { get; }
-    T?           Message     { get; }
-    Metadata?    Metadata    { get; }
-    ContextItems Items       { get; }
+public interface IMessageConsumeContext : IBaseConsumeContext {
+    object? Message { get; }
+}
+
+public interface IMessageConsumeContext<out T> : IBaseConsumeContext where T : class {
+    T? Message { get; }
 }

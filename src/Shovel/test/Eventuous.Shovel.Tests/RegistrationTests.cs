@@ -57,8 +57,8 @@ public class RegistrationTests {
     }
 
     class Handler : IEventHandler {
-        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
-            => Task.CompletedTask;
+        public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
+            => default;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {

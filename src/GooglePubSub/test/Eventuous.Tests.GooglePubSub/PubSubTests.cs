@@ -40,7 +40,7 @@ public class PubSubTests : IAsyncLifetime {
             PubSubFixture.ProjectId,
             _pubsubTopic,
             _pubsubSubscription,
-            new DefaultConsumer(new IEventHandler[] { _handler }, true),
+            new DefaultConsumer(new IEventHandler[] { _handler }),
             loggerFactory: loggerFactory
         );
     }

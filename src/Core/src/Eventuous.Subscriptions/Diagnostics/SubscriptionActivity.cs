@@ -5,7 +5,7 @@ using Eventuous.Subscriptions.Context;
 namespace Eventuous.Subscriptions.Diagnostics;
 
 public static class SubscriptionActivity {
-    public static Activity? Start(
+    public static Activity? Create(
         IMessageConsumeContext                      context,
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     ) {
@@ -13,8 +13,14 @@ public static class SubscriptionActivity {
 
         var activity = CreateActivity(context.ParentContext, tags);
 
-        return activity?.SetContextTags(context)?.Start();
+        return activity?.SetContextTags(context);
     }
+
+    public static Activity? Start(
+        IMessageConsumeContext                      context,
+        IEnumerable<KeyValuePair<string, object?>>? tags = null
+    )
+        => Create(context, tags)?.Start();
 
     public static Activity? SetContextTags(this Activity? activity, IMessageConsumeContext context) {
         if (activity is not { IsAllDataRequested: true }) return activity;

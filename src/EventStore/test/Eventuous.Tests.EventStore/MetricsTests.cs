@@ -87,11 +87,10 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
     public Task DisposeAsync() => _host.Host.StopAsync();
 
     class TestHandler : IEventHandler {
-        public Task HandleEvent(
+        public async ValueTask HandleEvent(
             IMessageConsumeContext context,
             CancellationToken      cancellationToken
-        )
-            => Task.Delay(10, cancellationToken);
+        ) => await Task.Delay(10, cancellationToken);
     }
 
     [ExportModes(ExportModes.Pull)]

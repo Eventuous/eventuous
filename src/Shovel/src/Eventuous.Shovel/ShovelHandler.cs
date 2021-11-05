@@ -1,5 +1,4 @@
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Shovel;
 
@@ -15,12 +14,16 @@ class ShovelHandler : IEventHandler {
         _transform     = transform;
     }
 
-    public async Task HandleEvent(
+    public async ValueTask HandleEvent(
         IMessageConsumeContext context,
         CancellationToken      cancellationToken
     ) {
         var shovelMessage = await _transform(context).NoContext();
-        if (shovelMessage?.Message == null) return;
+
+        if (shovelMessage?.Message == null) {
+            context.Ignore<ShovelHandler>();
+            return;
+        }
 
         await _eventProducer
             .Produce(
@@ -47,12 +50,16 @@ class ShovelHandler<TProduceOptions> : IEventHandler
         _transform     = transform;
     }
 
-    public async Task HandleEvent(
+    public async ValueTask HandleEvent(
         IMessageConsumeContext context,
         CancellationToken      cancellationToken
     ) {
         var shovelMessage = await _transform(context).NoContext();
-        if (shovelMessage?.Message == null) return;
+
+        if (shovelMessage?.Message == null) {
+            context.Ignore<ShovelHandler<TProduceOptions>>();
+            return;
+        }
 
         await _eventProducer.Produce(
                 shovelMessage.TargetStream,

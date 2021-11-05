@@ -138,12 +138,12 @@ public class RegistrationTests {
     }
 
     class Handler1 : IEventHandler {
-        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
-            => Task.CompletedTask;
+        public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
+            => default;
     }
 
     class Handler2 : IEventHandler {
-        public Task HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
-            => Task.CompletedTask;
+        public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
+            => default;
     }
 }

@@ -4,39 +4,33 @@ namespace Eventuous.Subscriptions.Consumers;
 
 public class DefaultConsumer : IMessageConsumer {
     readonly IEventHandler[] _eventHandlers;
-    readonly bool            _throwOnError;
 
-    public DefaultConsumer(IEventHandler[] eventHandlers, bool throwOnError) {
-        _eventHandlers = eventHandlers;
-        _throwOnError  = throwOnError;
-    }
+    public DefaultConsumer(IEventHandler[] eventHandlers) => _eventHandlers = eventHandlers;
 
     public async ValueTask Consume(
         IMessageConsumeContext context,
         CancellationToken      cancellationToken
     ) {
         try {
-            if (context.Message != null) {
-                await Task.WhenAll(
-                        _eventHandlers.Select(
-                            x => x.HandleEvent(
-                                context,
-                                cancellationToken
-                            )
-                        )
-                    )
-                    .NoContext();
+            if (context.Message == null) {
+                context.Ignore<DefaultConsumer>();
+                return;
             }
+
+            var tasks = _eventHandlers.Select(Handle);
+            await tasks.WhenAll();
         }
         catch (Exception e) {
-            if (!_throwOnError) return;
+            context.Nack<DefaultConsumer>(e);
+        }
 
-            throw new SubscriptionException(
-                context.Stream,
-                context.MessageType,
-                context.Message,
-                e
-            );
+        async ValueTask Handle(IEventHandler handler) {
+            try {
+                await handler.HandleEvent(context, cancellationToken);
+            }
+            catch (Exception e) {
+                context.Nack(handler.GetType(), e);
+            }
         }
     }
 }

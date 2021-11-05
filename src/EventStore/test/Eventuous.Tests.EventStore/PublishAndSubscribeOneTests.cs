@@ -1,3 +1,4 @@
+using System.Globalization;
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
 using Hypothesist;
@@ -17,6 +18,7 @@ public class PublishAndSubscribeOneTests : SubscriptionFixture<TestEventHandler>
 
         await Handler.Validate(10.Seconds());
 
+        await Task.Delay(100);
         CheckpointStore.Last.Position.Should().Be(0);
     }
 }

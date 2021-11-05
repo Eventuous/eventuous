@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Consumers;
@@ -69,7 +70,9 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         IMessageConsumeContext context,
         CancellationToken      cancellationToken
     ) {
-        using var activity = SubscriptionActivity.Start(context);
+        var activity = SubscriptionActivity.Create(context);
+        var delayed  = context is DelayedAckConsumeContext;
+        if (!delayed) activity?.Start();
 
         DebugLog?.Invoke(
             "Subscription {Subscription} got an event {EventType}",
@@ -79,28 +82,51 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         try {
             if (context.Message != null) {
+                if (delayed && activity != null) {
+                    activity.SetStartTime(DateTime.UtcNow);
+                    context.Items.AddItem("activity", activity);
+                }
                 await Consumer.Consume(context, cancellationToken).NoContext();
             }
+            else {
+                context.Ignore(GetType());
+            }
+
+            if (context.WasIgnored() && activity != null)
+                activity.ActivityTraceFlags = ActivityTraceFlags.None;
         }
         catch (Exception e) {
             activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
+            context.Nack(GetType(), e);
+        }
+
+        if (context.HasFailed()) {
+            var exception = context.HandlingResults.GetException();
 
             Log?.Log(
                 Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning,
-                e,
+                exception,
                 "Error when handling the event {Stream} {Type}",
                 context.Stream,
                 context.MessageType
             );
 
-            if (Options.ThrowOnError)
+            if (!delayed && activity != null) {
+                activity.SetStatus(ActivityStatus.Error(exception, $"Error handling {context.MessageType}"));
+            }
+
+            if (Options.ThrowOnError) {
+                activity?.Dispose();
                 throw new SubscriptionException(
                     context.Stream,
                     context.MessageType,
                     context.Message,
-                    e
+                    exception
                 );
+            }
         }
+        
+        if (!delayed) activity?.Dispose();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -42,7 +42,7 @@ public class SubscriptionSpec : IAsyncLifetime {
                 Exchange         = _exchange,
                 ThrowOnError     = true
             },
-            new DefaultConsumer(new IEventHandler[] { _handler }, true),
+            new DefaultConsumer(new IEventHandler[] { _handler }),
             loggerFactory
         );
     }

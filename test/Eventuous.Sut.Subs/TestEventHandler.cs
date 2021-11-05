@@ -19,8 +19,8 @@ public class TestEventHandler : IEventHandler {
 
     public Task Validate(TimeSpan timeout) => EnsureHypothesis.Validate(timeout);
 
-    public Task HandleEvent(IMessageConsumeContext context, CancellationToken cancellationToken)
-        => EnsureHypothesis.Test(context.Message!, cancellationToken);
+    public async ValueTask HandleEvent(IMessageConsumeContext context, CancellationToken cancellationToken)
+        => await EnsureHypothesis.Test(context.Message!, cancellationToken);
 
     IHypothesis<object> EnsureHypothesis =>
         _hypothesis ?? throw new InvalidOperationException("Test handler not specified");

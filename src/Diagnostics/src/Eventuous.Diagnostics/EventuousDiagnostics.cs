@@ -10,8 +10,27 @@ public static class EventuousDiagnostics {
 
     public const string InstrumentationName = "eventuous";
 
-    public static readonly ActivitySource ActivitySource
-        = new(InstrumentationName, Version?.ToString());
+    static ActivitySource?   _activitySource;
+    static ActivityListener? _listener;
+
+    public static ActivitySource ActivitySource {
+        get {
+            if (_activitySource != null) return _activitySource;
+            _activitySource = new ActivitySource(InstrumentationName, Version?.ToString());
+
+            _listener = new ActivityListener {
+                Sample = (ref ActivityCreationOptions<ActivityContext> _)
+                    => ActivitySamplingResult.AllData,
+                ShouldListenTo  = x => x.Name == InstrumentationName,
+                ActivityStarted = _ => { },
+                ActivityStopped = _ => { }
+            };
+            ActivitySource.AddActivityListener(_listener);
+            return _activitySource;
+        }
+    }
+
+    public static void RemoveDummyListener() => _listener?.Dispose();
 
     public static Meter GetCategoryMeter(string category)
         => new(GetMeterName(category), AssemblyName.Version?.ToString());

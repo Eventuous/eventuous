@@ -41,7 +41,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
             },
             CheckpointStore,
             new TracedConsumer(
-                new DefaultConsumer(new IEventHandler[] { Handler }, true)
+                new DefaultConsumer(new IEventHandler[] { Handler })
             ),
             loggerFactory
         );

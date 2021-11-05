@@ -2,43 +2,44 @@ using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
-using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
-using Exception = System.Exception;
 
-namespace Eventuous.Subscriptions.Consumers;
+namespace Eventuous.Subscriptions;
 
-public class TracedConsumer : IMessageConsumer {
-    public TracedConsumer(IMessageConsumer messageConsumer) {
-        _inner = messageConsumer;
+public class TracedEventHandler : IEventHandler {
+    public TracedEventHandler(IEventHandler eventHandler) {
+        _inner     = eventHandler;
+        _innerType = _inner.GetType();
 
         _defaultTags = new[] {
             new KeyValuePair<string, object?>(
-                TelemetryTags.Eventuous.Consumer,
-                messageConsumer.GetType().Name
+                TelemetryTags.Eventuous.EventHandler,
+                eventHandler.GetType().Name
             )
         };
     }
 
+    readonly Type                            _innerType;
+    readonly IEventHandler                   _inner;
     readonly KeyValuePair<string, object?>[] _defaultTags;
-    readonly IMessageConsumer                _inner;
 
-    public async ValueTask Consume(
+    public async ValueTask HandleEvent(
         IMessageConsumeContext context,
         CancellationToken      cancellationToken
     ) {
-        if (context.Message == null) return;
-
         using var activity = Activity.Current?.Context != context.ParentContext
             ? SubscriptionActivity.Start(context, _defaultTags) : Activity.Current;
 
         activity?.SetContextTags(context)?.Start();
 
         try {
-            await _inner.Consume(context, cancellationToken);
+            await _inner.HandleEvent(context, cancellationToken);
+
+            if (context.WasIgnored() && activity != null)
+                activity.ActivityTraceFlags = ActivityTraceFlags.None;
         }
         catch (Exception e) {
             activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
-            throw;
+            context.Nack(_innerType, e);
         }
     }
 }

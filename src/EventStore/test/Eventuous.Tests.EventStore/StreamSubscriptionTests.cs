@@ -71,7 +71,7 @@ public class StreamSubscriptionTests {
                 ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
-            new DefaultConsumer(new IEventHandler[] { handler }, true),
+            new DefaultConsumer(new IEventHandler[] { handler }),
             _loggerFactory
         );
 
@@ -103,7 +103,7 @@ public class StreamSubscriptionTests {
 
         public List<IMessageConsumeContext> Processed { get; } = new();
 
-        public Task HandleEvent(
+        public ValueTask HandleEvent(
             IMessageConsumeContext evt,
             CancellationToken      cancellationToken
         ) {
@@ -112,7 +112,7 @@ public class StreamSubscriptionTests {
 
             Processed.Add(evt);
 
-            return Task.CompletedTask;
+            return default;
         }
     }
 }

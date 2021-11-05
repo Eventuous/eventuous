@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Eventuous.Subscriptions.Consumers;
 using Microsoft.Extensions.DependencyInjection;
@@ -119,18 +120,12 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     IMessageConsumer GetConsumer(IServiceProvider sp) {
         if (_resolvedConsumer != null) return _resolvedConsumer;
 
-        _resolvedConsumer = new TracedConsumer(ResolveConsumer(sp));
+        _resolvedConsumer = ResolveConsumer(sp);
         return _resolvedConsumer;
     }
 
     IMessageConsumer ResolveDefaultConsumer(IServiceProvider sp) {
-        var options = sp.GetService<IOptionsMonitor<TOptions>>();
-
-        _resolvedConsumer = new DefaultConsumer(
-            ResolveHandlers(sp),
-            options?.Get(SubscriptionId)?.ThrowOnError == true
-        );
-
+        _resolvedConsumer = new DefaultConsumer(ResolveHandlers(sp));
         return _resolvedConsumer;
     }
 
@@ -184,8 +179,12 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
             }
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
-            if (parameterInfo.ParameterType == typeof(IMessageConsumer))
-                return new TracedConsumer(GetConsumer(sp));
+            // ReSharper disable once InvertIf
+            if (parameterInfo.ParameterType == typeof(IMessageConsumer)) {
+                var consumer = GetConsumer(sp);
+                // ensure we aren't wrapping the tracing consumer
+                return consumer is TracedConsumer ? consumer : new TracedConsumer(consumer);
+            }
 
             return sp.GetService(parameterInfo.ParameterType);
         }
