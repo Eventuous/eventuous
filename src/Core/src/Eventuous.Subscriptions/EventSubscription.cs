@@ -4,6 +4,7 @@ using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging;
 using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 
@@ -19,18 +20,18 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     protected internal T Options { get; }
 
     internal IEventSerializer EventSerializer { get; }
-    internal IMessageConsumer Consumer        { get; }
+    internal ConsumePipe      Pipe            { get; }
 
     CancellationTokenSource _subscriptionCts = new();
 
     protected EventSubscription(
-        T                options,
-        IMessageConsumer consumer,
-        ILoggerFactory?  loggerFactory = null
+        T               options,
+        ConsumePipe     consumePipe,
+        ILoggerFactory? loggerFactory = null
     ) {
         Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
 
-        Consumer        = Ensure.NotNull(consumer, nameof(consumer));
+        Pipe            = Ensure.NotNull(consumePipe, nameof(consumePipe));
         EventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
         Options         = options;
         Log             = loggerFactory?.CreateLogger($"Subscription-{options.SubscriptionId}");
@@ -60,16 +61,11 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         await Unsubscribe(cancellationToken);
         onUnsubscribed(Options.SubscriptionId);
 
-        if (Consumer is IAsyncDisposable disposable) {
-            await disposable.DisposeAsync();
-        }
+        await Pipe.DisposeAsync();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected async ValueTask Handler(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    protected async ValueTask Handler(IMessageConsumeContext context) {
         var activity = SubscriptionActivity.Create(context);
         var delayed  = context is DelayedAckConsumeContext;
         if (!delayed) activity?.Start();
@@ -86,7 +82,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                     activity.SetStartTime(DateTime.UtcNow);
                     context.Items.AddItem("activity", activity);
                 }
-                await Consumer.Consume(context, cancellationToken).NoContext();
+
+                await Pipe.Send(context).NoContext();
             }
             else {
                 context.Ignore(GetType());
@@ -112,11 +109,14 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             );
 
             if (!delayed && activity != null) {
-                activity.SetStatus(ActivityStatus.Error(exception, $"Error handling {context.MessageType}"));
+                activity.SetStatus(
+                    ActivityStatus.Error(exception, $"Error handling {context.MessageType}")
+                );
             }
 
             if (Options.ThrowOnError) {
                 activity?.Dispose();
+
                 throw new SubscriptionException(
                     context.Stream,
                     context.MessageType,
@@ -125,7 +125,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 );
             }
         }
-        
+
         if (!delayed) activity?.Dispose();
     }
 

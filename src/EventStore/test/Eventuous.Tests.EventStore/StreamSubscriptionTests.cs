@@ -104,13 +104,12 @@ public class StreamSubscriptionTests {
         public List<IMessageConsumeContext> Processed { get; } = new();
 
         public ValueTask HandleEvent(
-            IMessageConsumeContext evt,
-            CancellationToken      cancellationToken
+            IMessageConsumeContext ctx
         ) {
             Count++;
-            if (evt == null) throw new InvalidOperationException();
+            if (ctx == null) throw new InvalidOperationException();
 
-            Processed.Add(evt);
+            Processed.Add(ctx);
 
             return default;
         }

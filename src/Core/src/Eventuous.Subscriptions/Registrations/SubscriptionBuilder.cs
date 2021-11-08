@@ -76,7 +76,7 @@ public abstract class SubscriptionBuilder {
     /// <returns></returns>
     [PublicAPI]
     public SubscriptionBuilder UseConsumer(
-        Func<IServiceProvider, IEventHandler[], IMessageConsumer> getConsumer
+        Func<IServiceProvider, IEventHandler[], MessageConsumer> getConsumer
     ) {
         Ensure.NotNull(getConsumer, nameof(getConsumer));
         ResolveConsumer = sp => getConsumer(sp, ResolveHandlers(sp));
@@ -97,7 +97,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     }
 
     T?                _resolvedSubscription;
-    IMessageConsumer? _resolvedConsumer;
+    MessageConsumer? _resolvedConsumer;
 
     internal Action<TOptions>? ConfigureOptions { get; private set; }
 
@@ -117,14 +117,14 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         }
     }
 
-    IMessageConsumer GetConsumer(IServiceProvider sp) {
+    MessageConsumer GetConsumer(IServiceProvider sp) {
         if (_resolvedConsumer != null) return _resolvedConsumer;
 
         _resolvedConsumer = ResolveConsumer(sp);
         return _resolvedConsumer;
     }
 
-    IMessageConsumer ResolveDefaultConsumer(IServiceProvider sp) {
+    MessageConsumer ResolveDefaultConsumer(IServiceProvider sp) {
         _resolvedConsumer = new DefaultConsumer(ResolveHandlers(sp));
         return _resolvedConsumer;
     }
@@ -180,7 +180,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
             // ReSharper disable once InvertIf
-            if (parameterInfo.ParameterType == typeof(IMessageConsumer)) {
+            if (parameterInfo.ParameterType == typeof(MessageConsumer)) {
                 var consumer = GetConsumer(sp);
                 // ensure we aren't wrapping the tracing consumer
                 return consumer is TracedConsumer ? consumer : new TracedConsumer(consumer);
@@ -211,4 +211,4 @@ static class TypeExtensionsForRegistrations {
 
 public delegate IEventHandler ResolveHandler(IServiceProvider sp);
 
-public delegate IMessageConsumer ResolveConsumer(IServiceProvider sp);
+public delegate MessageConsumer ResolveConsumer(IServiceProvider sp);

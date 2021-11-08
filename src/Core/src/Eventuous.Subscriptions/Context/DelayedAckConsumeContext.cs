@@ -9,6 +9,5 @@ public class DelayedAckConsumeContext : WrappedConsumeContext {
         : base(inner)
         => _acknowledge = acknowledge;
 
-    public ValueTask Acknowledge(CancellationToken cancellationToken) 
-        => _acknowledge(cancellationToken);
+    public ValueTask Acknowledge() => _acknowledge(CancellationToken);
 }

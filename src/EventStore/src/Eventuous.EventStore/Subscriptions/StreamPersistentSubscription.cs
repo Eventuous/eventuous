@@ -27,12 +27,12 @@ public class StreamPersistentSubscription
     public StreamPersistentSubscription(
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
-        IMessageConsumer                    consumer,
+        MessageConsumer                     consumePipe,
         ILoggerFactory?                     loggerFactory = null
     ) : base(
         eventStoreClient,
         options,
-        consumer,
+        consumePipe,
         loggerFactory
     ) {
         Ensure.NotEmptyString(options.Stream, nameof(options.Stream));
@@ -62,7 +62,7 @@ public class StreamPersistentSubscription
         EventStoreClient     eventStoreClient,
         StreamName           streamName,
         string               subscriptionId,
-        IMessageConsumer     consumer,
+        MessageConsumer      consumer,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
         ILoggerFactory?      loggerFactory   = null
@@ -113,14 +113,14 @@ public class StreamPersistentSubscription
             int?                   retryCount,
             CancellationToken      ct
         ) {
-            var receivedEvent = CreateContext(re);
+            var ctx = CreateContext(re, ct);
 
             try {
-                await Handler(receivedEvent, ct).NoContext();
+                await Handler(ctx).NoContext();
 
                 if (!autoAck) await subscription.Ack(re).NoContext();
 
-                LastProcessed = EventPosition.FromContext(receivedEvent);
+                LastProcessed = EventPosition.FromContext(ctx);
             }
             catch (Exception e) {
                 await _handleEventProcessingFailure(EventStoreClient, subscription, re, e)
@@ -141,7 +141,7 @@ public class StreamPersistentSubscription
             );
     }
 
-    IMessageConsumeContext CreateContext(ResolvedEvent re) {
+    IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -158,7 +158,8 @@ public class StreamPersistentSubscription
             re.Event.EventNumber,
             re.Event.Created,
             evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber)
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            cancellationToken
         ) {
             GlobalPosition = re.Event.Position.CommitPosition,
             StreamPosition = re.Event.EventNumber

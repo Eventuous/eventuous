@@ -3,10 +3,10 @@ using System.Reflection;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 
-namespace Eventuous.TestHelpers; 
+namespace Eventuous.TestHelpers;
 
 public static class TestHelper {
-    public static IEventHandler[]? GetNestedConsumerHandlers(this IMessageConsumer? consumer) {
+    public static IEventHandler[]? GetNestedConsumerHandlers(this MessageConsumer? consumer) {
         IEventHandler[]? handlers = null;
 
         var c = consumer;
@@ -16,13 +16,14 @@ public static class TestHelper {
 
             if (handlers != null) break;
 
-            c = GetPrivateMember<IMessageConsumer>(c, "_inner");
+            c = GetPrivateMember<MessageConsumer>(c, "_inner");
         }
 
         return handlers;
     }
 
-    public static TMember? GetPrivateMember<TMember>(this object instance, string name) where TMember : class
+    public static TMember? GetPrivateMember<TMember>(this object instance, string name)
+        where TMember : class
         => GetMember<TMember>(instance.GetType(), instance, name);
 
     static TMember? GetMember<TMember>(Type instanceType, object instance, string name)

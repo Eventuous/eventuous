@@ -2,15 +2,12 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Subscriptions.Consumers;
 
-public class DefaultConsumer : IMessageConsumer {
+public class DefaultConsumer : MessageConsumer {
     readonly IEventHandler[] _eventHandlers;
 
     public DefaultConsumer(IEventHandler[] eventHandlers) => _eventHandlers = eventHandlers;
 
-    public async ValueTask Consume(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    public override async ValueTask Consume(IMessageConsumeContext context) {
         try {
             if (context.Message == null) {
                 context.Ignore<DefaultConsumer>();
@@ -18,7 +15,7 @@ public class DefaultConsumer : IMessageConsumer {
             }
 
             var tasks = _eventHandlers.Select(Handle);
-            await tasks.WhenAll();
+            await tasks.WhenAll().NoContext();
         }
         catch (Exception e) {
             context.Nack<DefaultConsumer>(e);
@@ -26,7 +23,7 @@ public class DefaultConsumer : IMessageConsumer {
 
         async ValueTask Handle(IEventHandler handler) {
             try {
-                await handler.HandleEvent(context, cancellationToken);
+                await handler.HandleEvent(context).NoContext();
             }
             catch (Exception e) {
                 context.Nack(handler.GetType(), e);

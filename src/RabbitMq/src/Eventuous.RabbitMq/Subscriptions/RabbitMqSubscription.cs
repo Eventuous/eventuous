@@ -31,7 +31,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     public RabbitMqSubscription(
         ConnectionFactory                     connectionFactory,
         IOptions<RabbitMqSubscriptionOptions> options,
-        IMessageConsumer                      consumer,
+        MessageConsumer                       consumer,
         ILoggerFactory?                       loggerFactory = null
     ) : this(connectionFactory, options.Value, consumer, loggerFactory) { }
 
@@ -45,7 +45,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     public RabbitMqSubscription(
         ConnectionFactory           connectionFactory,
         RabbitMqSubscriptionOptions options,
-        IMessageConsumer            consumer,
+        MessageConsumer             consumer,
         ILoggerFactory?             loggerFactory = null
     )
         : base(
@@ -55,11 +55,14 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         ) {
         _failureHandler = options.FailureHandler ?? DefaultEventFailureHandler;
 
-        _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory)).CreateConnection();
+        _connection = Ensure.NotNull(connectionFactory, nameof(connectionFactory))
+            .CreateConnection();
 
         _channel = _connection.CreateModel();
 
-        var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount : Options.ConcurrencyLimit * 2;
+        var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount
+            : Options.ConcurrencyLimit * 2;
+
         _channel.BasicQos(0, (ushort)prefetch, false);
     }
 
@@ -76,7 +79,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         ConnectionFactory connectionFactory,
         string            exchange,
         string            subscriptionId,
-        IMessageConsumer  consumer,
+        MessageConsumer   consumer,
         IEventSerializer? eventSerializer = null,
         ILoggerFactory?   loggerFactory   = null
     ) : this(
@@ -138,10 +141,14 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
 
         try {
             var ctx = CreateContext(sender, received);
-            await Handler(new DelayedAckConsumeContext(Ack, ctx), CancellationToken.None).NoContext();
+            await Handler(new DelayedAckConsumeContext(Ack, ctx)).NoContext();
         }
         catch (Exception e) {
-            Log?.Log(Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning, e, "Deserialization failed");
+            Log?.Log(
+                Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning,
+                e,
+                "Deserialization failed"
+            );
 
             // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
             if (Options.ThrowOnError) throw;
@@ -173,7 +180,8 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             received.DeliveryTag,
             received.BasicProperties.Timestamp.ToDateTime(),
             evt,
-            meta
+            meta,
+            default
         );
     }
 
@@ -187,7 +195,11 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         return default;
     }
 
-    void DefaultEventFailureHandler(IModel channel, BasicDeliverEventArgs message, Exception exception) {
+    void DefaultEventFailureHandler(
+        IModel                channel,
+        BasicDeliverEventArgs message,
+        Exception             exception
+    ) {
         Log?.LogWarning(exception, "Error in the consumer, will redeliver");
         _channel.BasicReject(message.DeliveryTag, true);
     }

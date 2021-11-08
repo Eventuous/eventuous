@@ -27,7 +27,7 @@ public class AllStreamSubscription
         EventStoreClient     eventStoreClient,
         string               subscriptionId,
         ICheckpointStore     checkpointStore,
-        IMessageConsumer     consumer,
+        MessageConsumer      consumer,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
         ILoggerFactory?      loggerFactory   = null,
@@ -57,7 +57,7 @@ public class AllStreamSubscription
         EventStoreClient             eventStoreClient,
         AllStreamSubscriptionOptions options,
         ICheckpointStore             checkpointStore,
-        IMessageConsumer             consumer,
+        MessageConsumer              consumer,
         ILoggerFactory?              loggerFactory = null
     ) : base(
         eventStoreClient,
@@ -108,7 +108,7 @@ public class AllStreamSubscription
             ResolvedEvent                                re,
             CancellationToken                            ct
         )
-            => await HandleInternal(CreateContext(re), ct);
+            => await HandleInternal(CreateContext(re, ct));
 
         void HandleDrop(
             global::EventStore.Client.StreamSubscription _,
@@ -118,7 +118,7 @@ public class AllStreamSubscription
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
-    IMessageConsumeContext CreateContext(ResolvedEvent re) {
+    IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -135,7 +135,8 @@ public class AllStreamSubscription
             _sequence++,
             re.Event.Created,
             evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId)
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId),
+            cancellationToken
         ) {
             GlobalPosition = re.Event.Position.CommitPosition,
             StreamPosition = re.Event.Position.CommitPosition

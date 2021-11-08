@@ -6,14 +6,14 @@ public static class ContextExtensions {
     public static void Ack(this IBaseConsumeContext context, Type? handlerType)
         => context.HandlingResults.Add(EventHandlingResult.Succeeded(handlerType));
 
-    public static void Ignore(this IBaseConsumeContext context, Type? handlerType)
-        => context.HandlingResults.Add(EventHandlingResult.Ignored(handlerType));
-
     public static void Nack(
         this IBaseConsumeContext context,
         Type?                    handlerType,
         Exception?               exception
     ) => context.HandlingResults.Add(EventHandlingResult.Failed(handlerType, exception));
+
+    public static void Ignore(this IBaseConsumeContext context, Type? handlerType)
+        => context.HandlingResults.Add(EventHandlingResult.Ignored(handlerType));
 
     public static void Ack<T>(this IBaseConsumeContext context)
         => context.HandlingResults.Add(EventHandlingResult.Succeeded(typeof(T)));

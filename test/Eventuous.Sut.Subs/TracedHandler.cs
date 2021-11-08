@@ -8,7 +8,7 @@ namespace Eventuous.Sut.Subs;
 public class TracedHandler : IEventHandler {
     public List<RecordedTrace> Contexts { get; } = new();
 
-    public ValueTask HandleEvent(IMessageConsumeContext context, CancellationToken cancellationToken) {
+    public ValueTask HandleEvent(IMessageConsumeContext context) {
         Contexts.Add(
             new RecordedTrace(
                 Activity.Current?.TraceId,

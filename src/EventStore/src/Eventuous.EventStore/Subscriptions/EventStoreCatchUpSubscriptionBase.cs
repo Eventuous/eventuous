@@ -14,7 +14,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         EventStoreClient eventStoreClient,
         T                options,
         ICheckpointStore checkpointStore,
-        IMessageConsumer consumer,
+        MessageConsumer  consumer,
         ILoggerFactory?  loggerFactory = null
     ) : base(
         eventStoreClient,
@@ -25,19 +25,16 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         CheckpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
     }
 
-    static IMessageConsumer GetConsumer(IMessageConsumer inner)
+    static MessageConsumer GetConsumer(MessageConsumer inner)
         => new FilterConsumer(
             new ConcurrentConsumer(inner, 1, 1),
             ctx => !ctx.MessageType.StartsWith("$")
         );
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected ValueTask HandleInternal(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    protected ValueTask HandleInternal(IMessageConsumeContext context) {
         var ctx = new DelayedAckConsumeContext(Ack, context);
-        return Handler(ctx, cancellationToken);
+        return Handler(ctx);
 
         ValueTask Ack(CancellationToken ct) {
             var position = EventPosition.FromContext(context);

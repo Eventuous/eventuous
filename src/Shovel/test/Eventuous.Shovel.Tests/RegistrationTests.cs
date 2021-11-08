@@ -47,9 +47,9 @@ public class RegistrationTests {
 
     class TestSub : EventSubscription<TestOptions> {
         public TestSub(
-            TestOptions      options,
-            IMessageConsumer consumer
-        ) : base(options, consumer) { }
+            TestOptions     options,
+            MessageConsumer consumePipe
+        ) : base(options, consumePipe) { }
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
@@ -57,8 +57,7 @@ public class RegistrationTests {
     }
 
     class Handler : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
-            => default;
+        public ValueTask HandleEvent(IMessageConsumeContext ctx) => default;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {

@@ -15,11 +15,8 @@ public class PollyEventHandler : IEventHandler {
         _retryPolicy = retryPolicy;
     }
 
-    public async ValueTask HandleEvent(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    )
+    public async ValueTask HandleEvent(IMessageConsumeContext context)
         => await _retryPolicy.ExecuteAsync(
-            async () => await _inner.HandleEvent(context, cancellationToken)
-        );
+            async () => await _inner.HandleEvent(context).NoContext()
+        ).NoContext();
 }

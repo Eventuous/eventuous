@@ -13,9 +13,9 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
     protected EventStoreSubscriptionBase(
         EventStoreClient eventStoreClient,
         T                options,
-        IMessageConsumer consumer,
+        MessageConsumer  consumePipe,
         ILoggerFactory?  loggerFactory = null
-    ) : base(options, consumer, loggerFactory) {
+    ) : base(options, consumePipe, loggerFactory) {
         EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
         _metaSerializer  = Options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
     }
@@ -44,6 +44,6 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
             return null;
         }
     }
-    
+
     protected EventPosition? LastProcessed { get; set; }
 }

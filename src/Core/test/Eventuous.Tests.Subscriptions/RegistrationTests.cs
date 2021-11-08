@@ -46,7 +46,7 @@ public class RegistrationTests {
     [InlineData(1, typeof(Handler2))]
     public void SubsShouldHaveHandlers(int position, Type handlerType) {
         var subs     = _provider.GetServices<TestSub>().ToArray();
-        var consumer = subs[position].Consumer;
+        var consumer = subs[position].Pipe;
         var handlers = consumer.GetNestedConsumerHandlers();
 
         handlers.Should().NotBeNull();
@@ -125,7 +125,7 @@ public class RegistrationTests {
     }
 
     class TestSub : EventSubscription<TestOptions>, IMeasuredSubscription {
-        public TestSub(TestOptions options, IMessageConsumer consumer) : base(options, consumer) { }
+        public TestSub(TestOptions options, MessageConsumer consumePipe) : base(options, consumePipe) { }
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
@@ -138,12 +138,12 @@ public class RegistrationTests {
     }
 
     class Handler1 : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
+        public ValueTask HandleEvent(IMessageConsumeContext evt)
             => default;
     }
 
     class Handler2 : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
+        public ValueTask HandleEvent(IMessageConsumeContext evt)
             => default;
     }
 }

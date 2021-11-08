@@ -22,17 +22,14 @@ public class TracedEventHandler : IEventHandler {
     readonly IEventHandler                   _inner;
     readonly KeyValuePair<string, object?>[] _defaultTags;
 
-    public async ValueTask HandleEvent(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    public async ValueTask HandleEvent(IMessageConsumeContext context) {
         using var activity = Activity.Current?.Context != context.ParentContext
             ? SubscriptionActivity.Start(context, _defaultTags) : Activity.Current;
 
         activity?.SetContextTags(context)?.Start();
 
         try {
-            await _inner.HandleEvent(context, cancellationToken);
+            await _inner.HandleEvent(context).NoContext();
 
             if (context.WasIgnored() && activity != null)
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;

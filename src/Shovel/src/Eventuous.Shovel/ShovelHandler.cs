@@ -14,10 +14,7 @@ class ShovelHandler : IEventHandler {
         _transform     = transform;
     }
 
-    public async ValueTask HandleEvent(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    public async ValueTask HandleEvent(IMessageConsumeContext context) {
         var shovelMessage = await _transform(context).NoContext();
 
         if (shovelMessage?.Message == null) {
@@ -30,7 +27,7 @@ class ShovelHandler : IEventHandler {
                 shovelMessage.TargetStream,
                 shovelMessage.Message,
                 shovelMessage.GetMeta(context),
-                cancellationToken
+                context.CancellationToken
             )
             .NoContext();
     }
@@ -50,10 +47,7 @@ class ShovelHandler<TProduceOptions> : IEventHandler
         _transform     = transform;
     }
 
-    public async ValueTask HandleEvent(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    public async ValueTask HandleEvent(IMessageConsumeContext context) {
         var shovelMessage = await _transform(context).NoContext();
 
         if (shovelMessage?.Message == null) {
@@ -66,7 +60,7 @@ class ShovelHandler<TProduceOptions> : IEventHandler
                 shovelMessage.Message,
                 shovelMessage.GetMeta(context),
                 shovelMessage.ProduceOptions,
-                cancellationToken
+                context.CancellationToken
             )
             .NoContext();
     }

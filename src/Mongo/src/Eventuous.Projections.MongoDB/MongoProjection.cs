@@ -1,6 +1,5 @@
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Projections.MongoDB;
@@ -19,10 +18,7 @@ public abstract class MongoProjection<T> : IEventHandler
 
     Type _myType;
 
-    public async ValueTask HandleEvent(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    public async ValueTask HandleEvent(IMessageConsumeContext context) {
         var updateTask = GetUpdate(context);
         var update     = updateTask == NoOp ? null : await updateTask.NoContext();
 
@@ -36,7 +32,7 @@ public abstract class MongoProjection<T> : IEventHandler
 
         var task = update switch {
             OtherOperation<T> operation => operation.Execute(),
-            CollectionOperation<T> col  => col.Execute(Collection, cancellationToken),
+            CollectionOperation<T> col  => col.Execute(Collection, context.CancellationToken),
             UpdateOperation<T> upd      => ExecuteUpdate(upd),
             _                           => Task.CompletedTask
         };
@@ -52,7 +48,7 @@ public abstract class MongoProjection<T> : IEventHandler
                 filterDefinition,
                 updateDefinition.Set(x => x.Position, streamPosition),
                 new UpdateOptions { IsUpsert = true },
-                cancellationToken
+                context.CancellationToken
             );
         }
     }

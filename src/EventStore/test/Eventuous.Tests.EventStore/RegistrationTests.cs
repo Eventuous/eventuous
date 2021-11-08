@@ -45,7 +45,7 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveTestHandler() {
-        var consumer = Sub.GetPrivateMember<IMessageConsumer>("Consumer");
+        var consumer = Sub.GetPrivateMember<MessageConsumer>("Consumer");
         var handlers = consumer.GetNestedConsumerHandlers();
 
         handlers.Should().HaveCount(1);
@@ -82,6 +82,5 @@ public class RegistrationTests {
 }
 
 public class TestHandler : IEventHandler {
-    public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
-        => default;
+    public ValueTask HandleEvent(IMessageConsumeContext evt) => default;
 }

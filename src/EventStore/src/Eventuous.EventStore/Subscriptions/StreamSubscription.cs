@@ -29,7 +29,7 @@ public class StreamSubscription
         StreamName           streamName,
         string               subscriptionId,
         ICheckpointStore     checkpointStore,
-        IMessageConsumer     consumer,
+        MessageConsumer      consumer,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
         ILoggerFactory?      loggerFactory   = null,
@@ -60,7 +60,7 @@ public class StreamSubscription
         EventStoreClient          client,
         StreamSubscriptionOptions options,
         ICheckpointStore          checkpointStore,
-        IMessageConsumer          consumer,
+        MessageConsumer           consumer,
         ILoggerFactory?           loggerFactory = null
     ) : base(
         client,
@@ -104,7 +104,7 @@ public class StreamSubscription
         ) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (re.Event is not null) await HandleInternal(CreateContext(re), ct);
+            if (re.Event is not null) await HandleInternal(CreateContext(re, ct));
         }
 
         void HandleDrop(
@@ -115,7 +115,7 @@ public class StreamSubscription
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
-    IMessageConsumeContext CreateContext(ResolvedEvent re) {
+    IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -132,7 +132,8 @@ public class StreamSubscription
             re.OriginalEventNumber.ToUInt64(),
             re.Event.Created,
             evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber)
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            cancellationToken
         ) {
             GlobalPosition = re.Event.Position.CommitPosition,
             StreamPosition = re.Event.EventNumber
