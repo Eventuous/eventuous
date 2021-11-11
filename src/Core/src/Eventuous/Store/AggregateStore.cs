@@ -36,15 +36,21 @@ public class AggregateStore : IAggregateStore {
         var stream          = StreamName.For<T>(aggregate.GetId());
         var expectedVersion = new ExpectedStreamVersion(aggregate.OriginalVersion);
 
-        var result = await _eventStore.AppendEvents(
-                stream,
-                expectedVersion,
-                aggregate.Changes.Select(ToStreamEvent).ToArray(),
-                cancellationToken
-            )
-            .NoContext();
+        try {
+            var result = await _eventStore.AppendEvents(
+                    stream,
+                    expectedVersion,
+                    aggregate.Changes.Select(ToStreamEvent).ToArray(),
+                    cancellationToken
+                )
+                .NoContext();
 
-        return result;
+            return result;
+        }
+        catch (Exception e) {
+            Console.WriteLine(e);
+            throw;
+        }
 
         StreamEvent ToStreamEvent(object evt) {
             var meta = _getEventMetadata?.Invoke(stream, evt) ?? new Metadata();
