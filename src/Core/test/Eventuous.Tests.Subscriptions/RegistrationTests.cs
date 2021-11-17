@@ -1,8 +1,8 @@
 ﻿using Eventuous.Diagnostics.OpenTelemetry.Subscriptions;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 using Eventuous.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -47,7 +47,7 @@ public class RegistrationTests {
     public void SubsShouldHaveHandlers(int position, Type handlerType) {
         var subs     = _provider.GetServices<TestSub>().ToArray();
         var consumer = subs[position].Pipe;
-        var handlers = consumer.GetNestedConsumerHandlers();
+        var handlers = consumer.GetHandlers();
 
         handlers.Should().NotBeNull();
         handlers!.Length.Should().Be(1);
@@ -125,7 +125,7 @@ public class RegistrationTests {
     }
 
     class TestSub : EventSubscription<TestOptions>, IMeasuredSubscription {
-        public TestSub(TestOptions options, MessageConsumer consumePipe) : base(options, consumePipe) { }
+        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(options, consumePipe) { }
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 

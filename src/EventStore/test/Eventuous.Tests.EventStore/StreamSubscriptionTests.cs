@@ -1,6 +1,7 @@
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Sut.Subs;
@@ -71,7 +72,7 @@ public class StreamSubscriptionTests {
                 ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
-            new DefaultConsumer(new IEventHandler[] { handler }),
+            new ConsumePipe().AddFilter(new ConsumerFilter(new DefaultConsumer(new IEventHandler[] { handler }))),
             _loggerFactory
         );
 

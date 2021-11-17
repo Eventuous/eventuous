@@ -1,7 +1,7 @@
 using Eventuous.EventStore.Subscriptions.Diagnostics;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -9,9 +9,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Persistent subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamPersistentSubscription
-    : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
-        IMeasuredSubscription {
+public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>, IMeasuredSubscription {
     public delegate Task HandleEventProcessingFailure(
         EventStoreClient       client,
         PersistentSubscription subscription,
@@ -27,7 +25,7 @@ public class StreamPersistentSubscription
     public StreamPersistentSubscription(
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
-        MessageConsumer                     consumePipe,
+        ConsumePipe                         consumePipe,
         ILoggerFactory?                     loggerFactory = null
     ) : base(
         eventStoreClient,
@@ -54,7 +52,7 @@ public class StreamPersistentSubscription
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
     /// <param name="streamName">Name of the stream to receive events from</param>
     /// <param name="subscriptionId">Subscription ID</param>
-    /// <param name="consumer"></param>
+    /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
@@ -62,7 +60,7 @@ public class StreamPersistentSubscription
         EventStoreClient     eventStoreClient,
         StreamName           streamName,
         string               subscriptionId,
-        MessageConsumer      consumer,
+        ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
         ILoggerFactory?      loggerFactory   = null
@@ -74,7 +72,7 @@ public class StreamPersistentSubscription
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
-        new FilterConsumer(consumer, re => !re.MessageType.StartsWith("$")),
+        consumerPipe.AddFilterFirst(new MessageFilter(ctx => !ctx.MessageType.StartsWith("$"))),
         loggerFactory
     ) { }
 

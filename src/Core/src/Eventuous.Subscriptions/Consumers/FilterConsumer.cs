@@ -3,8 +3,6 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Subscriptions.Consumers;
 
-public delegate bool FilterMessage(IMessageConsumeContext receivedEvent);
-
 public class FilterConsumer : MessageConsumer {
     readonly MessageConsumer _inner;
     readonly Type             _innerType;

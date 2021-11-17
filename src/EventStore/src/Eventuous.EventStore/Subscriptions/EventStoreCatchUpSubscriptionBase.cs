@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -14,22 +15,21 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         EventStoreClient eventStoreClient,
         T                options,
         ICheckpointStore checkpointStore,
-        MessageConsumer  consumer,
+        ConsumePipe      consumePipe,
         ILoggerFactory?  loggerFactory = null
     ) : base(
         eventStoreClient,
         options,
-        GetConsumer(consumer),
+        ConfigurePipe(consumePipe),
         loggerFactory
     ) {
         CheckpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
     }
 
-    static MessageConsumer GetConsumer(MessageConsumer inner)
-        => new FilterConsumer(
-            new ConcurrentConsumer(inner, 1, 1),
-            ctx => !ctx.MessageType.StartsWith("$")
-        );
+    static ConsumePipe ConfigurePipe(ConsumePipe pipe)
+        => pipe
+            .AddFilterFirst(new MessageFilter(ctx => !ctx.MessageType.StartsWith("$")))
+            .AddFilterFirst(new ConcurrentFilter(1));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected ValueTask HandleInternal(IMessageConsumeContext context) {

@@ -6,6 +6,4 @@ public interface IMessageConsumer<in TContext> where TContext : class, IMessageC
     ValueTask Consume(TContext context);
 }
 
-public abstract class MessageConsumer : IMessageConsumer<IMessageConsumeContext> {
-    public abstract ValueTask Consume(IMessageConsumeContext context);
-}
+public interface IMessageConsumer : IMessageConsumer<IMessageConsumeContext> { }

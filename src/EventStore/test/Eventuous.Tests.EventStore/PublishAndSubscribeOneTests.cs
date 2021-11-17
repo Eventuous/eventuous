@@ -1,4 +1,3 @@
-using System.Globalization;
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
 using Hypothesist;

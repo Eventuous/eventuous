@@ -2,12 +2,12 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Subscriptions.Consumers;
 
-public class DefaultConsumer : MessageConsumer {
+public class DefaultConsumer : IMessageConsumer {
     readonly IEventHandler[] _eventHandlers;
 
     public DefaultConsumer(IEventHandler[] eventHandlers) => _eventHandlers = eventHandlers;
 
-    public override async ValueTask Consume(IMessageConsumeContext context) {
+    public async ValueTask Consume(IMessageConsumeContext context) {
         try {
             if (context.Message == null) {
                 context.Ignore<DefaultConsumer>();

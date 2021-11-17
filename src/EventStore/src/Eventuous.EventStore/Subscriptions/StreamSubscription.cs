@@ -1,8 +1,8 @@
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -19,7 +19,7 @@ public class StreamSubscription
     /// <param name="streamName">Name of the stream to receive events from</param>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
-    /// <param name="consumer"></param>
+    /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
@@ -29,7 +29,7 @@ public class StreamSubscription
         StreamName           streamName,
         string               subscriptionId,
         ICheckpointStore     checkpointStore,
-        MessageConsumer      consumer,
+        ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
         ILoggerFactory?      loggerFactory   = null,
@@ -44,7 +44,7 @@ public class StreamSubscription
             MetadataSerializer = metaSerializer
         },
         checkpointStore,
-        consumer,
+        consumerPipe,
         loggerFactory
     ) { }
 
@@ -54,19 +54,19 @@ public class StreamSubscription
     /// <param name="client"></param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
     /// <param name="options">Subscription options</param>
-    /// <param name="consumer"></param>
+    /// <param name="consumePipe"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
     public StreamSubscription(
         EventStoreClient          client,
         StreamSubscriptionOptions options,
         ICheckpointStore          checkpointStore,
-        MessageConsumer           consumer,
+        ConsumePipe               consumePipe,
         ILoggerFactory?           loggerFactory = null
     ) : base(
         client,
         options,
         checkpointStore,
-        consumer,
+        consumePipe,
         loggerFactory
     )
         => Ensure.NotEmptyString(options.StreamName, nameof(options.StreamName));

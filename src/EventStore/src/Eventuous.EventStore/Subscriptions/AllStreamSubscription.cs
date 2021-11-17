@@ -3,6 +3,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -18,7 +19,7 @@ public class AllStreamSubscription
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
-    /// <param name="consumer"></param>
+    /// <param name="consumePipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
@@ -27,7 +28,7 @@ public class AllStreamSubscription
         EventStoreClient     eventStoreClient,
         string               subscriptionId,
         ICheckpointStore     checkpointStore,
-        MessageConsumer      consumer,
+        ConsumePipe          consumePipe,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
         ILoggerFactory?      loggerFactory   = null,
@@ -41,7 +42,7 @@ public class AllStreamSubscription
             EventFilter        = eventFilter
         },
         checkpointStore,
-        consumer,
+        consumePipe,
         loggerFactory
     ) { }
 
@@ -51,19 +52,19 @@ public class AllStreamSubscription
     /// <param name="eventStoreClient"></param>
     /// <param name="options"></param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
-    /// <param name="consumer"></param>
+    /// <param name="consumePipe"></param>
     /// <param name="loggerFactory">Optional: logger factory</param>
     public AllStreamSubscription(
         EventStoreClient             eventStoreClient,
         AllStreamSubscriptionOptions options,
         ICheckpointStore             checkpointStore,
-        MessageConsumer              consumer,
+        ConsumePipe                  consumePipe,
         ILoggerFactory?              loggerFactory = null
     ) : base(
         eventStoreClient,
         options,
         checkpointStore,
-        consumer,
+        consumePipe,
         loggerFactory
     ) { }
 

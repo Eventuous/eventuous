@@ -1,5 +1,6 @@
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -13,7 +14,7 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
     protected EventStoreSubscriptionBase(
         EventStoreClient eventStoreClient,
         T                options,
-        MessageConsumer  consumePipe,
+        ConsumePipe      consumePipe,
         ILoggerFactory?  loggerFactory = null
     ) : base(options, consumePipe, loggerFactory) {
         EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));

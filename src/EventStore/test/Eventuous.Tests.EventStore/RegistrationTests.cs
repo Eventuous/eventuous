@@ -2,6 +2,7 @@ using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Filters;
 using Eventuous.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -45,8 +46,8 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldHaveTestHandler() {
-        var consumer = Sub.GetPrivateMember<MessageConsumer>("Consumer");
-        var handlers = consumer.GetNestedConsumerHandlers();
+        var pipe     = Sub.GetPrivateMember<ConsumePipe>("Pipe");
+        var handlers = pipe!.GetHandlers();
 
         handlers.Should().HaveCount(1);
         handlers![0].Should().BeOfType<TracedEventHandler>();
