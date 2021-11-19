@@ -1,3 +1,5 @@
+using Eventuous.Subscriptions.Diagnostics;
+
 namespace Eventuous.Tests.EventStore.Fixtures; 
 
 public class TestCheckpointStore : ICheckpointStore {
@@ -11,11 +13,13 @@ public class TestCheckpointStore : ICheckpointStore {
     }
 
     public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+        SubscriptionsEventSource.Log.CheckpointLoaded(this, _start);
         return new ValueTask<Checkpoint>(_start);
     }
 
     public ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, CancellationToken cancellationToken) {
         Last = checkpoint;
+        SubscriptionsEventSource.Log.CheckpointStored(this, checkpoint);
         return new ValueTask<Checkpoint>(checkpoint);
     }
 }

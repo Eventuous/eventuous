@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics.Logging;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
@@ -32,6 +33,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
         Producer        = new EventStoreProducer(IntegrationFixture.Instance.Client);
         Log             = loggerFactory.CreateLogger(GetType());
         CheckpointStore = new TestCheckpointStore();
+        
+        _listener = new LoggingEventListener(loggerFactory);
 
         Subscription = new StreamSubscription(
             IntegrationFixture.Instance.Client,
@@ -48,7 +51,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
 
     protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
 
-    readonly bool _autoStart;
+    readonly bool                 _autoStart;
+    readonly LoggingEventListener _listener;
 
     public async Task InitializeAsync() {
         if (_autoStart) await Start();
@@ -56,5 +60,6 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
 
     public async Task DisposeAsync() {
         if (_autoStart) await Stop();
+        _listener.Dispose();
     }
 }

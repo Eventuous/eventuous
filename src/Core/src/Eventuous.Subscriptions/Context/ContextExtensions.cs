@@ -9,7 +9,7 @@ namespace Eventuous.Subscriptions.Context;
 public static class ContextExtensions {
     public static void Ack(this IBaseConsumeContext context, Type? handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Succeeded(handlerType));
-        Log.MessageHandled(handlerType, context.MessageType);
+        Log.MessageHandled(handlerType, context);
     }
 
     public static void Nack(
@@ -18,7 +18,7 @@ public static class ContextExtensions {
         Exception?               exception
     ) {
         context.HandlingResults.Add(EventHandlingResult.Failed(handlerType, exception));
-        Log.MessageHandlingFailed(handlerType, context.MessageType, exception);
+        Log.MessageHandlingFailed(handlerType, context, exception);
 
         if (Activity.Current != null && Activity.Current.Status != ActivityStatusCode.Error) {
             Activity.Current.SetActivityStatus(
@@ -30,7 +30,7 @@ public static class ContextExtensions {
     public static void Ignore(this IBaseConsumeContext context, Type? handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Ignored(handlerType));
 
-        Log.MessageIgnored(handlerType, context.MessageType);
+        Log.MessageIgnored(handlerType, context);
     }
 
     public static void Ack<T>(this IBaseConsumeContext context) => context.Ack(typeof(T));

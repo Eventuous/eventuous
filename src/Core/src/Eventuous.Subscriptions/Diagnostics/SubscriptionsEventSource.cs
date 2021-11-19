@@ -1,5 +1,7 @@
 using System.Diagnostics.Tracing;
 using Eventuous.Diagnostics;
+using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Context;
 
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -23,30 +25,32 @@ public class SubscriptionsEventSource : EventSource {
     const int SubscriptionRestoredId           = 12;
     const int ResubscribeFailedId              = 13;
     const int FailedToHandleMessageWithRetryId = 20;
+    const int CheckpointLoadedId               = 21;
+    const int CheckpointStoredId               = 22;
 
     const int InfoId = 100;
     const int WarnId = 101;
 
     [NonEvent]
-    public void MessageHandlingFailed(Type? handlerType, string messageType, Exception? exception) {
+    public void MessageHandlingFailed(Type? handlerType, IBaseConsumeContext context, Exception? exception) {
         if (IsEnabled(EventLevel.Error, EventKeywords.All))
             MessageHandlingFailed(
                 handlerType?.Name ?? "unknown",
-                messageType,
+                context.MessageType,
                 exception?.ToString() ?? "unknown error"
             );
     }
 
     [NonEvent]
-    public void MessageIgnored(Type? handlerType, string messageType) {
+    public void MessageIgnored(Type? handlerType, IBaseConsumeContext context) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            MessageIgnored(handlerType?.Name ?? "unknown", messageType);
+            MessageIgnored(handlerType?.Name ?? "unknown", context.MessageType);
     }
 
     [NonEvent]
-    public void MessageHandled(Type? handlerType, string eventType) {
+    public void MessageHandled(Type? handlerType, IBaseConsumeContext context) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            MessageHandled(handlerType?.Name ?? "unknown", eventType);
+            MessageHandled(handlerType?.Name ?? "unknown", context.MessageType);
     }
 
     [NonEvent]
@@ -64,6 +68,18 @@ public class SubscriptionsEventSource : EventSource {
     ) {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All))
             FailedToHandleMessageWithRetry(handlerType, messageType, retryCount.ToString(), exception.ToString());
+    }
+
+    [NonEvent]
+    public void CheckpointLoaded(ICheckpointStore store, Checkpoint checkpoint) {
+        if (IsEnabled(EventLevel.Informational, EventKeywords.All))
+            CheckpointLoaded(store.GetType().Name, checkpoint.Id, checkpoint.Position?.ToString() ?? "empty");
+    }
+
+    [NonEvent]
+    public void CheckpointStored(ICheckpointStore store, Checkpoint checkpoint) {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            CheckpointStored(store.GetType().Name, checkpoint.Id, checkpoint.Position?.ToString() ?? "empty");
     }
 
     [Event(MessageReceivedId, Message = "[{0}] Received {1}", Level = EventLevel.Verbose)]
@@ -167,6 +183,14 @@ public class SubscriptionsEventSource : EventSource {
         string retryCount,
         string exception
     ) => WriteEvent(FailedToHandleMessageWithRetryId, handlerType, messageType, retryCount, exception);
+
+    [Event(CheckpointLoadedId, Message = "[{0}] Loaded checkpoint {1}: {2}", Level = EventLevel.Informational)]
+    public void CheckpointLoaded(string store, string checkpointId, string value)
+        => WriteEvent(CheckpointLoadedId, store, checkpointId, value);
+
+    [Event(CheckpointStoredId, Message = "[{0}] Stored checkpoint {1}: {2}", Level = EventLevel.Verbose)]
+    public void CheckpointStored(string store, string checkpointId, string value)
+        => WriteEvent(CheckpointStoredId, store, checkpointId, value);
 
     [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
     public void Info(string message, string? arg1 = null, string? arg2 = null) {

@@ -7,6 +7,6 @@ public static class Logging {
         => LoggerFactory.Create(
             builder => builder
                 .SetMinimumLevel(LogLevel.Debug)
-                .AddXunit(outputHelper)
+                .AddXunit(outputHelper, LogLevel.Debug)
         );
 }

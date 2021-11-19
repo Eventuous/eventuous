@@ -1,31 +1,24 @@
 using System.Collections.Concurrent;
 using Eventuous.Subscriptions.Checkpoints;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver.Linq;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 
 namespace Eventuous.Projections.MongoDB;
 
 [PublicAPI]
 public class MongoCheckpointStore : ICheckpointStore {
-    readonly int                            _batchSize;
-    readonly ILogger<MongoCheckpointStore>? _log;
+    readonly int _batchSize;
 
-    public MongoCheckpointStore(
-        IMongoCollection<Checkpoint>   database,
-        int                            batchSize,
-        ILogger<MongoCheckpointStore>? logger
-    ) {
-        Checkpoints = Ensure.NotNull(database);
-        _batchSize  = batchSize;
-        _log        = logger;
+    public MongoCheckpointStore(IMongoDatabase database, MongoCheckpointOptions? options = null) {
+        var usedOptions = options ?? new MongoCheckpointOptions();
+        Checkpoints = Ensure.NotNull(database).GetCollection<Checkpoint>(usedOptions.CollectionName);
+        _batchSize  = usedOptions.BatchSize;
     }
 
-    public MongoCheckpointStore(IMongoDatabase database, ILogger<MongoCheckpointStore>? logger) : this(
-        database.GetCollection<Checkpoint>("checkpoint"),
-        0,
-        logger
-    ) { }
+    public MongoCheckpointStore(IMongoDatabase database, IOptions<MongoCheckpointOptions> options)
+        : this(database, options.Value) { }
 
     IMongoCollection<Checkpoint> Checkpoints { get; }
 
@@ -33,28 +26,12 @@ public class MongoCheckpointStore : ICheckpointStore {
         string            checkpointId,
         CancellationToken cancellationToken = default
     ) {
-        _log?.LogDebug("[{CheckpointId}] Finding checkpoint...", checkpointId);
-
         var checkpoint = await Checkpoints.AsQueryable()
             .Where(x => x.Id == checkpointId)
             .SingleOrDefaultAsync(cancellationToken)
-            .NoContext();
+            .NoContext() ?? new Checkpoint(checkpointId, null);
 
-        if (checkpoint is null) {
-            checkpoint = new Checkpoint(checkpointId, null);
-
-            _log?.LogInformation(
-                "[{CheckpointId}] Checkpoint not found, defaulting to earliest position",
-                checkpointId
-            );
-        }
-        else {
-            _log?.LogInformation(
-                "[{CheckpointId}] Checkpoint found at position {Checkpoint}",
-                checkpointId,
-                checkpoint.Position
-            );
-        }
+        Log.CheckpointLoaded(this, checkpoint);
 
         _counters[checkpointId] = 0;
 
@@ -77,13 +54,14 @@ public class MongoCheckpointStore : ICheckpointStore {
             cancellationToken
         ).NoContext();
 
-        if (_log?.IsEnabled(LogLevel.Debug) == true)
-            _log.LogDebug(
-                "[{CheckpointId}] Checkpoint position set to {Checkpoint}",
-                checkpoint.Id,
-                checkpoint.Position
-            );
+        Log.CheckpointStored(this, checkpoint);
 
         return checkpoint;
     }
+}
+
+[PublicAPI]
+public record MongoCheckpointOptions {
+    public string CollectionName { get; init; } = "checkpoint";
+    public int    BatchSize      { get; init; }
 }

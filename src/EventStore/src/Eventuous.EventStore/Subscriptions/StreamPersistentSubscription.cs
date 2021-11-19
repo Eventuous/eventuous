@@ -156,9 +156,15 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
         };
     }
 
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        _subscription?.Dispose();
-        return default;
+    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
+        try {
+            Stopping.Cancel(false);
+            await Task.Delay(100, cancellationToken);
+            _subscription?.Dispose();
+        }
+        catch (Exception) {
+            // It might throw
+        }
     }
 
     static Task DefaultEventProcessingFailureHandler(

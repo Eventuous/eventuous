@@ -17,7 +17,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     internal IEventSerializer EventSerializer { get; }
     internal ConsumePipe      Pipe            { get; }
 
-    CancellationTokenSource _subscriptionCts = new();
+    protected CancellationTokenSource Stopping { get; } = new();
 
     protected EventSubscription(T options, ConsumePipe consumePipe) {
         Ensure.NotEmptyString(options.SubscriptionId);
@@ -37,9 +37,11 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         OnDropped         onDropped,
         CancellationToken cancellationToken
     ) {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, Stopping.Token);
+        
         _onSubscribed = onSubscribed;
         _onDropped    = onDropped;
-        await Subscribe(cancellationToken);
+        await Subscribe(cts.Token);
         Log.SubscriptionStarted(Options.SubscriptionId);
         onSubscribed(Options.SubscriptionId);
     }
@@ -180,10 +182,11 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         Task.Run(
             () => {
-                var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10)
+                var delay = reason == DropReason.Stopped 
+                    ? TimeSpan.FromSeconds(10)
                     : TimeSpan.FromSeconds(2);
 
-                return Resubscribe(delay, _subscriptionCts.Token);
+                return Resubscribe(delay, Stopping.Token);
             }
         );
     }

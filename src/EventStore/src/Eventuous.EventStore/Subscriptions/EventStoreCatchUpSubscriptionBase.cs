@@ -8,7 +8,7 @@ namespace Eventuous.EventStore.Subscriptions;
 [PublicAPI]
 public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscriptionBase<T>
     where T : EventStoreSubscriptionOptions {
-    protected ICheckpointStore CheckpointStore { get; }
+    protected ICheckpointStore        CheckpointStore { get; }
 
     protected EventStoreCatchUpSubscriptionBase(
         EventStoreClient eventStoreClient,
@@ -67,15 +67,15 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         LastProcessed = position;
     }
 
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) {
+    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         try {
+            Stopping.Cancel(false);
+            await Task.Delay(100, cancellationToken);
             Subscription?.Dispose();
         }
         catch (Exception) {
             // Nothing to see here
         }
-
-        return default;
     }
 
     protected global::EventStore.Client.StreamSubscription? Subscription { get; set; }
