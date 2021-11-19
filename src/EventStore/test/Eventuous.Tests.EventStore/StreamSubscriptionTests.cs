@@ -109,9 +109,7 @@ public sealed class StreamSubscriptionTests : IDisposable {
 
         public List<IMessageConsumeContext> Processed { get; } = new();
 
-        public override ValueTask<EventHandlingStatus> HandleEvent(
-            IMessageConsumeContext ctx
-        ) {
+        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) {
             Count++;
             if (ctx == null) throw new InvalidOperationException();
 

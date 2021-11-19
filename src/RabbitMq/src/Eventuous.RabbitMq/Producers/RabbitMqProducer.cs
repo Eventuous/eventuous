@@ -75,10 +75,10 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
             throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
 
         var (msg, metadata)      = (message.Message, message.Metadata);
-        var (eventType, payload) = _serializer.SerializeEvent(msg);
+        var (eventType, contentType, payload) = _serializer.SerializeEvent(msg);
 
         var prop = _channel.CreateBasicProperties();
-        prop.ContentType   = _serializer.ContentType;
+        prop.ContentType   = contentType;
         prop.DeliveryMode  = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
         prop.Type          = eventType;
         prop.CorrelationId = metadata!.GetCorrelationId();

@@ -1,6 +1,7 @@
 // ReSharper disable CoVariantArrayConversion
 
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 
 namespace Eventuous.EventStore;
 
@@ -94,14 +95,14 @@ public class EsdbEventStore : IEventStore {
         );
 
         EventData ToEventData(StreamEvent streamEvent) {
-            var (eventType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
+            var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
             return new EventData(
                 Uuid.NewUuid(),
                 eventType,
                 payload,
                 _metaSerializer.Serialize(streamEvent.Metadata),
-                _serializer.ContentType
+                contentType
             );
         }
     }
@@ -282,13 +283,29 @@ public class EsdbEventStore : IEventStore {
     )
         => version == ExpectedStreamVersion.Any ? whenAny() : otherwise();
 
-    StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent)
-        => new(
-            _serializer.DeserializeEvent(resolvedEvent.Event.Data.ToArray(), resolvedEvent.Event.EventType),
-            _metaSerializer.Deserialize(resolvedEvent.Event.Metadata.ToArray()) ?? new Metadata(),
-            resolvedEvent.Event.ContentType,
-            resolvedEvent.OriginalEventNumber.ToInt64()
+    StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent) {
+        var deserialized = _serializer.DeserializeEvent(
+            resolvedEvent.Event.Data.ToArray(),
+            resolvedEvent.Event.EventType,
+            resolvedEvent.Event.ContentType
         );
+
+        return deserialized switch {
+            SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
+            FailedToDeserialize failed => throw new SerializationException(
+                $"Can't deserialize {resolvedEvent.Event.EventType}: {failed.Error}"
+            ),
+            _ => throw new Exception("Unknown deserialization result")
+        };
+
+        StreamEvent AsStreamEvent(object payload)
+            => new(
+                payload,
+                _metaSerializer.Deserialize(resolvedEvent.Event.Metadata.ToArray()) ?? new Metadata(),
+                resolvedEvent.Event.ContentType,
+                resolvedEvent.OriginalEventNumber.ToInt64()
+            );
+    }
 
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents.Select(ToStreamEvent).ToArray();

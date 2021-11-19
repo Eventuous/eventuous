@@ -88,13 +88,13 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     }
 
     PubsubMessage CreateMessage(ProducedMessage message, PubSubProduceOptions? options) {
-        var (eventType, payload) = _serializer.SerializeEvent(message.Message);
+        var (eventType, contentType, payload) = _serializer.SerializeEvent(message.Message);
 
         var psm = new PubsubMessage {
             Data        = ByteString.CopyFrom(payload),
             OrderingKey = options?.OrderingKey ?? "",
             Attributes = {
-                { _attributes.ContentType, _serializer.ContentType },
+                { _attributes.ContentType, contentType },
                 { _attributes.EventType, eventType }
             },
             MessageId = message.MessageId.ToString()

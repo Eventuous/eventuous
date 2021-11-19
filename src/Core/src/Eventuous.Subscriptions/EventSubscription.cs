@@ -115,26 +115,36 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         string               stream,
         ulong                position = 0
     ) {
+        if (data.IsEmpty) return null;
+
+        var contentType = string.IsNullOrWhiteSpace(eventContentType) ? "application/json" : eventContentType;
+
         try {
-            return EventSerializer.DeserializeSubscriptionPayload(
-                eventContentType,
-                eventType,
-                data,
-                stream,
-                position
-            );
+            var result = EventSerializer.DeserializeEvent(data.Span, eventType, contentType);
+
+            return result switch {
+                SuccessfullyDeserialized success => success.Payload,
+                FailedToDeserialize failed       => LogAndReturnNull(failed.Error),
+                _                                => throw new ApplicationException($"Unknown result {result}")
+            };
         }
         catch (Exception e) {
+            var exception = new DeserializationException(stream, eventType, position, e);
             Log.PayloadDeserializationFailed(
                 Options.SubscriptionId,
                 stream,
                 position,
                 eventType,
-                e.ToString()
+                exception.ToString()
             );
 
             if (Options.ThrowOnError) throw;
 
+            return null;
+        }
+
+        object? LogAndReturnNull(DeserializationError error) {
+            Log.MessagePayloadInconclusive(SubscriptionId, eventType, stream, contentType, error);
             return null;
         }
     }

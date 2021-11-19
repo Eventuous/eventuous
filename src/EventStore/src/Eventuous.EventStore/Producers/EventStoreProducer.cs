@@ -76,7 +76,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
 
     EventData CreateMessage(ProducedMessage message) {
         var msg = Ensure.NotNull(message.Message);
-        var (eventType, payload) = _serializer.SerializeEvent(msg);
+        var (eventType, contentType, payload) = _serializer.SerializeEvent(msg);
         message.Metadata!.Remove(MetaTags.MessageId);
         var metaBytes = _metaSerializer.Serialize(message.Metadata);
 
@@ -85,7 +85,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
             eventType,
             payload,
             metaBytes,
-            _serializer.ContentType
+            contentType
         );
     }
 }

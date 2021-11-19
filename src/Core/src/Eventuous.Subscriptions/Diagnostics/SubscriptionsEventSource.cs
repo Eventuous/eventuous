@@ -27,6 +27,7 @@ public class SubscriptionsEventSource : EventSource {
     const int FailedToHandleMessageWithRetryId = 20;
     const int CheckpointLoadedId               = 21;
     const int CheckpointStoredId               = 22;
+    const int MessageSerializationNoResultId   = 23;
 
     const int InfoId = 100;
     const int WarnId = 101;
@@ -191,6 +192,13 @@ public class SubscriptionsEventSource : EventSource {
     [Event(CheckpointStoredId, Message = "[{0}] Stored checkpoint {1}: {2}", Level = EventLevel.Verbose)]
     public void CheckpointStored(string store, string checkpointId, string value)
         => WriteEvent(CheckpointStoredId, store, checkpointId, value);
+
+    // The level of this message needs validation
+    [Event(PayloadDeserializationFailedId, Message = "[{0}] Message ignored as it didn't deserialize {1} {2} {3} {4}", Level = EventLevel.Verbose)]
+    public void MessagePayloadInconclusive(string subscriptionId, string type, string stream, string contentType, DeserializationError reason) {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            WriteEvent(PayloadDeserializationFailedId, subscriptionId, type, stream, contentType, reason);
+    }
 
     [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
     public void Info(string message, string? arg1 = null, string? arg2 = null) {

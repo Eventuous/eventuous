@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Eventuous; 
+namespace Eventuous;
 
 [PublicAPI]
 public class DefaultEventSerializer : IEventSerializer {
@@ -17,13 +17,20 @@ public class DefaultEventSerializer : IEventSerializer {
         _typeMapper = typeMapper ?? TypeMap.Instance;
     }
 
-    public object? DeserializeEvent(ReadOnlySpan<byte> data, string eventType)
-        => !_typeMapper.TryGetType(eventType, out var dataType)
-            ? null!
-            : JsonSerializer.Deserialize(data, dataType!, _options);
+    public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType) {
+        var typeMapped = _typeMapper.TryGetType(eventType, out var dataType);
+        if (!typeMapped) return new FailedToDeserialize(DeserializationError.UnknownType);
+        if (contentType != ContentType) return new FailedToDeserialize(DeserializationError.ContentTypeMismatch);
 
-    public (string EventType, byte[] Payload) SerializeEvent(object evt)
-        => (_typeMapper.GetTypeName(evt), JsonSerializer.SerializeToUtf8Bytes(evt, _options));
+        var deserialized = JsonSerializer.Deserialize(data, dataType!, _options);
+
+        return deserialized != null 
+            ? new SuccessfullyDeserialized(deserialized)
+            : new FailedToDeserialize(DeserializationError.PayloadEmpty);
+    }
+
+    public SerializationResult SerializeEvent(object evt)
+        => new(_typeMapper.GetTypeName(evt), ContentType, JsonSerializer.SerializeToUtf8Bytes(evt, _options));
 
     public string ContentType { get; } = "application/json";
 }
