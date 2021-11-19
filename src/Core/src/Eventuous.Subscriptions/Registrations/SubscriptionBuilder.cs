@@ -84,7 +84,8 @@ public abstract class SubscriptionBuilder {
     }
 
     void AddHandlerResolve(ResolveHandler resolveHandler)
-        => _handlers.Add(sp => {
+        => _handlers.Add(
+            sp => {
                 var handler = resolveHandler(sp);
                 return EventuousDiagnostics.Enabled ? new TracedEventHandler(handler) : handler;
             }
@@ -140,7 +141,12 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
         var consumer = GetConsumer(sp);
 
-        if (EventuousDiagnostics.Enabled) Pipe.AddFilter(new TracingFilter());
+        if (EventuousDiagnostics.Enabled) {
+            var tags = new KeyValuePair<string, object?>[]
+                { new(TelemetryTags.Eventuous.Consumer, consumer.GetType().Name) };
+
+            Pipe.AddFilter(new TracingFilter(tags));
+        }
 
         Pipe.AddFilter(new ConsumerFilter(consumer));
 

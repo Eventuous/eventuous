@@ -6,21 +6,23 @@ namespace Eventuous.Subscriptions.Diagnostics;
 
 public static class SubscriptionActivity {
     public static Activity? Create(
+        string                                      operation,
         IMessageConsumeContext                      context,
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     ) {
         context.ParentContext ??= GetParentContext(context.Metadata);
 
-        var activity = Create(context.ParentContext, tags);
+        var activity = Create(operation, context.ParentContext, tags);
 
         return activity?.SetContextTags(context);
     }
 
     public static Activity? Start(
+        string                                      operation,
         IMessageConsumeContext                      context,
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     )
-        => Create(context, tags)?.Start();
+        => Create(operation, context, tags)?.Start();
 
     public static Activity? SetContextTags(this Activity? activity, IMessageConsumeContext context) {
         if (activity is not { IsAllDataRequested: true }) return activity;
@@ -43,11 +45,12 @@ public static class SubscriptionActivity {
     }
 
     public static Activity? Create(
+        string                                      operation,
         ActivityContext?                            parentContext = null,
         IEnumerable<KeyValuePair<string, object?>>? tags          = null
     )
         => EventuousDiagnostics.ActivitySource.CreateActivity(
-            "consume",
+            operation,
             ActivityKind.Consumer,
             parentContext ?? default,
             tags,

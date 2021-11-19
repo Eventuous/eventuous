@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
@@ -27,6 +28,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         Pipe            = Ensure.NotNull(consumePipe);
         EventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
         Options         = options;
+
+        _tags = new KeyValuePair<string, object?>[] { new(TelemetryTags.Eventuous.Subscription, SubscriptionId) };
     }
 
     OnSubscribed? _onSubscribed;
@@ -48,19 +51,18 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         onSubscribed(Options.SubscriptionId);
     }
 
-    public async ValueTask Unsubscribe(
-        OnUnsubscribed    onUnsubscribed,
-        CancellationToken cancellationToken
-    ) {
+    public async ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken) {
         await Unsubscribe(cancellationToken);
         Log.SubscriptionStopped(Options.SubscriptionId);
         onUnsubscribed(Options.SubscriptionId);
         await Pipe.DisposeAsync();
     }
 
+    IEnumerable<KeyValuePair<string, object?>>? _tags;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask Handler(IMessageConsumeContext context) {
-        var activity = SubscriptionActivity.Create(context);
+        var activity = SubscriptionActivity.Create(TracingConstants.SubscriptionOperation, context, _tags);
         var delayed  = context is DelayedAckConsumeContext;
         if (!delayed) activity?.Start();
 
@@ -95,12 +97,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             if (Options.ThrowOnError) {
                 activity?.Dispose();
 
-                throw new SubscriptionException(
-                    context.Stream,
-                    context.MessageType,
-                    context.Message,
-                    exception
-                );
+                throw new SubscriptionException(context.Stream, context.MessageType, context.Message, exception);
             }
         }
 
@@ -130,6 +127,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         }
         catch (Exception e) {
             var exception = new DeserializationException(stream, eventType, position, e);
+
             Log.PayloadDeserializationFailed(
                 Options.SubscriptionId,
                 stream,

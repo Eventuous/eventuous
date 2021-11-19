@@ -15,7 +15,8 @@ public class TracingFilter : ConsumeFilter {
         if (context.Message == null || next == null) return;
         
         using var activity = Activity.Current?.Context != context.ParentContext
-            ? SubscriptionActivity.Start(context, _defaultTags) : Activity.Current;
+            ? SubscriptionActivity.Start(TracingConstants.ConsumerOperation, context, _defaultTags) 
+            : Activity.Current;
 
         activity?.SetContextTags(context);
 

@@ -79,6 +79,7 @@ public static class TelemetryTags {
     public static class Eventuous {
         public const string Consumer     = "eventuous.consumer";
         public const string EventHandler = "eventuous.event-handler";
+        public const string Subscription = "eventuous.subscription";
         public const string Stream       = "eventuous.stream";
     }
 }
