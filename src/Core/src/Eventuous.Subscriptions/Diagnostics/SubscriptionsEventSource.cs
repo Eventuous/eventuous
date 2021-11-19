@@ -194,10 +194,10 @@ public class SubscriptionsEventSource : EventSource {
         => WriteEvent(CheckpointStoredId, store, checkpointId, value);
 
     // The level of this message needs validation
-    [Event(PayloadDeserializationFailedId, Message = "[{0}] Message ignored as it didn't deserialize {1} {2} {3} {4}", Level = EventLevel.Verbose)]
+    [Event(MessageSerializationNoResultId, Message = "[{0}] Message ignored as it didn't deserialize {1} {2} {3} {4}", Level = EventLevel.Verbose)]
     public void MessagePayloadInconclusive(string subscriptionId, string type, string stream, string contentType, DeserializationError reason) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            WriteEvent(PayloadDeserializationFailedId, subscriptionId, type, stream, contentType, reason);
+            WriteEvent(MessageSerializationNoResultId, subscriptionId, type, stream, contentType, reason);
     }
 
     [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
