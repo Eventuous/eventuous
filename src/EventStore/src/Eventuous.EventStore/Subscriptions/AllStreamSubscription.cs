@@ -64,10 +64,10 @@ public class AllStreamSubscription
                 => await StoreCheckpoint(
                     new EventPosition(p.CommitPosition, DateTime.Now),
                     ct
-                )
+                ).NoContext()
         );
 
-        var (_, position) = await GetCheckpoint(cancellationToken);
+        var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
         var subTask = position != null
             ? EventStoreClient.SubscribeToAllAsync(
@@ -97,7 +97,7 @@ public class AllStreamSubscription
             ResolvedEvent                                re,
             CancellationToken                            ct
         )
-            => await HandleInternal(CreateContext(re, ct));
+            => await HandleInternal(CreateContext(re, ct)).NoContext();
 
         void HandleDrop(
             global::EventStore.Client.StreamSubscription _,

@@ -17,7 +17,7 @@ public class TracedEventStore : IEventStore {
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
         using var activity = StartActivity(stream, "stream-exists");
-        return await Inner.StreamExists(stream, cancellationToken);
+        return await Inner.StreamExists(stream, cancellationToken).NoContext();
     }
 
     public async Task<AppendEventsResult> AppendEvents(
@@ -32,7 +32,7 @@ public class TracedEventStore : IEventStore {
             x => x with { Metadata = x.Metadata.AddActivityTags(activity) }
         ).ToArray();
 
-        return await Inner.AppendEvents(stream, expectedVersion, tracedEvents, cancellationToken);
+        return await Inner.AppendEvents(stream, expectedVersion, tracedEvents, cancellationToken).NoContext();
     }
 
     public async Task<StreamEvent[]> ReadEvents(
@@ -42,7 +42,7 @@ public class TracedEventStore : IEventStore {
         CancellationToken  cancellationToken
     ) {
         using var activity = StartActivity(stream, "read-events");
-        return await Inner.ReadEvents(stream, start, count, cancellationToken);
+        return await Inner.ReadEvents(stream, start, count, cancellationToken).NoContext();
     }
 
     public async Task<StreamEvent[]> ReadEventsBackwards(
@@ -51,7 +51,7 @@ public class TracedEventStore : IEventStore {
         CancellationToken cancellationToken
     ) {
         using var activity = StartActivity(stream, "read-events");
-        return await Inner.ReadEventsBackwards(stream, count, cancellationToken);
+        return await Inner.ReadEventsBackwards(stream, count, cancellationToken).NoContext();
     }
 
     public async Task<long> ReadStream(
@@ -62,7 +62,7 @@ public class TracedEventStore : IEventStore {
         CancellationToken   cancellationToken
     ) {
         using var activity = StartActivity(stream, "read-events");
-        return await Inner.ReadStream(stream, start, count, callback, cancellationToken);
+        return await Inner.ReadStream(stream, start, count, callback, cancellationToken).NoContext();
     }
 
     public async Task TruncateStream(
@@ -72,7 +72,7 @@ public class TracedEventStore : IEventStore {
         CancellationToken      cancellationToken
     ) {
         using var activity = StartActivity(stream, "truncate-stream");
-        await Inner.TruncateStream(stream, truncatePosition, expectedVersion, cancellationToken);
+        await Inner.TruncateStream(stream, truncatePosition, expectedVersion, cancellationToken).NoContext();
     }
 
     public async Task DeleteStream(
@@ -81,7 +81,7 @@ public class TracedEventStore : IEventStore {
         CancellationToken     cancellationToken
     ) {
         using var activity = StartActivity(stream, "delete-stream");
-        await Inner.DeleteStream(stream, expectedVersion, cancellationToken);
+        await Inner.DeleteStream(stream, expectedVersion, cancellationToken).NoContext();
     }
 
     static Activity? StartActivity(

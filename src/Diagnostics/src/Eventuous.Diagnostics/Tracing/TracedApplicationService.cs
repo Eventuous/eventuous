@@ -21,7 +21,7 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
             idFormat: ActivityIdFormat.W3C
         )?.Start();
         
-        return await Inner.Handle(command, cancellationToken);
+        return await Inner.Handle(command, cancellationToken).NoContext();
     }
 }
 
@@ -46,6 +46,6 @@ public class TracedApplicationService<TState, TId> : IApplicationService<TState,
             idFormat: ActivityIdFormat.W3C
         )?.Start();
         
-        return await Inner.Handle(command, cancellationToken);
+        return await Inner.Handle(command, cancellationToken).NoContext();
     }
 }

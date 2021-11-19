@@ -46,16 +46,16 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         _onSubscribed = onSubscribed;
         _onDropped    = onDropped;
-        await Subscribe(cts.Token);
+        await Subscribe(cts.Token).NoContext();
         Log.SubscriptionStarted(Options.SubscriptionId);
         onSubscribed(Options.SubscriptionId);
     }
 
     public async ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken) {
-        await Unsubscribe(cancellationToken);
+        await Unsubscribe(cancellationToken).NoContext();
         Log.SubscriptionStopped(Options.SubscriptionId);
         onUnsubscribed(Options.SubscriptionId);
-        await Pipe.DisposeAsync();
+        await Pipe.DisposeAsync().NoContext();
     }
 
     IEnumerable<KeyValuePair<string, object?>>? _tags;

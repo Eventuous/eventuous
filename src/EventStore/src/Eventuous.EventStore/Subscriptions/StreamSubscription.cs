@@ -61,7 +61,7 @@ public class StreamSubscription
         => Ensure.NotEmptyString(options.StreamName);
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
-        var (_, position) = await GetCheckpoint(cancellationToken);
+        var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
         var subTask = position == null
             ? EventStoreClient.SubscribeToStreamAsync(
@@ -93,7 +93,7 @@ public class StreamSubscription
         ) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (re.Event is not null) await HandleInternal(CreateContext(re, ct));
+            if (re.Event is not null) await HandleInternal(CreateContext(re, ct)).NoContext();
         }
 
         void HandleDrop(

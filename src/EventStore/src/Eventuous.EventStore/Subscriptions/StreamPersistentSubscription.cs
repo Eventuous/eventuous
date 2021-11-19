@@ -113,8 +113,7 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
                 LastProcessed = EventPosition.FromContext(ctx);
             }
             catch (Exception e) {
-                await _handleEventProcessingFailure(EventStoreClient, subscription, re, e)
-                    .NoContext();
+                await _handleEventProcessingFailure(EventStoreClient, subscription, re, e).NoContext();
             }
         }
 

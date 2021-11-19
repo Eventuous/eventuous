@@ -25,7 +25,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             _positions.Add(position);
             if (_positions.Count < batchSize) return;
 
-            await CommitInternal(cancellationToken);
+            await CommitInternal(cancellationToken).NoContext();
         }
     }
 
@@ -54,7 +54,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         await _commitCheckpoint(
             new Checkpoint(_subscriptionId, commitPosition.Position),
             cancellationToken
-        );
+        ).NoContext();
 
         _positions.Clear();
     }

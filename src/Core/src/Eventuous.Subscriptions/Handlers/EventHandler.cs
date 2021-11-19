@@ -36,7 +36,7 @@ public abstract class EventHandler : BaseEventHandler {
 
             async ValueTask<EventHandlingStatus> HandleTypedEvent() {
                 var typedContext = new MessageConsumeContext<T>(context);
-                await handler(typedContext);
+                await handler(typedContext).NoContext();
                 return EventHandlingStatus.Success;
             }
 

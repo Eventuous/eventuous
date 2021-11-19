@@ -27,7 +27,7 @@ public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProduc
             activity.SetTag(Messaging.Destination, stream);
         }
 
-        await ProduceMessages(stream, msgs, options, cancellationToken);
+        await ProduceMessages(stream, msgs, options, cancellationToken).NoContext();
 
         activity?.Dispose();
     }
@@ -81,7 +81,7 @@ public abstract class BaseProducer : IEventProducer {
             activity.SetTag(TelemetryTags.Eventuous.Stream, stream);
         }
 
-        await ProduceMessages(stream, traced.msgs, cancellationToken);
+        await ProduceMessages(stream, traced.msgs, cancellationToken).NoContext();
 
         (Activity? act, ProducedMessage[] msgs) ForOne() {
             var (act, producedMessage) = ProducerActivity.Start(messagesArray[0], DefaultTags);

@@ -12,8 +12,8 @@ static class ChannelExtensions {
     ) {
         try {
             while (!cancellationToken.IsCancellationRequested && !channel.Reader.Completion.IsCompleted) {
-                var element = await channel.Reader.ReadAsync(cancellationToken);
-                await process(element, cancellationToken);
+                var element = await channel.Reader.ReadAsync(cancellationToken).NoContext();
+                await process(element, cancellationToken).NoContext();
             }
         }
         catch (OperationCanceledException) {

@@ -28,7 +28,7 @@ public class MeasuredCheckpointStore : ICheckpointStore {
             idFormat: ActivityIdFormat.W3C
         )?.Start();
 
-        var checkpoint = await _checkpointStore.GetLastCheckpoint(checkpointId, cancellationToken);
+        var checkpoint = await _checkpointStore.GetLastCheckpoint(checkpointId, cancellationToken).NoContext();
 
         activity?.AddBaggage(CheckpointBaggage, checkpoint.Position?.ToString());
         return checkpoint;
@@ -49,6 +49,6 @@ public class MeasuredCheckpointStore : ICheckpointStore {
             .AddBaggage(CheckpointBaggage, checkpoint.Position?.ToString())
             .Start();
 
-        return await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken);
+        return await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
     }
 }

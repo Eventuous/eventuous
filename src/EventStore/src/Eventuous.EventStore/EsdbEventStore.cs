@@ -46,7 +46,7 @@ public class EsdbEventStore : IEventStore {
             cancellationToken: cancellationToken
         );
 
-        var state = await read.ReadState;
+        var state = await read.ReadState.NoContext();
         return state == ReadState.Ok;
     }
 
@@ -196,7 +196,7 @@ public class EsdbEventStore : IEventStore {
             stream,
             () => new ErrorInfo("Unable to read stream {Stream} from {Start}", stream, start),
             (s, ex) => new ReadFromStreamException(s, ex)
-        );
+        ).NoContext();
     }
 
     public Task TruncateStream(
@@ -264,7 +264,7 @@ public class EsdbEventStore : IEventStore {
         Func<string, Exception, Exception> getException
     ) {
         try {
-            return await func();
+            return await func().NoContext();
         }
         catch (StreamNotFoundException) {
             _logger?.LogWarning("Stream {Stream} not found", stream);

@@ -283,7 +283,7 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
 
         async Task<T> TryLoad() {
             var id     = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();
-            var exists = await Store.Exists<T>(id, cancellationToken);
+            var exists = await Store.Exists<T>(id, cancellationToken).NoContext();
             return exists ? await Load().NoContext() : Create();
         }
 
@@ -314,7 +314,7 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
         TCommand          command,
         CancellationToken cancellationToken
     ) {
-        var (state, enumerable) = await Handle(command, cancellationToken);
+        var (state, enumerable) = await Handle(command, cancellationToken).NoContext();
         return new Result(state, enumerable);
     }
 }

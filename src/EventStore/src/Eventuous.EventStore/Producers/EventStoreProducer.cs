@@ -70,7 +70,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
                 options.ConfigureOperation,
                 options.Credentials,
                 cancellationToken
-            );
+            ).NoContext();
         }
     }
 
