@@ -11,13 +11,14 @@ namespace Eventuous.Projections.MongoDB;
 public class MongoCheckpointStore : ICheckpointStore {
     readonly int _batchSize;
 
-    public MongoCheckpointStore(IMongoDatabase database, MongoCheckpointOptions? options = null) {
-        var usedOptions = options ?? new MongoCheckpointOptions();
-        Checkpoints = Ensure.NotNull(database).GetCollection<Checkpoint>(usedOptions.CollectionName);
-        _batchSize  = usedOptions.BatchSize;
+    MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options) {
+        Checkpoints = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
+        _batchSize  = options.BatchSize;
     }
 
-    public MongoCheckpointStore(IMongoDatabase database, IOptions<MongoCheckpointOptions> options)
+    public MongoCheckpointStore(IMongoDatabase database) : this(database, new MongoCheckpointStoreOptions()) { }
+
+    public MongoCheckpointStore(IMongoDatabase database, IOptions<MongoCheckpointStoreOptions> options)
         : this(database, options.Value) { }
 
     IMongoCollection<Checkpoint> Checkpoints { get; }
@@ -61,7 +62,7 @@ public class MongoCheckpointStore : ICheckpointStore {
 }
 
 [PublicAPI]
-public record MongoCheckpointOptions {
+public record MongoCheckpointStoreOptions {
     public string CollectionName { get; init; } = "checkpoint";
     public int    BatchSize      { get; init; }
 }
