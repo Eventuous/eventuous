@@ -28,7 +28,7 @@ public record ErrorResult<TState, TId> : Result<TState, TId>
     }
 
     public ErrorResult(Exception exception) : base(new TState()) {
-        Exception = Ensure.NotNull(exception, nameof(exception));
+        Exception = Ensure.NotNull(exception);
         Message   = exception.Message;
     }
 

@@ -1,5 +1,6 @@
 using Google.Api.Gax;
 using Grpc.Core;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.GooglePubSub.Shared;
 
@@ -13,9 +14,10 @@ public static class PubSub {
     public static async Task CreateTopic(
         TopicName         topicName,
         EmulatorDetection emulatorDetection,
-        ILogger?          log,
         CancellationToken cancellationToken
     ) {
+        var topicString = topicName.ToString();
+
         var publisherServiceApiClient =
             await new PublisherServiceApiClientBuilder {
                     EmulatorDetection = emulatorDetection
@@ -23,16 +25,16 @@ public static class PubSub {
                 .BuildAsync(cancellationToken)
                 .NoContext();
 
-        log?.LogInformation("Checking topic {Topic}", topicName);
+        Log.Info("Checking topic", topicString);
 
         try {
             await publisherServiceApiClient.GetTopicAsync(topicName).NoContext();
-            log?.LogInformation("Topic {Topic} exists", topicName);
+            Log.Info("Topic exists", topicString);
         }
         catch (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
-            log?.LogInformation("Topic {Topic} doesn't exist", topicName);
+            Log.Info("Topic doesn't exist", topicString);
             await publisherServiceApiClient.CreateTopicAsync(topicName).NoContext();
-            log?.LogInformation("Created topic {Topic}", topicName);
+            Log.Info("Created topic", topicString);
         }
     }
 
@@ -41,9 +43,9 @@ public static class PubSub {
         TopicName             topicName,
         Action<Subscription>? configureSubscription,
         EmulatorDetection     emulatorDetection,
-        ILogger?              log,
         CancellationToken     cancellationToken
     ) {
+        var subName = subscriptionName.ToString();
         var subscriberServiceApiClient =
             await new SubscriberServiceApiClientBuilder {
                     EmulatorDetection = emulatorDetection
@@ -51,28 +53,15 @@ public static class PubSub {
                 .BuildAsync(cancellationToken)
                 .NoContext();
 
-        log?.LogInformation(
-            "Checking subscription {Subscription} for {Topic}",
-            subscriptionName,
-            topicName
-        );
+        Log.Info("Checking subscription for topic", subName, topicName.ToString());
 
         try {
             await subscriberServiceApiClient.GetSubscriptionAsync(subscriptionName);
-
-            log?.LogInformation(
-                "Subscription {Subscription} for {Topic} exists",
-                subscriptionName,
-                topicName
-            );
+            Log.Info("Subscription exists", subName);
         }
         catch
             (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
-            log?.LogInformation(
-                "Subscription {Subscription} for {Topic} doesn't exist",
-                subscriptionName,
-                topicName
-            );
+            Log.Info("Subscription doesn't exist", subName);
 
             var subscriptionRequest = new Subscription { AckDeadlineSeconds = 60 };
 
@@ -85,11 +74,7 @@ public static class PubSub {
                 )
                 .NoContext();
 
-            log?.LogInformation(
-                "Created subscription {Subscription} for {Topic}",
-                subscriptionName,
-                topicName
-            );
+            Log.Info("Created subscription", subName);
         }
     }
 }

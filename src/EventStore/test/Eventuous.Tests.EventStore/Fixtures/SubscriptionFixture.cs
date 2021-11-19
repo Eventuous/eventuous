@@ -1,6 +1,5 @@
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
 
@@ -41,8 +40,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
                 SubscriptionId = subscriptionId
             },
             CheckpointStore,
-            new ConsumePipe().AddFilter(new ConsumerFilter(new DefaultConsumer(new IEventHandler[] { Handler }))),
-            loggerFactory
+            new ConsumePipe().AddDefaultConsumer(Handler)
         );
     }
 

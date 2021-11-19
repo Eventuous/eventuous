@@ -22,7 +22,6 @@ public class StreamSubscription
     /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     /// <param name="throwOnError"></param>
     public StreamSubscription(
         EventStoreClient     eventStoreClient,
@@ -32,7 +31,6 @@ public class StreamSubscription
         ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
-        ILoggerFactory?      loggerFactory   = null,
         bool                 throwOnError    = false
     ) : this(
         eventStoreClient,
@@ -44,8 +42,7 @@ public class StreamSubscription
             MetadataSerializer = metaSerializer
         },
         checkpointStore,
-        consumerPipe,
-        loggerFactory
+        consumerPipe
     ) { }
 
     /// <summary>
@@ -55,21 +52,13 @@ public class StreamSubscription
     /// <param name="checkpointStore">Checkpoint store instance</param>
     /// <param name="options">Subscription options</param>
     /// <param name="consumePipe"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     public StreamSubscription(
         EventStoreClient          client,
         StreamSubscriptionOptions options,
         ICheckpointStore          checkpointStore,
-        ConsumePipe               consumePipe,
-        ILoggerFactory?           loggerFactory = null
-    ) : base(
-        client,
-        options,
-        checkpointStore,
-        consumePipe,
-        loggerFactory
-    )
-        => Ensure.NotEmptyString(options.StreamName, nameof(options.StreamName));
+        ConsumePipe               consumePipe
+    ) : base(client, options, checkpointStore, consumePipe)
+        => Ensure.NotEmptyString(options.StreamName);
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var (_, position) = await GetCheckpoint(cancellationToken);

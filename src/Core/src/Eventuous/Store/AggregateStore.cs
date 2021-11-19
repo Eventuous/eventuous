@@ -21,15 +21,12 @@ public class AggregateStore : IAggregateStore {
     ) {
         _getEventMetadata = getEventMetadata;
         _factoryRegistry  = factoryRegistry ?? AggregateFactoryRegistry.Instance;
-        _eventStore       = Ensure.NotNull(eventStore, nameof(eventStore));
+        _eventStore       = Ensure.NotNull(eventStore);
     }
 
-    public async Task<AppendEventsResult> Store<T>(
-        T                 aggregate,
-        CancellationToken cancellationToken
-    )
+    public async Task<AppendEventsResult> Store<T>(T aggregate, CancellationToken cancellationToken)
         where T : Aggregate {
-        Ensure.NotNull(aggregate, nameof(aggregate));
+        Ensure.NotNull(aggregate);
 
         if (aggregate.Changes.Count == 0) return AppendEventsResult.NoOp;
 
@@ -60,7 +57,7 @@ public class AggregateStore : IAggregateStore {
 
     public async Task<T> Load<T>(string id, CancellationToken cancellationToken)
         where T : Aggregate {
-        Ensure.NotEmptyString(id, nameof(id));
+        Ensure.NotEmptyString(id);
 
         const int pageSize = 500;
 

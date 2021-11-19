@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Logging;
+using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.Subscriptions;
 
@@ -41,14 +41,11 @@ public abstract class EventHandler : IEventHandler {
 
             ValueTask NoHandler() {
                 context.Ignore(_myType);
-                Log?.Warn("Handler can't process {Event}", typeof(T).Name);
+                SubscriptionsEventSource.Log.NoHandlerFound(_myType.Name, typeof(T).Name);
                 return default;
             }
         }
     }
-
-    // TODO: This one is always null
-    protected SubscriptionLog? Log { get; set; }
 
     public virtual async ValueTask HandleEvent(IMessageConsumeContext context) {
         if (!_handlersMap.TryGetValue(context.Message!.GetType(), out var handler)) {

@@ -11,13 +11,14 @@ public sealed class ConsumePipe : IAsyncDisposable {
         // Avoid adding one filter instance multiple times
         if (_filters.Any(x => x.FilterInstance == filter)) return this;
 
-        if (_filters.Count > 0 && _filters.First().InContext != typeof(TOut)) {
+        if (_filters.Count > 0 && !_filters.First().InContext.IsAssignableFrom(typeof(TOut))) {
             throw new InvalidContextTypeException(_filters.First().InContext, typeof(TOut));
         }
 
         _filters.AddFirst(
             new Filter(filter, typeof(TIn), typeof(TOut), (ctx, next) => InternalSend(filter, ctx, next))
         );
+
         return this;
     }
 
@@ -27,7 +28,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         // Avoid adding one filter instance multiple times
         if (_filters.Any(x => x.FilterInstance == filter)) return this;
 
-        if (_filters.Count > 1 && _filters.Last().OutContext != typeof(TIn)) {
+        if (_filters.Count > 1 && !_filters.Last().OutContext.IsAssignableFrom(typeof(TIn))) {
             throw new InvalidContextTypeException(_filters.Last().OutContext, typeof(TIn));
         }
 
@@ -49,8 +50,6 @@ public sealed class ConsumePipe : IAsyncDisposable {
         return filter.Send(ctx, next);
     }
 
-    internal bool HasFilter<T>() => _filters.Any(x => x.FilterInstance.GetType() == typeof(T));
-
     public ValueTask Send(IBaseConsumeContext context) => Move(_filters.First, context);
 
     static ValueTask Move(LinkedListNode<Filter>? node, IBaseConsumeContext context)
@@ -61,13 +60,13 @@ public sealed class ConsumePipe : IAsyncDisposable {
             if (filter.FilterInstance is IAsyncDisposable d) await d.DisposeAsync();
         }
     }
-
-    delegate ValueTask SendForward(IBaseConsumeContext ctx, Func<IBaseConsumeContext, ValueTask>? next);
-
-    record Filter(object FilterInstance, Type InContext, Type OutContext, SendForward SendForward);
 }
+
+delegate ValueTask SendForward(IBaseConsumeContext ctx, Func<IBaseConsumeContext, ValueTask>? next);
+
+record Filter(object FilterInstance, Type InContext, Type OutContext, SendForward SendForward);
 
 public class InvalidContextTypeException : Exception {
     public InvalidContextTypeException(Type expected, Type actual)
-        : base($"Expected context type is {expected.Name} for it is {actual.Name}") { }
+        : base($"Expected context type is {expected.Name} but it is {actual.Name}") { }
 }

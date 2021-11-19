@@ -138,12 +138,10 @@ public class RegistrationTests {
     }
 
     class Handler1 : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt)
-            => default;
+        public ValueTask HandleEvent(IMessageConsumeContext evt) => default;
     }
 
     class Handler2 : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt)
-            => default;
+        public ValueTask HandleEvent(IMessageConsumeContext evt) => default;
     }
 }

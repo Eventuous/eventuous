@@ -6,14 +6,12 @@ namespace Eventuous.GooglePubSub.Producers;
 class ClientCache {
     readonly string                _projectId;
     readonly PubSubProducerOptions _options;
-    readonly ILogger?              _log;
 
     readonly ConcurrentDictionary<string, PublisherClient> _clients = new();
 
-    public ClientCache(PubSubProducerOptions options, ILogger? log) {
-        _projectId = Ensure.NotEmptyString(options.ProjectId, nameof(options.ProjectId));
-        _options   = Ensure.NotNull(options, nameof(options));
-        _log       = log;
+    public ClientCache(PubSubProducerOptions options) {
+        _projectId = Ensure.NotEmptyString(options.ProjectId);
+        _options   = Ensure.NotNull(options);
     }
 
     public async Task<PublisherClient> GetOrAddPublisher(string topic, CancellationToken cancellationToken) {
@@ -30,7 +28,6 @@ class ClientCache {
         await PubSub.CreateTopic(
             topicName,
             _options.ClientCreationSettings.DetectEmulator(),
-            _log,
             cancellationToken
         ).NoContext();
 

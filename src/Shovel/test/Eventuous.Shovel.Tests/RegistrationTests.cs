@@ -1,8 +1,7 @@
 ﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Logging;
+using Eventuous.Subscriptions.Filters;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -46,10 +45,7 @@ public class RegistrationTests {
     record TestOptions : SubscriptionOptions;
 
     class TestSub : EventSubscription<TestOptions> {
-        public TestSub(
-            TestOptions     options,
-            MessageConsumer consumePipe
-        ) : base(options, consumePipe) { }
+        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(options, consumePipe) { }
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 

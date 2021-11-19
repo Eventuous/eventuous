@@ -1,5 +1,5 @@
+using Eventuous.Diagnostics.Logging;
 using Eventuous.EventStore.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.App;
@@ -10,13 +10,16 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 
 namespace Eventuous.Tests.EventStore;
 
-public class StreamSubscriptionTests {
-    readonly ILoggerFactory _loggerFactory;
+public sealed class StreamSubscriptionTests : IDisposable {
+    readonly ILoggerFactory       _loggerFactory;
+    readonly LoggingEventListener _listener;
 
     public StreamSubscriptionTests(ITestOutputHelper output) {
         _loggerFactory = LoggerFactory.Create(
             cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug)
         );
+
+        _listener = new LoggingEventListener(_loggerFactory);
     }
 
     [Fact]
@@ -38,7 +41,10 @@ public class StreamSubscriptionTests {
         }
         catch (StreamNotFound) { }
 
-        var commands = Enumerable.Range(0, 100)
+        const int produceCount = 20;
+        const int deleteCount  = 5;
+
+        var commands = Enumerable.Range(0, produceCount)
             .Select(_ => DomainFixture.CreateImportBooking())
             .ToArray();
 
@@ -46,7 +52,7 @@ public class StreamSubscriptionTests {
             commands.Select(x => service.Handle(x, CancellationToken.None))
         );
 
-        var delete = Enumerable.Range(20, 10).Select(x => commands[x]).ToList();
+        var delete = Enumerable.Range(5, deleteCount).Select(x => commands[x]).ToList();
 
         await Task.WhenAll(
             delete
@@ -72,15 +78,14 @@ public class StreamSubscriptionTests {
                 ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
-            new ConsumePipe().AddFilter(new ConsumerFilter(new DefaultConsumer(new IEventHandler[] { handler }))),
-            _loggerFactory
+            new ConsumePipe().AddDefaultConsumer(handler)
         );
 
         var log = _loggerFactory.CreateLogger("Test");
 
         await subscription.SubscribeWithLog(log);
 
-        while (handler.Count < 90) {
+        while (handler.Count < produceCount - deleteCount) {
             await Task.Delay(100);
         }
 
@@ -114,5 +119,10 @@ public class StreamSubscriptionTests {
 
             return default;
         }
+    }
+
+    public void Dispose() {
+        _loggerFactory.Dispose();
+        _listener.Dispose();
     }
 }

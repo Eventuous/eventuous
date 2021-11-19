@@ -1,4 +1,6 @@
-namespace Eventuous; 
+using System.Runtime.CompilerServices;
+
+namespace Eventuous;
 
 [PublicAPI]
 public static class Ensure {
@@ -10,7 +12,7 @@ public static class Ensure {
     /// <typeparam name="T">Object type</typeparam>
     /// <returns>Non-null object value</returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static T NotNull<T>(T? value, string name) where T : class
+    public static T NotNull<T>(T? value, [CallerArgumentExpression("value")] string? name = default) where T : class
         => value ?? throw new ArgumentNullException(name);
 
     /// <summary>
@@ -20,9 +22,9 @@ public static class Ensure {
     /// <param name="name">Name of the parameter to be used in the exception message</param>
     /// <returns>Non-null and not empty string</returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static string NotEmptyString(string? value, string name)
+    public static string NotEmptyString(string? value, [CallerArgumentExpression("value")] string? name = default)
         => !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentNullException(name);
-        
+
     /// <summary>
     /// Throws a <see cref="DomainException"/> with a given message if the condition is not met
     /// </summary>

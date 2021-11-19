@@ -1,7 +1,5 @@
-using System.Net.NetworkInformation;
 using Eventuous.GooglePubSub.Shared;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
@@ -36,14 +34,12 @@ public class GooglePubSubSubscription
     /// <param name="subscriptionId">Google PubSub subscription ID (within the project), which must already exist</param>
     /// <param name="consumePipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     public GooglePubSubSubscription(
         string            projectId,
         string            topicId,
         string            subscriptionId,
         ConsumePipe       consumePipe,
-        IEventSerializer? eventSerializer = null,
-        ILoggerFactory?   loggerFactory   = null
+        IEventSerializer? eventSerializer = null
     ) : this(
         new PubSubSubscriptionOptions {
             SubscriptionId  = subscriptionId,
@@ -51,8 +47,7 @@ public class GooglePubSubSubscription
             TopicId         = topicId,
             EventSerializer = eventSerializer
         },
-        consumePipe,
-        loggerFactory
+        consumePipe
     ) { }
 
     /// <summary>
@@ -60,27 +55,19 @@ public class GooglePubSubSubscription
     /// </summary>
     /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
     /// <param name="consumePipe"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
-    public GooglePubSubSubscription(
-        PubSubSubscriptionOptions options,
-        ConsumePipe               consumePipe,
-        ILoggerFactory?           loggerFactory = null
-    ) : base(
-        options,
-        consumePipe,
-        loggerFactory
-    ) {
-        _failureHandler = Ensure.NotNull(options, nameof(options)).FailureHandler
+    public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe)
+        : base(options, consumePipe) {
+        _failureHandler = Ensure.NotNull(options).FailureHandler
                        ?? DefaultEventProcessingErrorHandler;
 
         _subscriptionName = SubscriptionName.FromProjectSubscription(
-            Ensure.NotEmptyString(options.ProjectId, nameof(options.ProjectId)),
-            Ensure.NotEmptyString(options.SubscriptionId, nameof(options.SubscriptionId))
+            Ensure.NotEmptyString(options.ProjectId),
+            Ensure.NotEmptyString(options.SubscriptionId)
         );
 
         _topicName = TopicName.FromProjectTopic(
             options.ProjectId,
-            Ensure.NotEmptyString(options.TopicId, nameof(options.TopicId))
+            Ensure.NotEmptyString(options.TopicId)
         );
     }
 
@@ -153,14 +140,13 @@ public class GooglePubSubSubscription
     ) {
         var emulator = Options.ClientCreationSettings.DetectEmulator();
 
-        await PubSub.CreateTopic(topicName, emulator, Log, cancellationToken).NoContext();
+        await PubSub.CreateTopic(topicName, emulator, cancellationToken).NoContext();
 
         await PubSub.CreateSubscription(
             subscriptionName,
             topicName,
             configureSubscription,
             emulator,
-            Log,
             cancellationToken
         ).NoContext();
     }

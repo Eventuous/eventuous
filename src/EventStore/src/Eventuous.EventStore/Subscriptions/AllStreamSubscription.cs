@@ -1,6 +1,5 @@
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
@@ -22,7 +21,6 @@ public class AllStreamSubscription
     /// <param name="consumePipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     /// <param name="eventFilter">Optional: server-side event filter</param>
     public AllStreamSubscription(
         EventStoreClient     eventStoreClient,
@@ -31,7 +29,6 @@ public class AllStreamSubscription
         ConsumePipe          consumePipe,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
-        ILoggerFactory?      loggerFactory   = null,
         IEventFilter?        eventFilter     = null
     ) : this(
         eventStoreClient,
@@ -42,8 +39,7 @@ public class AllStreamSubscription
             EventFilter        = eventFilter
         },
         checkpointStore,
-        consumePipe,
-        loggerFactory
+        consumePipe
     ) { }
 
     /// <summary>
@@ -53,20 +49,12 @@ public class AllStreamSubscription
     /// <param name="options"></param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
     /// <param name="consumePipe"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     public AllStreamSubscription(
         EventStoreClient             eventStoreClient,
         AllStreamSubscriptionOptions options,
         ICheckpointStore             checkpointStore,
-        ConsumePipe                  consumePipe,
-        ILoggerFactory?              loggerFactory = null
-    ) : base(
-        eventStoreClient,
-        options,
-        checkpointStore,
-        consumePipe,
-        loggerFactory
-    ) { }
+        ConsumePipe                  consumePipe
+    ) : base(eventStoreClient, options, checkpointStore, consumePipe) { }
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var filterOptions = new SubscriptionFilterOptions(

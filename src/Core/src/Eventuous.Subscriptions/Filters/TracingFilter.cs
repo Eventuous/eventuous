@@ -11,19 +11,21 @@ public class TracingFilter : ConsumeFilter {
 
     public TracingFilter(params KeyValuePair<string, object?>[] tags) => _defaultTags = tags;
 
-    public override async ValueTask Send(IMessageConsumeContext context, Func<IMessageConsumeContext, ValueTask> next) {
-        if (context.Message == null) return;
+    public override async ValueTask Send(IMessageConsumeContext context, Func<IMessageConsumeContext, ValueTask>? next) {
+        if (context.Message == null || next == null) return;
         
         using var activity = Activity.Current?.Context != context.ParentContext
             ? SubscriptionActivity.Start(context, _defaultTags) : Activity.Current;
 
-        activity?.SetContextTags(context)?.Start();
+        activity?.SetContextTags(context);
 
         try {
             await next(context).NoContext();
+            if (activity != null && context.WasIgnored())
+                activity.ActivityTraceFlags = ActivityTraceFlags.None;
         }
         catch (Exception e) {
-            activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
+            activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
             throw;
         }
     }

@@ -74,8 +74,8 @@
         <MicrosoftTestHostVer>[5.0,)</MicrosoftTestHostVer>
     </PropertyGroup>
     <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net6.0'">
-        <MicrosoftExtensionsVer>[5.0,)</MicrosoftExtensionsVer>
-        <MicrosoftTestHostVer>[5.0,)</MicrosoftTestHostVer>
+        <MicrosoftExtensionsVer>[6.0,)</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>[6.0,)</MicrosoftTestHostVer>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">

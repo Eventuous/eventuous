@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -77,13 +78,17 @@ public abstract class SubscriptionBuilder {
     /// <returns></returns>
     [PublicAPI]
     public SubscriptionBuilder UseConsumer(Func<IServiceProvider, IEventHandler[], IMessageConsumer> getConsumer) {
-        Ensure.NotNull(getConsumer, nameof(getConsumer));
+        Ensure.NotNull(getConsumer);
         ResolveConsumer = sp => getConsumer(sp, ResolveHandlers(sp));
         return this;
     }
 
     void AddHandlerResolve(ResolveHandler resolveHandler)
-        => _handlers.Add(sp => new TracedEventHandler(resolveHandler(sp)));
+        => _handlers.Add(sp => {
+                var handler = resolveHandler(sp);
+                return EventuousDiagnostics.Enabled ? new TracedEventHandler(handler) : handler;
+            }
+        );
 }
 
 public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
@@ -134,7 +139,9 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         if (_resolvedSubscription != null) return _resolvedSubscription;
 
         var consumer = GetConsumer(sp);
-        if (!Pipe.HasFilter<TracingFilter>()) Pipe.AddFilter(new TracingFilter());
+
+        if (EventuousDiagnostics.Enabled) Pipe.AddFilter(new TracingFilter());
+
         Pipe.AddFilter(new ConsumerFilter(consumer));
 
         var constructors = typeof(T).GetConstructors<TOptions>();

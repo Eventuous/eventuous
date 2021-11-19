@@ -26,7 +26,7 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
         _stream   = new StreamName($"test-{Guid.NewGuid():N}");
         _output   = outputHelper;
 
-        _es = new TestEventListener(outputHelper, "eventuous", "OpenTelemetry");
+        _es = new TestEventListener(outputHelper);
 
         var builder = new WebHostBuilder()
             .Configure(_ => { })

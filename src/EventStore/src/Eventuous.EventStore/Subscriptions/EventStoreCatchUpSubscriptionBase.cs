@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 
@@ -15,16 +14,13 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         EventStoreClient eventStoreClient,
         T                options,
         ICheckpointStore checkpointStore,
-        ConsumePipe      consumePipe,
-        ILoggerFactory?  loggerFactory = null
+        ConsumePipe      consumePipe
     ) : base(
         eventStoreClient,
         options,
-        ConfigurePipe(consumePipe),
-        loggerFactory
-    ) {
-        CheckpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
-    }
+        ConfigurePipe(consumePipe)
+    )
+        => CheckpointStore = Ensure.NotNull(checkpointStore);
 
     static ConsumePipe ConfigurePipe(ConsumePipe pipe)
         => pipe
@@ -33,12 +29,18 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected ValueTask HandleInternal(IMessageConsumeContext context) {
-        var ctx = new DelayedAckConsumeContext(Ack, context);
+        var ctx = new DelayedAckConsumeContext(context, Ack, Nack);
         return Handler(ctx);
 
         ValueTask Ack(CancellationToken ct) {
             var position = EventPosition.FromContext(context);
             return StoreCheckpoint(position, ct);
+        }
+
+        ValueTask Nack(Exception exception, CancellationToken ct) {
+            if (Options.ThrowOnError) throw exception;
+
+            return Ack(ct);
         }
     }
 
@@ -69,12 +71,8 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         try {
             Subscription?.Dispose();
         }
-        catch (Exception e) {
-            Log.LogInformation(
-                "Subscription {SubscriptionId} stopped: {Message}",
-                SubscriptionId,
-                e.Message
-            );
+        catch (Exception) {
+            // Nothing to see here
         }
 
         return default;

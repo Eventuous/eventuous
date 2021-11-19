@@ -6,7 +6,7 @@ namespace Eventuous.TestHelpers;
 
 public static class TestHelper {
     public static IEventHandler[]? GetHandlers(this ConsumePipe pipe) {
-        var filters       = pipe.GetPrivateMember<List<Filter>>("_filters");
+        var filters       = pipe.GetPrivateMember<LinkedList<Filter>>("_filters");
         var consumeFilter = filters!.Last().FilterInstance;
         var consumer      = consumeFilter.GetPrivateMember("_consumer")!;
         var handlers      = consumer.GetPrivateMember<IEventHandler[]>("_eventHandlers");

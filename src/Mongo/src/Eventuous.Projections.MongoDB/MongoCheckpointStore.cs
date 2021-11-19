@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver.Linq;
 using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 
-namespace Eventuous.Projections.MongoDB; 
+namespace Eventuous.Projections.MongoDB;
 
 [PublicAPI]
 public class MongoCheckpointStore : ICheckpointStore {
@@ -12,9 +12,11 @@ public class MongoCheckpointStore : ICheckpointStore {
     readonly ILogger<MongoCheckpointStore>? _log;
 
     public MongoCheckpointStore(
-        IMongoCollection<Checkpoint> database, int batchSize, ILogger<MongoCheckpointStore>? logger
+        IMongoCollection<Checkpoint>   database,
+        int                            batchSize,
+        ILogger<MongoCheckpointStore>? logger
     ) {
-        Checkpoints = Ensure.NotNull(database, nameof(database));
+        Checkpoints = Ensure.NotNull(database);
         _batchSize  = batchSize;
         _log        = logger;
     }
@@ -28,7 +30,8 @@ public class MongoCheckpointStore : ICheckpointStore {
     IMongoCollection<Checkpoint> Checkpoints { get; }
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(
-        string checkpointId, CancellationToken cancellationToken = default
+        string            checkpointId,
+        CancellationToken cancellationToken = default
     ) {
         _log?.LogDebug("[{CheckpointId}] Finding checkpoint...", checkpointId);
 
@@ -61,7 +64,8 @@ public class MongoCheckpointStore : ICheckpointStore {
     readonly ConcurrentDictionary<string, int> _counters = new();
 
     public async ValueTask<Checkpoint> StoreCheckpoint(
-        Checkpoint checkpoint, CancellationToken cancellationToken = default
+        Checkpoint        checkpoint,
+        CancellationToken cancellationToken = default
     ) {
         _counters[checkpoint.Id]++;
         if (_counters[checkpoint.Id] < _batchSize) return checkpoint;

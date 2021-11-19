@@ -9,7 +9,8 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Persistent subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>, IMeasuredSubscription {
+public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
+    IMeasuredSubscription {
     public delegate Task HandleEventProcessingFailure(
         EventStoreClient       client,
         PersistentSubscription subscription,
@@ -25,15 +26,9 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
     public StreamPersistentSubscription(
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
-        ConsumePipe                         consumePipe,
-        ILoggerFactory?                     loggerFactory = null
-    ) : base(
-        eventStoreClient,
-        options,
-        consumePipe,
-        loggerFactory
-    ) {
-        Ensure.NotEmptyString(options.Stream, nameof(options.Stream));
+        ConsumePipe                         consumePipe
+    ) : base(eventStoreClient, options, consumePipe) {
+        Ensure.NotEmptyString(options.Stream);
 
         var settings   = eventStoreClient.GetSettings().Copy();
         var opSettings = settings.OperationOptions.Clone();
@@ -55,15 +50,13 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
     /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     public StreamPersistentSubscription(
         EventStoreClient     eventStoreClient,
         StreamName           streamName,
         string               subscriptionId,
         ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
-        IMetadataSerializer? metaSerializer  = null,
-        ILoggerFactory?      loggerFactory   = null
+        IMetadataSerializer? metaSerializer  = null
     ) : this(
         eventStoreClient,
         new StreamPersistentSubscriptionOptions {
@@ -72,8 +65,7 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
-        consumerPipe.AddFilterFirst(new MessageFilter(ctx => !ctx.MessageType.StartsWith("$"))),
-        loggerFactory
+        consumerPipe.AddFilterFirst(new MessageFilter(ctx => !ctx.MessageType.StartsWith("$")))
     ) { }
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {

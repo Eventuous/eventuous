@@ -1,5 +1,4 @@
 using Eventuous.Subscriptions.Registrations;
-using Microsoft.Extensions.DependencyInjection;
 using Polly;
 
 namespace Eventuous.Subscriptions.Polly;
@@ -38,15 +37,4 @@ public static class SubscriptionBuilderExtensions {
             getHandler,
             h => new PollyEventHandler(h, retryPolicy)
         );
-
-    static IEventHandler? Resolve<THandler>(
-        string           subscriptionId,
-        IServiceProvider sp,
-        string           id,
-        IAsyncPolicy     retryPolicy
-    ) where THandler : class, IEventHandler
-        => id == subscriptionId ? new PollyEventHandler(
-            sp.GetRequiredService<THandler>(),
-            retryPolicy
-        ) : null;
 }

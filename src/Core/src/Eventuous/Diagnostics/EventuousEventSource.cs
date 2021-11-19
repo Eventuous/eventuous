@@ -3,7 +3,11 @@ using System.Diagnostics.Tracing;
 
 namespace Eventuous.Diagnostics;
 
-[EventSource(Name = "eventuous")]
+public static class DiagnosticName {
+    public const string BaseName = "eventuous";
+}
+
+[EventSource(Name = DiagnosticName.BaseName)]
 class EventuousEventSource : EventSource {
     public static readonly EventuousEventSource Log = new();
 
@@ -29,7 +33,7 @@ class EventuousEventSource : EventSource {
     public void CommandHandlerNotFound(string commandType) => WriteEvent(1, commandType);
 
     [Event(2, Message = "Error handling command: '{0}' {1}", Level = EventLevel.Error)]
-    public void ErrorHandlingCommand(string commandType, string exception) => WriteEvent(2, commandType);
+    public void ErrorHandlingCommand(string commandType, string exception) => WriteEvent(2, commandType, exception);
 
     [Event(3, Message = "Command handler already registered for {0}", Level = EventLevel.Critical)]
     public void CommandHandlerAlreadyRegistered(string type) => WriteEvent(3, type);

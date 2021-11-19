@@ -34,13 +34,13 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
     /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     protected void OnNew<TCommand>(ActOnAggregate<TCommand> action)
-        where TCommand : class => _handlers.Add(
-        typeof(TCommand),
-        new RegisteredHandler<T>(
-            ExpectedState.New,
-            (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
-        )
-    );
+        where TCommand : class
+        => _handlers.AddHandler<TCommand>(
+            new RegisteredHandler<T>(
+                ExpectedState.New,
+                (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
+            )
+        );
 
     /// <summary>
     /// Register an asynchronous handler for a command, which is expected to create a new aggregate instance.
@@ -327,7 +327,8 @@ record RegisteredHandler<T>(
 class HandlersMap<T> : Dictionary<Type, RegisteredHandler<T>> {
     public void AddHandler<TCommand>(RegisteredHandler<T> handler) {
         if (ContainsKey(typeof(TCommand))) {
-            throw new Exceptions.CommandHandlerAlreadyRegistered<T>();
+            EventuousEventSource.Log.CommandHandlerAlreadyRegistered<TCommand>();
+            throw new Exceptions.CommandHandlerAlreadyRegistered<TCommand>();
         }
 
         Add(typeof(TCommand), handler);

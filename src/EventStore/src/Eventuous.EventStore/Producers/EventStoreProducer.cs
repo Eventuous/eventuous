@@ -24,7 +24,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         IEventSerializer?    serializer     = null,
         IMetadataSerializer? metaSerializer = null
     ) : base(TracingOptions) {
-        _client         = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
+        _client         = Ensure.NotNull(eventStoreClient);
         _serializer     = serializer ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
 
@@ -43,7 +43,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         IMetadataSerializer?     metaSerializer = null
     )
         : this(
-            new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
+            new EventStoreClient(Ensure.NotNull(clientSettings)),
             serializer,
             metaSerializer
         ) { }
@@ -62,7 +62,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
     ) {
         var options = produceOptions ?? EventStoreProduceOptions.Default;
 
-        foreach (var chunk in Ensure.NotNull(messages, nameof(messages)).Chunks(options.MaxAppendEventsCount)) {
+        foreach (var chunk in Ensure.NotNull(messages).Chunks(options.MaxAppendEventsCount)) {
             await _client.AppendToStreamAsync(
                 stream,
                 options.ExpectedState,
@@ -75,7 +75,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
     }
 
     EventData CreateMessage(ProducedMessage message) {
-        var msg = Ensure.NotNull(message.Message, nameof(message));
+        var msg = Ensure.NotNull(message.Message);
         var (eventType, payload) = _serializer.SerializeEvent(msg);
         message.Metadata!.Remove(MetaTags.MessageId);
         var metaBytes = _metaSerializer.Serialize(message.Metadata);

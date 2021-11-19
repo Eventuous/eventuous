@@ -1,10 +1,8 @@
 using Eventuous.GooglePubSub.Producers;
 using Eventuous.GooglePubSub.Subscriptions;
 using Eventuous.Producers;
-using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
-using FluentAssertions.Execution;
 using Hypothesist;
 
 namespace Eventuous.Tests.GooglePubSub;
@@ -31,17 +29,13 @@ public class PubSubTests : IAsyncLifetime {
 
         _handler = new TestEventHandler();
 
-        _producer = new GooglePubSubProducer(
-            PubSubFixture.ProjectId,
-            loggerFactory: loggerFactory
-        );
+        _producer = new GooglePubSubProducer(PubSubFixture.ProjectId);
 
         _subscription = new GooglePubSubSubscription(
             PubSubFixture.ProjectId,
             _pubsubTopic,
             _pubsubSubscription,
-            new DefaultConsumer(new IEventHandler[] { _handler }),
-            loggerFactory: loggerFactory
+            new ConsumePipe().AddDefaultConsumer(_handler)
         );
     }
 
