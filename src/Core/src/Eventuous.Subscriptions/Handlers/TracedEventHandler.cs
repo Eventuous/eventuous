@@ -30,7 +30,7 @@ public class TracedEventHandler : IEventHandler {
         try {
             var status = await _inner.HandleEvent(context).NoContext();
 
-            if (activity != null && context.WasIgnoredBy(DiagnosticName))
+            if (activity != null && status == EventHandlingStatus.Ignored)
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;
 
             return status;
