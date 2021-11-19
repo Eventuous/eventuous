@@ -17,11 +17,11 @@ public static class SubscriptionRegistrationExtensions {
         string                                   subscriptionId,
         Action<SubscriptionBuilder<T, TOptions>> configureSubscription
     ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
-        Ensure.NotNull(configureSubscription, nameof(configureSubscription));
+        Ensure.NotNull(configureSubscription);
 
         var builder = new SubscriptionBuilder<T, TOptions>(
-            Ensure.NotNull(services, nameof(services)),
-            Ensure.NotEmptyString(subscriptionId, nameof(subscriptionId))
+            Ensure.NotNull(services),
+            Ensure.NotEmptyString(subscriptionId)
         );
 
         configureSubscription(builder);

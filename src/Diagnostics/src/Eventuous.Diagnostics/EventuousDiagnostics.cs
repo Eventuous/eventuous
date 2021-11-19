@@ -8,10 +8,16 @@ public static class EventuousDiagnostics {
     static readonly AssemblyName AssemblyName = typeof(Metadata).Assembly.GetName();
     static readonly Version?     Version      = AssemblyName.Version;
 
-    public const string InstrumentationName = "eventuous";
+    static EventuousDiagnostics() {
+        Enabled = Environment.GetEnvironmentVariable("EVENTUOUS_DISABLE_DIAGS") != "1";
+    }
+
+    public const string InstrumentationName = DiagnosticName.BaseName;
 
     static ActivitySource?   _activitySource;
     static ActivityListener? _listener;
+
+    public static bool Enabled { get; }
 
     public static ActivitySource ActivitySource {
         get {

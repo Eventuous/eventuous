@@ -32,7 +32,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
     ) : base(TracingOptions) {
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
-        _connectionFactory = Ensure.NotNull(connectionFactory, nameof(connectionFactory));
+        _connectionFactory = Ensure.NotNull(connectionFactory);
     }
 
     public Task StartAsync(CancellationToken cancellationToken = default) {

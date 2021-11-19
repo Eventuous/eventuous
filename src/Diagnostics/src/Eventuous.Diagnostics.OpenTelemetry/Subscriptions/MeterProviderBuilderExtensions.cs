@@ -12,7 +12,7 @@ public static class MeterProviderBuilderExtensions {
     /// <param name="builder"></param>
     /// <returns></returns>
     public static MeterProviderBuilder AddEventuousSubscriptions(this MeterProviderBuilder builder) {
-        Ensure.NotNull(builder, nameof(builder));
+        Ensure.NotNull(builder);
 
         var meterName = SubscriptionGapMetric.MeterName;
 

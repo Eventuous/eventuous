@@ -2,7 +2,6 @@
     <ItemGroup>
         <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="21.2.0" />
         <PackageReference Include="EventStore.Client.Grpc.Streams" Version="21.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.*" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />

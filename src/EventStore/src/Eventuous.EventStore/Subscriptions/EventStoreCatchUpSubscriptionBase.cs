@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -14,34 +14,33 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         EventStoreClient eventStoreClient,
         T                options,
         ICheckpointStore checkpointStore,
-        IMessageConsumer consumer,
-        ILoggerFactory?  loggerFactory = null
+        ConsumePipe      consumePipe
     ) : base(
         eventStoreClient,
         options,
-        GetConsumer(consumer),
-        loggerFactory
-    ) {
-        CheckpointStore = Ensure.NotNull(checkpointStore, nameof(checkpointStore));
-    }
+        ConfigurePipe(consumePipe)
+    )
+        => CheckpointStore = Ensure.NotNull(checkpointStore);
 
-    static IMessageConsumer GetConsumer(IMessageConsumer inner)
-        => new FilterConsumer(
-            new ConcurrentConsumer(inner, 1, 1),
-            ctx => !ctx.MessageType.StartsWith("$")
-        );
+    static ConsumePipe ConfigurePipe(ConsumePipe pipe)
+        => pipe
+            .AddFilterFirst(new MessageFilter(ctx => !ctx.MessageType.StartsWith("$")))
+            .AddFilterFirst(new ConcurrentFilter(1));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected ValueTask HandleInternal(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
-        var ctx = new DelayedAckConsumeContext(Ack, context);
-        return Handler(ctx, cancellationToken);
+    protected ValueTask HandleInternal(IMessageConsumeContext context) {
+        var ctx = new DelayedAckConsumeContext(context, Ack, Nack);
+        return Handler(ctx);
 
         ValueTask Ack(CancellationToken ct) {
             var position = EventPosition.FromContext(context);
             return StoreCheckpoint(position, ct);
+        }
+
+        ValueTask Nack(Exception exception, CancellationToken ct) {
+            if (Options.ThrowOnError) throw exception;
+
+            return Ack(ct);
         }
     }
 
@@ -72,12 +71,8 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         try {
             Subscription?.Dispose();
         }
-        catch (Exception e) {
-            Log.LogInformation(
-                "Subscription {SubscriptionId} stopped: {Message}",
-                SubscriptionId,
-                e.Message
-            );
+        catch (Exception) {
+            // Nothing to see here
         }
 
         return default;

@@ -18,7 +18,7 @@ public class EsdbEventStore : IEventStore {
         ILogger<EsdbEventStore>? logger         = null
     ) {
         _logger         = logger;
-        _client         = Ensure.NotNull(client, nameof(client));
+        _client         = Ensure.NotNull(client);
         _serializer     = serializer ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
     }
@@ -30,7 +30,7 @@ public class EsdbEventStore : IEventStore {
         ILogger<EsdbEventStore>? logger         = null
     )
         : this(
-            new EventStoreClient(Ensure.NotNull(clientSettings, nameof(clientSettings))),
+            new EventStoreClient(Ensure.NotNull(clientSettings)),
             serializer,
             metaSerializer,
             logger

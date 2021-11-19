@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Logging;
+using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.Subscriptions;
 
@@ -31,36 +31,30 @@ public abstract class EventHandler : IEventHandler {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        ValueTask Handle(IMessageConsumeContext context, CancellationToken cancellationToken) {
+        ValueTask Handle(IMessageConsumeContext context) {
             return context.Message is not T ? NoHandler() : HandleTypedEvent();
 
             ValueTask HandleTypedEvent() {
                 var typedContext = new MessageConsumeContext<T>(context);
-                return handler(typedContext, cancellationToken);
+                return handler(typedContext);
             }
 
             ValueTask NoHandler() {
                 context.Ignore(_myType);
-                Log?.Warn("Handler can't process {Event}", typeof(T).Name);
+                SubscriptionsEventSource.Log.NoHandlerFound(_myType.Name, typeof(T).Name);
                 return default;
             }
         }
     }
 
-    // TODO: This one is always null
-    protected SubscriptionLog? Log { get; set; }
-
-    public virtual async ValueTask HandleEvent(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    public virtual async ValueTask HandleEvent(IMessageConsumeContext context) {
         if (!_handlersMap.TryGetValue(context.Message!.GetType(), out var handler)) {
             context.Ignore(_myType);
             return;
         }
 
         try {
-            await handler(context, cancellationToken);
+            await handler(context).NoContext();
             context.Ack(_myType);
         }
         catch (Exception e) {
@@ -79,17 +73,12 @@ public abstract class EventHandler : IEventHandler {
         return sb.ToString();
     }
 
-    delegate ValueTask HandleUntypedEvent(
-        IMessageConsumeContext evt,
-        CancellationToken      cancellationToken
-    );
+    delegate ValueTask HandleUntypedEvent(IMessageConsumeContext evt);
 }
 
 [PublicAPI]
 [Obsolete("Use EventHandler instead")]
 public abstract class TypedEventHandler : EventHandler { }
 
-public delegate ValueTask HandleTypedEvent<T>(
-    MessageConsumeContext<T> consumeContext,
-    CancellationToken        cancellationToken
-) where T : class;
+public delegate ValueTask HandleTypedEvent<T>(MessageConsumeContext<T> consumeContext)
+    where T : class;

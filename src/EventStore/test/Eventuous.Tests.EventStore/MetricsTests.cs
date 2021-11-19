@@ -26,7 +26,7 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
         _stream   = new StreamName($"test-{Guid.NewGuid():N}");
         _output   = outputHelper;
 
-        _es = new TestEventListener(outputHelper, "eventuous", "OpenTelemetry");
+        _es = new TestEventListener(outputHelper);
 
         var builder = new WebHostBuilder()
             .Configure(_ => { })
@@ -87,10 +87,8 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
     public Task DisposeAsync() => _host.Host.StopAsync();
 
     class TestHandler : IEventHandler {
-        public async ValueTask HandleEvent(
-            IMessageConsumeContext context,
-            CancellationToken      cancellationToken
-        ) => await Task.Delay(10, cancellationToken);
+        public async ValueTask HandleEvent(IMessageConsumeContext context)
+            => await Task.Delay(10, context.CancellationToken);
     }
 
     [ExportModes(ExportModes.Pull)]

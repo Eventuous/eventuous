@@ -7,8 +7,8 @@ using Exception = System.Exception;
 
 namespace Eventuous.Subscriptions.Consumers;
 
-public class TracedConsumer : IMessageConsumer {
-    public TracedConsumer(IMessageConsumer messageConsumer) {
+public class TracedConsumer : MessageConsumer {
+    public TracedConsumer(MessageConsumer messageConsumer) {
         _inner = messageConsumer;
 
         _defaultTags = new[] {
@@ -20,12 +20,9 @@ public class TracedConsumer : IMessageConsumer {
     }
 
     readonly KeyValuePair<string, object?>[] _defaultTags;
-    readonly IMessageConsumer                _inner;
+    readonly MessageConsumer                _inner;
 
-    public async ValueTask Consume(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    public override async ValueTask Consume(IMessageConsumeContext context) {
         if (context.Message == null) return;
 
         using var activity = Activity.Current?.Context != context.ParentContext
@@ -34,7 +31,7 @@ public class TracedConsumer : IMessageConsumer {
         activity?.SetContextTags(context)?.Start();
 
         try {
-            await _inner.Consume(context, cancellationToken);
+            await _inner.Consume(context).NoContext();
         }
         catch (Exception e) {
             activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));

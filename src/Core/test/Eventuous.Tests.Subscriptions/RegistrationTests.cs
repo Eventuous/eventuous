@@ -1,8 +1,8 @@
 ﻿using Eventuous.Diagnostics.OpenTelemetry.Subscriptions;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 using Eventuous.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -46,8 +46,8 @@ public class RegistrationTests {
     [InlineData(1, typeof(Handler2))]
     public void SubsShouldHaveHandlers(int position, Type handlerType) {
         var subs     = _provider.GetServices<TestSub>().ToArray();
-        var consumer = subs[position].Consumer;
-        var handlers = consumer.GetNestedConsumerHandlers();
+        var consumer = subs[position].Pipe;
+        var handlers = consumer.GetHandlers();
 
         handlers.Should().NotBeNull();
         handlers!.Length.Should().Be(1);
@@ -125,7 +125,7 @@ public class RegistrationTests {
     }
 
     class TestSub : EventSubscription<TestOptions>, IMeasuredSubscription {
-        public TestSub(TestOptions options, IMessageConsumer consumer) : base(options, consumer) { }
+        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(options, consumePipe) { }
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
@@ -138,12 +138,10 @@ public class RegistrationTests {
     }
 
     class Handler1 : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
-            => default;
+        public ValueTask HandleEvent(IMessageConsumeContext evt) => default;
     }
 
     class Handler2 : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt, CancellationToken cancellationToken)
-            => default;
+        public ValueTask HandleEvent(IMessageConsumeContext evt) => default;
     }
 }

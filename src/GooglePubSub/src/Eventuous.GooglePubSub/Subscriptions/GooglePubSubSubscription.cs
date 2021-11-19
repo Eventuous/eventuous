@@ -1,8 +1,8 @@
 using Eventuous.GooglePubSub.Shared;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 using Google.Protobuf.Collections;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
@@ -32,16 +32,14 @@ public class GooglePubSubSubscription
     /// <param name="projectId">GCP project ID</param>
     /// <param name="topicId"></param>
     /// <param name="subscriptionId">Google PubSub subscription ID (within the project), which must already exist</param>
-    /// <param name="consumer"></param>
+    /// <param name="consumePipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     public GooglePubSubSubscription(
         string            projectId,
         string            topicId,
         string            subscriptionId,
-        IMessageConsumer  consumer,
-        IEventSerializer? eventSerializer = null,
-        ILoggerFactory?   loggerFactory   = null
+        ConsumePipe       consumePipe,
+        IEventSerializer? eventSerializer = null
     ) : this(
         new PubSubSubscriptionOptions {
             SubscriptionId  = subscriptionId,
@@ -49,36 +47,27 @@ public class GooglePubSubSubscription
             TopicId         = topicId,
             EventSerializer = eventSerializer
         },
-        consumer,
-        loggerFactory
+        consumePipe
     ) { }
 
     /// <summary>
     /// Creates a Google PubSub subscription service
     /// </summary>
     /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
-    /// <param name="consumer"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
-    public GooglePubSubSubscription(
-        PubSubSubscriptionOptions options,
-        IMessageConsumer          consumer,
-        ILoggerFactory?           loggerFactory = null
-    ) : base(
-        options,
-        consumer,
-        loggerFactory
-    ) {
-        _failureHandler = Ensure.NotNull(options, nameof(options)).FailureHandler
+    /// <param name="consumePipe"></param>
+    public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe)
+        : base(options, consumePipe) {
+        _failureHandler = Ensure.NotNull(options).FailureHandler
                        ?? DefaultEventProcessingErrorHandler;
 
         _subscriptionName = SubscriptionName.FromProjectSubscription(
-            Ensure.NotEmptyString(options.ProjectId, nameof(options.ProjectId)),
-            Ensure.NotEmptyString(options.SubscriptionId, nameof(options.SubscriptionId))
+            Ensure.NotEmptyString(options.ProjectId),
+            Ensure.NotEmptyString(options.SubscriptionId)
         );
 
         _topicName = TopicName.FromProjectTopic(
             options.ProjectId,
-            Ensure.NotEmptyString(options.TopicId, nameof(options.TopicId))
+            Ensure.NotEmptyString(options.TopicId)
         );
     }
 
@@ -113,7 +102,7 @@ public class GooglePubSubSubscription
                 _topicName.TopicId
             );
 
-            var receivedEvent = new MessageConsumeContext(
+            var ctx = new MessageConsumeContext(
                 msg.MessageId,
                 eventType,
                 contentType,
@@ -121,11 +110,12 @@ public class GooglePubSubSubscription
                 0,
                 msg.PublishTime.ToDateTime(),
                 evt,
-                AsMeta(msg.Attributes)
+                AsMeta(msg.Attributes),
+                ct
             );
 
             try {
-                await Handler(receivedEvent, ct).NoContext();
+                await Handler(ctx).NoContext();
                 return Reply.Ack;
             }
             catch (Exception ex) {
@@ -150,14 +140,13 @@ public class GooglePubSubSubscription
     ) {
         var emulator = Options.ClientCreationSettings.DetectEmulator();
 
-        await PubSub.CreateTopic(topicName, emulator, Log, cancellationToken).NoContext();
+        await PubSub.CreateTopic(topicName, emulator, cancellationToken).NoContext();
 
         await PubSub.CreateSubscription(
             subscriptionName,
             topicName,
             configureSubscription,
             emulator,
-            Log,
             cancellationToken
         ).NoContext();
     }

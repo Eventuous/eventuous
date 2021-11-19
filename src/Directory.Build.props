@@ -13,25 +13,18 @@
 
     <ItemGroup Condition="'$(IsTestProject)' != 'true'">
         <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
-        <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
         <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
         <Using Include="JetBrains.Annotations"/>
         <Using Include="Eventuous"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(IncludeDiagnostics)'=='true'">
-        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\SharedDiagnostics.cs" Link="Diagnostics\SharedDiagnostics.cs"/>
-        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\TelemetryTags.cs" Link="Diagnostics\TelemetryTags.cs"/>
-        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\MetaTags.cs" Link="Diagnostics\MetaTags.cs"/>
-        <Compile Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics\MetadataExtensions.cs" Link="Diagnostics\MetadataExtensions.cs"/>
-    </ItemGroup>
-
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
         <PackageReference Include="AutoFixture" Version="4.17.0"/>
         <PackageReference Include="Bogus" Version="33.1.1"/>
-        <PackageReference Include="FluentAssertions" Version="6.1.0"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0"/>
+        <PackageReference Include="FluentAssertions" Version="6.2.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0"/>
         <PackageReference Include="xunit" Version="2.4.1"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="All"/>
         <PackageReference Include="coverlet.collector" Version="3.1.0" PrivateAssets="All"/>
@@ -42,12 +35,6 @@
         <Using Include="FluentAssertions.Extensions"/>
         <Using Include="AutoFixture"/>
         <Using Include="Microsoft.Extensions.Logging"/>
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
-        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.10" Condition="'$(TargetFramework)' == 'net5.0'"/>
-        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.10" Condition="'$(TargetFramework)' == 'net6.0'"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="3.1.19" Condition="'$(TargetFramework)' == 'netcoreapp3.1'"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -77,4 +64,21 @@
         <Copyright>Eventuous contributors</Copyright>
         <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
     </PropertyGroup>
+    
+    <PropertyGroup Label="Package versions for .NET Core 3.1" Condition="$(TargetFramework) == 'netcoreapp3.1'">
+        <MicrosoftExtensionsVer>[3.1,)</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>[3.1,)</MicrosoftTestHostVer>
+    </PropertyGroup>
+    <PropertyGroup Label="Package versions for .NET 5" Condition="$(TargetFramework) == 'net5.0'">
+        <MicrosoftExtensionsVer>[5.0,)</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>[5.0,)</MicrosoftTestHostVer>
+    </PropertyGroup>
+    <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net6.0'">
+        <MicrosoftExtensionsVer>[6.0,)</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>[6.0,)</MicrosoftTestHostVer>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)"/>
+    </ItemGroup>
 </Project>

@@ -1,4 +1,3 @@
-using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
 using Microsoft.Extensions.Hosting;
@@ -16,7 +15,6 @@ namespace Eventuous.GooglePubSub.Producers;
 public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedService {
     readonly IEventSerializer _serializer;
     readonly ClientCache      _clientCache;
-    readonly ILogger?         _log;
     readonly PubSubAttributes _attributes;
 
     /// <summary>
@@ -25,22 +23,19 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     /// <param name="projectId">GCP project ID</param>
     /// <param name="serializer">Event serializer instance</param>
     /// <param name="settings"></param>
-    /// <param name="loggerFactory">Logger factory</param>
     /// <param name="clientCreationSettings"></param>
     public GooglePubSubProducer(
         string                  projectId,
         IEventSerializer?       serializer             = null,
         ClientCreationSettings? clientCreationSettings = null,
-        Settings?               settings               = null,
-        ILoggerFactory?         loggerFactory          = null
+        Settings?               settings               = null
     ) : this(
         new PubSubProducerOptions {
-            ProjectId              = Ensure.NotEmptyString(projectId, nameof(projectId)),
+            ProjectId              = Ensure.NotEmptyString(projectId),
             Settings               = settings,
             ClientCreationSettings = clientCreationSettings
         },
-        serializer,
-        loggerFactory
+        serializer
     ) { }
 
     /// <summary>
@@ -48,25 +43,21 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     /// </summary>
     /// <param name="options">Producer options</param>
     /// <param name="serializer">Optional: event serializer. Will use the default instance if missing.</param>
-    /// <param name="loggerFactory">Logger factory</param>
     public GooglePubSubProducer(
         PubSubProducerOptions options,
-        IEventSerializer?     serializer    = null,
-        ILoggerFactory?       loggerFactory = null
+        IEventSerializer?     serializer = null
     ) : base(TracingOptions) {
-        Ensure.NotNull(options, nameof(options));
+        Ensure.NotNull(options);
 
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
-        _log         = loggerFactory?.CreateLogger($"Producer:{options.ProjectId}");
-        _clientCache = new ClientCache(options, _log);
+        _clientCache = new ClientCache(options);
         _attributes  = options.Attributes;
     }
 
     public GooglePubSubProducer(
         IOptions<PubSubProducerOptions> options,
-        IEventSerializer?               serializer    = null,
-        ILoggerFactory?                 loggerFactory = null
-    ) : this(options.Value, serializer, loggerFactory) { }
+        IEventSerializer?               serializer = null
+    ) : this(options.Value, serializer) { }
 
     public Task StartAsync(CancellationToken cancellationToken = default) {
         ReadyNow();

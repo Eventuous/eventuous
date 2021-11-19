@@ -1,8 +1,8 @@
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -19,20 +19,18 @@ public class StreamSubscription
     /// <param name="streamName">Name of the stream to receive events from</param>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
-    /// <param name="consumer"></param>
+    /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     /// <param name="throwOnError"></param>
     public StreamSubscription(
         EventStoreClient     eventStoreClient,
         StreamName           streamName,
         string               subscriptionId,
         ICheckpointStore     checkpointStore,
-        IMessageConsumer     consumer,
+        ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
-        ILoggerFactory?      loggerFactory   = null,
         bool                 throwOnError    = false
     ) : this(
         eventStoreClient,
@@ -44,8 +42,7 @@ public class StreamSubscription
             MetadataSerializer = metaSerializer
         },
         checkpointStore,
-        consumer,
-        loggerFactory
+        consumerPipe
     ) { }
 
     /// <summary>
@@ -54,22 +51,14 @@ public class StreamSubscription
     /// <param name="client"></param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
     /// <param name="options">Subscription options</param>
-    /// <param name="consumer"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
+    /// <param name="consumePipe"></param>
     public StreamSubscription(
         EventStoreClient          client,
         StreamSubscriptionOptions options,
         ICheckpointStore          checkpointStore,
-        IMessageConsumer          consumer,
-        ILoggerFactory?           loggerFactory = null
-    ) : base(
-        client,
-        options,
-        checkpointStore,
-        consumer,
-        loggerFactory
-    )
-        => Ensure.NotEmptyString(options.StreamName, nameof(options.StreamName));
+        ConsumePipe               consumePipe
+    ) : base(client, options, checkpointStore, consumePipe)
+        => Ensure.NotEmptyString(options.StreamName);
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var (_, position) = await GetCheckpoint(cancellationToken);
@@ -104,7 +93,7 @@ public class StreamSubscription
         ) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (re.Event is not null) await HandleInternal(CreateContext(re), ct);
+            if (re.Event is not null) await HandleInternal(CreateContext(re, ct));
         }
 
         void HandleDrop(
@@ -115,7 +104,7 @@ public class StreamSubscription
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
-    IMessageConsumeContext CreateContext(ResolvedEvent re) {
+    IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -132,7 +121,8 @@ public class StreamSubscription
             re.OriginalEventNumber.ToUInt64(),
             re.Event.Created,
             evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber)
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            cancellationToken
         ) {
             GlobalPosition = re.Event.Position.CommitPosition,
             StreamPosition = re.Event.EventNumber

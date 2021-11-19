@@ -22,23 +22,18 @@ public class TracedEventHandler : IEventHandler {
     readonly IEventHandler                   _inner;
     readonly KeyValuePair<string, object?>[] _defaultTags;
 
-    public async ValueTask HandleEvent(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
-        using var activity = Activity.Current?.Context != context.ParentContext
-            ? SubscriptionActivity.Start(context, _defaultTags) : Activity.Current;
-
-        activity?.SetContextTags(context)?.Start();
+    public async ValueTask HandleEvent(IMessageConsumeContext context) {
+        using var activity = SubscriptionActivity.Create(tags: _defaultTags)?.SetContextTags(context)?.Start();
 
         try {
-            await _inner.HandleEvent(context, cancellationToken);
+            await _inner.HandleEvent(context).NoContext();
 
-            if (context.WasIgnored() && activity != null)
+            if (activity != null && context.WasIgnoredBy(_innerType))
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;
         }
         catch (Exception e) {
-            activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
+            SubscriptionsEventSource.Log.FailedToHandleMessage(_innerType, context.MessageType, e);
+            activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
             context.Nack(_innerType, e);
         }
     }

@@ -1,25 +1,28 @@
 using Eventuous.Producers;
 using Eventuous.RabbitMq.Producers;
 using Eventuous.RabbitMq.Subscriptions;
-using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
+using Eventuous.TestHelpers;
 using Hypothesist;
 
 namespace Eventuous.Tests.RabbitMq;
 
-public class SubscriptionSpec : IAsyncLifetime {
+public class SubscriptionSpec : IAsyncLifetime, IDisposable {
     static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     static readonly Fixture Auto = new();
-
-    readonly RabbitMqSubscription _subscription;
-    readonly RabbitMqProducer            _producer;
-    readonly TestEventHandler            _handler;
-    readonly StreamName                  _exchange;
-    readonly ILogger<SubscriptionSpec>   _log;
+    
+    readonly RabbitMqSubscription      _subscription;
+    readonly RabbitMqProducer          _producer;
+    readonly TestEventHandler          _handler;
+    readonly StreamName                _exchange;
+    readonly ILogger<SubscriptionSpec> _log;
+    readonly TestEventListener         _es;
 
     public SubscriptionSpec(ITestOutputHelper outputHelper) {
+        _es = new TestEventListener(outputHelper);
+
         _exchange = new StreamName(Auto.Create<string>());
         var queue = Auto.Create<string>();
 
@@ -42,8 +45,7 @@ public class SubscriptionSpec : IAsyncLifetime {
                 Exchange         = _exchange,
                 ThrowOnError     = true
             },
-            new DefaultConsumer(new IEventHandler[] { _handler }),
-            loggerFactory
+            new ConsumePipe().AddDefaultConsumer(_handler)
         );
     }
 
@@ -78,4 +80,6 @@ public class SubscriptionSpec : IAsyncLifetime {
         await _producer.StopAsync();
         await _subscription.UnsubscribeWithLog(_log);
     }
+
+    public void Dispose() => _es.Dispose();
 }

@@ -18,6 +18,20 @@ public record OkResult<TState, TId>(TState State, IEnumerable<Change> Changes, u
     where TId : AggregateId;
 
 [PublicAPI]
-public record ErrorResult<TState, TId>() : Result<TState, TId>(new TState())
+public record ErrorResult<TState, TId> : Result<TState, TId>
     where TState : AggregateState<TState, TId>, new()
-    where TId : AggregateId;
+    where TId : AggregateId {
+    
+    public ErrorResult(string message, Exception? exception) : base(new TState()) {
+        Message   = message;
+        Exception = exception;
+    }
+
+    public ErrorResult(Exception exception) : base(new TState()) {
+        Exception = Ensure.NotNull(exception);
+        Message   = exception.Message;
+    }
+
+    public string     Message   { get; init; }
+    public Exception? Exception { get; init; }
+}

@@ -21,30 +21,33 @@ public class AggregateStore : IAggregateStore {
     ) {
         _getEventMetadata = getEventMetadata;
         _factoryRegistry  = factoryRegistry ?? AggregateFactoryRegistry.Instance;
-        _eventStore       = Ensure.NotNull(eventStore, nameof(eventStore));
+        _eventStore       = Ensure.NotNull(eventStore);
     }
 
-    public async Task<AppendEventsResult> Store<T>(
-        T                 aggregate,
-        CancellationToken cancellationToken
-    )
+    public async Task<AppendEventsResult> Store<T>(T aggregate, CancellationToken cancellationToken)
         where T : Aggregate {
-        Ensure.NotNull(aggregate, nameof(aggregate));
+        Ensure.NotNull(aggregate);
 
         if (aggregate.Changes.Count == 0) return AppendEventsResult.NoOp;
 
         var stream          = StreamName.For<T>(aggregate.GetId());
         var expectedVersion = new ExpectedStreamVersion(aggregate.OriginalVersion);
 
-        var result = await _eventStore.AppendEvents(
-                stream,
-                expectedVersion,
-                aggregate.Changes.Select(ToStreamEvent).ToArray(),
-                cancellationToken
-            )
-            .NoContext();
+        try {
+            var result = await _eventStore.AppendEvents(
+                    stream,
+                    expectedVersion,
+                    aggregate.Changes.Select(ToStreamEvent).ToArray(),
+                    cancellationToken
+                )
+                .NoContext();
 
-        return result;
+            return result;
+        }
+        catch (Exception e) {
+            Console.WriteLine(e);
+            throw;
+        }
 
         StreamEvent ToStreamEvent(object evt) {
             var meta = _getEventMetadata?.Invoke(stream, evt) ?? new Metadata();
@@ -54,7 +57,7 @@ public class AggregateStore : IAggregateStore {
 
     public async Task<T> Load<T>(string id, CancellationToken cancellationToken)
         where T : Aggregate {
-        Ensure.NotEmptyString(id, nameof(id));
+        Ensure.NotEmptyString(id);
 
         const int pageSize = 500;
 

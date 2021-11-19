@@ -35,6 +35,9 @@ public class HandlingResults {
         _results.Add(result);
     }
 
+    public IEnumerable<EventHandlingResult> GetResultsOf(EventHandlingStatus status)
+        => _results.Where(x => x.Status == status);
+
     public EventHandlingStatus GetFailureStatus() => _handlingStatus & EventHandlingStatus.Handled;
 
     public EventHandlingStatus GetIgnoreStatus() => _handlingStatus & EventHandlingStatus.Ignored;

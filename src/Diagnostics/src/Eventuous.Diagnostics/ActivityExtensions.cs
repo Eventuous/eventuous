@@ -40,7 +40,7 @@ public static class ActivityExtensions {
         );
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Activity SetStatus(this Activity activity, ActivityStatus status) {
+    public static Activity SetActivityStatus(this Activity activity, ActivityStatus status) {
         var (activityStatusCode, description, exception) = status;
 
         var statusCode = activityStatusCode switch {
@@ -49,6 +49,7 @@ public static class ActivityExtensions {
             _                        => "UNSET"
         };
 
+        activity.SetStatus(activityStatusCode, description);
         activity.SetTag(TelemetryTags.Otel.StatusCode, statusCode);
         activity.SetTag(TelemetryTags.Otel.StatusDescription, description);
 

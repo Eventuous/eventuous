@@ -10,7 +10,7 @@ public record StreamName {
         Value = value;
     }
 
-    public static StreamName For<T>(string entityId) => new($"{typeof(T).Name}-{entityId}");
+    public static StreamName For<T>(string entityId) => new($"{typeof(T).Name}-{Ensure.NotEmptyString(entityId)}");
 
     public static StreamName For<T, TState, TId>(TId aggregateId)
         where T : Aggregate<TState, TId>

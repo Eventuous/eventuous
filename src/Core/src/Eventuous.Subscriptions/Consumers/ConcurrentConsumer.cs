@@ -6,13 +6,13 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Subscriptions.Consumers;
 
-public sealed class ConcurrentConsumer : IMessageConsumer, IAsyncDisposable {
+public sealed class ConcurrentConsumer : MessageConsumer, IAsyncDisposable {
     readonly ConcurrentChannelWorker<DelayedAckConsumeContext> _worker;
-    readonly IMessageConsumer                                  _inner;
+    readonly MessageConsumer                                  _inner;
     readonly Type                                              _innerType;
 
     public ConcurrentConsumer(
-        IMessageConsumer eventHandler,
+        MessageConsumer eventHandler,
         int              concurrencyLimit,
         int              bufferSize = 10
     ) {
@@ -26,15 +26,15 @@ public sealed class ConcurrentConsumer : IMessageConsumer, IAsyncDisposable {
         );
     }
 
-    async ValueTask DelayedConsume(
-        DelayedAckConsumeContext ctx,
-        CancellationToken        cancellationToken
-    ) {
+    async ValueTask DelayedConsume(DelayedAckConsumeContext ctx, CancellationToken ct) {
         using var activity = ctx.Items.TryGetItem<Activity>("activity")?.Start();
 
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
+        ctx.CancellationToken = cts.Token;
+
         try {
-            await _inner.Consume(ctx, cancellationToken).NoContext();
-            await ctx.Acknowledge(cancellationToken).NoContext();
+            await _inner.Consume(ctx).NoContext();
+            await ctx.Acknowledge().NoContext();
         }
         catch (Exception e) {
             ctx.Nack(_innerType, e);
@@ -45,14 +45,14 @@ public sealed class ConcurrentConsumer : IMessageConsumer, IAsyncDisposable {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ValueTask Consume(IMessageConsumeContext context, CancellationToken cancellationToken) {
+    public override ValueTask Consume(IMessageConsumeContext context) {
         if (context is not DelayedAckConsumeContext ctx) {
             throw new InvalidCastException(
                 "Round robin consumer only works with delayed acknowledgement"
             );
         }
 
-        return _worker.Write(ctx, cancellationToken);
+        return _worker.Write(ctx, ctx.CancellationToken);
     }
 
     public ValueTask DisposeAsync() => _worker.DisposeAsync();

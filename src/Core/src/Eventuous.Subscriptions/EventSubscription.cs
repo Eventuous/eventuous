@@ -1,40 +1,30 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
-using Microsoft.Extensions.Logging;
-using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
+using Eventuous.Subscriptions.Filters;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions;
 
 [PublicAPI]
 public abstract class EventSubscription<T> : IMessageSubscription where T : SubscriptionOptions {
-    public    bool             IsRunning { get; set; }
-    public    bool             IsDropped { get; set; }
-    protected Logging.Logging? DebugLog  { get; }
-    protected ILogger?         Log       { get; }
+    public bool IsRunning { get; set; }
+    public bool IsDropped { get; set; }
 
     protected internal T Options { get; }
 
     internal IEventSerializer EventSerializer { get; }
-    internal IMessageConsumer Consumer        { get; }
+    internal ConsumePipe      Pipe            { get; }
 
     CancellationTokenSource _subscriptionCts = new();
 
-    protected EventSubscription(
-        T                options,
-        IMessageConsumer consumer,
-        ILoggerFactory?  loggerFactory = null
-    ) {
-        Ensure.NotEmptyString(options.SubscriptionId, options.SubscriptionId);
+    protected EventSubscription(T options, ConsumePipe consumePipe) {
+        Ensure.NotEmptyString(options.SubscriptionId);
 
-        Consumer        = Ensure.NotNull(consumer, nameof(consumer));
+        Pipe            = Ensure.NotNull(consumePipe);
         EventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
         Options         = options;
-        Log             = loggerFactory?.CreateLogger($"Subscription-{options.SubscriptionId}");
-        DebugLog        = Log?.IsEnabled(LogLevel.Debug) == true ? Log.LogDebug : null;
     }
 
     OnSubscribed? _onSubscribed;
@@ -50,6 +40,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         _onSubscribed = onSubscribed;
         _onDropped    = onDropped;
         await Subscribe(cancellationToken);
+        Log.SubscriptionStarted(Options.SubscriptionId);
         onSubscribed(Options.SubscriptionId);
     }
 
@@ -58,27 +49,18 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         CancellationToken cancellationToken
     ) {
         await Unsubscribe(cancellationToken);
+        Log.SubscriptionStopped(Options.SubscriptionId);
         onUnsubscribed(Options.SubscriptionId);
-
-        if (Consumer is IAsyncDisposable disposable) {
-            await disposable.DisposeAsync();
-        }
+        await Pipe.DisposeAsync();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected async ValueTask Handler(
-        IMessageConsumeContext context,
-        CancellationToken      cancellationToken
-    ) {
+    protected async ValueTask Handler(IMessageConsumeContext context) {
         var activity = SubscriptionActivity.Create(context);
         var delayed  = context is DelayedAckConsumeContext;
         if (!delayed) activity?.Start();
 
-        DebugLog?.Invoke(
-            "Subscription {Subscription} got an event {EventType}",
-            Options.SubscriptionId,
-            context.MessageType
-        );
+        Log.ReceivedMessage(Options.SubscriptionId, context.MessageType);
 
         try {
             if (context.Message != null) {
@@ -86,7 +68,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                     activity.SetStartTime(DateTime.UtcNow);
                     context.Items.AddItem("activity", activity);
                 }
-                await Consumer.Consume(context, cancellationToken).NoContext();
+
+                await Pipe.Send(context).NoContext();
             }
             else {
                 context.Ignore(GetType());
@@ -96,27 +79,18 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;
         }
         catch (Exception e) {
-            activity?.SetStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
             context.Nack(GetType(), e);
         }
 
         if (context.HasFailed()) {
+            if (activity != null)
+                activity.ActivityTraceFlags = ActivityTraceFlags.Recorded;
+
             var exception = context.HandlingResults.GetException();
-
-            Log?.Log(
-                Options.ThrowOnError ? LogLevel.Error : LogLevel.Warning,
-                exception,
-                "Error when handling the event {Stream} {Type}",
-                context.Stream,
-                context.MessageType
-            );
-
-            if (!delayed && activity != null) {
-                activity.SetStatus(ActivityStatus.Error(exception, $"Error handling {context.MessageType}"));
-            }
 
             if (Options.ThrowOnError) {
                 activity?.Dispose();
+
                 throw new SubscriptionException(
                     context.Stream,
                     context.MessageType,
@@ -125,7 +99,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 );
             }
         }
-        
+
         if (!delayed) activity?.Dispose();
     }
 
@@ -147,12 +121,12 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             );
         }
         catch (Exception e) {
-            Log?.LogError(
-                e,
-                "Error deserializing event {Stream} {Position} {Type}",
+            Log.PayloadDeserializationFailed(
+                Options.SubscriptionId,
                 stream,
                 position,
-                eventType
+                eventType,
+                e.ToString()
             );
 
             if (Options.ThrowOnError) throw;
@@ -171,7 +145,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     protected virtual async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
         if (_resubscribing.IsClosed()) return;
 
-        Log?.LogWarning("Resubscribing");
+        Log.SubscriptionResubscribing(Options.SubscriptionId);
 
         await Task.Delay(delay, cancellationToken).NoContext();
 
@@ -184,11 +158,10 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 IsDropped = false;
                 _onSubscribed?.Invoke(Options.SubscriptionId);
 
-                Log?.LogInformation("Subscription restored");
+                Log.SubscriptionRestored(Options.SubscriptionId);
             }
             catch (Exception e) {
-                Log?.LogError(e, "Unable to restart the subscription");
-
+                Log.ResubscribeFailed(Options.SubscriptionId, e.ToString());
                 await Task.Delay(1000, cancellationToken).NoContext();
             }
             finally {
@@ -200,7 +173,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning || _resubscribing.IsClosed()) return;
 
-        Log?.LogWarning(exception, "Subscription dropped {Reason}", reason);
+        Log.SubscriptionDropped(Options.SubscriptionId, reason, exception);
 
         IsDropped = true;
         _onDropped?.Invoke(Options.SubscriptionId, reason, exception);

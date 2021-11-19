@@ -51,7 +51,7 @@ public static class ProducerExtensions {
     )
         where TMessage : class where TProduceOptions : class {
         var producedMessages =
-            Ensure.NotNull(message, nameof(message)) is IEnumerable<object> collection
+            Ensure.NotNull(message) is IEnumerable<object> collection
                 ? ConvertMany(collection, metadata)
                 : ConvertOne(message, metadata);
 

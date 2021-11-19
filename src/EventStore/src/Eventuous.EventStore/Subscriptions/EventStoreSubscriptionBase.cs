@@ -1,5 +1,5 @@
-using Eventuous.Subscriptions.Consumers;
-using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -10,13 +10,9 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
 
     protected EventStoreClient EventStoreClient { get; }
 
-    protected EventStoreSubscriptionBase(
-        EventStoreClient eventStoreClient,
-        T                options,
-        IMessageConsumer consumer,
-        ILoggerFactory?  loggerFactory = null
-    ) : base(options, consumer, loggerFactory) {
-        EventStoreClient = Ensure.NotNull(eventStoreClient, nameof(eventStoreClient));
+    protected EventStoreSubscriptionBase(EventStoreClient eventStoreClient, T options, ConsumePipe consumePipe)
+        : base(options, consumePipe) {
+        EventStoreClient = Ensure.NotNull(eventStoreClient);
         _metaSerializer  = Options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
@@ -31,11 +27,11 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
             return _metaSerializer.Deserialize(meta.Span);
         }
         catch (Exception e) {
-            Log?.LogError(
-                e,
-                "Error deserializing metadata {Stream} {Position}",
+            SubscriptionsEventSource.Log.MetadataDeserializationFailed(
+                Options.SubscriptionId,
                 stream,
-                position
+                position,
+                e.ToString()
             );
 
             if (Options.ThrowOnError)
@@ -44,6 +40,6 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
             return null;
         }
     }
-    
+
     protected EventPosition? LastProcessed { get; set; }
 }

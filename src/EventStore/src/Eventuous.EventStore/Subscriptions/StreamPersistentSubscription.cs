@@ -1,7 +1,7 @@
 using Eventuous.EventStore.Subscriptions.Diagnostics;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -9,9 +9,8 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Persistent subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamPersistentSubscription
-    : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
-        IMeasuredSubscription {
+public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
+    IMeasuredSubscription {
     public delegate Task HandleEventProcessingFailure(
         EventStoreClient       client,
         PersistentSubscription subscription,
@@ -27,15 +26,9 @@ public class StreamPersistentSubscription
     public StreamPersistentSubscription(
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
-        IMessageConsumer                    consumer,
-        ILoggerFactory?                     loggerFactory = null
-    ) : base(
-        eventStoreClient,
-        options,
-        consumer,
-        loggerFactory
-    ) {
-        Ensure.NotEmptyString(options.Stream, nameof(options.Stream));
+        ConsumePipe                         consumePipe
+    ) : base(eventStoreClient, options, consumePipe) {
+        Ensure.NotEmptyString(options.Stream);
 
         var settings   = eventStoreClient.GetSettings().Copy();
         var opSettings = settings.OperationOptions.Clone();
@@ -54,18 +47,16 @@ public class StreamPersistentSubscription
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
     /// <param name="streamName">Name of the stream to receive events from</param>
     /// <param name="subscriptionId">Subscription ID</param>
-    /// <param name="consumer"></param>
+    /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
-    /// <param name="loggerFactory">Optional: logger factory</param>
     public StreamPersistentSubscription(
         EventStoreClient     eventStoreClient,
         StreamName           streamName,
         string               subscriptionId,
-        IMessageConsumer     consumer,
+        ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
-        IMetadataSerializer? metaSerializer  = null,
-        ILoggerFactory?      loggerFactory   = null
+        IMetadataSerializer? metaSerializer  = null
     ) : this(
         eventStoreClient,
         new StreamPersistentSubscriptionOptions {
@@ -74,8 +65,7 @@ public class StreamPersistentSubscription
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
-        new FilterConsumer(consumer, re => !re.MessageType.StartsWith("$")),
-        loggerFactory
+        consumerPipe.AddFilterFirst(new MessageFilter(ctx => !ctx.MessageType.StartsWith("$")))
     ) { }
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
@@ -113,14 +103,14 @@ public class StreamPersistentSubscription
             int?                   retryCount,
             CancellationToken      ct
         ) {
-            var receivedEvent = CreateContext(re);
+            var ctx = CreateContext(re, ct);
 
             try {
-                await Handler(receivedEvent, ct).NoContext();
+                await Handler(ctx).NoContext();
 
                 if (!autoAck) await subscription.Ack(re).NoContext();
 
-                LastProcessed = EventPosition.FromContext(receivedEvent);
+                LastProcessed = EventPosition.FromContext(ctx);
             }
             catch (Exception e) {
                 await _handleEventProcessingFailure(EventStoreClient, subscription, re, e)
@@ -141,7 +131,7 @@ public class StreamPersistentSubscription
             );
     }
 
-    IMessageConsumeContext CreateContext(ResolvedEvent re) {
+    IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -158,7 +148,8 @@ public class StreamPersistentSubscription
             re.Event.EventNumber,
             re.Event.Created,
             evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber)
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            cancellationToken
         ) {
             GlobalPosition = re.Event.Position.CommitPosition,
             StreamPosition = re.Event.EventNumber

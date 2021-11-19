@@ -8,7 +8,7 @@ public class StateStore : IStateStore {
     const int PageSize = 500;
 
     public StateStore(IEventStore eventStore, IEventSerializer? serializer = null) {
-        _eventStore = Ensure.NotNull(eventStore, nameof(eventStore));
+        _eventStore = Ensure.NotNull(eventStore);
         _serializer = serializer ?? DefaultEventSerializer.Instance;
     }
 

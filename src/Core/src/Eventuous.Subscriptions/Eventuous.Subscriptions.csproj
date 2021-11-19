@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="5.0.*" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.*" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(MicrosoftExtensionsVer)" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftExtensionsVer)" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
@@ -10,5 +9,10 @@
     </ItemGroup>
     <ItemGroup>
       <None Remove="Eventuous.Subscriptions.csproj.DotSettings" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="Consumers\ConcurrentConsumer.cs" />
+      <Compile Remove="Consumers\FilterConsumer.cs" />
+      <Compile Remove="Consumers\TracedConsumer.cs" />
     </ItemGroup>
 </Project>

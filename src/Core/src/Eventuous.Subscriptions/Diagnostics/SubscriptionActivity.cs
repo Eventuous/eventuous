@@ -11,7 +11,7 @@ public static class SubscriptionActivity {
     ) {
         context.ParentContext ??= GetParentContext(context.Metadata);
 
-        var activity = CreateActivity(context.ParentContext, tags);
+        var activity = Create(context.ParentContext, tags);
 
         return activity?.SetContextTags(context);
     }
@@ -42,9 +42,9 @@ public static class SubscriptionActivity {
         return tracingData?.ToActivityContext(true);
     }
 
-    static Activity? CreateActivity(
-        ActivityContext?                            parentContext,
-        IEnumerable<KeyValuePair<string, object?>>? tags
+    public static Activity? Create(
+        ActivityContext?                            parentContext = null,
+        IEnumerable<KeyValuePair<string, object?>>? tags          = null
     )
         => EventuousDiagnostics.ActivitySource.CreateActivity(
             "consume",

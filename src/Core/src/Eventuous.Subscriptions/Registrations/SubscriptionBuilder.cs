@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using System.Reflection;
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Consumers;
+using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -18,10 +21,10 @@ public abstract class SubscriptionBuilder {
 
     readonly List<ResolveHandler> _handlers = new();
 
+    protected ConsumePipe     Pipe            { get; }      = new();
     protected ResolveConsumer ResolveConsumer { get; set; } = null!;
 
-    protected IEventHandler[] ResolveHandlers(IServiceProvider sp)
-        => _handlers.Select(x => x(sp)).ToArray();
+    protected IEventHandler[] ResolveHandlers(IServiceProvider sp) => _handlers.Select(x => x(sp)).ToArray();
 
     /// <summary>
     /// Adds an event handler to the subscription
@@ -43,9 +46,8 @@ public abstract class SubscriptionBuilder {
     /// <typeparam name="THandler"></typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public SubscriptionBuilder AddEventHandler<THandler>(
-        Func<IServiceProvider, THandler> getHandler
-    ) where THandler : class, IEventHandler {
+    public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler)
+        where THandler : class, IEventHandler {
         Services.TryAddSingleton(getHandler);
         AddHandlerResolve(sp => sp.GetRequiredService<THandler>());
         return this;
@@ -75,16 +77,18 @@ public abstract class SubscriptionBuilder {
     /// <param name="getConsumer">A function to resolve the consumer using the service provider</param>
     /// <returns></returns>
     [PublicAPI]
-    public SubscriptionBuilder UseConsumer(
-        Func<IServiceProvider, IEventHandler[], IMessageConsumer> getConsumer
-    ) {
-        Ensure.NotNull(getConsumer, nameof(getConsumer));
+    public SubscriptionBuilder UseConsumer(Func<IServiceProvider, IEventHandler[], IMessageConsumer> getConsumer) {
+        Ensure.NotNull(getConsumer);
         ResolveConsumer = sp => getConsumer(sp, ResolveHandlers(sp));
         return this;
     }
 
     void AddHandlerResolve(ResolveHandler resolveHandler)
-        => _handlers.Add(sp => new TracedEventHandler(resolveHandler(sp)));
+        => _handlers.Add(sp => {
+                var handler = resolveHandler(sp);
+                return EventuousDiagnostics.Enabled ? new TracedEventHandler(handler) : handler;
+            }
+        );
 }
 
 public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
@@ -134,6 +138,12 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
         if (_resolvedSubscription != null) return _resolvedSubscription;
 
+        var consumer = GetConsumer(sp);
+
+        if (EventuousDiagnostics.Enabled) Pipe.AddFilter(new TracingFilter());
+
+        Pipe.AddFilter(new ConsumerFilter(consumer));
+
         var constructors = typeof(T).GetConstructors<TOptions>();
 
         switch (constructors.Length) {
@@ -180,10 +190,8 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
             // ReSharper disable once InvertIf
-            if (parameterInfo.ParameterType == typeof(IMessageConsumer)) {
-                var consumer = GetConsumer(sp);
-                // ensure we aren't wrapping the tracing consumer
-                return consumer is TracedConsumer ? consumer : new TracedConsumer(consumer);
+            if (parameterInfo.ParameterType == typeof(ConsumePipe)) {
+                return Pipe;
             }
 
             return sp.GetService(parameterInfo.ParameterType);
