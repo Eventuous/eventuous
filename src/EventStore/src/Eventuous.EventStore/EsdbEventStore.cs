@@ -147,6 +147,7 @@ public class EsdbEventStore : IEventStore {
             stream,
             StreamPosition.End,
             count,
+            resolveLinkTos: true,
             cancellationToken: cancellationToken
         );
 
@@ -177,6 +178,7 @@ public class EsdbEventStore : IEventStore {
             stream,
             start.AsStreamPosition(),
             count,
+            resolveLinkTos: true,
             cancellationToken: cancellationToken
         );
 
@@ -308,7 +310,7 @@ public class EsdbEventStore : IEventStore {
     }
 
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
-        => resolvedEvents.Select(ToStreamEvent).ToArray();
+        => resolvedEvents.Where(x => !x.Event.EventType.StartsWith("$")).Select(ToStreamEvent).ToArray();
 
     record ErrorInfo(string Message, params object[] Args);
 }

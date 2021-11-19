@@ -1,3 +1,4 @@
+using EventStore.Client;
 using Eventuous.Diagnostics.Logging;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Context;
@@ -31,13 +32,14 @@ public sealed class StreamSubscriptionTests : IDisposable {
         ulong? startPosition = null;
 
         try {
-            var last = await Instance.EventStore.ReadEventsBackwards(
+            var last = await Instance.Client.ReadStreamAsync(
+                Direction.Backwards,
                 categoryStream,
-                1,
-                CancellationToken.None
-            );
+                StreamPosition.End,
+                1
+            ).ToArrayAsync();
 
-            startPosition = (ulong?)last[0].Position;
+            startPosition = last[0].OriginalEventNumber;
         }
         catch (StreamNotFound) { }
 
@@ -78,7 +80,9 @@ public sealed class StreamSubscriptionTests : IDisposable {
                 ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
-            new ConsumePipe().AddDefaultConsumer(handler)
+            new ConsumePipe()
+                .AddFilter(new MessageFilter(x => !x.MessageType.StartsWith("$")))
+                .AddDefaultConsumer(handler)
         );
 
         var log = _loggerFactory.CreateLogger("Test");

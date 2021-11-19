@@ -125,7 +125,7 @@ public class StreamSubscription
             cancellationToken
         ) {
             GlobalPosition = re.Event.Position.CommitPosition,
-            StreamPosition = re.Event.EventNumber
+            StreamPosition = re.OriginalEventNumber.ToUInt64()
         };
     }
 
