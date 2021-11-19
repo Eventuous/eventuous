@@ -24,6 +24,7 @@ public class DefaultConsumer : IMessageConsumer {
         async ValueTask Handle(IEventHandler handler) {
             try {
                 await handler.HandleEvent(context).NoContext();
+                context.Ack(handler.GetType());
             }
             catch (Exception e) {
                 context.Nack(handler.GetType(), e);

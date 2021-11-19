@@ -9,14 +9,44 @@ namespace Eventuous.Subscriptions.Diagnostics;
 public class SubscriptionsEventSource : EventSource {
     public static readonly SubscriptionsEventSource Log = new();
 
+    const int MessageReceivedId                = 1;
+    const int MessageIgnoredId                 = 2;
+    const int MessageHandledId                 = 3;
+    const int MessageHandlingFailedId          = 4;
+    const int NoHandlerFoundId                 = 5;
+    const int PayloadDeserializationFailedId   = 6;
+    const int MetadataDeserializationFailedId  = 7;
+    const int SubscriptionStartedId            = 8;
+    const int SubscriptionStoppedId            = 9;
+    const int SubscriptionDroppedId            = 10;
+    const int SubscriptionResubscribingId      = 11;
+    const int SubscriptionRestoredId           = 12;
+    const int ResubscribeFailedId              = 13;
+    const int FailedToHandleMessageWithRetryId = 20;
+
+    const int InfoId = 100;
+    const int WarnId = 101;
+
     [NonEvent]
-    public void FailedToHandleMessage(Type? handlerType, string messageType, Exception? exception) {
+    public void MessageHandlingFailed(Type? handlerType, string messageType, Exception? exception) {
         if (IsEnabled(EventLevel.Error, EventKeywords.All))
-            FailedToHandleMessage(
+            MessageHandlingFailed(
                 handlerType?.Name ?? "unknown",
                 messageType,
                 exception?.ToString() ?? "unknown error"
             );
+    }
+
+    [NonEvent]
+    public void MessageIgnored(Type? handlerType, string messageType) {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            MessageIgnored(handlerType?.Name ?? "unknown", messageType);
+    }
+
+    [NonEvent]
+    public void MessageHandled(Type? handlerType, string eventType) {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            MessageHandled(handlerType?.Name ?? "unknown", eventType);
     }
 
     [NonEvent]
@@ -36,17 +66,36 @@ public class SubscriptionsEventSource : EventSource {
             FailedToHandleMessageWithRetry(handlerType, messageType, retryCount.ToString(), exception.ToString());
     }
 
-    [Event(1, Message = "Handler {0} failed to process event {1}: {2}", Level = EventLevel.Error)]
-    public void FailedToHandleMessage(string handlerType, string messageType, string exception)
-        => WriteEvent(1, handlerType, messageType, exception);
-
-    [Event(2, Message = "[{0}] Received {1}", Level = EventLevel.Verbose)]
-    public void ReceivedMessage(string subscriptionId, string messageType) {
+    [Event(MessageReceivedId, Message = "[{0}] Received {1}", Level = EventLevel.Verbose)]
+    public void MessageReceived(string subscriptionId, string messageType) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            WriteEvent(2, subscriptionId, messageType);
+            WriteEvent(MessageReceivedId, subscriptionId, messageType);
     }
 
-    [Event(3, Message = "[{0}] Failed to deserialize event {1} {2} {3}: {4}", Level = EventLevel.Error)]
+    [Event(MessageIgnoredId, Message = "[{0}] Ignored {1}", Level = EventLevel.Verbose)]
+    public void MessageIgnored(string handlerType, string messageType) {
+        WriteEvent(MessageIgnoredId, handlerType, messageType);
+    }
+
+    [Event(MessageHandledId, Message = "[{0}] Handled {1}", Level = EventLevel.Verbose)]
+    public void MessageHandled(string handlerType, string eventType)
+        => WriteEvent(MessageHandledId, handlerType, eventType);
+
+    [Event(MessageHandlingFailedId, Message = "Handler {0} failed to process event {1}: {2}", Level = EventLevel.Error)]
+    public void MessageHandlingFailed(string handlerType, string messageType, string exception)
+        => WriteEvent(MessageHandlingFailedId, handlerType, messageType, exception);
+
+    [Event(NoHandlerFoundId, Message = "[{0}] No handler found for message {1}", Level = EventLevel.Warning)]
+    public void NoHandlerFound(string handlerType, string messageType) {
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
+            WriteEvent(NoHandlerFoundId, handlerType, messageType);
+    }
+
+    [Event(
+        PayloadDeserializationFailedId,
+        Message = "[{0}] Failed to deserialize event {1} {2} {3}: {4}",
+        Level = EventLevel.Error
+    )]
     public void PayloadDeserializationFailed(
         string subscriptionId,
         string stream,
@@ -55,32 +104,14 @@ public class SubscriptionsEventSource : EventSource {
         string e
     ) {
         if (IsEnabled(EventLevel.Error, EventKeywords.All))
-            WriteEvent(3, subscriptionId, stream, position.ToString(), type, e);
+            WriteEvent(PayloadDeserializationFailedId, subscriptionId, stream, position.ToString(), type, e);
     }
 
-    [Event(4, Message = "[{0}] Dropped: {1} {2}", Level = EventLevel.Warning)]
-    public void SubscriptionDropped(string subscriptionId, string reason, string e)
-        => WriteEvent(4, subscriptionId, reason, e);
-
-    [Event(5, Message = "[{0}] Resubscribing", Level = EventLevel.Informational)]
-    public void SubscriptionResubscribing(string subscriptionId) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            WriteEvent(5, subscriptionId);
-    }
-
-    [Event(6, Message = "[{0}] Unable to restart subscription: {1}", Level = EventLevel.Error)]
-    public void ResubscribeFailed(string subscriptionId, string exception) {
-        if (IsEnabled(EventLevel.Error, EventKeywords.All))
-            WriteEvent(6, subscriptionId, exception);
-    }
-
-    [Event(7, Message = "[{0}] Restored", Level = EventLevel.Informational)]
-    public void SubscriptionRestored(string subscriptionId) {
-        if (IsEnabled(EventLevel.Informational, EventKeywords.All))
-            WriteEvent(7, subscriptionId);
-    }
-
-    [Event(8, Message = "[{0}] Failed to deserialize metadata {1} {2}: {3}", Level = EventLevel.Error)]
+    [Event(
+        MetadataDeserializationFailedId,
+        Message = "[{0}] Failed to deserialize metadata {1} {2}: {3}",
+        Level = EventLevel.Error
+    )]
     public void MetadataDeserializationFailed(
         string subscriptionId,
         string stream,
@@ -88,54 +119,62 @@ public class SubscriptionsEventSource : EventSource {
         string e
     ) {
         if (IsEnabled(EventLevel.Error, EventKeywords.All))
-            WriteEvent(8, subscriptionId, stream, position.ToString(), e);
+            WriteEvent(MetadataDeserializationFailedId, subscriptionId, stream, position.ToString(), e);
     }
 
-    [Event(9, Message = "[{0}] No handler found for message {1}", Level = EventLevel.Warning)]
-    public void NoHandlerFound(string handlerType, string messageType) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            WriteEvent(9, handlerType, messageType);
-    }
-
-    [Event(10, Message = "[{0}] Started", Level = EventLevel.Informational)]
+    [Event(SubscriptionStartedId, Message = "[{0}] Started", Level = EventLevel.Informational)]
     public void SubscriptionStarted(string subscriptionId) {
         if (IsEnabled(EventLevel.Informational, EventKeywords.All))
-            WriteEvent(10, subscriptionId);
+            WriteEvent(SubscriptionStartedId, subscriptionId);
     }
 
-    [Event(11, Message = "[{0}] Stopped", Level = EventLevel.Informational)]
+    [Event(SubscriptionStoppedId, Message = "[{0}] Stopped", Level = EventLevel.Informational)]
     public void SubscriptionStopped(string subscriptionId) {
         if (IsEnabled(EventLevel.Informational, EventKeywords.All))
-            WriteEvent(11, subscriptionId);
+            WriteEvent(SubscriptionStoppedId, subscriptionId);
     }
 
-    [Event(12, Message = "[{0}] Event {1} ignored by projection", Level = EventLevel.Verbose)]
-    public void EventIgnoredByProjection(string handlerType, string eventType) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            WriteEvent(12, handlerType, eventType);
+    [Event(SubscriptionDroppedId, Message = "[{0}] Dropped: {1} {2}", Level = EventLevel.Warning)]
+    public void SubscriptionDropped(string subscriptionId, string reason, string e)
+        => WriteEvent(SubscriptionDroppedId, subscriptionId, reason, e);
+
+    [Event(SubscriptionRestoredId, Message = "[{0}] Restored", Level = EventLevel.Informational)]
+    public void SubscriptionRestored(string subscriptionId) {
+        if (IsEnabled(EventLevel.Informational, EventKeywords.All))
+            WriteEvent(SubscriptionRestoredId, subscriptionId);
     }
 
-    [Event(13, Message = "[{0}] Event {1} being projected", Level = EventLevel.Verbose)]
-    public void EventHandledByProjection(string handlerType, string eventType) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            WriteEvent(13, handlerType, eventType);
+    [Event(SubscriptionResubscribingId, Message = "[{0}] Resubscribing", Level = EventLevel.Informational)]
+    public void SubscriptionResubscribing(string subscriptionId) {
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
+            WriteEvent(SubscriptionResubscribingId, subscriptionId);
     }
 
-    [Event(14, Message = "[{0}] Failed to handle {1} after {2} retries: {3}", Level = EventLevel.Warning)]
+    [Event(ResubscribeFailedId, Message = "[{0}] Unable to restart subscription: {1}", Level = EventLevel.Error)]
+    public void ResubscribeFailed(string subscriptionId, string exception) {
+        if (IsEnabled(EventLevel.Error, EventKeywords.All))
+            WriteEvent(ResubscribeFailedId, subscriptionId, exception);
+    }
+
+    [Event(
+        FailedToHandleMessageWithRetryId,
+        Message = "[{0}] Failed to handle {1} after {2} retries: {3}",
+        Level = EventLevel.Warning
+    )]
     public void FailedToHandleMessageWithRetry(
         string handlerType,
         string messageType,
         string retryCount,
         string exception
-    ) => WriteEvent(14, handlerType, messageType, retryCount, exception);
+    ) => WriteEvent(FailedToHandleMessageWithRetryId, handlerType, messageType, retryCount, exception);
 
-    [Event(100, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
+    [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
     public void Info(string message, string? arg1 = null, string? arg2 = null) {
-        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) WriteEvent(100, message, arg1, arg2);
+        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) WriteEvent(InfoId, message, arg1, arg2);
     }
 
-    [Event(101, Message = "{0} {1} {2}", Level = EventLevel.Warning)]
+    [Event(WarnId, Message = "{0} {1} {2}", Level = EventLevel.Warning)]
     public void Warn(string message, string? arg1 = null, string? arg2 = null) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) WriteEvent(101, message, arg1, arg2);
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) WriteEvent(WarnId, message, arg1, arg2);
     }
 }

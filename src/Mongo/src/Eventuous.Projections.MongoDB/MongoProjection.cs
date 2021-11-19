@@ -1,6 +1,5 @@
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
 
@@ -19,15 +18,14 @@ public abstract class MongoProjection<T> : IEventHandler where T : ProjectedDocu
 
     public async ValueTask HandleEvent(IMessageConsumeContext context) {
         var updateTask = GetUpdate(context);
-        var update     = updateTask == NoOp ? null : await updateTask.NoContext();
+        var update     = updateTask == NoOp 
+            ? null 
+            : updateTask.IsCompleted ? updateTask.Result : await updateTask.NoContext();
 
         if (update == null) {
-            Log.EventIgnoredByProjection(_myTypeName, context.MessageType);
             context.Ignore(_myType);
             return;
         }
-
-        Log.EventHandledByProjection(_myTypeName, context.MessageType);
 
         var task = update switch {
             OtherOperation<T> operation => operation.Execute(),

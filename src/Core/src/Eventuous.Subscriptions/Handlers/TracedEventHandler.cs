@@ -32,7 +32,7 @@ public class TracedEventHandler : IEventHandler {
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;
         }
         catch (Exception e) {
-            SubscriptionsEventSource.Log.FailedToHandleMessage(_innerType, context.MessageType, e);
+            SubscriptionsEventSource.Log.MessageHandlingFailed(_innerType, context.MessageType, e);
             activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
             context.Nack(_innerType, e);
         }

@@ -1,14 +1,16 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Diagnostics;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 
 namespace Eventuous.Subscriptions.Context;
 
 public static class ContextExtensions {
-    public static void Ack(this IBaseConsumeContext context, Type? handlerType)
-        => context.HandlingResults.Add(EventHandlingResult.Succeeded(handlerType));
+    public static void Ack(this IBaseConsumeContext context, Type? handlerType) {
+        context.HandlingResults.Add(EventHandlingResult.Succeeded(handlerType));
+        Log.MessageHandled(handlerType, context.MessageType);
+    }
 
     public static void Nack(
         this IBaseConsumeContext context,
@@ -16,8 +18,7 @@ public static class ContextExtensions {
         Exception?               exception
     ) {
         context.HandlingResults.Add(EventHandlingResult.Failed(handlerType, exception));
-
-        SubscriptionsEventSource.Log.FailedToHandleMessage(handlerType, context.MessageType, exception);
+        Log.MessageHandlingFailed(handlerType, context.MessageType, exception);
 
         if (Activity.Current != null && Activity.Current.Status != ActivityStatusCode.Error) {
             Activity.Current.SetActivityStatus(
@@ -26,8 +27,11 @@ public static class ContextExtensions {
         }
     }
 
-    public static void Ignore(this IBaseConsumeContext context, Type? handlerType)
-        => context.HandlingResults.Add(EventHandlingResult.Ignored(handlerType));
+    public static void Ignore(this IBaseConsumeContext context, Type? handlerType) {
+        context.HandlingResults.Add(EventHandlingResult.Ignored(handlerType));
+
+        Log.MessageIgnored(handlerType, context.MessageType);
+    }
 
     public static void Ack<T>(this IBaseConsumeContext context) => context.Ack(typeof(T));
 

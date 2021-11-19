@@ -60,7 +60,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         var delayed  = context is DelayedAckConsumeContext;
         if (!delayed) activity?.Start();
 
-        Log.ReceivedMessage(Options.SubscriptionId, context.MessageType);
+        Log.MessageReceived(Options.SubscriptionId, context.MessageType);
 
         try {
             if (context.Message != null) {
