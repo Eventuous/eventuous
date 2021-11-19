@@ -137,11 +137,11 @@ public class RegistrationTests {
             );
     }
 
-    class Handler1 : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt) => default;
+    class Handler1 : BaseEventHandler {
+        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext evt) => default;
     }
 
-    class Handler2 : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext evt) => default;
+    class Handler2 : BaseEventHandler {
+        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext evt) => default;
     }
 }

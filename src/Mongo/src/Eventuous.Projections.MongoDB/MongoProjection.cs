@@ -4,28 +4,26 @@ using Eventuous.Subscriptions.Context;
 namespace Eventuous.Projections.MongoDB;
 
 [PublicAPI]
-public abstract class MongoProjection<T> : IEventHandler where T : ProjectedDocument {
+public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedDocument {
     protected IMongoCollection<T> Collection { get; }
 
-    protected MongoProjection(IMongoDatabase database) {
-        Collection  = Ensure.NotNull(database).GetDocumentCollection<T>();
-        _myType     = GetType();
-        _myTypeName = _myType.Name;
-    }
+    protected MongoProjection(IMongoDatabase database)
+        => Collection = Ensure.NotNull(database).GetDocumentCollection<T>();
 
-    Type   _myType;
-    string _myTypeName;
-
-    public async ValueTask HandleEvent(IMessageConsumeContext context) {
+    public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         var updateTask = GetUpdate(context);
-        var update     = updateTask == NoOp 
-            ? null 
-            : updateTask.IsCompleted ? updateTask.Result : await updateTask.NoContext();
+
+        var update = updateTask == NoOp
+            ? null
+            : updateTask.IsCompleted
+                ? updateTask.Result
+                : await updateTask.NoContext();
 
         if (update == null) {
-            context.Ignore(_myType);
-            return;
+            return EventHandlingStatus.Ignored;
         }
+
+        var status = EventHandlingStatus.Success;
 
         var task = update switch {
             OtherOperation<T> operation => operation.Execute(),
@@ -35,9 +33,10 @@ public abstract class MongoProjection<T> : IEventHandler where T : ProjectedDocu
         };
 
         if (!task.IsCompleted) await task.NoContext();
+        return status;
 
         Task Ignore() {
-            context.Ignore(_myType);
+            status = EventHandlingStatus.Ignored;
             return Task.CompletedTask;
         }
 

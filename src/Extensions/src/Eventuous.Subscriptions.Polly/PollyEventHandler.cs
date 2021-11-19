@@ -11,27 +11,28 @@ namespace Eventuous.Subscriptions.Polly;
 public class PollyEventHandler : IEventHandler {
     readonly IEventHandler _inner;
     readonly IAsyncPolicy  _retryPolicy;
-    readonly string        _innerName;
 
     public PollyEventHandler(IEventHandler inner, IAsyncPolicy retryPolicy) {
-        _inner       = inner;
-        _innerName   = inner.GetType().Name;
-        _retryPolicy = retryPolicy;
+        _inner         = inner;
+        _retryPolicy   = retryPolicy;
+        DiagnosticName = _inner.DiagnosticName;
     }
 
-    public async ValueTask HandleEvent(IMessageConsumeContext context) {
+    public string DiagnosticName { get; }
+
+    public async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         const string retryKey = "eventuous-retry";
         
         var pollyContext = new PollyContext { { retryKey, new RetryCounter() } };
-        await _retryPolicy.ExecuteAsync(Execute, pollyContext).NoContext();
+        return await _retryPolicy.ExecuteAsync(Execute, pollyContext).NoContext();
 
-        async Task Execute(PollyContext ctx) {
+        async Task<EventHandlingStatus> Execute(PollyContext ctx) {
             try {
-                await _inner.HandleEvent(context).NoContext();
+                return await _inner.HandleEvent(context).NoContext();
             }
             catch (Exception e) {
                 var counter = ctx[retryKey] as RetryCounter;
-                Log.FailedToHandleMessageWithRetry(_innerName, context.MessageType, counter!.Counter, e);
+                Log.FailedToHandleMessageWithRetry(DiagnosticName, context.MessageType, counter!.Counter, e);
                 counter.Increase();
                 throw;
             }

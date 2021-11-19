@@ -5,10 +5,12 @@ using Eventuous.TestHelpers;
 
 namespace Eventuous.Sut.Subs;
 
-public class TracedHandler : IEventHandler {
+public class TracedHandler : BaseEventHandler {
     public List<RecordedTrace> Contexts { get; } = new();
 
-    public ValueTask HandleEvent(IMessageConsumeContext context) {
+    static readonly ValueTask<EventHandlingStatus> Success = new(EventHandlingStatus.Success);
+    
+    public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         Contexts.Add(
             new RecordedTrace(
                 Activity.Current?.TraceId,
@@ -17,6 +19,6 @@ public class TracedHandler : IEventHandler {
             )
         );
 
-        return default;
+        return Success;
     }
 }

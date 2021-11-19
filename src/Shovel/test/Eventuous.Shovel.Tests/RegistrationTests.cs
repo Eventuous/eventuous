@@ -52,8 +52,8 @@ public class RegistrationTests {
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
     }
 
-    class Handler : IEventHandler {
-        public ValueTask HandleEvent(IMessageConsumeContext ctx) => default;
+    class Handler : BaseEventHandler {
+        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) => default;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {

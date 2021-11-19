@@ -104,12 +104,12 @@ public sealed class StreamSubscriptionTests : IDisposable {
             .BeEquivalentTo(commands.Except(delete).Select(x => x.BookingId));
     }
 
-    class TestHandler : IEventHandler {
+    class TestHandler : BaseEventHandler {
         public int Count { get; private set; }
 
         public List<IMessageConsumeContext> Processed { get; } = new();
 
-        public ValueTask HandleEvent(
+        public override ValueTask<EventHandlingStatus> HandleEvent(
             IMessageConsumeContext ctx
         ) {
             Count++;

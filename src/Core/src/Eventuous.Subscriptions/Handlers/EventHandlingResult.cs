@@ -3,24 +3,24 @@ using System.Collections.Concurrent;
 namespace Eventuous.Subscriptions;
 
 public record EventHandlingResult {
-    EventHandlingResult(EventHandlingStatus status, Type? handlerType, Exception? exception = null) {
+    EventHandlingResult(EventHandlingStatus status, string handlerType, Exception? exception = null) {
         Status      = status;
         Exception   = exception;
         HandlerType = handlerType;
     }
 
-    public static EventHandlingResult Succeeded(Type? handlerType)
+    public static EventHandlingResult Succeeded(string handlerType)
         => new(EventHandlingStatus.Success, handlerType);
 
-    public static EventHandlingResult Ignored(Type? handlerType)
+    public static EventHandlingResult Ignored(string handlerType)
         => new(EventHandlingStatus.Ignored, handlerType);
 
-    public static EventHandlingResult Failed(Type? handlerType, Exception? e)
+    public static EventHandlingResult Failed(string handlerType, Exception? e)
         => new(EventHandlingStatus.Failure, handlerType, e);
 
     public EventHandlingStatus Status      { get; }
     public Exception?          Exception   { get; }
-    public Type?               HandlerType { get; }
+    public string              HandlerType { get; }
 }
 
 public class HandlingResults {
@@ -37,6 +37,8 @@ public class HandlingResults {
 
     public IEnumerable<EventHandlingResult> GetResultsOf(EventHandlingStatus status)
         => _results.Where(x => x.Status == status);
+
+    public bool ReportedBy(string handlerType) => _results.Any(x => x.HandlerType == handlerType);
 
     public EventHandlingStatus GetFailureStatus() => _handlingStatus & EventHandlingStatus.Handled;
 

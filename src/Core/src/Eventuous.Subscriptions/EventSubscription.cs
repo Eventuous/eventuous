@@ -7,15 +7,17 @@ using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions;
 
-[PublicAPI]
 public abstract class EventSubscription<T> : IMessageSubscription where T : SubscriptionOptions {
+    [PublicAPI]
     public bool IsRunning { get; set; }
+
+    [PublicAPI]
     public bool IsDropped { get; set; }
 
     protected internal T Options { get; }
 
-    internal IEventSerializer EventSerializer { get; }
-    internal ConsumePipe      Pipe            { get; }
+    IEventSerializer     EventSerializer { get; }
+    internal ConsumePipe Pipe            { get; }
 
     protected CancellationTokenSource Stopping { get; } = new();
 
@@ -38,7 +40,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         CancellationToken cancellationToken
     ) {
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, Stopping.Token);
-        
+
         _onSubscribed = onSubscribed;
         _onDropped    = onDropped;
         await Subscribe(cts.Token);
@@ -74,14 +76,14 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 await Pipe.Send(context).NoContext();
             }
             else {
-                context.Ignore(GetType());
+                context.Ignore(SubscriptionId);
             }
 
             if (context.WasIgnored() && activity != null)
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;
         }
         catch (Exception e) {
-            context.Nack(GetType(), e);
+            context.Nack(SubscriptionId, e);
         }
 
         if (context.HasFailed()) {
@@ -182,7 +184,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         Task.Run(
             () => {
-                var delay = reason == DropReason.Stopped 
+                var delay = reason == DropReason.Stopped
                     ? TimeSpan.FromSeconds(10)
                     : TimeSpan.FromSeconds(2);
 

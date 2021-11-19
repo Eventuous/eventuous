@@ -82,6 +82,6 @@ public class RegistrationTests {
     }
 }
 
-public class TestHandler : IEventHandler {
-    public ValueTask HandleEvent(IMessageConsumeContext evt) => default;
+public class TestHandler : BaseEventHandler {
+    public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext evt) => default;
 }

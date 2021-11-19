@@ -34,7 +34,7 @@ public class HandlingStatusTests {
     public void NackAndIgnoreShouldFail() {
         var context = Fixture.Create<MessageConsumeContext>();
         context.Nack<object>(new Exception());
-        context.Ignore(GetType());
+        context.Ignore("test");
         context.HasFailed().Should().BeTrue();
         context.WasIgnored().Should().BeFalse();
     }

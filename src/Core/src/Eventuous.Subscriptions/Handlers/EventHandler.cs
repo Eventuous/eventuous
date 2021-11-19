@@ -9,15 +9,15 @@ namespace Eventuous.Subscriptions;
 /// Base class for event handlers, which allows registering typed handlers for different event types
 /// </summary>
 [PublicAPI]
-public abstract class EventHandler : IEventHandler {
+public abstract class EventHandler : BaseEventHandler {
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
-    readonly Type                                 _myType;
 
     protected EventHandler(TypeMapper? mapper = null) {
         var map = mapper ?? TypeMap.Instance;
         map.EnsureTypesRegistered(_handlersMap.Keys);
-        _myType = GetType();
     }
+
+    static readonly ValueTask<EventHandlingStatus> Ignored = new(EventHandlingStatus.Ignored);
 
     /// <summary>
     /// Register a handler for a particular event type
@@ -31,35 +31,28 @@ public abstract class EventHandler : IEventHandler {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        ValueTask Handle(IMessageConsumeContext context) {
+        ValueTask<EventHandlingStatus> Handle(IMessageConsumeContext context) {
             return context.Message is not T ? NoHandler() : HandleTypedEvent();
 
-            ValueTask HandleTypedEvent() {
+            async ValueTask<EventHandlingStatus> HandleTypedEvent() {
                 var typedContext = new MessageConsumeContext<T>(context);
-                return handler(typedContext);
+                await handler(typedContext);
+                return EventHandlingStatus.Success;
             }
 
-            ValueTask NoHandler() {
-                context.Ignore(_myType);
-                SubscriptionsEventSource.Log.NoHandlerFound(_myType.Name, typeof(T).Name);
-                return default;
+            ValueTask<EventHandlingStatus> NoHandler() {
+                SubscriptionsEventSource.Log.NoHandlerFound(DiagnosticName, context.MessageType);
+                return Ignored;
             }
         }
     }
 
-    public virtual async ValueTask HandleEvent(IMessageConsumeContext context) {
+    public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         if (!_handlersMap.TryGetValue(context.Message!.GetType(), out var handler)) {
-            context.Ignore(_myType);
-            return;
+            return EventHandlingStatus.Ignored;
         }
 
-        try {
-            await handler(context).NoContext();
-            context.Ack(_myType);
-        }
-        catch (Exception e) {
-            context.Nack(_myType, e);
-        }
+        return await handler(context).NoContext();
     }
 
     public override string ToString() {
@@ -73,12 +66,11 @@ public abstract class EventHandler : IEventHandler {
         return sb.ToString();
     }
 
-    delegate ValueTask HandleUntypedEvent(IMessageConsumeContext evt);
+    delegate ValueTask<EventHandlingStatus> HandleUntypedEvent(IMessageConsumeContext evt);
 }
 
 [PublicAPI]
 [Obsolete("Use EventHandler instead")]
 public abstract class TypedEventHandler : EventHandler { }
 
-public delegate ValueTask HandleTypedEvent<T>(MessageConsumeContext<T> consumeContext)
-    where T : class;
+public delegate ValueTask HandleTypedEvent<T>(MessageConsumeContext<T> consumeContext) where T : class;

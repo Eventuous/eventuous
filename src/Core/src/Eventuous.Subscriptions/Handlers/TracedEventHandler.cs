@@ -8,7 +8,6 @@ namespace Eventuous.Subscriptions;
 public class TracedEventHandler : IEventHandler {
     public TracedEventHandler(IEventHandler eventHandler) {
         _inner     = eventHandler;
-        _innerType = _inner.GetType();
 
         _defaultTags = new[] {
             new KeyValuePair<string, object?>(
@@ -16,24 +15,29 @@ public class TracedEventHandler : IEventHandler {
                 eventHandler.GetType().Name
             )
         };
+
+        DiagnosticName = _inner.DiagnosticName;
     }
 
-    readonly Type                            _innerType;
     readonly IEventHandler                   _inner;
     readonly KeyValuePair<string, object?>[] _defaultTags;
 
-    public async ValueTask HandleEvent(IMessageConsumeContext context) {
+    public string DiagnosticName { get; }
+
+    public async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         using var activity = SubscriptionActivity.Create(tags: _defaultTags)?.SetContextTags(context)?.Start();
 
         try {
-            await _inner.HandleEvent(context).NoContext();
+            var status = await _inner.HandleEvent(context).NoContext();
 
-            if (activity != null && context.WasIgnoredBy(_innerType))
+            if (activity != null && context.WasIgnoredBy(DiagnosticName))
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;
+
+            return status;
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
-            context.Nack(_innerType, e);
+            throw;
         }
     }
 }

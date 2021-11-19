@@ -23,11 +23,22 @@ public class DefaultConsumer : IMessageConsumer {
 
         async ValueTask Handle(IEventHandler handler) {
             try {
-                await handler.HandleEvent(context).NoContext();
-                context.Ack(handler.GetType());
+                var status = await handler.HandleEvent(context).NoContext();
+
+                switch (status) {
+                    case EventHandlingStatus.Success:
+                        context.Ack(handler.DiagnosticName);
+                        break;
+                    case EventHandlingStatus.Ignored:
+                        context.Ignore(handler.DiagnosticName);
+                        break;
+                    case EventHandlingStatus.Failure:
+                        context.Nack(handler.DiagnosticName, null);
+                        break;
+                }
             }
             catch (Exception e) {
-                context.Nack(handler.GetType(), e);
+                context.Nack(handler.DiagnosticName, e);
             }
         }
     }

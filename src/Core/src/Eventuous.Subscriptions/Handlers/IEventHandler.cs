@@ -3,5 +3,7 @@ using Eventuous.Subscriptions.Context;
 namespace Eventuous.Subscriptions; 
 
 public interface IEventHandler {
-    ValueTask HandleEvent(IMessageConsumeContext context);
+    string DiagnosticName { get; }
+    
+    ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context);
 }

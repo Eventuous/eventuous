@@ -7,14 +7,14 @@ using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 namespace Eventuous.Subscriptions.Context;
 
 public static class ContextExtensions {
-    public static void Ack(this IBaseConsumeContext context, Type? handlerType) {
+    public static void Ack(this IBaseConsumeContext context, string handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Succeeded(handlerType));
         Log.MessageHandled(handlerType, context);
     }
 
     public static void Nack(
         this IBaseConsumeContext context,
-        Type?                    handlerType,
+        string                   handlerType,
         Exception?               exception
     ) {
         context.HandlingResults.Add(EventHandlingResult.Failed(handlerType, exception));
@@ -27,18 +27,17 @@ public static class ContextExtensions {
         }
     }
 
-    public static void Ignore(this IBaseConsumeContext context, Type? handlerType) {
+    public static void Ignore(this IBaseConsumeContext context, string handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Ignored(handlerType));
-
         Log.MessageIgnored(handlerType, context);
     }
 
-    public static void Ack<T>(this IBaseConsumeContext context) => context.Ack(typeof(T));
+    public static void Ack<T>(this IBaseConsumeContext context) => context.Ack(typeof(T).Name);
 
-    public static void Ignore<T>(this IBaseConsumeContext context) => context.Ignore(typeof(T));
+    public static void Ignore<T>(this IBaseConsumeContext context) => context.Ignore(typeof(T).Name);
 
     public static void Nack<T>(this IBaseConsumeContext context, Exception? exception)
-        => context.Nack(typeof(T), exception);
+        => context.Nack(typeof(T).Name, exception);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool WasIgnored(this IBaseConsumeContext context) {
@@ -50,7 +49,11 @@ public static class ContextExtensions {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool WasIgnoredBy(this IBaseConsumeContext context, Type handlerType)
+    public static bool StatusUpdatedBy(this IBaseConsumeContext context, string handlerType)
+        => context.HandlingResults.ReportedBy(handlerType);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool WasIgnoredBy(this IBaseConsumeContext context, string handlerType)
         => context.HandlingResults.GetResultsOf(EventHandlingStatus.Ignored).Any(x => x.HandlerType == handlerType);
 
     public static bool HasFailed(this IBaseConsumeContext context)

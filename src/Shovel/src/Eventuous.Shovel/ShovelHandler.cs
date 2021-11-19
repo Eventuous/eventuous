@@ -2,7 +2,7 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Shovel;
 
-class ShovelHandler : IEventHandler {
+class ShovelHandler : BaseEventHandler {
     readonly IEventProducer    _eventProducer;
     readonly RouteAndTransform _transform;
 
@@ -14,13 +14,11 @@ class ShovelHandler : IEventHandler {
         _transform     = transform;
     }
 
-    public async ValueTask HandleEvent(IMessageConsumeContext context) {
+    public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         var shovelMessage = await _transform(context).NoContext();
 
-        if (shovelMessage?.Message == null) {
-            context.Ignore<ShovelHandler>();
-            return;
-        }
+        if (shovelMessage?.Message == null)
+            return EventHandlingStatus.Ignored;
 
         await _eventProducer
             .Produce(
@@ -30,10 +28,12 @@ class ShovelHandler : IEventHandler {
                 context.CancellationToken
             )
             .NoContext();
+
+        return EventHandlingStatus.Handled;
     }
 }
 
-class ShovelHandler<TProduceOptions> : IEventHandler
+class ShovelHandler<TProduceOptions> : BaseEventHandler
     where TProduceOptions : class {
     readonly IEventProducer<TProduceOptions> _eventProducer;
 
@@ -47,13 +47,11 @@ class ShovelHandler<TProduceOptions> : IEventHandler
         _transform     = transform;
     }
 
-    public async ValueTask HandleEvent(IMessageConsumeContext context) {
+    public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         var shovelMessage = await _transform(context).NoContext();
 
-        if (shovelMessage?.Message == null) {
-            context.Ignore<ShovelHandler<TProduceOptions>>();
-            return;
-        }
+        if (shovelMessage?.Message == null)
+            return EventHandlingStatus.Ignored;
 
         await _eventProducer.Produce(
                 shovelMessage.TargetStream,
@@ -63,6 +61,8 @@ class ShovelHandler<TProduceOptions> : IEventHandler
                 context.CancellationToken
             )
             .NoContext();
+
+        return EventHandlingStatus.Success;
     }
 }
 

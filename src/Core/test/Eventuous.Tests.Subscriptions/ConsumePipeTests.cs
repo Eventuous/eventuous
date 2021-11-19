@@ -54,11 +54,11 @@ public class ConsumePipeTests {
         }
     }
 
-    class TestHandler : IEventHandler {
+    class TestHandler : BaseEventHandler {
         public int                     Called   { get; private set; }
         public IMessageConsumeContext? Received { get; private set; }
 
-        public ValueTask HandleEvent(IMessageConsumeContext context) {
+        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
             Called++;
             Received = context;
             return default;

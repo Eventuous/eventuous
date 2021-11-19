@@ -32,25 +32,25 @@ public class SubscriptionsEventSource : EventSource {
     const int WarnId = 101;
 
     [NonEvent]
-    public void MessageHandlingFailed(Type? handlerType, IBaseConsumeContext context, Exception? exception) {
+    public void MessageHandlingFailed(string handlerType, IBaseConsumeContext context, Exception? exception) {
         if (IsEnabled(EventLevel.Error, EventKeywords.All))
             MessageHandlingFailed(
-                handlerType?.Name ?? "unknown",
+                handlerType,
                 context.MessageType,
                 exception?.ToString() ?? "unknown error"
             );
     }
 
     [NonEvent]
-    public void MessageIgnored(Type? handlerType, IBaseConsumeContext context) {
+    public void MessageIgnored(string handlerType, IBaseConsumeContext context) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            MessageIgnored(handlerType?.Name ?? "unknown", context.MessageType);
+            MessageIgnored(handlerType, context.MessageType);
     }
 
     [NonEvent]
-    public void MessageHandled(Type? handlerType, IBaseConsumeContext context) {
+    public void MessageHandled(string handlerType, IBaseConsumeContext context) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            MessageHandled(handlerType?.Name ?? "unknown", context.MessageType);
+            MessageHandled(handlerType, context.MessageType);
     }
 
     [NonEvent]
