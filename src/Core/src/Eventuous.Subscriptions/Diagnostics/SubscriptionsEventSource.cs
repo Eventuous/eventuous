@@ -24,7 +24,18 @@ public class SubscriptionsEventSource : EventSource {
         if (IsEnabled(EventLevel.Error, EventKeywords.All))
             SubscriptionDropped(subscriptionId, reason.ToString(), e?.ToString() ?? "unknown error");
     }
-    
+
+    [NonEvent]
+    public void FailedToHandleMessageWithRetry(
+        string    handlerType,
+        string    messageType,
+        int       retryCount,
+        Exception exception
+    ) {
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
+            FailedToHandleMessageWithRetry(handlerType, messageType, retryCount.ToString(), exception.ToString());
+    }
+
     [Event(1, Message = "Handler {0} failed to process event {1}: {2}", Level = EventLevel.Error)]
     public void FailedToHandleMessage(string handlerType, string messageType, string exception)
         => WriteEvent(1, handlerType, messageType, exception);
@@ -91,24 +102,32 @@ public class SubscriptionsEventSource : EventSource {
         if (IsEnabled(EventLevel.Informational, EventKeywords.All))
             WriteEvent(10, subscriptionId);
     }
-    
+
     [Event(11, Message = "[{0}] Stopped", Level = EventLevel.Informational)]
     public void SubscriptionStopped(string subscriptionId) {
         if (IsEnabled(EventLevel.Informational, EventKeywords.All))
             WriteEvent(11, subscriptionId);
     }
-    
+
     [Event(12, Message = "[{0}] Event {1} ignored by projection", Level = EventLevel.Verbose)]
     public void EventIgnoredByProjection(string handlerType, string eventType) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
             WriteEvent(12, handlerType, eventType);
     }
 
     [Event(13, Message = "[{0}] Event {1} being projected", Level = EventLevel.Verbose)]
     public void EventHandledByProjection(string handlerType, string eventType) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
             WriteEvent(13, handlerType, eventType);
     }
+
+    [Event(14, Message = "[{0}] Failed to handle {1} after {2} retries: {3}", Level = EventLevel.Warning)]
+    public void FailedToHandleMessageWithRetry(
+        string handlerType,
+        string messageType,
+        string retryCount,
+        string exception
+    ) => WriteEvent(14, handlerType, messageType, retryCount, exception);
 
     [Event(100, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
     public void Info(string message, string? arg1 = null, string? arg2 = null) {
