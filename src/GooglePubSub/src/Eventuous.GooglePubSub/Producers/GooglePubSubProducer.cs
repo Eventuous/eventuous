@@ -81,10 +81,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     ) {
         var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
 
-        await Task.WhenAll(
-            messages
-                .Select(x => client.PublishAsync(CreateMessage(x, options)))
-        ).NoContext();
+        await Task.WhenAll(messages.Select(x => client.PublishAsync(CreateMessage(x, options)))).NoContext();
     }
 
     PubsubMessage CreateMessage(ProducedMessage message, PubSubProduceOptions? options) {

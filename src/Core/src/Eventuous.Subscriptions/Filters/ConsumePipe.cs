@@ -22,7 +22,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         return this;
     }
 
-    public ConsumePipe AddFilter<TIn, TOut>(IConsumeFilter<TIn, TOut> filter)
+    public ConsumePipe AddFilterLast<TIn, TOut>(IConsumeFilter<TIn, TOut> filter)
         where TIn : class, IBaseConsumeContext
         where TOut : class, IBaseConsumeContext {
         // Avoid adding one filter instance multiple times
@@ -43,12 +43,10 @@ public sealed class ConsumePipe : IAsyncDisposable {
         IConsumeFilter<TIn, TOut>             filter,
         IBaseConsumeContext                   context,
         Func<IBaseConsumeContext, ValueTask>? next
-    ) where TIn : class, IBaseConsumeContext where TOut : class, IBaseConsumeContext {
-        if (context is not TIn ctx)
-            throw new InvalidContextTypeException(typeof(TIn), context.GetType());
-
-        return filter.Send(ctx, next);
-    }
+    ) where TIn : class, IBaseConsumeContext where TOut : class, IBaseConsumeContext
+        => context is TIn ctx
+            ? filter.Send(ctx, next)
+            : throw new InvalidContextTypeException(typeof(TIn), context.GetType());
 
     public ValueTask Send(IBaseConsumeContext context) => Move(_filters.First, context);
 

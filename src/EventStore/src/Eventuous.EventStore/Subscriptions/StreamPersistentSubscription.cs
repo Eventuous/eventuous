@@ -2,6 +2,7 @@ using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -9,8 +10,8 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Persistent subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>,
-    IMeasuredSubscription {
+public class StreamPersistentSubscription
+    : EventStoreSubscriptionBase<StreamPersistentSubscriptionOptions>, IMeasuredSubscription {
     public delegate Task HandleEventProcessingFailure(
         EventStoreClient       client,
         PersistentSubscription subscription,
@@ -37,8 +38,10 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
 
         _subscriptionClient = new EventStorePersistentSubscriptionsClient(settings);
 
-        _handleEventProcessingFailure =
-            options.FailureHandler ?? DefaultEventProcessingFailureHandler;
+        _handleEventProcessingFailure = options.FailureHandler ?? DefaultEventProcessingFailureHandler;
+
+        if (options.FailureHandler != null && !options.ThrowOnError)
+            Log.ThrowOnErrorIncompatible(SubscriptionId);
     }
 
     /// <summary>
@@ -65,14 +68,12 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
-        consumerPipe.AddFilterFirst(new MessageFilter(ctx => !ctx.MessageType.StartsWith("$")))
+        consumerPipe
     ) { }
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
-        var settings = Options.SubscriptionSettings
-                    ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
-
-        var autoAck = Options.AutoAck;
+        var settings = Options.SubscriptionSettings ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
+        var autoAck  = Options.AutoAck;
 
         try {
             _subscription = await LocalSubscribe().NoContext();
@@ -183,7 +184,6 @@ public class StreamPersistentSubscription : EventStoreSubscriptionBase<StreamPer
             Options.SubscriptionId,
             Options.Stream,
             EventStoreClient,
-            Options.ResolveLinkTos,
             () => LastProcessed
         ).GetSubscriptionGap;
 }

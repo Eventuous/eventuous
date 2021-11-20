@@ -91,9 +91,13 @@ public class StreamSubscription
             ResolvedEvent                                re,
             CancellationToken                            ct
         ) {
+            if (Options.IgnoreSystemEvents && re.Event.EventType[0] == '$') return;
+
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (re.Event is not null) await HandleInternal(CreateContext(re, ct)).NoContext();
+            if (re.Event is null) return;
+            
+            await HandleInternal(CreateContext(re, ct)).NoContext();
         }
 
         void HandleDrop(
@@ -134,7 +138,6 @@ public class StreamSubscription
             Options.SubscriptionId,
             Options.StreamName,
             EventStoreClient,
-            Options.ResolveLinkTos,
             () => LastProcessed
         ).GetSubscriptionGap;
 }

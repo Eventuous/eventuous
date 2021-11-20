@@ -81,7 +81,7 @@ public sealed class StreamSubscriptionTests : IDisposable {
             },
             new NoOpCheckpointStore(startPosition),
             new ConsumePipe()
-                .AddFilter(new MessageFilter(x => !x.MessageType.StartsWith("$")))
+                .AddFilterLast(new MessageFilter(x => !x.MessageType.StartsWith("$")))
                 .AddDefaultConsumer(handler)
         );
 

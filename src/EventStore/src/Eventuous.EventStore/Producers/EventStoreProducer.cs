@@ -1,5 +1,4 @@
-﻿using Eventuous.Diagnostics;
-using Eventuous.Producers;
+﻿using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
 
 namespace Eventuous.EventStore.Producers;
@@ -41,12 +40,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         EventStoreClientSettings clientSettings,
         IEventSerializer?        serializer     = null,
         IMetadataSerializer?     metaSerializer = null
-    )
-        : this(
-            new EventStoreClient(Ensure.NotNull(clientSettings)),
-            serializer,
-            metaSerializer
-        ) { }
+    ) : this(new EventStoreClient(Ensure.NotNull(clientSettings)), serializer, metaSerializer) { }
 
     static readonly ProducerTracingOptions TracingOptions = new() {
         DestinationKind  = "stream",
@@ -80,12 +74,6 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         message.Metadata!.Remove(MetaTags.MessageId);
         var metaBytes = _metaSerializer.Serialize(message.Metadata);
 
-        return new EventData(
-            Uuid.FromGuid(message.MessageId),
-            eventType,
-            payload,
-            metaBytes,
-            contentType
-        );
+        return new EventData(Uuid.FromGuid(message.MessageId), eventType, payload, metaBytes, contentType);
     }
 }

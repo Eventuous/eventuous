@@ -8,40 +8,26 @@ namespace Eventuous.EventStore.Subscriptions;
 [PublicAPI]
 public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscriptionBase<T>
     where T : EventStoreSubscriptionOptions {
-    protected ICheckpointStore        CheckpointStore { get; }
+    protected ICheckpointStore CheckpointStore { get; }
 
     protected EventStoreCatchUpSubscriptionBase(
         EventStoreClient eventStoreClient,
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe
-    ) : base(
-        eventStoreClient,
-        options,
-        ConfigurePipe(consumePipe)
-    )
+    ) : base(eventStoreClient, options, ConfigurePipe(consumePipe))
         => CheckpointStore = Ensure.NotNull(checkpointStore);
 
-    static ConsumePipe ConfigurePipe(ConsumePipe pipe)
-        => pipe
-            .AddFilterFirst(new MessageFilter(ctx => !ctx.MessageType.StartsWith("$")))
-            .AddFilterFirst(new ConcurrentFilter(1));
+    static ConsumePipe ConfigurePipe(ConsumePipe pipe) => pipe.AddFilterFirst(new ConcurrentFilter(1));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected ValueTask HandleInternal(IMessageConsumeContext context) {
         var ctx = new DelayedAckConsumeContext(context, Ack, Nack);
         return Handler(ctx);
 
-        ValueTask Ack(CancellationToken ct) {
-            var position = EventPosition.FromContext(context);
-            return StoreCheckpoint(position, ct);
-        }
+        ValueTask Ack(CancellationToken ct) => StoreCheckpoint(EventPosition.FromContext(context), ct);
 
-        ValueTask Nack(Exception exception, CancellationToken ct) {
-            if (Options.ThrowOnError) throw exception;
-
-            return Ack(ct);
-        }
+        ValueTask Nack(Exception exception, CancellationToken ct) => Options.ThrowOnError ? throw exception : Ack(ct);
     }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
@@ -58,10 +44,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         return checkpoint;
     }
 
-    protected async ValueTask StoreCheckpoint(
-        EventPosition     position,
-        CancellationToken cancellationToken
-    ) {
+    protected async ValueTask StoreCheckpoint(EventPosition position, CancellationToken cancellationToken) {
         var checkpoint = new Checkpoint(Options.SubscriptionId, position.Position);
         await CheckpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
         LastProcessed = position;

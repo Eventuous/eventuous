@@ -7,20 +7,17 @@ public class StreamSubscriptionMeasure {
         string               subscriptionId,
         StreamName           streamName,
         EventStoreClient     eventStoreClient,
-        bool                 resolveLinkTos,
         Func<EventPosition?> getLast
     ) {
         _subscriptionId   = subscriptionId;
         _streamName       = streamName;
         _eventStoreClient = eventStoreClient;
-        _resolveLinkTos   = resolveLinkTos;
         _getLast          = getLast;
     }
 
     readonly string               _subscriptionId;
     readonly StreamName           _streamName;
     readonly EventStoreClient     _eventStoreClient;
-    readonly bool                 _resolveLinkTos;
     readonly Func<EventPosition?> _getLast;
 
     public async ValueTask<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken) {
@@ -29,7 +26,6 @@ public class StreamSubscriptionMeasure {
             _streamName,
             StreamPosition.End,
             1,
-            resolveLinkTos: _resolveLinkTos,
             cancellationToken: cancellationToken
         );
 

@@ -28,6 +28,7 @@ public class SubscriptionsEventSource : EventSource {
     const int CheckpointLoadedId               = 21;
     const int CheckpointStoredId               = 22;
     const int MessageSerializationNoResultId   = 23;
+    const int ThrowOnErrorIncompatibleId       = 24;
 
     const int InfoId = 100;
     const int WarnId = 101;
@@ -194,11 +195,28 @@ public class SubscriptionsEventSource : EventSource {
         => WriteEvent(CheckpointStoredId, store, checkpointId, value);
 
     // The level of this message needs validation
-    [Event(MessageSerializationNoResultId, Message = "[{0}] Message ignored as it didn't deserialize {1} {2} {3} {4}", Level = EventLevel.Verbose)]
-    public void MessagePayloadInconclusive(string subscriptionId, string type, string stream, string contentType, DeserializationError reason) {
+    [Event(
+        MessageSerializationNoResultId,
+        Message = "[{0}] Message ignored as it didn't deserialize {1} {2} {3} {4}",
+        Level = EventLevel.Verbose
+    )]
+    public void MessagePayloadInconclusive(
+        string               subscriptionId,
+        string               type,
+        string               stream,
+        string               contentType,
+        DeserializationError reason
+    ) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
             WriteEvent(MessageSerializationNoResultId, subscriptionId, type, stream, contentType, reason);
     }
+
+    [Event(
+        ThrowOnErrorIncompatibleId,
+        Message = "[{0}] Failure handler is set, but ThrowOnError is disabled, so the failure handler will never be called",
+        Level = EventLevel.Warning
+    )]
+    public void ThrowOnErrorIncompatible(string subscriptionId) => WriteEvent(ThrowOnErrorIncompatibleId, subscriptionId);
 
     [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
     public void Info(string message, string? arg1 = null, string? arg2 = null) {

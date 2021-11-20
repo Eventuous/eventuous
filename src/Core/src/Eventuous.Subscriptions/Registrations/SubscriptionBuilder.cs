@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Consumers;
@@ -83,6 +82,34 @@ public abstract class SubscriptionBuilder {
         return this;
     }
 
+    /// <summary>
+    /// Add a custom filter to the consume pipe, at the end of the pipe
+    /// </summary>
+    /// <param name="filter">The filter instance</param>
+    /// <typeparam name="TIn">Inbound consume context type</typeparam>
+    /// <typeparam name="TOut">Outbound consume context type</typeparam>
+    /// <returns></returns>
+    [PublicAPI]
+    public SubscriptionBuilder AddConsumeFilterLast<TIn, TOut>(IConsumeFilter<TIn, TOut> filter)
+        where TIn : class, IBaseConsumeContext where TOut : class, IBaseConsumeContext {
+        Pipe.AddFilterLast(filter);
+        return this;
+    }
+
+    /// <summary>
+    /// Add a custom filter to the consume pipe, at the beginning of the pipe
+    /// </summary>
+    /// <param name="filter">The filter instance</param>
+    /// <typeparam name="TIn">Inbound consume context type</typeparam>
+    /// <typeparam name="TOut">Outbound consume context type</typeparam>
+    /// <returns></returns>
+    [PublicAPI]
+    public SubscriptionBuilder AddConsumeFilterFirst<TIn, TOut>(IConsumeFilter<TIn, TOut> filter)
+        where TIn : class, IBaseConsumeContext where TOut : class, IBaseConsumeContext {
+        Pipe.AddFilterFirst(filter);
+        return this;
+    }
+
     void AddHandlerResolve(ResolveHandler resolveHandler)
         => _handlers.Add(
             sp => {
@@ -145,10 +172,10 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
             var tags = new KeyValuePair<string, object?>[]
                 { new(TelemetryTags.Eventuous.Consumer, consumer.GetType().Name) };
 
-            Pipe.AddFilter(new TracingFilter(tags));
+            Pipe.AddFilterLast(new TracingFilter(tags));
         }
 
-        Pipe.AddFilter(new ConsumerFilter(consumer));
+        Pipe.AddFilterLast(new ConsumerFilter(consumer));
 
         var constructors = typeof(T).GetConstructors<TOptions>();
 

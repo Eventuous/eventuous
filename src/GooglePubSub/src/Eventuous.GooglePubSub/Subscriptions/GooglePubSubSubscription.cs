@@ -4,6 +4,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Google.Protobuf.Collections;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
 namespace Eventuous.GooglePubSub.Subscriptions;
@@ -57,18 +58,17 @@ public class GooglePubSubSubscription
     /// <param name="consumePipe"></param>
     public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe)
         : base(options, consumePipe) {
-        _failureHandler = Ensure.NotNull(options).FailureHandler
-                       ?? DefaultEventProcessingErrorHandler;
+        _failureHandler = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
 
         _subscriptionName = SubscriptionName.FromProjectSubscription(
             Ensure.NotEmptyString(options.ProjectId),
             Ensure.NotEmptyString(options.SubscriptionId)
         );
 
-        _topicName = TopicName.FromProjectTopic(
-            options.ProjectId,
-            Ensure.NotEmptyString(options.TopicId)
-        );
+        _topicName = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
+
+        if (options.FailureHandler != null && !options.ThrowOnError)
+            Log.ThrowOnErrorIncompatible(SubscriptionId);
     }
 
     Task _subscriberTask = null!;

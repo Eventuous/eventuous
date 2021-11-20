@@ -1,5 +1,5 @@
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -16,23 +16,14 @@ public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
         _metaSerializer  = Options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
-    protected Metadata? DeserializeMeta(
-        ReadOnlyMemory<byte> meta,
-        string               stream,
-        ulong                position = 0
-    ) {
+    protected Metadata? DeserializeMeta(ReadOnlyMemory<byte> meta, string stream, ulong position = 0) {
         if (meta.IsEmpty) return null;
 
         try {
             return _metaSerializer.Deserialize(meta.Span);
         }
         catch (Exception e) {
-            SubscriptionsEventSource.Log.MetadataDeserializationFailed(
-                Options.SubscriptionId,
-                stream,
-                position,
-                e.ToString()
-            );
+            Log.MetadataDeserializationFailed(Options.SubscriptionId, stream, position, e.ToString());
 
             if (Options.ThrowOnError)
                 throw new DeserializationException(stream, "metadata", position, e);

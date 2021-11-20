@@ -1,8 +1,8 @@
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Options;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.RabbitMq.Subscriptions;
 
@@ -46,18 +46,18 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     )
         : base(
             Ensure.NotNull(options),
-            consumePipe.AddFilterFirst(new ConcurrentFilter(options.ConcurrencyLimit))
+            consumePipe.AddFilterFirst(new ConcurrentFilter(options.ConcurrencyLimit, options.ConcurrencyLimit * 10))
         ) {
         _failureHandler = options.FailureHandler ?? DefaultEventFailureHandler;
+        _connection     = Ensure.NotNull(connectionFactory).CreateConnection();
+        _channel        = _connection.CreateModel();
 
-        _connection = Ensure.NotNull(connectionFactory).CreateConnection();
-
-        _channel = _connection.CreateModel();
-
-        var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount
-            : Options.ConcurrencyLimit * 2;
+        var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount : Options.ConcurrencyLimit * 2;
 
         _channel.BasicQos(0, (ushort)prefetch, false);
+
+        if (options.FailureHandler != null && !options.ThrowOnError)
+            Log.ThrowOnErrorIncompatible(SubscriptionId);
     }
 
     /// <summary>
@@ -76,18 +76,15 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         IEventSerializer? eventSerializer = null
     ) : this(
         connectionFactory,
-        new RabbitMqSubscriptionOptions {
-            Exchange        = exchange,
-            SubscriptionId  = subscriptionId,
-            EventSerializer = eventSerializer
-        },
+        new RabbitMqSubscriptionOptions
+            { Exchange = exchange, SubscriptionId = subscriptionId, EventSerializer = eventSerializer },
         consumePipe
     ) { }
 
     protected override ValueTask Subscribe(CancellationToken cancellationToken) {
         var exchange = Ensure.NotEmptyString(Options.Exchange);
 
-        SubscriptionsEventSource.Log.Info("Ensuring exchange", exchange);
+        Log.Info("Ensuring exchange", exchange);
 
         _channel.ExchangeDeclare(
             exchange,
@@ -97,7 +94,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.ExchangeOptions?.Arguments
         );
 
-        SubscriptionsEventSource.Log.Info("Ensuring queue", Options.SubscriptionId);
+        Log.Info("Ensuring queue", Options.SubscriptionId);
 
         _channel.QueueDeclare(
             Options.SubscriptionId,
@@ -107,7 +104,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.QueueOptions?.Arguments
         );
 
-        SubscriptionsEventSource.Log.Info("Binding exchange to queue:", exchange, Options.SubscriptionId);
+        Log.Info("Binding exchange to queue:", exchange, Options.SubscriptionId);
 
         _channel.QueueBind(
             Options.SubscriptionId,
@@ -181,12 +178,11 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         _connection.Close();
         _connection.Dispose();
 
-        // return _worker?.DisposeAsync() ?? default;
         return default;
     }
 
     void DefaultEventFailureHandler(IModel channel, BasicDeliverEventArgs message, Exception? exception) {
-        SubscriptionsEventSource.Log.Warn("Error in the consumer, will redeliver", exception?.ToString());
+        Log.Warn("Error in the consumer, will redeliver", exception?.ToString());
         _channel.BasicReject(message.DeliveryTag, true);
     }
 
