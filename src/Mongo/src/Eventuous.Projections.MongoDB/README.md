@@ -22,30 +22,25 @@ Make sure to use unique subscription ids across different applications if they u
 Create your own projection class that inherits `MongoProjection<T>` abstract class.
 Here, `T` is the document type, which must be a record. Your document type should inherit from `ProjectedDocument` record.
 
-Override `GetUpdate` function, following this example:
+Use the `On<TEvent>` function to register event projection handlers:
 
 ```csharp
 public class ProjectWithTasksProjection : MongoProjection<ProjectWithTasks> {
     public ProjectWithTasksProjection(
         IMongoDatabase  database,
         ILoggerFactory? loggerFactory
-    ) : base(database, QuerySubscription.Id, loggerFactory) { }
-
-    protected override ValueTask<Operation<ProjectWithTasks>> GetUpdate(object evt, long? position) {
-        return evt switch {
-            V1.ProjectRegistered e => UpdateOperationTask(
-                e.Id,
-                update => update.SetOnInsert(x => x.ProjectName, e.Name)
-            ),
-            V1.TaskCreated e => UpdateOperationTask(
-                e.ProjectId,
-                update => update.AddToSet(
-                    x => x.Tasks,
-                    new ProjectTaskRecord(e.TaskId, e.Description)
-                )
-            ),
-            _ => NoOp
-        };
+    ) : base(database, QuerySubscription.Id, loggerFactory) { 
+        On<V1.ProjectRegistered>(ctx => UpdateOperationTask(
+            ctx.Message.Id, 
+            update => update.SetOnInsert(x => x.ProjectName, ctx.Message.Name)
+        ));
+        On<V1.TaskCreated>(ctx => UpdateOperationTask(
+            ctx.Message.ProjectId,
+            update => update.AddToSet(
+                x => x.Tasks,
+                new ProjectTaskRecord(ctx.Message.TaskId, ctx.Message.Description)
+            )
+        ));
     }
 }
 ```
