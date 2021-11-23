@@ -1,4 +1,4 @@
-namespace Eventuous.Projections.MongoDB.Tools; 
+namespace Eventuous.Projections.MongoDB; 
 
 public delegate UpdateDefinition<T> BuildUpdate<T>(UpdateDefinitionBuilder<T> update);
 

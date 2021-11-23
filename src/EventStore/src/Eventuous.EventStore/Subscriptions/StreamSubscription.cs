@@ -96,7 +96,7 @@ public class StreamSubscription
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (re.Event is null) return;
-            
+
             await HandleInternal(CreateContext(re, ct)).NoContext();
         }
 
@@ -118,19 +118,18 @@ public class StreamSubscription
         );
 
         return new MessageConsumeContext(
-            re.Event.EventId.ToString(),
-            re.Event.EventType,
-            re.Event.ContentType,
-            re.Event.EventStreamId,
-            re.OriginalEventNumber.ToUInt64(),
-            re.Event.Created,
-            evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
-            cancellationToken
-        ) {
-            GlobalPosition = re.Event.Position.CommitPosition,
-            StreamPosition = re.OriginalEventNumber.ToUInt64()
-        };
+                re.Event.EventId.ToString(),
+                re.Event.EventType,
+                re.Event.ContentType,
+                re.Event.EventStreamId,
+                re.OriginalEventNumber.ToUInt64(),
+                re.Event.Created,
+                evt,
+                DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+                cancellationToken
+            )
+            .WithItem(ContextKeys.GlobalPosition, re.Event.Position.CommitPosition)
+            .WithItem(ContextKeys.StreamPosition, re.OriginalEventNumber.ToUInt64());
     }
 
     public GetSubscriptionGap GetMeasure()

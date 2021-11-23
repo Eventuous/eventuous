@@ -36,10 +36,10 @@ public class MessageConsumeContext : IMessageConsumeContext {
     public ActivityContext?  ParentContext     { get; set; }
     public HandlingResults   HandlingResults   { get; } = new();
     public CancellationToken CancellationToken { get; set; }
-
     public ulong Sequence       { get; init; }
-    public ulong GlobalPosition { get; init; }
-    public ulong StreamPosition { get; init; }
+    
+    // public ulong GlobalPosition { get; init; }
+    // public ulong StreamPosition { get; init; }
 }
 
 public class MessageConsumeContext<T> : WrappedConsumeContext, IMessageConsumeContext<T>

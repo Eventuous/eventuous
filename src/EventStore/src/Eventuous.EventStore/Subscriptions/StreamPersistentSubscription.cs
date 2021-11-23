@@ -141,19 +141,18 @@ public class StreamPersistentSubscription
         );
 
         return new MessageConsumeContext(
-            re.Event.EventId.ToString(),
-            re.Event.EventType,
-            re.Event.ContentType,
-            re.OriginalStreamId,
-            re.Event.EventNumber,
-            re.Event.Created,
-            evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
-            cancellationToken
-        ) {
-            GlobalPosition = re.Event.Position.CommitPosition,
-            StreamPosition = re.Event.EventNumber
-        };
+                re.Event.EventId.ToString(),
+                re.Event.EventType,
+                re.Event.ContentType,
+                re.OriginalStreamId,
+                re.Event.EventNumber,
+                re.Event.Created,
+                evt,
+                DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+                cancellationToken
+            )
+            .WithItem(ContextKeys.GlobalPosition, re.Event.Position.CommitPosition)
+            .WithItem(ContextKeys.StreamPosition, re.Event.EventNumber);
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {

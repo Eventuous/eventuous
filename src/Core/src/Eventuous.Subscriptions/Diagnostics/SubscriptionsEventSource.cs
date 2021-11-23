@@ -29,6 +29,7 @@ public class SubscriptionsEventSource : EventSource {
     const int CheckpointStoredId               = 22;
     const int MessageSerializationNoResultId   = 23;
     const int ThrowOnErrorIncompatibleId       = 24;
+    const int UnknownMessageTypeId             = 25;
 
     const int InfoId = 100;
     const int WarnId = 101;
@@ -83,6 +84,9 @@ public class SubscriptionsEventSource : EventSource {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
             CheckpointStored(store.GetType().Name, checkpoint.Id, checkpoint.Position?.ToString() ?? "empty");
     }
+    
+    [NonEvent]
+    public void UnknownMessageType<T>() => UnknownMessageType(typeof(T).Name);
 
     [Event(MessageReceivedId, Message = "[{0}] Received {1}", Level = EventLevel.Verbose)]
     public void MessageReceived(string subscriptionId, string messageType) {
@@ -217,6 +221,13 @@ public class SubscriptionsEventSource : EventSource {
         Level = EventLevel.Warning
     )]
     public void ThrowOnErrorIncompatible(string subscriptionId) => WriteEvent(ThrowOnErrorIncompatibleId, subscriptionId);
+
+    [Event(
+        UnknownMessageTypeId,
+        Message = "Message type {0} is not registered in the type map",
+        Level = EventLevel.Warning
+    )]
+    public void UnknownMessageType(string type) => WriteEvent(UnknownMessageTypeId, type);
 
     [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
     public void Info(string message, string? arg1 = null, string? arg2 = null) {

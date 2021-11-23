@@ -13,6 +13,7 @@ public interface IBaseConsumeContext {
     ActivityContext?  ParentContext     { get; set; }
     HandlingResults   HandlingResults   { get; }
     CancellationToken CancellationToken { get; set; }
+    ulong             Sequence          { get; }
 }
 
 public interface IMessageConsumeContext : IBaseConsumeContext {

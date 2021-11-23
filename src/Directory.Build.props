@@ -9,6 +9,8 @@
         <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
         <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
         <DiagRoot>$(RepoRoot)\src\Diagnostics\src</DiagRoot>
+        <EsdbRoot>$(RepoRoot)\src\EventStore\src</EsdbRoot>
+        <LocalRoot>..\..\src</LocalRoot>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' != 'true'">
@@ -80,5 +82,16 @@
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
         <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(IncludeSutApp)' == 'true'">
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(IncludeSutSubs)' == 'true'">
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(IncludeTestHelpers)' == 'true'">
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
     </ItemGroup>
 </Project>

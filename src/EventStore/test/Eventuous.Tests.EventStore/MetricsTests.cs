@@ -14,7 +14,7 @@ using OpenTelemetry.Metrics;
 
 namespace Eventuous.Tests.EventStore;
 
-public class MetricsTests : IDisposable, IAsyncLifetime {
+public sealed class MetricsTests : IDisposable {
     static MetricsTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     const string SubscriptionId = "test-sub";
@@ -81,10 +81,6 @@ public class MetricsTests : IDisposable, IAsyncLifetime {
     readonly TestExporter      _exporter;
     readonly TestEventListener _es;
     readonly ITestOutputHelper _output;
-
-    public Task InitializeAsync() => _host.Host.StartAsync();
-
-    public Task DisposeAsync() => _host.Host.StopAsync();
 
     class TestHandler : BaseEventHandler {
         public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {

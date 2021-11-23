@@ -2,13 +2,12 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
+        <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
-        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
-        <ProjectReference Include="..\..\src\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
 </Project>

@@ -1,5 +1,7 @@
+using System.Runtime.CompilerServices;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
 
@@ -7,11 +9,54 @@ namespace Eventuous.Projections.MongoDB;
 public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedDocument {
     protected IMongoCollection<T> Collection { get; }
 
-    protected MongoProjection(IMongoDatabase database)
-        => Collection = Ensure.NotNull(database).GetDocumentCollection<T>();
+    readonly Dictionary<Type, ProjectUntypedEvent> _handlersMap = new();
+    readonly TypeMapper                            _map;
+
+    protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) {
+        Collection = Ensure.NotNull(database).GetDocumentCollection<T>();
+        _map = typeMap ?? TypeMap.Instance;
+    }
+
+    readonly UpdateOptions _defaultUpdateOptions = new() { IsUpsert = true };
+
+    /// <summary>
+    /// Register a handler for a particular event type
+    /// </summary>
+    /// <param name="handler">Function which handles an event</param>
+    /// <typeparam name="T">Event type</typeparam>
+    /// <typeparam name="TEvent"></typeparam>
+    /// <exception cref="ArgumentException">Throws if a handler for the given event type has already been registered</exception>
+    protected void On<TEvent>(ProjectTypedEvent<T, TEvent> handler) where TEvent : class {
+        if (!_handlersMap.TryAdd(typeof(TEvent), x => HandleInternal(x, handler))) {
+            throw new ArgumentException($"Type {typeof(TEvent).Name} already has a handler");
+        }
+
+        if (!_map.IsTypeRegistered<T>()) {
+            Log.UnknownMessageType<T>();
+        }
+    }
+
+    readonly ValueTask<EventHandlingStatus> _ignored = new(EventHandlingStatus.Ignored);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    ValueTask<Operation<T>> HandleInternal<TEvent>(IMessageConsumeContext context, ProjectTypedEvent<T, TEvent> handler)
+        where TEvent : class {
+        return context.Message is not TEvent ? NoHandler() : HandleTypedEvent();
+
+        ValueTask<Operation<T>> HandleTypedEvent() {
+            var typedContext = new MessageConsumeContext<TEvent>(context);
+            return handler(typedContext);
+        }
+
+        ValueTask<Operation<T>> NoHandler() {
+            Log.NoHandlerFound(DiagnosticName, context.MessageType);
+            return NoOp;
+        }
+    }
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        var updateTask = GetUpdate(context);
+        var updateTask = _handlersMap.TryGetValue(context.Message!.GetType(), out var handler)
+            ? handler(context) : GetUpdate(context);
 
         var update = updateTask == NoOp
             ? null
@@ -41,23 +86,23 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         }
 
         Task ExecuteUpdate(UpdateOperation<T> upd) {
-            var streamPosition = context is MessageConsumeContext ctx ? (long)ctx.StreamPosition : 0;
+            var streamPosition = context.Items.TryGetItem<ulong>(ContextKeys.StreamPosition);
 
             var (filterDefinition, updateDefinition) = upd;
 
             return Collection.UpdateOneAsync(
                 filterDefinition,
                 updateDefinition.Set(x => x.Position, streamPosition),
-                new UpdateOptions { IsUpsert = true },
+                _defaultUpdateOptions,
                 context.CancellationToken
             );
         }
     }
 
-    protected abstract ValueTask<Operation<T>> GetUpdate(object evt, long? position);
+    protected virtual ValueTask<Operation<T>> GetUpdate(object evt, ulong? position) => NoOp;
 
-    protected virtual ValueTask<Operation<T>> GetUpdate(IMessageConsumeContext context) {
-        var streamPosition = context is MessageConsumeContext ctx ? (long?)ctx.StreamPosition : null;
+    ValueTask<Operation<T>> GetUpdate(IMessageConsumeContext context) {
+        var streamPosition = context.Items.TryGetItem<ulong>(ContextKeys.StreamPosition);
 
         return GetUpdate(
             context.Message!,
@@ -78,7 +123,12 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         => new(UpdateOperation(id, update));
 
     protected static readonly ValueTask<Operation<T>> NoOp = new((Operation<T>)null!);
+
+    delegate ValueTask<Operation<T>> ProjectUntypedEvent(IMessageConsumeContext evt);
 }
+
+public delegate ValueTask<Operation<T>> ProjectTypedEvent<T, TEvent>(MessageConsumeContext<TEvent> consumeContext)
+    where T : class where TEvent : class;
 
 // ReSharper disable once UnusedTypeParameter
 public abstract record Operation<T>;

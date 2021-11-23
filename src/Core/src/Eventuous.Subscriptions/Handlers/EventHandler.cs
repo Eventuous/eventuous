@@ -12,12 +12,11 @@ namespace Eventuous.Subscriptions;
 public abstract class EventHandler : BaseEventHandler {
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
 
-    protected EventHandler(TypeMapper? mapper = null) {
-        var map = mapper ?? TypeMap.Instance;
-        map.EnsureTypesRegistered(_handlersMap.Keys);
-    }
+    protected EventHandler(TypeMapper? mapper = null) => _map = mapper ?? TypeMap.Instance;
 
     static readonly ValueTask<EventHandlingStatus> Ignored = new(EventHandlingStatus.Ignored);
+
+    readonly TypeMapper _map;
 
     /// <summary>
     /// Register a handler for a particular event type
@@ -28,6 +27,10 @@ public abstract class EventHandler : BaseEventHandler {
     protected void On<T>(HandleTypedEvent<T> handler) where T : class {
         if (!_handlersMap.TryAdd(typeof(T), Handle)) {
             throw new ArgumentException($"Type {typeof(T).Name} already has a handler");
+        }
+
+        if (!_map.IsTypeRegistered<T>()) {
+            SubscriptionsEventSource.Log.UnknownMessageType<T>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -3,10 +3,10 @@
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
         <IncludeTestHost>true</IncludeTestHost>
+        <IncludeTestHelpers>true</IncludeTestHelpers>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
-        <ProjectReference Include="$(RepoRoot)\src\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
-        <ProjectReference Include="..\..\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     </ItemGroup>
 </Project>

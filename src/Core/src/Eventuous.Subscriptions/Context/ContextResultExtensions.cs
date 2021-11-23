@@ -6,7 +6,7 @@ using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 
 namespace Eventuous.Subscriptions.Context;
 
-public static class ContextExtensions {
+public static class ContextResultExtensions {
     public static void Ack(this IBaseConsumeContext context, string handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Succeeded(handlerType));
         Log.MessageHandled(handlerType, context);

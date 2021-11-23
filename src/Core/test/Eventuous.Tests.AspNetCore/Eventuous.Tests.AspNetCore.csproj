@@ -5,6 +5,6 @@
         <IncludeTestHost>true</IncludeTestHost>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
     </ItemGroup>
 </Project>

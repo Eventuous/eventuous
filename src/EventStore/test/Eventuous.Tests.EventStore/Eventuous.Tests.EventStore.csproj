@@ -3,16 +3,14 @@
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
         <IncludeTestHost>true</IncludeTestHost>
+        <IncludeSutApp>true</IncludeSutApp>
+        <IncludeSutSubs>true</IncludeSutSubs>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
         <ProjectReference Include="$(CoreRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
-        <ProjectReference Include="..\..\src\Eventuous.EventStore\Eventuous.EventStore.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />

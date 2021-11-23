@@ -4,8 +4,7 @@ using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 namespace Eventuous.Tests.EventStore.Fixtures;
 
 public static class DomainFixture {
-    static DomainFixture()
-        => TypeMap.RegisterKnownEventTypes();
+    static DomainFixture() => TypeMap.RegisterKnownEventTypes();
         
     public static Commands.ImportBooking CreateImportBooking() {
         var from = Instance.Auto.Create<DateTime>();

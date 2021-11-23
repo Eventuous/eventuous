@@ -2,10 +2,10 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
+        <IncludeSutSubs>true</IncludeSutSubs>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
-        <ProjectReference Include="..\..\src\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="RabbitMQ.Client"/>
