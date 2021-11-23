@@ -34,6 +34,18 @@ public class SequenceTests {
         first.Should().Be(sequence.ElementAt(gapPlace - 1));
     }
 
+    [Fact]
+    public void ShouldWorkForNormalCase() {
+        var sequence = new CommitPositionSequence();
+
+        for (ulong i = 0; i < 10; i++) {
+            sequence.Add(new CommitPosition(i, i));
+        }
+
+        var first = sequence.FirstBeforeGap();
+        first.Should().Be(new CommitPosition(9, 9));
+    }
+
     public static IEnumerable<object[]> TestData =>
         new List<object[]>
         {

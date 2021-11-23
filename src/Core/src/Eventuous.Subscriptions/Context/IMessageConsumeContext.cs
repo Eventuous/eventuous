@@ -14,6 +14,7 @@ public interface IBaseConsumeContext {
     HandlingResults   HandlingResults   { get; }
     CancellationToken CancellationToken { get; set; }
     ulong             Sequence          { get; }
+    string            SubscriptionId    { get; }
 }
 
 public interface IMessageConsumeContext : IBaseConsumeContext {

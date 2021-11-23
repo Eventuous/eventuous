@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
@@ -28,8 +30,8 @@ public class StreamPersistentSubscription
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
         ConsumePipe                         consumePipe
-    ) : base(eventStoreClient, options, consumePipe) {
-        Ensure.NotEmptyString(options.Stream);
+    ) : base(eventStoreClient, options, ConfigurePipe(consumePipe, options)) {
+        Ensure.NotEmptyString(options.StreamName);
 
         var settings   = eventStoreClient.GetSettings().Copy();
         var opSettings = settings.OperationOptions.Clone();
@@ -42,6 +44,19 @@ public class StreamPersistentSubscription
 
         if (options.FailureHandler != null && !options.ThrowOnError)
             Log.ThrowOnErrorIncompatible(SubscriptionId);
+    }
+
+    static ConsumePipe ConfigurePipe(ConsumePipe pipe, StreamPersistentSubscriptionOptions options) {
+        return pipe;
+        
+        // if (options.AutoAck && options.ConcurrencyLevel > 1) {
+        //     throw new ArgumentException(
+        //         "Concurrency is not supported when auto-ack is enabled",
+        //         nameof(options.ConcurrencyLevel)
+        //     );
+        // }
+        //
+        // return options.AutoAck ? pipe : pipe.AddFilterFirst(new ConcurrentFilter(options.ConcurrencyLevel));
     }
 
     /// <summary>
@@ -63,13 +78,16 @@ public class StreamPersistentSubscription
     ) : this(
         eventStoreClient,
         new StreamPersistentSubscriptionOptions {
-            Stream             = streamName,
+            StreamName         = streamName,
             SubscriptionId     = subscriptionId,
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
         consumerPipe
     ) { }
+
+    const string ResolvedEventKey = "resolvedEvent";
+    const string SubscriptionKey  = "subscription";
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var settings = Options.SubscriptionSettings ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
@@ -80,7 +98,7 @@ public class StreamPersistentSubscription
         }
         catch (PersistentSubscriptionNotFoundException) {
             await _subscriptionClient.CreateAsync(
-                    Options.Stream,
+                    Options.StreamName,
                     Options.SubscriptionId,
                     settings,
                     Options.Credentials,
@@ -104,23 +122,25 @@ public class StreamPersistentSubscription
             int?                   retryCount,
             CancellationToken      ct
         ) {
-            var ctx = CreateContext(re, ct);
+            var context = CreateContext(re, ct)
+                .WithItem(ResolvedEventKey, re)
+                .WithItem(SubscriptionKey, subscription);
 
             try {
-                await Handler(ctx).NoContext();
+                // var ctx = autoAck ? context : new DelayedAckConsumeContext(context, Ack, Nack);
 
-                if (!autoAck) await subscription.Ack(re).NoContext();
-
-                LastProcessed = EventPosition.FromContext(ctx);
+                await Handler(context).NoContext();
+                LastProcessed = EventPosition.FromContext(context);
+                if (!autoAck) await Ack(context);
             }
             catch (Exception e) {
-                await _handleEventProcessingFailure(EventStoreClient, subscription, re, e).NoContext();
+                await Nack(context, e).NoContext();
             }
         }
 
         Task<PersistentSubscription> LocalSubscribe()
             => _subscriptionClient.SubscribeAsync(
-                Options.Stream,
+                Options.StreamName,
                 Options.SubscriptionId,
                 HandleEvent,
                 HandleDrop,
@@ -129,6 +149,32 @@ public class StreamPersistentSubscription
                 Options.AutoAck,
                 cancellationToken
             );
+    }
+
+    ConcurrentQueue<ResolvedEvent> AckQueue { get; } = new();
+
+    async ValueTask Ack(IMessageConsumeContext ctx) {
+        var re = ctx.Items.TryGetItem<ResolvedEvent>(ResolvedEventKey);
+        AckQueue.Enqueue(re);
+
+        if (AckQueue.Count < Options.BufferSize) return;
+
+        var subscription = ctx.Items.TryGetItem<PersistentSubscription>(SubscriptionKey)!;
+
+        var toAck = new List<ResolvedEvent>();
+        for (var i = 0; i < Options.BufferSize; i++) {
+            if (AckQueue.TryDequeue(out var evt))
+                toAck.Add(evt);
+        }
+        await subscription.Ack(toAck).NoContext();
+    }
+
+    async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
+        if (Options.ThrowOnError) throw exception;
+
+        var re           = ctx.Items.TryGetItem<ResolvedEvent>(ResolvedEventKey);
+        var subscription = ctx.Items.TryGetItem<PersistentSubscription>(SubscriptionKey)!;
+        await _handleEventProcessingFailure(EventStoreClient, subscription, re, exception).NoContext();
     }
 
     IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
@@ -149,6 +195,7 @@ public class StreamPersistentSubscription
                 re.Event.Created,
                 evt,
                 DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+                SubscriptionId,
                 cancellationToken
             )
             .WithItem(ContextKeys.GlobalPosition, re.Event.Position.CommitPosition)
@@ -181,7 +228,7 @@ public class StreamPersistentSubscription
     public GetSubscriptionGap GetMeasure()
         => new StreamSubscriptionMeasure(
             Options.SubscriptionId,
-            Options.Stream,
+            Options.StreamName,
             EventStoreClient,
             () => LastProcessed
         ).GetSubscriptionGap;

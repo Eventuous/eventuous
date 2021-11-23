@@ -1,19 +1,20 @@
 using System.Diagnostics;
 using System.Threading.Channels;
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Channels;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Filters;
 
 public class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext> {
     readonly ConcurrentChannelWorker<WorkerTask> _worker;
 
-    public ConcurrentFilter(int concurrencyLimit, int bufferSize = 10) {
+    public ConcurrentFilter(uint concurrencyLimit, uint bufferSize = 10) {
         _worker = new ConcurrentChannelWorker<WorkerTask>(
-            Channel.CreateBounded<WorkerTask>(concurrencyLimit * bufferSize),
+            Channel.CreateBounded<WorkerTask>((int)(concurrencyLimit * bufferSize)),
             DelayedConsume,
-            concurrencyLimit
+            (int)concurrencyLimit
         );
     }
 
@@ -29,7 +30,9 @@ public class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext> {
             await ctx.Acknowledge().NoContext();
         }
         catch (Exception e) {
-            ctx.Nack<ConcurrentFilter>(e);
+            Log.MessageHandlingFailed(nameof(ConcurrentFilter), workerTask.Context, e);
+            activity?.SetActivityStatus(ActivityStatus.Error(e));
+            await ctx.Fail(e).NoContext();
         }
 
         if (activity != null && ctx.WasIgnored())

@@ -62,7 +62,7 @@ public class AllStreamSubscription
             Options.CheckpointInterval,
             async (_, p, ct)
                 => await StoreCheckpoint(
-                    new EventPosition(p.CommitPosition, DateTime.Now),
+                    new EventPosition(p.CommitPosition, DateTime.UtcNow),
                     ct
                 ).NoContext()
         );
@@ -125,6 +125,7 @@ public class AllStreamSubscription
                 re.Event.Created,
                 evt,
                 DeserializeMeta(re.Event.Metadata, re.OriginalStreamId),
+                SubscriptionId,
                 cancellationToken
             )
             .WithItem(ContextKeys.GlobalPosition, re.Event.Position.CommitPosition)

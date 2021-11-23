@@ -126,6 +126,7 @@ public class StreamSubscription
                 re.Event.Created,
                 evt,
                 DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+                SubscriptionId,
                 cancellationToken
             )
             .WithItem(ContextKeys.GlobalPosition, re.Event.Position.CommitPosition)

@@ -53,7 +53,7 @@ public record StreamPersistentSubscriptionOptions : EventStoreSubscriptionOption
     /// <summary>
     /// Stream name to subscribe for
     /// </summary>
-    public StreamName Stream { get; set; } = null!;
+    public StreamName StreamName { get; set; } = null!;
 
     /// <summary>
     /// Native EventStoreDB settings for the subscription
@@ -69,6 +69,8 @@ public record StreamPersistentSubscriptionOptions : EventStoreSubscriptionOption
     /// Acknowledge events without an explicit ACK
     /// </summary>
     public bool AutoAck { get; set; } = true;
+
+    // public uint ConcurrencyLevel { get; set; } = 1;
 
     /// <summary>
     /// Allows to override the failure handling behaviour. By default, when the consumer crashes, the event is

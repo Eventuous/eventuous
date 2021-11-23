@@ -30,6 +30,7 @@ public class SubscriptionsEventSource : EventSource {
     const int MessageSerializationNoResultId   = 23;
     const int ThrowOnErrorIncompatibleId       = 24;
     const int UnknownMessageTypeId             = 25;
+    const int PartitionedFilterId              = 26;
 
     const int InfoId = 100;
     const int WarnId = 101;
@@ -38,6 +39,7 @@ public class SubscriptionsEventSource : EventSource {
     public void MessageHandlingFailed(string handlerType, IBaseConsumeContext context, Exception? exception) {
         if (IsEnabled(EventLevel.Error, EventKeywords.All))
             MessageHandlingFailed(
+                context.SubscriptionId,
                 handlerType,
                 context.MessageType,
                 exception?.ToString() ?? "unknown error"
@@ -47,13 +49,13 @@ public class SubscriptionsEventSource : EventSource {
     [NonEvent]
     public void MessageIgnored(string handlerType, IBaseConsumeContext context) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            MessageIgnored(handlerType, context.MessageType);
+            MessageIgnored(context.SubscriptionId, handlerType, context.MessageType);
     }
 
     [NonEvent]
     public void MessageHandled(string handlerType, IBaseConsumeContext context) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            MessageHandled(handlerType, context.MessageType);
+            MessageHandled(context.SubscriptionId, handlerType, context.MessageType);
     }
 
     [NonEvent]
@@ -84,28 +86,38 @@ public class SubscriptionsEventSource : EventSource {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
             CheckpointStored(store.GetType().Name, checkpoint.Id, checkpoint.Position?.ToString() ?? "empty");
     }
-    
+
     [NonEvent]
     public void UnknownMessageType<T>() => UnknownMessageType(typeof(T).Name);
 
-    [Event(MessageReceivedId, Message = "[{0}] Received {1}", Level = EventLevel.Verbose)]
-    public void MessageReceived(string subscriptionId, string messageType) {
+    [NonEvent]
+    public void SendingMessageToPartition(IMessageConsumeContext context, long partition) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            WriteEvent(MessageReceivedId, subscriptionId, messageType);
+            SendingMessageToPartition(context.SubscriptionId, context.MessageType, partition.ToString());
     }
 
-    [Event(MessageIgnoredId, Message = "[{0}] Ignored {1}", Level = EventLevel.Verbose)]
-    public void MessageIgnored(string handlerType, string messageType) {
-        WriteEvent(MessageIgnoredId, handlerType, messageType);
+    [NonEvent]
+    public void MessageReceived(IMessageConsumeContext context) {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            MessageReceived(context.SubscriptionId, context.MessageType, context.Stream);
     }
 
-    [Event(MessageHandledId, Message = "[{0}] Handled {1}", Level = EventLevel.Verbose)]
-    public void MessageHandled(string handlerType, string eventType)
-        => WriteEvent(MessageHandledId, handlerType, eventType);
+    [Event(MessageReceivedId, Message = "[{0}] Received {1} from {2}", Level = EventLevel.Verbose)]
+    public void MessageReceived(string subscriptionId, string messageType, string stream)
+        => WriteEvent(MessageReceivedId, subscriptionId, messageType, stream);
 
-    [Event(MessageHandlingFailedId, Message = "Handler {0} failed to process event {1}: {2}", Level = EventLevel.Error)]
-    public void MessageHandlingFailed(string handlerType, string messageType, string exception)
-        => WriteEvent(MessageHandlingFailedId, handlerType, messageType, exception);
+    [Event(MessageIgnoredId, Message = "[{0}] {1} ignored {2}", Level = EventLevel.Verbose)]
+    public void MessageIgnored(string id, string handlerType, string messageType) {
+        WriteEvent(MessageIgnoredId, id, handlerType, messageType);
+    }
+
+    [Event(MessageHandledId, Message = "[{0}] {1} handled {2}", Level = EventLevel.Verbose)]
+    public void MessageHandled(string id, string handlerType, string eventType)
+        => WriteEvent(MessageHandledId, id, handlerType, eventType);
+
+    [Event(MessageHandlingFailedId, Message = "[{0}] {1} failed to process event {2}: {3}", Level = EventLevel.Error)]
+    public void MessageHandlingFailed(string id, string handlerType, string messageType, string exception)
+        => WriteEvent(MessageHandlingFailedId, id, handlerType, messageType, exception);
 
     [Event(NoHandlerFoundId, Message = "[{0}] No handler found for message {1}", Level = EventLevel.Warning)]
     public void NoHandlerFound(string handlerType, string messageType) {
@@ -217,10 +229,12 @@ public class SubscriptionsEventSource : EventSource {
 
     [Event(
         ThrowOnErrorIncompatibleId,
-        Message = "[{0}] Failure handler is set, but ThrowOnError is disabled, so the failure handler will never be called",
+        Message =
+            "[{0}] Failure handler is set, but ThrowOnError is disabled, so the failure handler will never be called",
         Level = EventLevel.Warning
     )]
-    public void ThrowOnErrorIncompatible(string subscriptionId) => WriteEvent(ThrowOnErrorIncompatibleId, subscriptionId);
+    public void ThrowOnErrorIncompatible(string subscriptionId)
+        => WriteEvent(ThrowOnErrorIncompatibleId, subscriptionId);
 
     [Event(
         UnknownMessageTypeId,
@@ -228,6 +242,10 @@ public class SubscriptionsEventSource : EventSource {
         Level = EventLevel.Warning
     )]
     public void UnknownMessageType(string type) => WriteEvent(UnknownMessageTypeId, type);
+
+    [Event(PartitionedFilterId, Message = "[{0}] Sending {1} to partition {2}", Level = EventLevel.Verbose)]
+    public void SendingMessageToPartition(string subscriptionId, string messageType, string partition)
+        => WriteEvent(PartitionedFilterId, subscriptionId, messageType, partition);
 
     [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
     public void Info(string message, string? arg1 = null, string? arg2 = null) {

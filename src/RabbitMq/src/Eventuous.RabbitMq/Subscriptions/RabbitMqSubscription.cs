@@ -121,30 +121,31 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         return default;
     }
 
-    async Task HandleReceived(
-        object                sender,
-        BasicDeliverEventArgs received
-    ) {
+    const string ReceivedMessageKey = "receivedMessage";
+
+    async Task HandleReceived(object sender, BasicDeliverEventArgs received) {
         try {
-            var ctx = CreateContext(sender, received);
+            var ctx = CreateContext(sender, received).WithItem(ReceivedMessageKey, received);
             await Handler(new DelayedAckConsumeContext(ctx, Ack, Nack)).NoContext();
         }
         catch (Exception) {
             // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
             if (Options.ThrowOnError) throw;
         }
+    }
 
-        ValueTask Ack(CancellationToken _) {
-            _channel.BasicAck(received.DeliveryTag, false);
-            return default;
-        }
+    ValueTask Ack(IMessageConsumeContext ctx) {
+        var received = ctx.Items.TryGetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
+        _channel.BasicAck(received.DeliveryTag, false);
+        return default;
+    }
 
-        ValueTask Nack(Exception exception, CancellationToken cancellationToken) {
-            if (Options.ThrowOnError) throw exception;
+    ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
+        if (Options.ThrowOnError) throw exception;
 
-            _failureHandler(_channel, received, exception);
-            return default;
-        }
+        var received = ctx.Items.TryGetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
+        _failureHandler(_channel, received, exception);
+        return default;
     }
 
     IMessageConsumeContext CreateContext(object sender, BasicDeliverEventArgs received) {
@@ -168,6 +169,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             received.BasicProperties.Timestamp.ToDateTime(),
             evt,
             meta,
+            SubscriptionId,
             default
         );
     }

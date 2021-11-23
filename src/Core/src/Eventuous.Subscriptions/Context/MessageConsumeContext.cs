@@ -12,6 +12,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
         DateTime          created,
         object?           message,
         Metadata?         metadata,
+        string            subscriptionId,
         CancellationToken cancellationToken
     ) {
         MessageId         = eventId;
@@ -23,6 +24,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
         Sequence          = sequence;
         Message           = message;
         CancellationToken = cancellationToken;
+        SubscriptionId    = subscriptionId;
     }
 
     public string            MessageId         { get; }
@@ -36,10 +38,8 @@ public class MessageConsumeContext : IMessageConsumeContext {
     public ActivityContext?  ParentContext     { get; set; }
     public HandlingResults   HandlingResults   { get; } = new();
     public CancellationToken CancellationToken { get; set; }
-    public ulong Sequence       { get; init; }
-    
-    // public ulong GlobalPosition { get; init; }
-    // public ulong StreamPosition { get; init; }
+    public ulong             Sequence          { get; init; }
+    public string            SubscriptionId    { get; }
 }
 
 public class MessageConsumeContext<T> : WrappedConsumeContext, IMessageConsumeContext<T>

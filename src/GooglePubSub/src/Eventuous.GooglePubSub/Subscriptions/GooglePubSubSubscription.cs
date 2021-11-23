@@ -111,6 +111,7 @@ public class GooglePubSubSubscription
                 msg.PublishTime.ToDateTime(),
                 evt,
                 AsMeta(msg.Attributes),
+                SubscriptionId,
                 ct
             );
 

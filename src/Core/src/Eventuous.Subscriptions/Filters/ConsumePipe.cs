@@ -5,6 +5,8 @@ namespace Eventuous.Subscriptions.Filters;
 public sealed class ConsumePipe : IAsyncDisposable {
     readonly LinkedList<Filter> _filters = new();
 
+    public IEnumerable<object> RegisteredFilters => _filters.Select(x => x.FilterInstance);
+
     public ConsumePipe AddFilterFirst<TIn, TOut>(IConsumeFilter<TIn, TOut> filter)
         where TIn : class, IBaseConsumeContext
         where TOut : class, IBaseConsumeContext {

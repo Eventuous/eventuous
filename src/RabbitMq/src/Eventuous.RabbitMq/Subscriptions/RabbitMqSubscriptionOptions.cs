@@ -11,7 +11,7 @@ public record RabbitMqSubscriptionOptions : SubscriptionOptions {
     public RabbitMqQueueOptions?         QueueOptions    { get; set; } = new();
     public RabbitMqBindingOptions?       BindingOptions  { get; set; } = new();
 
-    public int    ConcurrencyLimit { get; set; } = 1;
+    public uint   ConcurrencyLimit { get; set; } = 1;
     public ushort PrefetchCount    { get; set; }
 
     [PublicAPI]

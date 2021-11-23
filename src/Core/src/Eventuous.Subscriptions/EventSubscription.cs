@@ -66,7 +66,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         var delayed  = context is DelayedAckConsumeContext;
         if (!delayed) activity?.Start();
 
-        Log.MessageReceived(Options.SubscriptionId, context.MessageType);
+        Log.MessageReceived(context);
 
         try {
             if (context.Message != null) {
@@ -203,9 +203,6 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 }
 
 public record EventPosition(ulong? Position, DateTime Created) {
-    public static EventPosition FromContext(MessageConsumeContext context)
-        => new(context.Items.TryGetItem<ulong>(ContextKeys.StreamPosition), context.Created);
-
     public static EventPosition FromContext(IMessageConsumeContext context)
-        => FromContext((context as MessageConsumeContext)!);
+        => new(context.Items.TryGetItem<ulong>(ContextKeys.StreamPosition), context.Created);
 }

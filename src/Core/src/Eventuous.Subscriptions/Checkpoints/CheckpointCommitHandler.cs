@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
+using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
@@ -29,11 +30,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         }
     }
 
-    public CheckpointCommitHandler(
-        string           subscriptionId,
-        ICheckpointStore checkpointStore,
-        int              batchSize = 1
-    )
+    public CheckpointCommitHandler(string subscriptionId, ICheckpointStore checkpointStore, int batchSize = 1)
         : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize) { }
 
     /// <summary>
@@ -48,15 +45,20 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     async ValueTask CommitInternal(CancellationToken cancellationToken) {
-        var commitPosition = _positions.FirstBeforeGap();
-        if (!commitPosition.Valid) return;
+        try {
+            var commitPosition = _positions.FirstBeforeGap();
+            if (!commitPosition.Valid) return;
 
-        await _commitCheckpoint(
-            new Checkpoint(_subscriptionId, commitPosition.Position),
-            cancellationToken
-        ).NoContext();
+            await _commitCheckpoint(
+                new Checkpoint(_subscriptionId, commitPosition.Position),
+                cancellationToken
+            ).NoContext();
 
-        _positions.Clear();
+            _positions.Clear();
+        }
+        catch (Exception e) {
+            SubscriptionsEventSource.Log.Warn("Error committing", e.ToString());
+        }
     }
 
     public async ValueTask DisposeAsync() {

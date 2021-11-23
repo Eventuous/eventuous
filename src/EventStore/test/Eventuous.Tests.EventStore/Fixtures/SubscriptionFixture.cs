@@ -10,7 +10,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
     static SubscriptionFixture()
         => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    protected static readonly Fixture Auto = new();
+    protected readonly Fixture Auto = new();
 
     protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
     protected T                   Handler         { get; }
@@ -20,11 +20,14 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
     StreamSubscription            Subscription    { get; }
 
     protected SubscriptionFixture(
-        ITestOutputHelper outputHelper,
-        T                 handler,
-        bool              autoStart = true
+        ITestOutputHelper    outputHelper,
+        T                    handler,
+        bool                 autoStart     = true,
+        Action<ConsumePipe>? configurePipe = null,
+        StreamName?          stream        = null
     ) {
         _autoStart = autoStart;
+        if (stream != null) Stream = stream;
 
         var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper);
         var subscriptionId = $"test-{Guid.NewGuid():N}";
@@ -33,17 +36,20 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
         Producer        = new EventStoreProducer(IntegrationFixture.Instance.Client);
         Log             = loggerFactory.CreateLogger(GetType());
         CheckpointStore = new TestCheckpointStore();
-        
+
         _listener = new LoggingEventListener(loggerFactory);
+        var pipe = new ConsumePipe().AddDefaultConsumer(Handler);
+        configurePipe?.Invoke(pipe);
 
         Subscription = new StreamSubscription(
             IntegrationFixture.Instance.Client,
             new StreamSubscriptionOptions {
                 StreamName     = Stream,
-                SubscriptionId = subscriptionId
+                SubscriptionId = subscriptionId,
+                ResolveLinkTos = Stream.ToString().StartsWith("$")
             },
             CheckpointStore,
-            new ConsumePipe().AddDefaultConsumer(Handler)
+            pipe
         );
     }
 
