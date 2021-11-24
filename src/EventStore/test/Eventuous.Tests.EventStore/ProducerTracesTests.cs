@@ -13,16 +13,14 @@ public class TracesTests : SubscriptionFixture<TracedHandler>, IDisposable {
         : base(outputHelper, new TracedHandler(), false) {
         _listener = new ActivityListener {
             ShouldListenTo = _ => true,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _)
-                => ActivitySamplingResult.AllData,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
             ActivityStarted = activity => Log.LogInformation(
                 "Started {Activity} with {Id}, parent {ParentId}",
                 activity.DisplayName,
                 activity.Id,
                 activity.ParentId
             ),
-            ActivityStopped = activity
-                => Log.LogInformation("Stopped {Activity}", activity.DisplayName)
+            ActivityStopped = activity => Log.LogInformation("Stopped {Activity}", activity.DisplayName)
         };
 
         ActivitySource.AddActivityListener(_listener);

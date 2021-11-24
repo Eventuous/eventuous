@@ -1,4 +1,4 @@
-using Eventuous.Diagnostics.OpenTelemetry.Subscriptions;
+using Eventuous.Diagnostics.OpenTelemetry;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
@@ -71,7 +71,7 @@ public sealed class MetricsTests : IDisposable {
 
         _output.WriteLine($"Gap: {values[0].LongValue}");
 
-        var gapCount = values.First(x => x.Name == SubscriptionGapMetric.MetricName);
+        var gapCount = values.First(x => x.Name == SubscriptionMetrics.GapCountMetricName);
         gapCount.LongValue.Should().BeInRange(count / 2, count);
         gapCount.Keys[0].Should().Be("subscription-id");
         gapCount.Values[0].Should().Be(SubscriptionId);

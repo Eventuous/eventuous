@@ -32,6 +32,7 @@ public static class SubscriptionActivity {
             .SetTag(TelemetryTags.Message.Id, context.MessageId)
             .SetTag(TelemetryTags.Messaging.MessageId, context.MessageId)
             .SetTag(TelemetryTags.Eventuous.Stream, context.Stream)
+            .SetTag(TelemetryTags.Eventuous.Subscription, context.SubscriptionId)
             .CopyParentTag(TelemetryTags.Messaging.ConversationId)
             .SetOrCopyParentTag(
                 TelemetryTags.Messaging.CorrelationId,

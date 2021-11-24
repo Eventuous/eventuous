@@ -68,13 +68,11 @@ public sealed class ProjectingWithTypedHandlers : IDisposable {
 class SutProjection : MongoProjection<BookingDocument> {
     public SutProjection(IMongoDatabase database) : base(database) {
         On<BookingImported>(
-            ctx => UpdateOperationTask(
-                ctx.Message.BookingId,
-                update => update
-                    .SetOnInsert(x => x.RoomId, ctx.Message.RoomId)
-                    .Set(x => x.CheckInDate, ctx.Message.CheckIn)
-                    .Set(x => x.CheckOutDate, ctx.Message.CheckOut)
-            )
+            evt => evt.BookingId,
+            (evt, update) => update
+                .SetOnInsert(x => x.RoomId, evt.RoomId)
+                .Set(x => x.CheckInDate, evt.CheckIn)
+                .Set(x => x.CheckOutDate, evt.CheckOut)
         );
     }
 }

@@ -8,9 +8,7 @@ public static class EventuousDiagnostics {
     static readonly AssemblyName AssemblyName = typeof(Metadata).Assembly.GetName();
     static readonly Version?     Version      = AssemblyName.Version;
 
-    static EventuousDiagnostics() {
-        Enabled = Environment.GetEnvironmentVariable("EVENTUOUS_DISABLE_DIAGS") != "1";
-    }
+    static EventuousDiagnostics() => Enabled = Environment.GetEnvironmentVariable("EVENTUOUS_DISABLE_DIAGS") != "1";
 
     public const string InstrumentationName = DiagnosticName.BaseName;
 
@@ -24,13 +22,7 @@ public static class EventuousDiagnostics {
             if (_activitySource != null) return _activitySource;
             _activitySource = new ActivitySource(InstrumentationName, Version?.ToString());
 
-            _listener = new ActivityListener {
-                Sample = (ref ActivityCreationOptions<ActivityContext> _)
-                    => ActivitySamplingResult.AllData,
-                ShouldListenTo  = x => x.Name == InstrumentationName,
-                ActivityStarted = _ => { },
-                ActivityStopped = _ => { }
-            };
+            _listener = DummyActivityListener.Create();
             ActivitySource.AddActivityListener(_listener);
             return _activitySource;
         }

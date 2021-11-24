@@ -1,4 +1,4 @@
-﻿using Eventuous.Diagnostics.OpenTelemetry.Subscriptions;
+﻿using Eventuous.Diagnostics.OpenTelemetry;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
@@ -94,7 +94,7 @@ public class RegistrationTests {
     [Fact]
     public void ShouldRegisterTwoMeasures() {
         var subs    = _provider.GetServices<TestSub>().ToArray();
-        var measure = _provider.GetRequiredService<SubscriptionGapMetric>();
+        var measure = _provider.GetRequiredService<SubscriptionMetrics>();
     }
 
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();

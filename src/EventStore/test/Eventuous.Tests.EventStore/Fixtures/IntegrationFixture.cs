@@ -14,13 +14,7 @@ public class IntegrationFixture : IDisposable {
     public EventStoreClient Client         { get; }
     public Fixture          Auto           { get; } = new();
 
-    readonly ActivityListener _listener = new() {
-        Sample = (ref ActivityCreationOptions<ActivityContext> _)
-            => ActivitySamplingResult.AllData,
-        ShouldListenTo  = s => s.Name.Contains(EventuousDiagnostics.InstrumentationName),
-        ActivityStarted = activity => { },
-        ActivityStopped = activity => { }
-    };
+    readonly ActivityListener _listener = DummyActivityListener.Create();
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)

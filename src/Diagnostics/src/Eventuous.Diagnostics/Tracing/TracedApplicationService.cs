@@ -15,11 +15,13 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
         CancellationToken cancellationToken
     ) where TCommand : class {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            "hande-command",
+            Constants.HandleCommand,
             ActivityKind.Internal,
             parentContext: default,
             idFormat: ActivityIdFormat.W3C
-        )?.Start();
+        )?
+            .SetTag(Constants.CommandTag, typeof(TCommand).Name)
+            .Start();
         
         return await Inner.Handle(command, cancellationToken).NoContext();
     }
@@ -40,7 +42,7 @@ public class TracedApplicationService<TState, TId> : IApplicationService<TState,
         CancellationToken cancellationToken
     ) where TCommand : class {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            "hande-command",
+            Constants.HandleCommand,
             ActivityKind.Internal,
             parentContext: default,
             idFormat: ActivityIdFormat.W3C

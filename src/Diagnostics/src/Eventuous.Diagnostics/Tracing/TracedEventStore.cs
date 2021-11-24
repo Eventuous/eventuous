@@ -16,7 +16,7 @@ public class TracedEventStore : IEventStore {
     };
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
-        using var activity = StartActivity(stream, "stream-exists");
+        using var activity = StartActivity(stream, Constants.StreamExists);
         return await Inner.StreamExists(stream, cancellationToken).NoContext();
     }
 
@@ -26,7 +26,7 @@ public class TracedEventStore : IEventStore {
         IReadOnlyCollection<StreamEvent> events,
         CancellationToken                cancellationToken
     ) {
-        using var activity = StartActivity(stream, "append-events");
+        using var activity = StartActivity(stream, Constants.AppendEvents);
 
         var tracedEvents = events.Select(
             x => x with { Metadata = x.Metadata.AddActivityTags(activity) }
@@ -41,7 +41,7 @@ public class TracedEventStore : IEventStore {
         int                count,
         CancellationToken  cancellationToken
     ) {
-        using var activity = StartActivity(stream, "read-events");
+        using var activity = StartActivity(stream, Constants.ReadEvents);
         return await Inner.ReadEvents(stream, start, count, cancellationToken).NoContext();
     }
 
@@ -50,7 +50,7 @@ public class TracedEventStore : IEventStore {
         int               count,
         CancellationToken cancellationToken
     ) {
-        using var activity = StartActivity(stream, "read-events");
+        using var activity = StartActivity(stream, Constants.ReadEvents);
         return await Inner.ReadEventsBackwards(stream, count, cancellationToken).NoContext();
     }
 
@@ -61,7 +61,7 @@ public class TracedEventStore : IEventStore {
         Action<StreamEvent> callback,
         CancellationToken   cancellationToken
     ) {
-        using var activity = StartActivity(stream, "read-events");
+        using var activity = StartActivity(stream, Constants.ReadEvents);
         return await Inner.ReadStream(stream, start, count, callback, cancellationToken).NoContext();
     }
 
@@ -71,7 +71,7 @@ public class TracedEventStore : IEventStore {
         ExpectedStreamVersion  expectedVersion,
         CancellationToken      cancellationToken
     ) {
-        using var activity = StartActivity(stream, "truncate-stream");
+        using var activity = StartActivity(stream, Constants.TruncateStream);
         await Inner.TruncateStream(stream, truncatePosition, expectedVersion, cancellationToken).NoContext();
     }
 
@@ -80,7 +80,7 @@ public class TracedEventStore : IEventStore {
         ExpectedStreamVersion expectedVersion,
         CancellationToken     cancellationToken
     ) {
-        using var activity = StartActivity(stream, "delete-stream");
+        using var activity = StartActivity(stream, Constants.DeleteStream);
         await Inner.DeleteStream(stream, expectedVersion, cancellationToken).NoContext();
     }
 
