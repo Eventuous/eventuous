@@ -7,16 +7,23 @@ using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 namespace Eventuous.Subscriptions.Context;
 
 public static class ContextResultExtensions {
+    /// <summary>
+    /// Allows to acknowledge the message by a specific handler, identified by a string
+    /// </summary>
+    /// <param name="context">Consume context</param>
+    /// <param name="handlerType">Handler type identifier</param>
     public static void Ack(this IBaseConsumeContext context, string handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Succeeded(handlerType));
         Log.MessageHandled(handlerType, context);
     }
 
-    public static void Nack(
-        this IBaseConsumeContext context,
-        string                   handlerType,
-        Exception?               exception
-    ) {
+    /// <summary>
+    /// Allows to convey the message handling failure that occurred in a specific handler
+    /// </summary>
+    /// <param name="context">Message context</param>
+    /// <param name="handlerType">Handler type identifier</param>
+    /// <param name="exception">Optional: handler exception</param>
+    public static void Nack(this IBaseConsumeContext context, string handlerType, Exception? exception) {
         context.HandlingResults.Add(EventHandlingResult.Failed(handlerType, exception));
         Log.MessageHandlingFailed(handlerType, context, exception);
 
@@ -27,35 +34,57 @@ public static class ContextResultExtensions {
         }
     }
 
+    /// <summary>
+    /// Allows to convey the fact that the message was ignored by the handler
+    /// </summary>
+    /// <param name="context">Consume context</param>
+    /// <param name="handlerType">Handler type identifier</param>
     public static void Ignore(this IBaseConsumeContext context, string handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Ignored(handlerType));
         Log.MessageIgnored(handlerType, context);
     }
 
+    /// <summary>
+    /// Allows to acknowledge the message by a specific handler, identified by a string
+    /// </summary>
+    /// <param name="context">Consume context</param>
+    /// <typeparam name="T">Handler type</typeparam>
     public static void Ack<T>(this IBaseConsumeContext context) => context.Ack(typeof(T).Name);
 
+    /// <summary>
+    /// Allows to convey the fact that the message was ignored by the handler
+    /// </summary>
+    /// <param name="context">Consume context</param>
+    /// <typeparam name="T">Handler type</typeparam>
     public static void Ignore<T>(this IBaseConsumeContext context) => context.Ignore(typeof(T).Name);
 
+    /// <summary>
+    /// Allows to convey the message handling failure that occurred in a specific handler
+    /// </summary>
+    /// <param name="context">Consume context</param>
+    /// <param name="exception">Optional: handler exception</param>
+    /// <typeparam name="T">Handler type</typeparam>
     public static void Nack<T>(this IBaseConsumeContext context, Exception? exception)
         => context.Nack(typeof(T).Name, exception);
 
+    /// <summary>
+    /// Returns true if the message was ignored by all handlers
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool WasIgnored(this IBaseConsumeContext context) {
         var status       = context.HandlingResults.GetIgnoreStatus();
         var handleStatus = context.HandlingResults.GetFailureStatus();
 
-        return (status & EventHandlingStatus.Ignored) == EventHandlingStatus.Ignored
-            && handleStatus == 0;
+        return (status & EventHandlingStatus.Ignored) == EventHandlingStatus.Ignored && handleStatus == 0;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool StatusUpdatedBy(this IBaseConsumeContext context, string handlerType)
-        => context.HandlingResults.ReportedBy(handlerType);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool WasIgnoredBy(this IBaseConsumeContext context, string handlerType)
-        => context.HandlingResults.GetResultsOf(EventHandlingStatus.Ignored).Any(x => x.HandlerType == handlerType);
-
+    /// <summary>
+    /// Returns true if any of the handlers reported a failure
+    /// </summary>
+    /// <param name="context">Consume context</param>
+    /// <returns></returns>
     public static bool HasFailed(this IBaseConsumeContext context)
         => context.HandlingResults.GetFailureStatus() == EventHandlingStatus.Failure;
 }

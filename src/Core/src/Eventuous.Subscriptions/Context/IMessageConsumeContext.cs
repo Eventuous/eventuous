@@ -2,6 +2,9 @@ using System.Diagnostics;
 
 namespace Eventuous.Subscriptions.Context;
 
+/// <summary>
+/// Base interface for a consume context, which doesn't include the payload.
+/// </summary>
 public interface IBaseConsumeContext {
     string            MessageId         { get; }
     string            MessageType       { get; }

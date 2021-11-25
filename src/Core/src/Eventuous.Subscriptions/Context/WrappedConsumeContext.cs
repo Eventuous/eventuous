@@ -5,8 +5,7 @@ namespace Eventuous.Subscriptions.Context;
 public abstract class WrappedConsumeContext : IMessageConsumeContext {
     protected IMessageConsumeContext InnerContext { get; }
 
-    protected WrappedConsumeContext(IMessageConsumeContext innerContext)
-        => InnerContext = innerContext;
+    protected WrappedConsumeContext(IMessageConsumeContext innerContext) => InnerContext = innerContext;
 
     public string          MessageId       => InnerContext.MessageId;
     public string          MessageType     => InnerContext.MessageType;

@@ -38,7 +38,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
     public ActivityContext?  ParentContext     { get; set; }
     public HandlingResults   HandlingResults   { get; } = new();
     public CancellationToken CancellationToken { get; set; }
-    public ulong             Sequence          { get; init; }
+    public ulong             Sequence          { get; }
     public string            SubscriptionId    { get; }
 }
 

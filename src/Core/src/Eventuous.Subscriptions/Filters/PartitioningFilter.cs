@@ -21,8 +21,7 @@ public class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyn
     public override ValueTask Send(DelayedAckConsumeContext context, Func<DelayedAckConsumeContext, ValueTask>? next) {
         var hash      = _partitioner(context);
         var partition = hash % _partitionCount;
-        Log.SendingMessageToPartition(context, partition);
-        return _filters[partition].Send(context, next);
+        return _filters[partition].Send(context.WithItem(ContextKeys.PartitionId, partition), next);
     }
 
     public async ValueTask DisposeAsync() {
