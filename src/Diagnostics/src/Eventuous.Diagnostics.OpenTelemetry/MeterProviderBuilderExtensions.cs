@@ -25,6 +25,11 @@ public static class MeterProviderBuilderExtensions {
             ) : builder.AddInstrumentation<SubscriptionMetrics>();
     }
 
+    /// <summary>
+    /// Adds metrics instrumentation for core components such as application service and event store
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <returns></returns>
     public static MeterProviderBuilder AddEventuous(this MeterProviderBuilder builder) 
         => Ensure.NotNull(builder).AddMeter(EventuousMetrics.MeterName).AddInstrumentation<EventuousMetrics>();
 }

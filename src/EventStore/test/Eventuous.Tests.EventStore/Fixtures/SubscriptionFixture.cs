@@ -24,12 +24,13 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
         T                    handler,
         bool                 autoStart     = true,
         Action<ConsumePipe>? configurePipe = null,
-        StreamName?          stream        = null
+        StreamName?          stream        = null,
+        LogLevel             logLevel      = LogLevel.Debug
     ) {
         _autoStart = autoStart;
         if (stream != null) Stream = stream;
 
-        var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper);
+        var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
         var subscriptionId = $"test-{Guid.NewGuid():N}";
 
         Handler         = handler;

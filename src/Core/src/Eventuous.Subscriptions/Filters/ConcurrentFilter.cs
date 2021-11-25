@@ -3,11 +3,12 @@ using System.Threading.Channels;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Channels;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Filters;
 
-public class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext> {
+public class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
     readonly ConcurrentChannelWorker<WorkerTask> _worker;
 
     public ConcurrentFilter(uint concurrencyLimit, uint bufferSize = 10) {
@@ -39,17 +40,17 @@ public class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext> {
             activity.ActivityTraceFlags = ActivityTraceFlags.None;
     }
 
-    public override ValueTask Send(
-        DelayedAckConsumeContext                   context,
-        Func<DelayedAckConsumeContext, ValueTask>? next
-    ) {
+    public override ValueTask Send(DelayedAckConsumeContext context, Func<DelayedAckConsumeContext, ValueTask>? next) {
         if (next == null)
             throw new InvalidOperationException("Concurrent context must have a next filer");
+
         return _worker.Write(new WorkerTask(context, next), context.CancellationToken);
     }
 
-    record WorkerTask(
-        DelayedAckConsumeContext                  Context,
-        Func<DelayedAckConsumeContext, ValueTask> Next
-    );
+    record WorkerTask(DelayedAckConsumeContext Context, Func<DelayedAckConsumeContext, ValueTask> Next);
+
+    public ValueTask DisposeAsync() {
+        Log.Stopping(nameof(ConcurrentFilter), "worker", "");
+        return _worker.DisposeAsync();
+    }
 }

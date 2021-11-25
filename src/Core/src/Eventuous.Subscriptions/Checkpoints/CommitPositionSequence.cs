@@ -12,6 +12,7 @@ public class CommitPositionSequence : SortedSet<CommitPosition> {
         _ => Get()
     };
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     CommitPosition Get() {
         var result = this
             .Zip(this.Skip(1), Tuple.Create)

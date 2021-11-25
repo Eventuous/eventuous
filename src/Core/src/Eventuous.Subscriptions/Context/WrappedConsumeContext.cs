@@ -19,12 +19,11 @@ public abstract class WrappedConsumeContext : IMessageConsumeContext {
     public HandlingResults HandlingResults => InnerContext.HandlingResults;
     public ulong           Sequence        => InnerContext.Sequence;
     public string          SubscriptionId  => InnerContext.SubscriptionId;
-    
+
     public CancellationToken CancellationToken {
         get => InnerContext.CancellationToken;
         set => InnerContext.CancellationToken = value;
     }
-
 
     public ActivityContext? ParentContext {
         get => InnerContext.ParentContext;

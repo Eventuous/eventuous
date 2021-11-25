@@ -6,32 +6,30 @@ using Hypothesist;
 namespace Eventuous.Tests.EventStore;
 
 public class PublishAndSubscribeManyPartitionedTests : SubscriptionFixture<TestEventHandler> {
-    public PublishAndSubscribeManyPartitionedTests(ITestOutputHelper outputHelper)
+    public PublishAndSubscribeManyPartitionedTests(ITestOutputHelper output)
         : base(
-            outputHelper,
-            new TestEventHandler(),
+            output,
+            new TestEventHandler(TimeSpan.FromMilliseconds(5)),
             false,
-            pipe => pipe.AddFilterFirst(new PartitioningFilter(10)),
-            new StreamName("$ce-part")
+            pipe => pipe.AddFilterFirst(new PartitioningFilter(10, x => (x.Message as TestEvent)!.Data))
         ) { }
 
     [Fact]
     public async Task SubscribeAndProduceMany() {
-        const int count = 100;
+        const int count = 1000;
 
-        var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
+        var testEvents = Enumerable.Range(1, count)
+            .Select(i => new TestEvent(Auto.Create<string>(), i))
+            .ToList();
+
         Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
         await Start();
-
-        foreach (var testEvent in testEvents) {
-            await Producer.Produce(new StreamName($"part-{testEvent.Number}"), testEvent);
-        }
+        await Producer.Produce(Stream, testEvents);
 
         await Handler.Validate(5.Seconds());
-
-        CheckpointStore.Last.Position.Should().Be(count - 1);
-
         await Stop();
+        
+        CheckpointStore.Last.Position.Should().Be(count - 1);
     }
 }

@@ -122,7 +122,7 @@ public class StreamSubscription
                 re.Event.EventType,
                 re.Event.ContentType,
                 re.Event.EventStreamId,
-                re.OriginalEventNumber.ToUInt64(),
+                re.OriginalEventNumber,
                 re.Event.Created,
                 evt,
                 DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),

@@ -53,9 +53,10 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         Log.SubscriptionStopped(Options.SubscriptionId);
         onUnsubscribed(Options.SubscriptionId);
         await Pipe.DisposeAsync().NoContext();
+        await Finalize(cancellationToken);
     }
 
-    IEnumerable<KeyValuePair<string, object?>>? _tags;
+    protected virtual ValueTask Finalize(CancellationToken cancellationToken) => default;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask Handler(IMessageConsumeContext context) {

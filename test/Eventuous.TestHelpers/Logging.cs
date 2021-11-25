@@ -3,10 +3,10 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.TestHelpers;
 
 public static class Logging {
-    public static ILoggerFactory GetLoggerFactory(ITestOutputHelper outputHelper)
+    public static ILoggerFactory GetLoggerFactory(ITestOutputHelper outputHelper, LogLevel logLevel = LogLevel.Debug)
         => LoggerFactory.Create(
             builder => builder
-                .SetMinimumLevel(LogLevel.Debug)
-                .AddXunit(outputHelper, LogLevel.Debug)
+                .SetMinimumLevel(logLevel)
+                .AddXunit(outputHelper, logLevel)
         );
 }

@@ -76,12 +76,14 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
             Stopping.Cancel(false);
             await Task.Delay(100, cancellationToken);
             Subscription?.Dispose();
-            await CheckpointCommitHandler.DisposeAsync();
         }
         catch (Exception) {
             // Nothing to see here
         }
     }
+
+    protected override ValueTask Finalize(CancellationToken cancellationToken)
+        => CheckpointCommitHandler.DisposeAsync();
 
     protected global::EventStore.Client.StreamSubscription? Subscription { get; set; }
 }

@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
-using Eventuous.Subscriptions.Diagnostics;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
@@ -11,11 +11,9 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     readonly CommitPositionSequence        _positions = new();
     readonly ChannelWorker<CommitPosition> _worker;
 
-    public CheckpointCommitHandler(
-        string           subscriptionId,
-        CommitCheckpoint commitCheckpoint,
-        int              batchSize = 1
-    ) {
+    CommitPosition _lastCommit = CommitPosition.None;
+
+    public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1) {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
         var channel = Channel.CreateBounded<CommitPosition>(batchSize * 10);
@@ -46,6 +44,14 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     async ValueTask CommitInternal(CancellationToken cancellationToken) {
         try {
+            switch (_lastCommit.Valid) {
+                // There's a gap between the last committed position and the list head
+                case true when _lastCommit.Sequence + 1 != _positions.Min?.Sequence:
+                // The list head is not at the very beginning
+                case false when _positions.Min?.Sequence != 0:
+                    return;
+            }
+
             var commitPosition = _positions.FirstBeforeGap();
             if (!commitPosition.Valid) return;
 
@@ -54,14 +60,18 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
                 cancellationToken
             ).NoContext();
 
-            _positions.Clear();
+            _lastCommit = commitPosition;
+
+            // Removing positions before and including the committed one
+            _positions.RemoveWhere(x => x.Sequence <= commitPosition.Sequence);
         }
         catch (Exception e) {
-            SubscriptionsEventSource.Log.Warn("Error committing", e.ToString());
+            Log.Warn("Error committing", e.ToString());
         }
     }
 
     public async ValueTask DisposeAsync() {
+        Log.Stopping(nameof(CheckpointCommitHandler), "worker", "");
         await _worker.Stop(CommitInternal);
         _positions.Clear();
     }

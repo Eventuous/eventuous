@@ -31,6 +31,7 @@ public class SubscriptionsEventSource : EventSource {
     const int ThrowOnErrorIncompatibleId       = 24;
     const int UnknownMessageTypeId             = 25;
     const int PartitionedFilterId              = 26;
+    const int StoppingSomethingId                 = 27;
 
     const int InfoId = 100;
     const int WarnId = 101;
@@ -246,6 +247,12 @@ public class SubscriptionsEventSource : EventSource {
     [Event(PartitionedFilterId, Message = "[{0}] Sending {1} to partition {2}", Level = EventLevel.Verbose)]
     public void SendingMessageToPartition(string subscriptionId, string messageType, string partition)
         => WriteEvent(PartitionedFilterId, subscriptionId, messageType, partition);
+
+    [Event(StoppingSomethingId, Message = "[{0}] Stopping {1} {2}", Level = EventLevel.Verbose)]
+    public void Stopping(string id, string what, string name) {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            WriteEvent(StoppingSomethingId, id, what, name);
+    }
 
     [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
     public void Info(string message, string? arg1 = null, string? arg2 = null) {

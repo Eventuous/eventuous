@@ -57,7 +57,9 @@ public sealed class ConsumePipe : IAsyncDisposable {
 
     public async ValueTask DisposeAsync() {
         foreach (var filter in _filters) {
-            if (filter.FilterInstance is IAsyncDisposable d) await d.DisposeAsync();
+            if (filter.FilterInstance is IAsyncDisposable d) {
+                await d.DisposeAsync();
+            }
         }
     }
 }
