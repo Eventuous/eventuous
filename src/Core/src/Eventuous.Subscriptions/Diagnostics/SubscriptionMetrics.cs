@@ -57,6 +57,8 @@ public sealed class SubscriptionMetrics : IDisposable {
             ShouldListenTo = x => x.Name == EventuousDiagnostics.InstrumentationName,
             Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
             ActivityStopped = activity => {
+                if (activity.OperationName != TracingConstants.ConsumerOperation) return;
+
                 var subId = activity.GetTagItem(TelemetryTags.Eventuous.Subscription);
                 if (subId == null) return;
 
@@ -70,6 +72,7 @@ public sealed class SubscriptionMetrics : IDisposable {
                 }
             }
         };
+
         ActivitySource.AddActivityListener(_listener);
 
         KeyValuePair<string, object?> GetTag(string  key, object? id) => new(key, id);
@@ -99,6 +102,6 @@ public sealed class SubscriptionMetrics : IDisposable {
     public void Dispose() {
         _listener.Dispose();
         _meter.Dispose();
-        _checkpointMetrics.Dispose();
+        if (_checkpointMetrics.IsValueCreated) _checkpointMetrics.Value.Dispose();
     }
 }
