@@ -110,12 +110,7 @@ public sealed class MetricsTests : IDisposable {
 
                 if (TryGetMetric(ref enumerator, out var metricState)) {
                     values.Add(
-                        new MetricValue(
-                            metric.Name,
-                            metricState.Item1,
-                            metricState.Item2,
-                            metricState.Item3
-                        )
+                        new MetricValue(metric.Name, metricState.Item1, metricState.Item2, metricState.Item3)
                     );
                 }
             }

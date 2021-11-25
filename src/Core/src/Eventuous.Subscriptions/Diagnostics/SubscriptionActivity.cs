@@ -11,9 +11,7 @@ public static class SubscriptionActivity {
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     ) {
         context.ParentContext ??= GetParentContext(context.Metadata);
-
         var activity = Create(operation, context.ParentContext, tags);
-
         return activity?.SetContextTags(context);
     }
 

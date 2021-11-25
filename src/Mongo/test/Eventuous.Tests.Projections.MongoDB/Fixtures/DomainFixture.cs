@@ -21,8 +21,8 @@ public static class DomainFixture {
 }
 
 record BookingDocument(string Id) : ProjectedDocument(Id) {
-    public string    GuestId      { get; init; }
-    public string    RoomId       { get; init; }
+    public string    GuestId      { get; init; } = null!;
+    public string    RoomId       { get; init; } = null!;
     public LocalDate CheckInDate  { get; init; }
     public LocalDate CheckOutDate { get; init; }
     public float     BookingPrice { get; init; }

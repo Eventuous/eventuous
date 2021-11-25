@@ -4,7 +4,7 @@ using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Filters;
 
-public class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
+public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
     readonly int                          _partitionCount;
     readonly Partitioner.GetPartitionHash _partitioner;
     readonly ConcurrentFilter[]           _filters;

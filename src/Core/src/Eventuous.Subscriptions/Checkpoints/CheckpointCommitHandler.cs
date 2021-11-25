@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
@@ -12,6 +13,13 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     readonly ChannelWorker<CommitPosition> _worker;
 
     CommitPosition _lastCommit = CommitPosition.None;
+
+    public const string DiagnosticName  = "eventuous.checkpoint.commithandler";
+    public const string CommitOperation = "Commit";
+
+    static readonly DiagnosticSource Diagnostic = new DiagnosticListener(DiagnosticName);
+
+    internal record CommitEvent(string Id, CommitPosition CommitPosition, CommitPosition? FirstPending);
 
     public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1) {
         _subscriptionId   = subscriptionId;
@@ -38,8 +46,12 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
     [PublicAPI]
-    public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken)
-        => _worker.Write(position, cancellationToken);
+    public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken) {
+        if (Diagnostic.IsEnabled(CommitOperation))
+            Diagnostic.Write(CommitOperation, new CommitEvent(_subscriptionId, position, _positions.Min));
+
+        return _worker.Write(position, cancellationToken);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     async ValueTask CommitInternal(CancellationToken cancellationToken) {
