@@ -26,7 +26,7 @@ public sealed class SubscriptionMetrics : IDisposable {
     public SubscriptionMetrics(IEnumerable<GetSubscriptionGap> measures) {
         _meter = EventuousDiagnostics.GetMeter(MeterName);
         var getGaps = measures.ToArray();
-        _checkpointMetrics = new CheckpointCommitMetrics();
+        _checkpointMetrics = new Lazy<CheckpointCommitMetrics>(() => new CheckpointCommitMetrics());
         IEnumerable<SubscriptionGap>? gaps = null;
 
         _meter.CreateObservableGauge(
@@ -45,7 +45,7 @@ public sealed class SubscriptionMetrics : IDisposable {
 
         _meter.CreateObservableGauge(
             CheckpointQueueLength,
-            _checkpointMetrics.Record,
+            _checkpointMetrics.Value.Record,
             "events",
             "Number of pending checkpoints"
         );
@@ -70,6 +70,7 @@ public sealed class SubscriptionMetrics : IDisposable {
                 }
             }
         };
+        ActivitySource.AddActivityListener(_listener);
 
         KeyValuePair<string, object?> GetTag(string  key, object? id) => new(key, id);
         KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
@@ -91,9 +92,9 @@ public sealed class SubscriptionMetrics : IDisposable {
         }
     }
 
-    readonly Meter                   _meter;
-    readonly ActivityListener        _listener;
-    readonly CheckpointCommitMetrics _checkpointMetrics;
+    readonly Meter                         _meter;
+    readonly ActivityListener              _listener;
+    readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics;
 
     public void Dispose() {
         _listener.Dispose();

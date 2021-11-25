@@ -2,7 +2,7 @@ using Eventuous.Subscriptions.Diagnostics;
 
 namespace Eventuous.EventStore.Subscriptions.Diagnostics;
 
-public class AllStreamSubscriptionMeasure {
+class AllStreamSubscriptionMeasure {
     public AllStreamSubscriptionMeasure(
         string               subscriptionId,
         EventStoreClient     eventStoreClient,
