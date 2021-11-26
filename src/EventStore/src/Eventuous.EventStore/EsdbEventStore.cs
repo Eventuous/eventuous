@@ -2,6 +2,7 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using Eventuous.Diagnostics;
 
 namespace Eventuous.EventStore;
 
@@ -91,7 +92,10 @@ public class EsdbEventStore : IEventStore {
             },
             stream,
             () => new ErrorInfo("Unable to appends events to {Stream}", stream),
-            (s, ex) => new AppendToStreamException(s, ex)
+            (s, ex) => {
+                EventuousEventSource.Log.UnableToAppendEvents(stream, ex);
+                return new AppendToStreamException(s, ex);
+            }
         );
 
         EventData ToEventData(StreamEvent streamEvent) {

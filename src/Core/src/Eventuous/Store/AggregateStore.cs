@@ -1,3 +1,5 @@
+using static Eventuous.Diagnostics.EventuousEventSource;
+
 namespace Eventuous;
 
 public delegate Metadata? GetEventMetadata(string stream, object evt);
@@ -45,7 +47,7 @@ public class AggregateStore : IAggregateStore {
             return result;
         }
         catch (Exception e) {
-            Console.WriteLine(e);
+            Log.UnableToStoreAggregate(aggregate, e);
             throw;
         }
 
@@ -83,7 +85,12 @@ public class AggregateStore : IAggregateStore {
             }
         }
         catch (StreamNotFound e) {
+            Log.UnableToLoadAggregate(aggregate, e);
             throw new Exceptions.AggregateNotFound<T>(id, e);
+        }
+        catch (Exception e) {
+            Log.UnableToLoadAggregate(aggregate, e);
+            throw;
         }
 
         return aggregate;

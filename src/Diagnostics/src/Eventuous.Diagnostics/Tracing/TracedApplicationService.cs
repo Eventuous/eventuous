@@ -22,20 +22,32 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
         )?
             .SetTag(Constants.CommandTag, typeof(TCommand).Name)
             .Start();
-        
-        return await Inner.Handle(command, cancellationToken).NoContext();
+
+        try {
+            var result = await Inner.Handle(command, cancellationToken).NoContext();
+
+            if (result is ErrorResult error)
+                activity?.SetException(error.Exception);
+
+            return result;
+        }
+        catch (Exception e) {
+            activity?.SetException(e);
+            throw;
+        }
     }
 }
 
-public class TracedApplicationService<TState, TId> : IApplicationService<TState, TId>
-    where TState : AggregateState<TState, TId>, new() where TId : AggregateId {
-    public static IApplicationService<TState, TId> Trace(IApplicationService<TState, TId> appService)
-        => new TracedApplicationService<TState, TId>(appService);
+public class TracedApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>
+    where TState : AggregateState<TState, TId>, new() 
+    where TId : AggregateId 
+    where T : Aggregate<TState, TId> {
+    public static IApplicationService<T, TState, TId> Trace(IApplicationService<T, TState, TId> appService)
+        => new TracedApplicationService<T, TState, TId>(appService);
 
-    IApplicationService<TState, TId> Inner { get; }
+    IApplicationService<T, TState, TId> Inner { get; }
 
-    TracedApplicationService(IApplicationService<TState, TId> appService)
-        => Inner = appService;
+    TracedApplicationService(IApplicationService<T, TState, TId> appService) => Inner = appService;
 
     public async Task<Result<TState, TId>> Handle<TCommand>(
         TCommand          command,
@@ -47,7 +59,18 @@ public class TracedApplicationService<TState, TId> : IApplicationService<TState,
             parentContext: default,
             idFormat: ActivityIdFormat.W3C
         )?.Start();
-        
-        return await Inner.Handle(command, cancellationToken).NoContext();
+
+        try {
+            var result = await Inner.Handle(command, cancellationToken).NoContext();
+
+            if (result is ErrorResult<TState, TId> error)
+                activity?.SetException(error.Exception);
+
+            return result;
+        }
+        catch (Exception e) {
+            activity?.SetException(e);
+            throw;
+        }
     }
 }

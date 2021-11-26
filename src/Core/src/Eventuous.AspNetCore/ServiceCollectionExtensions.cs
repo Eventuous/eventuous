@@ -36,17 +36,19 @@ public static class ServiceCollectionExtensions {
     /// <typeparam name="T">Application service implementation type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddApplicationService<T, TState, TId>(this IServiceCollection services)
-        where T : class, IApplicationService<TState, TId>
+    public static IServiceCollection AddApplicationService<T, TAggregate, TState, TId>(this IServiceCollection services)
+        where T : class, IApplicationService<TAggregate, TState, TId>
         where TState : AggregateState<TState, TId>, new()
-        where TId : AggregateId {
+        where TId : AggregateId
+        where TAggregate : Aggregate<TState, TId> {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();
 
         if (EventuousDiagnostics.Enabled) {
             services.AddSingleton(
-                sp => TracedApplicationService<TState, TId>.Trace(sp.GetRequiredService<T>())
+                sp => TracedApplicationService<TAggregate, TState, TId>.Trace(sp.GetRequiredService<T>())
             );
         }
 

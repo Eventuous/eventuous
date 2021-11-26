@@ -5,8 +5,10 @@ public interface IApplicationService<T> where T : Aggregate {
         where TCommand : class;
 }
 
-public interface IApplicationService<TState, TId>
-    where TState : AggregateState<TState, TId>, new() where TId : AggregateId {
+public interface IApplicationService<T, TState, TId>
+    where T : Aggregate<TState, TId>
+    where TState : AggregateState<TState, TId>, new()
+    where TId : AggregateId {
     Task<Result<TState, TId>> Handle<TCommand>(
         TCommand          command,
         CancellationToken cancellationToken

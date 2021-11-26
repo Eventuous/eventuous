@@ -1,4 +1,4 @@
-using Eventuous.Diagnostics;
+using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous;
 
@@ -9,7 +9,7 @@ namespace Eventuous;
 /// <typeparam name="TState">The aggregate state type</typeparam>
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 [PublicAPI]
-public abstract class ApplicationService<T, TState, TId> : IApplicationService<TState, TId>,
+public abstract class ApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>,
     IApplicationService<T>
     where T : Aggregate<TState, TId>, new()
     where TState : AggregateState<TState, TId>, new()
@@ -241,7 +241,7 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
     )
         where TCommand : class {
         if (!_handlers.TryGetValue(typeof(TCommand), out var registeredHandler)) {
-            EventuousEventSource.Log.CommandHandlerNotFound<TCommand>();
+            Log.CommandHandlerNotFound<TCommand>();
             var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
             return new ErrorResult<TState, TId>(exception);
         }
@@ -268,7 +268,7 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
             return new OkResult<TState, TId>(result.State, changes, storeResult.GlobalPosition);
         }
         catch (Exception e) {
-            EventuousEventSource.Log.ErrorHandlingCommand<TCommand>(e);
+            Log.ErrorHandlingCommand<TCommand>(e);
 
             return new ErrorResult<TState, TId>(
                 $"Error handling command {typeof(TCommand).Name}",
@@ -314,8 +314,13 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
         TCommand          command,
         CancellationToken cancellationToken
     ) {
-        var (state, enumerable) = await Handle(command, cancellationToken).NoContext();
-        return new Result(state, enumerable);
+        var result = await Handle(command, cancellationToken).NoContext();
+
+        return result switch {
+            OkResult<TState, TId>(var aggregateState, var enumerable, _) => new OkResult(aggregateState, enumerable),
+            ErrorResult<TState, TId> error => new ErrorResult(error.Message, error.Exception),
+            _ => throw new ApplicationException("Unknown result type")
+        };
     }
 }
 
@@ -327,7 +332,7 @@ record RegisteredHandler<T>(
 class HandlersMap<T> : Dictionary<Type, RegisteredHandler<T>> {
     public void AddHandler<TCommand>(RegisteredHandler<T> handler) {
         if (ContainsKey(typeof(TCommand))) {
-            EventuousEventSource.Log.CommandHandlerAlreadyRegistered<TCommand>();
+            Log.CommandHandlerAlreadyRegistered<TCommand>();
             throw new Exceptions.CommandHandlerAlreadyRegistered<TCommand>();
         }
 
