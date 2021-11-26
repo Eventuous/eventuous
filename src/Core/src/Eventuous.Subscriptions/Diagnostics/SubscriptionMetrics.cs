@@ -18,10 +18,9 @@ public sealed class SubscriptionMetrics : IDisposable {
     public const string ErrorCountName        = $"{MetricPrefix}.{Category}.errors.count";
     public const string CheckpointQueueLength = $"{MetricPrefix}.{Category}.pendingCheckpoint.count";
 
-    internal const string SubscriptionIdTag = "subscription-id";
-
-    const string MessageTypeTag = "message-type";
-    const string PartitionIdTag = "partition";
+    public const string SubscriptionIdTag = "subscription-id";
+    public const string MessageTypeTag = "message-type";
+    public const string PartitionIdTag = "partition";
 
     public SubscriptionMetrics(IEnumerable<GetSubscriptionGap> measures) {
         _meter = EventuousDiagnostics.GetMeter(MeterName);

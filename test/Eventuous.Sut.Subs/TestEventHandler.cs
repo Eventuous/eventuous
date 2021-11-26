@@ -5,9 +5,11 @@ using Xunit.Abstractions;
 
 namespace Eventuous.Sut.Subs;
 
-[EventType("test-event")]
+[EventType(TypeName)]
 // ReSharper disable once ClassNeverInstantiated.Global
-public record TestEvent(string Data, int Number);
+public record TestEvent(string Data, int Number) {
+    public const string TypeName = "test-event";
+}
 
 public class TestEventHandler : BaseEventHandler {
     readonly ITestOutputHelper? _output;

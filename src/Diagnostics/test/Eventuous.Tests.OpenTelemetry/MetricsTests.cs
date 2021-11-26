@@ -1,20 +1,10 @@
-using Eventuous.Diagnostics.OpenTelemetry;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
-using Eventuous.Producers;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Sut.Subs;
-using Eventuous.TestHelpers;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
-using OpenTelemetry;
-using OpenTelemetry.Metrics;
 
-namespace Eventuous.Tests.EventStore;
+namespace Eventuous.Tests.OpenTelemetry;
 
-public sealed class MetricsTests : IDisposable {
+public sealed class MetricsTests : IAsyncLifetime, IDisposable {
     static MetricsTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     const string SubscriptionId = "test-sub";
@@ -57,25 +47,48 @@ public sealed class MetricsTests : IDisposable {
     }
 
     [Fact]
-    public async Task ShouldMeasureSubscription() {
-        const int count = 1000;
+    public void CollectorShouldNotFail() {
+        _exporter.Collect(Timeout.Infinite).Should().BeTrue();
+    }
 
-        var testEvents = IntegrationFixture.Instance.Auto.CreateMany<TestEvent>(count).ToList();
+    [Fact]
+    public void ShouldMeasureSubscriptionGapCount() {
+        _exporter.Collect(Timeout.Infinite);
+        var values = _exporter.CollectValues();
+        var gapCount = GetValue(values, SubscriptionMetrics.GapCountMetricName)!;
+        gapCount.Should().NotBeNull();
+        gapCount.LongValue.Should().BeInRange(Count / 2, Count);
+        GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
+    }
+
+    [Fact]
+    public void ShouldMeasureConsumeDuration() {
+        _exporter.Collect(Timeout.Infinite);
+        var values = _exporter.CollectValues();
+        var duration = GetValue(values, SubscriptionMetrics.ProcessingRateName)!;
+        duration.Should().NotBeNull();
+        GetTag(duration, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
+        GetTag(duration, SubscriptionMetrics.MessageTypeTag).Should().Be(TestEvent.TypeName);
+    }
+
+    static MetricValue? GetValue(MetricValue[] values, string metric)
+        => values.FirstOrDefault(x => x.Name == metric);
+
+    static object GetTag(MetricValue metric, string key) {
+        var index = metric.Keys.Select((x, i) => (x, i)).First(x => x.x == key).i;
+        return metric.Values[index];
+    }
+
+    const int Count = 1000;
+
+    public async Task InitializeAsync() {
+        var testEvents = IntegrationFixture.Instance.Auto.CreateMany<TestEvent>(Count).ToList();
         var producer   = _host.Services.GetRequiredService<IEventProducer>();
         await producer.Produce(_stream, testEvents);
-
         await Task.Delay(1000);
-
-        _exporter.Collect(Timeout.Infinite).Should().BeTrue();
-        var values = _exporter.CollectValues();
-
-        _output.WriteLine($"Gap: {values[0].LongValue}");
-
-        var gapCount = values.First(x => x.Name == SubscriptionMetrics.GapCountMetricName);
-        gapCount.LongValue.Should().BeInRange(count / 2, count);
-        gapCount.Keys[0].Should().Be("subscription-id");
-        gapCount.Values[0].Should().Be(SubscriptionId);
     }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     readonly TestServer        _host;
     readonly TestExporter      _exporter;
