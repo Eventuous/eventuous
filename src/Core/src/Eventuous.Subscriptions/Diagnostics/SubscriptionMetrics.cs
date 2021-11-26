@@ -53,29 +53,12 @@ public sealed class SubscriptionMetrics : IDisposable {
         var errorCount = _meter.CreateCounter<long>(ErrorCountName, "events", "Number of event processing failures");
 
         _listener = new ActivityListener {
-            ShouldListenTo = x => x.Name == EventuousDiagnostics.InstrumentationName,
-            Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-            ActivityStopped = activity => {
-                if (activity.OperationName != TracingConstants.ConsumerOperation) return;
-
-                var subId = activity.GetTagItem(TelemetryTags.Eventuous.Subscription);
-                if (subId == null) return;
-
-                var subTag       = SubTag(subId);
-                var typeTag      = GetTag(MessageTypeTag, activity.GetTagItem(TelemetryTags.Message.Type));
-                var partitionTag = GetTag(PartitionIdTag, activity.GetTagItem(TelemetryTags.Eventuous.Partition));
-                histogram.Record(activity.Duration.TotalSeconds, subTag, typeTag, partitionTag);
-
-                if (activity.Status == ActivityStatusCode.Error) {
-                    errorCount.Add(1, subTag, typeTag);
-                }
-            }
+            ShouldListenTo  = x => x.Name == EventuousDiagnostics.InstrumentationName,
+            Sample          = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = x => ActivityStopped(histogram, errorCount, x)
         };
 
         ActivitySource.AddActivityListener(_listener);
-
-        KeyValuePair<string, object?> GetTag(string  key, object? id) => new(key, id);
-        KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
 
         IEnumerable<Measurement<double>> ObserveTimeValues()
             => gaps?
@@ -87,19 +70,39 @@ public sealed class SubscriptionMetrics : IDisposable {
 
             return gaps.Select(x => new Measurement<long>((long)x.PositionGap, SubTag(x.SubscriptionId)));
         }
+    }
 
-        SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
-            var cts = new CancellationTokenSource(5000);
+    static KeyValuePair<string, object?> GetTag(string key, object? id) => new(key, id);
 
-            try {
-                var t = gapMeasure(cts.Token);
+    static KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
 
-                return t.IsCompleted ? t.Result : t.GetAwaiter().GetResult();
-            }
-            catch (Exception e) {
-                SubscriptionsEventSource.Log.MetricCollectionFailed("Subscription Gap", e);
-                return SubscriptionGap.Invalid;
-            }
+    static void ActivityStopped(Histogram<double> histogram, Counter<long> errorCount, Activity activity) {
+        if (activity.OperationName != TracingConstants.ConsumerOperation) return;
+
+        var subId = activity.GetTagItem(TelemetryTags.Eventuous.Subscription);
+        if (subId == null) return;
+
+        var subTag       = SubTag(subId);
+        var typeTag      = GetTag(MessageTypeTag, activity.GetTagItem(TelemetryTags.Message.Type));
+        var partitionTag = GetTag(PartitionIdTag, activity.GetTagItem(TelemetryTags.Eventuous.Partition));
+        histogram.Record(activity.Duration.TotalSeconds, subTag, typeTag, partitionTag);
+
+        if (activity.Status == ActivityStatusCode.Error) {
+            errorCount.Add(1, subTag, typeTag);
+        }
+    }
+
+    static SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
+        var cts = new CancellationTokenSource(5000);
+
+        try {
+            var t = gapMeasure(cts.Token);
+
+            return t.IsCompleted ? t.Result : t.NoContext().GetAwaiter().GetResult();
+        }
+        catch (Exception e) {
+            SubscriptionsEventSource.Log.MetricCollectionFailed("Subscription Gap", e);
+            return SubscriptionGap.Invalid;
         }
     }
 
