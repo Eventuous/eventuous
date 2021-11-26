@@ -20,14 +20,10 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '6.0.x'
-          include-prerelease: true
-          source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
-        env:
-          NUGET_AUTH_TOKEN: '%NUGET_AUTH_TOKEN%'
       - name: Create and push NuGet package
         run: |
           dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
           dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          dotnet nuget push nuget/**/*.nupkg --skip-duplicate --api-key ${{ github.token }}
+          dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.MYGET_API_KEY }} --source https://www.myget.org/F/eventuous/api/v2/package --skip-duplicate
         env:
           NUGET_AUTH_TOKEN: ${{ github.token }}
