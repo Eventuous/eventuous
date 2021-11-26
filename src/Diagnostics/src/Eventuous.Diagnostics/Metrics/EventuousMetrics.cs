@@ -30,6 +30,7 @@ public sealed class EventuousMetrics : IDisposable {
             Sample          = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
             ActivityStopped = Record
         };
+        ActivitySource.AddActivityListener(_listener);
 
         void Record(Activity activity) {
             if (activity.OperationName == Constants.HandleCommand) {
