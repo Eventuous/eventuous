@@ -34,7 +34,7 @@ public class TracedEventStore : IEventStore {
             return await Inner.AppendEvents(stream, expectedVersion, tracedEvents, cancellationToken).NoContext();
         }
         catch (Exception e) {
-            activity?.SetException(e);
+            activity?.SetActivityStatus(ActivityStatus.Error(e));
             throw;
         }
     }
@@ -89,7 +89,7 @@ public class TracedEventStore : IEventStore {
             await task.NoContext();
         }
         catch (Exception e) {
-            activity?.SetException(e);
+            activity?.SetActivityStatus(ActivityStatus.Error(e));
             throw;
         }
     }
@@ -101,7 +101,7 @@ public class TracedEventStore : IEventStore {
             return await task.NoContext();
         }
         catch (Exception e) {
-            activity?.SetException(e);
+            activity?.SetActivityStatus(ActivityStatus.Error(e));
             throw;
         }
     }

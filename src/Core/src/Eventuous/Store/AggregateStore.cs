@@ -48,7 +48,9 @@ public class AggregateStore : IAggregateStore {
         }
         catch (Exception e) {
             Log.UnableToStoreAggregate(aggregate, e);
-            throw;
+
+            throw e.InnerException?.Message.Contains("WrongExpectedVersion") == true
+                ? new OptimisticConcurrencyException<T>(aggregate, e) : e;
         }
 
         StreamEvent ToStreamEvent(object evt) {
@@ -85,11 +87,11 @@ public class AggregateStore : IAggregateStore {
             }
         }
         catch (StreamNotFound e) {
-            Log.UnableToLoadAggregate(aggregate, e);
-            throw new Exceptions.AggregateNotFound<T>(id, e);
+            Log.UnableToLoadAggregate<T>(id, e);
+            throw new AggregateNotFoundException<T>(id, e);
         }
         catch (Exception e) {
-            Log.UnableToLoadAggregate(aggregate, e);
+            Log.UnableToLoadAggregate<T>(id, e);
             throw;
         }
 

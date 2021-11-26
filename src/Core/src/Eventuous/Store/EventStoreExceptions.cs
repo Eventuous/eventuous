@@ -12,20 +12,20 @@ public class StreamNotFound : EventStoreException {
 
 public class AppendToStreamException : EventStoreException {
     public AppendToStreamException(string stream, Exception inner)
-        : base($"Unable to append events to {stream}", inner) { }
+        : base($"Unable to append events to {stream}: {inner.Message}", inner) { }
 }
 
 public class ReadFromStreamException : EventStoreException {
     public ReadFromStreamException(string stream, Exception inner)
-        : base($"Unable to read events from {stream}", inner) { }
+        : base($"Unable to read events from {stream}: {inner.Message}", inner) { }
 }
 
 public class DeleteStreamException : EventStoreException {
     public DeleteStreamException(string stream, Exception inner)
-        : base($"Unable to delete stream {stream}", inner) { }
+        : base($"Unable to delete stream {stream}: {inner.Message}", inner) { }
 }
 
 public class TruncateStreamException : EventStoreException {
     public TruncateStreamException(string stream, Exception inner)
-        : base($"Unable to truncate stream {stream}", inner) { }
+        : base($"Unable to truncate stream {stream}: {inner.Message}", inner) { }
 }

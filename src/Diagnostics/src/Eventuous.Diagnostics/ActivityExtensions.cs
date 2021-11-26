@@ -57,16 +57,20 @@ public static class ActivityExtensions {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Activity SetException(this Activity activity, Exception? exception) {
+    static Activity SetException(this Activity activity, Exception? exception) {
         if (exception == null) return activity;
-
+        
         var tags = new ActivityTagsCollection(
             new KeyValuePair<string, object?>[] {
                 new(TelemetryTags.Exception.Type, exception.GetType().Name),
-                new(TelemetryTags.Exception.Message, exception.Message),
+                new(TelemetryTags.Exception.Message, $"{exception.Message} {exception.InnerException?.Message}"),
                 new(TelemetryTags.Exception.Stacktrace, exception.StackTrace)
             }
         );
+
+        foreach (var (key, value) in tags) {
+            activity.SetTag(key, value);
+        }
 
         return activity.AddEvent(
             new ActivityEvent(TelemetryTags.Exception.EventName, DateTimeOffset.Now, tags)

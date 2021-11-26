@@ -6,17 +6,6 @@ namespace Microsoft.AspNetCore.Builder;
 
 [PublicAPI]
 public static class AggregateFactoryBuilderExtensions {
-    /// <summary>
-    /// Adds registered aggregate factories to the registry. The registry is then used by
-    /// <see cref="ApplicationService{T,TState,TId}"/> and <see cref="AggregateStore"/>
-    /// </summary>
-    /// <param name="builder"></param>
-    /// <returns></returns>
-    public static IApplicationBuilder UseAggregateFactory(this IApplicationBuilder builder) {
-        UseAggregateFactory(builder.ApplicationServices);
-        return builder;
-    }
-
     public static IHost UseAggregateFactory(this IHost host) {
         UseAggregateFactory(host.Services);
         return host;

@@ -1,4 +1,4 @@
-using Eventuous.AspNetCore;
+using Eventuous.AspNetCore.Web;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Projections.MongoDB.Tools;

@@ -10,6 +10,7 @@
         <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
         <DiagRoot>$(RepoRoot)\src\Diagnostics\src</DiagRoot>
         <EsdbRoot>$(RepoRoot)\src\EventStore\src</EsdbRoot>
+        <ExtRoot>$(RepoRoot)\src\Extensions\src</ExtRoot>
         <LocalRoot>..\..\src</LocalRoot>
     </PropertyGroup>
 

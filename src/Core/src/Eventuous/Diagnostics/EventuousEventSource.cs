@@ -40,9 +40,9 @@ public class EventuousEventSource : EventSource {
     }
 
     [NonEvent]
-    public void UnableToLoadAggregate<T>(T aggregate, Exception exception) where T : Aggregate {
+    public void UnableToLoadAggregate<T>(string id, Exception exception) where T : Aggregate {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            UnableToLoadAggregate(typeof(T).Name, aggregate.GetId(), exception.ToString());
+            UnableToLoadAggregate(typeof(T).Name, id, exception.ToString());
     }
 
     [Event(CommandHandlerNotFoundId, Message = "Handler not found for command: '{0}'", Level = EventLevel.Error)]

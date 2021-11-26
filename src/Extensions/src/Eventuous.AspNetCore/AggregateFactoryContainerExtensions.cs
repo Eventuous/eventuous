@@ -7,7 +7,7 @@ public static class AggregateFactoryContainerExtensions {
     /// <summary>
     /// Add an aggregate factory to the container, allowing to resolve aggregate dependencies.
     /// Do not use this if your aggregate has no dependencies and has a parameterless constructor.
-    /// Must be followed by <see cref="UseAggregateFactory"/> in Startup.Configure.
+    /// Must be followed by "UseAggregateFactory" for IHost or IApplicationBuilder.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="createInstance">Aggregate factory function, which can get dependencies from the container.</param>
@@ -39,4 +39,4 @@ public static class AggregateFactoryContainerExtensions {
     }
 }
 
-record ResolveAggregateFactory(Type Type, Func<IServiceProvider, Aggregate> CreateInstance);
+public record ResolveAggregateFactory(Type Type, Func<IServiceProvider, Aggregate> CreateInstance);

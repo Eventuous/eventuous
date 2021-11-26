@@ -27,12 +27,12 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
             var result = await Inner.Handle(command, cancellationToken).NoContext();
 
             if (result is ErrorResult error)
-                activity?.SetException(error.Exception);
+                activity?.SetActivityStatus(ActivityStatus.Error(error.Exception));
 
             return result;
         }
         catch (Exception e) {
-            activity?.SetException(e);
+            activity?.SetActivityStatus(ActivityStatus.Error(e));
             throw;
         }
     }
@@ -64,12 +64,12 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
             var result = await Inner.Handle(command, cancellationToken).NoContext();
 
             if (result is ErrorResult<TState, TId> error)
-                activity?.SetException(error.Exception);
+                activity?.SetActivityStatus(ActivityStatus.Error(error.Exception));
 
             return result;
         }
         catch (Exception e) {
-            activity?.SetException(e);
+            activity?.SetActivityStatus(ActivityStatus.Error(e));
             throw;
         }
     }

@@ -8,7 +8,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
+        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
         <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
     </ItemGroup>
     <ItemGroup>
