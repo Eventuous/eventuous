@@ -31,10 +31,10 @@ sealed class CheckpointCommitMetrics : IDisposable {
 
     public IEnumerable<Measurement<long>> Record()
         => _commitEvents
-            .Where(x => x.Value.FirstPending != null)
+            .Where(x => x.Value.FirstPending.HasValue)
             .Select(
                 x => new Measurement<long>(
-                    (long)(x.Value.CommitPosition.Sequence - x.Value.FirstPending!.Sequence),
+                    (long)(x.Value.CommitPosition.Sequence - x.Value.FirstPending!.Value.Sequence),
                     new KeyValuePair<string, object?>(SubscriptionMetrics.SubscriptionIdTag, x.Value.Id)
                 )
             );
