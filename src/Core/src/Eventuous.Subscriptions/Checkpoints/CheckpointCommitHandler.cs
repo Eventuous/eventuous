@@ -58,9 +58,9 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         try {
             switch (_lastCommit.Valid) {
                 // There's a gap between the last committed position and the list head
-                case true when _lastCommit.Sequence + 1 != _positions.Min?.Sequence:
+                case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence:
                 // The list head is not at the very beginning
-                case false when _positions.Min?.Sequence != 0:
+                case false when _positions.Min.Sequence != 0:
                     return;
             }
 
@@ -89,7 +89,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     }
 }
 
-public record CommitPosition(ulong Position, ulong Sequence) {
+public record struct CommitPosition(ulong Position, ulong Sequence) {
     public bool Valid { get; private init; } = true;
 
     public static readonly CommitPosition None = new(0, 0) { Valid = false };

@@ -31,7 +31,8 @@ public class SubscriptionsEventSource : EventSource {
     const int ThrowOnErrorIncompatibleId       = 24;
     const int UnknownMessageTypeId             = 25;
     const int PartitionedFilterId              = 26;
-    const int StoppingSomethingId                 = 27;
+    const int StoppingSomethingId              = 27;
+    const int MetricCollectionFailedId         = 28;
 
     const int InfoId = 100;
     const int WarnId = 101;
@@ -103,6 +104,10 @@ public class SubscriptionsEventSource : EventSource {
             MessageReceived(context.SubscriptionId, context.MessageType, context.Stream);
     }
 
+    [NonEvent]
+    public void MetricCollectionFailed(string metric, Exception exception)
+        => MetricCollectionFailed(metric, exception.ToString());
+
     [Event(MessageReceivedId, Message = "[{0}] Received {1} from {2}", Level = EventLevel.Verbose)]
     public void MessageReceived(string subscriptionId, string messageType, string stream)
         => WriteEvent(MessageReceivedId, subscriptionId, messageType, stream);
@@ -124,6 +129,11 @@ public class SubscriptionsEventSource : EventSource {
     public void NoHandlerFound(string handlerType, string messageType) {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All))
             WriteEvent(NoHandlerFoundId, handlerType, messageType);
+    }
+
+    [Event(MetricCollectionFailedId, Message = "Failed to collect metric {0}: {1}", Level = EventLevel.Warning)]
+    public void MetricCollectionFailed(string metric, string exception) {
+        WriteEvent(MetricCollectionFailedId, metric, exception);
     }
 
     [Event(

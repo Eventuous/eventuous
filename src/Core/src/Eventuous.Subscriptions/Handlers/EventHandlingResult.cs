@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace Eventuous.Subscriptions;
 
-public record EventHandlingResult {
+public record struct EventHandlingResult {
     EventHandlingResult(EventHandlingStatus status, string handlerType, Exception? exception = null) {
         Status      = status;
         Exception   = exception;

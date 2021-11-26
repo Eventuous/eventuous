@@ -1,6 +1,6 @@
 namespace Eventuous.Subscriptions.Diagnostics;
 
-public record HealthReport {
+public record struct HealthReport {
     HealthReport(bool isHealthy, Exception? lastException) {
         IsHealthy     = isHealthy;
         LastException = lastException;

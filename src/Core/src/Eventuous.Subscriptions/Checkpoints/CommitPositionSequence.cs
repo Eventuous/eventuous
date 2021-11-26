@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+// ReSharper disable UseDeconstructionOnParameter
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
@@ -23,8 +24,8 @@ public class CommitPositionSequence : SortedSet<CommitPosition> {
 
     class PositionsComparer : IComparer<CommitPosition> {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Compare(CommitPosition? x, CommitPosition? y) {
-            if (x == null || y == null || x.Sequence == y.Sequence) return 0;
+        public int Compare(CommitPosition x, CommitPosition y) {
+            if (x.Sequence == y.Sequence) return 0;
 
             return x.Sequence > y.Sequence ? 1 : -1;
         }

@@ -19,8 +19,8 @@ public sealed class SubscriptionMetrics : IDisposable {
     public const string CheckpointQueueLength = $"{MetricPrefix}.{Category}.pendingCheckpoint.count";
 
     public const string SubscriptionIdTag = "subscription-id";
-    public const string MessageTypeTag = "message-type";
-    public const string PartitionIdTag = "partition";
+    public const string MessageTypeTag    = "message-type";
+    public const string PartitionIdTag    = "partition";
 
     public SubscriptionMetrics(IEnumerable<GetSubscriptionGap> measures) {
         _meter = EventuousDiagnostics.GetMeter(MeterName);
@@ -78,19 +78,28 @@ public sealed class SubscriptionMetrics : IDisposable {
         KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
 
         IEnumerable<Measurement<double>> ObserveTimeValues()
-            => gaps?.Select(x => new Measurement<double>(x.TimeGap.TotalSeconds, SubTag(x.SubscriptionId)))
+            => gaps?
+                   .Select(x => new Measurement<double>(x.TimeGap.TotalSeconds, SubTag(x.SubscriptionId)))
             ?? Array.Empty<Measurement<double>>();
 
         IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionGap[] gapMeasure) {
-            gaps = gapMeasure.Select(GetGap);
+            gaps = gapMeasure.Select(GetGap).Where(x => x != SubscriptionGap.Invalid);
+
             return gaps.Select(x => new Measurement<long>((long)x.PositionGap, SubTag(x.SubscriptionId)));
         }
 
         SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
             var cts = new CancellationTokenSource(5000);
-            var t   = gapMeasure(cts.Token);
 
-            return t.IsCompleted ? t.Result : t.GetAwaiter().GetResult();
+            try {
+                var t = gapMeasure(cts.Token);
+
+                return t.IsCompleted ? t.Result : t.GetAwaiter().GetResult();
+            }
+            catch (Exception e) {
+                SubscriptionsEventSource.Log.MetricCollectionFailed("Subscription Gap", e);
+                return SubscriptionGap.Invalid;
+            }
         }
     }
 
