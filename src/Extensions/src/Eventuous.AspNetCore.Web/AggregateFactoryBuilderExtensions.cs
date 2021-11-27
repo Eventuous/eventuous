@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 // ReSharper disable CheckNamespace
 namespace Microsoft.AspNetCore.Builder;
 

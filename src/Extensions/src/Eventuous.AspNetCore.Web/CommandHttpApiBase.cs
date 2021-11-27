@@ -1,17 +1,26 @@
-using Microsoft.AspNetCore.Mvc;
-
 namespace Eventuous.AspNetCore.Web;
 
+/// <summary>
+/// Base class for exposing commands via Web API using a controller.
+/// </summary>
+/// <typeparam name="TAggregate">Aggregate type</typeparam>
 [PublicAPI]
-public abstract class CommandHttpApiBase<T> : ControllerBase where T : Aggregate {
-    readonly IApplicationService<T> _service;
+public abstract class CommandHttpApiBase<TAggregate> : ControllerBase where TAggregate : Aggregate {
+    readonly IApplicationService<TAggregate> _service;
 
-    protected CommandHttpApiBase(IApplicationService<T> service) => _service = service;
+    protected CommandHttpApiBase(IApplicationService<TAggregate> service) => _service = service;
 
+    /// <summary>
+    /// Call this method from your HTTP endpoints to handle commands and wrap the result properly.
+    /// </summary>
+    /// <param name="command">Command instance</param>
+    /// <param name="cancellationToken">Request cancellation token</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    /// <returns></returns>
     protected async Task<ActionResult<Result>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await _service.Handle(command, cancellationToken);
-        return AsActionResult<T>(result);
+        return AsActionResult<TAggregate>(result);
     }
     
     static ActionResult<Result> AsActionResult<T>(Result result) where T : Aggregate

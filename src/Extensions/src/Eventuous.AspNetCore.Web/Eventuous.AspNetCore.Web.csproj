@@ -5,7 +5,8 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
         <ProjectReference Include="..\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
         <Using Include="Eventuous" />
-        <Using Include="Microsoft.Extensions.DependencyInjection.Extensions" />
+        <Using Include="Microsoft.Extensions.DependencyInjection" />
+        <Using Include="Microsoft.AspNetCore.Mvc" />
     </ItemGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />

@@ -1,6 +1,5 @@
 using Eventuous.Diagnostics.Logging;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.AspNetCore.Web;

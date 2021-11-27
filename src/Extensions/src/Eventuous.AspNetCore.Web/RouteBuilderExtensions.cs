@@ -2,7 +2,7 @@ using System.Reflection;
 using Eventuous.AspNetCore.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
+using OkResult = Eventuous.OkResult;
 
 // ReSharper disable CheckNamespace
 
@@ -50,10 +50,29 @@ public static class RouteBuilderExtensions {
             .Produces<ErrorResult>(StatusCodes.Status409Conflict)
             .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
 
+    /// <summary>
+    /// Creates an instance of <see cref="ApplicationServiceRouteBuilder{T}"/> for a given aggregate type, so you
+    /// can explicitly map commands to HTTP endpoints. 
+    /// </summary>
+    /// <param name="builder">Endpoint route builder instance</param>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <returns></returns>
     [PublicAPI]
-    public static ApplicationServiceRouteBuilder<T> MapAggregateCommands<T>(this IEndpointRouteBuilder builder)
-        where T : Aggregate => new(builder);
+    public static ApplicationServiceRouteBuilder<TAggregate> MapAggregateCommands<TAggregate>(
+        this IEndpointRouteBuilder builder
+    )
+        where TAggregate : Aggregate => new(builder);
 
+    /// <summary>
+    /// Maps all commands annotated by <seealso cref="HttpCommandAttribute"/> to HTTP endpoints to be handled
+    /// by <seealso cref="IApplicationService{T}"/> where T is the aggregate type provided. Only use it if your
+    /// application only handles commands for one aggregate type.
+    /// </summary>
+    /// <param name="builder">Endpoint route builder instance</param>
+    /// <param name="assemblies">List of assemblies to scan</param>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     [PublicAPI]
     public static IEndpointRouteBuilder MapDiscoveredCommands<TAggregate>(
         this   IEndpointRouteBuilder builder,
@@ -109,6 +128,15 @@ public static class RouteBuilderExtensions {
         return builder;
     }
 
+    /// <summary>
+    /// Maps commands that are annotated either with <seealso cref="AggregateCommands"/> and/or
+    /// <seealso cref="HttpCommandAttribute"/> in given assemblies. Will use assemblies of the current
+    /// application domain if no assembly is specified explicitly.
+    /// </summary>
+    /// <param name="builder">Endpoint router builder instance</param>
+    /// <param name="assemblies">List of assemblies to scan</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     [PublicAPI]
     public static IEndpointRouteBuilder MapDiscoveredCommands(
         this   IEndpointRouteBuilder builder,
@@ -196,11 +224,23 @@ public class ApplicationServiceRouteBuilder<T> where T : Aggregate {
 
     public ApplicationServiceRouteBuilder(IEndpointRouteBuilder builder) => _builder = builder;
 
+    /// <summary>
+    /// Maps the given command type to an HTTP endpoint. The command class can be annotated with
+    /// the <seealso cref="HttpCommandAttribute"/> if you need a custom route.
+    /// </summary>
+    /// <typeparam name="TCommand">Command class</typeparam>
+    /// <returns></returns>
     public ApplicationServiceRouteBuilder<T> MapCommand<TCommand>() where TCommand : class {
         _builder.MapCommand<TCommand, T>();
         return this;
     }
 
+    /// <summary>
+    /// Maps the given command type to an HTTP endpoint using the specified route.
+    /// </summary>
+    /// <param name="route">HTTP route for the command</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    /// <returns></returns>
     public ApplicationServiceRouteBuilder<T> MapCommand<TCommand>(string route) where TCommand : class {
         _builder.MapCommand<TCommand, T>(route);
         return this;
