@@ -304,7 +304,7 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
         CancellationToken cancellationToken
     );
 
-    async Task<Result> IApplicationService<T>.Handle(object command, CancellationToken cancellationToken) {
+    async Task<Result> IApplicationService.Handle(object command, CancellationToken cancellationToken) {
         var result = await Handle(command, cancellationToken).NoContext();
 
         return result switch {

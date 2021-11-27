@@ -1,8 +1,11 @@
+// ReSharper disable UnusedTypeParameter
 namespace Eventuous;
 
-public interface IApplicationService<T> where T : Aggregate {
+public interface IApplicationService {
     Task<Result> Handle(object command, CancellationToken cancellationToken);
 }
+
+public interface IApplicationService<T> : IApplicationService where T : Aggregate { }
 
 public interface IApplicationService<T, TState, TId>
     where T : Aggregate<TState, TId>

@@ -1,4 +1,3 @@
-using System.Net.Mime;
 using System.Reflection;
 using Eventuous.AspNetCore.Web;
 using Microsoft.AspNetCore.Builder;
@@ -21,8 +20,8 @@ public static class RouteBuilderExtensions {
     public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(this IEndpointRouteBuilder builder)
         where TAggregate : Aggregate where TCommand : class {
         var attr  = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
-        var route = attr?.Route ?? typeof(TCommand).Name;
-        return builder.MapCommand<TCommand, TAggregate>(char.ToLowerInvariant(route[0]) + route[1..]);
+        var route = GetRoute<TCommand>(attr?.Route);
+        return builder.MapCommand<TCommand, TAggregate>(route);
     }
 
     /// <summary>
@@ -38,13 +37,18 @@ public static class RouteBuilderExtensions {
         this IEndpointRouteBuilder builder,
         string                     route
     ) where TAggregate : Aggregate where TCommand : class
-        => builder.MapPost(
-            route,
-            async (TCommand cmd, IApplicationService<TAggregate> service, CancellationToken cancellationToken) => {
-                var result = await service.Handle(cmd, cancellationToken);
-                return result.AsResult<TAggregate>();
-            }
-        );
+        => builder
+            .MapPost(
+                route,
+                async (TCommand cmd, IApplicationService<TAggregate> service, CancellationToken cancellationToken) => {
+                    var result = await service.Handle(cmd, cancellationToken);
+                    return result.AsResult();
+                }
+            )
+            .Produces<OkResult>()
+            .Produces<ErrorResult>(StatusCodes.Status404NotFound)
+            .Produces<ErrorResult>(StatusCodes.Status409Conflict)
+            .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
 
     [PublicAPI]
     public static ApplicationServiceRouteBuilder<T> MapAggregateCommands<T>(this IEndpointRouteBuilder builder)
@@ -55,8 +59,7 @@ public static class RouteBuilderExtensions {
         this   IEndpointRouteBuilder builder,
         params Assembly[]            assemblies
     ) where TAggregate : Aggregate {
-        var assembliesToScan = assemblies.Length == 0
-            ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
+        var assembliesToScan = assemblies.Length == 0 ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
 
         var attributeType = typeof(HttpCommandAttribute);
 
@@ -71,25 +74,31 @@ public static class RouteBuilderExtensions {
 
             foreach (var type in decoratedTypes) {
                 var attr = type.GetAttribute<HttpCommandAttribute>()!;
+
+                if (attr.AggregateType != null && attr.AggregateType != typeof(TAggregate))
+                    throw new InvalidOperationException(
+                        $"Command aggregate is {attr.AggregateType.Name} but expected to be {typeof(TAggregate).Name}"
+                    );
+
                 Map(type, attr.Route);
             }
         }
 
-        void Map(Type type, string route) {
-            builder.MapPost(
-                route,
-                async Task<IResult>(HttpContext context) => {
-                    var cmd = await context.Request.ReadFromJsonAsync(type, context.RequestAborted);
+        void Map(Type type, string? route) {
+            builder
+                .MapPost(
+                    GetRoute(type, route),
+                    async Task<IResult>(HttpContext context, IApplicationService<TAggregate> service) => {
+                        var cmd = await context.Request.ReadFromJsonAsync(type, context.RequestAborted);
 
-                    if (cmd == null)
-                        throw new InvalidOperationException("Failed to deserialize the command");
+                        if (cmd == null)
+                            throw new InvalidOperationException("Failed to deserialize the command");
 
-                    var service = context.RequestServices.GetRequiredService<IApplicationService<TAggregate>>();
-                    var result  = await service.Handle(cmd, context.RequestAborted);
+                        var result = await service.Handle(cmd, context.RequestAborted);
 
-                    return result.AsResult<TAggregate>();
-                }
-            )
+                        return result.AsResult();
+                    }
+                )
                 .Accepts(type, false, "application/json")
                 .Produces<Result>()
                 .Produces<ErrorResult>(StatusCodes.Status404NotFound)
@@ -100,15 +109,85 @@ public static class RouteBuilderExtensions {
         return builder;
     }
 
-    static IResult AsResult<T>(this Result result) where T : Aggregate
+    [PublicAPI]
+    public static IEndpointRouteBuilder MapDiscoveredCommands(
+        this   IEndpointRouteBuilder builder,
+        params Assembly[]            assemblies
+    ) {
+        var assembliesToScan = assemblies.Length == 0 ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
+
+        var attributeType = typeof(HttpCommandAttribute);
+
+        foreach (var assembly in assembliesToScan) {
+            MapAssemblyCommands(assembly);
+        }
+
+        return builder;
+
+        void MapAssemblyCommands(Assembly assembly) {
+            var decoratedTypes = assembly.DefinedTypes.Where(
+                x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == attributeType)
+            );
+
+            foreach (var type in decoratedTypes) {
+                var attr            = type.GetAttribute<HttpCommandAttribute>()!;
+                var parentAttribute = type.DeclaringType?.GetAttribute<AggregateCommands>();
+                if (parentAttribute == null) continue;
+
+                Map(parentAttribute.AggregateType, type, attr.Route);
+            }
+        }
+
+        void Map(Type aggregateType, Type type, string? route) {
+            var appServiceBase = typeof(IApplicationService<>);
+            var appServiceType = appServiceBase.MakeGenericType(aggregateType);
+
+            builder
+                .MapPost(
+                    GetRoute(type, route),
+                    async Task<IResult>(HttpContext context) => {
+                        var cmd = await context.Request.ReadFromJsonAsync(type, context.RequestAborted);
+
+                        if (cmd == null)
+                            throw new InvalidOperationException("Failed to deserialize the command");
+
+                        if (context.RequestServices.GetRequiredService(appServiceType) is not IApplicationService
+                            service)
+                            throw new InvalidOperationException("Unable to resolve the application service");
+
+                        var result = await service.Handle(cmd, context.RequestAborted);
+
+                        return result.AsResult();
+                    }
+                )
+                .Accepts(type, false, "application/json")
+                .Produces<Result>()
+                .Produces<ErrorResult>(StatusCodes.Status404NotFound)
+                .Produces<ErrorResult>(StatusCodes.Status409Conflict)
+                .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
+        }
+    }
+
+    static IResult AsResult(this Result result)
         => result is ErrorResult error
             ? error.Exception switch {
-                OptimisticConcurrencyException<T> => Results.Conflict(error),
-                AggregateNotFoundException<T>     => Results.NotFound(error),
-                _                                 => Results.BadRequest(error)
+                OptimisticConcurrencyException => Results.Conflict(error),
+                AggregateNotFoundException     => Results.NotFound(error),
+                _                              => Results.BadRequest(error)
             } : Results.Ok(result);
 
     static T? GetAttribute<T>(this Type type) where T : class => Attribute.GetCustomAttribute(type, typeof(T)) as T;
+
+    static string GetRoute<TCommand>(string? route) => GetRoute(typeof(TCommand), route);
+
+    static string GetRoute(Type type, string? route) {
+        return route ?? Generate();
+
+        string Generate() {
+            var gen = type.Name;
+            return char.ToLowerInvariant(gen[0]) + gen[1..];
+        }
+    }
 }
 
 [PublicAPI]
