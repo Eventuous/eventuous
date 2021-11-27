@@ -12,5 +12,6 @@
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' != 'net6.0'">
         <Compile Remove="RouteBuilderExtensions.cs" />
+        <Compile Remove="HttpCommandAttribute.cs" />
     </ItemGroup>
 </Project>

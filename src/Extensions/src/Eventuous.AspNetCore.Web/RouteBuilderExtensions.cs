@@ -1,5 +1,6 @@
 using Eventuous.AspNetCore.Web;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 
 // ReSharper disable CheckNamespace
 
@@ -38,13 +39,23 @@ public static class RouteBuilderExtensions {
             route,
             async (TCommand cmd, IApplicationService<TAggregate> service, CancellationToken cancellationToken) => {
                 var result = await service.Handle(cmd, cancellationToken);
-                return result.AsActionResult<TAggregate>();
+                return result.AsResult<TAggregate>();
             }
         );
 
     [PublicAPI]
     public static ApplicationServiceRouteBuilder<T> MapAggregateCommands<T>(this IEndpointRouteBuilder builder) 
         where T : Aggregate => new(builder);
+    
+    static IResult AsResult<T>(this Result result) where T : Aggregate
+        => result is ErrorResult error
+            ? error.Exception switch {
+                OptimisticConcurrencyException<T> => Results.Conflict(error),
+                AggregateNotFoundException<T>     => Results.NotFound(error),
+                _                                 => Results.BadRequest(error)
+            } : Results.Ok(result);
+    
+    static T? GetAttribute<T>(this Type type) where T : class => Attribute.GetCustomAttribute(type, typeof(T)) as T;
 }
 
 [PublicAPI]
@@ -62,16 +73,4 @@ public class ApplicationServiceRouteBuilder<T> where T : Aggregate {
         _builder.MapCommand<TCommand, T>(route);
         return this;
     }
-}
-
-[AttributeUsage(AttributeTargets.Class)]
-public class HttpCommandAttribute : Attribute {
-    public string Route { get; }
-
-    public HttpCommandAttribute(string route) => Route = route;
-}
-
-static class TypeExtensions {
-    public static T? GetAttribute<T>(this Type type) where T : class
-        => Attribute.GetCustomAttribute(type, typeof(T)) as T;
 }
