@@ -10,4 +10,7 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' != 'net6.0'">
+        <Compile Remove="RouteBuilderExtensions.cs" />
+    </ItemGroup>
 </Project>
