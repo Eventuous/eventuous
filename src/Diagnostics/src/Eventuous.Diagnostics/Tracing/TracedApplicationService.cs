@@ -10,17 +10,14 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
 
     TracedApplicationService(IApplicationService<T> appService) => Inner = appService;
 
-    public async Task<Result> Handle<TCommand>(
-        TCommand          command,
-        CancellationToken cancellationToken
-    ) where TCommand : class {
+    public async Task<Result> Handle(object command, CancellationToken cancellationToken) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            Constants.HandleCommand,
-            ActivityKind.Internal,
-            parentContext: default,
-            idFormat: ActivityIdFormat.W3C
-        )?
-            .SetTag(Constants.CommandTag, typeof(TCommand).Name)
+                Constants.HandleCommand,
+                ActivityKind.Internal,
+                parentContext: default,
+                idFormat: ActivityIdFormat.W3C
+            )?
+            .SetTag(Constants.CommandTag, command.GetType().Name)
             .Start();
 
         try {
@@ -39,8 +36,8 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
 }
 
 public class TracedApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>
-    where TState : AggregateState<TState, TId>, new() 
-    where TId : AggregateId 
+    where TState : AggregateState<TState, TId>, new()
+    where TId : AggregateId
     where T : Aggregate<TState, TId> {
     public static IApplicationService<T, TState, TId> Trace(IApplicationService<T, TState, TId> appService)
         => new TracedApplicationService<T, TState, TId>(appService);
@@ -49,10 +46,7 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
 
     TracedApplicationService(IApplicationService<T, TState, TId> appService) => Inner = appService;
 
-    public async Task<Result<TState, TId>> Handle<TCommand>(
-        TCommand          command,
-        CancellationToken cancellationToken
-    ) where TCommand : class {
+    public async Task<Result<TState, TId>> Handle(object command, CancellationToken cancellationToken) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
             Constants.HandleCommand,
             ActivityKind.Internal,
