@@ -228,21 +228,18 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
     }
 
     /// <summary>
-    /// The generic command handler. Call this function from your edge (API).
+    /// The command handler. Call this function from your edge (API).
     /// </summary>
     /// <param name="command">Command to execute</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns><see cref="Result{TState,TId}"/> of the execution</returns>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
-    public async Task<Result<TState, TId>> Handle<TCommand>(
-        TCommand          command,
-        CancellationToken cancellationToken
-    )
-        where TCommand : class {
-        if (!_handlers.TryGetValue(typeof(TCommand), out var registeredHandler)) {
-            Log.CommandHandlerNotFound<TCommand>();
-            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
+    public async Task<Result<TState, TId>> Handle(object command, CancellationToken cancellationToken) {
+        var commandType = command.GetType();
+
+        if (!_handlers.TryGetValue(commandType, out var registeredHandler)) {
+            Log.CommandHandlerNotFound(commandType);
+            var exception = new Exceptions.CommandHandlerNotFound(commandType);
             return new ErrorResult<TState, TId>(exception);
         }
 
@@ -268,21 +265,18 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
             return new OkResult<TState, TId>(result.State, changes, storeResult.GlobalPosition);
         }
         catch (Exception e) {
-            Log.ErrorHandlingCommand<TCommand>(e);
+            Log.ErrorHandlingCommand(commandType, e);
 
-            return new ErrorResult<TState, TId>(
-                $"Error handling command {typeof(TCommand).Name}",
-                e
-            );
+            return new ErrorResult<TState, TId>($"Error handling command {commandType.Name}", e);
         }
 
         async Task<T> Load() {
-            var id = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();
+            var id = await _getId[commandType](command, cancellationToken).NoContext();
             return await Store.Load<T, TState, TId>(id, cancellationToken).NoContext();
         }
 
         async Task<T> TryLoad() {
-            var id     = await _getId[typeof(TCommand)](command, cancellationToken).NoContext();
+            var id     = await _getId[commandType](command, cancellationToken).NoContext();
             var exists = await Store.Exists<T>(id, cancellationToken).NoContext();
             return exists ? await Load().NoContext() : Create();
         }
@@ -310,10 +304,7 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
         CancellationToken cancellationToken
     );
 
-    async Task<Result> IApplicationService<T>.Handle<TCommand>(
-        TCommand          command,
-        CancellationToken cancellationToken
-    ) {
+    async Task<Result> IApplicationService<T>.Handle(object command, CancellationToken cancellationToken) {
         var result = await Handle(command, cancellationToken).NoContext();
 
         return result switch {
@@ -324,10 +315,7 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
     }
 }
 
-record RegisteredHandler<T>(
-    ExpectedState                                    ExpectedState,
-    Func<T, object, CancellationToken, ValueTask<T>> Handler
-);
+record RegisteredHandler<T>(ExpectedState ExpectedState, Func<T, object, CancellationToken, ValueTask<T>> Handler);
 
 class HandlersMap<T> : Dictionary<Type, RegisteredHandler<T>> {
     public void AddHandler<TCommand>(RegisteredHandler<T> handler) {

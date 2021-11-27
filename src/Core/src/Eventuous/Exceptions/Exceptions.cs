@@ -7,9 +7,13 @@ public static class Exceptions {
         ) { }
     }
 
-    public class CommandHandlerNotFound<T> : Exception {
-        public CommandHandlerNotFound() :
-            base($"Handler not found for command {typeof(T).Name}") { }
+    public class CommandHandlerNotFound : Exception {
+        public CommandHandlerNotFound(Type type) :
+            base($"Handler not found for command {type.Name}") { }
+    }
+
+    public class CommandHandlerNotFound<T> : CommandHandlerNotFound {
+        public CommandHandlerNotFound() : base(typeof(T)) { }
     }
 
     public class CommandHandlerAlreadyRegistered<T> : Exception {

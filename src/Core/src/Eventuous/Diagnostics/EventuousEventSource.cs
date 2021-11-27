@@ -21,7 +21,13 @@ public class EventuousEventSource : EventSource {
     const int UnableToAppendEventsId            = 6;
 
     [NonEvent]
+    public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
+
+    [NonEvent]
     public void CommandHandlerNotFound<T>() => CommandHandlerNotFound(typeof(T).Name);
+
+    [NonEvent]
+    public void ErrorHandlingCommand(Type type, Exception e) => ErrorHandlingCommand(type.Name, e.ToString());
 
     [NonEvent]
     public void ErrorHandlingCommand<T>(Exception e) => ErrorHandlingCommand(typeof(T).Name, e.ToString());
