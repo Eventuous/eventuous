@@ -1,7 +1,9 @@
+using Eventuous.AspNetCore.Web;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
 
-namespace Eventuous.AspNetCore.Web; 
+// ReSharper disable CheckNamespace
+
+namespace Microsoft.AspNetCore.Routing;
 
 public static class RouteBuilderExtensions {
     /// <summary>
@@ -12,9 +14,10 @@ public static class RouteBuilderExtensions {
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(this IEndpointRouteBuilder builder) 
+    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(this IEndpointRouteBuilder builder)
         where TAggregate : Aggregate where TCommand : class {
-        var route = typeof(TCommand).Name;
+        var attr  = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
+        var route = attr?.Route ?? typeof(TCommand).Name;
         return builder.MapCommand<TCommand, TAggregate>(char.ToLowerInvariant(route[0]) + route[1..]);
     }
 
@@ -38,4 +41,37 @@ public static class RouteBuilderExtensions {
                 return result.AsActionResult<TAggregate>();
             }
         );
+
+    [PublicAPI]
+    public static ApplicationServiceRouteBuilder<T> MapAggregateCommands<T>(this IEndpointRouteBuilder builder) 
+        where T : Aggregate => new(builder);
+}
+
+[PublicAPI]
+public class ApplicationServiceRouteBuilder<T> where T : Aggregate {
+    readonly IEndpointRouteBuilder _builder;
+
+    public ApplicationServiceRouteBuilder(IEndpointRouteBuilder builder) => _builder = builder;
+
+    public ApplicationServiceRouteBuilder<T> MapCommand<TCommand>() where TCommand : class {
+        _builder.MapCommand<TCommand, T>();
+        return this;
+    }
+    
+    public ApplicationServiceRouteBuilder<T> MapCommand<TCommand>(string route) where TCommand : class {
+        _builder.MapCommand<TCommand, T>(route);
+        return this;
+    }
+}
+
+[AttributeUsage(AttributeTargets.Class)]
+public class HttpCommandAttribute : Attribute {
+    public string Route { get; }
+
+    public HttpCommandAttribute(string route) => Route = route;
+}
+
+static class TypeExtensions {
+    public static T? GetAttribute<T>(this Type type) where T : class
+        => Attribute.GetCustomAttribute(type, typeof(T)) as T;
 }
