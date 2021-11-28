@@ -102,11 +102,12 @@ public class TypeMapper {
 
         Assembly[] GetDefaultAssemblies() {
             var firstLevel = AppDomain.CurrentDomain.GetAssemblies().Where(x => NamePredicate(x.GetName())).ToArray();
-            return firstLevel.Concat(firstLevel.SelectMany(Get)).Distinct().ToArray();
+            return firstLevel.SelectMany(Get).Distinct().ToArray();
 
             IEnumerable<Assembly> Get(Assembly assembly) {
                 var referenced = assembly.GetReferencedAssemblies().Where(NamePredicate);
                 var assemblies = referenced.Select(Assembly.Load).ToList();
+                assemblies.Add(assembly);
                 return assemblies.Concat(assemblies.SelectMany(Get));
             }
         }
