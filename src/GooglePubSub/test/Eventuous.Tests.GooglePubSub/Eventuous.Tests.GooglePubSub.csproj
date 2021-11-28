@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IsTestProject>true</IsTestProject>
+        <IsPackable>false</IsPackable>
+        <IncludeSutSubs>true</IncludeSutSubs>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Google.Cloud.PubSub.V1"/>
+    </ItemGroup>
+</Project>

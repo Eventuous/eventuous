@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IsTestProject>true</IsTestProject>
+        <IsPackable>false</IsPackable>
+        <IncludeSutSubs>true</IncludeSutSubs>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="RabbitMQ.Client"/>
+    </ItemGroup>
+</Project>

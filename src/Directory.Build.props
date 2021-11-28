@@ -1,11 +1,59 @@
 <Project>
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
-        <LangVersion>9</LangVersion>
+        <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
+        <LangVersion>10</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
-        <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
+        <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
+        <DiagRoot>$(RepoRoot)\src\Diagnostics\src</DiagRoot>
+        <EsdbRoot>$(RepoRoot)\src\EventStore\src</EsdbRoot>
+        <ExtRoot>$(RepoRoot)\src\Extensions\src</ExtRoot>
+        <LocalRoot>..\..\src</LocalRoot>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
+        <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
+        <Using Include="JetBrains.Annotations"/>
+        <Using Include="Eventuous"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+        <PackageReference Include="AutoFixture" Version="4.17.0"/>
+        <PackageReference Include="Bogus" Version="33.1.1"/>
+        <PackageReference Include="FluentAssertions" Version="6.2.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0"/>
+        <PackageReference Include="xunit" Version="2.4.1"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="All"/>
+        <PackageReference Include="coverlet.collector" Version="3.1.0" PrivateAssets="All"/>
+        <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0"/>
+        <Using Include="Xunit"/>
+        <Using Include="Xunit.Abstractions"/>
+        <Using Include="FluentAssertions"/>
+        <Using Include="FluentAssertions.Extensions"/>
+        <Using Include="AutoFixture"/>
+        <Using Include="Microsoft.Extensions.Logging"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+        <PackageReference Include="IsExternalInit" Version="1.0.1" PrivateAssets="All"/>
+    </ItemGroup>
+
+    <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
+        <IsPackable>true</IsPackable>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <UpdateVersionProperties>true</UpdateVersionProperties>
@@ -16,14 +64,35 @@
         <RepositoryType>git</RepositoryType>
         <Description>Opinionated and volatile Event Sourcing library</Description>
         <Authors>Alexey Zimarev</Authors>
+        <Copyright>Eventuous contributors</Copyright>
+        <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
+    </PropertyGroup>
+    
+    <PropertyGroup Label="Package versions for .NET Core 3.1" Condition="$(TargetFramework) == 'netcoreapp3.1'">
+        <MicrosoftExtensionsVer>[3.1,)</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>[3.1,)</MicrosoftTestHostVer>
+    </PropertyGroup>
+    <PropertyGroup Label="Package versions for .NET 5" Condition="$(TargetFramework) == 'net5.0'">
+        <MicrosoftExtensionsVer>[5.0,)</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>[5.0,)</MicrosoftTestHostVer>
+    </PropertyGroup>
+    <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net6.0'">
+        <MicrosoftExtensionsVer>[6.0,)</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>[6.0,)</MicrosoftTestHostVer>
     </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All" />
-        <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" PrivateAssets="All"/>
+    <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <None Include="..\..\e-logo.png" Pack="true" PackagePath="\"/>
+    <ItemGroup Condition="'$(IncludeSutApp)' == 'true'">
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(IncludeSutSubs)' == 'true'">
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(IncludeTestHelpers)' == 'true'">
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
     </ItemGroup>
 </Project>

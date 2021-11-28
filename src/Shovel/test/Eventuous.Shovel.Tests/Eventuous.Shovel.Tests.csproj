@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IsTestProject>true</IsTestProject>
+        <IsPackable>false</IsPackable>
+        <IncludeTestHost>true</IncludeTestHost>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Shovel\Eventuous.Shovel.csproj" />
+    </ItemGroup>
+</Project>
