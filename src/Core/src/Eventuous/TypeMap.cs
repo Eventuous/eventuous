@@ -99,21 +99,28 @@ public class TypeMapper {
         foreach (var assembly in assembliesToScan) {
             RegisterAssemblyEventTypes(assembly);
         }
-
+        
         Assembly[] GetDefaultAssemblies() {
-            var firstLevel = AppDomain.CurrentDomain.GetAssemblies().Where(x => NamePredicate(x.GetName())).ToArray();
-            return firstLevel.SelectMany(Get).Distinct().ToArray();
+            var firstLevel = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(x => NamePredicate(x.GetName()))
+                .ToArray();
+            return firstLevel
+                .SelectMany(Get)
+                .Concat(firstLevel)
+                .Distinct().ToArray();
 
             IEnumerable<Assembly> Get(Assembly assembly) {
                 var referenced = assembly.GetReferencedAssemblies().Where(NamePredicate);
                 var assemblies = referenced.Select(Assembly.Load).ToList();
-                assemblies.Add(assembly);
-                return assemblies.Concat(assemblies.SelectMany(Get));
+                return assemblies.Concat(assemblies.SelectMany(Get)).Distinct();
             }
         }
 
         bool NamePredicate(AssemblyName name)
-            => name.Name != null && !name.Name.StartsWith("System.") && !name.Name.StartsWith("Microsoft.");
+            => name.Name != null                    &&
+                !name.Name.StartsWith("System.")    &&
+                !name.Name.StartsWith("Microsoft.") &&
+                !name.Name.StartsWith("netstandard");
     }
 
     static readonly Type AttributeType = typeof(EventTypeAttribute);
