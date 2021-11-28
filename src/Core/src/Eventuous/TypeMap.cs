@@ -92,16 +92,24 @@ public class TypeMapper {
 
     public bool IsTypeRegistered<T>() => _map.ContainsKey(typeof(T));
 
-    public void RegisterKnownEventTypes(params Assembly[] assemblies) {
-        var assembliesToScan = assemblies.Length == 0
-            ? GetDefaultAssemblies() : assemblies;
+    public void RegisterKnownEventTypes(params Assembly[] assembliesWithEvents) {
+        var assembliesToScan = assembliesWithEvents.Length == 0
+            ? GetDefaultAssemblies() : assembliesWithEvents;
 
         foreach (var assembly in assembliesToScan) {
             RegisterAssemblyEventTypes(assembly);
         }
 
-        Assembly[] GetDefaultAssemblies()
-            => AppDomain.CurrentDomain.GetAssemblies().Where(x => NamePredicate(x.GetName())).ToArray();
+        Assembly[] GetDefaultAssemblies() {
+            var firstLevel = AppDomain.CurrentDomain.GetAssemblies().Where(x => NamePredicate(x.GetName())).ToArray();
+            return firstLevel.SelectMany(Get).Distinct().ToArray();
+
+            IEnumerable<Assembly> Get(Assembly assembly) {
+                var referenced = assembly.GetReferencedAssemblies().Where(NamePredicate);
+                var assemblies = referenced.Select(Assembly.Load).ToList();
+                return assemblies.Concat(assemblies.SelectMany(Get));
+            }
+        }
 
         bool NamePredicate(AssemblyName name)
             => name.Name != null && !name.Name.StartsWith("System.") && !name.Name.StartsWith("Microsoft.");
