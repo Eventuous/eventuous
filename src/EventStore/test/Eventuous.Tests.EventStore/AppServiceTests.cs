@@ -8,7 +8,7 @@ namespace Eventuous.Tests.EventStore;
 public class AppServiceTests : IDisposable {
     readonly TestEventListener _listener;
 
-    static AppServiceTests() => TypeMap.RegisterKnownEventTypes();
+    // static AppServiceTests() => TypeMap.RegisterKnownEventTypes();
 
     static BookingService Service { get; } = new(Instance.AggregateStore);
 

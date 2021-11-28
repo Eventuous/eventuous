@@ -19,8 +19,9 @@ public class EventuousEventSource : EventSource {
     const int UnableToStoreAggregateId          = 4;
     const int UnableToReadAggregateId           = 5;
     const int UnableToAppendEventsId            = 6;
-    const int TypeNotMappedToNameId               = 7;
-    const int TypeNameNotMappedToTypeId           = 8;
+    const int TypeNotMappedToNameId             = 7;
+    const int TypeNameNotMappedToTypeId         = 8;
+    const int TypeMapRegisteredId               = 9;
 
     [NonEvent]
     public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
@@ -95,4 +96,10 @@ public class EventuousEventSource : EventSource {
 
     [Event(TypeNameNotMappedToTypeId, Message = "Type name {0} is not mapped to any type", Level = EventLevel.Error)]
     public void TypeNameNotMappedToType(string typeName) => WriteEvent(TypeNameNotMappedToTypeId, typeName);
+
+    [Event(TypeMapRegisteredId, Message = "Type {0} registered as {1}", Level = EventLevel.Verbose)]
+    public void TypeMapRegistered(string type, string typeName) {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            WriteEvent(TypeMapRegisteredId, type, typeName);
+    }
 }
