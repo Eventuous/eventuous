@@ -49,7 +49,7 @@ public sealed class SubscriptionMetrics : IDisposable {
             "Number of pending checkpoints"
         );
 
-        var histogram  = _meter.CreateHistogram<double>(ProcessingRateName, "s", "Processing duration, seconds");
+        var histogram  = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Processing duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>(ErrorCountName, "events", "Number of event processing failures");
 
         _listener = new ActivityListener {
@@ -85,7 +85,7 @@ public sealed class SubscriptionMetrics : IDisposable {
         var subTag       = SubTag(subId);
         var typeTag      = GetTag(MessageTypeTag, activity.GetTagItem(TelemetryTags.Message.Type));
         var partitionTag = GetTag(PartitionIdTag, activity.GetTagItem(TelemetryTags.Eventuous.Partition));
-        histogram.Record(activity.Duration.TotalSeconds, subTag, typeTag, partitionTag);
+        histogram.Record(activity.Duration.TotalMilliseconds, subTag, typeTag, partitionTag);
 
         if (activity.Status == ActivityStatusCode.Error) {
             errorCount.Add(1, subTag, typeTag);

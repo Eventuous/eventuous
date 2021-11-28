@@ -15,14 +15,14 @@ public sealed class EventuousMetrics : IDisposable {
 
         var eventStoreMetric = _meter.CreateHistogram<double>(
             Constants.EventStorePrefix,
-            "s",
-            "Event store operation duration, seconds"
+            "ms",
+            "Event store operation duration, milliseconds"
         );
 
         var appServiceMetric = _meter.CreateHistogram<double>(
             "appservice",
-            "s",
-            "Application service operation duration, seconds"
+            "ms",
+            "Application service operation duration, milliseconds"
         );
 
         _listener = new ActivityListener {
@@ -35,7 +35,7 @@ public sealed class EventuousMetrics : IDisposable {
         void Record(Activity activity) {
             if (activity.OperationName == Constants.HandleCommand) {
                 appServiceMetric.Record(
-                    activity.Duration.TotalSeconds,
+                    activity.Duration.TotalMilliseconds,
                     new KeyValuePair<string, object?>("command", activity.GetTagItem(Constants.CommandTag))
                 );
 
@@ -44,7 +44,7 @@ public sealed class EventuousMetrics : IDisposable {
 
             if (activity.OperationName.StartsWith(Constants.EventStorePrefix)) {
                 eventStoreMetric.Record(
-                    activity.Duration.TotalSeconds,
+                    activity.Duration.TotalMilliseconds,
                     new KeyValuePair<string, object?>("operation", activity.OperationName)
                 );
             }
