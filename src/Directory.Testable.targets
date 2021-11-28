@@ -1,4 +1,8 @@
 <Project>
     <Target Name="GenerateNuspec" />
     <Target Name="Pack" />
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <NoWarn>CA1816</NoWarn>
+    </PropertyGroup>
 </Project>

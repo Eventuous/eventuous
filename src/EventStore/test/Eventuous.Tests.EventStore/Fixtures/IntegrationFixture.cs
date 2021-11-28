@@ -8,7 +8,7 @@ using NodaTime.Serialization.SystemTextJson;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
 
-public class IntegrationFixture : IDisposable {
+public sealed class IntegrationFixture : IDisposable {
     public IEventStore      EventStore     { get; }
     public IAggregateStore  AggregateStore { get; }
     public EventStoreClient Client         { get; }

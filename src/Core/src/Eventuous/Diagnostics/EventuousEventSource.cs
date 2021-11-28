@@ -19,6 +19,8 @@ public class EventuousEventSource : EventSource {
     const int UnableToStoreAggregateId          = 4;
     const int UnableToReadAggregateId           = 5;
     const int UnableToAppendEventsId            = 6;
+    const int TypeNotMappedToNameId               = 7;
+    const int TypeNameNotMappedToTypeId           = 8;
 
     [NonEvent]
     public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
@@ -50,6 +52,9 @@ public class EventuousEventSource : EventSource {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All))
             UnableToLoadAggregate(typeof(T).Name, id, exception.ToString());
     }
+
+    [NonEvent]
+    public void TypeNotMappedToName(Type type) => TypeNotMappedToName(type.Name);
 
     [Event(CommandHandlerNotFoundId, Message = "Handler not found for command: '{0}'", Level = EventLevel.Error)]
     public void CommandHandlerNotFound(string commandType) => WriteEvent(CommandHandlerNotFoundId, commandType);
@@ -85,4 +90,9 @@ public class EventuousEventSource : EventSource {
     public void UnableToLoadAggregate(string type, string id, string exception)
         => WriteEvent(UnableToReadAggregateId, type, id, exception);
 
+    [Event(TypeNotMappedToNameId, Message = "Type {0} is not registered in the type map", Level = EventLevel.Error)]
+    public void TypeNotMappedToName(string type) => WriteEvent(TypeNotMappedToNameId, type);
+
+    [Event(TypeNameNotMappedToTypeId, Message = "Type name {0} is not mapped to any type", Level = EventLevel.Error)]
+    public void TypeNameNotMappedToType(string typeName) => WriteEvent(TypeNameNotMappedToTypeId, typeName);
 }

@@ -1,4 +1,7 @@
 using System.Reflection;
+using static Eventuous.Diagnostics.EventuousEventSource;
+
+// ReSharper disable InvertIf
 
 namespace Eventuous;
 
@@ -42,17 +45,41 @@ public class TypeMapper {
     readonly Dictionary<string, Type> _reverseMap = new();
     readonly Dictionary<Type, string> _map        = new();
 
-    public string GetTypeName<T>()
-        => _map.TryGetValue(typeof(T), out var name) ? name : throw new UnregisteredTypeException(typeof(T));
+    public string GetTypeName<T>() {
+        if (!_map.TryGetValue(typeof(T), out var name)) {
+            Log.TypeNotMappedToName(typeof(T));
+            throw new UnregisteredTypeException(typeof(T));
+        }
 
-    public string GetTypeName(object o) 
-        => _map.TryGetValue(o.GetType(), out var name) ? name : throw new UnregisteredTypeException(o.GetType());
+        return name;
+    }
 
-    public string GetTypeNameByType(Type type) 
-        => _map.TryGetValue(type, out var name) ? name : throw new UnregisteredTypeException(type);
+    public string GetTypeName(object o) {
+        if (!_map.TryGetValue(o.GetType(), out var name)) {
+            Log.TypeNotMappedToName(o.GetType());
+            throw new UnregisteredTypeException(o.GetType());
+        }
 
-    public Type GetType(string typeName) 
-        => _reverseMap.TryGetValue(typeName, out var type) ? type : throw new UnregisteredTypeException(typeName);
+        return name;
+    }
+
+    public string GetTypeNameByType(Type type) {
+        if (!_map.TryGetValue(type, out var name)) {
+            Log.TypeNotMappedToName(type);
+            throw new UnregisteredTypeException(type);
+        }
+
+        return name;
+    }
+
+    public Type GetType(string typeName) {
+        if (!_reverseMap.TryGetValue(typeName, out var type)) {
+            Log.TypeNameNotMappedToType(typeName);
+            throw new UnregisteredTypeException(typeName);
+        }
+
+        return type;
+    }
 
     public bool TryGetType(string typeName, out Type? type) => _reverseMap.TryGetValue(typeName, out type);
 
@@ -67,11 +94,17 @@ public class TypeMapper {
 
     public void RegisterKnownEventTypes(params Assembly[] assemblies) {
         var assembliesToScan = assemblies.Length == 0
-            ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
+            ? GetDefaultAssemblies() : assemblies;
 
         foreach (var assembly in assembliesToScan) {
             RegisterAssemblyEventTypes(assembly);
         }
+
+        Assembly[] GetDefaultAssemblies()
+            => AppDomain.CurrentDomain.GetAssemblies().Where(x => NamePredicate(x.GetName())).ToArray();
+
+        bool NamePredicate(AssemblyName name)
+            => name.Name != null && !name.Name.StartsWith("System.") && !name.Name.StartsWith("Microsoft.");
     }
 
     static readonly Type AttributeType = typeof(EventTypeAttribute);
