@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
-        <IsPackable>false</IsPackable>
+<!--        <IsPackable>false</IsPackable>-->
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeSutSubs>true</IncludeSutSubs>

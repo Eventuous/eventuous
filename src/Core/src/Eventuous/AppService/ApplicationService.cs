@@ -9,8 +9,9 @@ namespace Eventuous;
 /// <typeparam name="TState">The aggregate state type</typeparam>
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 [PublicAPI]
-public abstract class ApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>,
-    IApplicationService<T>
+public abstract class ApplicationService<T, TState, TId>
+    : IApplicationService<T, TState, TId>,
+        IApplicationService<T>
     where T : Aggregate<TState, TId>, new()
     where TState : AggregateState<TState, TId>, new()
     where TId : AggregateId {
@@ -284,26 +285,6 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
         T Create() => _factoryRegistry.CreateInstance<T, TState, TId>();
     }
 
-    public delegate Task ActOnAggregateAsync<in TCommand>(
-        T                 aggregate,
-        TCommand          command,
-        CancellationToken cancellationToken
-    );
-
-    public delegate void ActOnAggregate<in TCommand>(T aggregate, TCommand command);
-
-    public delegate Task<T> ArbitraryActAsync<in TCommand>(
-        TCommand          command,
-        CancellationToken cancellationToken
-    );
-
-    public delegate TId GetIdFromCommand<in TCommand>(TCommand command);
-
-    public delegate Task<TId> GetIdFromCommandAsync<in TCommand>(
-        TCommand          command,
-        CancellationToken cancellationToken
-    );
-
     async Task<Result> IApplicationService.Handle(object command, CancellationToken cancellationToken) {
         var result = await Handle(command, cancellationToken).NoContext();
 
@@ -313,26 +294,21 @@ public abstract class ApplicationService<T, TState, TId> : IApplicationService<T
             _ => throw new ApplicationException("Unknown result type")
         };
     }
-}
 
-record RegisteredHandler<T>(ExpectedState ExpectedState, Func<T, object, CancellationToken, ValueTask<T>> Handler);
+    public delegate Task ActOnAggregateAsync<in TCommand>(
+        T                 aggregate,
+        TCommand          command,
+        CancellationToken cancellationToken
+    );
 
-class HandlersMap<T> : Dictionary<Type, RegisteredHandler<T>> {
-    public void AddHandler<TCommand>(RegisteredHandler<T> handler) {
-        if (ContainsKey(typeof(TCommand))) {
-            Log.CommandHandlerAlreadyRegistered<TCommand>();
-            throw new Exceptions.CommandHandlerAlreadyRegistered<TCommand>();
-        }
+    public delegate void ActOnAggregate<in TCommand>(T aggregate, TCommand command);
 
-        Add(typeof(TCommand), handler);
-    }
-}
+    public delegate Task<T> ArbitraryActAsync<in TCommand>(TCommand command, CancellationToken cancellationToken);
 
-class IdMap<T> : Dictionary<Type, Func<object, CancellationToken, ValueTask<T>>> { }
+    public delegate TId GetIdFromCommand<in TCommand>(TCommand command);
 
-enum ExpectedState {
-    New,
-    Existing,
-    Any,
-    Unknown
+    public delegate Task<TId> GetIdFromCommandAsync<in TCommand>(
+        TCommand          command,
+        CancellationToken cancellationToken
+    );
 }

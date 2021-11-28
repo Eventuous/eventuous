@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
-        <IsPackable>false</IsPackable>
         <IncludeSutSubs>true</IncludeSutSubs>
     </PropertyGroup>
     <ItemGroup>
