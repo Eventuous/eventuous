@@ -102,6 +102,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.AspNetCore", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.AspNetCore.Web", "src\Extensions\src\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj", "{E387CC89-42B6-40BD-800B-C369AE971FCC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Experimental", "Experimental", "{B64D59D5-7935-4DFC-8D90-D6EF3D6F2ABA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
