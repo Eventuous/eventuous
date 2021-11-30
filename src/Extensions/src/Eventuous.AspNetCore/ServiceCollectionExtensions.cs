@@ -25,6 +25,9 @@ public static class ServiceCollectionExtensions {
                 sp => TracedApplicationService<TAggregate>.Trace(sp.GetRequiredService<T>())
             );
         }
+        else {
+            services.AddSingleton<IApplicationService<TAggregate>>(sp => sp.GetRequiredService<T>());
+        }
 
         return services;
     }
@@ -51,6 +54,9 @@ public static class ServiceCollectionExtensions {
                 sp => TracedApplicationService<TAggregate, TState, TId>.Trace(sp.GetRequiredService<T>())
             );
         }
+        else {
+            services.AddSingleton<IApplicationService<TAggregate, TState, TId>>(sp => sp.GetRequiredService<T>());
+        }
 
         return services;
     }
@@ -76,6 +82,9 @@ public static class ServiceCollectionExtensions {
             services.AddSingleton(
                 sp => TracedApplicationService<TAggregate>.Trace(sp.GetRequiredService<T>())
             );
+        }
+        else {
+            services.AddSingleton<IApplicationService<TAggregate>>(sp => sp.GetRequiredService<T>());
         }
 
         return services;
