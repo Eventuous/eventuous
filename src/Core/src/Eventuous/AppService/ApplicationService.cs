@@ -236,7 +236,7 @@ public abstract class ApplicationService<T, TState, TId>
     /// <returns><see cref="Result{TState,TId}"/> of the execution</returns>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
     public async Task<Result<TState, TId>> Handle(object command, CancellationToken cancellationToken) {
-        var commandType = command.GetType();
+        var commandType = Ensure.NotNull(command).GetType();
 
         if (!_handlers.TryGetValue(commandType, out var registeredHandler)) {
             Log.CommandHandlerNotFound(commandType);
