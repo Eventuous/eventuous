@@ -113,9 +113,8 @@ public class SubscriptionsEventSource : EventSource {
         => WriteEvent(MessageReceivedId, subscriptionId, messageType, stream);
 
     [Event(MessageIgnoredId, Message = "[{0}] {1} ignored {2}", Level = EventLevel.Verbose)]
-    public void MessageIgnored(string id, string handlerType, string messageType) {
-        WriteEvent(MessageIgnoredId, id, handlerType, messageType);
-    }
+    public void MessageIgnored(string id, string handlerType, string messageType)
+        => WriteEvent(MessageIgnoredId, id, handlerType, messageType);
 
     [Event(MessageHandledId, Message = "[{0}] {1} handled {2}", Level = EventLevel.Verbose)]
     public void MessageHandled(string id, string handlerType, string eventType)
@@ -127,14 +126,12 @@ public class SubscriptionsEventSource : EventSource {
 
     [Event(NoHandlerFoundId, Message = "[{0}] No handler found for message {1}", Level = EventLevel.Warning)]
     public void NoHandlerFound(string handlerType, string messageType) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            WriteEvent(NoHandlerFoundId, handlerType, messageType);
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) WriteEvent(NoHandlerFoundId, handlerType, messageType);
     }
 
     [Event(MetricCollectionFailedId, Message = "Failed to collect metric {0}: {1}", Level = EventLevel.Warning)]
-    public void MetricCollectionFailed(string metric, string exception) {
-        WriteEvent(MetricCollectionFailedId, metric, exception);
-    }
+    public void MetricCollectionFailed(string metric, string exception)
+        => WriteEvent(MetricCollectionFailedId, metric, exception);
 
     [Event(
         PayloadDeserializationFailedId,
@@ -169,14 +166,12 @@ public class SubscriptionsEventSource : EventSource {
 
     [Event(SubscriptionStartedId, Message = "[{0}] Started", Level = EventLevel.Informational)]
     public void SubscriptionStarted(string subscriptionId) {
-        if (IsEnabled(EventLevel.Informational, EventKeywords.All))
-            WriteEvent(SubscriptionStartedId, subscriptionId);
+        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) WriteEvent(SubscriptionStartedId, subscriptionId);
     }
 
     [Event(SubscriptionStoppedId, Message = "[{0}] Stopped", Level = EventLevel.Informational)]
     public void SubscriptionStopped(string subscriptionId) {
-        if (IsEnabled(EventLevel.Informational, EventKeywords.All))
-            WriteEvent(SubscriptionStoppedId, subscriptionId);
+        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) WriteEvent(SubscriptionStoppedId, subscriptionId);
     }
 
     [Event(SubscriptionDroppedId, Message = "[{0}] Dropped: {1} {2}", Level = EventLevel.Warning)]
@@ -185,20 +180,17 @@ public class SubscriptionsEventSource : EventSource {
 
     [Event(SubscriptionRestoredId, Message = "[{0}] Restored", Level = EventLevel.Informational)]
     public void SubscriptionRestored(string subscriptionId) {
-        if (IsEnabled(EventLevel.Informational, EventKeywords.All))
-            WriteEvent(SubscriptionRestoredId, subscriptionId);
+        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) WriteEvent(SubscriptionRestoredId, subscriptionId);
     }
 
     [Event(SubscriptionResubscribingId, Message = "[{0}] Resubscribing", Level = EventLevel.Informational)]
     public void SubscriptionResubscribing(string subscriptionId) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            WriteEvent(SubscriptionResubscribingId, subscriptionId);
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) WriteEvent(SubscriptionResubscribingId, subscriptionId);
     }
 
     [Event(ResubscribeFailedId, Message = "[{0}] Unable to restart subscription: {1}", Level = EventLevel.Error)]
     public void ResubscribeFailed(string subscriptionId, string exception) {
-        if (IsEnabled(EventLevel.Error, EventKeywords.All))
-            WriteEvent(ResubscribeFailedId, subscriptionId, exception);
+        if (IsEnabled(EventLevel.Error, EventKeywords.All)) WriteEvent(ResubscribeFailedId, subscriptionId, exception);
     }
 
     [Event(
@@ -211,7 +203,8 @@ public class SubscriptionsEventSource : EventSource {
         string messageType,
         string retryCount,
         string exception
-    ) => WriteEvent(FailedToHandleMessageWithRetryId, handlerType, messageType, retryCount, exception);
+    )
+        => WriteEvent(FailedToHandleMessageWithRetryId, handlerType, messageType, retryCount, exception);
 
     [Event(CheckpointLoadedId, Message = "[{0}] Loaded checkpoint {1}: {2}", Level = EventLevel.Informational)]
     public void CheckpointLoaded(string store, string checkpointId, string value)
@@ -260,8 +253,7 @@ public class SubscriptionsEventSource : EventSource {
 
     [Event(StoppingSomethingId, Message = "[{0}] Stopping {1} {2}", Level = EventLevel.Verbose)]
     public void Stopping(string id, string what, string name) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            WriteEvent(StoppingSomethingId, id, what, name);
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) WriteEvent(StoppingSomethingId, id, what, name);
     }
 
     [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]

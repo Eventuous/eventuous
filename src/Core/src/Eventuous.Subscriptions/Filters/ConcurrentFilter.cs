@@ -8,19 +8,19 @@ using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Filters;
 
-public class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
+public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
     readonly ConcurrentChannelWorker<WorkerTask> _worker;
 
-    public ConcurrentFilter(uint concurrencyLimit, uint bufferSize = 10) {
-        _worker = new ConcurrentChannelWorker<WorkerTask>(
+    public ConcurrentFilter(uint concurrencyLimit, uint bufferSize = 10)
+        => _worker = new ConcurrentChannelWorker<WorkerTask>(
             Channel.CreateBounded<WorkerTask>((int)(concurrencyLimit * bufferSize)),
             DelayedConsume,
             (int)concurrencyLimit
         );
-    }
 
     static async ValueTask DelayedConsume(WorkerTask workerTask, CancellationToken ct) {
-        var       ctx      = workerTask.Context;
+        var ctx = workerTask.Context;
+
         using var activity = ctx.Items.TryGetItem<Activity>("activity")?.Start();
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
@@ -28,6 +28,8 @@ public class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncD
 
         try {
             await workerTask.Next(ctx).NoContext();
+            if (ctx.HasFailed()) throw ctx.HandlingResults.GetException();
+
             await ctx.Acknowledge().NoContext();
         }
         catch (Exception e) {
@@ -36,13 +38,11 @@ public class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncD
             await ctx.Fail(e).NoContext();
         }
 
-        if (activity != null && ctx.WasIgnored())
-            activity.ActivityTraceFlags = ActivityTraceFlags.None;
+        if (activity != null && ctx.WasIgnored()) activity.ActivityTraceFlags = ActivityTraceFlags.None;
     }
 
     public override ValueTask Send(DelayedAckConsumeContext context, Func<DelayedAckConsumeContext, ValueTask>? next) {
-        if (next == null)
-            throw new InvalidOperationException("Concurrent context must have a next filer");
+        if (next == null) throw new InvalidOperationException("Concurrent context must have a next filer");
 
         return _worker.Write(new WorkerTask(context, next), context.CancellationToken);
     }
