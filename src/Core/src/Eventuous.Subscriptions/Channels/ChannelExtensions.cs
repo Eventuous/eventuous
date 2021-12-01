@@ -19,6 +19,9 @@ static class ChannelExtensions {
         catch (OperationCanceledException) {
             // it's ok
         }
+        catch (ChannelClosedException) {
+            // ok, we are quitting
+        }
     }
 
     public static ValueTask Write<T>(
@@ -45,6 +48,7 @@ static class ChannelExtensions {
         Func<CancellationToken, ValueTask>? finalize = null
     ) {
         channel.Writer.Complete();
+        await channel.Reader.Completion;
         cts.CancelAfter(TimeSpan.FromSeconds(10));
 
         await Task.WhenAll(readers);
