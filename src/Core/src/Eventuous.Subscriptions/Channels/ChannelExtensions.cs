@@ -45,16 +45,13 @@ static class ChannelExtensions {
         Func<CancellationToken, ValueTask>? finalize = null
     ) {
         channel.Writer.Complete();
-        await channel.Reader.Completion;
-        
-        cts.CancelAfter(TimeSpan.FromSeconds(1));
+        cts.CancelAfter(TimeSpan.FromSeconds(10));
 
-        while (!readers.All(x => x.IsCompleted || x.IsCanceled)) {
-            await Task.Delay(10);
-        }
+        await Task.WhenAll(readers);
 
-        if (!cts.IsCancellationRequested && finalize != null) {
-            await finalize(cts.Token);
-        }
+        if (finalize == null) return;
+
+        var token = new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token;
+        await finalize(token);
     }
 }
