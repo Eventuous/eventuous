@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 // ReSharper disable ParameterTypeCanBeEnumerable.Local
 
@@ -101,7 +102,7 @@ public sealed class SubscriptionMetrics : IDisposable {
             return t.IsCompleted ? t.Result : t.NoContext().GetAwaiter().GetResult();
         }
         catch (Exception e) {
-            SubscriptionsEventSource.Log.MetricCollectionFailed("Subscription Gap", e);
+            Log.MetricCollectionFailed("Subscription Gap", e);
             return SubscriptionGap.Invalid;
         }
     }

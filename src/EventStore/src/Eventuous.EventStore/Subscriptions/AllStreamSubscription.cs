@@ -73,7 +73,7 @@ public class AllStreamSubscription
             ? EventStoreClient.SubscribeToAllAsync(
                 new Position(position.Value, position.Value),
                 HandleEvent,
-                false,
+                Options.ResolveLinkTos,
                 HandleDrop,
                 filterOptions,
                 Options.ConfigureOperation,
@@ -82,7 +82,7 @@ public class AllStreamSubscription
             )
             : EventStoreClient.SubscribeToAllAsync(
                 HandleEvent,
-                false,
+                Options.ResolveLinkTos,
                 HandleDrop,
                 filterOptions,
                 Options.ConfigureOperation,

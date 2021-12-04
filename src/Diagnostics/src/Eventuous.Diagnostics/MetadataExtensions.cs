@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using static Eventuous.Diagnostics.DiagnosticTags;
 
 namespace Eventuous.Diagnostics;
 
@@ -22,15 +23,16 @@ public static class MetadataExtensions {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Metadata AddTracingMeta(this Metadata metadata, TracingMeta tracingMeta)
-        => metadata.AddNotNull(MetaTags.TraceId, tracingMeta.TraceId)
-            .AddNotNull(MetaTags.SpanId, tracingMeta.SpanId)
-            .AddNotNull(MetaTags.ParentSpanId, tracingMeta.ParentSpanId);
+        => metadata
+            .AddNotNull(TraceId, tracingMeta.TraceId)
+            .AddNotNull(SpanId, tracingMeta.SpanId)
+            .AddNotNull(ParentSpanId, tracingMeta.ParentSpanId);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TracingMeta GetTracingMeta(this Metadata metadata)
         => new(
-            metadata.GetString(MetaTags.TraceId),
-            metadata.GetString(MetaTags.SpanId),
-            metadata.GetString(MetaTags.ParentSpanId)
+            metadata.GetString(TraceId),
+            metadata.GetString(SpanId),
+            metadata.GetString(ParentSpanId)
         );
 }
