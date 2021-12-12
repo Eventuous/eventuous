@@ -14,7 +14,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Producers", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.GooglePubSub", "src\GooglePubSub\test\Eventuous.Tests.GooglePubSub\Eventuous.Tests.GooglePubSub.csproj", "{135075B3-AAE5-4C13-87F6-BF3ECF108B37}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Shovel", "src\Shovel\src\Eventuous.Shovel\Eventuous.Shovel.csproj", "{F597091E-E8AD-429B-A8E0-3C7972031F83}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Gateway", "src\Shovel\src\Eventuous.Gateway\Eventuous.Gateway.csproj", "{F597091E-E8AD-429B-A8E0-3C7972031F83}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Sut.App", "test\Eventuous.Sut.App\Eventuous.Sut.App.csproj", "{151A0839-2B1F-49D6-B5DD-199A5FAAB610}"
 EndProject
@@ -42,7 +42,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0ED6785B-6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BCD7A6A8-C3BF-4ADA-8DA5-243B9053A839}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shovel", "Shovel", "{55396859-0971-4980-9B7F-59A1A5BD2B29}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gateway", "Gateway", "{55396859-0971-4980-9B7F-59A1A5BD2B29}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{AA3D3779-C490-47DE-857D-1CD8A9F6A354}"
 EndProject

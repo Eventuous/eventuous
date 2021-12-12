@@ -81,7 +81,7 @@ public class AggregateStore : IAggregateStore {
                     )
                     .NoContext();
 
-                if (readCount == 0) break;
+                if (readCount < pageSize) break;
 
                 position = new StreamReadPosition(position.Value + readCount);
             }

@@ -1,4 +1,5 @@
-﻿using Eventuous.Producers;
+﻿using Eventuous.Gateway;
+using Eventuous.Producers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -24,7 +25,7 @@ public class RegistrationTests {
 
     class Startup {
         public static void ConfigureServices(IServiceCollection services) {
-            services.AddShovel<TestSub, TestOptions, TestProducer, TestProduceOptions>(
+            services.AddGateway<TestSub, TestOptions, TestProducer, TestProduceOptions>(
                 "shovel",
                 RouteAndTransform
             );
@@ -35,7 +36,7 @@ public class RegistrationTests {
             );
         }
 
-        static ValueTask<ShovelContext<TestProduceOptions>?> RouteAndTransform(object message) {
+        static ValueTask<GatewayContext<TestProduceOptions>?> RouteAndTransform(object message) {
             throw new NotImplementedException();
         }
 

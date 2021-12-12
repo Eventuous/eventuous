@@ -170,6 +170,33 @@ public class EsdbEventStore : IEventStore {
         );
     }
 
+    public async Task<long> ReadStream2(
+        StreamName          stream,
+        StreamReadPosition  start,
+        int                 count,
+        Action<StreamEvent> callback,
+        CancellationToken   cancellationToken
+    ) {
+        var revision = start.AsStreamPosition();
+        Console.WriteLine(revision);
+        var read = _client.ReadStreamAsync(
+            Direction.Forwards,
+            stream,
+            revision,
+            count,
+            // resolveLinkTos: true,
+            cancellationToken: cancellationToken
+        );
+
+        var page = await read.ToListAsync(cancellationToken).NoContext();
+
+        // foreach (var resolvedEvent in page) {
+        //     callback(ToStreamEvent(resolvedEvent));
+        // }
+
+        return page.Count;
+    }
+
     public async Task<long> ReadStream(
         StreamName          stream,
         StreamReadPosition  start,
@@ -190,7 +217,7 @@ public class EsdbEventStore : IEventStore {
             async () => {
                 long readCount = 0;
 
-                await foreach (var re in read.IgnoreWithCancellation(cancellationToken)) {
+                await foreach (var re in read.IgnoreWithCancellation(cancellationToken).ConfigureAwait(false)) {
                     callback(ToStreamEvent(re));
                     readCount++;
                 }
