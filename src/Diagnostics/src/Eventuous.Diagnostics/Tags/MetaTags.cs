@@ -1,17 +1,7 @@
-using static Eventuous.MetaTags;
+namespace Eventuous.Diagnostics; 
 
-namespace Eventuous.Diagnostics;
-
-public static class MetaMappings {
-    public static readonly IDictionary<string, string> TelemetryToInternalTagsMap = new Dictionary<string, string> {
-        { TelemetryTags.Message.Id, MessageId },
-        { TelemetryTags.Messaging.CausationId, CausationId },
-        { TelemetryTags.Messaging.CorrelationId, CorrelationId }
-    };
-
-    public static readonly IDictionary<string, string> InternalToTelemetryTagsMap = new Dictionary<string, string> {
-        { MessageId, TelemetryTags.Message.Id },
-        { CausationId, TelemetryTags.Messaging.CausationId },
-        { CorrelationId, TelemetryTags.Messaging.CorrelationId }
-    };
+public static class DiagnosticTags {
+    public const string TraceId       = "trace-id";
+    public const string SpanId        = "span-id";
+    public const string ParentSpanId  = "parent-span-id";
 }

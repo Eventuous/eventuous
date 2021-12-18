@@ -12,23 +12,23 @@ public static class EventuousDiagnostics {
 
     public const string InstrumentationName = DiagnosticName.BaseName;
 
-    static ActivitySource?   _activitySource;
-    static ActivityListener? _listener;
+    static ActivitySource?   activitySource;
+    static ActivityListener? listener;
 
     public static bool Enabled { get; }
 
     public static ActivitySource ActivitySource {
         get {
-            if (_activitySource != null) return _activitySource;
-            _activitySource = new ActivitySource(InstrumentationName, Version?.ToString());
+            if (activitySource != null) return activitySource;
+            activitySource = new ActivitySource(InstrumentationName, Version?.ToString());
 
-            _listener = DummyActivityListener.Create();
-            ActivitySource.AddActivityListener(_listener);
-            return _activitySource;
+            listener = DummyActivityListener.Create();
+            ActivitySource.AddActivityListener(listener);
+            return activitySource;
         }
     }
 
-    public static void RemoveDummyListener() => _listener?.Dispose();
+    public static void RemoveDummyListener() => listener?.Dispose();
 
     public static Meter GetCategoryMeter(string category)
         => new(GetMeterName(category), AssemblyName.Version?.ToString());

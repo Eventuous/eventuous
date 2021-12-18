@@ -26,7 +26,7 @@ public class AggregateStoreTests {
 
     [Fact]
     public async Task ShouldReadLongAggregateStream() {
-        const int count = 9500;
+        const int count = 9000;
 
         var id = Guid.NewGuid().ToString("N");
 
@@ -60,9 +60,26 @@ public class AggregateStoreTests {
         restored.State.Values.Should().BeEquivalentTo(aggregate.State.Values);
     }
 
+    [Fact]
+    public async Task ShouldReadAggregateStreamManyTimes() {
+        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
+        var id        = Guid.NewGuid().ToString("N");
+        aggregate.DoIt(new TestId(id), "test");
+        await Store.Store(aggregate, default);
+
+        const int numberOfReads = 100;
+
+        foreach (var unused in Enumerable.Range(0, numberOfReads)) {
+            var read = await Store.Load<TestAggregate>(id, default);
+            read.State.Should().BeEquivalentTo(aggregate.State);
+        }
+    }
+
     IAggregateStore Store { get; }
 
-    record TestId(string Value) : AggregateId(Value);
+    record TestId : AggregateId {
+        public TestId(string value) : base(value) { }
+    }
 
     record TestState : AggregateState<TestState, TestId> {
         public TestState() {

@@ -4,6 +4,6 @@
         <IncludeTestHost>true</IncludeTestHost>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Shovel\Eventuous.Shovel.csproj" />
+        <ProjectReference Include="..\..\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
     </ItemGroup>
 </Project>

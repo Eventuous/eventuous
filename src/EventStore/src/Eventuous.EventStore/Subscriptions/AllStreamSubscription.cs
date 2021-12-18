@@ -60,11 +60,10 @@ public class AllStreamSubscription
         var filterOptions = new SubscriptionFilterOptions(
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
             Options.CheckpointInterval,
-            async (_, p, ct)
-                => await StoreCheckpoint(
-                    new EventPosition(p.CommitPosition, DateTime.UtcNow),
-                    ct
-                ).NoContext()
+            async (_, p, ct) => {
+                LastProcessed = new EventPosition(p.CommitPosition, DateTime.Now);
+                await StoreCheckpoint(LastProcessed, ct).NoContext();
+            }
         );
 
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
@@ -73,7 +72,7 @@ public class AllStreamSubscription
             ? EventStoreClient.SubscribeToAllAsync(
                 new Position(position.Value, position.Value),
                 HandleEvent,
-                false,
+                Options.ResolveLinkTos,
                 HandleDrop,
                 filterOptions,
                 Options.ConfigureOperation,
@@ -82,7 +81,7 @@ public class AllStreamSubscription
             )
             : EventStoreClient.SubscribeToAllAsync(
                 HandleEvent,
-                false,
+                Options.ResolveLinkTos,
                 HandleDrop,
                 filterOptions,
                 Options.ConfigureOperation,

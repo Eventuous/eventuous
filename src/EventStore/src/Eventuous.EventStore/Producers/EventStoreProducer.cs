@@ -1,4 +1,5 @@
-﻿using Eventuous.Producers;
+﻿using Eventuous.Diagnostics;
+using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
 
 namespace Eventuous.EventStore.Producers;

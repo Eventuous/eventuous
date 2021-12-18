@@ -1,9 +1,9 @@
-namespace Eventuous.Shovel;
+namespace Eventuous.Gateway;
 
-class ShovelProducer<T> : ShovelProducer, IEventProducer<T> where T : class {
+class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : class {
     readonly IEventProducer<T> _inner;
 
-    public ShovelProducer(IEventProducer<T> inner) : base(inner) => _inner = inner;
+    public GatewayProducer(IEventProducer<T> inner) : base(inner) => _inner = inner;
 
     public async Task Produce(
         StreamName                   stream,
@@ -17,10 +17,10 @@ class ShovelProducer<T> : ShovelProducer, IEventProducer<T> where T : class {
     }
 }
 
-class ShovelProducer : IEventProducer {
+class GatewayProducer : IEventProducer {
     readonly IEventProducer _inner;
 
-    public ShovelProducer(IEventProducer inner) => _inner = inner;
+    public GatewayProducer(IEventProducer inner) => _inner = inner;
 
     public async Task Produce(
         StreamName                   stream,

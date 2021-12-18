@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
 using Microsoft.Extensions.Hosting;
