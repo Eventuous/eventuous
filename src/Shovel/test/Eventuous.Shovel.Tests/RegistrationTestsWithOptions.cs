@@ -10,10 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eventuous.Shovel.Tests;
 
-public class RegistrationTests {
+public class RegistrationTestsWithOptions {
     readonly IServiceProvider _provider;
 
-    public RegistrationTests() {
+    public RegistrationTestsWithOptions() {
         var host = new TestServer(BuildHost());
         _provider = host.Services;
     }
@@ -25,17 +25,17 @@ public class RegistrationTests {
 
     class Startup {
         public static void ConfigureServices(IServiceCollection services) {
-            services.AddGateway<TestSub, TestOptions, TestProducer>("shovel1", RouteAndTransform);
-            services.AddGateway<TestSub, TestOptions, TestProducer, TestTransform>("shovel2");
+            services.AddGateway<TestSub, TestOptions, TestProducer, TestProduceOptions>("shovel1", RouteAndTransform);
+            services.AddGateway<TestSub, TestOptions, TestProducer, TestProduceOptions, TestTransform>("shovel2");
         }
 
-        static ValueTask<GatewayContext?> RouteAndTransform(object message) => new();
+        static ValueTask<GatewayContext<TestProduceOptions>?> RouteAndTransform(object message) => new();
 
         public void Configure(IApplicationBuilder app) { }
     }
 
-    class TestTransform : IGatewayTransform {
-        public ValueTask<GatewayContext?> RouteAndTransform(IMessageConsumeContext context)
+    class TestTransform : IGatewayTransform<TestProduceOptions> {
+        public ValueTask<GatewayContext<TestProduceOptions>?> RouteAndTransform(IMessageConsumeContext context)
             => new();
     }
 
@@ -53,16 +53,19 @@ public class RegistrationTests {
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) => default;
     }
 
-    class TestProducer : BaseProducer {
+    class TestProducer : BaseProducer<TestProduceOptions> {
         public List<ProducedMessage> ProducedMessages { get; } = new();
 
         protected override Task ProduceMessages(
             StreamName                   stream,
             IEnumerable<ProducedMessage> messages,
+            TestProduceOptions?          options,
             CancellationToken            cancellationToken = default
         ) {
             ProducedMessages.AddRange(messages);
             return Task.CompletedTask;
         }
     }
+
+    record TestProduceOptions { }
 }
