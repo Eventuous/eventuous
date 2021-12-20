@@ -1,13 +1,13 @@
 // ReSharper disable CheckNamespace
 
 using Eventuous.Gateway;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
 [PublicAPI]
-public static class ShovelContainerRegistrations {
-    public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions,
-        TProducer, TProduceOptions>(
+public static class GatewayWithOptionsRegistrations {
+    public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions>(
         this IServiceCollection            services,
         string                             subscriptionId,
         RouteAndTransform<TProduceOptions> routeAndTransform,
@@ -32,8 +32,7 @@ public static class ShovelContainerRegistrations {
         return services;
     }
 
-    public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions,
-        TProducer, TProduceOptions>(
+    public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions>(
         this IServiceCollection       services,
         string                        subscriptionId,
         Action<TSubscriptionOptions>? configureSubscription = null
@@ -62,38 +61,17 @@ public static class ShovelContainerRegistrations {
         }
     }
 
-    public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer>(
-        this IServiceCollection       services,
-        string                        subscriptionId,
-        RouteAndTransform             routeAndTransform,
-        Action<TSubscriptionOptions>? configureSubscription = null
-    )
-        where TSubscription : EventSubscription<TSubscriptionOptions>
-        where TProducer : class, IEventProducer
-        where TSubscriptionOptions : SubscriptionOptions {
-        services.AddSubscription<TSubscription, TSubscriptionOptions>(
-            subscriptionId,
-            builder => builder
-                .Configure(configureSubscription)
-                .AddEventHandler(
-                    sp => new GatewayHandler(
-                        new GatewayProducer(sp.GetRequiredService<TProducer>()),
-                        routeAndTransform
-                    )
-                )
-        );
-
-        return services;
-    }
-
-    public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer>(
+    public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions, TTransform>(
         this IServiceCollection       services,
         string                        subscriptionId,
         Action<TSubscriptionOptions>? configureSubscription = null
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
-        where TProducer : class, IEventProducer
+        where TProducer : class, IEventProducer<TProduceOptions>
+        where TProduceOptions : class
+        where TTransform : class, IGatewayTransform<TProduceOptions>
         where TSubscriptionOptions : SubscriptionOptions {
+        services.TryAddSingleton<TTransform>();
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
             builder => builder
@@ -104,10 +82,13 @@ public static class ShovelContainerRegistrations {
         return services;
 
         IEventHandler GetHandler(IServiceProvider sp) {
-            var transform = sp.GetRequiredService<RouteAndTransform>();
+            var transform = sp.GetRequiredService<TTransform>();
             var producer  = sp.GetRequiredService<TProducer>();
 
-            return new GatewayHandler(new GatewayProducer(producer), transform);
+            return new GatewayHandler<TProduceOptions>(
+                new GatewayProducer<TProduceOptions>(producer),
+                transform.RouteAndTransform
+            );
         }
     }
 }
