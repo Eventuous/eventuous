@@ -4,14 +4,15 @@ using Eventuous.Diagnostics.Tracing;
 
 namespace Eventuous.Diagnostics.Metrics;
 
-public sealed class EventuousMetrics : IDisposable {
+public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
     public static readonly string MeterName = EventuousDiagnostics.GetMeterName("core");
 
-    readonly Meter            _meter;
-    readonly ActivityListener _listener;
+    readonly Meter                   _meter;
+    readonly ActivityListener        _listener;
+    KeyValuePair<string, object?>[]? _customTags;
 
     public EventuousMetrics() {
-        _meter = EventuousDiagnostics.GetMeter(MeterName);
+        _meter      = EventuousDiagnostics.GetMeter(MeterName);
 
         var eventStoreMetric = _meter.CreateHistogram<double>(
             Constants.EventStorePrefix,
@@ -30,11 +31,13 @@ public sealed class EventuousMetrics : IDisposable {
             Sample          = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
             ActivityStopped = Record
         };
+
         ActivitySource.AddActivityListener(_listener);
 
         void Record(Activity activity) {
             if (activity.OperationName == Constants.HandleCommand) {
-                appServiceMetric.Record(
+                RecordWithTags(
+                    appServiceMetric,
                     activity.Duration.TotalMilliseconds,
                     new KeyValuePair<string, object?>("command", activity.GetTagItem(Constants.CommandTag))
                 );
@@ -43,11 +46,22 @@ public sealed class EventuousMetrics : IDisposable {
             }
 
             if (activity.OperationName.StartsWith(Constants.EventStorePrefix)) {
-                eventStoreMetric.Record(
+                RecordWithTags(
+                    eventStoreMetric,
                     activity.Duration.TotalMilliseconds,
                     new KeyValuePair<string, object?>("operation", activity.OperationName)
                 );
             }
+        }
+
+        void RecordWithTags(Histogram<double> histogram, double value, KeyValuePair<string, object?> tag) {
+            if (_customTags == null) {
+                histogram.Record(value, tag);
+                return;
+            }
+
+            var tags = new TagList(_customTags) { tag };
+            histogram.Record(value, tags);
         }
     }
 
@@ -55,4 +69,6 @@ public sealed class EventuousMetrics : IDisposable {
         _listener.Dispose();
         _meter.Dispose();
     }
+
+    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
 }

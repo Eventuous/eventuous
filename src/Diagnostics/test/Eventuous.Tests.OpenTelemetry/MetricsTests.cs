@@ -131,7 +131,7 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
             return values.ToArray();
 
             static bool TryGetMetric(
-                ref BatchMetricPoint.Enumerator enumerator,
+                ref MetricPointsAccessor.Enumerator enumerator,
                 out (string[], object[], long)  state
             ) {
                 if (!enumerator.MoveNext()) {
@@ -139,8 +139,8 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
                     return false;
                 }
 
-                ref var metricPoint = ref enumerator.Current;
-                state = (metricPoint.Keys, metricPoint.Values, metricPoint.LongValue);
+                var metricPoint = enumerator.Current;
+                state = (metricPoint., metricPoint.Values, metricPoint.LongValue);
                 return true;
             }
         }

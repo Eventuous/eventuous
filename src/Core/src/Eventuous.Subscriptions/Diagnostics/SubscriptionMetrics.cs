@@ -7,7 +7,7 @@ using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
-public sealed class SubscriptionMetrics : IDisposable {
+public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     const string MetricPrefix = "eventuous";
     const string Category     = "subscription";
 
@@ -63,13 +63,22 @@ public sealed class SubscriptionMetrics : IDisposable {
 
         IEnumerable<Measurement<double>> ObserveTimeValues()
             => gaps?
-                   .Select(x => new Measurement<double>(x.TimeGap.TotalSeconds, SubTag(x.SubscriptionId)))
+                   .Select(x => Measure(x.TimeGap.TotalSeconds, x.SubscriptionId))
             ?? Array.Empty<Measurement<double>>();
 
         IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionGap[] gapMeasure) {
             gaps = gapMeasure.Select(GetGap).Where(x => x != SubscriptionGap.Invalid);
 
-            return gaps.Select(x => new Measurement<long>((long)x.PositionGap, SubTag(x.SubscriptionId)));
+            return gaps.Select(x => Measure((long)x.PositionGap, x.SubscriptionId));
+        }
+
+        Measurement<T> Measure<T>(T value, string subscriptionId) where T : struct {
+            if (_customTags == null) {
+                return new Measurement<T>(value, SubTag(subscriptionId));
+            }
+
+            var tags = new List<KeyValuePair<string, object?>>(_customTags) { SubTag(subscriptionId) };
+            return new Measurement<T>(value, tags);
         }
     }
 
@@ -77,7 +86,7 @@ public sealed class SubscriptionMetrics : IDisposable {
 
     static KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
 
-    static void ActivityStopped(Histogram<double> histogram, Counter<long> errorCount, Activity activity) {
+    void ActivityStopped(Histogram<double> histogram, Counter<long> errorCount, Activity activity) {
         if (activity.OperationName != TracingConstants.ConsumerOperation) return;
 
         var subId = activity.GetTagItem(TelemetryTags.Eventuous.Subscription);
@@ -86,10 +95,16 @@ public sealed class SubscriptionMetrics : IDisposable {
         var subTag       = SubTag(subId);
         var typeTag      = GetTag(MessageTypeTag, activity.GetTagItem(TelemetryTags.Message.Type));
         var partitionTag = GetTag(PartitionIdTag, activity.GetTagItem(TelemetryTags.Eventuous.Partition));
-        histogram.Record(activity.Duration.TotalMilliseconds, subTag, typeTag, partitionTag);
+
+        var tags = _customTags == null ? new TagList() : new TagList(_customTags);
+        tags.Add(subTag);
+        tags.Add(typeTag);
+        tags.Add(partitionTag);
+
+        histogram.Record(activity.Duration.TotalMilliseconds, tags);
 
         if (activity.Status == ActivityStatusCode.Error) {
-            errorCount.Add(1, subTag, typeTag);
+            errorCount.Add(1, tags);
         }
     }
 
@@ -110,10 +125,13 @@ public sealed class SubscriptionMetrics : IDisposable {
     readonly Meter                         _meter;
     readonly ActivityListener              _listener;
     readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics;
+    KeyValuePair<string, object?>[]?       _customTags;
 
     public void Dispose() {
         _listener.Dispose();
         _meter.Dispose();
         if (_checkpointMetrics.IsValueCreated) _checkpointMetrics.Value.Dispose();
     }
+
+    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
 }

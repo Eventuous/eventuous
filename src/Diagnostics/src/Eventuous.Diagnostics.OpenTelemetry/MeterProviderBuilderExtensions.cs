@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Eventuous.Diagnostics.Metrics;
 using Eventuous.Subscriptions.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,29 +12,39 @@ public static class MeterProviderBuilderExtensions {
     /// Adds subscriptions metrics instrumentation
     /// </summary>
     /// <param name="builder"></param>
+    /// <param name="customTags"></param>
     /// <returns></returns>
-    public static MeterProviderBuilder AddEventuousSubscriptions(this MeterProviderBuilder builder)
+    public static MeterProviderBuilder AddEventuousSubscriptions(this MeterProviderBuilder builder, TagList? customTags = null)
         => Ensure.NotNull(builder)
             .AddMeter(SubscriptionMetrics.MeterName)
-            .AddMetrics<SubscriptionMetrics>();
+            .AddMetrics<SubscriptionMetrics>(customTags);
 
     /// <summary>
     /// Adds metrics instrumentation for core components such as application service and event store
     /// </summary>
     /// <param name="builder"></param>
+    /// <param name="customTags"></param>
     /// <returns></returns>
-    public static MeterProviderBuilder AddEventuous(this MeterProviderBuilder builder)
+    public static MeterProviderBuilder AddEventuous(this MeterProviderBuilder builder, TagList? customTags = null)
         => Ensure.NotNull(builder)
             .AddMeter(EventuousMetrics.MeterName)
-            .AddMetrics<EventuousMetrics>();
+            .AddMetrics<EventuousMetrics>(customTags);
 
-    static MeterProviderBuilder AddMetrics<T>(this MeterProviderBuilder builder) where T : class {
+    static MeterProviderBuilder AddMetrics<T>(this MeterProviderBuilder builder, TagList? customTags = null)
+        where T : class, IWithCustomTags {
         builder.GetServices().AddSingleton<T>();
 
         return builder is IDeferredMeterProviderBuilder deferredMeterProviderBuilder
             ? deferredMeterProviderBuilder.Configure(
-                (sp, b) =>
-                    b.AddInstrumentation(sp.GetRequiredService<T>)
-            ) : builder.AddInstrumentation<T>();
+                (sp, b) => {
+                    b.AddInstrumentation(
+                        () => {
+                            var instrument = sp.GetRequiredService<T>();
+                            if (customTags != null) instrument.SetCustomTags(customTags.Value);
+                            return instrument;
+                        }
+                    );
+                }
+            ) : builder;
     }
 }
