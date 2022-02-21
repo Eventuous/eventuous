@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Sut.Subs;
@@ -17,6 +18,8 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
         _output   = outputHelper;
 
         _es = new TestEventListener(outputHelper);
+        
+        EventuousDiagnostics.AddDefaultTag("test", "foo");
 
         var builder = new WebHostBuilder()
             .Configure(_ => { })
@@ -54,21 +57,23 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
     [Fact]
     public void ShouldMeasureSubscriptionGapCount() {
         _exporter.Collect(Timeout.Infinite);
-        var values = _exporter.CollectValues();
+        var values   = _exporter.CollectValues();
         var gapCount = GetValue(values, SubscriptionMetrics.GapCountMetricName)!;
         gapCount.Should().NotBeNull();
-        gapCount.LongValue.Should().BeInRange(Count / 2, Count);
+        gapCount.Value.Should().BeInRange(Count / 2, Count);
         GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
+        GetTag(gapCount, "test").Should().Be("foo");
     }
 
     [Fact]
     public void ShouldMeasureConsumeDuration() {
         _exporter.Collect(Timeout.Infinite);
-        var values = _exporter.CollectValues();
+        var values   = _exporter.CollectValues();
         var duration = GetValue(values, SubscriptionMetrics.ProcessingRateName)!;
         duration.Should().NotBeNull();
         GetTag(duration, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
         GetTag(duration, SubscriptionMetrics.MessageTypeTag).Should().Be(TestEvent.TypeName);
+        GetTag(duration, "test").Should().Be("foo");
     }
 
     static MetricValue? GetValue(MetricValue[] values, string metric)
@@ -119,30 +124,32 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
             foreach (var metric in Batch) {
                 if (metric == null) continue;
 
-                var enumerator = metric.GetMetricPoints().GetEnumerator();
+                foreach (ref readonly var metricPoint in metric.GetMetricPoints()) {
+                    var tags = new List<(string, object?)>();
 
-                if (TryGetMetric(ref enumerator, out var metricState)) {
+                    foreach (var (key, value) in metricPoint.Tags) {
+                        tags.Add((key, value));
+                    }
+
+                    var metricValue = metric.MetricType switch {
+                        MetricType.Histogram   => metricPoint.GetHistogramSum() / metricPoint.GetHistogramCount(),
+                        MetricType.DoubleGauge => metricPoint.GetGaugeLastValueDouble(),
+                        MetricType.LongGauge   => metricPoint.GetGaugeLastValueLong(),
+                        _                      => throw new ArgumentOutOfRangeException()
+                    };
+
                     values.Add(
-                        new MetricValue(metric.Name, metricState.Item1, metricState.Item2, metricState.Item3)
+                        new MetricValue(
+                            metric.Name,
+                            tags.Select(x => x.Item1).ToArray(),
+                            tags.Select(x => x.Item2).ToArray(),
+                            metricValue
+                        )
                     );
                 }
             }
 
             return values.ToArray();
-
-            static bool TryGetMetric(
-                ref BatchMetricPoint.Enumerator enumerator,
-                out (string[], object[], long)  state
-            ) {
-                if (!enumerator.MoveNext()) {
-                    state = default;
-                    return false;
-                }
-
-                ref var metricPoint = ref enumerator.Current;
-                state = (metricPoint.Keys, metricPoint.Values, metricPoint.LongValue);
-                return true;
-            }
         }
     }
 
@@ -153,4 +160,4 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
     }
 }
 
-record MetricValue(string Name, string[] Keys, object[] Values, long LongValue);
+record MetricValue(string Name, string[] Keys, object[] Values, double Value);

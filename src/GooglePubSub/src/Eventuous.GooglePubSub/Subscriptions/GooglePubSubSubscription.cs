@@ -74,13 +74,15 @@ public class GooglePubSubSubscription
     Task _subscriberTask = null!;
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
-        await CreateSubscription(
-                _subscriptionName,
-                _topicName,
-                Options.ConfigureSubscription,
-                cancellationToken
-            )
-            .NoContext();
+        if (Options.CreateSubscription) {
+            await CreateSubscription(
+                    _subscriptionName,
+                    _topicName,
+                    Options.ConfigureSubscription,
+                    cancellationToken
+                )
+                .NoContext();
+        }
 
         _client = await CreateAsync(
                 _subscriptionName,

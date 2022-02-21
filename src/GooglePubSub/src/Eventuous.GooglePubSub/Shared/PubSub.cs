@@ -19,9 +19,7 @@ public static class PubSub {
         var topicString = topicName.ToString();
 
         var publisherServiceApiClient =
-            await new PublisherServiceApiClientBuilder {
-                    EmulatorDetection = emulatorDetection
-                }
+            await new PublisherServiceApiClientBuilder { EmulatorDetection = emulatorDetection }
                 .BuildAsync(cancellationToken)
                 .NoContext();
 
@@ -46,6 +44,7 @@ public static class PubSub {
         CancellationToken     cancellationToken
     ) {
         var subName = subscriptionName.ToString();
+
         var subscriberServiceApiClient =
             await new SubscriberServiceApiClientBuilder {
                     EmulatorDetection = emulatorDetection

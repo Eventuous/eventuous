@@ -25,13 +25,16 @@ class ClientCache {
     async Task<PublisherClient> CreateTopicAndClient(string topicId, CancellationToken cancellationToken) {
         var topicName = TopicName.FromProjectTopic(_projectId, topicId);
 
-        await PubSub.CreateTopic(
-            topicName,
-            _options.ClientCreationSettings.DetectEmulator(),
-            cancellationToken
-        ).NoContext();
+        if (_options.CreateTopic) {
+            await PubSub.CreateTopic(
+                topicName,
+                _options.ClientCreationSettings.DetectEmulator(),
+                cancellationToken
+            ).NoContext();
+        }
 
-        return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings).NoContext();
+        return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings)
+            .NoContext();
     }
 
     public IEnumerable<PublisherClient> GetAllClients() => _clients.Values;
