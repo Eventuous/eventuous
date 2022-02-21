@@ -96,10 +96,11 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         var typeTag      = GetTag(MessageTypeTag, activity.GetTagItem(TelemetryTags.Message.Type));
         var partitionTag = GetTag(PartitionIdTag, activity.GetTagItem(TelemetryTags.Eventuous.Partition));
 
-        var tags = _customTags == null ? new TagList() : new TagList(_customTags);
-        tags.Add(subTag);
-        tags.Add(typeTag);
-        tags.Add(partitionTag);
+        var tags = new TagList(_customTags) {
+            subTag,
+            typeTag,
+            partitionTag
+        };
 
         histogram.Record(activity.Duration.TotalMilliseconds, tags);
 
@@ -125,7 +126,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     readonly Meter                         _meter;
     readonly ActivityListener              _listener;
     readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics;
-    KeyValuePair<string, object?>[]?       _customTags;
+    KeyValuePair<string, object?>[]        _customTags = EventuousDiagnostics.Tags;
 
     public void Dispose() {
         _listener.Dispose();
@@ -133,5 +134,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         if (_checkpointMetrics.IsValueCreated) _checkpointMetrics.Value.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
+    public void SetCustomTags(TagList customTags) {
+        _customTags = _customTags.Concat(customTags).ToArray();
+    }
 }
