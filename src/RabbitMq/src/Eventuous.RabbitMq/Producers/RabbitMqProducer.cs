@@ -26,9 +26,9 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
     /// <param name="serializer">Optional: event serializer instance</param>
     /// <param name="options">Optional: additional configuration for the exchange</param>
     public RabbitMqProducer(
-        ConnectionFactory        connectionFactory,
-        IEventSerializer?        serializer = null,
-        RabbitMqExchangeOptions? options    = null
+        ConnectionFactory         connectionFactory,
+        IEventSerializer?         serializer       = null,
+        RabbitMqExchangeOptions?  options          = null
     ) : base(TracingOptions) {
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
@@ -74,7 +74,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         if (_channel == null)
             throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
 
-        var (msg, metadata)      = (message.Message, message.Metadata);
+        var (msg, metadata)                   = (message.Message, message.Metadata);
         var (eventType, contentType, payload) = _serializer.SerializeEvent(msg);
 
         var prop = _channel.CreateBasicProperties();

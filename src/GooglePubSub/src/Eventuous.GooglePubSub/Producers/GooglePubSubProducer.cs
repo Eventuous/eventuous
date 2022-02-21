@@ -55,6 +55,11 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
         _attributes  = options.Attributes;
     }
 
+    /// <summary>
+    /// Create a new instance of a Google PubSub producer
+    /// </summary>
+    /// <param name="options">Producer options</param>
+    /// <param name="serializer">Optional: event serializer. Will use the default instance if missing.</param>
     public GooglePubSubProducer(
         IOptions<PubSubProducerOptions> options,
         IEventSerializer?               serializer = null

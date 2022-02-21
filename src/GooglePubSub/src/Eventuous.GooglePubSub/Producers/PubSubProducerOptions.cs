@@ -23,4 +23,11 @@ public class PubSubProducerOptions {
     /// Message attributes for system values like content type and event type
     /// </summary>
     public PubSubAttributes Attributes { get; init; } = new();
+
+    /// <summary>
+    /// The producer will try creating a PubSub topic by default, but it requires extended permissions for PubSub.
+    /// If you run the application with lower permissions, you can pre-create the topic using your DevOps tools,
+    /// then set this option to false
+    /// </summary>
+    public bool CreateTopic { get; set; } = true;
 }

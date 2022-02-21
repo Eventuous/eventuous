@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
@@ -60,7 +61,9 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask Handler(IMessageConsumeContext context) {
-        var activity = SubscriptionActivity.Create(TracingConstants.SubscriptionOperation, context);
+        var activity = EventuousDiagnostics.Enabled 
+            ? SubscriptionActivity.Create(TracingConstants.SubscriptionOperation, context, EventuousDiagnostics.Tags)
+            : null;
         var delayed  = context is DelayedAckConsumeContext;
         if (!delayed) activity?.Start();
 
