@@ -48,12 +48,7 @@ public abstract class BaseProducer : IEventProducer {
 
     protected BaseProducer(ProducerTracingOptions? tracingOptions = null) {
         var options = tracingOptions ?? new ProducerTracingOptions();
-
-        DefaultTags = new[] {
-            new KeyValuePair<string, object?>(Messaging.System, options.MessagingSystem),
-            new KeyValuePair<string, object?>(Messaging.DestinationKind, options.DestinationKind),
-            new KeyValuePair<string, object?>(Messaging.Operation, options.ProduceOperation)
-        };
+        DefaultTags = options.AllTags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
     protected abstract Task ProduceMessages(

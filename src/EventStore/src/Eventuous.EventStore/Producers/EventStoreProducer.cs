@@ -18,11 +18,11 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
     /// </summary>
     /// <param name="eventStoreClient">EventStoreDB gRPC client</param>
     /// <param name="serializer">Optional: event serializer instance</param>
-    /// <param name="metaSerializer"></param>
+    /// <param name="metaSerializer">Optional: metadata serializer instance</param>
     public EventStoreProducer(
-        EventStoreClient     eventStoreClient,
-        IEventSerializer?    serializer     = null,
-        IMetadataSerializer? metaSerializer = null
+        EventStoreClient          eventStoreClient,
+        IEventSerializer?         serializer       = null,
+        IMetadataSerializer?      metaSerializer   = null
     ) : base(TracingOptions) {
         _client         = Ensure.NotNull(eventStoreClient);
         _serializer     = serializer ?? DefaultEventSerializer.Instance;
@@ -36,11 +36,11 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
     /// </summary>
     /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
     /// <param name="serializer">Optional: event serializer instance</param>
-    /// <param name="metaSerializer"></param>
+    /// <param name="metaSerializer">Optional: metadata serializer instance</param>
     public EventStoreProducer(
-        EventStoreClientSettings clientSettings,
-        IEventSerializer?        serializer     = null,
-        IMetadataSerializer?     metaSerializer = null
+        EventStoreClientSettings  clientSettings,
+        IEventSerializer?         serializer       = null,
+        IMetadataSerializer?      metaSerializer   = null
     ) : this(new EventStoreClient(Ensure.NotNull(clientSettings)), serializer, metaSerializer) { }
 
     static readonly ProducerTracingOptions TracingOptions = new() {

@@ -9,7 +9,9 @@ namespace Eventuous.Subscriptions.Filters;
 public class TracingFilter : ConsumeFilter {
     readonly KeyValuePair<string, object?>[] _defaultTags;
 
-    public TracingFilter(params KeyValuePair<string, object?>[] tags) => _defaultTags = tags;
+    public TracingFilter(params KeyValuePair<string, object?>[] tags) {
+        _defaultTags = tags.Concat(EventuousDiagnostics.Tags).ToArray();
+    }
 
     public override async ValueTask Send(
         IMessageConsumeContext                   context,
