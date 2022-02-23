@@ -84,15 +84,15 @@ static class AppServiceActivity {
         if (!EventuousDiagnostics.Enabled) return null;
 
         var cmdName = command.GetType().Name;
+
         var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            $"{Constants.AppServicePrefix}.{serviceName}/{cmdName}",
+            $"{Constants.Components.AppService}.{serviceName}/{cmdName}",
             ActivityKind.Internal,
             parentContext: default,
             idFormat: ActivityIdFormat.W3C,
             tags: EventuousDiagnostics.Tags
-        )?.Start();
+        )?.SetTag(TelemetryTags.Eventuous.Command, cmdName).Start();
 
-        activity?.SetTag(TelemetryTags.Eventuous.Command, cmdName);
         return activity;
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using static Eventuous.Diagnostics.Tracing.Constants;
 
 // ReSharper disable InvertIf
 
@@ -15,7 +16,7 @@ public class TracedEventStore : IEventStore {
         .Concat(new KeyValuePair<string, object?>[] { new(TelemetryTags.Db.System, "eventstore") }).ToArray();
 
     public Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken)
-        => Trace(stream, Constants.StreamExists, Inner.StreamExists(stream, cancellationToken));
+        => Trace(stream, Operations.StreamExists, Inner.StreamExists(stream, cancellationToken));
 
     public async Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
@@ -23,7 +24,7 @@ public class TracedEventStore : IEventStore {
         IReadOnlyCollection<StreamEvent> events,
         CancellationToken                cancellationToken
     ) {
-        using var activity = StartActivity(stream, Constants.AppendEvents);
+        using var activity = StartActivity(stream, Operations.AppendEvents);
 
         var tracedEvents = events.Select(
             x => x with { Metadata = x.Metadata.AddActivityTags(activity) }
@@ -46,14 +47,14 @@ public class TracedEventStore : IEventStore {
         int                count,
         CancellationToken  cancellationToken
     )
-        => Trace(stream, Constants.ReadEvents, Inner.ReadEvents(stream, start, count, cancellationToken));
+        => Trace(stream, Operations.ReadEvents, Inner.ReadEvents(stream, start, count, cancellationToken));
 
     public Task<StreamEvent[]> ReadEventsBackwards(
         StreamName        stream,
         int               count,
         CancellationToken cancellationToken
     )
-        => Trace(stream, Constants.ReadEvents, Inner.ReadEventsBackwards(stream, count, cancellationToken));
+        => Trace(stream, Operations.ReadEvents, Inner.ReadEventsBackwards(stream, count, cancellationToken));
 
     public Task<long> ReadStream(
         StreamName          stream,
@@ -62,7 +63,7 @@ public class TracedEventStore : IEventStore {
         Action<StreamEvent> callback,
         CancellationToken   cancellationToken
     )
-        => Trace(stream, Constants.ReadEvents, Inner.ReadStream(stream, start, count, callback, cancellationToken));
+        => Trace(stream, Operations.ReadEvents, Inner.ReadStream(stream, start, count, callback, cancellationToken));
 
     public Task TruncateStream(
         StreamName             stream,
@@ -72,7 +73,7 @@ public class TracedEventStore : IEventStore {
     )
         => Trace(
             stream,
-            Constants.TruncateStream,
+            Operations.TruncateStream,
             Inner.TruncateStream(stream, truncatePosition, expectedVersion, cancellationToken)
         );
 
@@ -81,7 +82,7 @@ public class TracedEventStore : IEventStore {
         ExpectedStreamVersion expectedVersion,
         CancellationToken     cancellationToken
     )
-        => Trace(stream, Constants.DeleteStream, Inner.DeleteStream(stream, expectedVersion, cancellationToken));
+        => Trace(stream, Operations.DeleteStream, Inner.DeleteStream(stream, expectedVersion, cancellationToken));
 
     static async Task Trace(StreamName stream, string operation, Task task) {
         using var activity = StartActivity(stream, operation);
@@ -114,7 +115,7 @@ public class TracedEventStore : IEventStore {
         var streamName = stream.ToString();
 
         var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            $"{Constants.EventStorePrefix}.{operationName}/{streamName}",
+            $"{Components.EventStore}.{operationName}/{streamName}",
             ActivityKind.Server,
             parentContext: default,
             DefaultTags,

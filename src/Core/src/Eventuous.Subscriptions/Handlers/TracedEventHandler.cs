@@ -28,7 +28,7 @@ public class TracedEventHandler : IEventHandler {
     public async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         using var activity = SubscriptionActivity
             .Create(
-                $"{Constants.EventHandlerPrefix}.{DiagnosticName}/{context.MessageType}",
+                $"{Constants.Components.EventHandler}.{DiagnosticName}/{context.MessageType}",
                 ActivityKind.Internal,
                 tags: _defaultTags
             )

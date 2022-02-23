@@ -12,16 +12,16 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
     KeyValuePair<string, object?>[]? _customTags;
 
     public EventuousMetrics() {
-        _meter      = EventuousDiagnostics.GetMeter(MeterName);
+        _meter = EventuousDiagnostics.GetMeter(MeterName);
 
         var eventStoreMetric = _meter.CreateHistogram<double>(
-            Constants.EventStorePrefix,
+            Constants.Components.EventStore,
             "ms",
             "Event store operation duration, milliseconds"
         );
 
         var appServiceMetric = _meter.CreateHistogram<double>(
-            Constants.AppServicePrefix,
+            Constants.Components.AppService,
             "ms",
             "Application service operation duration, milliseconds"
         );
@@ -35,22 +35,27 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
         ActivitySource.AddActivityListener(_listener);
 
         void Record(Activity activity) {
-            var dot    = activity.OperationName.IndexOf('.');
+            var dot = activity.OperationName.IndexOf('.');
+            if (dot == -1) return;
+
             var prefix = activity.OperationName[..dot];
+
             switch (prefix) {
-                case Constants.AppServicePrefix:
+                case Constants.Components.AppService:
                     RecordWithTags(
                         appServiceMetric,
                         activity.Duration.TotalMilliseconds,
-                        new KeyValuePair<string, object?>("command", activity.GetTagItem(Constants.CommandTag))
+                        new KeyValuePair<string, object?>("command", activity.GetTagItem(TelemetryTags.Eventuous.Command))
                     );
+
                     return;
-                case Constants.EventStorePrefix:
+                case Constants.Components.EventStore:
                     RecordWithTags(
                         eventStoreMetric,
                         activity.Duration.TotalMilliseconds,
                         new KeyValuePair<string, object?>("operation", activity.OperationName)
                     );
+
                     break;
             }
         }

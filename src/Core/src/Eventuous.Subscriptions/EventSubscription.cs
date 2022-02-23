@@ -64,7 +64,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     protected async ValueTask Handler(IMessageConsumeContext context) {
         var activity = EventuousDiagnostics.Enabled
             ? SubscriptionActivity.Create(
-                $"{Constants.SubscriptionPrefix}.{SubscriptionId}/{context.MessageType}",
+                $"{Constants.Components.Subscription}.{SubscriptionId}/{context.MessageType}",
                 ActivityKind.Internal,
                 context,
                 EventuousDiagnostics.Tags
