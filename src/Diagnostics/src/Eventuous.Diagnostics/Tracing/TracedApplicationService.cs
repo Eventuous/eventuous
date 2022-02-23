@@ -21,8 +21,14 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
         try {
             var result = await InnerService.Handle(command, cancellationToken).NoContext();
 
-            if (result is ErrorResult error)
-                activity?.SetActivityStatus(ActivityStatus.Error(error.Exception));
+            if (activity != null) {
+                if (result is ErrorResult error) {
+                    activity.SetActivityStatus(ActivityStatus.Error(error.Exception));
+                }
+                else {
+                    activity.SetActivityStatus(ActivityStatus.Ok());
+                }
+            }
 
             return result;
         }
@@ -55,8 +61,14 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
         try {
             var result = await InnerService.Handle(command, cancellationToken).NoContext();
 
-            if (result is ErrorResult<TState, TId> error)
-                activity?.SetActivityStatus(ActivityStatus.Error(error.Exception));
+            if (activity != null) {
+                if (result is ErrorResult<TState, TId> error) {
+                    activity.SetActivityStatus(ActivityStatus.Error(error.Exception));
+                }
+                else {
+                    activity.SetActivityStatus(ActivityStatus.Ok());
+                }
+            }
 
             return result;
         }
@@ -68,14 +80,19 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
 }
 
 static class AppServiceActivity {
-    public static Activity? StartActivity(string serviceName, object command)
-        => EventuousDiagnostics.Enabled
-            ? EventuousDiagnostics.ActivitySource.CreateActivity(
-                $"{serviceName}.{command.GetType().Name}",
-                ActivityKind.Internal,
-                parentContext: default,
-                idFormat: ActivityIdFormat.W3C,
-                tags: EventuousDiagnostics.Tags
-            )?.Start()
-            : null;
+    public static Activity? StartActivity(string serviceName, object command) {
+        if (!EventuousDiagnostics.Enabled) return null;
+
+        var cmdName = command.GetType().Name;
+        var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
+            $"{Constants.AppServicePrefix}.{serviceName}/{cmdName}",
+            ActivityKind.Internal,
+            parentContext: default,
+            idFormat: ActivityIdFormat.W3C,
+            tags: EventuousDiagnostics.Tags
+        )?.Start();
+
+        activity?.SetTag(TelemetryTags.Eventuous.Command, cmdName);
+        return activity;
+    }
 }

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Eventuous.Diagnostics;
+using Eventuous.Diagnostics.Tracing;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
@@ -23,7 +24,7 @@ public class TracingFilter : ConsumeFilter {
 
         using var activity = Activity.Current?.Context != context.ParentContext
             ? SubscriptionActivity.Start(
-                $"{context.SubscriptionId}/{context.MessageType}",
+                $"{Constants.ConsumerPrefix}.{context.SubscriptionId}/{context.MessageType}",
                 ActivityKind.Consumer,
                 context,
                 _defaultTags
@@ -38,8 +39,13 @@ public class TracingFilter : ConsumeFilter {
         try {
             await next(context).NoContext();
 
-            if (activity != null && context.WasIgnored())
-                activity.ActivityTraceFlags = ActivityTraceFlags.None;
+            if (activity != null) {
+                if (context.WasIgnored()) {
+                    activity.ActivityTraceFlags = ActivityTraceFlags.None;
+                }
+
+                activity.SetActivityStatus(ActivityStatus.Ok());
+            }
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
+using Eventuous.Diagnostics.Tracing;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
@@ -63,7 +64,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     protected async ValueTask Handler(IMessageConsumeContext context) {
         var activity = EventuousDiagnostics.Enabled
             ? SubscriptionActivity.Create(
-                $"{SubscriptionId}/{context.MessageType}",
+                $"{Constants.SubscriptionPrefix}{SubscriptionId}/{context.MessageType}",
                 ActivityKind.Internal,
                 context,
                 EventuousDiagnostics.Tags

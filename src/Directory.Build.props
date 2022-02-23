@@ -39,8 +39,9 @@
         <Using Include="Microsoft.Extensions.Logging"/>
     </ItemGroup>
 
-    <PropertyGroup>
-        <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <MinVerSkip>true</MinVerSkip>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">

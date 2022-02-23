@@ -142,7 +142,7 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
                         new MetricValue(
                             metric.Name,
                             tags.Select(x => x.Item1).ToArray(),
-                            tags.Select(x => x.Item2).ToArray(),
+                            tags.Select(x => x.Item2).ToArray()!,
                             metricValue
                         )
                     );

@@ -21,7 +21,7 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
         );
 
         var appServiceMetric = _meter.CreateHistogram<double>(
-            "appservice",
+            Constants.AppServicePrefix,
             "ms",
             "Application service operation duration, milliseconds"
         );
@@ -35,22 +35,23 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
         ActivitySource.AddActivityListener(_listener);
 
         void Record(Activity activity) {
-            if (activity.OperationName == Constants.HandleCommand) {
-                RecordWithTags(
-                    appServiceMetric,
-                    activity.Duration.TotalMilliseconds,
-                    new KeyValuePair<string, object?>("command", activity.GetTagItem(Constants.CommandTag))
-                );
-
-                return;
-            }
-
-            if (activity.OperationName.StartsWith(Constants.EventStorePrefix)) {
-                RecordWithTags(
-                    eventStoreMetric,
-                    activity.Duration.TotalMilliseconds,
-                    new KeyValuePair<string, object?>("operation", activity.OperationName)
-                );
+            var dot    = activity.OperationName.IndexOf('.');
+            var prefix = activity.OperationName[..dot];
+            switch (prefix) {
+                case Constants.AppServicePrefix:
+                    RecordWithTags(
+                        appServiceMetric,
+                        activity.Duration.TotalMilliseconds,
+                        new KeyValuePair<string, object?>("command", activity.GetTagItem(Constants.CommandTag))
+                    );
+                    return;
+                case Constants.EventStorePrefix:
+                    RecordWithTags(
+                        eventStoreMetric,
+                        activity.Duration.TotalMilliseconds,
+                        new KeyValuePair<string, object?>("operation", activity.OperationName)
+                    );
+                    break;
             }
         }
 

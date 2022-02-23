@@ -30,7 +30,9 @@ public class TracedEventStore : IEventStore {
         ).ToArray();
 
         try {
-            return await Inner.AppendEvents(stream, expectedVersion, tracedEvents, cancellationToken).NoContext();
+            var result = await Inner.AppendEvents(stream, expectedVersion, tracedEvents, cancellationToken).NoContext();
+            activity?.SetActivityStatus(ActivityStatus.Ok());
+            return result;
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
@@ -86,6 +88,7 @@ public class TracedEventStore : IEventStore {
 
         try {
             await task.NoContext();
+            activity?.SetActivityStatus(ActivityStatus.Ok());
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
@@ -97,7 +100,9 @@ public class TracedEventStore : IEventStore {
         using var activity = StartActivity(stream, operation);
 
         try {
-            return await task.NoContext();
+            var result = await task.NoContext();
+            activity?.SetActivityStatus(ActivityStatus.Ok());
+            return result;
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
@@ -109,7 +114,7 @@ public class TracedEventStore : IEventStore {
         var streamName = stream.ToString();
 
         var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            $"{streamName}.{operationName}",
+            $"{Constants.EventStorePrefix}.{operationName}/{streamName}",
             ActivityKind.Server,
             parentContext: default,
             DefaultTags,

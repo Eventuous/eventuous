@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Eventuous.Diagnostics;
+using Eventuous.Diagnostics.Tracing;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 
@@ -26,7 +27,11 @@ public class TracedEventHandler : IEventHandler {
 
     public async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         using var activity = SubscriptionActivity
-            .Create($"{DiagnosticName}/{context.MessageType}", ActivityKind.Internal, tags: _defaultTags)
+            .Create(
+                $"{Constants.EventHandlerPrefix}.{DiagnosticName}/{context.MessageType}",
+                ActivityKind.Internal,
+                tags: _defaultTags
+            )
             ?.SetContextTags(context)
             ?.Start();
 
@@ -35,6 +40,8 @@ public class TracedEventHandler : IEventHandler {
 
             if (activity != null && status == EventHandlingStatus.Ignored)
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;
+
+            activity?.SetActivityStatus(ActivityStatus.Ok());
 
             return status;
         }
