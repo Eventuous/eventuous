@@ -109,10 +109,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         }
     }
 
-    static readonly Semaphore Semaphore = new(0, 1);
-
     static SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
-        Semaphore.WaitOne(1000);
         var cts = new CancellationTokenSource(500);
 
         try {
@@ -123,9 +120,6 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         catch (Exception e) {
             Log.MetricCollectionFailed("Subscription Gap", e);
             return SubscriptionGap.Invalid;
-        }
-        finally {
-            Semaphore.Release();
         }
     }
 
