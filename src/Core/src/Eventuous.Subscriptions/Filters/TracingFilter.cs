@@ -9,7 +9,9 @@ namespace Eventuous.Subscriptions.Filters;
 public class TracingFilter : ConsumeFilter {
     readonly KeyValuePair<string, object?>[] _defaultTags;
 
-    public TracingFilter(params KeyValuePair<string, object?>[] tags) {
+    public TracingFilter(string consumerName) {
+        var tags = new KeyValuePair<string, object?>[] { new(TelemetryTags.Eventuous.Consumer, consumerName) };
+
         _defaultTags = tags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
@@ -20,7 +22,12 @@ public class TracingFilter : ConsumeFilter {
         if (context.Message == null || next == null) return;
 
         using var activity = Activity.Current?.Context != context.ParentContext
-            ? SubscriptionActivity.Start(TracingConstants.ConsumerOperation, context, _defaultTags)
+            ? SubscriptionActivity.Start(
+                $"{context.SubscriptionId}/{context.MessageType}",
+                ActivityKind.Consumer,
+                context,
+                _defaultTags
+            )
             : Activity.Current;
 
         if (activity?.IsAllDataRequested == true) {

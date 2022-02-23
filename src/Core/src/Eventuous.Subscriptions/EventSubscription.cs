@@ -61,10 +61,16 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask Handler(IMessageConsumeContext context) {
-        var activity = EventuousDiagnostics.Enabled 
-            ? SubscriptionActivity.Create(TracingConstants.SubscriptionOperation, context, EventuousDiagnostics.Tags)
+        var activity = EventuousDiagnostics.Enabled
+            ? SubscriptionActivity.Create(
+                $"{SubscriptionId}/{context.MessageType}",
+                ActivityKind.Internal,
+                context,
+                EventuousDiagnostics.Tags
+            )
             : null;
-        var delayed  = context is DelayedAckConsumeContext;
+
+        var delayed = context is DelayedAckConsumeContext;
         if (!delayed) activity?.Start();
 
         Log.MessageReceived(context);

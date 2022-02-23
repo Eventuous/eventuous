@@ -6,21 +6,23 @@ namespace Eventuous.Subscriptions.Diagnostics;
 
 public static class SubscriptionActivity {
     public static Activity? Create(
-        string                                      operation,
+        string                                      name,
+        ActivityKind                                activityKind,
         IMessageConsumeContext                      context,
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     ) {
         context.ParentContext ??= GetParentContext(context.Metadata);
-        var activity = Create(operation, context.ParentContext, tags);
+        var activity = Create(name, activityKind, context.ParentContext, tags);
         return activity?.SetContextTags(context);
     }
 
     public static Activity? Start(
-        string                                      operation,
+        string                                      name,
+        ActivityKind                                activityKind,
         IMessageConsumeContext                      context,
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     )
-        => Create(operation, context, tags)?.Start();
+        => Create(name, activityKind, context, tags)?.Start();
 
     public static Activity? SetContextTags(this Activity? activity, IMessageConsumeContext context) {
         if (activity is not { IsAllDataRequested: true }) return activity;
@@ -44,13 +46,14 @@ public static class SubscriptionActivity {
     }
 
     public static Activity? Create(
-        string                                      operation,
+        string                                      name,
+        ActivityKind                                activityKind,
         ActivityContext?                            parentContext = null,
         IEnumerable<KeyValuePair<string, object?>>? tags          = null
     )
         => EventuousDiagnostics.ActivitySource.CreateActivity(
-            operation,
-            ActivityKind.Consumer,
+            name,
+            activityKind,
             parentContext ?? default,
             tags,
             idFormat: ActivityIdFormat.W3C

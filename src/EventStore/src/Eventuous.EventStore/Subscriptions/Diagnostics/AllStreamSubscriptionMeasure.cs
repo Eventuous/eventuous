@@ -9,7 +9,7 @@ class AllStreamSubscriptionMeasure {
         Func<EventPosition?> getLast
     ) {
         _subscriptionId   = subscriptionId;
-        _eventStoreClient = eventStoreClient;
+        _eventStoreClient = new EventStoreClient(eventStoreClient.GetSettings());
         _getLast          = getLast;
     }
 

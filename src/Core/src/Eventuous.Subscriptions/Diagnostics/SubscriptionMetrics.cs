@@ -87,7 +87,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     static KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
 
     void ActivityStopped(Histogram<double> histogram, Counter<long> errorCount, Activity activity) {
-        if (activity.OperationName != TracingConstants.ConsumerOperation) return;
+        if (activity.Kind != ActivityKind.Consumer) return;
 
         var subId = activity.GetTagItem(TelemetryTags.Eventuous.Subscription);
         if (subId == null) return;

@@ -169,10 +169,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         var consumer = GetConsumer(sp);
 
         if (EventuousDiagnostics.Enabled) {
-            var tags = new KeyValuePair<string, object?>[]
-                { new(TelemetryTags.Eventuous.Consumer, consumer.GetType().Name) };
-
-            Pipe.AddFilterLast(new TracingFilter(tags));
+            Pipe.AddFilterLast(new TracingFilter(consumer.GetType().Name));
         }
 
         Pipe.AddFilterLast(new ConsumerFilter(consumer));

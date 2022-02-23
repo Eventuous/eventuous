@@ -7,7 +7,7 @@ namespace Eventuous.Subscriptions;
 
 public class TracedEventHandler : IEventHandler {
     public TracedEventHandler(IEventHandler eventHandler) {
-        _inner = eventHandler;
+        _innerHandler = eventHandler;
 
         _defaultTags = new[] {
             new KeyValuePair<string, object?>(
@@ -16,22 +16,22 @@ public class TracedEventHandler : IEventHandler {
             )
         };
 
-        DiagnosticName = _inner.DiagnosticName;
+        DiagnosticName = _innerHandler.DiagnosticName;
     }
 
-    readonly IEventHandler                   _inner;
+    readonly IEventHandler                   _innerHandler;
     readonly KeyValuePair<string, object?>[] _defaultTags;
 
     public string DiagnosticName { get; }
 
     public async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         using var activity = SubscriptionActivity
-            .Create(TracingConstants.HandlerOperation, tags: _defaultTags)
+            .Create($"{DiagnosticName}/{context.MessageType}", ActivityKind.Internal, tags: _defaultTags)
             ?.SetContextTags(context)
             ?.Start();
 
         try {
-            var status = await _inner.HandleEvent(context).NoContext();
+            var status = await _innerHandler.HandleEvent(context).NoContext();
 
             if (activity != null && status == EventHandlingStatus.Ignored)
                 activity.ActivityTraceFlags = ActivityTraceFlags.None;
