@@ -64,10 +64,7 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="getId">A function to get the aggregate id from the command</param>
     /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnExisting<TCommand>(
-        GetIdFromCommand<TCommand> getId,
-        ActOnAggregate<TCommand>   action
-    )
+    protected void OnExisting<TCommand>(GetIdFromCommand<TCommand> getId, ActOnAggregate<TCommand> action)
         where TCommand : class {
         _handlers.AddHandler<TCommand>(
             new RegisteredHandler<T>(
@@ -86,10 +83,7 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnExistingAsync<TCommand>(
-        GetIdFromCommand<TCommand>    getId,
-        ActOnAggregateAsync<TCommand> action
-    )
+    protected void OnExistingAsync<TCommand>(GetIdFromCommand<TCommand> getId, ActOnAggregateAsync<TCommand> action)
         where TCommand : class {
         _handlers.AddHandler<TCommand>(
             new RegisteredHandler<T>(
@@ -108,10 +102,7 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAny<TCommand>(
-        GetIdFromCommand<TCommand> getId,
-        ActOnAggregate<TCommand>   action
-    )
+    protected void OnAny<TCommand>(GetIdFromCommand<TCommand> getId, ActOnAggregate<TCommand> action)
         where TCommand : class {
         _handlers.AddHandler<TCommand>(
             new RegisteredHandler<T>(
@@ -130,10 +121,7 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAnyAsync<TCommand>(
-        GetIdFromCommand<TCommand>    getId,
-        ActOnAggregateAsync<TCommand> action
-    )
+    protected void OnAnyAsync<TCommand>(GetIdFromCommand<TCommand> getId, ActOnAggregateAsync<TCommand> action)
         where TCommand : class {
         _handlers.AddHandler<TCommand>(
             new RegisteredHandler<T>(
@@ -152,10 +140,7 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAny<TCommand>(
-        GetIdFromCommandAsync<TCommand> getId,
-        ActOnAggregate<TCommand>        action
-    )
+    protected void OnAny<TCommand>(GetIdFromCommandAsync<TCommand> getId, ActOnAggregate<TCommand> action)
         where TCommand : class {
         _handlers.AddHandler<TCommand>(
             new RegisteredHandler<T>(
@@ -177,10 +162,7 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAnyAsync<TCommand>(
-        GetIdFromCommandAsync<TCommand> getId,
-        ActOnAggregateAsync<TCommand>   action
-    )
+    protected void OnAnyAsync<TCommand>(GetIdFromCommandAsync<TCommand> getId, ActOnAggregateAsync<TCommand> action)
         where TCommand : class {
         _handlers.AddHandler<TCommand>(
             new RegisteredHandler<T>(
@@ -209,11 +191,7 @@ public abstract class ApplicationService<T, TState, TId>
             )
         );
 
-    static ValueTask<T> SyncAsTask<TCommand>(
-        T                        aggregate,
-        object                   cmd,
-        ActOnAggregate<TCommand> action
-    ) {
+    static ValueTask<T> SyncAsTask<TCommand>(T aggregate, object cmd, ActOnAggregate<TCommand> action) {
         action(aggregate, (TCommand)cmd);
         return new ValueTask<T>(aggregate);
     }

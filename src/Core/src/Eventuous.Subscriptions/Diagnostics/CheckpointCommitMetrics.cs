@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using Eventuous.Diagnostics;
+using Eventuous.Subscriptions.Checkpoints;
 using static Eventuous.Subscriptions.Checkpoints.CheckpointCommitHandler;
 
 namespace Eventuous.Subscriptions.Diagnostics;
@@ -12,7 +14,7 @@ sealed class CheckpointCommitMetrics : IDisposable {
     public CheckpointCommitMetrics() {
         _commitHandlerSub = DiagnosticListener.AllListeners.Subscribe(
             listener => {
-                if (listener.Name != DiagnosticName) return;
+                if (listener.Name != CheckpointCommitHandler.DiagnosticName) return;
 
                 listener.Subscribe(RecordCheckpointCommit);
             }
@@ -35,7 +37,9 @@ sealed class CheckpointCommitMetrics : IDisposable {
             .Select(
                 x => new Measurement<long>(
                     (long)(x.Value.CommitPosition.Sequence - x.Value.FirstPending!.Value.Sequence),
-                    new KeyValuePair<string, object?>(SubscriptionMetrics.SubscriptionIdTag, x.Value.Id)
+                    EventuousDiagnostics.CombineWithDefaultTags(
+                        new KeyValuePair<string, object?>(SubscriptionMetrics.SubscriptionIdTag, x.Value.Id)
+                    )
                 )
             );
 }

@@ -11,9 +11,8 @@ public class TracedEventStore : IEventStore {
 
     IEventStore Inner { get; }
 
-    static readonly KeyValuePair<string, object?>[] DefaultTags = {
-        new(TelemetryTags.Db.System, "eventstore")
-    };
+    static readonly KeyValuePair<string, object?>[] DefaultTags = EventuousDiagnostics.Tags
+        .Concat(new KeyValuePair<string, object?>[] { new(TelemetryTags.Db.System, "eventstore") }).ToArray();
 
     public Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken)
         => Trace(stream, Constants.StreamExists, Inner.StreamExists(stream, cancellationToken));
@@ -106,12 +105,11 @@ public class TracedEventStore : IEventStore {
         }
     }
 
-    static Activity? StartActivity(
-        StreamName stream,
-        string     operationName
-    ) {
+    static Activity? StartActivity(StreamName stream, string operationName) {
+        var streamName = stream.ToString();
+
         var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            operationName,
+            $"{streamName}.{operationName}",
             ActivityKind.Server,
             parentContext: default,
             DefaultTags,
@@ -119,8 +117,8 @@ public class TracedEventStore : IEventStore {
         );
 
         if (activity is { IsAllDataRequested: true }) {
-            activity.SetTag(TelemetryTags.Db.Operation, activity.OperationName);
-            activity.SetTag(TelemetryTags.Eventuous.Stream, stream);
+            activity.SetTag(TelemetryTags.Db.Operation, operationName);
+            activity.SetTag(TelemetryTags.Eventuous.Stream, streamName);
         }
 
         return activity?.Start();

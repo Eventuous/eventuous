@@ -73,7 +73,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         }
 
         Measurement<T> Measure<T>(T value, string subscriptionId) where T : struct {
-            if (_customTags == null) {
+            if (_customTags.Length == 0) {
                 return new Measurement<T>(value, SubTag(subscriptionId));
             }
 
@@ -110,7 +110,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     }
 
     static SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
-        var cts = new CancellationTokenSource(5000);
+        var cts = new CancellationTokenSource(500);
 
         try {
             var t = gapMeasure(cts.Token);
@@ -134,7 +134,5 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         if (_checkpointMetrics.IsValueCreated) _checkpointMetrics.Value.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags) {
-        _customTags = _customTags.Concat(customTags).ToArray();
-    }
+    public void SetCustomTags(TagList customTags) => _customTags = _customTags.Concat(customTags).ToArray();
 }

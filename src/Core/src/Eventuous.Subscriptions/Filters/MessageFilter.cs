@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Subscriptions.Filters;

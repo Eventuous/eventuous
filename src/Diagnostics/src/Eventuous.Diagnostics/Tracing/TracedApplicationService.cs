@@ -6,22 +6,20 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
     public static IApplicationService<T> Trace(IApplicationService<T> appService)
         => new TracedApplicationService<T>(appService);
 
-    IApplicationService<T> Inner { get; }
+    IApplicationService<T> InnerService { get; }
 
-    TracedApplicationService(IApplicationService<T> appService) => Inner = appService;
+    readonly string _appServiceTypeName;
+
+    TracedApplicationService(IApplicationService<T> appService) {
+        _appServiceTypeName = appService.GetType().Name;
+        InnerService        = appService;
+    }
 
     public async Task<Result> Handle(object command, CancellationToken cancellationToken) {
-        using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-                Constants.HandleCommand,
-                ActivityKind.Internal,
-                parentContext: default,
-                idFormat: ActivityIdFormat.W3C
-            )?
-            .SetTag(Constants.CommandTag, command.GetType().Name)
-            .Start();
+        using var activity = AppServiceActivity.StartActivity(_appServiceTypeName, command);
 
         try {
-            var result = await Inner.Handle(command, cancellationToken).NoContext();
+            var result = await InnerService.Handle(command, cancellationToken).NoContext();
 
             if (result is ErrorResult error)
                 activity?.SetActivityStatus(ActivityStatus.Error(error.Exception));
@@ -42,20 +40,20 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
     public static IApplicationService<T, TState, TId> Trace(IApplicationService<T, TState, TId> appService)
         => new TracedApplicationService<T, TState, TId>(appService);
 
-    IApplicationService<T, TState, TId> Inner { get; }
+    IApplicationService<T, TState, TId> InnerService { get; }
 
-    TracedApplicationService(IApplicationService<T, TState, TId> appService) => Inner = appService;
+    readonly string _appServiceTypeName;
+
+    TracedApplicationService(IApplicationService<T, TState, TId> appService) {
+        _appServiceTypeName = appService.GetType().Name;
+        InnerService        = appService;
+    }
 
     public async Task<Result<TState, TId>> Handle(object command, CancellationToken cancellationToken) {
-        using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            Constants.HandleCommand,
-            ActivityKind.Internal,
-            parentContext: default,
-            idFormat: ActivityIdFormat.W3C
-        )?.Start();
+        using var activity = AppServiceActivity.StartActivity(_appServiceTypeName, command);
 
         try {
-            var result = await Inner.Handle(command, cancellationToken).NoContext();
+            var result = await InnerService.Handle(command, cancellationToken).NoContext();
 
             if (result is ErrorResult<TState, TId> error)
                 activity?.SetActivityStatus(ActivityStatus.Error(error.Exception));
@@ -67,4 +65,17 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
             throw;
         }
     }
+}
+
+static class AppServiceActivity {
+    public static Activity? StartActivity(string serviceName, object command)
+        => EventuousDiagnostics.Enabled
+            ? EventuousDiagnostics.ActivitySource.CreateActivity(
+                $"{serviceName}.{command.GetType().Name}",
+                ActivityKind.Internal,
+                parentContext: default,
+                idFormat: ActivityIdFormat.W3C,
+                tags: EventuousDiagnostics.Tags
+            )?.Start()
+            : null;
 }

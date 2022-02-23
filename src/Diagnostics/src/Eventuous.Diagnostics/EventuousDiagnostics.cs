@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Eventuous.Diagnostics;
 
@@ -20,6 +21,23 @@ public static class EventuousDiagnostics {
     public static void AddDefaultTag(string key, object? value) {
         var tags = new List<KeyValuePair<string, object?>>(Tags) { new(key, value) };
         Tags = tags.ToArray();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static KeyValuePair<string, object?>[] CombineWithDefaultTags(params KeyValuePair<string, object?>[] tags) {
+        if (Tags.Length == 0) return tags;
+
+        var combinedTags = new KeyValuePair<string, object?>[Tags.Length + tags.Length];
+
+        for (var i = 0; i < Tags.Length; i++) {
+            tags[i] = Tags[i];
+        }
+
+        for (var i = Tags.Length; i < tags.Length + Tags.Length; i++) {
+            combinedTags[i] = tags[i];
+        }
+
+        return combinedTags;
     }
 
     public static bool Enabled { get; }
