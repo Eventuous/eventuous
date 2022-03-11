@@ -16,11 +16,8 @@ public record EventStoreProduceOptions {
     /// Maximum number of events appended to a single stream in one batch
     /// </summary>
     public int MaxAppendEventsCount { get; init; } = 500;
-
-    /// <summary>
-    /// Optional function to configure client operation options
-    /// </summary>
-    public Action<EventStoreClientOperationOptions>? ConfigureOperation { get; init; }
     
+    public TimeSpan? Deadline { get; init; }
+
     public static EventStoreProduceOptions Default { get; } = new();
 }

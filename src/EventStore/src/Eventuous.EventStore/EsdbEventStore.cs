@@ -271,12 +271,12 @@ public class EsdbEventStore : IEventStore {
     ) => TryExecute(
         () => AnyOrNot(
             expectedVersion,
-            () => _client.SoftDeleteAsync(
+            () => _client.DeleteAsync(
                 stream,
                 StreamState.Any,
                 cancellationToken: cancellationToken
             ),
-            () => _client.SoftDeleteAsync(
+            () => _client.DeleteAsync(
                 stream,
                 expectedVersion.AsStreamRevision(),
                 cancellationToken: cancellationToken

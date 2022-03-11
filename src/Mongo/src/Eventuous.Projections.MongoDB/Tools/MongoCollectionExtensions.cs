@@ -4,7 +4,7 @@ using static System.String;
 namespace Eventuous.Projections.MongoDB.Tools; 
 
 [PublicAPI]
-public static class MongoCollectionExtensions {
+public static class ongoCollectionExtensions {
     public static IMongoCollection<T> GetDocumentCollection<T>(
         this IMongoDatabase  database,
         MongoCollectionName? collectionName = null
@@ -24,7 +24,7 @@ public static class MongoCollectionExtensions {
         MongoCollectionSettings? settings
     ) where T : Document
         => database.GetCollection<T>(
-            collectionName == null ? MongoCollectionName.For<T>() : collectionName,
+            collectionName ?? MongoCollectionName.For<T>(),
             settings
         );
 

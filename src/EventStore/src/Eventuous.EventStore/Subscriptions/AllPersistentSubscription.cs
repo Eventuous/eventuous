@@ -7,36 +7,31 @@ namespace Eventuous.EventStore.Subscriptions;
 /// <summary>
 /// Persistent subscription for EventStoreDB, for a specific stream
 /// </summary>
-public class StreamPersistentSubscription
-    : PersistentSubscriptionBase<StreamPersistentSubscriptionOptions>, IMeasuredSubscription {
-    public StreamPersistentSubscription(
-        EventStoreClient                    eventStoreClient,
-        StreamPersistentSubscriptionOptions options,
-        ConsumePipe                         consumePipe
-    ) : base(eventStoreClient, options, consumePipe) {
-        Ensure.NotEmptyString(options.StreamName);
-    }
+public class AllPersistentSubscription
+    : PersistentSubscriptionBase<AllPersistentSubscriptionOptions>, IMeasuredSubscription {
+    public AllPersistentSubscription(
+        EventStoreClient                 eventStoreClient,
+        AllPersistentSubscriptionOptions options,
+        ConsumePipe                      consumePipe
+    ) : base(eventStoreClient, options, consumePipe) { }
 
     /// <summary>
     /// Creates EventStoreDB persistent subscription service for a given stream
     /// </summary>
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
-    /// <param name="streamName">Name of the stream to receive events from</param>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
-    public StreamPersistentSubscription(
+    public AllPersistentSubscription(
         EventStoreClient     eventStoreClient,
-        StreamName           streamName,
         string               subscriptionId,
         ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null
     ) : this(
         eventStoreClient,
-        new StreamPersistentSubscriptionOptions {
-            StreamName         = streamName,
+        new AllPersistentSubscriptionOptions {
             SubscriptionId     = subscriptionId,
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
@@ -47,8 +42,7 @@ public class StreamPersistentSubscription
     protected override Task CreatePersistentSubscription(
         PersistentSubscriptionSettings settings,
         CancellationToken              cancellationToken
-    ) => SubscriptionClient.CreateAsync(
-        Options.StreamName,
+    ) => SubscriptionClient.CreateToAllAsync(
         Options.SubscriptionId,
         settings,
         Options.Deadline,
@@ -61,8 +55,7 @@ public class StreamPersistentSubscription
         Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>?     subscriptionDropped,
         CancellationToken                                                          cancellationToken
     )
-        => SubscriptionClient.SubscribeToStreamAsync(
-            Options.StreamName,
+        => SubscriptionClient.SubscribeToAllAsync(
             Options.SubscriptionId,
             eventAppeared,
             subscriptionDropped,
@@ -71,11 +64,9 @@ public class StreamPersistentSubscription
             cancellationToken
         );
 
-
     public GetSubscriptionGap GetMeasure()
-        => new StreamSubscriptionMeasure(
+        => new AllStreamSubscriptionMeasure(
             Options.SubscriptionId,
-            Options.StreamName,
             EventStoreClient,
             () => LastProcessed
         ).GetSubscriptionGap;

@@ -1,0 +1,3 @@
+namespace Eventuous.EventStore.Subscriptions;
+
+public record AllPersistentSubscriptionOptions : PersistentSubscriptionOptions;

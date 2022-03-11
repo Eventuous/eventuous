@@ -63,28 +63,18 @@ public class StreamSubscription
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        var subTask = position == null
-            ? EventStoreClient.SubscribeToStreamAsync(
-                Options.StreamName,
-                HandleEvent,
-                Options.ResolveLinkTos,
-                HandleDrop,
-                Options.ConfigureOperation,
-                Options.Credentials,
-                cancellationToken
-            )
-            : EventStoreClient.SubscribeToStreamAsync(
-                Options.StreamName,
-                StreamPosition.FromInt64((long)position),
-                HandleEvent,
-                Options.ResolveLinkTos,
-                HandleDrop,
-                Options.ConfigureOperation,
-                Options.Credentials,
-                cancellationToken
-            );
+        var fromStream = position == null ? FromStream.Start
+            : FromStream.After(StreamPosition.FromInt64((long)position));
 
-        Subscription = await subTask.NoContext();
+        Subscription = await EventStoreClient.SubscribeToStreamAsync(
+                Options.StreamName,
+                fromStream,
+                HandleEvent,
+                Options.ResolveLinkTos,
+                HandleDrop,
+                Options.Credentials,
+                cancellationToken
+            ).NoContext();
 
         async Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,
