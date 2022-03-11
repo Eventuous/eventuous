@@ -81,11 +81,11 @@ public class StreamSubscription
             ResolvedEvent                                re,
             CancellationToken                            ct
         ) {
-            if (Options.IgnoreSystemEvents && re.Event.EventType[0] == '$') return;
-
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (re.Event is null) return;
+            
+            if (Options.IgnoreSystemEvents && re.Event.EventType.Length > 0 && re.Event.EventType[0] == '$') return;
 
             await HandleInternal(CreateContext(re, ct)).NoContext();
         }

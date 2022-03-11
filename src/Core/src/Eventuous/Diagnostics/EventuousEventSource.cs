@@ -15,26 +15,27 @@ public class EventuousEventSource : EventSource {
 
     const int CommandHandlerNotFoundId          = 1;
     const int ErrorHandlingCommandId            = 2;
-    const int CommandHandlerAlreadyRegisteredId = 3;
-    const int UnableToStoreAggregateId          = 4;
-    const int UnableToReadAggregateId           = 5;
-    const int UnableToAppendEventsId            = 6;
-    const int TypeNotMappedToNameId             = 7;
-    const int TypeNameNotMappedToTypeId         = 8;
-    const int TypeMapRegisteredId               = 9;
+    const int CommandHandledId                  = 3;
+    const int CommandHandlerAlreadyRegisteredId = 4;
+    const int UnableToStoreAggregateId          = 5;
+    const int UnableToReadAggregateId           = 6;
+    const int UnableToAppendEventsId            = 7;
+    const int TypeNotMappedToNameId             = 8;
+    const int TypeNameNotMappedToTypeId         = 9;
+    const int TypeMapRegisteredId               = 10;
 
     [NonEvent]
     public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
 
     [NonEvent]
-    public void CommandHandlerNotFound<T>() => CommandHandlerNotFound(typeof(T).Name);
-
-    [NonEvent]
     public void ErrorHandlingCommand(Type type, Exception e) => ErrorHandlingCommand(type.Name, e.ToString());
 
     [NonEvent]
-    public void ErrorHandlingCommand<T>(Exception e) => ErrorHandlingCommand(typeof(T).Name, e.ToString());
-
+    public void CommandHandled(Type commandType) {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            CommandHandled(commandType.Name);
+    }
+    
     [NonEvent]
     public void CommandHandlerAlreadyRegistered<T>() => CommandHandlerAlreadyRegistered(typeof(T).Name);
 
@@ -64,6 +65,9 @@ public class EventuousEventSource : EventSource {
     public void ErrorHandlingCommand(string commandType, string exception)
         => WriteEvent(ErrorHandlingCommandId, commandType, exception);
 
+    [Event(CommandHandledId, Message = "Command handled: '{0}'", Level = EventLevel.Verbose)]
+    public void CommandHandled(string commandType) => WriteEvent(CommandHandledId, commandType);
+    
     [Event(
         CommandHandlerAlreadyRegisteredId,
         Message = "Command handler already registered for {0}",

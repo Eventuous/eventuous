@@ -89,7 +89,8 @@ public sealed class StreamSubscriptionTests : IDisposable {
 
         await subscription.SubscribeWithLog(log);
 
-        while (handler.Count < produceCount - deleteCount) {
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(200));
+        while (handler.Count < produceCount - deleteCount && !cts.IsCancellationRequested) {
             await Task.Delay(100);
         }
 

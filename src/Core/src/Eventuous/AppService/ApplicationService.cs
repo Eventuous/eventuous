@@ -241,6 +241,9 @@ public abstract class ApplicationService<T, TState, TId>
             var storeResult = await Store.Store(result, cancellationToken).NoContext();
 
             var changes = result.Changes.Select(x => new Change(x, TypeMap.GetTypeName(x)));
+            
+            Log.CommandHandled(commandType);
+            
             return new OkResult<TState, TId>(result.State, changes, storeResult.GlobalPosition);
         }
         catch (Exception e) {

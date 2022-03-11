@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.EventStore.Subscriptions;
@@ -30,9 +31,15 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
             : pipe;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected ValueTask HandleInternal(IMessageConsumeContext context) {
-        var ctx = new DelayedAckConsumeContext(context, Ack, Nack);
-        return Handler(ctx);
+    protected async ValueTask HandleInternal(IMessageConsumeContext context) {
+        try {
+            var ctx = new DelayedAckConsumeContext(context, Ack, Nack);
+            await Handler(ctx).NoContext();
+        }
+        catch (Exception e) {
+            SubscriptionsEventSource.Log.MessageHandlingFailed(Options.SubscriptionId, context, e);
+            if (Options.ThrowOnError) throw;
+        }
     }
 
     ValueTask Ack(IMessageConsumeContext ctx) {

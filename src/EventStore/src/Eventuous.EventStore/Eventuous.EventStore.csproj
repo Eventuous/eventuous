@@ -13,4 +13,7 @@
         <Using Include="Eventuous.Subscriptions" />
         <Using Include="Microsoft.Extensions.Logging" />
     </ItemGroup>
+    <ItemGroup>
+      <None Remove="Eventuous.EventStore.csproj.DotSettings" />
+    </ItemGroup>
 </Project>

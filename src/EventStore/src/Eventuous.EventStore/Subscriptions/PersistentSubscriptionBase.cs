@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 // ReSharper disable SuggestBaseTypeForParameter
@@ -109,6 +110,8 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
     }
 
     async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
+        Log.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
+        
         if (Options.ThrowOnError) throw exception;
 
         var re           = ctx.Items.TryGetItem<ResolvedEvent>(ResolvedEventKey);
