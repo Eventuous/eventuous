@@ -8,7 +8,7 @@ using NodaTime.Serialization.SystemTextJson;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
 
-public sealed class IntegrationFixture : IDisposable {
+public sealed class IntegrationFixture : IAsyncDisposable {
     public IEventStore      EventStore     { get; }
     public IAggregateStore  AggregateStore { get; }
     public EventStoreClient Client         { get; }
@@ -32,8 +32,8 @@ public sealed class IntegrationFixture : IDisposable {
         ActivitySource.AddActivityListener(_listener);
     }
 
-    public void Dispose() {
+    public async ValueTask DisposeAsync() {
         _listener.Dispose();
-        Client.Dispose();
+        await Client.DisposeAsync();
     }
 }

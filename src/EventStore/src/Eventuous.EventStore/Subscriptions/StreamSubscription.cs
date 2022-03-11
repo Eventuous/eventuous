@@ -63,39 +63,29 @@ public class StreamSubscription
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        var subTask = position == null
-            ? EventStoreClient.SubscribeToStreamAsync(
-                Options.StreamName,
-                HandleEvent,
-                Options.ResolveLinkTos,
-                HandleDrop,
-                Options.ConfigureOperation,
-                Options.Credentials,
-                cancellationToken
-            )
-            : EventStoreClient.SubscribeToStreamAsync(
-                Options.StreamName,
-                StreamPosition.FromInt64((long)position),
-                HandleEvent,
-                Options.ResolveLinkTos,
-                HandleDrop,
-                Options.ConfigureOperation,
-                Options.Credentials,
-                cancellationToken
-            );
+        var fromStream = position == null ? FromStream.Start
+            : FromStream.After(StreamPosition.FromInt64((long)position));
 
-        Subscription = await subTask.NoContext();
+        Subscription = await EventStoreClient.SubscribeToStreamAsync(
+                Options.StreamName,
+                fromStream,
+                HandleEvent,
+                Options.ResolveLinkTos,
+                HandleDrop,
+                Options.Credentials,
+                cancellationToken
+            ).NoContext();
 
         async Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,
             ResolvedEvent                                re,
             CancellationToken                            ct
         ) {
-            if (Options.IgnoreSystemEvents && re.Event.EventType[0] == '$') return;
-
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (re.Event is null) return;
+            
+            if (Options.IgnoreSystemEvents && re.Event.EventType.Length > 0 && re.Event.EventType[0] == '$') return;
 
             await HandleInternal(CreateContext(re, ct)).NoContext();
         }

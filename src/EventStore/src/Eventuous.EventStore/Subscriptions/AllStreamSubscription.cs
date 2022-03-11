@@ -61,6 +61,7 @@ public class AllStreamSubscription
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
             Options.CheckpointInterval,
             async (_, p, ct) => {
+                // This doesn't allow to report tie time gap
                 LastProcessed = new EventPosition(p.CommitPosition, DateTime.Now);
                 await StoreCheckpoint(LastProcessed, ct).NoContext();
             }
@@ -68,28 +69,17 @@ public class AllStreamSubscription
 
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        var subTask = position != null
-            ? EventStoreClient.SubscribeToAllAsync(
-                new Position(position.Value, position.Value),
-                HandleEvent,
-                Options.ResolveLinkTos,
-                HandleDrop,
-                filterOptions,
-                Options.ConfigureOperation,
-                Options.Credentials,
-                cancellationToken
-            )
-            : EventStoreClient.SubscribeToAllAsync(
-                HandleEvent,
-                Options.ResolveLinkTos,
-                HandleDrop,
-                filterOptions,
-                Options.ConfigureOperation,
-                Options.Credentials,
-                cancellationToken
-            );
+        var fromAll = position == null ? FromAll.Start : FromAll.After(new Position(position.Value, position.Value));
 
-        Subscription = await subTask.NoContext();
+        Subscription = await EventStoreClient.SubscribeToAllAsync(
+                fromAll,
+                HandleEvent,
+                Options.ResolveLinkTos,
+                HandleDrop,
+                filterOptions,
+                Options.Credentials,
+                cancellationToken
+            ).NoContext();
 
         async Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,

@@ -1,6 +1,5 @@
 using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
-using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.TestHelpers;
@@ -51,7 +50,7 @@ public class RegistrationTests {
 
         handlers.Should().HaveCount(1);
         handlers![0].Should().BeOfType<TracedEventHandler>();
-        var innerHandler = handlers[0].GetPrivateMember<IEventHandler>("_inner");
+        var innerHandler = handlers[0].GetPrivateMember<IEventHandler>("_innerHandler");
         innerHandler.Should().BeOfType(typeof(TestHandler));
     }
 

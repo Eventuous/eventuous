@@ -38,8 +38,7 @@ public abstract class PersistentSubscriptionFixture<T> : IAsyncLifetime where T 
             IntegrationFixture.Instance.Client,
             new StreamPersistentSubscriptionOptions {
                 StreamName       = Stream,
-                SubscriptionId   = subscriptionId,
-                AutoAck          = false
+                SubscriptionId   = subscriptionId
             },
             new ConsumePipe().AddDefaultConsumer(Handler)
         );

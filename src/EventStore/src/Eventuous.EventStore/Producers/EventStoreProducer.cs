@@ -62,7 +62,8 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
                 stream,
                 options.ExpectedState,
                 chunk.Select(CreateMessage),
-                options.ConfigureOperation,
+                null,
+                options.Deadline,
                 options.Credentials,
                 cancellationToken
             ).NoContext();

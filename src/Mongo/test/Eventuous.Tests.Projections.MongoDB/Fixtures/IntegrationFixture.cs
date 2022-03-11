@@ -1,7 +1,5 @@
-using System.Diagnostics;
 using System.Text.Json;
 using EventStore.Client;
-using Eventuous.Diagnostics.Tracing;
 using Eventuous.EventStore;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Driver;
@@ -10,7 +8,7 @@ using NodaTime.Serialization.SystemTextJson;
 
 namespace Eventuous.Tests.Projections.MongoDB.Fixtures;
 
-public sealed class IntegrationFixture : IDisposable {
+public sealed class IntegrationFixture : IAsyncDisposable {
     public IEventStore      EventStore     { get; }
     public IAggregateStore  AggregateStore { get; }
     public EventStoreClient Client         { get; }
@@ -33,11 +31,11 @@ public sealed class IntegrationFixture : IDisposable {
         Mongo          = ConfigureMongo();
     }
 
-    public void Dispose() => Client.Dispose();
-
     static IMongoDatabase ConfigureMongo() {
         NodaTimeSerializers.Register();
         var settings = MongoClientSettings.FromConnectionString("mongodb://mongoadmin:secret@localhost:27017");
         return new MongoClient(settings).GetDatabase("bookings");
     }
+
+    public ValueTask DisposeAsync() => Client.DisposeAsync();
 }

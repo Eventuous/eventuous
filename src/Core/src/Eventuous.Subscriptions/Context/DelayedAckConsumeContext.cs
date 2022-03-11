@@ -23,10 +23,9 @@ public class DelayedAckConsumeContext : WrappedConsumeContext {
     /// <param name="inner">The original message context</param>
     /// <param name="acknowledge">Function to ACK the message</param>
     /// <param name="fail">Function to NACK the message in case of failure</param>
-    public DelayedAckConsumeContext(IMessageConsumeContext inner, Acknowledge acknowledge, Fail fail)
-        : base(inner) {
+    public DelayedAckConsumeContext(IMessageConsumeContext inner, Acknowledge acknowledge, Fail fail) : base(inner) {
         _acknowledge = acknowledge;
-        _fail   = fail;
+        _fail        = fail;
     }
 
     /// <summary>

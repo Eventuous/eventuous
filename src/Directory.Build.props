@@ -45,7 +45,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-        <PackageReference Include="IsExternalInit" Version="1.0.1" PrivateAssets="All"/>
+        <PackageReference Include="IsExternalInit" Version="1.0.2" PrivateAssets="All"/>
     </ItemGroup>
 
     <PropertyGroup Condition="'$(IsTestProject)' == 'true'">

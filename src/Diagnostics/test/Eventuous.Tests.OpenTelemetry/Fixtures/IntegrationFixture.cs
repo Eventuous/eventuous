@@ -6,7 +6,7 @@ using NodaTime.Serialization.SystemTextJson;
 
 namespace Eventuous.Tests.OpenTelemetry.Fixtures;
 
-public class IntegrationFixture : IDisposable {
+public class IntegrationFixture : IAsyncDisposable {
     public IEventStore      EventStore     { get; }
     public IAggregateStore  AggregateStore { get; }
     public EventStoreClient Client         { get; }
@@ -30,8 +30,5 @@ public class IntegrationFixture : IDisposable {
         // ActivitySource.AddActivityListener(_listener);
     }
 
-    public void Dispose() {
-        // _listener.Dispose();
-        Client.Dispose();
-    }
+    public ValueTask DisposeAsync() => Client.DisposeAsync();
 }
