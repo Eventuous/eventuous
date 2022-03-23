@@ -133,6 +133,8 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
     internal Action<TOptions>? ConfigureOptions { get; private set; }
 
+    internal Dictionary<Type, Type> ParametersMap { get; } = new();
+
     /// <summary>
     /// Configure subscription options
     /// </summary>
@@ -147,6 +149,11 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
             options.SubscriptionId = SubscriptionId;
             configureOptions?.Invoke(options);
         }
+    }
+
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>() where TImplementation: TService {
+        ParametersMap.Add(typeof(TService), typeof(TImplementation));
+        return this;
     }
 
     IMessageConsumer GetConsumer(IServiceProvider sp) {
@@ -222,6 +229,11 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
             // ReSharper disable once InvertIf
             if (parameterInfo.ParameterType == typeof(ConsumePipe)) {
                 return Pipe;
+            }
+
+            // ReSharper disable once ConvertIfStatementToReturnStatement
+            if (ParametersMap.TryGetValue(parameterInfo.ParameterType, out var type)) {
+                return sp.GetRequiredService(type);
             }
 
             return sp.GetService(parameterInfo.ParameterType);

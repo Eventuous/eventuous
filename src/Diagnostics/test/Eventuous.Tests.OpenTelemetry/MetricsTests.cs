@@ -28,12 +28,12 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
                     services.AddSingleton(IntegrationFixture.Instance.Client);
                     services.AddEventProducer<EventStoreProducer>();
 
-                    services.AddCheckpointStore<NoOpCheckpointStore>();
-
+                    
                     services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
                         SubscriptionId,
                         builder => builder
                             .Configure(options => options.StreamName = _stream)
+                            .UseCheckpointStore<NoOpCheckpointStore>()
                             .AddEventHandler<TestHandler>()
                     );
 

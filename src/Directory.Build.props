@@ -14,7 +14,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' != 'true'">
-        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
+        <PackageReference Include="MinVer" Version="3.1.0" PrivateAssets="All"/>
         <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
         <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
@@ -38,11 +38,6 @@
         <Using Include="AutoFixture"/>
         <Using Include="Microsoft.Extensions.Logging"/>
     </ItemGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-        <MinVerSkip>true</MinVerSkip>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    </PropertyGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
         <PackageReference Include="IsExternalInit" Version="1.0.2" PrivateAssets="All"/>
