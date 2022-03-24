@@ -6,4 +6,7 @@
       <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj" />
       <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Gateway" />
+    </ItemGroup>
 </Project>

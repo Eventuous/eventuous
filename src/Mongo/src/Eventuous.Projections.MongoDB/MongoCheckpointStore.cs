@@ -55,6 +55,8 @@ public class MongoCheckpointStore : ICheckpointStore {
             cancellationToken
         ).NoContext();
 
+        _counters[checkpoint.Id] = 0;
+
         Log.CheckpointStored(this, checkpoint);
 
         return checkpoint;

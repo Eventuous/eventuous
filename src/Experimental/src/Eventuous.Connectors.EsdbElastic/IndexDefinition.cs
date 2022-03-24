@@ -1,10 +1,11 @@
 ﻿using Elasticsearch.Net;
+using Eventuous.ElasticSearch;
 using Nest;
 using static Elasticsearch.Net.PostData;
 
-namespace Eventuous.ElasticSearch;
+namespace Eventuous.Connectors.EsdbElastic;
 
-public static class DomainEventsIndexDefinition {
+public static class IndexDefinition {
     const string IndexLifecyclePolicyName = "eventlog-policy";
 
     public static async Task SetupDomainEventsIndex(this IElasticClient client) {
@@ -57,7 +58,7 @@ public static class DomainEventsIndexDefinition {
             $"{templateName}_data_stream",
             Serializable(
                 new {
-                    index_patterns = new[] { IndexNames.DomainEventsIndex },
+                    index_patterns = new[] { "event-log" },
                     data_stream    = new { },
                     template = new {
                         settings = new {

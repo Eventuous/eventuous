@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Eventuous.Shovel.Tests;
+namespace Eventuous.Gateway.Tests;
 
 public class RegistrationTests {
     readonly IServiceProvider _provider;
