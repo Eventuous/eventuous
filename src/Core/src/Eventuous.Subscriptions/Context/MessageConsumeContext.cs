@@ -8,6 +8,8 @@ public class MessageConsumeContext : IMessageConsumeContext {
         string            eventType,
         string            contentType,
         string            stream,
+        long streamPosition,
+        ulong globalPosition,
         ulong             sequence,
         DateTime          created,
         object?           message,
@@ -19,6 +21,8 @@ public class MessageConsumeContext : IMessageConsumeContext {
         MessageType       = eventType;
         ContentType       = contentType;
         Stream            = stream;
+        StreamPosition    = streamPosition;
+        GlobalPosition    = globalPosition;
         Created           = created;
         Metadata          = metadata;
         Sequence          = sequence;
@@ -31,6 +35,8 @@ public class MessageConsumeContext : IMessageConsumeContext {
     public string            MessageType       { get; }
     public string            ContentType       { get; }
     public string            Stream            { get; }
+    public long              StreamPosition    { get; }
+    public ulong             GlobalPosition    { get; }
     public DateTime          Created           { get; }
     public Metadata?         Metadata          { get; }
     public object?           Message           { get; }

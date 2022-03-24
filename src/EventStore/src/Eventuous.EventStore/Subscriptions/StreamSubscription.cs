@@ -112,6 +112,8 @@ public class StreamSubscription
                 re.Event.EventType,
                 re.Event.ContentType,
                 re.Event.EventStreamId,
+                re.Event.EventNumber.ToInt64(),
+                re.Event.Position.CommitPosition,
                 re.OriginalEventNumber,
                 re.Event.Created,
                 evt,

@@ -110,6 +110,8 @@ public class AllStreamSubscription
                 re.Event.EventType,
                 re.Event.ContentType,
                 re.OriginalStreamId,
+                re.Event.EventNumber.ToInt64(),
+                re.Event.Position.CommitPosition,
                 _sequence++,
                 re.Event.Created,
                 evt,

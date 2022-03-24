@@ -110,6 +110,8 @@ public class GooglePubSubSubscription
                 contentType,
                 _topicName.TopicId,
                 0,
+                0,
+                0,
                 msg.PublishTime.ToDateTime(),
                 evt,
                 AsMeta(msg.Attributes),
