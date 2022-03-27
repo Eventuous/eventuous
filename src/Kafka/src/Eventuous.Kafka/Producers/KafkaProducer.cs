@@ -9,6 +9,12 @@ namespace Eventuous.Kafka.Producers;
 /// </summary>
 [PublicAPI]
 public class KafkaProducer : BaseProducer<KafkaProducerOptions> {
+    readonly Func<StreamName, MessageRoute> _route;
+
+    public KafkaProducer() {
+        _route = stream => DefaultRouters.RouteByCategory(stream); // TODO: Router should be configurable
+    }
+    
     protected override async Task ProduceMessages(StreamName stream,
         IEnumerable<ProducedMessage>                         messages,
         KafkaProducerOptions?                                options,
@@ -25,14 +31,15 @@ public class KafkaProducer : BaseProducer<KafkaProducerOptions> {
         var config = new ClientConfig(properties); // TODO: How will I populate the properties?
         var producerConfig = new ProducerConfig(); // TODO: How will I populate producer config properties?
         
+        var route = _route(stream);
         using var producer = new ProducerBuilder<string, string>(config).Build();
         foreach (var message in messages) {
             var kafkaMessage = new Message<string, string> {
-                // Key   = "", // TODO: What can I use as a partition key
+                Key   = route.PartitionKey,
                 Value = JsonSerializer.Serialize(message.Message) // TODO: I presume that we serialize the message as json for the Kafka message body.
             };
 
-           var deliveryResult = await producer.ProduceAsync(stream, kafkaMessage, cancellationToken);
+           var deliveryResult = await producer.ProduceAsync(route.Topic, kafkaMessage, cancellationToken);
            // TODO: Use the delivery results
         }
     }
