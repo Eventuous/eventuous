@@ -12,9 +12,9 @@ public class KafkaProducer : BaseProducer<KafkaProduceOptions>, IHostedService {
     readonly Func<StreamName, MessageRoute> route;
     IProducer<string, object>               producer;
 
-    public KafkaProducer(KafkaProducerOptions options) {
+    public KafkaProducer(KafkaProducerOptions options, Func<StreamName, MessageRoute>? router = null) {
         producer = new ProducerBuilder<string, object>(options.Headers).Build();
-        route    = stream => DefaultRouters.RouteByCategory(stream); // TODO: Router should be configurable
+        route    = stream => router is null ? DefaultRouters.RouteByCategory(stream) : router(stream);
     }
 
     protected override async Task ProduceMessages(StreamName stream,
@@ -24,7 +24,7 @@ public class KafkaProducer : BaseProducer<KafkaProduceOptions>, IHostedService {
         var (topic, partitionKey) = route(stream);
         foreach (var message in messages) {
             var kafkaMessage = new Message<string, object> {
-                Key = partitionKey,
+                Key   = partitionKey,
                 Value = message.Message
             };
 
