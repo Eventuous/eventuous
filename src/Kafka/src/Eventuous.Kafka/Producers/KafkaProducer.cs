@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Confluent.Kafka;
 using Eventuous.Producers;
 using Microsoft.Extensions.Hosting;
