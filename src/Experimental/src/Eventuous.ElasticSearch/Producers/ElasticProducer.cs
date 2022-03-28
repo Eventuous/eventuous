@@ -8,6 +8,7 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
 
     public ElasticProducer(IElasticClient elasticClient) {
         _elasticClient = elasticClient;
+        ReadyNow();
     }
 
     protected override async Task ProduceMessages(
@@ -19,7 +20,7 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
         var documents = messages.Select(x => x.Message);
         var mode      = options?.ProduceMode ?? ProduceMode.Create;
 
-        var bulk   = GetOp(new BulkDescriptor()).Index(stream.ToString());
+        var bulk   = GetOp(new BulkDescriptor(stream.ToString()));
         var result = await _elasticClient.BulkAsync(bulk, cancellationToken);
 
         if (!result.IsValid) {

@@ -7,8 +7,7 @@ using Eventuous.Sut.Subs;
 namespace Eventuous.Tests.EventStore.Fixtures;
 
 public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
-    static SubscriptionFixture()
-        => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static SubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     protected readonly Fixture Auto = new();
 
@@ -28,7 +27,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
         LogLevel             logLevel      = LogLevel.Debug
     ) {
         _autoStart = autoStart;
-        if (stream != null) Stream = stream;
+        if (stream is { } s) Stream = s;
 
         var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
         var subscriptionId = $"test-{Guid.NewGuid():N}";

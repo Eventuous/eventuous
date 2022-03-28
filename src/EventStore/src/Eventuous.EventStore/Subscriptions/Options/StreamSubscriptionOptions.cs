@@ -9,5 +9,5 @@ public record StreamSubscriptionOptions : EventStoreSubscriptionOptions {
     /// <summary>
     /// Stream name to subscribe for
     /// </summary>
-    public StreamName StreamName { get; set; } = null!;
+    public StreamName StreamName { get; set; }
 }

@@ -4,7 +4,7 @@ services:
 
   esdb:
     container_name: eventuous-esdb
-    image: eventstore/eventstore:latest #20.10.2-buster-slim
+    image: ghcr.io/eventstore/eventstore:21.10.0-alpha-arm64v8
     ports:
       - '2113:2113'
       - '1113:1113'

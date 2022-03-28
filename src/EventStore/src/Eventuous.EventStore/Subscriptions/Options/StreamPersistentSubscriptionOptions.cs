@@ -5,5 +5,5 @@ public record StreamPersistentSubscriptionOptions : PersistentSubscriptionOption
     /// <summary>
     /// Stream name to subscribe for
     /// </summary>
-    public StreamName StreamName { get; set; } = null!;
+    public StreamName StreamName { get; set; }
 }
