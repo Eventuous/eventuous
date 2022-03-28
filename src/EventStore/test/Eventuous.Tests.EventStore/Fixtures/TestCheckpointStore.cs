@@ -17,7 +17,7 @@ public class TestCheckpointStore : ICheckpointStore {
         return new ValueTask<Checkpoint>(_start);
     }
 
-    public ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, CancellationToken cancellationToken) {
+    public ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
         Last = checkpoint;
         SubscriptionsEventSource.Log.CheckpointStored(this, checkpoint);
         return new ValueTask<Checkpoint>(checkpoint);

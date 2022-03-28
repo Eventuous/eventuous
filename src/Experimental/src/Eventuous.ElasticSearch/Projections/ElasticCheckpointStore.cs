@@ -47,9 +47,9 @@ public class ElasticCheckpointStore : ICheckpointStore {
         return checkpoint;
     }
 
-    public async ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, CancellationToken cancellationToken) {
+    public async ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
         _counters[checkpoint.Id]++;
-        if (_counters[checkpoint.Id] < _batchSize) return checkpoint;
+        if (!force && _counters[checkpoint.Id] < _batchSize) return checkpoint;
         
         var response = await _client.UpdateAsync(
             DocumentPath<Checkpoint>.Id(checkpoint.Id),

@@ -67,7 +67,7 @@ class ElasticSerializer : IElasticsearchSerializer {
 
         foreach (var jsonElement in doc.RootElement.EnumerateObject()) {
             if (jsonElement.NameEquals("message")) {
-                writer.WritePropertyName("message");
+                writer.WritePropertyName("event");
                 writer.WriteRawValue(payload);
             }
             else if (jsonElement.NameEquals("created")) {

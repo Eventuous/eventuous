@@ -27,6 +27,6 @@ class GatewayHandler : BaseEventHandler {
             )
             .NoContext();
 
-        return EventHandlingStatus.Handled;
+        return EventHandlingStatus.Success;
     }
 }

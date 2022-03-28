@@ -26,7 +26,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
     // It's not ideal, but for now if there's any filter added on top of the default one,
     // we won't add the concurrent filter, so it won't clash with any custom setup
     static ConsumePipe ConfigurePipe(ConsumePipe pipe)
-        => pipe.RegisteredFilters.Count() == 1
+        => pipe.RegisteredFilters.All(x => x is not ConcurrentFilter)
             ? pipe.AddFilterFirst(new ConcurrentFilter(1))
             : pipe;
 
@@ -74,6 +74,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
 
         await CheckpointStore.StoreCheckpoint(
             new Checkpoint(SubscriptionId, eventPosition.Position),
+            true,
             cancellationToken
         );
     }

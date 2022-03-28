@@ -25,7 +25,6 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
         var result = await _elasticClient.BulkAsync(bulk, cancellationToken);
 
         if (!result.IsValid) {
-            Console.WriteLine(result.DebugInformation);
             if (result.OriginalException != null)
                 throw result.OriginalException;
 

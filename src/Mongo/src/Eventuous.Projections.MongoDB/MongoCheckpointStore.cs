@@ -43,17 +43,19 @@ public class MongoCheckpointStore : ICheckpointStore {
 
     public async ValueTask<Checkpoint> StoreCheckpoint(
         Checkpoint        checkpoint,
+        bool              force,
         CancellationToken cancellationToken = default
     ) {
         _counters[checkpoint.Id]++;
-        if (_counters[checkpoint.Id] < _batchSize) return checkpoint;
+        if (!force && _counters[checkpoint.Id] < _batchSize) return checkpoint;
 
         await Checkpoints.ReplaceOneAsync(
-            x => x.Id == checkpoint.Id,
-            checkpoint,
-            MongoDefaults.DefaultReplaceOptions,
-            cancellationToken
-        ).NoContext();
+                x => x.Id == checkpoint.Id,
+                checkpoint,
+                MongoDefaults.DefaultReplaceOptions,
+                cancellationToken
+            )
+            .NoContext();
 
         _counters[checkpoint.Id] = 0;
 
