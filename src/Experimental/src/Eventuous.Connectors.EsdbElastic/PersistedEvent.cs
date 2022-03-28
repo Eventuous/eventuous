@@ -3,18 +3,23 @@ using Nest;
 
 namespace Eventuous.Connectors.EsdbElastic;
 
+class ElasticMeta {
+    public static Dictionary<string, string?>? FromMetadata(Metadata? metadata)
+        => metadata?.ToDictionary(x => x.Key, x => x.Value?.ToString());
+}
+
 [ElasticsearchType(IdProperty = nameof(MessageId))]
 [EventType("Event")]
-public record PersistedEvent(
-    string                                          MessageId,
-    [property: Keyword] string                      MessageType,
-    long                                            StreamPosition,
-    string                                          ContentType,
-    string                                          Stream,
-    ulong                                           GlobalPosition,
-    object?                                         Message,
-    [property: Flattened]                 Metadata? Metadata,
-    [property: Date(Name = "@timestamp")] DateTime  Created
+record PersistedEvent(
+    string                                         MessageId,
+    [property: Keyword] string                     MessageType,
+    long                                           StreamPosition,
+    string                                         ContentType,
+    string                                         Stream,
+    ulong                                          GlobalPosition,
+    object?                                        Message,
+    Dictionary<string, string?>?                   Metadata,
+    [property: Date(Name = "@timestamp")] DateTime Created
 ) {
     public static PersistedEvent From(IMessageConsumeContext ctx)
         => new(
@@ -25,7 +30,7 @@ public record PersistedEvent(
             ctx.Stream,
             ctx.GlobalPosition,
             ctx.Message,
-            ctx.Metadata,
+            ElasticMeta.FromMetadata(ctx.Metadata),
             ctx.Created
         );
 }

@@ -1,7 +1,8 @@
+using System.Text;
 using Eventuous.Producers;
 using Nest;
 
-namespace Eventuous.ElasticSearch.Producers; 
+namespace Eventuous.ElasticSearch.Producers;
 
 public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
     readonly IElasticClient _elasticClient;
@@ -24,14 +25,19 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
         var result = await _elasticClient.BulkAsync(bulk, cancellationToken);
 
         if (!result.IsValid) {
-            throw result.OriginalException;
+            Console.WriteLine(result.DebugInformation);
+            if (result.OriginalException != null)
+                throw result.OriginalException;
+
+            throw new InvalidOperationException(result.DebugInformation);
         }
 
-        BulkDescriptor GetOp(BulkDescriptor descriptor) => mode switch {
-            ProduceMode.Create => descriptor.CreateMany(documents),
-            ProduceMode.Index  => descriptor.IndexMany(documents),
-            _                  => throw new ArgumentOutOfRangeException()
-        };
+        BulkDescriptor GetOp(BulkDescriptor descriptor)
+            => mode switch {
+                ProduceMode.Create => descriptor.CreateMany(documents),
+                ProduceMode.Index  => descriptor.IndexMany(documents),
+                _                  => throw new ArgumentOutOfRangeException()
+            };
     }
 }
 
