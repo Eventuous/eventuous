@@ -1,7 +1,7 @@
 namespace Eventuous.EventStore.Subscriptions;
 
 [PublicAPI]
-public record AllStreamSubscriptionOptions : EventStoreSubscriptionOptions {
+public record AllStreamSubscriptionOptions : CatchUpSubscriptionOptions {
     /// <summary>
     /// Server-side event filter
     /// </summary>

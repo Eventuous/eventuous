@@ -6,6 +6,7 @@ using Eventuous.ElasticSearch.Producers;
 using Eventuous.ElasticSearch.Projections;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
+using Eventuous.Subscriptions.Registrations;
 using Nest;
 using Serilog;
 using Serilog.Events;
@@ -31,9 +32,9 @@ builder.ConfigureAppConfiguration(
 
 builder.ConfigureServices(
     (ctx, services) => {
-        var config     = ctx.Configuration.GetSection("elastic").Get<ElasticConfig>();
+        var config = ctx.Configuration.GetSection("elastic").Get<ElasticConfig>();
         services.AddSingleton(config.DataStream);
-        
+
         var serializer = new StringSerializer();
         services.AddSingleton<IEventSerializer>(serializer);
         services.AddEventStoreClient(ctx.Configuration["eventstoredb:connectionString"]);
@@ -41,11 +42,20 @@ builder.ConfigureServices(
         services.AddSingleton(new EventTransform("eventlog"));
         services.AddEventProducer<ElasticProducer>();
 
-        services
-            .AddCheckpointStore<ElasticCheckpointStore>()
-            .AddGateway<AllStreamSubscription, AllStreamSubscriptionOptions,
-                ElasticProducer, ElasticProduceOptions,
-                EventTransform>("esdb-elastic-connector", cfg => cfg.EventSerializer = serializer);
+        var concurrencyLimit = ctx.Configuration.GetValue<uint>("connector:concurrencyLimit", 1);
+        services.AddGateway<AllStreamSubscription, AllStreamSubscriptionOptions,
+            ElasticProducer, ElasticProduceOptions,
+            EventTransform>(
+            "esdb-elastic-connector",
+            cfg => {
+                cfg.EventSerializer  = serializer;
+                cfg.ConcurrencyLimit = concurrencyLimit;
+            },
+            b => {
+                b.UseCheckpointStore<ElasticCheckpointStore>();
+                b.WithPartitioningByStream(concurrencyLimit);
+            }
+        );
     }
 );
 

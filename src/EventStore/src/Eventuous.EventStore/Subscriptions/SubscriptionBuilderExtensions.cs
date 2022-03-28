@@ -9,7 +9,7 @@ public static class SubscriptionBuilderExtensions {
         this SubscriptionBuilder<TSubscription, TOptions> builder
     ) where T : class, ICheckpointStore
         where TSubscription : EventStoreCatchUpSubscriptionBase<TOptions>
-        where TOptions : EventStoreSubscriptionOptions {
+        where TOptions : CatchUpSubscriptionOptions {
         builder.Services.TryAddSingleton<T>();
         return builder.AddParameterMap<ICheckpointStore, T>();
     }
