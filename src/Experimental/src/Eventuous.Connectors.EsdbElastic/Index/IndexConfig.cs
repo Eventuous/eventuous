@@ -1,18 +1,31 @@
 // ReSharper disable UnusedAutoPropertyAccessor.Global
+
 namespace Eventuous.Connectors.EsdbElastic.Index;
 
-public record IndexConfig(DataStreamTemplateConfig TemplateConfig, LifecycleConfig LifecycleConfig);
+public record IndexConfig {
+    public DataStreamTemplateConfig? Template  { get; init; }
+    public LifecycleConfig?          Lifecycle { get; init; }
 
-public record DataStreamTemplateConfig(
-    string TemplateName,
-    string IndexPattern,
-    int    NumberOfShards   = 1,
-    int    NumberOrReplicas = 1
-);
+    public void Deconstruct(out DataStreamTemplateConfig? templateConfig, out LifecycleConfig? lifecycleConfig) {
+        templateConfig  = Template;
+        lifecycleConfig = Lifecycle;
+    }
+}
 
-public record LifecycleConfig(string PolicyName, TierDefinition[] Tiers);
-    
-public record TierDefinition(string Tier) {
+public record DataStreamTemplateConfig {
+    public string? TemplateName     { get; init; }
+    public string? IndexPattern     { get; init; }
+    public int     NumberOfShards   { get; init; }
+    public int     NumberOrReplicas { get; init; }
+}
+
+public record LifecycleConfig {
+    public string?           PolicyName { get; init; }
+    public TierDefinition[]? Tiers      { get; init; }
+}
+
+public record TierDefinition {
+    public string?     Tier       { get; init; }
     public string?     MinAge     { get; init; }
     public Rollover?   Rollover   { get; init; }
     public int?        Priority   { get; init; }
@@ -21,6 +34,18 @@ public record TierDefinition(string Tier) {
     public bool        Delete     { get; init; }
 }
 
-public record Rollover(string? MaxAge, long? MaxDocs, string? MaxSize);
+public record Rollover {
+    public string? MaxAge  { get; init; }
+    public long?   MaxDocs { get; init; }
+    public string? MaxSize { get; init; }
 
-public record ForceMerge(int MaxNumSegments);
+    public void Deconstruct(out string? maxAge, out long? maxDocs, out string? maxSize) {
+        maxAge  = MaxAge;
+        maxDocs = MaxDocs;
+        maxSize = MaxSize;
+    }
+}
+
+public record ForceMerge {
+    public int MaxNumSegments { get; init; }
+}

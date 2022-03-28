@@ -5,15 +5,14 @@ namespace Eventuous.Connectors.EsdbElastic.Index;
 
 public static class SetupIndex {
     public static async Task CreateIfNecessary(IElasticClient client, IndexConfig config) {
-        var (templateConfig, (policyName, tierDefinitions)) = config;
-
-        var response = await client.IndexLifecycleManagement.GetLifecycleAsync(x => x.PolicyId(policyName));
-        if (response.IsValid && response.Policies.ContainsKey(policyName)) return;
+        var (templateConfig, lifecycleConfig) = config;
+        var response    = await client.IndexLifecycleManagement.GetLifecycleAsync(x => x.PolicyId(lifecycleConfig.PolicyName));
+        if (response.IsValid && response.Policies.ContainsKey(lifecycleConfig.PolicyName)) return;
 
         await client.IndexLifecycleManagement.PutLifecycleAsync(
-            policyName,
+            lifecycleConfig.PolicyName,
             p => p.Policy(
-                pd => pd.Phases(phases => tierDefinitions.Aggregate(phases, AddTier))
+                pd => pd.Phases(phases => lifecycleConfig.Tiers?.Aggregate(phases, AddTier))
             )
         );
 
@@ -26,7 +25,7 @@ public static class SetupIndex {
                     template = new {
                         settings = new {
                             index = new {
-                                lifecycle          = new { name = policyName },
+                                lifecycle          = new { name = lifecycleConfig.PolicyName },
                                 number_of_shards   = templateConfig.NumberOfShards,
                                 number_of_replicas = templateConfig.NumberOrReplicas
                             }

@@ -25,12 +25,19 @@ Log.Logger = new LoggerConfiguration()
 var builder = Host.CreateDefaultBuilder(args);
 builder.UseSerilog();
 
+builder.ConfigureAppConfiguration(
+    cfg => cfg.AddYamlFile("config.yaml", false, true).AddEnvironmentVariables()
+);
+
 builder.ConfigureServices(
     (ctx, services) => {
+        var config     = ctx.Configuration.GetSection("elastic").Get<ElasticConfig>();
+        services.AddSingleton(config.DataStream);
+        
         var serializer = new StringSerializer();
         services.AddSingleton<IEventSerializer>(serializer);
-        services.AddEventStoreClient("esdb://localhost:2113?tls=false");
-        services.AddElasticClient(ctx.Configuration["Elastic:ConnectionString"], null);
+        services.AddEventStoreClient(ctx.Configuration["eventstoredb:connectionString"]);
+        services.AddElasticClient(config.ConnectionString!, config.ApiKey);
         services.AddSingleton(new EventTransform("eventlog"));
         services.AddEventProducer<ElasticProducer>();
 
@@ -44,32 +51,33 @@ builder.ConfigureServices(
 
 var host = builder.Build();
 
-var config = new IndexConfig(
-    new DataStreamTemplateConfig("eventlog-template", "eventlog"),
-    new LifecycleConfig(
-        "eventlog-policy",
-        new TierDefinition[] {
-            new("hot") {
-                MinAge   = "1d",
-                Priority = 100,
-                Rollover = new Rollover("1d", null, "100mb")
-            },
-            new("warm") {
-                MinAge     = "1d",
-                Priority   = 50,
-                ForceMerge = new ForceMerge(1)
-            },
-            new("cold") {
-                MinAge   = "1d",
-                Priority = 0,
-                ReadOnly = true
-            }
-        }
-    )
-);
+// var config = new IndexConfig(
+//     new DataStreamTemplateConfig("eventlog-template", "eventlog"),
+//     new LifecycleConfig(
+//         "eventlog-policy",
+//         new TierDefinition[] {
+//             new("hot") {
+//                 MinAge   = "1d",
+//                 Priority = 100,
+//                 Rollover = new Rollover("1d", null, "100mb")
+//             },
+//             new("warm") {
+//                 MinAge     = "1d",
+//                 Priority   = 50,
+//                 ForceMerge = new ForceMerge(1)
+//             },
+//             new("cold") {
+//                 MinAge   = "1d",
+//                 Priority = 0,
+//                 ReadOnly = true
+//             }
+//         }
+//     )
+// );
 
-var client = host.Services.GetRequiredService<IElasticClient>();
-await SetupIndex.CreateIfNecessary(client, config);
+var client      = host.Services.GetRequiredService<IElasticClient>();
+var indexConfig = host.Services.GetRequiredService<IndexConfig>();
+await SetupIndex.CreateIfNecessary(client, indexConfig);
 
 host.AddEventuousLogs();
 await host.RunAsync();

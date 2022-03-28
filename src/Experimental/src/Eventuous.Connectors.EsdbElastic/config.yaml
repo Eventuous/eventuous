@@ -1,0 +1,30 @@
+eventstoredb:
+  connectionString: "esdb://localhost:2113?tls=false"
+elastic:
+  connectionString: "http://localhost:9200"
+  apiKey: ""
+  dataStream:
+    template:
+      templateName: "eventlog-template"
+      indexPattern: "eventlog"
+    lifecycle:
+      policyName: "eventlog-policy"
+      tiers:
+        -
+          tier: "hot"
+          minAge: "1d"
+          priority: 100
+          rollover:
+            maxAge: "1d"
+            maxSize: "100mb"
+        -
+          tier: "warm"
+          minAge: "1d"
+          priority: 50
+          forceMerge:
+            maxNumSegments: 1
+        -
+          tier: "cold"
+          minAge: "1d"
+          priority: 0
+          readOnly: true
