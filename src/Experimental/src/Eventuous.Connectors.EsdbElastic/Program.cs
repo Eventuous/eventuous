@@ -51,30 +51,6 @@ builder.ConfigureServices(
 
 var host = builder.Build();
 
-// var config = new IndexConfig(
-//     new DataStreamTemplateConfig("eventlog-template", "eventlog"),
-//     new LifecycleConfig(
-//         "eventlog-policy",
-//         new TierDefinition[] {
-//             new("hot") {
-//                 MinAge   = "1d",
-//                 Priority = 100,
-//                 Rollover = new Rollover("1d", null, "100mb")
-//             },
-//             new("warm") {
-//                 MinAge     = "1d",
-//                 Priority   = 50,
-//                 ForceMerge = new ForceMerge(1)
-//             },
-//             new("cold") {
-//                 MinAge   = "1d",
-//                 Priority = 0,
-//                 ReadOnly = true
-//             }
-//         }
-//     )
-// );
-
 var client      = host.Services.GetRequiredService<IElasticClient>();
 var indexConfig = host.Services.GetRequiredService<IndexConfig>();
 await SetupIndex.CreateIfNecessary(client, indexConfig);
