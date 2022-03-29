@@ -8,10 +8,7 @@ class GatewayHandler : BaseEventHandler {
     readonly IEventProducer    _eventProducer;
     readonly RouteAndTransform _transform;
 
-    public GatewayHandler(
-        IEventProducer    eventProducer,
-        RouteAndTransform transform
-    ) {
+    public GatewayHandler(IEventProducer eventProducer, RouteAndTransform transform) {
         _eventProducer = eventProducer;
         _transform     = transform;
     }
@@ -19,8 +16,7 @@ class GatewayHandler : BaseEventHandler {
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         var shovelMessage = await _transform(context).NoContext();
 
-        if (shovelMessage?.Message == null)
-            return EventHandlingStatus.Ignored;
+        if (shovelMessage?.Message == null) return EventHandlingStatus.Ignored;
 
         await _eventProducer
             .Produce(
@@ -31,6 +27,6 @@ class GatewayHandler : BaseEventHandler {
             )
             .NoContext();
 
-        return EventHandlingStatus.Handled;
+        return EventHandlingStatus.Success;
     }
 }

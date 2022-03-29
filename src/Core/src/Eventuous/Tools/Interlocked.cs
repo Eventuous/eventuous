@@ -7,11 +7,17 @@ public class InterlockedSemaphore {
         
     public bool CanMove() => CompareExchange(true, false);
 
-    public bool Close() => Set(true);
-        
-    public bool Open() => Set(false);
+    public bool Close() {
+        return Set(true);
+    }
 
-    public bool IsClosed() => _value == 1;
+    public bool Open() {
+        return Set(false);
+    }
+
+    public bool IsClosed() {
+        return _value == 1;
+    }
 
     bool Set(bool newValue) {
         var oldValue = Interlocked.Exchange(ref _value, newValue ? 1 : 0);

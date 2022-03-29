@@ -46,11 +46,13 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         _onSubscribed = onSubscribed;
         _onDropped    = onDropped;
         await Subscribe(cts.Token).NoContext();
+        IsRunning = true;
         Log.SubscriptionStarted(Options.SubscriptionId);
         onSubscribed(Options.SubscriptionId);
     }
 
     public async ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken) {
+        IsRunning = false;
         await Unsubscribe(cancellationToken).NoContext();
         Log.SubscriptionStopped(Options.SubscriptionId);
         onUnsubscribed(Options.SubscriptionId);
@@ -89,16 +91,14 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 context.Ignore(SubscriptionId);
             }
 
-            if (context.WasIgnored() && activity != null)
-                activity.ActivityTraceFlags = ActivityTraceFlags.None;
+            if (context.WasIgnored() && activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.None;
         }
         catch (Exception e) {
             context.Nack(SubscriptionId, e);
         }
 
         if (context.HasFailed()) {
-            if (activity != null)
-                activity.ActivityTraceFlags = ActivityTraceFlags.Recorded;
+            if (activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.Recorded;
 
             var exception = context.HandlingResults.GetException();
 
@@ -160,18 +160,12 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     protected abstract ValueTask Unsubscribe(CancellationToken cancellationToken);
 
-    readonly InterlockedSemaphore _resubscribing = new();
-
     protected virtual async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
-        if (_resubscribing.IsClosed()) return;
-
-        Log.SubscriptionResubscribing(Options.SubscriptionId);
-
         await Task.Delay(delay, cancellationToken).NoContext();
 
-        while (IsRunning && IsDropped) {
+        while (IsRunning && IsDropped && !cancellationToken.IsCancellationRequested) {
             try {
-                _resubscribing.Close();
+                Log.SubscriptionResubscribing(Options.SubscriptionId);
 
                 await Subscribe(cancellationToken).NoContext();
 
@@ -180,18 +174,16 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
                 Log.SubscriptionRestored(Options.SubscriptionId);
             }
+            catch (OperationCanceledException) { }
             catch (Exception e) {
-                Log.ResubscribeFailed(Options.SubscriptionId, e.ToString());
+                Log.ResubscribeFailed(Options.SubscriptionId, e.Message);
                 await Task.Delay(1000, cancellationToken).NoContext();
-            }
-            finally {
-                _resubscribing.Open();
             }
         }
     }
 
     protected void Dropped(DropReason reason, Exception? exception) {
-        if (!IsRunning || _resubscribing.IsClosed()) return;
+        if (!IsRunning) return;
 
         Log.SubscriptionDropped(Options.SubscriptionId, reason, exception);
 
@@ -199,12 +191,20 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         _onDropped?.Invoke(Options.SubscriptionId, reason, exception);
 
         Task.Run(
-            () => {
+            async () => {
                 var delay = reason == DropReason.Stopped
                     ? TimeSpan.FromSeconds(10)
                     : TimeSpan.FromSeconds(2);
 
-                return Resubscribe(delay, Stopping.Token);
+                Log.Warn($"Will resubscribe after {delay}");
+
+                try {
+                    await Resubscribe(delay, Stopping.Token);
+                }
+                catch (Exception e) {
+                    Log.Warn(e.Message);
+                    throw;
+                }
             }
         );
     }

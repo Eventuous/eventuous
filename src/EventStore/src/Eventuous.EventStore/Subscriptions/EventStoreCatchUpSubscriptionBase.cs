@@ -8,7 +8,7 @@ namespace Eventuous.EventStore.Subscriptions;
 
 [PublicAPI]
 public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscriptionBase<T>
-    where T : EventStoreSubscriptionOptions {
+    where T : CatchUpSubscriptionOptions {
     protected ICheckpointStore CheckpointStore { get; }
 
     CheckpointCommitHandler CheckpointCommitHandler { get; }
@@ -18,16 +18,16 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe
-    ) : base(eventStoreClient, options, ConfigurePipe(consumePipe)) {
+    ) : base(eventStoreClient, options, ConfigurePipe(consumePipe, options)) {
         CheckpointStore         = Ensure.NotNull(checkpointStore);
         CheckpointCommitHandler = new CheckpointCommitHandler(options.SubscriptionId, checkpointStore, 10);
     }
 
     // It's not ideal, but for now if there's any filter added on top of the default one,
     // we won't add the concurrent filter, so it won't clash with any custom setup
-    static ConsumePipe ConfigurePipe(ConsumePipe pipe)
+    static ConsumePipe ConfigurePipe(ConsumePipe pipe, CatchUpSubscriptionOptions options)
         => pipe.RegisteredFilters.All(x => x is not ConcurrentFilter)
-            ? pipe.AddFilterFirst(new ConcurrentFilter(1))
+            ? pipe.AddFilterFirst(new ConcurrentFilter(options.ConcurrencyLimit))
             : pipe;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -74,6 +74,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
 
         await CheckpointStore.StoreCheckpoint(
             new Checkpoint(SubscriptionId, eventPosition.Position),
+            true,
             cancellationToken
         );
     }

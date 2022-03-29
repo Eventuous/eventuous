@@ -24,7 +24,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1) {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
-        var channel = Channel.CreateBounded<CommitPosition>(batchSize * 10);
+        var channel = Channel.CreateBounded<CommitPosition>(batchSize * 1000);
         _worker = new ChannelWorker<CommitPosition>(channel, Process, true);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -32,7 +32,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             _positions.Add(position);
             if (_positions.Count < batchSize) return;
 
-            await CommitInternal(cancellationToken).NoContext();
+            await CommitInternal(false, cancellationToken).NoContext();
         }
     }
 
@@ -54,11 +54,11 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    async ValueTask CommitInternal(CancellationToken cancellationToken) {
+    async ValueTask CommitInternal(bool force, CancellationToken cancellationToken) {
         try {
             switch (_lastCommit.Valid) {
                 // There's a gap between the last committed position and the list head
-                case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence:
+                case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force:
                 // The list head is not at the very beginning
                 case false when _positions.Min.Sequence != 0:
                     return;
@@ -68,9 +68,11 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             if (!commitPosition.Valid) return;
 
             await _commitCheckpoint(
-                new Checkpoint(_subscriptionId, commitPosition.Position),
-                cancellationToken
-            ).NoContext();
+                    new Checkpoint(_subscriptionId, commitPosition.Position),
+                    force,
+                    cancellationToken
+                )
+                .NoContext();
 
             _lastCommit = commitPosition;
 
@@ -84,7 +86,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
     public async ValueTask DisposeAsync() {
         Log.Stopping(nameof(CheckpointCommitHandler), "worker", "");
-        await _worker.Stop(CommitInternal);
+        await _worker.Stop(ct => CommitInternal(true, ct)).NoContext();
         _positions.Clear();
     }
 }
@@ -97,5 +99,6 @@ public record struct CommitPosition(ulong Position, ulong Sequence) {
 
 public delegate ValueTask<Checkpoint> CommitCheckpoint(
     Checkpoint        checkpoint,
+    bool              force,
     CancellationToken cancellationToken
 );

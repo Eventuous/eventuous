@@ -13,20 +13,20 @@ public class MeasuredCheckpointStore : ICheckpointStore {
 
     readonly ICheckpointStore _checkpointStore;
 
-    public MeasuredCheckpointStore(ICheckpointStore checkpointStore)
-        => _checkpointStore = checkpointStore;
+    public MeasuredCheckpointStore(ICheckpointStore checkpointStore) => _checkpointStore = checkpointStore;
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(
         string            checkpointId,
         CancellationToken cancellationToken
     ) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-            ReadOperationName,
-            ActivityKind.Internal,
-            parentContext: default,
-            GetTags(checkpointId),
-            idFormat: ActivityIdFormat.W3C
-        )?.Start();
+                ReadOperationName,
+                ActivityKind.Internal,
+                parentContext: default,
+                GetTags(checkpointId),
+                idFormat: ActivityIdFormat.W3C
+            )
+            ?.Start();
 
         var checkpoint = await _checkpointStore.GetLastCheckpoint(checkpointId, cancellationToken).NoContext();
 
@@ -37,6 +37,7 @@ public class MeasuredCheckpointStore : ICheckpointStore {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public async ValueTask<Checkpoint> StoreCheckpoint(
         Checkpoint        checkpoint,
+        bool              force,
         CancellationToken cancellationToken
     ) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
@@ -45,11 +46,12 @@ public class MeasuredCheckpointStore : ICheckpointStore {
                 parentContext: default,
                 GetTags(checkpoint.Id),
                 idFormat: ActivityIdFormat.W3C
-            )?
+            )
+            ?
             .AddBaggage(CheckpointBaggage, checkpoint.Position?.ToString())
             .Start();
 
-        return await _checkpointStore.StoreCheckpoint(checkpoint, cancellationToken).NoContext();
+        return await _checkpointStore.StoreCheckpoint(checkpoint, force, cancellationToken).NoContext();
     }
 
     static KeyValuePair<string, object?>[] GetTags(string checkpointId)

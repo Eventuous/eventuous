@@ -1,7 +1,7 @@
 namespace Eventuous; 
 
 [PublicAPI]
-public record StreamName {
+public record struct StreamName {
     string Value { get; }
 
     public StreamName(string value) {

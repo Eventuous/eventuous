@@ -165,6 +165,8 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             received.BasicProperties.Type,
             received.BasicProperties.ContentType,
             received.Exchange,
+            0,
+            0,
             received.DeliveryTag,
             received.BasicProperties.Timestamp.ToDateTime(),
             evt,

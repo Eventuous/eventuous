@@ -27,6 +27,7 @@ resharper_int_align_assignments = true
 resharper_int_align_fields = true
 resharper_int_align_parameters = true
 resharper_int_align_properties = true
+resharper_max_attribute_length_for_same_line = 80
 resharper_nested_ternary_style = expanded
 resharper_outdent_binary_ops = true
 resharper_place_expr_method_on_single_line = if_owner_is_single_line
