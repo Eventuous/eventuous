@@ -3,13 +3,9 @@
 namespace Eventuous.Connectors.EsdbElastic.Index;
 
 public record IndexConfig {
+    public string                    IndexName { get; init; } = null!;
     public DataStreamTemplateConfig? Template  { get; init; }
     public LifecycleConfig?          Lifecycle { get; init; }
-
-    public void Deconstruct(out DataStreamTemplateConfig? templateConfig, out LifecycleConfig? lifecycleConfig) {
-        templateConfig  = Template;
-        lifecycleConfig = Lifecycle;
-    }
 }
 
 public record DataStreamTemplateConfig {

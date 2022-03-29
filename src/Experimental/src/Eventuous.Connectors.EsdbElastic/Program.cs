@@ -1,4 +1,3 @@
-using Elasticsearch.Net;
 using Eventuous.Connectors.Base;
 using Eventuous.Connectors.EsdbElastic.Conversions;
 using Eventuous.Connectors.EsdbElastic.Index;
@@ -27,9 +26,10 @@ builder.Services
     .AddElasticClient(config.ConnectionString!, config.ApiKey);
 
 var concurrencyLimit = builder.Configuration.GetValue<uint>("connector:concurrencyLimit", 1);
+var subscriptionId = builder.Configuration.GetValue<string>("connector:subscriptionId", "default");
 
 new ConnectorBuilder()
-    .SubscribeWith<AllStreamSubscription, AllStreamSubscriptionOptions>("esdb-elastic-connector")
+    .SubscribeWith<AllStreamSubscription, AllStreamSubscriptionOptions>(subscriptionId)
     .ConfigureSubscriptionOptions(
         cfg => {
             cfg.EventSerializer  = serializer;
@@ -43,7 +43,7 @@ new ConnectorBuilder()
         }
     )
     .ProduceWith<ElasticProducer, ElasticProduceOptions>()
-    .TransformWith(_ => new EventTransform("eventlog"))
+    .TransformWith(_ => new EventTransform(config.DataStream.IndexName))
     .Register(builder.Services);
 
 builder.AddStartupJob<IElasticClient, IndexConfig>(SetupIndex.CreateIfNecessary);

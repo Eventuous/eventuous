@@ -1,8 +1,10 @@
 connector:
   concurrencyLimit: 1
+  subscriptionId: "esdb-elastic-connector"
 eventstoredb:
   connectionString: "esdb://localhost:2113?tls=false"
 elastic:
+  indexName: "eventlog"
   connectionString: "http://localhost:9200"
   apiKey: ""
   dataStream:
