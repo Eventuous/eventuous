@@ -1,22 +1,24 @@
 using Elasticsearch.Net;
+using Eventuous.Connectors.EsdbElastic.Conversions;
 using Nest;
 
 namespace Eventuous.Connectors.EsdbElastic.Index;
 
 public static class SetupIndex {
     public static async Task CreateIfNecessary(IElasticClient client, IndexConfig config) {
-        var (templateConfig, lifecycleConfig) = config;
+        var lifecycleConfig = Ensure.NotNull(config.Lifecycle, nameof(config.Lifecycle));
+        var templateConfig = Ensure.NotNull(config.Template, nameof(config.Template));
         var response    = await client.IndexLifecycleManagement.GetLifecycleAsync(x => x.PolicyId(lifecycleConfig.PolicyName));
         if (response.IsValid && response.Policies.ContainsKey(lifecycleConfig.PolicyName)) return;
 
-        await client.IndexLifecycleManagement.PutLifecycleAsync(
+        var r1 = await client.IndexLifecycleManagement.PutLifecycleAsync(
             lifecycleConfig.PolicyName,
             p => p.Policy(
                 pd => pd.Phases(phases => lifecycleConfig.Tiers?.Aggregate(phases, AddTier))
             )
         );
 
-        await client.LowLevel.Indices.PutTemplateV2ForAllAsync<StringResponse>(
+        var r2 = await client.LowLevel.Indices.PutTemplateV2ForAllAsync<StringResponse>(
             templateConfig.TemplateName,
             PostData.Serializable(
                 new {

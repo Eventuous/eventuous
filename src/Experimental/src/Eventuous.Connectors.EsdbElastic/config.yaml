@@ -1,5 +1,5 @@
 connector:
-  concurrencyLimit: 10
+  concurrencyLimit: 1
 eventstoredb:
   connectionString: "esdb://localhost:2113?tls=false"
 elastic:

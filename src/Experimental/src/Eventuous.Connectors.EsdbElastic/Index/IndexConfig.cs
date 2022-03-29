@@ -15,8 +15,8 @@ public record IndexConfig {
 public record DataStreamTemplateConfig {
     public string? TemplateName     { get; init; }
     public string? IndexPattern     { get; init; }
-    public int     NumberOfShards   { get; init; }
-    public int     NumberOrReplicas { get; init; }
+    public int     NumberOfShards   { get; init; } = 1;
+    public int     NumberOrReplicas { get; init; } = 1;
 }
 
 public record LifecycleConfig {

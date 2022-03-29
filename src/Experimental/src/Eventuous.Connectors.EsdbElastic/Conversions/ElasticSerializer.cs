@@ -1,41 +1,7 @@
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using Elasticsearch.Net;
-using Eventuous.ElasticSearch.Producers;
-using Eventuous.Gateway;
-using Eventuous.Subscriptions.Context;
 
-namespace Eventuous.Connectors.EsdbElastic;
-
-public class EventTransform : IGatewayTransform<ElasticProduceOptions> {
-    readonly string                _indexName;
-    readonly ElasticProduceOptions _options;
-
-    public EventTransform(string indexName) {
-        _indexName = indexName;
-        _options   = new ElasticProduceOptions { ProduceMode = ProduceMode.Create };
-    }
-
-    public ValueTask<GatewayContext<ElasticProduceOptions>?> RouteAndTransform(IMessageConsumeContext context) {
-        var ctx = new GatewayContext<ElasticProduceOptions>(
-            new StreamName(_indexName),
-            PersistedEvent.From(context),
-            null,
-            _options
-        );
-
-        return new ValueTask<GatewayContext<ElasticProduceOptions>?>(ctx);
-    }
-}
-
-class StringSerializer : IEventSerializer {
-    public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType)
-        => new SuccessfullyDeserialized(data.ToArray());
-
-    public SerializationResult SerializeEvent(object evt) => DefaultEventSerializer.Instance.SerializeEvent(evt);
-}
+namespace Eventuous.Connectors.EsdbElastic.Conversions;
 
 class ElasticSerializer : IElasticsearchSerializer {
     readonly        IElasticsearchSerializer _builtIn;
@@ -60,8 +26,8 @@ class ElasticSerializer : IElasticsearchSerializer {
         }
 
         var payload = persistedEvent.Message as byte[];
-        var doc     = JsonSerializer.SerializeToDocument(persistedEvent with { Message = null }, Options);
 
+        using var doc    = JsonSerializer.SerializeToDocument(persistedEvent with { Message = null }, Options);
         using var writer = new Utf8JsonWriter(stream);
         writer.WriteStartObject();
 

@@ -1,6 +1,6 @@
 namespace Eventuous.Gateway;
 
-class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : class {
+public class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : class {
     readonly IEventProducer<T> _inner;
 
     public GatewayProducer(IEventProducer<T> inner) : base(inner) => _inner = inner;
@@ -17,7 +17,7 @@ class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : class {
     }
 }
 
-class GatewayProducer : IEventProducer {
+public class GatewayProducer : IEventProducer {
     readonly IEventProducer _inner;
 
     public GatewayProducer(IEventProducer inner) => _inner = inner;

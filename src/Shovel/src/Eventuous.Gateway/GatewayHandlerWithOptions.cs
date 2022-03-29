@@ -6,7 +6,7 @@ public delegate ValueTask<GatewayContext<TProduceOptions>?> RouteAndTransform<TP
     IMessageConsumeContext message
 );
 
-class GatewayHandler<TProduceOptions> : BaseEventHandler
+public class GatewayHandler<TProduceOptions> : BaseEventHandler
     where TProduceOptions : class {
     readonly IEventProducer<TProduceOptions> _eventProducer;
 
@@ -20,17 +20,21 @@ class GatewayHandler<TProduceOptions> : BaseEventHandler
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         var shovelMessage = await _transform(context).NoContext();
 
-        if (shovelMessage?.Message == null)
-            return EventHandlingStatus.Ignored;
+        if (shovelMessage?.Message == null) return EventHandlingStatus.Ignored;
 
-        await _eventProducer.Produce(
-                shovelMessage.TargetStream,
-                shovelMessage.Message,
-                shovelMessage.GetMeta(context),
-                shovelMessage.ProduceOptions,
-                context.CancellationToken
-            )
-            .NoContext();
+        try {
+            await _eventProducer.Produce(
+                    shovelMessage.TargetStream,
+                    shovelMessage.Message,
+                    shovelMessage.GetMeta(context),
+                    shovelMessage.ProduceOptions,
+                    context.CancellationToken
+                )
+                .NoContext();
+        }
+        catch (OperationCanceledException) {
+            context.Nack<GatewayHandler>(null);
+        }
 
         return EventHandlingStatus.Success;
     }

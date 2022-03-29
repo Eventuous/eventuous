@@ -1,8 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -16,7 +17,8 @@
     <ItemGroup>
         <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
         <ProjectReference Include="$(RepoRoot)\src\Shovel\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
-        <ProjectReference Include="..\..\..\Extensions\src\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
+        <ProjectReference Include="$(RepoRoot)\src\Extensions\src\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
+        <ProjectReference Include="..\Eventuous.Connectors.Base\Eventuous.Connectors.Base.csproj" />
         <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj" />
     </ItemGroup>
 </Project>

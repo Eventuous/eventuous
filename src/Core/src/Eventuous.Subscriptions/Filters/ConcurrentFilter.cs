@@ -31,6 +31,9 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
 
             await ctx.Acknowledge().NoContext();
         }
+        catch (OperationCanceledException) {
+            ctx.Ignore<ConcurrentFilter>();
+        }
         catch (Exception e) {
             Log.MessageHandlingFailed(nameof(ConcurrentFilter), workerTask.Context, e);
             activity?.SetActivityStatus(ActivityStatus.Error(e));

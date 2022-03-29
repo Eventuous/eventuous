@@ -24,7 +24,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1) {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
-        var channel = Channel.CreateBounded<CommitPosition>(batchSize * 10);
+        var channel = Channel.CreateBounded<CommitPosition>(batchSize * 1000);
         _worker = new ChannelWorker<CommitPosition>(channel, Process, true);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -58,7 +58,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         try {
             switch (_lastCommit.Valid) {
                 // There's a gap between the last committed position and the list head
-                case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence:
+                case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force:
                 // The list head is not at the very beginning
                 case false when _positions.Min.Sequence != 0:
                     return;

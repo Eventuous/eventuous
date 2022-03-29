@@ -1,4 +1,5 @@
 ﻿using Elasticsearch.Net;
+using Eventuous.Connectors.EsdbElastic.Conversions;
 using Nest;
 using static System.String;
 
