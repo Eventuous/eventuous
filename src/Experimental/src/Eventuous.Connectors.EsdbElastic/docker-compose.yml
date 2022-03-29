@@ -11,6 +11,7 @@ services:
       - cluster.initial_master_nodes=es01,es02,es03,es04
       - node.roles=master,data_content,data_hot
       - path.repo=/usr/share/elasticsearch/snapshots
+      - xpack.security.enabled=false
       #- bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
@@ -36,6 +37,7 @@ services:
       - cluster.initial_master_nodes=es01,es02,es03,es04
       - node.roles=master,data_warm
       - path.repo=/usr/share/elasticsearch/snapshots
+      - xpack.security.enabled=false
       #- bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
@@ -59,6 +61,7 @@ services:
       - cluster.initial_master_nodes=es01,es02,es03,es04
       - node.roles=master,data_cold
       - path.repo=/usr/share/elasticsearch/snapshots
+      - xpack.security.enabled=false
       #- bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
@@ -83,6 +86,7 @@ services:
       - node.roles=master,data_frozen
       - path.repo=/usr/share/elasticsearch/snapshots
       - xpack.searchable.snapshot.shared_cache.size=10%
+      - xpack.security.enabled=false
       #- bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:

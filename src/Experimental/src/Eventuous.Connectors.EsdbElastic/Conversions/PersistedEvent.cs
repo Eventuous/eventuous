@@ -1,4 +1,4 @@
-using Eventuous.Subscriptions.Context;
+using Eventuous.Connectors.Base;
 using Nest;
 
 namespace Eventuous.Connectors.EsdbElastic.Conversions;
@@ -8,11 +8,11 @@ class ElasticMeta {
         => metadata?.ToDictionary(x => x.Key, x => x.Value?.ToString());
 }
 
-[ElasticsearchType(IdProperty = nameof(MessageId))]
+[ElasticsearchType(IdProperty = "MessageId")]
 [EventType("Event")]
 record PersistedEvent(
     string                                         MessageId,
-    [property: Keyword] string                     MessageType,
+    MessageType                                    MessageType,
     long                                           StreamPosition,
     string                                         ContentType,
     string                                         Stream,
@@ -20,17 +20,4 @@ record PersistedEvent(
     object?                                        Message,
     Dictionary<string, string?>?                   Metadata,
     [property: Date(Name = "@timestamp")] DateTime Created
-) {
-    public static PersistedEvent From(IMessageConsumeContext ctx)
-        => new(
-            ctx.MessageId,
-            ctx.MessageType,
-            ctx.StreamPosition,
-            ctx.ContentType,
-            ctx.Stream,
-            ctx.GlobalPosition,
-            ctx.Message,
-            ElasticMeta.FromMetadata(ctx.Metadata),
-            ctx.Created
-        );
-}
+);

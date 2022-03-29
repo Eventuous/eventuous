@@ -1,5 +1,5 @@
-using System.Text;
 using Eventuous.Producers;
+using Eventuous.Subscriptions.Diagnostics;
 using Nest;
 
 namespace Eventuous.ElasticSearch.Producers;
@@ -25,10 +25,12 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
         var result = await _elasticClient.BulkAsync(bulk, cancellationToken);
 
         if (!result.IsValid) {
-            if (result.OriginalException != null)
-                throw result.OriginalException;
-
-            throw new InvalidOperationException(result.DebugInformation);
+            if (result.DebugInformation.Contains("version conflict")) {
+                SubscriptionsEventSource.Log.Warn("ElasticProducer: version conflict");
+            }
+            else {
+                throw result.OriginalException ?? throw new InvalidOperationException(result.DebugInformation);
+            }
         }
 
         BulkDescriptor GetOp(BulkDescriptor descriptor)

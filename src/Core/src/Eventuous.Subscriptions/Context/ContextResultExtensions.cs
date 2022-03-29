@@ -25,7 +25,8 @@ public static class ContextResultExtensions {
     /// <param name="exception">Optional: handler exception</param>
     public static void Nack(this IBaseConsumeContext context, string handlerType, Exception? exception) {
         context.HandlingResults.Add(EventHandlingResult.Failed(handlerType, exception));
-        Log.MessageHandlingFailed(handlerType, context, exception);
+        if (exception is not TaskCanceledException)
+            Log.MessageHandlingFailed(handlerType, context, exception);
 
         if (Activity.Current != null && Activity.Current.Status != ActivityStatusCode.Error) {
             Activity.Current.SetActivityStatus(

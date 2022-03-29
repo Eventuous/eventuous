@@ -32,8 +32,8 @@ public class GatewayHandler<TProduceOptions> : BaseEventHandler
                 )
                 .NoContext();
         }
-        catch (OperationCanceledException) {
-            context.Nack<GatewayHandler>(null);
+        catch (OperationCanceledException e) {
+            context.Nack<GatewayHandler>(e);
         }
 
         return EventHandlingStatus.Success;

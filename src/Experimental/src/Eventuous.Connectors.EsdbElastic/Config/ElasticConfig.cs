@@ -1,6 +1,6 @@
 using Eventuous.Connectors.EsdbElastic.Index;
 
-namespace Eventuous.Connectors.EsdbElastic.Infrastructure;
+namespace Eventuous.Connectors.EsdbElastic.Config;
 
 public record ElasticConfig {
     public string?     ConnectionString { get; init; }

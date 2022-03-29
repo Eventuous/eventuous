@@ -105,7 +105,12 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             if (Options.ThrowOnError) {
                 activity?.Dispose();
 
-                throw new SubscriptionException(context.Stream, context.MessageType, context.Message, exception);
+                throw new SubscriptionException(
+                    context.Stream,
+                    context.MessageType,
+                    context.Message,
+                    exception ?? new InvalidOperationException()
+                );
             }
         }
 

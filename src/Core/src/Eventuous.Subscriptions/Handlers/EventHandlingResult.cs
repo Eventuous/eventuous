@@ -44,5 +44,5 @@ public class HandlingResults {
 
     public EventHandlingStatus GetIgnoreStatus() => _handlingStatus & EventHandlingStatus.Ignored;
 
-    public Exception GetException() => _results.First(x => x.Exception != null).Exception!;
+    public Exception? GetException() => _results.First(x => x.Exception != null).Exception;
 }

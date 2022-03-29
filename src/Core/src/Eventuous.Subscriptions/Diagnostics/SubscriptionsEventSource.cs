@@ -44,7 +44,7 @@ public class SubscriptionsEventSource : EventSource {
                 context.SubscriptionId,
                 handlerType,
                 context.MessageType,
-                exception?.ToString() ?? "unknown error"
+                exception?.Message ?? "unknown error"
             );
     }
 

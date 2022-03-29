@@ -1,34 +1,31 @@
 connector:
-  concurrencyLimit: 1
   subscriptionId: "esdb-elastic-connector"
-eventstoredb:
+source:
   connectionString: "esdb://localhost:2113?tls=false"
-elastic:
-  indexName: "eventlog"
+  concurrencyLimit: 1
+target:
   connectionString: "http://localhost:9200"
   apiKey: ""
   dataStream:
+    indexName: "eventlog"
     template:
       templateName: "eventlog-template"
       indexPattern: "eventlog"
     lifecycle:
       policyName: "eventlog-policy"
       tiers:
-        -
-          tier: "hot"
+        - tier: "hot"
           minAge: "1d"
           priority: 100
           rollover:
             maxAge: "1d"
             maxSize: "100mb"
-        -
-          tier: "warm"
+        - tier: "warm"
           minAge: "1d"
           priority: 50
           forceMerge:
             maxNumSegments: 1
-        -
-          tier: "cold"
+        - tier: "cold"
           minAge: "1d"
           priority: 0
           readOnly: true

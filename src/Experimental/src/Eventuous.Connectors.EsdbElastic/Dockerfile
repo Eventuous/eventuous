@@ -3,10 +3,9 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["src/Experimental/src/Eventuous.Connectors.EsdbElastic/Eventuous.Connectors.EsdbElastic.csproj", "Eventuous.Connectors.EsdbElastic/"]
+COPY ./src ./src
 RUN dotnet restore "src/Experimental/src/Eventuous.Connectors.EsdbElastic/Eventuous.Connectors.EsdbElastic.csproj"
-COPY . .
-WORKDIR "/src/Eventuous.Connectors.EsdbElastic"
+WORKDIR "src/Experimental/src/Eventuous.Connectors.EsdbElastic"
 RUN dotnet build "Eventuous.Connectors.EsdbElastic.csproj" -c Release -o /app/build
 
 FROM build AS publish

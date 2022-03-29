@@ -27,11 +27,21 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
 
         try {
             await workerTask.Next(ctx).NoContext();
-            if (ctx.HasFailed()) throw ctx.HandlingResults.GetException();
+
+            if (ctx.HasFailed()) {
+                var exception = ctx.HandlingResults.GetException();
+
+                switch (exception) {
+                    case TaskCanceledException:
+                        break;
+                    case null: throw new ApplicationException("Event handler failed");
+                    default: throw exception;
+                }
+            }
 
             await ctx.Acknowledge().NoContext();
         }
-        catch (OperationCanceledException) {
+        catch (TaskCanceledException) {
             ctx.Ignore<ConcurrentFilter>();
         }
         catch (Exception e) {
