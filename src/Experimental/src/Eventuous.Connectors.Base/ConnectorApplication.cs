@@ -33,9 +33,12 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
         }
     }
 
+    [PublicAPI]
     public WebApplicationBuilder                         Builder { get; }
+    [PublicAPI]
     public ConnectorConfig<TSourceConfig, TTargetConfig> Config  { get; }
 
+    [PublicAPI]
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> ConfigureSerilog(
         LogEventLevel?                                      minimumLogLevel   = null,
         Func<LoggerSinkConfiguration, LoggerConfiguration>? sinkConfiguration = null,
@@ -47,6 +50,7 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
         return this;
     }
 
+    [PublicAPI]
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> RegisterDependencies(
         Action<IServiceCollection, ConnectorConfig<TSourceConfig, TTargetConfig>> configure
     ) {
@@ -54,6 +58,7 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
         return this;
     }
 
+    [PublicAPI]
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> RegisterConnector<TSubscription,
         TSubscriptionOptions, TProducer, TProduceOptions>(
         Func<ConnectorBuilder, ConnectorConfig<TSourceConfig, TTargetConfig>,
@@ -138,6 +143,7 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
 }
 
 public class ConnectorApp {
+    [PublicAPI]
     public static ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> Create<TSourceConfig, TTargetConfig>()
         where TSourceConfig : class where TTargetConfig : class
         => new();
@@ -162,10 +168,28 @@ public class ConnectorApp {
 }
 
 public static class ConnectorBuilderExtensions {
+    [PublicAPI]
     public static Task RunConnector<TSourceConfig, TTargetConfig>(
         this ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> builder
     ) where TSourceConfig : class where TTargetConfig : class {
         var application = builder.Build();
         return application.Run();
+    }
+}
+
+public class ExporterMappings<T> {
+    Dictionary<string, Action<T>> _mappings = new();
+
+    public ExporterMappings<T> Add(string name, Action<T> configure) {
+        _mappings.Add(name, configure);
+        return this;
+    }
+    
+    public void RegisterExporters(T provider, string[] exporters) {
+        foreach (var exporter in exporters) {
+            if (_mappings.TryGetValue(exporter, out var addExporter)) {
+                addExporter(provider);
+            }
+        }
     }
 }
