@@ -22,7 +22,7 @@ public class StartupJob<T1, T2> : IStartupJob {
 }
 
 public static class StartupJobRegistration {
-    public static void AddStartupJob<T1, T2>(this WebApplicationBuilder builder, Func<T1, T2, Task> func)
+    public static void AddStartupJob<T1, T2>(this IServiceCollection services, Func<T1, T2, Task> func)
         where T1 : class where T2 : class
-        => builder.Services.AddSingleton(func).AddSingleton<IStartupJob, StartupJob<T1, T2>>();
+        => services.AddSingleton(func).AddSingleton<IStartupJob, StartupJob<T1, T2>>();
 }

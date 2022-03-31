@@ -8,12 +8,14 @@ public record ConnectorConfig<TSource, TTarget> where TSource : class where TTar
 
 public record ConnectorSettings {
     public string            ConnectorId { get; init; } = "default";
+    public string            ServiceName { get; init; } = "eventuous-connector";
     public DiagnosticsConfig Diagnostics { get; init; } = new();
 }
 
 public record DiagnosticsConfig {
-    public bool Enabled    { get; init; } = true;
-    public bool Trace      { get; init; } = true;
-    public bool Metrics    { get; init; } = true;
-    public bool Prometheus { get; init; } = true;
+    public bool   Enabled                 { get; init; } = true;
+    public bool   Trace                   { get; init; } = true;
+    public bool   Metrics                 { get; init; } = true;
+    public bool   Prometheus              { get; init; } = true;
+    public double TraceSamplerProbability { get; init; } = 1;
 }
