@@ -78,9 +78,7 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> AddOpenTelemetry(
         Action<TracerProviderBuilder, Action<Activity, string, object>>? configureTracing    = null,
         Action<MeterProviderBuilder>?                                    configureMetrics    = null,
-        Sampler?                                                         sampler             = null,
-        Action<TracerProviderBuilder>?                                   addTraceExporters   = null,
-        Action<MeterProviderBuilder>?                                    addMetricsExporters = null
+        Sampler?                                                         sampler             = null
     ) {
         _otelAdded = true;
 
@@ -104,8 +102,6 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
                                 Config.Connector.Diagnostics.TraceSamplerProbability
                             )
                         );
-
-                    addTraceExporters?.Invoke(cfg);
                 }
             );
         }
@@ -117,7 +113,6 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
                     configureMetrics?.Invoke(cfg);
                     cfg.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(Config.Connector.ServiceName));
                     if (Config.Connector.Diagnostics.Prometheus) cfg.AddPrometheusExporter();
-                    addMetricsExporters?.Invoke(cfg);
                 }
             );
         }
