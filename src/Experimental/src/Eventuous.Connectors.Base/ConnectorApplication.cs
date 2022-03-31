@@ -115,7 +115,7 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
         return this;
     }
 
-    public ConnectorApplication Build() {
+    public ConnectorApp Build() {
         _builder.ConfigureSerilog(_minimumLogLevel, _sinkConfiguration, _configureLogger);
 
         if (!_otelAdded) {
@@ -128,14 +128,18 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
             app.UseOpenTelemetryPrometheusScrapingEndpoint();
         }
 
-        return new ConnectorApplication(app);
+        return new ConnectorApp(app);
     }
 }
 
-public class ConnectorApplication {
+public class ConnectorApp {
+    public static ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> Create<TSourceConfig, TTargetConfig>()
+        where TSourceConfig : class where TTargetConfig : class
+        => new();
+    
     public WebApplication Host { get; }
 
-    internal ConnectorApplication(WebApplication host) => Host = host;
+    internal ConnectorApp(WebApplication host) => Host = host;
 
     public async Task<int> Run() {
         try {
@@ -152,12 +156,9 @@ public class ConnectorApplication {
     }
 }
 
-public static class ConnectorAppExtensions {
-    public static ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> Create<TSourceConfig, TTargetConfig>()
-        where TSourceConfig : class where TTargetConfig : class
-        => new();
+public static class ConnectorBuilderExtensions {
 
-    public static Task RunConnectorConnectorApplicationBuilder<TSourceConfig, TTargetConfig>(
+    public static Task RunConnector<TSourceConfig, TTargetConfig>(
         this ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> builder
     ) where TSourceConfig : class where TTargetConfig : class {
         var application = builder.Build();
