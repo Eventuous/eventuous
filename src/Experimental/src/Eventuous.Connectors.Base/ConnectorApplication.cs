@@ -78,7 +78,8 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
 
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> AddOpenTelemetry(
         Action<TracerProviderBuilder, Action<Activity, string, object>>? configureTracing = null,
-        Action<MeterProviderBuilder>?  configureMetrics = null
+        Action<MeterProviderBuilder>?                                    configureMetrics = null,
+        Sampler?                                                         sampler          = null
     ) {
         _otelAdded = true;
 
@@ -93,7 +94,7 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
                 cfg => {
                     cfg
                         .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(Config.Connector.ServiceName))
-                        .SetSampler(new TraceIdRatioBasedSampler(Config.Connector.Diagnostics.TraceSamplerProbability))
+                        .SetSampler(sampler ?? new TraceIdRatioBasedSampler(Config.Connector.Diagnostics.TraceSamplerProbability))
                         .AddEventuousTracing();
 
                     configureTracing?.Invoke(cfg, EnrichActivity);

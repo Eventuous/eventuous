@@ -17,5 +17,5 @@ public record DiagnosticsConfig {
     public bool   Trace                   { get; init; } = true;
     public bool   Metrics                 { get; init; } = true;
     public bool   Prometheus              { get; init; } = true;
-    public double TraceSamplerProbability { get; init; } = 1;
+    public double TraceSamplerProbability { get; init; } = 0;
 }
