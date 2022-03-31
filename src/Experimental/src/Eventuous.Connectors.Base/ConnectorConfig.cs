@@ -13,9 +13,18 @@ public record ConnectorSettings {
 }
 
 public record DiagnosticsConfig {
-    public bool   Enabled                 { get; init; } = true;
-    public bool   Trace                   { get; init; } = true;
-    public bool   Metrics                 { get; init; } = true;
-    public bool   Prometheus              { get; init; } = true;
-    public double TraceSamplerProbability { get; init; } = 0;
+    public bool           Enabled                 { get; init; } = true;
+    public TracingConfig? Tracing                 { get; init; }
+    public MetricsConfig? Metrics                 { get; init; }
+    public double         TraceSamplerProbability { get; init; } = 0;
+}
+
+public record MetricsConfig {
+    public bool      Enabled   { get; init; } = true;
+    public string[]? Exporters { get; init; }
+}
+
+public record TracingConfig {
+    public bool      Enabled   { get; init; } = true;
+    public string[]? Exporters { get; init; }
 }

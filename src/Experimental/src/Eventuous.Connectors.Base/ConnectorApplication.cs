@@ -34,9 +34,9 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
     }
 
     [PublicAPI]
-    public WebApplicationBuilder                         Builder { get; }
+    public WebApplicationBuilder Builder { get; }
     [PublicAPI]
-    public ConnectorConfig<TSourceConfig, TTargetConfig> Config  { get; }
+    public ConnectorConfig<TSourceConfig, TTargetConfig> Config { get; }
 
     [PublicAPI]
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> ConfigureSerilog(
@@ -75,15 +75,18 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
 
     const string ConnectorIdTag = "connectorId";
 
-    public void EnrichActivity(Activity activity, string arg1, object arg2)
+    void EnrichActivity(Activity activity, string arg1, object arg2)
         => activity.AddTag(ConnectorIdTag, Config.Connector.ConnectorId);
 
     bool _otelAdded;
 
+    [PublicAPI]
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> AddOpenTelemetry(
-        Action<TracerProviderBuilder, Action<Activity, string, object>>? configureTracing    = null,
-        Action<MeterProviderBuilder>?                                    configureMetrics    = null,
-        Sampler?                                                         sampler             = null
+        Action<TracerProviderBuilder, Action<Activity, string, object>>? configureTracing = null,
+        Action<MeterProviderBuilder>?                                    configureMetrics = null,
+        Sampler?                                                         sampler          = null,
+        ExporterMappings<TracerProviderBuilder>?                         tracingExporters = null,
+        ExporterMappings<MeterProviderBuilder>?                          metricsExporters = null
     ) {
         _otelAdded = true;
 
@@ -93,7 +96,7 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
 
         EventuousDiagnostics.AddDefaultTag(ConnectorIdTag, Config.Connector.ConnectorId);
 
-        if (Config.Connector.Diagnostics.Trace) {
+        if (Config.Connector.Diagnostics.Tracing is { Enabled: true }) {
             Builder.Services.AddOpenTelemetryTracing(
                 cfg => {
                     cfg.AddEventuousTracing();
@@ -107,17 +110,19 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
                                 Config.Connector.Diagnostics.TraceSamplerProbability
                             )
                         );
+
+                    tracingExporters?.RegisterExporters(cfg, Config.Connector.Diagnostics.Tracing.Exporters);
                 }
             );
         }
 
-        if (Config.Connector.Diagnostics.Metrics) {
+        if (Config.Connector.Diagnostics.Metrics is { Enabled: true }) {
             Builder.Services.AddOpenTelemetryMetrics(
                 cfg => {
                     cfg.AddEventuous().AddEventuousSubscriptions();
                     configureMetrics?.Invoke(cfg);
                     cfg.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(Config.Connector.ServiceName));
-                    if (Config.Connector.Diagnostics.Prometheus) cfg.AddPrometheusExporter();
+                    metricsExporters?.RegisterExporters(cfg, Config.Connector.Diagnostics.Metrics.Exporters);
                 }
             );
         }
@@ -133,11 +138,6 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
         }
 
         var app = Builder.Build();
-
-        if (Config.Connector.Diagnostics.Prometheus) {
-            app.UseOpenTelemetryPrometheusScrapingEndpoint();
-        }
-
         return new ConnectorApp(app);
     }
 }
@@ -174,22 +174,5 @@ public static class ConnectorBuilderExtensions {
     ) where TSourceConfig : class where TTargetConfig : class {
         var application = builder.Build();
         return application.Run();
-    }
-}
-
-public class ExporterMappings<T> {
-    Dictionary<string, Action<T>> _mappings = new();
-
-    public ExporterMappings<T> Add(string name, Action<T> configure) {
-        _mappings.Add(name, configure);
-        return this;
-    }
-    
-    public void RegisterExporters(T provider, string[] exporters) {
-        foreach (var exporter in exporters) {
-            if (_mappings.TryGetValue(exporter, out var addExporter)) {
-                addExporter(provider);
-            }
-        }
     }
 }
