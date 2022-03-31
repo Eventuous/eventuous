@@ -17,7 +17,6 @@ namespace Eventuous.Connectors.Base;
 public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
     where TSourceConfig : class
     where TTargetConfig : class {
-
     LogEventLevel?                                      _minimumLogLevel;
     Func<LoggerSinkConfiguration, LoggerConfiguration>? _sinkConfiguration;
     Func<LoggerConfiguration, LoggerConfiguration>?     _configureLogger;
@@ -34,8 +33,8 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
         }
     }
 
-    public   WebApplicationBuilder                         Builder { get; }
-    public   ConnectorConfig<TSourceConfig, TTargetConfig> Config  { get; }
+    public WebApplicationBuilder                         Builder { get; }
+    public ConnectorConfig<TSourceConfig, TTargetConfig> Config  { get; }
 
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> ConfigureSerilog(
         LogEventLevel?                                      minimumLogLevel   = null,
@@ -77,9 +76,11 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
     bool _otelAdded;
 
     public ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> AddOpenTelemetry(
-        Action<TracerProviderBuilder, Action<Activity, string, object>>? configureTracing = null,
-        Action<MeterProviderBuilder>?                                    configureMetrics = null,
-        Sampler?                                                         sampler          = null
+        Action<TracerProviderBuilder, Action<Activity, string, object>>? configureTracing    = null,
+        Action<MeterProviderBuilder>?                                    configureMetrics    = null,
+        Sampler?                                                         sampler             = null,
+        Action<TracerProviderBuilder>?                                   addTraceExporters   = null,
+        Action<MeterProviderBuilder>?                                    addMetricsExporters = null
     ) {
         _otelAdded = true;
 
@@ -92,13 +93,19 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
         if (Config.Connector.Diagnostics.Trace) {
             Builder.Services.AddOpenTelemetryTracing(
                 cfg => {
-                    cfg
-                        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(Config.Connector.ServiceName))
-                        .SetSampler(sampler ?? new TraceIdRatioBasedSampler(Config.Connector.Diagnostics.TraceSamplerProbability))
-                        .AddEventuousTracing();
+                    cfg.AddEventuousTracing();
 
                     configureTracing?.Invoke(cfg, EnrichActivity);
-                    cfg.AddOtlpExporter();
+
+                    cfg
+                        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(Config.Connector.ServiceName))
+                        .SetSampler(
+                            sampler ?? new TraceIdRatioBasedSampler(
+                                Config.Connector.Diagnostics.TraceSamplerProbability
+                            )
+                        );
+
+                    addTraceExporters?.Invoke(cfg);
                 }
             );
         }
@@ -108,7 +115,9 @@ public class ConnectorApplicationBuilder<TSourceConfig, TTargetConfig>
                 cfg => {
                     cfg.AddEventuous().AddEventuousSubscriptions();
                     configureMetrics?.Invoke(cfg);
+                    cfg.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(Config.Connector.ServiceName));
                     if (Config.Connector.Diagnostics.Prometheus) cfg.AddPrometheusExporter();
+                    addMetricsExporters?.Invoke(cfg);
                 }
             );
         }
@@ -137,7 +146,7 @@ public class ConnectorApp {
     public static ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> Create<TSourceConfig, TTargetConfig>()
         where TSourceConfig : class where TTargetConfig : class
         => new();
-    
+
     public WebApplication Host { get; }
 
     internal ConnectorApp(WebApplication host) => Host = host;
@@ -158,7 +167,6 @@ public class ConnectorApp {
 }
 
 public static class ConnectorBuilderExtensions {
-
     public static Task RunConnector<TSourceConfig, TTargetConfig>(
         this ConnectorApplicationBuilder<TSourceConfig, TTargetConfig> builder
     ) where TSourceConfig : class where TTargetConfig : class {
