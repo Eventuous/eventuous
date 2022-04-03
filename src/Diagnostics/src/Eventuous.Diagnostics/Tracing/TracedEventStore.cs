@@ -13,10 +13,11 @@ public class TracedEventStore : IEventStore {
     IEventStore Inner { get; }
 
     static readonly KeyValuePair<string, object?>[] DefaultTags = EventuousDiagnostics.Tags
-        .Concat(new KeyValuePair<string, object?>[] { new(TelemetryTags.Db.System, "eventstore") }).ToArray();
+        .Concat(new KeyValuePair<string, object?>[] { new(TelemetryTags.Db.System, "eventstore") })
+        .ToArray();
 
     public Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken)
-        => Trace(stream, Operations.StreamExists, Inner.StreamExists(stream, cancellationToken));
+        => Trace(stream, Operations.StreamExists, () => Inner.StreamExists(stream, cancellationToken));
 
     public async Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
@@ -27,8 +28,9 @@ public class TracedEventStore : IEventStore {
         using var activity = StartActivity(stream, Operations.AppendEvents);
 
         var tracedEvents = events.Select(
-            x => x with { Metadata = x.Metadata.AddActivityTags(activity) }
-        ).ToArray();
+                x => x with { Metadata = x.Metadata.AddActivityTags(activity) }
+            )
+            .ToArray();
 
         try {
             var result = await Inner.AppendEvents(stream, expectedVersion, tracedEvents, cancellationToken).NoContext();
@@ -47,14 +49,14 @@ public class TracedEventStore : IEventStore {
         int                count,
         CancellationToken  cancellationToken
     )
-        => Trace(stream, Operations.ReadEvents, Inner.ReadEvents(stream, start, count, cancellationToken));
+        => Trace(stream, Operations.ReadEvents, () => Inner.ReadEvents(stream, start, count, cancellationToken));
 
     public Task<StreamEvent[]> ReadEventsBackwards(
         StreamName        stream,
         int               count,
         CancellationToken cancellationToken
     )
-        => Trace(stream, Operations.ReadEvents, Inner.ReadEventsBackwards(stream, count, cancellationToken));
+        => Trace(stream, Operations.ReadEvents, () => Inner.ReadEventsBackwards(stream, count, cancellationToken));
 
     public Task<long> ReadStream(
         StreamName          stream,
@@ -63,7 +65,11 @@ public class TracedEventStore : IEventStore {
         Action<StreamEvent> callback,
         CancellationToken   cancellationToken
     )
-        => Trace(stream, Operations.ReadEvents, Inner.ReadStream(stream, start, count, callback, cancellationToken));
+        => Trace(
+            stream,
+            Operations.ReadEvents,
+            () => Inner.ReadStream(stream, start, count, callback, cancellationToken)
+        );
 
     public Task TruncateStream(
         StreamName             stream,
@@ -74,7 +80,7 @@ public class TracedEventStore : IEventStore {
         => Trace(
             stream,
             Operations.TruncateStream,
-            Inner.TruncateStream(stream, truncatePosition, expectedVersion, cancellationToken)
+            () => Inner.TruncateStream(stream, truncatePosition, expectedVersion, cancellationToken)
         );
 
     public Task DeleteStream(
@@ -82,13 +88,13 @@ public class TracedEventStore : IEventStore {
         ExpectedStreamVersion expectedVersion,
         CancellationToken     cancellationToken
     )
-        => Trace(stream, Operations.DeleteStream, Inner.DeleteStream(stream, expectedVersion, cancellationToken));
+        => Trace(stream, Operations.DeleteStream, () => Inner.DeleteStream(stream, expectedVersion, cancellationToken));
 
-    static async Task Trace(StreamName stream, string operation, Task task) {
+    static async Task Trace(StreamName stream, string operation, Func<Task> task) {
         using var activity = StartActivity(stream, operation);
 
         try {
-            await task.NoContext();
+            await task().NoContext();
             activity?.SetActivityStatus(ActivityStatus.Ok());
         }
         catch (Exception e) {
@@ -97,11 +103,11 @@ public class TracedEventStore : IEventStore {
         }
     }
 
-    static async Task<T> Trace<T>(StreamName stream, string operation, Task<T> task) {
+    static async Task<T> Trace<T>(StreamName stream, string operation, Func<Task<T>> task) {
         using var activity = StartActivity(stream, operation);
 
         try {
-            var result = await task.NoContext();
+            var result = await task().NoContext();
             activity?.SetActivityStatus(ActivityStatus.Ok());
             return result;
         }
