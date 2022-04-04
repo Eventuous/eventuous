@@ -36,12 +36,16 @@ public static class ServiceCollectionExtensions {
     /// Registers the application service in the container
     /// </summary>
     /// <param name="services"></param>
+    /// <param name="throwOnError">Set to true if you want the app service to throw instead of returning the error result</param>
     /// <typeparam name="T">Application service implementation type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddApplicationService<T, TAggregate, TState, TId>(this IServiceCollection services)
+    public static IServiceCollection AddApplicationService<T, TAggregate, TState, TId>(
+        this IServiceCollection services,
+        bool                    throwOnError = false
+    )
         where T : class, IApplicationService<TAggregate, TState, TId>
         where TState : AggregateState<TState, TId>, new()
         where TId : AggregateId
@@ -49,16 +53,21 @@ public static class ServiceCollectionExtensions {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();
 
-        if (EventuousDiagnostics.Enabled) {
-            services.AddSingleton(
-                sp => TracedApplicationService<TAggregate, TState, TId>.Trace(sp.GetRequiredService<T>())
-            );
-        }
-        else {
-            services.AddSingleton<IApplicationService<TAggregate, TState, TId>>(sp => sp.GetRequiredService<T>());
-        }
+        services.AddSingleton(sp => GetThrowingService(GetTracedService(sp)));
 
         return services;
+
+        IApplicationService<TAggregate, TState, TId> GetThrowingService(
+            IApplicationService<TAggregate, TState, TId> inner
+        )
+            => throwOnError
+                ? new ThrowingApplicationService<TAggregate, TState, TId>(inner)
+                : inner;
+
+        IApplicationService<TAggregate, TState, TId> GetTracedService(IServiceProvider serviceProvider)
+            => EventuousDiagnostics.Enabled
+                ? TracedApplicationService<TAggregate, TState, TId>.Trace(serviceProvider.GetRequiredService<T>())
+                : serviceProvider.GetRequiredService<T>();
     }
 
     /// <summary>
@@ -127,7 +136,7 @@ public static class ServiceCollectionExtensions {
     )
         where T : class, IEventStore {
         services.TryAddSingleton<AggregateFactoryRegistry>();
-        
+
         if (EventuousDiagnostics.Enabled) {
             services
                 .AddSingleton(getService)
@@ -136,6 +145,7 @@ public static class ServiceCollectionExtensions {
         else {
             services.AddSingleton<IEventStore>(getService);
         }
+
         services.AddSingleton<AggregateStore>();
         return services;
     }

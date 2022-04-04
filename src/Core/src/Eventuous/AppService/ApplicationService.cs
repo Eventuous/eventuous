@@ -10,8 +10,7 @@ namespace Eventuous;
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 [PublicAPI]
 public abstract class ApplicationService<T, TState, TId>
-    : IApplicationService<T, TState, TId>,
-        IApplicationService<T>
+    : IApplicationService<T, TState, TId>, IApplicationService<T>
     where T : Aggregate<TState, TId>, new()
     where TState : AggregateState<TState, TId>, new()
     where TId : AggregateId {
@@ -241,9 +240,9 @@ public abstract class ApplicationService<T, TState, TId>
             var storeResult = await Store.Store(result, cancellationToken).NoContext();
 
             var changes = result.Changes.Select(x => new Change(x, TypeMap.GetTypeName(x)));
-            
+
             Log.CommandHandled(commandType);
-            
+
             return new OkResult<TState, TId>(result.State, changes, storeResult.GlobalPosition);
         }
         catch (Exception e) {
