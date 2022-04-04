@@ -13,7 +13,9 @@ public sealed class LoggingEventListener : EventListener {
         _log    = loggerFactory.CreateLogger(DiagnosticName.BaseName);
     }
 
-    protected override void OnEventSourceCreated(EventSource eventSource) {
+    protected override void OnEventSourceCreated(EventSource? eventSource) {
+        if (eventSource?.Name == null) return;
+
         if (eventSource.Name.StartsWith(_prefix)) {
             _eventSources.Add(eventSource);
             EnableEvents(eventSource, EventLevel.Verbose, EventKeywords.All);
