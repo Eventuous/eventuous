@@ -31,21 +31,21 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
         _meter.CreateObservableGauge(
             GapCountMetricName,
-            () => ObserveGapValues(getGaps),
+            () => TryObserving(GapCountMetricName, () => ObserveGapValues(getGaps)),
             "events",
             "Gap between the last processed event and the stream tail"
         );
 
         _meter.CreateObservableGauge(
             GapTimeMetricName,
-            ObserveTimeValues,
+            () => TryObserving(GapTimeMetricName, ObserveTimeValues),
             "s",
             "Subscription time lag, seconds"
         );
 
         _meter.CreateObservableGauge(
             CheckpointQueueLength,
-            _checkpointMetrics.Value.Record,
+            () => TryObserving(CheckpointQueueLength, _checkpointMetrics.Value.Record),
             "events",
             "Number of pending checkpoints"
         );
@@ -66,11 +66,11 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
                    .Select(x => Measure(x.TimeGap.TotalSeconds, x.SubscriptionId))
             ?? Array.Empty<Measurement<double>>();
 
-        IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionGap[] gapMeasure) {
-            gaps = gapMeasure.Select(GetGap).Where(x => x != SubscriptionGap.Invalid);
-
-            return gaps.Select(x => Measure((long)x.PositionGap, x.SubscriptionId));
-        }
+        IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionGap[] gapMeasure)
+            => gapMeasure
+                .Select(GetGap)
+                .Where(x => x != SubscriptionGap.Invalid)
+                .Select(x => Measure((long)x.PositionGap, x.SubscriptionId));
 
         Measurement<T> Measure<T>(T value, string subscriptionId) where T : struct {
             if (_customTags.Length == 0) {
@@ -79,6 +79,18 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
             var tags = new List<KeyValuePair<string, object?>>(_customTags) { SubTag(subscriptionId) };
             return new Measurement<T>(value, tags);
+        }
+    }
+
+    static IEnumerable<Measurement<T>> TryObserving<T>(string metric, Func<IEnumerable<Measurement<T>>> observe)
+        where T : struct {
+        try {
+            return observe();
+        }
+        catch (Exception e) {
+            Log.MetricCollectionFailed(metric, e);
+            Activity.Current?.SetStatus(ActivityStatusCode.Error, e.Message);
+            return Array.Empty<Measurement<T>>();
         }
     }
 

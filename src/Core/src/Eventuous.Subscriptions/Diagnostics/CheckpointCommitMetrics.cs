@@ -11,15 +11,14 @@ sealed class CheckpointCommitMetrics : IDisposable {
     readonly IDisposable                               _commitHandlerSub;
     readonly ConcurrentDictionary<string, CommitEvent> _commitEvents = new();
 
-    public CheckpointCommitMetrics() {
-        _commitHandlerSub = DiagnosticListener.AllListeners.Subscribe(
+    public CheckpointCommitMetrics()
+        => _commitHandlerSub = DiagnosticListener.AllListeners.Subscribe(
             listener => {
                 if (listener.Name != CheckpointCommitHandler.DiagnosticName) return;
 
                 listener.Subscribe(RecordCheckpointCommit);
             }
         );
-    }
 
     void RecordCheckpointCommit(KeyValuePair<string, object?> evt) {
         var (key, value) = evt;
