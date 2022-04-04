@@ -53,8 +53,8 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
 
                     return;
                 case Constants.Components.EventStore:
-                    var resourceSeparation = activity.OperationName.IndexOf('/');
                     var operation          = activity.OperationName[(dot + 1)..];
+                    var resourceSeparation = operation.IndexOf('/');
 
                     RecordWithTags(
                         eventStoreMetric,
