@@ -45,15 +45,24 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
                     RecordWithTags(
                         appServiceMetric,
                         activity.Duration.TotalMilliseconds,
-                        new KeyValuePair<string, object?>("command", activity.GetTagItem(TelemetryTags.Eventuous.Command))
+                        new KeyValuePair<string, object?>(
+                            "command",
+                            activity.GetTagItem(TelemetryTags.Eventuous.Command)
+                        )
                     );
 
                     return;
                 case Constants.Components.EventStore:
+                    var resourceSeparation = activity.OperationName.IndexOf('/');
+                    var operation          = activity.OperationName[(dot + 1)..];
+
                     RecordWithTags(
                         eventStoreMetric,
                         activity.Duration.TotalMilliseconds,
-                        new KeyValuePair<string, object?>("operation", activity.OperationName)
+                        new KeyValuePair<string, object?>(
+                            "operation",
+                            resourceSeparation > 0 ? operation[..resourceSeparation] : operation
+                        )
                     );
 
                     break;
