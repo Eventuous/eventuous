@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Diagnostics.Logging;
 
 public sealed class LoggingEventListener : EventListener {
-    readonly string            _prefix;
+    readonly string?           _prefix;
     readonly List<EventSource> _eventSources = new();
     readonly ILogger           _log;
 
@@ -14,7 +14,7 @@ public sealed class LoggingEventListener : EventListener {
     }
 
     protected override void OnEventSourceCreated(EventSource? eventSource) {
-        if (eventSource?.Name == null) return;
+        if (eventSource?.Name == null || _prefix == null) return;
 
         if (eventSource.Name.StartsWith(_prefix)) {
             _eventSources.Add(eventSource);
