@@ -20,6 +20,6 @@ public class AggregateNotFoundException : Exception {
 }
 
 public class AggregateNotFoundException<T> : AggregateNotFoundException where T : Aggregate {
-    public AggregateNotFoundException(string id, Exception inner)
-        : base(typeof(T), id, inner) { }
+    public AggregateNotFoundException(StreamName streamName, Exception inner)
+        : base(typeof(T), streamName, inner) { }
 }

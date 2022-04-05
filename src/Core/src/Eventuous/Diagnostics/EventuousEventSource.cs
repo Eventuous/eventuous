@@ -23,9 +23,13 @@ public class EventuousEventSource : EventSource {
     const int TypeNotMappedToNameId             = 8;
     const int TypeNameNotMappedToTypeId         = 9;
     const int TypeMapRegisteredId               = 10;
+    const int StreamNameResolveNotFoundId       = 11;
 
     [NonEvent]
     public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
+
+    [NonEvent]
+    public void StreamNameResolveNotFound(Type type) => StreamNameResolveNotFound(type.Name);
 
     [NonEvent]
     public void ErrorHandlingCommand(Type type, Exception e) => ErrorHandlingCommand(type.Name, e.ToString());
@@ -50,9 +54,9 @@ public class EventuousEventSource : EventSource {
     }
 
     [NonEvent]
-    public void UnableToLoadAggregate<T>(string id, Exception exception) where T : Aggregate {
+    public void UnableToLoadAggregate<T>(StreamName streamName, Exception exception) where T : Aggregate {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            UnableToLoadAggregate(typeof(T).Name, id, exception.ToString());
+            UnableToLoadAggregate(typeof(T).Name, streamName, exception.ToString());
     }
 
     [NonEvent]
@@ -60,6 +64,9 @@ public class EventuousEventSource : EventSource {
 
     [Event(CommandHandlerNotFoundId, Message = "Handler not found for command: '{0}'", Level = EventLevel.Error)]
     public void CommandHandlerNotFound(string commandType) => WriteEvent(CommandHandlerNotFoundId, commandType);
+
+    [Event(StreamNameResolveNotFoundId, Message = "Cannot get stream name from command: '{0}'", Level = EventLevel.Error)]
+    public void StreamNameResolveNotFound(string commandType) => WriteEvent(StreamNameResolveNotFoundId, commandType);
 
     [Event(ErrorHandlingCommandId, Message = "Error handling command: '{0}' {1}", Level = EventLevel.Error)]
     public void ErrorHandlingCommand(string commandType, string exception)
@@ -89,11 +96,11 @@ public class EventuousEventSource : EventSource {
 
     [Event(
         UnableToReadAggregateId,
-        Message = "Unable to read aggregate {0} with id {1}: {2}",
+        Message = "Unable to read aggregate {0} with from stream {1}: {2}",
         Level = EventLevel.Warning
     )]
-    public void UnableToLoadAggregate(string type, string id, string exception)
-        => WriteEvent(UnableToReadAggregateId, type, id, exception);
+    public void UnableToLoadAggregate(string type, string stream, string exception)
+        => WriteEvent(UnableToReadAggregateId, type, stream, exception);
 
     [Event(TypeNotMappedToNameId, Message = "Type {0} is not registered in the type map", Level = EventLevel.Error)]
     public void TypeNotMappedToName(string type) => WriteEvent(TypeNotMappedToNameId, type);

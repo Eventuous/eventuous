@@ -5,13 +5,13 @@ using Eventuous.Sut.Domain;
 
 namespace Eventuous.Tests;
 
-public class StoringEvents : NaiveFixture {
-    public StoringEvents() {
-        Service = new BookingService(AggregateStore);
+public class StoringEventsWithCustomStream : NaiveFixture {
+    public StoringEventsWithCustomStream() {
+        Service = new BookingServiceWithStream(AggregateStore);
         TypeMap.RegisterKnownEventTypes();
     }
 
-    BookingService Service { get; }
+    BookingServiceWithStream Service { get; }
 
     [Fact]
     public async Task StoreInitial() {
@@ -40,9 +40,9 @@ public class StoringEvents : NaiveFixture {
 
         result.Success.Should().BeTrue();
         result.Changes.Should().BeEquivalentTo(expected);
-
+        
         var evt = await EventStore.ReadEvents(
-            StreamName.For<Booking>(cmd.BookingId),
+            BookingServiceWithStream.GetStreamName(cmd.BookingId),
             StreamReadPosition.Start,
             1,
             CancellationToken.None
