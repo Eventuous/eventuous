@@ -26,18 +26,21 @@ public class AggregateStore : IAggregateStore {
         _eventStore       = Ensure.NotNull(eventStore);
     }
 
-    public async Task<AppendEventsResult> Store<T>(T aggregate, CancellationToken cancellationToken)
+    public async Task<AppendEventsResult> Store<T>(
+        StreamName        streamName,
+        T                 aggregate,
+        CancellationToken cancellationToken
+    )
         where T : Aggregate {
         Ensure.NotNull(aggregate);
 
         if (aggregate.Changes.Count == 0) return AppendEventsResult.NoOp;
 
-        var stream          = StreamName.For<T>(aggregate.GetId());
         var expectedVersion = new ExpectedStreamVersion(aggregate.OriginalVersion);
 
         try {
             var result = await _eventStore.AppendEvents(
-                    stream,
+                    streamName,
                     expectedVersion,
                     aggregate.Changes.Select(ToStreamEvent).ToArray(),
                     cancellationToken
@@ -54,18 +57,15 @@ public class AggregateStore : IAggregateStore {
         }
 
         StreamEvent ToStreamEvent(object evt) {
-            var meta = _getEventMetadata?.Invoke(stream, evt) ?? new Metadata();
+            var meta = _getEventMetadata?.Invoke(streamName, evt) ?? new Metadata();
             return new StreamEvent(evt, meta, "", -1);
         }
     }
 
-    public async Task<T> Load<T>(string id, CancellationToken cancellationToken)
+    public async Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken)
         where T : Aggregate {
-        Ensure.NotEmptyString(id);
-
         const int pageSize = 500;
 
-        var stream    = StreamName.For<T>(id);
         var aggregate = _factoryRegistry.CreateInstance<T>();
 
         try {
@@ -73,7 +73,7 @@ public class AggregateStore : IAggregateStore {
 
             while (true) {
                 var readCount = await _eventStore.ReadStream(
-                        stream,
+                        streamName,
                         position,
                         pageSize,
                         Fold,
@@ -86,13 +86,9 @@ public class AggregateStore : IAggregateStore {
                 position = new StreamReadPosition(position.Value + readCount);
             }
         }
-        catch (StreamNotFound e) {
-            Log.UnableToLoadAggregate<T>(id, e);
-            throw new AggregateNotFoundException<T>(id, e);
-        }
         catch (Exception e) {
-            Log.UnableToLoadAggregate<T>(id, e);
-            throw;
+            Log.UnableToLoadAggregate<T>(streamName, e);
+            throw e is StreamNotFound ? new AggregateNotFoundException<T>(streamName, e) : e;
         }
 
         return aggregate;
@@ -105,8 +101,6 @@ public class AggregateStore : IAggregateStore {
         }
     }
 
-    public Task<bool> Exists<T>(string id, CancellationToken cancellationToken) where T : Aggregate {
-        var stream = StreamName.For<T>(id);
-        return _eventStore.StreamExists(stream, cancellationToken);
-    }
+    public Task<bool> Exists<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
+        => _eventStore.StreamExists(streamName, cancellationToken);
 }

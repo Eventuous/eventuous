@@ -1,29 +1,28 @@
 using static Eventuous.Diagnostics.EventuousEventSource;
 
+// ReSharper disable MemberCanBePrivate.Global
+
 namespace Eventuous;
 
 /// <summary>
 /// Application service base class. A derived class should be scoped to handle commands for one aggregate type only.
 /// </summary>
-/// <typeparam name="T">The aggregate type</typeparam>
+/// <typeparam name="TAggregate">The aggregate type</typeparam>
 /// <typeparam name="TState">The aggregate state type</typeparam>
 /// <typeparam name="TId">The aggregate identity type</typeparam>
-[PublicAPI]
-public abstract class ApplicationService<T, TState, TId>
-    : IApplicationService<T, TState, TId>, IApplicationService<T>
-    where T : Aggregate<TState, TId>, new()
+// [PublicAPI]
+public abstract class ApplicationService<TAggregate, TState, TId>
+    : IApplicationService<TAggregate, TState, TId>, IApplicationService<TAggregate>
+    where TAggregate : Aggregate<TState, TId>, new()
     where TState : AggregateState<TState, TId>, new()
     where TId : AggregateId {
     protected IAggregateStore Store { get; }
 
-    readonly HandlersMap<T>           _handlers = new();
-    readonly IdMap<TId>               _getId    = new();
+    readonly HandlersMap<TAggregate>  _handlers      = new();
+    readonly StreamNameMap            _getStreamName = new();
     readonly AggregateFactoryRegistry _factoryRegistry;
 
-    protected ApplicationService(
-        IAggregateStore           store,
-        AggregateFactoryRegistry? factoryRegistry = null
-    ) {
+    protected ApplicationService(IAggregateStore store, AggregateFactoryRegistry? factoryRegistry = null) {
         _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
         Store            = store;
     }
@@ -31,31 +30,54 @@ public abstract class ApplicationService<T, TState, TId>
     /// <summary>
     /// Register a handler for a command, which is expected to create a new aggregate instance.
     /// </summary>
+    /// <param name="getStream">Function to get the aggregate stream name from the command</param>
     /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnNew<TCommand>(ActOnAggregate<TCommand> action)
-        where TCommand : class
-        => _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
-                ExpectedState.New,
-                (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
-            )
-        );
+    protected void OnNew<TCommand>(
+        GetStreamFromCommand<TCommand>       getStream,
+        ActOnAggregate<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.New, action);
+        _getStreamName.AddCommand(getStream);
+    }
+
+    /// <summary>
+    /// Register a handler for a command, which is expected to create a new aggregate instance.
+    /// </summary>
+    /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    protected void OnNew<TCommand>(ActOnAggregate<TAggregate, TCommand> action) where TCommand : class
+        => _handlers.AddHandler(ExpectedState.New, action);
 
     /// <summary>
     /// Register an asynchronous handler for a command, which is expected to create a new aggregate instance.
     /// </summary>
+    /// <param name="getStream">Function to get the aggregate stream name from the command</param>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnNewAsync<TCommand>(ActOnAggregateAsync<TCommand> action)
-        where TCommand : class
-        => _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
-                ExpectedState.New,
-                (aggregate, cmd, ct) => AsTask(aggregate, cmd, action, ct)
-            )
-        );
+    protected void OnNewAsync<TCommand>(
+        GetStreamFromCommand<TCommand>            getStream,
+        ActOnAggregateAsync<TAggregate, TCommand> action
+    )
+        where TCommand : class {
+        _handlers.AddHandler(ExpectedState.New, action);
+        _getStreamName.AddCommand(getStream);
+    }
+
+    /// <summary>
+    /// Register a handler for a command, which is expected to use an existing aggregate instance.
+    /// </summary>
+    /// <param name="getStream">Function to get the aggregate stream name from the command</param>
+    /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    protected void OnExisting<TCommand>(
+        GetStreamFromCommand<TCommand>       getStream,
+        ActOnAggregate<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Existing, action);
+        _getStreamName.AddCommand(getStream);
+    }
 
     /// <summary>
     /// Register a handler for a command, which is expected to use an existing aggregate instance.
@@ -63,16 +85,27 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="getId">A function to get the aggregate id from the command</param>
     /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnExisting<TCommand>(GetIdFromCommand<TCommand> getId, ActOnAggregate<TCommand> action)
-        where TCommand : class {
-        _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
-                ExpectedState.Existing,
-                (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
-            )
-        );
+    protected void OnExisting<TCommand>(
+        GetIdFromCommand<TId, TCommand>      getId,
+        ActOnAggregate<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Existing, action);
+        _getStreamName.AddCommand(getId);
+    }
 
-        _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
+    /// <summary>
+    /// Register an asynchronous handler for a command, which is expected to use an existing aggregate instance.
+    /// </summary>
+    /// <param name="getStream">Function to get the aggregate stream name from the command</param>
+    /// <param name="action">Asynchronous action to be performed on the aggregate,
+    /// given the aggregate instance and the command</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    protected void OnExistingAsync<TCommand>(
+        GetStreamFromCommand<TCommand>            getStream,
+        ActOnAggregateAsync<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Existing, action);
+        _getStreamName.AddCommand(getStream);
     }
 
     /// <summary>
@@ -82,16 +115,27 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnExistingAsync<TCommand>(GetIdFromCommand<TCommand> getId, ActOnAggregateAsync<TCommand> action)
-        where TCommand : class {
-        _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
-                ExpectedState.Existing,
-                (aggregate, cmd, ct) => AsTask(aggregate, cmd, action, ct)
-            )
-        );
+    protected void OnExistingAsync<TCommand>(
+        GetIdFromCommand<TId, TCommand>           getId,
+        ActOnAggregateAsync<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Existing, action);
+        _getStreamName.AddCommand(getId);
+    }
 
-        _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
+    /// <summary>
+    /// Register a handler for a command, which is expected to use an a new or an existing aggregate instance.
+    /// </summary>
+    /// <param name="getStream">Function to get the aggregate stream name from the command</param>
+    /// <param name="action">Action to be performed on the aggregate,
+    /// given the aggregate instance and the command</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    protected void OnAny<TCommand>(
+        GetStreamFromCommand<TCommand>       getStream,
+        ActOnAggregate<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Any, action);
+        _getStreamName.AddCommand(getStream);
     }
 
     /// <summary>
@@ -101,35 +145,12 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAny<TCommand>(GetIdFromCommand<TCommand> getId, ActOnAggregate<TCommand> action)
-        where TCommand : class {
-        _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
-                ExpectedState.Any,
-                (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
-            )
-        );
-
-        _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
-    }
-
-    /// <summary>
-    /// Register an asynchronous handler for a command, which is expected to use an a new or an existing aggregate instance.
-    /// </summary>
-    /// <param name="getId">A function to get the aggregate id from the command</param>
-    /// <param name="action">Asynchronous action to be performed on the aggregate,
-    /// given the aggregate instance and the command</param>
-    /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAnyAsync<TCommand>(GetIdFromCommand<TCommand> getId, ActOnAggregateAsync<TCommand> action)
-        where TCommand : class {
-        _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
-                ExpectedState.Any,
-                (aggregate, cmd, ct) => AsTask(aggregate, cmd, action, ct)
-            )
-        );
-
-        _getId.TryAdd(typeof(TCommand), (cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
+    protected void OnAny<TCommand>(
+        GetIdFromCommand<TId, TCommand>      getId,
+        ActOnAggregate<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Any, action);
+        _getStreamName.AddCommand(getId);
     }
 
     /// <summary>
@@ -139,19 +160,42 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAny<TCommand>(GetIdFromCommandAsync<TCommand> getId, ActOnAggregate<TCommand> action)
-        where TCommand : class {
-        _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
-                ExpectedState.Any,
-                (aggregate, cmd, _) => SyncAsTask(aggregate, cmd, action)
-            )
-        );
+    protected void OnAny<TCommand>(
+        GetIdFromCommandAsync<TId, TCommand> getId,
+        ActOnAggregate<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Any, action);
+        _getStreamName.AddCommand(getId);
+    }
 
-        _getId.TryAdd(
-            typeof(TCommand),
-            async (cmd, ct) => await getId((TCommand)cmd, ct).NoContext()
-        );
+    /// <summary>
+    /// Register an asynchronous handler for a command, which is expected to use an a new or an existing aggregate instance.
+    /// </summary>
+    /// <param name="getStream">Function to get the aggregate stream name from the command</param>
+    /// <param name="action">Asynchronous action to be performed on the aggregate,
+    /// given the aggregate instance and the command</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    protected void OnAnyAsync<TCommand>(
+        GetStreamFromCommand<TCommand>            getStream,
+        ActOnAggregateAsync<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Any, action);
+        _getStreamName.AddCommand(getStream);
+    }
+
+    /// <summary>
+    /// Register an asynchronous handler for a command, which is expected to use an a new or an existing aggregate instance.
+    /// </summary>
+    /// <param name="getId">A function to get the aggregate id from the command</param>
+    /// <param name="action">Asynchronous action to be performed on the aggregate,
+    /// given the aggregate instance and the command</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    protected void OnAnyAsync<TCommand>(
+        GetIdFromCommand<TId, TCommand>           getId,
+        ActOnAggregateAsync<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Any, action);
+        _getStreamName.AddCommand(getId);
     }
 
     /// <summary>
@@ -161,19 +205,12 @@ public abstract class ApplicationService<T, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAnyAsync<TCommand>(GetIdFromCommandAsync<TCommand> getId, ActOnAggregateAsync<TCommand> action)
-        where TCommand : class {
-        _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
-                ExpectedState.Any,
-                (aggregate, cmd, ct) => AsTask(aggregate, cmd, action, ct)
-            )
-        );
-
-        _getId.TryAdd(
-            typeof(TCommand),
-            async (cmd, ct) => await getId((TCommand)cmd, ct).NoContext()
-        );
+    protected void OnAnyAsync<TCommand>(
+        GetIdFromCommandAsync<TId, TCommand>      getId,
+        ActOnAggregateAsync<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Any, action);
+        _getStreamName.AddCommand(getId);
     }
 
     /// <summary>
@@ -184,26 +221,11 @@ public abstract class ApplicationService<T, TState, TId>
     protected void OnAsync<TCommand>(ArbitraryActAsync<TCommand> action)
         where TCommand : class
         => _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<T>(
+            new RegisteredHandler<TAggregate>(
                 ExpectedState.Unknown,
                 async (_, cmd, ct) => await action((TCommand)cmd, ct).NoContext()
             )
         );
-
-    static ValueTask<T> SyncAsTask<TCommand>(T aggregate, object cmd, ActOnAggregate<TCommand> action) {
-        action(aggregate, (TCommand)cmd);
-        return new ValueTask<T>(aggregate);
-    }
-
-    static async ValueTask<T> AsTask<TCommand>(
-        T                             aggregate,
-        object                        cmd,
-        ActOnAggregateAsync<TCommand> action,
-        CancellationToken             cancellationToken
-    ) {
-        await action(aggregate, (TCommand)cmd, cancellationToken).NoContext();
-        return aggregate;
-    }
 
     /// <summary>
     /// The command handler. Call this function from your edge (API).
@@ -221,6 +243,17 @@ public abstract class ApplicationService<T, TState, TId>
             return new ErrorResult<TState, TId>(exception);
         }
 
+        var hasGetStreamName        = _getStreamName.TryGetValue(commandType, out var getStreamName);
+        var shouldResolveStreamName = registeredHandler.ExpectedState is ExpectedState.Existing or ExpectedState.Any;
+
+        if ((!hasGetStreamName || getStreamName == null) && shouldResolveStreamName) {
+            Log.StreamNameResolveNotFound(commandType);
+            var exception = new Exceptions.CommandHandlerNotFound(commandType);
+            return new ErrorResult<TState, TId>(exception);
+        }
+
+        var streamName = hasGetStreamName ? await GetStreamName() : default;
+
         try {
             var aggregate = registeredHandler.ExpectedState switch {
                 ExpectedState.Any      => await TryLoad().NoContext(),
@@ -237,7 +270,12 @@ public abstract class ApplicationService<T, TState, TId>
                 .Handler(aggregate!, command, cancellationToken)
                 .NoContext();
 
-            var storeResult = await Store.Store(result, cancellationToken).NoContext();
+            var storeResult = await Store.Store(
+                    hasGetStreamName ? streamName : StreamName.For<TAggregate>(result.GetId()),
+                    result,
+                    cancellationToken
+                )
+                .NoContext();
 
             var changes = result.Changes.Select(x => new Change(x, TypeMap.GetTypeName(x)));
 
@@ -251,18 +289,19 @@ public abstract class ApplicationService<T, TState, TId>
             return new ErrorResult<TState, TId>($"Error handling command {commandType.Name}", e);
         }
 
-        async Task<T> Load() {
-            var id = await _getId[commandType](command, cancellationToken).NoContext();
-            return await Store.Load<T, TState, TId>(id, cancellationToken).NoContext();
+        async ValueTask<StreamName> GetStreamName() {
+            var task = getStreamName!(command, cancellationToken);
+            return task.IsCompleted ? task.Result : await task.NoContext();
         }
 
-        async Task<T> TryLoad() {
-            var id     = await _getId[commandType](command, cancellationToken).NoContext();
-            var exists = await Store.Exists<T>(id, cancellationToken).NoContext();
+        Task<TAggregate> Load() => Store.Load<TAggregate, TState, TId>(streamName, cancellationToken);
+
+        async Task<TAggregate> TryLoad() {
+            var exists = await Store.Exists<TAggregate>(streamName, cancellationToken).NoContext();
             return exists ? await Load().NoContext() : Create();
         }
 
-        T Create() => _factoryRegistry.CreateInstance<T, TState, TId>();
+        TAggregate Create() => _factoryRegistry.CreateInstance<TAggregate, TState, TId>();
     }
 
     async Task<Result> IApplicationService.Handle(object command, CancellationToken cancellationToken) {
@@ -275,19 +314,7 @@ public abstract class ApplicationService<T, TState, TId>
         };
     }
 
-    public delegate Task ActOnAggregateAsync<in TCommand>(
-        T                 aggregate,
-        TCommand          command,
-        CancellationToken cancellationToken
-    );
-
-    public delegate void ActOnAggregate<in TCommand>(T aggregate, TCommand command);
-
-    public delegate Task<T> ArbitraryActAsync<in TCommand>(TCommand command, CancellationToken cancellationToken);
-
-    public delegate TId GetIdFromCommand<in TCommand>(TCommand command);
-
-    public delegate Task<TId> GetIdFromCommandAsync<in TCommand>(
+    public delegate Task<TAggregate> ArbitraryActAsync<in TCommand>(
         TCommand          command,
         CancellationToken cancellationToken
     );

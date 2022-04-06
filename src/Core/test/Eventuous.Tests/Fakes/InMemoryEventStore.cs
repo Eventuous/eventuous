@@ -14,7 +14,8 @@ public class InMemoryEventStore : IEventStore {
         CancellationToken                cancellationToken
     ) {
         if (!_storage.TryGetValue(stream, out var existing)) {
-            existing = new InMemoryStream(stream);
+            existing         = new InMemoryStream(stream);
+            _storage[stream] = existing;
         }
 
         existing.AppendEvents(expectedVersion, events);
