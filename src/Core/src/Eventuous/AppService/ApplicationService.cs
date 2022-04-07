@@ -196,6 +196,9 @@ public abstract class ApplicationService<TAggregate, TState, TId>
                 .Handler(aggregate!, command, cancellationToken)
                 .NoContext();
 
+            // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
+            if (result.Changes.Count == 0) return new OkResult<TState, TId>(result.State, Array.Empty<Change>(), 0);
+            
             var storeResult = await Store.Store(
                     streamName != default ? streamName : GetAggregateStreamName(result),
                     result,

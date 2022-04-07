@@ -1,10 +1,9 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 [PublicAPI]
 public abstract record AggregateId {
     protected AggregateId(string value) {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new Exceptions.InvalidIdException(this);
+        if (string.IsNullOrWhiteSpace(value)) throw new Exceptions.InvalidIdException(this);
 
         Value = value;
     }
@@ -13,7 +12,8 @@ public abstract record AggregateId {
 
     public sealed override string ToString() => Value;
 
-    public static implicit operator string(AggregateId id) => id.ToString();
+    public static implicit operator string(AggregateId? id)
+        => id?.ToString() ?? throw new Exceptions.InvalidIdException(typeof(AggregateId));
 
     public void Deconstruct(out string value) => value = Value;
 }

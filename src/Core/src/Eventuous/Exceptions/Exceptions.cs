@@ -2,9 +2,13 @@ namespace Eventuous;
 
 public static class Exceptions {
     public class InvalidIdException : Exception {
-        public InvalidIdException(AggregateId id) : base(
-            $"Aggregate id {id.GetType().Name} cannot have an empty value"
-        ) { }
+        public InvalidIdException(AggregateId id) : this(id.GetType()) { }
+
+        public InvalidIdException(Type idType) : base($"Aggregate id {idType.Name} cannot have an empty value") { }
+    }
+
+    public class InvalidIdException<T> : InvalidIdException where T : AggregateId {
+        public InvalidIdException() : base(typeof(T)) { }
     }
 
     public class CommandHandlerNotFound : Exception {
