@@ -23,23 +23,22 @@ public class EventuousEventSource : EventSource {
     const int TypeNotMappedToNameId             = 8;
     const int TypeNameNotMappedToTypeId         = 9;
     const int TypeMapRegisteredId               = 10;
-    const int StreamNameResolveNotFoundId       = 11;
+    const int CannotGetAggregateIdFromCommandId = 11;
 
     [NonEvent]
     public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
 
     [NonEvent]
-    public void StreamNameResolveNotFound(Type type) => StreamNameResolveNotFound(type.Name);
+    public void CannotCalculateAggregateId(Type type) => CannotCalculateAggregateId(type.Name);
 
     [NonEvent]
     public void ErrorHandlingCommand(Type type, Exception e) => ErrorHandlingCommand(type.Name, e.ToString());
 
     [NonEvent]
     public void CommandHandled(Type commandType) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            CommandHandled(commandType.Name);
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) CommandHandled(commandType.Name);
     }
-    
+
     [NonEvent]
     public void CommandHandlerAlreadyRegistered<T>() => CommandHandlerAlreadyRegistered(typeof(T).Name);
 
@@ -65,8 +64,13 @@ public class EventuousEventSource : EventSource {
     [Event(CommandHandlerNotFoundId, Message = "Handler not found for command: '{0}'", Level = EventLevel.Error)]
     public void CommandHandlerNotFound(string commandType) => WriteEvent(CommandHandlerNotFoundId, commandType);
 
-    [Event(StreamNameResolveNotFoundId, Message = "Cannot get stream name from command: '{0}'", Level = EventLevel.Error)]
-    public void StreamNameResolveNotFound(string commandType) => WriteEvent(StreamNameResolveNotFoundId, commandType);
+    [Event(
+        CannotGetAggregateIdFromCommandId,
+        Message = "Cannot get aggregate id from command: '{0}'",
+        Level = EventLevel.Error
+    )]
+    public void CannotCalculateAggregateId(string commandType)
+        => WriteEvent(CannotGetAggregateIdFromCommandId, commandType);
 
     [Event(ErrorHandlingCommandId, Message = "Error handling command: '{0}' {1}", Level = EventLevel.Error)]
     public void ErrorHandlingCommand(string commandType, string exception)
@@ -74,7 +78,7 @@ public class EventuousEventSource : EventSource {
 
     [Event(CommandHandledId, Message = "Command handled: '{0}'", Level = EventLevel.Verbose)]
     public void CommandHandled(string commandType) => WriteEvent(CommandHandledId, commandType);
-    
+
     [Event(
         CommandHandlerAlreadyRegisteredId,
         Message = "Command handler already registered for {0}",
@@ -110,7 +114,6 @@ public class EventuousEventSource : EventSource {
 
     [Event(TypeMapRegisteredId, Message = "Type {0} registered as {1}", Level = EventLevel.Verbose)]
     public void TypeMapRegistered(string type, string typeName) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All))
-            WriteEvent(TypeMapRegisteredId, type, typeName);
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) WriteEvent(TypeMapRegisteredId, type, typeName);
     }
 }

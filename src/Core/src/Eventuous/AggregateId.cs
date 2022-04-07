@@ -11,9 +11,9 @@ public abstract record AggregateId {
 
     string Value { get; }
 
-    public override string ToString() => Value;
+    public sealed override string ToString() => Value;
 
-    public static implicit operator string(AggregateId id) => id.Value;
+    public static implicit operator string(AggregateId id) => id.ToString();
 
     public void Deconstruct(out string value) => value = Value;
 }

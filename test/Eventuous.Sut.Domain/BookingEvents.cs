@@ -20,6 +20,7 @@ public static class BookingEvents {
         decimal AmountPaid
     );
 
+    [EventType("BookingFullyPaid")]
     public record BookingFullyPaid(string BookingId);
 
     [EventType(TypeNames.BookingCancelled)]

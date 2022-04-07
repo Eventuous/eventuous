@@ -12,6 +12,11 @@ public static class Exceptions {
             base($"Handler not found for command {type.Name}") { }
     }
 
+    public class UnableToResolveAggregateId : Exception {
+        public UnableToResolveAggregateId(Type type) :
+            base($"Unable to resolve aggregate id from command {type.Name}") { }
+    }
+
     public class CommandHandlerNotFound<T> : CommandHandlerNotFound {
         public CommandHandlerNotFound() : base(typeof(T)) { }
     }

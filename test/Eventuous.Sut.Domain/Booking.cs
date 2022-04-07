@@ -28,4 +28,6 @@ public class Booking : Aggregate<BookingState, BookingId> {
     }
 }
 
-public record BookingId(string Value) : AggregateId(Value);
+public record BookingId : AggregateId {
+    public BookingId(string value) : base(value) { }
+}
