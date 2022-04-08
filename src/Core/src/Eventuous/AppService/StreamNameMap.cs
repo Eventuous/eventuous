@@ -1,31 +1,22 @@
 namespace Eventuous;
 
-public delegate StreamName GetStreamFromCommand<in TCommand>(TCommand command);
+public class StreamNameMap {
+    readonly Dictionary<Type, Func<AggregateId, StreamName>> _map = new();
 
-public delegate Task<TId> GetIdFromCommandAsync<TId, in TCommand>(
-    TCommand          command,
-    CancellationToken cancellationToken
-) where TId : AggregateId;
+    public void Register<T, TState, TId>(Func<TId, StreamName> map)
+        where T : Aggregate<TState, TId>
+        where TState : AggregateState<TState, TId>, new()
+        where TId : AggregateId
+        => _map.TryAdd(typeof(TId), id => map((TId)id));
 
-public delegate TId GetIdFromCommand<out TId, in TCommand>(TCommand command) where TId : AggregateId;
+    public StreamName GetStreamName<T, TState, TId>(TId aggregateId)
+        where T : Aggregate<TState, TId>
+        where TState : AggregateState<TState, TId>, new()
+        where TId : AggregateId {
+        if (_map.TryGetValue(typeof(TId), out var map)) return map(aggregateId);
 
-class StreamNameMap : Dictionary<Type, Func<object, CancellationToken, ValueTask<StreamName>>> {
-    public void AddCommand<TCommand>(Func<TCommand, CancellationToken, ValueTask<StreamName>> getStreamName)
-        where TCommand : class
-        => TryAdd(typeof(TCommand), (obj, token) => getStreamName((TCommand)obj, token));
+        _map[typeof(TId)] = id => StreamName.For<T>(id);
 
-    public void AddCommand<TCommand>(GetStreamFromCommand<TCommand> getStreamFromCommand) where TCommand : class
-        => TryAdd(typeof(TCommand), (obj, _) => new ValueTask<StreamName>(getStreamFromCommand((TCommand)obj)));
-
-    public void AddCommand<TId, TCommand>(GetIdFromCommand<TId, TCommand> getId) where TId : AggregateId
-        => TryAdd(
-            typeof(TCommand),
-            (cmd, _) => new ValueTask<StreamName>(new StreamName(getId((TCommand)cmd)))
-        );
-
-    public void AddCommand<TId, TCommand>(GetIdFromCommandAsync<TId, TCommand> getId) where TId : AggregateId
-        => TryAdd(
-            typeof(TCommand),
-            async (cmd, ct) => new StreamName(await getId((TCommand)cmd, ct))
-        );
+        return _map[typeof(TId)](aggregateId);
+    }
 }

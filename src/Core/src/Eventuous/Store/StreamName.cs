@@ -1,4 +1,4 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 [PublicAPI]
 public record struct StreamName {
@@ -6,7 +6,7 @@ public record struct StreamName {
 
     public StreamName(string value) {
         if (string.IsNullOrWhiteSpace(value)) throw new InvalidStreamName(value);
-            
+
         Value = value;
     }
 
@@ -15,8 +15,9 @@ public record struct StreamName {
     public static StreamName For<T, TState, TId>(TId aggregateId)
         where T : Aggregate<TState, TId>
         where TState : AggregateState<TState, TId>, new()
-        where TId : AggregateId => For<T>(aggregateId);
-        
+        where TId : AggregateId
+        => For<T>(aggregateId);
+
     public static implicit operator string(StreamName streamName) => streamName.Value;
 
     public override string ToString() => Value;

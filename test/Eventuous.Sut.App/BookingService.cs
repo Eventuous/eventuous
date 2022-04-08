@@ -1,10 +1,12 @@
 using Eventuous.Sut.Domain;
+using static Eventuous.Sut.App.Commands;
 
 namespace Eventuous.Sut.App;
 
 public class BookingService : ApplicationService<Booking, BookingState, BookingId> {
-    public BookingService(IAggregateStore store) : base(store) {
-        OnNew<Commands.BookRoom>(
+    public BookingService(IAggregateStore store, StreamNameMap? streamNameMap = null)
+        : base(store, streamNameMap: streamNameMap) {
+        OnNew<BookRoom>(
             (booking, cmd)
                 => booking.BookRoom(
                     new BookingId(cmd.BookingId),
@@ -14,7 +16,7 @@ public class BookingService : ApplicationService<Booking, BookingState, BookingI
                 )
         );
 
-        OnAny<Commands.ImportBooking>(
+        OnAny<ImportBooking>(
             cmd => new BookingId(cmd.BookingId),
             (booking, cmd)
                 => booking.Import(
@@ -22,6 +24,11 @@ public class BookingService : ApplicationService<Booking, BookingState, BookingI
                     cmd.RoomId,
                     new StayPeriod(cmd.CheckIn, cmd.CheckOut)
                 )
+        );
+
+        OnExisting<RecordPayment>(
+            cmd => new BookingId(cmd.BookingId),
+            (booking, cmd) => booking.RecordPayment(cmd.PaymentId, cmd.Amount)
         );
     }
 }

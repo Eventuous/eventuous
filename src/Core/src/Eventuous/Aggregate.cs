@@ -114,5 +114,5 @@ public abstract class Aggregate<T, TId> : Aggregate<T>
     where T : AggregateState<T, TId>, new()
     where TId : AggregateId {
     /// <inheritdoc />
-    public override string GetId() => State.Id;
+    public override string GetId() => State.Id ?? throw new Exceptions.InvalidIdException<TId>();
 }

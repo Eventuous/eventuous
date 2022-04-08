@@ -2,6 +2,7 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IncludeSutApp>true</IncludeSutApp>
+        <LangVersion>preview</LangVersion>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
