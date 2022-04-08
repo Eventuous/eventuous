@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj" />
+        <ProjectReference Include="..\..\..\..\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj" />
+        <ProjectReference Include="..\..\..\Core\src\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AutoFixture" Version="4.17.0" />
+        <PackageReference Include="Elasticsearch.Net" Version="7.17.0" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
+    </ItemGroup>
+
+</Project>
