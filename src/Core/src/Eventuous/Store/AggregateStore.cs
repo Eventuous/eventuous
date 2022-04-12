@@ -2,89 +2,74 @@ using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous;
 
-public delegate Metadata? GetEventMetadata(string stream, object evt);
-
-[PublicAPI]
 public class AggregateStore : IAggregateStore {
-    readonly GetEventMetadata?        _getEventMetadata;
-    readonly AggregateFactoryRegistry _factoryRegistry;
-    readonly IEventStore              _eventStore;
+    readonly Func<StreamEvent, StreamEvent> _amendEvent;
+    readonly AggregateFactoryRegistry       _factoryRegistry;
+    readonly IEventReader                   _eventReader;
+    readonly IEventWriter                   _eventWriter;
+
+    /// <summary>
+    /// Creates a new instance of the default aggregate store
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="writer"></param>
+    /// <param name="amendEvent"></param>
+    /// <param name="factoryRegistry"></param>
+    public AggregateStore(
+        IEventReader                    reader,
+        IEventWriter                    writer,
+        Func<StreamEvent, StreamEvent>? amendEvent      = null,
+        AggregateFactoryRegistry?       factoryRegistry = null
+    ) {
+        _amendEvent      = amendEvent      ?? (x => x);
+        _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
+        _eventReader     = Ensure.NotNull(reader);
+        _eventWriter     = Ensure.NotNull(writer);
+    }
 
     /// <summary>
     /// Creates a new instance of the default aggregate store
     /// </summary>
     /// <param name="eventStore">Event store implementation</param>
-    /// <param name="getEventMetadata">Optional: a function to produce metadata</param>
+    /// <param name="amendEvent"></param>
     /// <param name="factoryRegistry"></param>
     public AggregateStore(
-        IEventStore               eventStore,
-        GetEventMetadata?         getEventMetadata = null,
-        AggregateFactoryRegistry? factoryRegistry  = null
-    ) {
-        _getEventMetadata = getEventMetadata;
-        _factoryRegistry  = factoryRegistry ?? AggregateFactoryRegistry.Instance;
-        _eventStore       = Ensure.NotNull(eventStore);
-    }
+        IEventStore                     eventStore,
+        Func<StreamEvent, StreamEvent>? amendEvent      = null,
+        AggregateFactoryRegistry?       factoryRegistry = null
+    ) : this(eventStore, eventStore, amendEvent, factoryRegistry) { }
 
-    public async Task<AppendEventsResult> Store<T>(
+    public Task<AppendEventsResult> Store<T>(
         StreamName        streamName,
         T                 aggregate,
         CancellationToken cancellationToken
-    )
+    ) where T : Aggregate
+        => _eventWriter.Store(streamName, aggregate, _amendEvent, cancellationToken);
+
+    public Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
+        => LoadInternal<T>(streamName, true, cancellationToken);
+
+    public Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
+        => LoadInternal<T>(streamName, false, cancellationToken);
+
+    async Task<T> LoadInternal<T>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken)
         where T : Aggregate {
-        Ensure.NotNull(aggregate);
-
-        if (aggregate.Changes.Count == 0) return AppendEventsResult.NoOp;
-
-        var expectedVersion = new ExpectedStreamVersion(aggregate.OriginalVersion);
-
-        try {
-            var result = await _eventStore.AppendEvents(
-                    streamName,
-                    expectedVersion,
-                    aggregate.Changes.Select(ToStreamEvent).ToArray(),
-                    cancellationToken
-                )
-                .NoContext();
-
-            return result;
-        }
-        catch (Exception e) {
-            Log.UnableToStoreAggregate(aggregate, e);
-
-            throw e.InnerException?.Message.Contains("WrongExpectedVersion") == true
-                ? new OptimisticConcurrencyException<T>(aggregate, e) : e;
-        }
-
-        StreamEvent ToStreamEvent(object evt) {
-            var meta = _getEventMetadata?.Invoke(streamName, evt) ?? new Metadata();
-            return new StreamEvent(evt, meta, "", -1);
-        }
-    }
-
-    public async Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken)
-        where T : Aggregate {
-        const int pageSize = 500;
-
         var aggregate = _factoryRegistry.CreateInstance<T>();
 
         try {
-            var position = StreamReadPosition.Start;
+            var events = await _eventReader.ReadStream(
+                streamName,
+                StreamReadPosition.Start,
+                failIfNotFound,
+                cancellationToken
+            );
 
-            while (true) {
-                var readCount = await _eventStore.ReadStream(
-                        streamName,
-                        position,
-                        pageSize,
-                        Fold,
-                        cancellationToken
-                    )
-                    .NoContext();
-
-                if (readCount < pageSize) break;
-
-                position = new StreamReadPosition(position.Value + readCount);
+            foreach (var streamEvent in events) {
+                Fold(streamEvent);
             }
+        }
+        catch (StreamNotFound) when (!failIfNotFound) {
+            return aggregate;
         }
         catch (Exception e) {
             Log.UnableToLoadAggregate<T>(streamName, e);
@@ -100,7 +85,4 @@ public class AggregateStore : IAggregateStore {
             aggregate.Fold(evt);
         }
     }
-
-    public Task<bool> Exists<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
-        => _eventStore.StreamExists(streamName, cancellationToken);
 }

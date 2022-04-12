@@ -3,19 +3,10 @@ using Nest;
 
 namespace Eventuous.ElasticSearch.Store;
 
-public class ElasticEventStore : IEventStore {
+public class ElasticEventStore : IEventReader, IEventWriter {
     readonly IElasticClient _client;
 
     public ElasticEventStore(IElasticClient client) => _client = client;
-
-    public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
-        var response = await _client.SearchAsync<PersistedEvent>(
-            d => d.Index("eventuous").Query(q => q.Term(x => x.Stream, stream.ToString())).Size(1),
-            cancellationToken
-        );
-
-        return response.IsValid && response.Documents.Count > 0;
-    }
 
     public async Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
@@ -57,22 +48,37 @@ public class ElasticEventStore : IEventStore {
                 .Index("eventuous")
                 .Query(
                     q => q
-                        .Term(x => x.Stream, stream.ToString())
+                        .Bool(
+                            b => b
+                                .Must(
+                                    mu => mu
+                                        .Term(
+                                            x => x.Stream,
+                                            stream.ToString()
+                                        ),
+                                    mu => mu
+                                        .Range(
+                                            r => r
+                                                .Field(x => x.StreamPosition)
+                                                .GreaterThanOrEquals(start.Value)
+                                        )
+                                )
+                        )
                 )
-                .Skip((int?)start.Value)
-                .Size(count),
+                .Take(count),
             cancellationToken
         );
 
-        return response.Documents
-            .Select(
-                x => new StreamEvent(x.Message, Metadata.FromHeaders(x.Metadata), x.ContentType, x.StreamPosition)
-            )
-            .ToArray();
-    }
+        if (!response.IsValid) throw new ApplicationException("Unable to read events");
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
-        => throw new NotImplementedException();
+        return response.Documents.Count == 0
+            ? throw new StreamNotFound(stream)
+            : response.Documents
+                .Select(
+                    x => new StreamEvent(x.Message, Metadata.FromHeaders(x.Metadata), x.ContentType, x.StreamPosition)
+                )
+                .ToArray();
+    }
 
     public async Task<long> ReadStream(
         StreamName          stream,
@@ -89,19 +95,4 @@ public class ElasticEventStore : IEventStore {
 
         return events.Length;
     }
-
-    public Task TruncateStream(
-        StreamName             stream,
-        StreamTruncatePosition truncatePosition,
-        ExpectedStreamVersion  expectedVersion,
-        CancellationToken      cancellationToken
-    )
-        => throw new NotImplementedException();
-
-    public Task DeleteStream(
-        StreamName            stream,
-        ExpectedStreamVersion expectedVersion,
-        CancellationToken     cancellationToken
-    )
-        => throw new NotImplementedException();
 }

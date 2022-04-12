@@ -51,26 +51,6 @@ public class TracedEventStore : IEventStore {
     )
         => Trace(stream, Operations.ReadEvents, () => Inner.ReadEvents(stream, start, count, cancellationToken));
 
-    public Task<StreamEvent[]> ReadEventsBackwards(
-        StreamName        stream,
-        int               count,
-        CancellationToken cancellationToken
-    )
-        => Trace(stream, Operations.ReadEvents, () => Inner.ReadEventsBackwards(stream, count, cancellationToken));
-
-    public Task<long> ReadStream(
-        StreamName          stream,
-        StreamReadPosition  start,
-        int                 count,
-        Action<StreamEvent> callback,
-        CancellationToken   cancellationToken
-    )
-        => Trace(
-            stream,
-            Operations.ReadEvents,
-            () => Inner.ReadStream(stream, start, count, callback, cancellationToken)
-        );
-
     public Task TruncateStream(
         StreamName             stream,
         StreamTruncatePosition truncatePosition,
