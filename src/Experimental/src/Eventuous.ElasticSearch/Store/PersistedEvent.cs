@@ -13,7 +13,7 @@ class ElasticMeta {
 public record PersistedEvent {
     public PersistedEvent(
         string                       messageId,
-        MessageType                  messageType,
+        string                       messageType,
         long                         streamPosition,
         string                       contentType,
         string                       stream,
@@ -33,10 +33,10 @@ public record PersistedEvent {
         Created        = created;
     }
 
-    public string      MessageId      { get; }
-    public MessageType MessageType    { get; }
-    public long        StreamPosition { get; }
-    public string      ContentType    { get; }
+    public string MessageId      { get; }
+    public string MessageType    { get; }
+    public long   StreamPosition { get; }
+    public string ContentType    { get; }
 
     [Keyword]
     public string Stream { get; }
@@ -51,7 +51,7 @@ public record PersistedEvent {
 
     public void Deconstruct(
         out string                       messageId,
-        out MessageType                  messageType,
+        out string                       messageType,
         out long                         streamPosition,
         out string                       contentType,
         out string                       stream,

@@ -36,7 +36,7 @@ public static class StoreFunctions {
         }
 
         StreamEvent ToStreamEvent(object evt, int position) {
-            var streamEvent = new StreamEvent(evt, new Metadata(), "", position);
+            var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", position);
             return amendEvent(streamEvent);
         }
     }

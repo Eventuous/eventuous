@@ -44,7 +44,7 @@ public sealed class ProjectingWithTypedHandlers : IDisposable {
             stream,
             ExpectedStreamVersion.Any,
             new[] {
-                new StreamEvent(evt, new Metadata(), "application/json", 0)
+                new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "application/json", 0)
             },
             CancellationToken.None
         );

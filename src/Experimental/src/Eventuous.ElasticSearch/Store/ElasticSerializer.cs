@@ -16,12 +16,12 @@ public class ElasticSerializer : IElasticsearchSerializer {
         var reader = new BinaryReader(stream);
         var obj    = JsonSerializer.Deserialize(reader.ReadBytes((int)stream.Length), type, _options);
         if (type != typeof(PersistedEvent)) return obj!;
-        
+
         var evt         = (PersistedEvent)obj!;
-        var messageType = TypeMap.GetType(evt.MessageType.Original);
+        var messageType = TypeMap.GetType(evt.MessageType);
         var element     = (JsonElement)evt.Message!;
         var payload     = JsonSerializer.Deserialize(element.GetRawText(), messageType, _options);
-        
+
         return evt with { Message = payload };
     }
 

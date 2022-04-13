@@ -25,8 +25,8 @@ public class ElasticEventStore : IEventReader, IEventWriter {
 
         PersistedEvent AsDocument(StreamEvent evt)
             => new(
-                Guid.NewGuid().ToString("N"),
-                VersionParser.Parse(TypeMap.Instance.GetTypeName(evt.Payload!)),
+                evt.Id.ToString(),
+                TypeMap.Instance.GetTypeName(evt.Payload!),
                 evt.Position + 1,
                 evt.ContentType,
                 streamName,
@@ -75,24 +75,8 @@ public class ElasticEventStore : IEventReader, IEventWriter {
             ? throw new StreamNotFound(stream)
             : response.Documents
                 .Select(
-                    x => new StreamEvent(x.Message, Metadata.FromHeaders(x.Metadata), x.ContentType, x.StreamPosition)
+                    x => new StreamEvent(Guid.Parse(x.MessageId), x.Message, Metadata.FromHeaders(x.Metadata), x.ContentType, x.StreamPosition)
                 )
                 .ToArray();
-    }
-
-    public async Task<long> ReadStream(
-        StreamName          stream,
-        StreamReadPosition  start,
-        int                 count,
-        Action<StreamEvent> callback,
-        CancellationToken   cancellationToken
-    ) {
-        var events = await ReadEvents(stream, start, count, cancellationToken);
-
-        foreach (var streamEvent in events) {
-            callback(streamEvent);
-        }
-
-        return events.Length;
     }
 }
