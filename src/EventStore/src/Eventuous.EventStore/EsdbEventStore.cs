@@ -102,7 +102,7 @@ public class EsdbEventStore : IEventStore {
             var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
             return new EventData(
-                Uuid.NewUuid(),
+                Uuid.FromGuid(streamEvent.Id), 
                 eventType,
                 payload,
                 _metaSerializer.Serialize(streamEvent.Metadata),
@@ -333,6 +333,7 @@ public class EsdbEventStore : IEventStore {
 
         StreamEvent AsStreamEvent(object payload)
             => new(
+                resolvedEvent.Event.EventId.ToGuid(),
                 payload,
                 _metaSerializer.Deserialize(resolvedEvent.Event.Metadata.ToArray()) ?? new Metadata(),
                 resolvedEvent.Event.ContentType,

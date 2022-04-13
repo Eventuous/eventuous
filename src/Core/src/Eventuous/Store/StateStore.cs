@@ -1,28 +1,41 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 [PublicAPI]
 public class StateStore : IStateStore {
-    readonly IEventStore      _eventStore;
+    readonly IEventReader     _eventReader;
     readonly IEventSerializer _serializer;
 
     const int PageSize = 500;
 
-    public StateStore(IEventStore eventStore, IEventSerializer? serializer = null) {
-        _eventStore = Ensure.NotNull(eventStore);
-        _serializer = serializer ?? DefaultEventSerializer.Instance;
+    public StateStore(IEventReader eventReader, IEventSerializer? serializer = null) {
+        _eventReader = Ensure.NotNull(eventReader);
+        _serializer  = serializer ?? DefaultEventSerializer.Instance;
     }
 
     public async Task<T> LoadState<T, TId>(StreamName stream, CancellationToken cancellationToken)
         where T : AggregateState<T, TId>, new() where TId : AggregateId {
         var state = new T();
 
+        const int pageSize = 500;
+
         var position = StreamReadPosition.Start;
 
         while (true) {
-            var readCount = await _eventStore.ReadStream(stream, position, PageSize, Fold, cancellationToken).NoContext();
-            if (readCount == 0) break;
+            var events = await _eventReader.ReadEvents(
+                    stream,
+                    position,
+                    pageSize,
+                    cancellationToken
+                )
+                .NoContext();
 
-            position = new StreamReadPosition(position.Value + readCount);
+            foreach (var streamEvent in events) {
+                Fold(streamEvent);
+            }
+
+            if (events.Length < pageSize) break;
+
+            position = new StreamReadPosition(position.Value + events.Length);
         }
 
         return state;

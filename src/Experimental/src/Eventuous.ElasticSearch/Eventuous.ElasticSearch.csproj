@@ -1,12 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
         <PackageReference Include="NEST" Version="7.17.0" />
+        <PackageReference Include="Polly" Version="7.2.3" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj" />
       <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Gateway" />
     </ItemGroup>
 </Project>

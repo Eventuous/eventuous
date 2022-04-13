@@ -23,7 +23,8 @@ public interface IAggregateStore {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <returns></returns>
-    Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate;
+    Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken)
+        where T : Aggregate;
 
     /// <summary>
     /// Load the aggregate from the store for a given id
@@ -44,8 +45,24 @@ public interface IAggregateStore {
     /// <returns></returns>
     Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate;
 
-    Task<bool> Exists<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate;
+    /// <summary>
+    /// Attempts to load the aggregate from the store for a given id. If the aggregate is not found,
+    /// a new instance of the aggregate is returned
+    /// </summary>
+    /// <param name="id">Aggregate id as string</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <returns></returns>
+    public Task<T> LoadOrNew<T>(string id, CancellationToken cancellationToken) where T : Aggregate
+        => this.LoadOrNew<T>(StreamName.For<T>(Ensure.NotEmptyString(id)), cancellationToken);
 
-    public Task<bool> Exists<T>(string id, CancellationToken cancellationToken) where T : Aggregate
-        => this.Exists<T>(StreamName.For<T>(Ensure.NotEmptyString(id)), cancellationToken);
+    /// <summary>
+    /// Attempts to load the aggregate from the store for a given id. If the aggregate is not found,
+    /// a new instance of the aggregate is returned
+    /// </summary>
+    /// <param name="streamName">Name of the aggregate stream</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <returns></returns>
+    Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate;
 }

@@ -1,12 +1,17 @@
 namespace Eventuous;
 
 [PublicAPI]
-public class Metadata : Dictionary<string, object> {
+public class Metadata : Dictionary<string, object?> {
     public Metadata() { }
 
     public static Metadata FromMeta(Metadata? metadata) => metadata == null ? new Metadata() : new Metadata(metadata);
 
-    public Metadata(IDictionary<string, object> dictionary) : base(dictionary) { }
+    public Metadata(IDictionary<string, object?> dictionary) : base(dictionary) { }
+
+    public static Metadata FromHeaders(Dictionary<string, string?>? headers)
+        => headers == null ? new Metadata() : new Metadata(headers.ToDictionary(x => x.Key, x => (object?)x.Value));
+
+    public Dictionary<string, string?> ToHeaders() => this.ToDictionary(x => x.Key, x => x.Value?.ToString());
 
     public Metadata With<T>(string key, T? value) {
         if (value != null) this[key] = value;
@@ -14,7 +19,7 @@ public class Metadata : Dictionary<string, object> {
     }
 
     public string? GetString(string key) => TryGetValue(key, out var value) ? value.ToString() : default;
-    
+
     public T? Get<T>(string key) => TryGetValue(key, out var value) && value is T v ? v : default;
 
     public Metadata AddNotNull(string key, string? value) {

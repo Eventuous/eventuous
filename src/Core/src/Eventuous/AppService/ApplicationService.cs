@@ -182,8 +182,8 @@ public abstract class ApplicationService<TAggregate, TState, TId>
 
         try {
             var aggregate = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await TryLoad().NoContext(),
-                ExpectedState.Existing => await Load().NoContext(),
+                ExpectedState.Any      => await Store.LoadOrNew<TAggregate>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Existing => await Store.Load<TAggregate>(streamName, cancellationToken).NoContext(),
                 ExpectedState.New      => Create(),
                 ExpectedState.Unknown  => default,
                 _ => throw new ArgumentOutOfRangeException(
@@ -216,13 +216,6 @@ public abstract class ApplicationService<TAggregate, TState, TId>
             Log.ErrorHandlingCommand(commandType, e);
 
             return new ErrorResult<TState, TId>($"Error handling command {commandType.Name}", e);
-        }
-
-        Task<TAggregate> Load() => Store.Load<TAggregate, TState, TId>(streamName, cancellationToken);
-
-        async Task<TAggregate> TryLoad() {
-            var exists = await Store.Exists<TAggregate>(streamName, cancellationToken).NoContext();
-            return exists ? await Load().NoContext() : Create();
         }
 
         TAggregate Create() => _factoryRegistry.CreateInstance<TAggregate, TState, TId>();
