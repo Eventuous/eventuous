@@ -2,7 +2,6 @@ using System.Reflection;
 using Eventuous.AspNetCore.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using OkResult = Eventuous.OkResult;
 
 // ReSharper disable CheckNamespace
 
@@ -37,18 +36,7 @@ public static class RouteBuilderExtensions {
         this IEndpointRouteBuilder builder,
         string                     route
     ) where TAggregate : Aggregate where TCommand : class
-        => builder
-            .MapPost(
-                route,
-                async (TCommand cmd, IApplicationService<TAggregate> service, CancellationToken cancellationToken) => {
-                    var result = await service.Handle(cmd, cancellationToken);
-                    return result.AsResult();
-                }
-            )
-            .Produces<OkResult>()
-            .Produces<ErrorResult>(StatusCodes.Status404NotFound)
-            .Produces<ErrorResult>(StatusCodes.Status409Conflict)
-            .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
+        => Map<TAggregate>(builder, typeof(TCommand), route);
 
     /// <summary>
     /// Creates an instance of <see cref="ApplicationServiceRouteBuilder{T}"/> for a given aggregate type, so you
@@ -60,8 +48,8 @@ public static class RouteBuilderExtensions {
     [PublicAPI]
     public static ApplicationServiceRouteBuilder<TAggregate> MapAggregateCommands<TAggregate>(
         this IEndpointRouteBuilder builder
-    )
-        where TAggregate : Aggregate => new(builder);
+    ) where TAggregate : Aggregate
+        => new(builder);
 
     /// <summary>
     /// Maps all commands annotated by <seealso cref="HttpCommandAttribute"/> to HTTP endpoints to be handled
@@ -99,34 +87,32 @@ public static class RouteBuilderExtensions {
                         $"Command aggregate is {attr.AggregateType.Name} but expected to be {typeof(TAggregate).Name}"
                     );
 
-                Map(type, attr.Route);
+                Map<TAggregate>(builder, type, attr.Route);
             }
-        }
-
-        void Map(Type type, string? route) {
-            builder
-                .MapPost(
-                    GetRoute(type, route),
-                    async Task<IResult>(HttpContext context, IApplicationService<TAggregate> service) => {
-                        var cmd = await context.Request.ReadFromJsonAsync(type, context.RequestAborted);
-
-                        if (cmd == null)
-                            throw new InvalidOperationException("Failed to deserialize the command");
-
-                        var result = await service.Handle(cmd, context.RequestAborted);
-
-                        return result.AsResult();
-                    }
-                )
-                .Accepts(type, false, "application/json")
-                .Produces<Result>()
-                .Produces<ErrorResult>(StatusCodes.Status404NotFound)
-                .Produces<ErrorResult>(StatusCodes.Status409Conflict)
-                .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
         }
 
         return builder;
     }
+
+    static RouteHandlerBuilder Map<TAggregate>(IEndpointRouteBuilder builder, Type type, string? route) where TAggregate : Aggregate
+        => builder
+            .MapPost(
+                GetRoute(type, route),
+                async Task<IResult>(HttpContext context, IApplicationService<TAggregate> service) => {
+                    var cmd = await context.Request.ReadFromJsonAsync(type, context.RequestAborted);
+
+                    if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
+
+                    var result = await service.Handle(cmd, context.RequestAborted);
+
+                    return result.AsResult();
+                }
+            )
+            .Accepts(type, false, "application/json")
+            .Produces<Result>()
+            .Produces<ErrorResult>(StatusCodes.Status404NotFound)
+            .Produces<ErrorResult>(StatusCodes.Status409Conflict)
+            .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
 
     /// <summary>
     /// Maps commands that are annotated either with <seealso cref="AggregateCommands"/> and/or
@@ -162,11 +148,11 @@ public static class RouteBuilderExtensions {
                 var parentAttribute = type.DeclaringType?.GetAttribute<AggregateCommands>();
                 if (parentAttribute == null) continue;
 
-                Map(parentAttribute.AggregateType, type, attr.Route);
+                LocalMap(parentAttribute.AggregateType, type, attr.Route);
             }
         }
 
-        void Map(Type aggregateType, Type type, string? route) {
+        void LocalMap(Type aggregateType, Type type, string? route) {
             var appServiceBase = typeof(IApplicationService<>);
             var appServiceType = appServiceBase.MakeGenericType(aggregateType);
 
@@ -176,12 +162,10 @@ public static class RouteBuilderExtensions {
                     async Task<IResult>(HttpContext context) => {
                         var cmd = await context.Request.ReadFromJsonAsync(type, context.RequestAborted);
 
-                        if (cmd == null)
-                            throw new InvalidOperationException("Failed to deserialize the command");
+                        if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
 
                         if (context.RequestServices.GetRequiredService(appServiceType) is not IApplicationService
-                            service)
-                            throw new InvalidOperationException("Unable to resolve the application service");
+                            service) throw new InvalidOperationException("Unable to resolve the application service");
 
                         var result = await service.Handle(cmd, context.RequestAborted);
 
@@ -203,8 +187,6 @@ public static class RouteBuilderExtensions {
                 AggregateNotFoundException     => Results.NotFound(error),
                 _                              => Results.BadRequest(error)
             } : Results.Ok(result);
-
-    static T? GetAttribute<T>(this Type type) where T : class => Attribute.GetCustomAttribute(type, typeof(T)) as T;
 
     static string GetRoute<TCommand>(string? route) => GetRoute(typeof(TCommand), route);
 

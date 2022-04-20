@@ -2,7 +2,7 @@ using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous;
 
-public class AggregateStore<TReader> : IAggregateStore where TReader : IEventReader {
+public class AggregateStore<TReader> : IAggregateStore where TReader : class, IEventReader {
     readonly Func<StreamEvent, StreamEvent> _amendEvent;
     readonly AggregateFactoryRegistry       _factoryRegistry;
     readonly IEventReader                   _archiveReader;
@@ -10,7 +10,7 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : IEventRea
 
     public AggregateStore(
         IEventStore                     eventStore,
-        IEventReader                    archiveReader,
+        TReader                         archiveReader,
         Func<StreamEvent, StreamEvent>? amendEvent      = null,
         AggregateFactoryRegistry?       factoryRegistry = null
     ) {

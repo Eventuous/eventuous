@@ -1,4 +1,3 @@
-using System.ComponentModel.Design;
 using AutoFixture;
 using EventStore.Client;
 using Eventuous.ElasticSearch.Store;

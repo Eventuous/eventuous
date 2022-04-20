@@ -3,7 +3,7 @@ using Nest;
 
 namespace Eventuous.ElasticSearch.Store;
 
-class ElasticMeta {
+public class ElasticMeta {
     public static Dictionary<string, string?>? FromMetadata(Metadata? metadata)
         => metadata?.ToDictionary(x => x.Key, x => x.Value?.ToString());
 }

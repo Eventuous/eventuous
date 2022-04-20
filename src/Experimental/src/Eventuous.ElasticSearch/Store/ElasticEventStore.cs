@@ -4,9 +4,13 @@ using Nest;
 namespace Eventuous.ElasticSearch.Store;
 
 public class ElasticEventStore : IEventReader, IEventWriter {
-    readonly IElasticClient _client;
+    readonly IElasticClient           _client;
+    readonly ElasticEventStoreOptions _options;
 
-    public ElasticEventStore(IElasticClient client) => _client = client;
+    public ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? options = null) {
+        _client  = client;
+        _options = options ?? new ElasticEventStoreOptions();
+    }
 
     public async Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
@@ -16,12 +20,12 @@ public class ElasticEventStore : IEventReader, IEventWriter {
     ) {
         var streamName = stream.ToString();
         var documents  = events.Select(AsDocument).ToArray();
-        var bulk       = new BulkDescriptor("eventuous").CreateMany(documents).Refresh(Refresh.WaitFor);
+        var bulk       = new BulkDescriptor(_options.IndexName).CreateMany(documents).Refresh(Refresh.WaitFor);
         var result     = await _client.BulkAsync(bulk, cancellationToken);
 
         return result.IsValid
             ? new AppendEventsResult(0, documents.Last().StreamPosition + 1)
-            : throw new ApplicationException("Unable to add events");
+            : throw new ApplicationException($"Unable to add events: {result.DebugInformation}");
 
         PersistedEvent AsDocument(StreamEvent evt)
             => new(
@@ -45,7 +49,7 @@ public class ElasticEventStore : IEventReader, IEventWriter {
     ) {
         var response = await _client.SearchAsync<PersistedEvent>(
             d => d
-                .Index("eventuous")
+                .Index(_options.IndexName)
                 .Query(
                     q => q
                         .Bool(
@@ -69,14 +73,24 @@ public class ElasticEventStore : IEventReader, IEventWriter {
             cancellationToken
         );
 
-        if (!response.IsValid) throw new ApplicationException("Unable to read events");
+        if (!response.IsValid) throw new ApplicationException($"Unable to read events: {response.DebugInformation}");
 
         return response.Documents.Count == 0
             ? throw new StreamNotFound(stream)
             : response.Documents
                 .Select(
-                    x => new StreamEvent(Guid.Parse(x.MessageId), x.Message, Metadata.FromHeaders(x.Metadata), x.ContentType, x.StreamPosition)
+                    x => new StreamEvent(
+                        Guid.Parse(x.MessageId),
+                        x.Message,
+                        Metadata.FromHeaders(x.Metadata),
+                        x.ContentType,
+                        x.StreamPosition
+                    )
                 )
                 .ToArray();
     }
+}
+
+public record ElasticEventStoreOptions {
+    public string IndexName { get; init; } = "eventlog";
 }

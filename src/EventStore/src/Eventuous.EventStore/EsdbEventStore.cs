@@ -6,7 +6,6 @@ using Eventuous.Diagnostics;
 
 namespace Eventuous.EventStore;
 
-[PublicAPI]
 public class EsdbEventStore : IEventStore {
     readonly ILogger<EsdbEventStore>? _logger;
     readonly EventStoreClient         _client;
@@ -168,66 +167,6 @@ public class EsdbEventStore : IEventStore {
             ),
             (s, ex) => new ReadFromStreamException(s, ex)
         );
-    }
-
-    public async Task<long> ReadStream2(
-        StreamName          stream,
-        StreamReadPosition  start,
-        int                 count,
-        Action<StreamEvent> callback,
-        CancellationToken   cancellationToken
-    ) {
-        var revision = start.AsStreamPosition();
-        Console.WriteLine(revision);
-        var read = _client.ReadStreamAsync(
-            Direction.Forwards,
-            stream,
-            revision,
-            count,
-            // resolveLinkTos: true,
-            cancellationToken: cancellationToken
-        );
-
-        var page = await read.ToListAsync(cancellationToken).NoContext();
-
-        // foreach (var resolvedEvent in page) {
-        //     callback(ToStreamEvent(resolvedEvent));
-        // }
-
-        return page.Count;
-    }
-
-    public async Task<long> ReadStream(
-        StreamName          stream,
-        StreamReadPosition  start,
-        int                 count,
-        Action<StreamEvent> callback,
-        CancellationToken   cancellationToken
-    ) {
-        var read = _client.ReadStreamAsync(
-            Direction.Forwards,
-            stream,
-            start.AsStreamPosition(),
-            count,
-            resolveLinkTos: true,
-            cancellationToken: cancellationToken
-        );
-
-        return await TryExecute(
-            async () => {
-                long readCount = 0;
-
-                await foreach (var re in read.IgnoreWithCancellation(cancellationToken).ConfigureAwait(false)) {
-                    callback(ToStreamEvent(re));
-                    readCount++;
-                }
-
-                return readCount;
-            },
-            stream,
-            () => new ErrorInfo("Unable to read stream {Stream} from {Start}", stream, start),
-            (s, ex) => new ReadFromStreamException(s, ex)
-        ).NoContext();
     }
 
     public Task TruncateStream(

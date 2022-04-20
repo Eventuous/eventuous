@@ -118,8 +118,7 @@ public static class ServiceCollectionExtensions {
             services.AddSingleton<IEventStore, T>();
         }
 
-        services.AddSingleton<AggregateStore>();
-        services.AddSingleton<IAggregateStore>(sp => sp.GetRequiredService<AggregateStore>());
+        services.AddSingleton<IAggregateStore, AggregateStore>();
         return services;
     }
 
@@ -133,8 +132,7 @@ public static class ServiceCollectionExtensions {
     public static IServiceCollection AddAggregateStore<T>(
         this IServiceCollection   services,
         Func<IServiceProvider, T> getService
-    )
-        where T : class, IEventStore {
+    ) where T : class, IEventStore {
         services.TryAddSingleton<AggregateFactoryRegistry>();
 
         if (EventuousDiagnostics.Enabled) {
@@ -146,7 +144,27 @@ public static class ServiceCollectionExtensions {
             services.AddSingleton<IEventStore>(getService);
         }
 
-        services.AddSingleton<AggregateStore>();
+        services.AddSingleton<IAggregateStore, AggregateStore>();
+        return services;
+    }
+
+    public static IServiceCollection AddAggregateStore<T, TArchive>(this IServiceCollection services)
+        where T : class, IEventStore
+        where TArchive : class, IEventReader {
+        services.TryAddSingleton<AggregateFactoryRegistry>();
+        
+        if (EventuousDiagnostics.Enabled) {
+            services
+                .AddSingleton<T>()
+                .AddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>()));
+        }
+        else {
+            services.AddSingleton<IEventStore, T>();
+        }
+
+        services.AddSingleton<TArchive>();
+        services.AddSingleton<IAggregateStore, AggregateStore<TArchive>>();
+
         return services;
     }
 }
