@@ -1,5 +1,6 @@
-// ReSharper disable CheckNamespace
-namespace Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
+
+namespace Eventuous.AspNetCore.Web;
 
 [PublicAPI]
 public static class AggregateFactoryBuilderExtensions {

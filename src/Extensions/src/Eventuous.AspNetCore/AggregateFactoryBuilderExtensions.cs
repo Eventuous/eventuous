@@ -1,8 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-// ReSharper disable CheckNamespace
-namespace Microsoft.AspNetCore.Builder;
+namespace Eventuous.AspNetCore;
 
 [PublicAPI]
 public static class AggregateFactoryBuilderExtensions {
@@ -10,7 +9,7 @@ public static class AggregateFactoryBuilderExtensions {
         UseAggregateFactory(host.Services);
         return host;
     }
-
+    
     static void UseAggregateFactory(IServiceProvider sp) {
         var resolvers = sp.GetServices<ResolveAggregateFactory>();
         var registry  = sp.GetService<AggregateFactoryRegistry>() ?? AggregateFactoryRegistry.Instance;

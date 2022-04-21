@@ -114,6 +114,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Connectors.Base",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElasticPlayground", "src\Experimental\src\ElasticPlayground\ElasticPlayground.csproj", "{5555BC0B-418C-49A3-BD68-ADCEBCC518E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.AspNetCore", "src\Extensions\test\Eventuous.Tests.AspNetCore\Eventuous.Tests.AspNetCore.csproj", "{152E27CE-35F1-4F65-B53A-C7B710F1B310}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.AspNetCore.Web", "src\Extensions\test\Eventuous.Tests.AspNetCore.Web\Eventuous.Tests.AspNetCore.Web.csproj", "{B3F782EE-FBEF-47E2-8379-8A91B11363B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -256,6 +260,14 @@ Global
 		{5555BC0B-418C-49A3-BD68-ADCEBCC518E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5555BC0B-418C-49A3-BD68-ADCEBCC518E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5555BC0B-418C-49A3-BD68-ADCEBCC518E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{152E27CE-35F1-4F65-B53A-C7B710F1B310}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{152E27CE-35F1-4F65-B53A-C7B710F1B310}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{152E27CE-35F1-4F65-B53A-C7B710F1B310}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{152E27CE-35F1-4F65-B53A-C7B710F1B310}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3F782EE-FBEF-47E2-8379-8A91B11363B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3F782EE-FBEF-47E2-8379-8A91B11363B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3F782EE-FBEF-47E2-8379-8A91B11363B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3F782EE-FBEF-47E2-8379-8A91B11363B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{151A0839-2B1F-49D6-B5DD-199A5FAAB610} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
@@ -305,5 +317,7 @@ Global
 		{8B9741E1-EB6A-40C9-B30D-0549A1849B9D} = {0E2520E7-B4A6-47E7-AED8-662C88441A84}
 		{859AF2D3-3370-412A-A163-425C42C8A04C} = {0E2520E7-B4A6-47E7-AED8-662C88441A84}
 		{5555BC0B-418C-49A3-BD68-ADCEBCC518E4} = {0E2520E7-B4A6-47E7-AED8-662C88441A84}
+		{152E27CE-35F1-4F65-B53A-C7B710F1B310} = {CCD807D2-F4F2-4EC2-A03D-8943F73993A6}
+		{B3F782EE-FBEF-47E2-8379-8A91B11363B8} = {CCD807D2-F4F2-4EC2-A03D-8943F73993A6}
 	EndGlobalSection
 EndGlobal

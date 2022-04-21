@@ -79,7 +79,7 @@ public static class RouteBuilderExtensions {
                 x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == attributeType)
             );
 
-            var method = typeof(RouteBuilderExtensions).GetMethod(nameof(Map))!;
+            var method = typeof(RouteBuilderExtensions).GetMethod(nameof(Map), BindingFlags.Static | BindingFlags.NonPublic)!;
 
             foreach (var type in decoratedTypes) {
                 var attr = type.GetAttribute<HttpCommandAttribute>()!;

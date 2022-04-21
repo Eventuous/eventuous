@@ -1,4 +1,5 @@
-﻿using Eventuous.Tests.AspNetCore.Sut;
+﻿using Eventuous.AspNetCore.Web;
+using Eventuous.Tests.AspNetCore.Sut;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
