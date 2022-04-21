@@ -1,4 +1,4 @@
-namespace Eventuous.Tests.Fakes;
+namespace Eventuous.TestHelpers.Fakes;
 
 public class InMemoryEventStore : IEventStore {
     readonly Dictionary<StreamName, InMemoryStream> _storage = new();
