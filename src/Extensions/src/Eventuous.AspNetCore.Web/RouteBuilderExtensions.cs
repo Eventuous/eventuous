@@ -7,20 +7,25 @@ using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.Routing;
 
+public delegate TCommand EnrichCommandFromHttpContext<TCommand>(TCommand command, HttpContext httpContext);
+
 public static class RouteBuilderExtensions {
     /// <summary>
     /// Allows to add an HTTP endpoint for controller-less apps
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
+    /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(this IEndpointRouteBuilder builder)
-        where TAggregate : Aggregate where TCommand : class {
+    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
+        this IEndpointRouteBuilder              builder,
+        EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
+    ) where TAggregate : Aggregate where TCommand : class {
         var attr  = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
         var route = GetRoute<TCommand>(attr?.Route);
-        return builder.MapCommand<TCommand, TAggregate>(route);
+        return builder.MapCommand<TCommand, TAggregate>(route, enrichCommand);
     }
 
     /// <summary>
@@ -28,15 +33,17 @@ public static class RouteBuilderExtensions {
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
     /// <param name="route">HTTP API route</param>
+    /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
     /// <returns></returns>
     [PublicAPI]
     public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
-        this IEndpointRouteBuilder builder,
-        string                     route
+        this IEndpointRouteBuilder              builder,
+        string                                  route,
+        EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
     ) where TAggregate : Aggregate where TCommand : class
-        => Map<TAggregate, TCommand>(builder, route);
+        => Map<TAggregate, TCommand>(builder, route, enrichCommand);
 
     /// <summary>
     /// Creates an instance of <see cref="ApplicationServiceRouteBuilder{T}"/> for a given aggregate type, so you
@@ -79,7 +86,10 @@ public static class RouteBuilderExtensions {
                 x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == attributeType)
             );
 
-            var method = typeof(RouteBuilderExtensions).GetMethod(nameof(Map), BindingFlags.Static | BindingFlags.NonPublic)!;
+            var method = typeof(RouteBuilderExtensions).GetMethod(
+                nameof(Map),
+                BindingFlags.Static | BindingFlags.NonPublic
+            )!;
 
             foreach (var type in decoratedTypes) {
                 var attr = type.GetAttribute<HttpCommandAttribute>()!;
@@ -91,15 +101,17 @@ public static class RouteBuilderExtensions {
 
                 var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type);
                 genericMethod.Invoke(null, new object?[] { builder, attr.Route });
-                // Map<TAggregate>(builder, type, attr.Route);
             }
         }
 
         return builder;
     }
 
-    static RouteHandlerBuilder Map<TAggregate, TCommand>(IEndpointRouteBuilder builder, string? route)
-        where TAggregate : Aggregate where TCommand : notnull
+    static RouteHandlerBuilder Map<TAggregate, TCommand>(
+        IEndpointRouteBuilder                   builder,
+        string?                                 route,
+        EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
+    ) where TAggregate : Aggregate where TCommand : notnull
         => builder
             .MapPost(
                 GetRoute<TCommand>(route),
@@ -108,8 +120,9 @@ public static class RouteBuilderExtensions {
 
                     if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
 
-                    var result = await service.Handle(cmd, context.RequestAborted);
+                    if (enrichCommand != null) cmd = enrichCommand(cmd, context);
 
+                    var result = await service.Handle(cmd, context.RequestAborted);
                     return result.AsResult();
                 }
             )
@@ -194,34 +207,5 @@ public static class RouteBuilderExtensions {
             var gen = type.Name;
             return char.ToLowerInvariant(gen[0]) + gen[1..];
         }
-    }
-}
-
-[PublicAPI]
-public class ApplicationServiceRouteBuilder<T> where T : Aggregate {
-    readonly IEndpointRouteBuilder _builder;
-
-    public ApplicationServiceRouteBuilder(IEndpointRouteBuilder builder) => _builder = builder;
-
-    /// <summary>
-    /// Maps the given command type to an HTTP endpoint. The command class can be annotated with
-    /// the <seealso cref="HttpCommandAttribute"/> if you need a custom route.
-    /// </summary>
-    /// <typeparam name="TCommand">Command class</typeparam>
-    /// <returns></returns>
-    public ApplicationServiceRouteBuilder<T> MapCommand<TCommand>() where TCommand : class {
-        _builder.MapCommand<TCommand, T>();
-        return this;
-    }
-
-    /// <summary>
-    /// Maps the given command type to an HTTP endpoint using the specified route.
-    /// </summary>
-    /// <param name="route">HTTP route for the command</param>
-    /// <typeparam name="TCommand">Command type</typeparam>
-    /// <returns></returns>
-    public ApplicationServiceRouteBuilder<T> MapCommand<TCommand>(string route) where TCommand : class {
-        _builder.MapCommand<TCommand, T>(route);
-        return this;
     }
 }

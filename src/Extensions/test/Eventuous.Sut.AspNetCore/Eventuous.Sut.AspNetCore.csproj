@@ -1,19 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
         <TargetFrameworks>net6.0</TargetFrameworks>
-        <IsTestProject>true</IsTestProject>
         <IncludeSutApp>true</IncludeSutApp>
-        <IncludeTestHelpers>true</IncludeTestHelpers>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
         <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
-        <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.4" />
-      <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
-      <PackageReference Include="RestSharp" Version="107.3.0" />
+        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
     </ItemGroup>
 </Project>

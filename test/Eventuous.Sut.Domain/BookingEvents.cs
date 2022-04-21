@@ -1,4 +1,5 @@
 using NodaTime;
+
 // ReSharper disable MemberHidesStaticFromOuterClass
 
 namespace Eventuous.Sut.Domain;
@@ -10,7 +11,8 @@ public static class BookingEvents {
         string    RoomId,
         LocalDate CheckIn,
         LocalDate CheckOut,
-        decimal   Price
+        decimal   Price,
+        string?   GuestId = null
     );
 
     [EventType("PaymentRegistered")]

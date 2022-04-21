@@ -2,6 +2,7 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IncludeSutApp>true</IncludeSutApp>
+        <IncludeTestHelpers>true</IncludeTestHelpers>
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
     <ItemGroup>

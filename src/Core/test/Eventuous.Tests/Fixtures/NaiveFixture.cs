@@ -1,4 +1,4 @@
-using Eventuous.Tests.Fakes;
+using Eventuous.TestHelpers.Fakes;
 
 namespace Eventuous.Tests.Fixtures;
 

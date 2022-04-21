@@ -3,10 +3,10 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Sut.Domain;
 
 public class Booking : Aggregate<BookingState, BookingId> {
-    public void BookRoom(BookingId id, string roomId, StayPeriod period, decimal price) {
+    public void BookRoom(BookingId id, string roomId, StayPeriod period, decimal price, string? guestId = null) {
         EnsureDoesntExist();
 
-        Apply(new RoomBooked(id, roomId, period.CheckIn, period.CheckOut, price));
+        Apply(new RoomBooked(id, roomId, period.CheckIn, period.CheckOut, price, guestId));
     }
 
     public void Import(BookingId id, string roomId, StayPeriod period) {
