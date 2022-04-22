@@ -36,5 +36,4 @@ public class ContextItems {
 public static class ContextKeys {
     public const string GlobalPosition = nameof(GlobalPosition);
     public const string StreamPosition = nameof(StreamPosition);
-    public const string PartitionId    = nameof(PartitionId);
 }

@@ -25,6 +25,13 @@ public class HandlingStatusTests {
     }
 
     [Fact]
+    public void PendingShouldBeHandled() {
+        const EventHandlingStatus actual = EventHandlingStatus.Pending;
+        (actual & EventHandlingStatus.Handled).Should().NotBe(EventHandlingStatus.Failure);
+        (actual & EventHandlingStatus.Handled).Should().NotBe(EventHandlingStatus.Ignored);
+    }
+
+    [Fact]
     public void IgnoredShouldBeIgnored() {
         const EventHandlingStatus actual = EventHandlingStatus.Ignored;
         (actual & EventHandlingStatus.Handled).Should().Be(0);

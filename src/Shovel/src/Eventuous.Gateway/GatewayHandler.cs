@@ -7,10 +7,12 @@ public delegate ValueTask<GatewayContext?> RouteAndTransform(IMessageConsumeCont
 class GatewayHandler : BaseEventHandler {
     readonly IEventProducer    _eventProducer;
     readonly RouteAndTransform _transform;
+    readonly bool              _awaitProduce;
 
-    public GatewayHandler(IEventProducer eventProducer, RouteAndTransform transform) {
+    public GatewayHandler(IEventProducer eventProducer, RouteAndTransform transform, bool awaitProduce) {
         _eventProducer = eventProducer;
         _transform     = transform;
+        _awaitProduce  = awaitProduce;
     }
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
@@ -27,6 +29,6 @@ class GatewayHandler : BaseEventHandler {
             )
             .NoContext();
 
-        return EventHandlingStatus.Success;
+        return _awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
     }
 }

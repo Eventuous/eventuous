@@ -11,10 +11,16 @@ public class GatewayHandler<TProduceOptions> : BaseEventHandler
     readonly IEventProducer<TProduceOptions> _eventProducer;
 
     readonly RouteAndTransform<TProduceOptions> _transform;
+    readonly bool                               _awaitProduce;
 
-    public GatewayHandler(IEventProducer<TProduceOptions> eventProducer, RouteAndTransform<TProduceOptions> transform) {
+    public GatewayHandler(
+        IEventProducer<TProduceOptions>    eventProducer,
+        RouteAndTransform<TProduceOptions> transform,
+        bool                               awaitProduce
+    ) {
         _eventProducer = eventProducer;
         _transform     = transform;
+        _awaitProduce  = awaitProduce;
     }
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
