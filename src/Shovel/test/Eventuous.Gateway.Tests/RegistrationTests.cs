@@ -29,13 +29,13 @@ public class RegistrationTests {
             services.AddGateway<TestSub, TestOptions, TestProducer, TestTransform>("shovel2");
         }
 
-        static ValueTask<GatewayContext?> RouteAndTransform(object message) => new();
+        static ValueTask<GatewayMessage[]> RouteAndTransform(object message) => new();
 
         public void Configure(IApplicationBuilder app) { }
     }
 
     class TestTransform : IGatewayTransform {
-        public ValueTask<GatewayContext?> RouteAndTransform(IMessageConsumeContext context)
+        public ValueTask<GatewayMessage[]> RouteAndTransform(IMessageConsumeContext context)
             => new();
     }
 

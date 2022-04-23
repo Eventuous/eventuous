@@ -55,7 +55,7 @@ public class SubscriptionSpec : IAsyncLifetime, IDisposable {
 
         _handler.AssertThat().Any(x => x as TestEvent == testEvent);
 
-        await _producer.Produce(_exchange, testEvent);
+        await _producer.Produce(_exchange, testEvent, new Metadata());
         await _handler.Validate(10.Seconds());
     }
 
@@ -67,7 +67,7 @@ public class SubscriptionSpec : IAsyncLifetime, IDisposable {
 
         _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
-        await _producer.Produce(_exchange, testEvents);
+        await _producer.Produce(_exchange, testEvents, new Metadata());
         await _handler.Validate(10.Seconds());
     }
 

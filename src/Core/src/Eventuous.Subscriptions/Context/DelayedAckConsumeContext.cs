@@ -41,6 +41,6 @@ public class DelayedAckConsumeContext : WrappedConsumeContext {
     /// <returns></returns>
     public ValueTask Fail(Exception exception) => _fail(this, exception);
 
-    public string PartitionKey { get; internal set; }
-    public long   PartitionId  { get; internal set; }
+    public string? PartitionKey { get; internal set; }
+    public long    PartitionId  { get; internal set; }
 }

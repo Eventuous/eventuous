@@ -2,7 +2,7 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Gateway;
 
-public delegate ValueTask<GatewayContext<TProduceOptions>?> RouteAndTransform<TProduceOptions>(
+public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<TProduceOptions>(
     IMessageConsumeContext message
 );
 
@@ -24,24 +24,42 @@ public class GatewayHandler<TProduceOptions> : BaseEventHandler
     }
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        var shovelMessage = await _transform(context).NoContext();
+        var shovelMessages = await _transform(context).NoContext();
 
-        if (shovelMessage?.Message == null) return EventHandlingStatus.Ignored;
+        if (shovelMessages.Length == 0) return EventHandlingStatus.Ignored;
+
+        Func<ValueTask>? onAck = null;
+
+        if (context is DelayedAckConsumeContext delayed) {
+            onAck = () => delayed.Acknowledge();
+        }
 
         try {
-            await _eventProducer.Produce(
-                    shovelMessage.TargetStream,
-                    shovelMessage.Message,
-                    shovelMessage.GetMeta(context),
-                    shovelMessage.ProduceOptions,
-                    context.CancellationToken
-                )
+            var grouped = shovelMessages.GroupBy(x => x.TargetStream);
+
+            await grouped
+                .Select(x => ProduceToStream(x.Key, x))
+                .WhenAll()
                 .NoContext();
         }
         catch (OperationCanceledException e) {
             context.Nack<GatewayHandler>(e);
         }
 
-        return EventHandlingStatus.Success;
+        return _awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
+
+        Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage<TProduceOptions>> toProduce)
+            => toProduce.Select(
+                    x =>
+                        _eventProducer.Produce(
+                            streamName,
+                            x.Message,
+                            x.GetMeta(context),
+                            x.ProduceOptions,
+                            onAck,
+                            context.CancellationToken
+                        )
+                )
+                .WhenAll();
     }
 }

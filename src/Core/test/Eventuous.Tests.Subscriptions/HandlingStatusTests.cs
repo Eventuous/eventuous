@@ -44,6 +44,7 @@ public class HandlingStatusTests {
         context.Ignore("test");
         context.HasFailed().Should().BeTrue();
         context.WasIgnored().Should().BeFalse();
+        context.HandlingResults.IsPending().Should().BeFalse();
     }
 
     [Fact]
@@ -54,6 +55,7 @@ public class HandlingStatusTests {
         context.Ignore<long>();
         context.HasFailed().Should().BeTrue();
         context.WasIgnored().Should().BeFalse();
+        context.HandlingResults.IsPending().Should().BeFalse();
     }
 
     [Fact]
@@ -63,6 +65,7 @@ public class HandlingStatusTests {
         context.Ignore<int>();
         context.HasFailed().Should().BeFalse();
         context.WasIgnored().Should().BeFalse();
+        context.HandlingResults.IsPending().Should().BeFalse();
     }
 
     [Fact]
@@ -71,5 +74,14 @@ public class HandlingStatusTests {
         context.Ignore<object>();
         context.Ignore<int>();
         context.WasIgnored().Should().BeTrue();
+        context.HandlingResults.IsPending().Should().BeFalse();
+    }
+
+    [Fact]
+    public void PendingShouldBePending() {
+        var context = Fixture.Create<MessageConsumeContext>();
+        context.WasIgnored().Should().BeFalse();
+        context.HasFailed().Should().BeFalse();
+        context.HandlingResults.IsPending().Should().BeTrue();
     }
 }

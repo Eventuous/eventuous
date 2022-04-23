@@ -17,7 +17,7 @@ public class PublishAndSubscribeManyTests : SubscriptionFixture<TestEventHandler
 
         await Start();
         
-        await Producer.Produce(Stream, testEvents);
+        await Producer.Produce(Stream, testEvents, new Metadata());
 
         await Handler.Validate(10.Seconds());
         

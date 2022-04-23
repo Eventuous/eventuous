@@ -1,6 +1,7 @@
 // ReSharper disable CheckNamespace
 
 using Eventuous.Gateway;
+using Eventuous.Subscriptions.Registrations;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -8,45 +9,52 @@ namespace Microsoft.Extensions.DependencyInjection;
 [PublicAPI]
 public static class GatewayRegistrations {
     public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer>(
-        this IServiceCollection       services,
-        string                        subscriptionId,
-        RouteAndTransform             routeAndTransform,
-        Action<TSubscriptionOptions>? configureSubscription = null,
-        bool                          awaitProduce          = true
+        this IServiceCollection                                           services,
+        string                                                            subscriptionId,
+        RouteAndTransform                                                 routeAndTransform,
+        Action<TSubscriptionOptions>?                                     configureSubscription = null,
+        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+        bool                                                              awaitProduce          = true
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer
         where TSubscriptionOptions : SubscriptionOptions {
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
-            builder => builder
-                .Configure(configureSubscription)
-                .AddEventHandler(
+            builder => {
+                builder.Configure(configureSubscription);
+                configureBuilder?.Invoke(builder);
+
+                builder.AddEventHandler(
                     sp => new GatewayHandler(
                         new GatewayProducer(sp.GetRequiredService<TProducer>()),
                         routeAndTransform,
                         awaitProduce
                     )
-                )
+                );
+            }
         );
 
         return services;
     }
 
     public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer>(
-        this IServiceCollection       services,
-        string                        subscriptionId,
-        Action<TSubscriptionOptions>? configureSubscription = null,
-        bool                          awaitProduce          = true
+        this IServiceCollection                                           services,
+        string                                                            subscriptionId,
+        Action<TSubscriptionOptions>?                                     configureSubscription = null,
+        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+        bool                                                              awaitProduce          = true
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer
         where TSubscriptionOptions : SubscriptionOptions {
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
-            builder => builder
-                .Configure(configureSubscription)
-                .AddEventHandler(GetHandler)
+            builder => {
+                builder.Configure(configureSubscription);
+                configureBuilder?.Invoke(builder);
+                builder.AddEventHandler(GetHandler);
+            }
         );
 
         return services;
@@ -60,10 +68,11 @@ public static class GatewayRegistrations {
     }
 
     public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TTransform>(
-        this IServiceCollection       services,
-        string                        subscriptionId,
-        Action<TSubscriptionOptions>? configureSubscription = null,
-        bool                          awaitProduce          = true
+        this IServiceCollection                                           services,
+        string                                                            subscriptionId,
+        Action<TSubscriptionOptions>?                                     configureSubscription = null,
+        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+        bool                                                              awaitProduce          = true
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer
@@ -73,9 +82,11 @@ public static class GatewayRegistrations {
 
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
-            builder => builder
-                .Configure(configureSubscription)
-                .AddEventHandler(GetHandler)
+            builder => {
+                builder.Configure(configureSubscription);
+                configureBuilder?.Invoke(builder);
+                builder.AddEventHandler(GetHandler);
+            }
         );
 
         return services;

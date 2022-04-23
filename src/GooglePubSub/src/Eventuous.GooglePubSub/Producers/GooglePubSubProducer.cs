@@ -107,7 +107,8 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
             message.Metadata.Remove(MetaTags.MessageId);
 
             foreach (var (key, value) in message.Metadata) {
-                psm.Attributes.Add(key, value.ToString());
+                if (value != null)
+                    psm.Attributes.Add(key, value.ToString());
             }
         }
 

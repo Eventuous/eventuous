@@ -20,6 +20,8 @@ public static class TaskExtensions {
     )
         => source.WithCancellation(cancellationToken).ConfigureAwait(false);
 
+    public static Task WhenAll(this IEnumerable<Task> tasks) => Task.WhenAll(tasks);
+
     public static async Task WhenAll(this IEnumerable<ValueTask> tasks) {
         var toAwait = tasks
             .Where(valueTask => !valueTask.IsCompletedSuccessfully)

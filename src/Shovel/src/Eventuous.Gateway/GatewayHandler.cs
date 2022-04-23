@@ -2,7 +2,7 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Gateway;
 
-public delegate ValueTask<GatewayContext?> RouteAndTransform(IMessageConsumeContext context);
+public delegate ValueTask<GatewayMessage[]> RouteAndTransform(IMessageConsumeContext context);
 
 class GatewayHandler : BaseEventHandler {
     readonly IEventProducer    _eventProducer;
@@ -16,19 +16,32 @@ class GatewayHandler : BaseEventHandler {
     }
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        var shovelMessage = await _transform(context).NoContext();
+        var shovelMessages = await _transform(context).NoContext();
 
-        if (shovelMessage?.Message == null) return EventHandlingStatus.Ignored;
+        if (shovelMessages.Length == 0) return EventHandlingStatus.Ignored;
 
-        await _eventProducer
-            .Produce(
-                shovelMessage.TargetStream,
-                shovelMessage.Message,
-                shovelMessage.GetMeta(context),
-                context.CancellationToken
-            )
-            .NoContext();
+        Func<ValueTask>? onAck = null;
+
+        if (context is DelayedAckConsumeContext delayed) {
+            onAck = () => delayed.Acknowledge();
+        }
+
+        var grouped = shovelMessages.GroupBy(x => x.TargetStream);
+
+        try {
+            await grouped.Select(x => ProduceToStream(x.Key, x)).WhenAll();
+        }
+        catch (OperationCanceledException e) {
+            context.Nack<GatewayHandler>(e);
+        }
 
         return _awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
+
+        Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage> toProduce) {
+            var messages = toProduce
+                .Select(x => new ProducedMessage(x.Message, x.GetMeta(context)) { OnAck = onAck });
+
+            return _eventProducer.Produce(streamName, messages, context.CancellationToken);
+        }
     }
 }

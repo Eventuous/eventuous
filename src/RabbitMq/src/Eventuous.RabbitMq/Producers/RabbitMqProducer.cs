@@ -26,9 +26,9 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
     /// <param name="serializer">Optional: event serializer instance</param>
     /// <param name="options">Optional: additional configuration for the exchange</param>
     public RabbitMqProducer(
-        ConnectionFactory         connectionFactory,
-        IEventSerializer?         serializer       = null,
-        RabbitMqExchangeOptions?  options          = null
+        ConnectionFactory        connectionFactory,
+        IEventSerializer?        serializer = null,
+        RabbitMqExchangeOptions? options    = null
     ) : base(TracingOptions) {
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
@@ -71,8 +71,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
     }
 
     void Publish(string stream, ProducedMessage message, RabbitMqProduceOptions? options) {
-        if (_channel == null)
-            throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
+        if (_channel == null) throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
 
         var (msg, metadata)                   = (message.Message, message.Metadata);
         var (eventType, contentType, payload) = _serializer.SerializeEvent(msg);
@@ -100,19 +99,18 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
 
     readonly ExchangeCache _exchangeCache = new();
 
-    void EnsureExchange(string exchange) {
-        _exchangeCache.EnsureExchange(
+    void EnsureExchange(string exchange)
+        => _exchangeCache.EnsureExchange(
             exchange,
             () =>
                 _channel!.ExchangeDeclare(
                     exchange,
-                    _options?.Type ?? ExchangeType.Fanout,
-                    _options?.Durable ?? true,
+                    _options?.Type       ?? ExchangeType.Fanout,
+                    _options?.Durable    ?? true,
                     _options?.AutoDelete ?? false,
                     _options?.Arguments
                 )
         );
-    }
 
     async Task Confirm(CancellationToken cancellationToken) {
         while (!_channel!.WaitForConfirms(ConfirmTimeout) && !cancellationToken.IsCancellationRequested) {

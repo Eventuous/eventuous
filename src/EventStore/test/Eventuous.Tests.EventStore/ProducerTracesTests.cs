@@ -30,7 +30,7 @@ public class TracesTests : SubscriptionFixture<TracedHandler>, IDisposable {
     public async Task ShouldPropagateRemoveContext() {
         var testEvent = Auto.Create<TestEvent>();
 
-        await Producer.Produce(Stream, testEvent);
+        await Producer.Produce(Stream, testEvent, new Metadata());
 
         await Start();
 

@@ -8,8 +8,9 @@ public record ProducedMessage {
         MessageType = TypeMap.GetTypeName(message);
     }
 
-    public object    Message     { get; }
-    public Metadata? Metadata    { get; init; }
-    public Guid      MessageId   { get; }
-    public string    MessageType { get; }
+    public object           Message     { get; }
+    public Metadata?        Metadata    { get; init; }
+    public Guid             MessageId   { get; }
+    public string           MessageType { get; }
+    public Func<ValueTask>? OnAck       { get; init; }
 }

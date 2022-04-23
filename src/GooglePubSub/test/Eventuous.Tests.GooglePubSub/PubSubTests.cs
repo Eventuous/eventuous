@@ -44,7 +44,7 @@ public class PubSubTests : IAsyncLifetime {
         var testEvent = Auto.Create<TestEvent>();
         _handler.AssertThat().Any(x => x as TestEvent == testEvent);
 
-        await _producer.Produce(_pubsubTopic, testEvent);
+        await _producer.Produce(_pubsubTopic, testEvent, null);
 
         await _handler.Validate(10.Seconds());
     }
@@ -56,7 +56,7 @@ public class PubSubTests : IAsyncLifetime {
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
         _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
-        await _producer.Produce(_pubsubTopic, testEvents);
+        await _producer.Produce(_pubsubTopic, testEvents, null);
 
         await _handler.Validate(10.Seconds());
     }

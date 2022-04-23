@@ -92,9 +92,8 @@ public class AllStreamSubscription
             global::EventStore.Client.StreamSubscription _,
             SubscriptionDroppedReason                    reason,
             Exception?                                   ex
-        ) {
-            Dropped(EsdbMappings.AsDropReason(reason), ex);
-        }
+        )
+            => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
     IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {

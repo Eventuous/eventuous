@@ -129,7 +129,7 @@ public class GooglePubSubSubscription
         }
 
         Metadata AsMeta(MapField<string, string> attributes)
-            => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value));
+            => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {

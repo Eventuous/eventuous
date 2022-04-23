@@ -3,9 +3,9 @@ using Eventuous.Subscriptions.Context;
 namespace Eventuous.Gateway;
 
 public interface IGatewayTransform {
-    ValueTask<GatewayContext?> RouteAndTransform(IMessageConsumeContext context);
+    ValueTask<GatewayMessage[]> RouteAndTransform(IMessageConsumeContext context);
 }
 
 public interface IGatewayTransform<TProduceOptions> {
-    ValueTask<GatewayContext<TProduceOptions>?> RouteAndTransform(IMessageConsumeContext context);
+    ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform(IMessageConsumeContext context);
 }

@@ -13,7 +13,7 @@ public class PublishAndSubscribeOneTests : SubscriptionFixture<TestEventHandler>
         var testEvent = Auto.Create<TestEvent>();
         Handler.AssertThat().Any(x => x as TestEvent == testEvent);
 
-        await Producer.Produce(Stream, testEvent);
+        await Producer.Produce(Stream, testEvent, new Metadata());
         await Start();
 
         await Handler.Validate(10.Seconds());

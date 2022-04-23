@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Microsoft.Extensions.DependencyInjection;
 
 public class ConnectorBuilder {
+    [PublicAPI]
     public ConnectorBuilder<TSubscription, TSubscriptionOptions> SubscribeWith<TSubscription, TSubscriptionOptions>(
         string subscriptionId
     ) where TSubscription : EventSubscription<TSubscriptionOptions> where TSubscriptionOptions : SubscriptionOptions
@@ -21,6 +22,7 @@ public class ConnectorBuilder<TSubscription, TSubscriptionOptions> : ConnectorBu
 
     internal ConnectorBuilder(string subscriptionId) => SubscriptionId = subscriptionId;
 
+    [PublicAPI]
     public ConnectorBuilder<TSubscription, TSubscriptionOptions> ConfigureSubscriptionOptions(
         Action<TSubscriptionOptions> configureOptions
     ) {
@@ -28,6 +30,7 @@ public class ConnectorBuilder<TSubscription, TSubscriptionOptions> : ConnectorBu
         return this;
     }
 
+    [PublicAPI]
     public ConnectorBuilder<TSubscription, TSubscriptionOptions> ConfigureSubscription(
         Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>> configure
     ) {
@@ -35,10 +38,11 @@ public class ConnectorBuilder<TSubscription, TSubscriptionOptions> : ConnectorBu
         return this;
     }
 
+    [PublicAPI]
     public ConnectorBuilder<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions>
-        ProduceWith<TProducer, TProduceOptions>()
+        ProduceWith<TProducer, TProduceOptions>(bool awaitProduce = false)
         where TProducer : class, IEventProducer<TProduceOptions> where TProduceOptions : class
-        => new(this);
+        => new(this, awaitProduce);
 
     internal void ConfigureOptions(TSubscriptionOptions options) => _configureOptions?.Invoke(options);
 
@@ -56,10 +60,15 @@ public class ConnectorBuilder<TSubscription, TSubscriptionOptions, TProducer, TP
     where TProduceOptions : class {
     readonly ConnectorBuilder<TSubscription, TSubscriptionOptions> _inner;
     Func<IServiceProvider, IGatewayTransform<TProduceOptions>>?    _getTransformer;
+    readonly bool                                                  _awaitProduce;
     Type?                                                          _transformerType;
 
-    public ConnectorBuilder(ConnectorBuilder<TSubscription, TSubscriptionOptions> inner) => _inner = inner;
+    public ConnectorBuilder(ConnectorBuilder<TSubscription, TSubscriptionOptions> inner, bool awaitProduce) {
+        _inner        = inner;
+        _awaitProduce = awaitProduce;
+    }
 
+    [PublicAPI]
     public ConnectorBuilder<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions> TransformWith<T>(
         Func<IServiceProvider, T> getTransformer
     ) where T : class, IGatewayTransform<TProduceOptions> {
@@ -91,7 +100,8 @@ public class ConnectorBuilder<TSubscription, TSubscriptionOptions, TProducer, TP
 
             return new GatewayHandler<TProduceOptions>(
                 new GatewayProducer<TProduceOptions>(producer),
-                transform!.RouteAndTransform
+                transform!.RouteAndTransform,
+                _awaitProduce
             );
         }
     }

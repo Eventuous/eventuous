@@ -18,7 +18,7 @@ public class Metadata : Dictionary<string, object?> {
         return this;
     }
 
-    public string? GetString(string key) => TryGetValue(key, out var value) ? value.ToString() : default;
+    public string? GetString(string key) => TryGetValue(key, out var value) ? value?.ToString() : default;
 
     public T? Get<T>(string key) => TryGetValue(key, out var value) && value is T v ? v : default;
 
