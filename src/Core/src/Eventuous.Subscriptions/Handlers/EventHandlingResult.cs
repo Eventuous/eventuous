@@ -43,6 +43,8 @@ public class HandlingResults {
     public EventHandlingStatus GetFailureStatus() => _handlingStatus & EventHandlingStatus.Handled;
 
     public EventHandlingStatus GetIgnoreStatus() => _handlingStatus & EventHandlingStatus.Ignored;
+    
+    public bool IsPending() => _handlingStatus == 0;
 
     public Exception? GetException() => _results.First(x => x.Exception != null).Exception;
 }

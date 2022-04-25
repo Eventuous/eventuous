@@ -31,9 +31,8 @@ public class TracingFilter : ConsumeFilter {
             )
             : Activity.Current;
 
-        if (activity?.IsAllDataRequested == true) {
-            var partitionId = context.Items.TryGetItem<long>(ContextKeys.PartitionId);
-            activity.SetContextTags(context)?.SetTag(TelemetryTags.Eventuous.Partition, partitionId);
+        if (activity?.IsAllDataRequested == true && context is DelayedAckConsumeContext delayedAckContext) {
+            activity.SetContextTags(context)?.SetTag(TelemetryTags.Eventuous.Partition, delayedAckContext.PartitionId);
         }
 
         try {

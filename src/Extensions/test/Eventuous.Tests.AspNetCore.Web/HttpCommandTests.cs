@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Eventuous.AspNetCore.Web;
 using Eventuous.Sut.AspNetCore;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers;
@@ -83,3 +84,6 @@ public class HttpCommandTests : IDisposable {
 }
 
 record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);
+
+[HttpCommand(Route = "book")]
+record BookAnotherRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);

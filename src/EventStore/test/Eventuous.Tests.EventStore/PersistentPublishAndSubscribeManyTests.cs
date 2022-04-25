@@ -17,7 +17,7 @@ public class PersistentPublishAndSubscribeManyTests : PersistentSubscriptionFixt
 
         await Start();
         
-        await Producer.Produce(Stream, testEvents);
+        await Producer.Produce(Stream, testEvents, new Metadata());
 
         await Handler.Validate(10.Seconds());
 

@@ -100,7 +100,7 @@ public static class RouteBuilderExtensions {
                     );
 
                 var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type);
-                genericMethod.Invoke(null, new object?[] { builder, attr.Route });
+                genericMethod.Invoke(null, new object?[] { builder, attr.Route, null });
             }
         }
 

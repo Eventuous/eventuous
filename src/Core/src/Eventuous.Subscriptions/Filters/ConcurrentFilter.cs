@@ -39,7 +39,8 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
                 }
             }
 
-            await ctx.Acknowledge().NoContext();
+            if (!ctx.HandlingResults.IsPending())
+                await ctx.Acknowledge().NoContext();
         }
         catch (TaskCanceledException) {
             ctx.Ignore<ConcurrentFilter>();

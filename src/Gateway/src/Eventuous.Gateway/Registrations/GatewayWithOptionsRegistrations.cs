@@ -13,7 +13,8 @@ public static class GatewayWithOptionsRegistrations {
         string                                                            subscriptionId,
         RouteAndTransform<TProduceOptions>                                routeAndTransform,
         Action<TSubscriptionOptions>?                                     configureSubscription = null,
-        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null
+        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+        bool                                                              awaitProduce          = true
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
@@ -24,10 +25,12 @@ public static class GatewayWithOptionsRegistrations {
             builder => {
                 builder.Configure(configureSubscription);
                 configureBuilder?.Invoke(builder);
+
                 builder.AddEventHandler(
                     sp => new GatewayHandler<TProduceOptions>(
                         new GatewayProducer<TProduceOptions>(sp.GetRequiredService<TProducer>()),
-                        routeAndTransform
+                        routeAndTransform,
+                        awaitProduce
                     )
                 );
             }
@@ -40,7 +43,8 @@ public static class GatewayWithOptionsRegistrations {
         this IServiceCollection                                           services,
         string                                                            subscriptionId,
         Action<TSubscriptionOptions>?                                     configureSubscription = null,
-        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null
+        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+        bool                                                              awaitProduce          = true
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
@@ -63,7 +67,8 @@ public static class GatewayWithOptionsRegistrations {
 
             return new GatewayHandler<TProduceOptions>(
                 new GatewayProducer<TProduceOptions>(producer),
-                transform
+                transform,
+                awaitProduce
             );
         }
     }
@@ -73,7 +78,8 @@ public static class GatewayWithOptionsRegistrations {
         this IServiceCollection                                           services,
         string                                                            subscriptionId,
         Action<TSubscriptionOptions>?                                     configureSubscription = null,
-        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null
+        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+        bool                                                              awaitProduce          = true
     )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
@@ -99,7 +105,8 @@ public static class GatewayWithOptionsRegistrations {
 
             return new GatewayHandler<TProduceOptions>(
                 new GatewayProducer<TProduceOptions>(producer),
-                transform.RouteAndTransform
+                transform.RouteAndTransform,
+                awaitProduce
             );
         }
     }

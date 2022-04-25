@@ -1,0 +1,60 @@
+version: '3.7'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    hostname: zookeeper
+    container_name: eventuous-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: eventuous-kafka
+    hostname: kafka
+    ports:
+      # To learn about configuring Kafka for access across networks see
+      # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:19092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  kafka-schema-registry:
+    image: confluentinc/cp-schema-registry:7.0.1
+    container_name: eventuous-kafka-schema-registry
+    hostname: schema-registry
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://kafka:19092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - zookeeper
+      - kafka
+      - kafka1
+      - schemaregistry
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_JMXPORT: 9997
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schemaregistry:8085

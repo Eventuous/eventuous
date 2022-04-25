@@ -1,5 +1,4 @@
-﻿using Eventuous.Gateway;
-using Eventuous.Producers;
+﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -29,13 +28,13 @@ public class RegistrationTestsWithOptions {
             services.AddGateway<TestSub, TestOptions, TestProducer, TestProduceOptions, TestTransform>("shovel2");
         }
 
-        static ValueTask<GatewayContext<TestProduceOptions>?> RouteAndTransform(object message) => new();
+        static ValueTask<GatewayMessage<TestProduceOptions>[]> RouteAndTransform(object message) => new();
 
         public void Configure(IApplicationBuilder app) { }
     }
 
     class TestTransform : IGatewayTransform<TestProduceOptions> {
-        public ValueTask<GatewayContext<TestProduceOptions>?> RouteAndTransform(IMessageConsumeContext context)
+        public ValueTask<GatewayMessage<TestProduceOptions>[]> RouteAndTransform(IMessageConsumeContext context)
             => new();
     }
 

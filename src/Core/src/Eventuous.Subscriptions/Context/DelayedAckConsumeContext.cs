@@ -40,4 +40,7 @@ public class DelayedAckConsumeContext : WrappedConsumeContext {
     /// <param name="exception">Exception that occurred during message processing</param>
     /// <returns></returns>
     public ValueTask Fail(Exception exception) => _fail(this, exception);
+
+    public string? PartitionKey { get; internal set; }
+    public long    PartitionId  { get; internal set; }
 }

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks></TargetFrameworks>
+        <IsTestProject>true</IsTestProject>
+        <IsPackable>false</IsPackable>
+        <IncludeSutSubs>true</IncludeSutSubs>
+        <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx-x64</RuntimeIdentifier>
+    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="$(LocalRoot)\Eventuous.Kafka\Eventuous.Kafka.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
+    </ItemGroup>
+</Project>

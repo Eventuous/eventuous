@@ -89,7 +89,7 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
     public async Task InitializeAsync() {
         var testEvents = IntegrationFixture.Instance.Auto.CreateMany<TestEvent>(Count).ToList();
         var producer   = _host.Services.GetRequiredService<IEventProducer>();
-        await producer.Produce(_stream, testEvents);
+        await producer.Produce(_stream, testEvents, new Metadata());
         await Task.Delay(1000);
     }
 

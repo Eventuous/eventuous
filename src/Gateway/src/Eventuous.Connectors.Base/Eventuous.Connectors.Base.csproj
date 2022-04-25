@@ -18,7 +18,7 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
         <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
-        <ProjectReference Include="$(GatewayRoot)\Eventuous.Gateway\Eventuous.Gateway.csproj" />
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
+        <ProjectReference Include="..\Eventuous.Gateway\Eventuous.Gateway.csproj" />
     </ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <TargetFrameworks>net6.0</TargetFrameworks>
         <IsTestProject>true</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeTestHelpers>true</IncludeTestHelpers>

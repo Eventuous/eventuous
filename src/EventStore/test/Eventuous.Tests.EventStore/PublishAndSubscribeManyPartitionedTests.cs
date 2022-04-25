@@ -25,7 +25,7 @@ public class PublishAndSubscribeManyPartitionedTests : SubscriptionFixture<TestE
         Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
         await Start();
-        await Producer.Produce(Stream, testEvents);
+        await Producer.Produce(Stream, testEvents, new Metadata());
 
         await Handler.Validate(5.Seconds());
         await Stop();
