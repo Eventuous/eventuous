@@ -23,4 +23,14 @@ static class MetadataExtensions {
         }
         return headers;
     }
+    
+    public static Metadata AsMetadata(this Headers headers) {
+        var metadata = new Metadata();
+
+        foreach (var header in headers) {
+            metadata.Add(header.Key, Encoding.UTF8.GetString(header.GetValueBytes()));
+        }
+
+        return metadata;
+    }
 }

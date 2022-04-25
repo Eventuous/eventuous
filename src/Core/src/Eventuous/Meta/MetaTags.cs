@@ -1,4 +1,4 @@
-namespace Eventuous; 
+namespace Eventuous;
 
 public static class MetaTags {
     const string Prefix = "eventuous";

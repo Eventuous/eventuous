@@ -1,0 +1,129 @@
+version: '3.7'
+
+services:
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    container_name: eventuous-es01
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es02,es03,es04
+      - cluster.initial_master_nodes=es01,es02,es03,es04
+      - node.roles=master,data_content,data_hot
+      - path.repo=/usr/share/elasticsearch/snapshots
+      - xpack.security.enabled=false
+      #- bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1Gb
+    volumes:
+      - hot_data:/usr/share/elasticsearch/data
+      - snapshots:/usr/share/elasticsearch/snapshots
+    ports:
+      - "9200:9200"
+    networks:
+      - elastic
+  
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    container_name: eventuous-es02
+    environment:
+      - node.name=es02
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es03,es04
+      - cluster.initial_master_nodes=es01,es02,es03,es04
+      - node.roles=master,data_warm
+      - path.repo=/usr/share/elasticsearch/snapshots
+      - xpack.security.enabled=false
+      #- bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1Gb
+    volumes:
+      - warm_data:/usr/share/elasticsearch/data
+      - snapshots:/usr/share/elasticsearch/snapshots
+    networks:
+      - elastic
+  
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    container_name: eventuous-es03
+    environment:
+      - node.name=es03
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es02,es04
+      - cluster.initial_master_nodes=es01,es02,es03,es04
+      - node.roles=master,data_cold
+      - path.repo=/usr/share/elasticsearch/snapshots
+      - xpack.security.enabled=false
+      #- bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1Gb
+    volumes:
+      - cold_data:/usr/share/elasticsearch/data
+      - snapshots:/usr/share/elasticsearch/snapshots
+    networks:
+      - elastic
+  
+  es04:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    container_name: eventuous-es04
+    environment:
+      - node.name=es04
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03,es04
+      - node.roles=master,data_frozen
+      - path.repo=/usr/share/elasticsearch/snapshots
+      - xpack.searchable.snapshot.shared_cache.size=10%
+      - xpack.security.enabled=false
+      #- bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1Gb
+    volumes:
+      - frozen_data:/usr/share/elasticsearch/data
+      - snapshots:/usr/share/elasticsearch/snapshots
+    networks:
+      - elastic
+  
+  kib01:
+    image: docker.elastic.co/kibana/kibana:7.15.0
+    container_name: eventuous-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_URL: http://es01:9200
+      ELASTICSEARCH_HOSTS: '["http://es01:9200","http://es02:9200","http://es03:9200","http://es04:9200"]'
+    mem_limit: 1Gb
+    networks:
+      - elastic
+
+volumes:
+  hot_data:
+    driver: local
+  warm_data:
+    driver: local
+  cold_data:
+    driver: local
+  frozen_data:
+    driver: local
+  snapshots:
+    driver: local
+
+networks:
+  elastic:
+    driver: bridge

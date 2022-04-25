@@ -28,9 +28,6 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
         ProduceOperation = "produce"
     };
 
-    const string MessageTypeHeader = "message-type";
-    const string ContentTypeHeader = "content-type";
-
     protected override async Task ProduceMessages(
         StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
@@ -42,8 +39,8 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
             var headers    = producedMessage.Metadata?.AsKafkaHeaders() ?? new Headers();
 
             headers
-                .AddHeader(MessageTypeHeader, serialized.EventType)
-                .AddHeader(ContentTypeHeader, serialized.ContentType);
+                .AddHeader(KafkaHeaderKeys.MessageTypeHeader, serialized.EventType)
+                .AddHeader(KafkaHeaderKeys.ContentTypeHeader, serialized.ContentType);
 
             await ProduceLocal();
 
@@ -60,10 +57,11 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
                     await _producerWithKey.ProduceAsync(stream, message, cancellationToken).NoContext();
                 }
                 else {
-                    _producerWithKey.Produce(stream, message, DeliveryHandler);
+                    _producerWithKey.Produce(stream, message, r => DeliveryHandler(r, producedMessage));
                 }
 
-                void DeliveryHandler(DeliveryReport<string, byte[]> report) => Report(report.Error);
+                void DeliveryHandler(DeliveryReport<string, byte[]> report, ProducedMessage msg)
+                    => Report(report.Error, msg);
             }
 
             async Task ProduceNotPartitioned() {
@@ -76,17 +74,19 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
                     await _producerWithoutKey.ProduceAsync(stream, message, cancellationToken).NoContext();
                 }
                 else {
-                    _producerWithoutKey.Produce(stream, message, DeliveryHandler);
+                    _producerWithoutKey.Produce(stream, message, r => DeliveryHandler(r, producedMessage));
                 }
 
-                void DeliveryHandler(DeliveryReport<Null, byte[]> report) => Report(report.Error);
+                void DeliveryHandler(DeliveryReport<Null, byte[]> report, ProducedMessage msg)
+                    => Report(report.Error, msg);
             }
 
-            void Report(Error error) {
-                // TODO: Handle error
-                if (!error.IsError) {
-                    Task.Run(() => producedMessage.OnAck().NoContext(), cancellationToken).GetAwaiter().GetResult();
+            void Report(Error error, ProducedMessage message) {
+                if (error.IsError) {
+                    producedMessage.OnNack?.Invoke(message, error.Reason, null).NoContext().GetAwaiter().GetResult();
                 }
+
+                producedMessage.OnAck(message).NoContext().GetAwaiter().GetResult();
             }
         }
     }
@@ -96,8 +96,12 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) {
-        _producerWithKey.Flush(TimeSpan.FromSeconds(10));
-        return Task.CompletedTask;
+    public async Task StopAsync(CancellationToken cancellationToken) {
+        while (!cancellationToken.IsCancellationRequested) {
+            var count = _producerWithKey.Flush(TimeSpan.FromSeconds(10));
+            if (count == 0) break;
+
+            await Task.Delay(100, cancellationToken).NoContext();
+        }
     }
 }

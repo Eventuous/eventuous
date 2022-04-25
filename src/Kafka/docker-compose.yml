@@ -1,44 +1,9 @@
 version: '3.7'
 
 services:
-
-  esdb:
-    container_name: eventuous-esdb
-    image: ghcr.io/eventstore/eventstore:21.10.0-alpha-arm64v8
-    ports:
-      - '2113:2113'
-      - '1113:1113'
-    environment:
-      EVENTSTORE_INSECURE: 'true'
-      EVENTSTORE_CLUSTER_SIZE: 1
-      EVENTSTORE_EXT_TCP_PORT: 1113
-      EVENTSTORE_HTTP_PORT: 2113
-      EVENTSTORE_ENABLE_EXTERNAL_TCP: 'true'
-      EVENTSTORE_RUN_PROJECTIONS: all
-      EVENTSTORE_START_STANDARD_PROJECTIONS: "true"
-      EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP: "true"
-
-  mongo:
-    container_name: eventuous-mongo
-    image: mongo
-    ports:
-      - '27017:27017'
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: mongoadmin
-      MONGO_INITDB_ROOT_PASSWORD: secret
-
-  rabbitmq:
-    container_name: eventuous-rabbitmq
-    hostname: rabbitmq
-    image: rabbitmq:management-alpine
-    ports:
-      - '4369:4369'
-      - '5672:5672'
-      - '25672:25672'
-      - '15672:15672'
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
+    hostname: zookeeper
     container_name: eventuous-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -47,6 +12,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.0.1
     container_name: eventuous-kafka
+    hostname: kafka
     ports:
       # To learn about configuring Kafka for access across networks see
       # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
@@ -57,7 +23,7 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:19092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -65,6 +31,7 @@ services:
   kafka-schema-registry:
     image: confluentinc/cp-schema-registry:7.0.1
     container_name: eventuous-kafka-schema-registry
+    hostname: schema-registry
     depends_on:
       - zookeeper
       - kafka
@@ -72,9 +39,22 @@ services:
       - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://kafka1:19092,PLAINTEXT://kafka2:19093,PLAINTEXT://kafka3:19094'
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://kafka:19092'
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
 
-networks:
-  default:
-    name: eventuous-network
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - zookeeper
+      - kafka
+      - kafka1
+      - schemaregistry
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_JMXPORT: 9997
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schemaregistry:8085

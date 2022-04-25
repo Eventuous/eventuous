@@ -1,14 +1,86 @@
 using Confluent.Kafka;
+using Eventuous.Kafka;
+using Eventuous.Kafka.Producers;
+using Eventuous.Producers;
+using Eventuous.Sut.Subs;
 
 namespace Eventuous.Tests.Kafka;
 
 public class BasicProducerTests {
-    public async Task ShouldProduceAndWait() {
-        var brokerList = "localhost:9092";
+    readonly ITestOutputHelper _output;
 
+    public BasicProducerTests(ITestOutputHelper output) => _output = output;
+
+    const string BrokerList = "localhost:9092";
+
+    static readonly Fixture Auto = new();
+
+    [Fact]
+    public async Task ShouldProduceAndWait() {
+        var topicName = Auto.Create<string>();
+        _output.WriteLine($"Topic: {topicName}");
+
+        var producer = new KafkaBasicProducer(
+            new KafkaProducerOptions(new ProducerConfig { BootstrapServers = BrokerList })
+        );
+
+        var produced = new List<TestEvent>();
+
+        var events = Auto.CreateMany<TestEvent>().ToArray();
+        await producer.StartAsync(default);
+
+        ValueTask OnAck(ProducedMessage msg) {
+            _output.WriteLine("Produced message: {0}", msg.Message);
+            produced.Add((TestEvent)msg.Message);
+            return ValueTask.CompletedTask;
+        }
+
+        await producer.Produce(
+            new StreamName(topicName),
+            events,
+            new Metadata(),
+            new KafkaProduceOptions("test"),
+            onAck: OnAck
+        );
+
+        await producer.StopAsync(default);
+
+        produced.Should().BeEquivalentTo(events);
+
+        using var consumer = GetConsumer(topicName);
+
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        consumer.Subscribe(topicName);
+
+        var consumed = new List<TestEvent>();
+
+        while (!cts.IsCancellationRequested) {
+            var msg = consumer.Consume(cts.Token);
+            if (msg == null) return;
+
+            var meta = msg.Message.Headers.AsMetadata();
+
+            var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
+            var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
+
+            var result =
+                DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as
+                    SuccessfullyDeserialized;
+
+            var evt = (result!.Payload as TestEvent)!;
+            _output.WriteLine($"Consumed {evt}");
+            consumed.Add(evt);
+            if (consumed.Count == events.Length) break;
+        }
+
+        _output.WriteLine($"Consumed {consumed.Count} events");
+        consumed.Should().BeEquivalentTo(events);
+    }
+
+    IConsumer<string, byte[]> GetConsumer(string groupId) {
         var config = new ConsumerConfig {
-            BootstrapServers            = brokerList,
-            GroupId                     = "csharp-consumer",
+            BootstrapServers            = BrokerList,
+            GroupId                     = groupId,
             EnableAutoCommit            = false,
             StatisticsIntervalMs        = 5000,
             SessionTimeoutMs            = 6000,
@@ -17,37 +89,27 @@ public class BasicProducerTests {
             PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky
         };
 
-        const int commitPeriod = 5;
-
-        using var consumer = new ConsumerBuilder<Ignore, string>(config)
-            .SetErrorHandler((_,      e) => Console.WriteLine($"Error: {e.Reason}"))
-            .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
+        return new ConsumerBuilder<string, byte[]>(config)
+            .SetErrorHandler((_,      e) => _output.WriteLine($"Error: {e.Reason}"))
+            .SetStatisticsHandler((_, json) => _output.WriteLine($"Statistics: {json}"))
             .SetPartitionsAssignedHandler(
                 (c, partitions) => {
-                    // Since a cooperative assignor (CooperativeSticky) has been configured, the
-                    // partition assignment is incremental (adds partitions to any existing assignment).
-                    Console.WriteLine(
+                    _output.WriteLine(
                         "Partitions incrementally assigned: ["                                           +
                         string.Join(',', partitions.Select(p => p.Partition.Value))                      +
                         "], all: ["                                                                      +
                         string.Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value)) +
                         "]"
                     );
-
-                    // Possibly manually specify start offsets by returning a list of topic/partition/offsets
-                    // to assign to, e.g.:
-                    // return partitions.Select(tp => new TopicPartitionOffset(tp, externalOffsets[tp]));
                 }
             )
             .SetPartitionsRevokedHandler(
                 (c, partitions) => {
-                    // Since a cooperative assignor (CooperativeSticky) has been configured, the revoked
-                    // assignment is incremental (may remove only some partitions of the current assignment).
                     var remaining = c.Assignment.Where(
                         atp => partitions.All(rtp => rtp.TopicPartition != atp)
                     );
 
-                    Console.WriteLine(
+                    _output.WriteLine(
                         "Partitions incrementally revoked: ["                       +
                         string.Join(',', partitions.Select(p => p.Partition.Value)) +
                         "], remaining: ["                                           +
@@ -57,9 +119,7 @@ public class BasicProducerTests {
                 }
             )
             .SetPartitionsLostHandler(
-                (c, partitions) => {
-                    Console.WriteLine($"Partitions were lost: [{string.Join(", ", partitions)}]");
-                }
+                (c, partitions) => _output.WriteLine($"Partitions were lost: [{string.Join(", ", partitions)}]")
             )
             .Build();
     }

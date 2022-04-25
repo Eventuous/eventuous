@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Eventuous.Gateway;
 using Eventuous.Producers;
 using Eventuous.Subscriptions;
@@ -10,6 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public class ConnectorBuilder {
     [PublicAPI]
+    [SuppressMessage("Performance", "CA1822:Mark members as static")]
     public ConnectorBuilder<TSubscription, TSubscriptionOptions> SubscribeWith<TSubscription, TSubscriptionOptions>(
         string subscriptionId
     ) where TSubscription : EventSubscription<TSubscriptionOptions> where TSubscriptionOptions : SubscriptionOptions

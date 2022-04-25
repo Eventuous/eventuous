@@ -1,0 +1,1 @@
+docker compose -f ../EventStore/docker-compose.yml -f ../Mongo/docker-compose.yml -f docker-compose.yml up

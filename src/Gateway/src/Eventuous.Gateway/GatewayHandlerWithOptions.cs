@@ -28,10 +28,10 @@ public class GatewayHandler<TProduceOptions> : BaseEventHandler
 
         if (shovelMessages.Length == 0) return EventHandlingStatus.Ignored;
 
-        Func<ValueTask>? onAck = null;
+        AcknowledgeProduce? onAck = null;
 
         if (context is DelayedAckConsumeContext delayed) {
-            onAck = () => delayed.Acknowledge();
+            onAck = _ => delayed.Acknowledge();
         }
 
         try {

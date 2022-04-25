@@ -19,13 +19,13 @@ public static class ProducerExtensions {
         StreamName          stream,
         TMessage            message,
         Metadata?           metadata,
-        Func<ValueTask>?    onAck             = null,
+        AcknowledgeProduce? onAck             = null,
         CancellationToken   cancellationToken = default
     ) where TMessage : class {
         var producedMessages =
             message is IEnumerable<object> collection
-                ? ConvertMany(collection, metadata)
-                : ConvertOne(message, metadata);
+                ? ConvertMany(collection, metadata, onAck)
+                : ConvertOne(message, metadata, onAck);
 
         return producer.Produce(stream, producedMessages, cancellationToken);
     }
@@ -50,7 +50,7 @@ public static class ProducerExtensions {
         TMessage                             message,
         Metadata?                            metadata,
         TProduceOptions                      options,
-        Func<ValueTask>?                     onAck             = null,
+        AcknowledgeProduce?                  onAck             = null,
         CancellationToken                    cancellationToken = default
     ) where TMessage : class where TProduceOptions : class {
         var producedMessages =
@@ -64,10 +64,10 @@ public static class ProducerExtensions {
     static IEnumerable<ProducedMessage> ConvertMany(
         IEnumerable<object> messages,
         Metadata?           metadata,
-        Func<ValueTask>?    onAck = null
+        AcknowledgeProduce? onAck
     )
         => messages.Select(x => new ProducedMessage(x, metadata) { OnAck = onAck });
 
-    static IEnumerable<ProducedMessage> ConvertOne(object message, Metadata? metadata, Func<ValueTask>? onAck = null)
+    static IEnumerable<ProducedMessage> ConvertOne(object message, Metadata? metadata, AcknowledgeProduce? onAck)
         => new[] { new ProducedMessage(message, metadata) { OnAck = onAck } };
 }
