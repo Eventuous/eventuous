@@ -48,29 +48,18 @@ public class GatewayHandler<TProduceOptions> : BaseEventHandler
 
         return _awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
 
-        async Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage<TProduceOptions>> toProduce) {
-            foreach (var message in toProduce) {
-                await _eventProducer.Produce(
-                    streamName,
-                    message.Message,
-                    message.GetMeta(context),
-                    message.ProduceOptions,
-                    onAck,
-                    context.CancellationToken
-                );
-            }
-            // return toProduce.Select(
-            //         x =>
-            //             _eventProducer.Produce(
-            //                 streamName,
-            //                 x.Message,
-            //                 x.GetMeta(context),
-            //                 x.ProduceOptions,
-            //                 onAck,
-            //                 context.CancellationToken
-            //             )
-            //     )
-            //     .WhenAll();
-        }
+        Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage<TProduceOptions>> toProduce)
+            => toProduce.Select(
+                    x =>
+                        _eventProducer.Produce(
+                            streamName,
+                            x.Message,
+                            x.GetMeta(context),
+                            x.ProduceOptions,
+                            onAck,
+                            context.CancellationToken
+                        )
+                )
+                .WhenAll();
     }
 }

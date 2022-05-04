@@ -5,7 +5,7 @@ public record ProducedMessage {
         Message     = message;
         Metadata    = metadata;
         MessageId   = messageId ?? Guid.NewGuid();
-        MessageType = TypeMap.GetTypeName(message);
+        MessageType = TypeMap.GetTypeName(message, false);
     }
 
     public object               Message     { get; }

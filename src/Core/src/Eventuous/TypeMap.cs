@@ -15,7 +15,7 @@ public static class TypeMap {
 
     public static string GetTypeName<T>() => Instance.GetTypeName<T>();
 
-    public static string GetTypeName(object o) => Instance.GetTypeName(o);
+    public static string GetTypeName(object o, bool fail = true) => Instance.GetTypeName(o, fail);
 
     public static string GetTypeNameByType(Type type) => Instance.GetTypeNameByType(type);
 
@@ -56,13 +56,12 @@ public class TypeMapper {
         return name;
     }
 
-    public string GetTypeName(object o) {
-        if (!_map.TryGetValue(o.GetType(), out var name)) {
-            Log.TypeNotMappedToName(o.GetType());
-            throw new UnregisteredTypeException(o.GetType());
-        }
+    public string GetTypeName(object o, bool fail = true) {
+        if (_map.TryGetValue(o.GetType(), out var name)) return name;
 
-        return name;
+        if (!fail) return "unknown";
+        Log.TypeNotMappedToName(o.GetType());
+        throw new UnregisteredTypeException(o.GetType());
     }
 
     public string GetTypeNameByType(Type type) {
