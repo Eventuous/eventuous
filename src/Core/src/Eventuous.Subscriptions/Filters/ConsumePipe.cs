@@ -13,7 +13,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         // Avoid adding one filter instance multiple times
         if (_filters.Any(x => x.FilterInstance == filter)) return this;
 
-        if (_filters.Count > 0 && !_filters.First().InContext.IsAssignableFrom(typeof(TOut))) {
+        if (_filters.Count > 0 && !typeof(TOut).IsAssignableFrom(_filters.First().InContext)) {
             throw new InvalidContextTypeException(_filters.First().InContext, typeof(TOut));
         }
 
@@ -30,7 +30,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         // Avoid adding one filter instance multiple times
         if (_filters.Any(x => x.FilterInstance == filter)) return this;
 
-        if (_filters.Count > 1 && !_filters.Last().OutContext.IsAssignableFrom(typeof(TIn))) {
+        if (_filters.Count > 1 && !typeof(TIn).IsAssignableFrom(_filters.Last().OutContext)) {
             throw new InvalidContextTypeException(_filters.Last().OutContext, typeof(TIn));
         }
 
@@ -70,5 +70,5 @@ record Filter(object FilterInstance, Type InContext, Type OutContext, SendForwar
 
 public class InvalidContextTypeException : Exception {
     public InvalidContextTypeException(Type expected, Type actual)
-        : base($"Expected context type is {expected.Name} but it is {actual.Name}") { }
+        : base($"Context type {expected.Name} is not assignable to {actual.Name}") { }
 }
