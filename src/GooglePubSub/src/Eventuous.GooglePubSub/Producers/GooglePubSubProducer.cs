@@ -87,7 +87,17 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     ) {
         var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
 
-        await Task.WhenAll(messages.Select(x => client.PublishAsync(CreateMessage(x, options)))).NoContext();
+        async Task ProduceLocal(ProducedMessage x) {
+            try {
+                await client.PublishAsync(CreateMessage(x, options)).NoContext();
+                await x.Ack().NoContext();
+            }
+            catch (Exception e) {
+                await x.Nack("Failed to produce to Google PubSub", e).NoContext();
+            }
+        }
+
+        await Task.WhenAll(messages.Select(ProduceLocal)).NoContext();
     }
 
     PubsubMessage CreateMessage(ProducedMessage message, PubSubProduceOptions? options) {
@@ -107,8 +117,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
             message.Metadata.Remove(MetaTags.MessageId);
 
             foreach (var (key, value) in message.Metadata) {
-                if (value != null)
-                    psm.Attributes.Add(key, value.ToString());
+                if (value != null) psm.Attributes.Add(key, value.ToString());
             }
         }
 

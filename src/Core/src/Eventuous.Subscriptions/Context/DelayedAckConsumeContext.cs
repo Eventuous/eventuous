@@ -32,7 +32,9 @@ public class DelayedAckConsumeContext : WrappedConsumeContext {
     /// Acknowledges that the message has been processed successfully. It also gets called if the message was ignored.
     /// </summary>
     /// <returns></returns>
-    public ValueTask Acknowledge() => _acknowledge(this);
+    public async ValueTask Acknowledge() {
+        await _acknowledge(this);
+    }
 
     /// <summary>
     /// Reports a message processing failure (NACK)

@@ -85,8 +85,9 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
                 if (error.IsError) {
                     producedMessage.OnNack?.Invoke(message, error.Reason, null).NoContext().GetAwaiter().GetResult();
                 }
-
-                producedMessage.OnAck(message).NoContext().GetAwaiter().GetResult();
+                else {
+                    producedMessage.OnAck(message).NoContext().GetAwaiter().GetResult();
+                }
             }
         }
     }

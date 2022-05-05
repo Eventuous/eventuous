@@ -58,16 +58,27 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         CancellationToken            cancellationToken = default
     ) {
         EnsureExchange(stream);
+        var produced = new List<ProducedMessage>();
+        var failed   = new List<(ProducedMessage, Exception)>();
 
         foreach (var message in messages) {
             if (Activity.Current is { IsAllDataRequested: true }) {
                 Activity.Current.SetTag(RabbitMqTelemetryTags.RoutingKey, options?.RoutingKey);
             }
 
-            Publish(stream, message, options);
+            try {
+                Publish(stream, message, options);
+                produced.Add(message);
+            }
+            catch (Exception e) {
+                failed.Add((message, e));
+            }
         }
 
         await Confirm(cancellationToken).NoContext();
+
+        await produced.Select(x => x.Ack()).WhenAll().NoContext();
+        await failed.Select(x => x.Item1.Nack("Failed to produce to RabbitMQ", x.Item2)).WhenAll().NoContext();
     }
 
     void Publish(string stream, ProducedMessage message, RabbitMqProduceOptions? options) {

@@ -14,4 +14,12 @@ public record ProducedMessage {
     public string               MessageType { get; }
     public AcknowledgeProduce?  OnAck       { get; init; }
     public ReportFailedProduce? OnNack      { get; init; }
+
+    public ValueTask Ack() => OnAck?.Invoke(this) ?? default;
+
+    public ValueTask Nack(string message, Exception? exception) {
+        if (OnNack != null) return OnNack(this, message, exception);
+
+        throw exception ?? new InvalidOperationException(message);
+    }
 }

@@ -18,8 +18,9 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
         ElasticProduceOptions?       options,
         CancellationToken            cancellationToken = default
     ) {
-        var documents = messages.Select(x => x.Message);
-        var mode      = options?.ProduceMode ?? ProduceMode.Create;
+        var messagesList = messages.ToList();
+        var documents    = messagesList.Select(x => x.Message);
+        var mode         = options?.ProduceMode ?? ProduceMode.Create;
 
         var bulk   = GetOp(new BulkDescriptor(stream.ToString()));
         var result = await _elasticClient.BulkAsync(bulk, cancellationToken);
@@ -29,15 +30,31 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
                 SubscriptionsEventSource.Log.Warn("ElasticProducer: version conflict");
             }
             else {
-                throw result.OriginalException ?? throw new InvalidOperationException(result.DebugInformation);
+                var errors = messagesList
+                    .Where(x => result.ItemsWithErrors.Any(y => y.Id == x.MessageId.ToString()))
+                    .ToList();
+
+                foreach (var error in errors) {
+                    await error.Nack(result.DebugInformation, result.OriginalException).NoContext();
+                }
+
+                messagesList = messagesList.Except(errors).ToList();
             }
         }
 
+        await Task.WhenAll(messagesList.Select(x => x.Ack().AsTask())).NoContext();
+
         BulkDescriptor GetOp(BulkDescriptor descriptor)
             => mode switch {
-                ProduceMode.Create => descriptor.CreateMany(documents),
-                ProduceMode.Index  => descriptor.IndexMany(documents),
-                _                  => throw new ArgumentOutOfRangeException()
+                ProduceMode.Create => descriptor.CreateMany<object>(
+                    messagesList,
+                    (createDescriptor, o) => {
+                        var pm = o as ProducedMessage;
+                        return createDescriptor.Document(pm!.Message).Id(pm.MessageId);
+                    }
+                ),
+                ProduceMode.Index => descriptor.IndexMany(documents),
+                _                 => throw new ArgumentOutOfRangeException()
             };
     }
 }
