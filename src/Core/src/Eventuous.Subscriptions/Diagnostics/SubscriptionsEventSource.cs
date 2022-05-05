@@ -34,9 +34,6 @@ public class SubscriptionsEventSource : EventSource {
     const int StoppingSomethingId              = 27;
     const int MetricCollectionFailedId         = 28;
 
-    const int InfoId = 100;
-    const int WarnId = 101;
-
     [NonEvent]
     public void MessageHandlingFailed(string handlerType, IBaseConsumeContext context, Exception? exception) {
         if (IsEnabled(EventLevel.Error, EventKeywords.All))
@@ -254,15 +251,5 @@ public class SubscriptionsEventSource : EventSource {
     [Event(StoppingSomethingId, Message = "[{0}] Stopping {1} {2}", Level = EventLevel.Verbose)]
     public void Stopping(string id, string what, string name) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) WriteEvent(StoppingSomethingId, id, what, name);
-    }
-
-    [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
-    public void Info(string message, string? arg1 = null, string? arg2 = null) {
-        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) WriteEvent(InfoId, message, arg1, arg2);
-    }
-
-    [Event(WarnId, Message = "{0} {1} {2}", Level = EventLevel.Warning)]
-    public void Warn(string message, string? arg1 = null, string? arg2 = null) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) WriteEvent(WarnId, message, arg1, arg2);
     }
 }

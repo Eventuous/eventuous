@@ -1,3 +1,5 @@
+using Eventuous.Diagnostics;
+
 namespace Eventuous.Gateway;
 
 public class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : class {
@@ -11,7 +13,10 @@ public class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : c
         T?                           options,
         CancellationToken            cancellationToken = default
     ) {
-        while (!_inner.Ready) await Task.Delay(10, cancellationToken);
+        while (!_inner.Ready) {
+            EventuousEventSource.Log.Warn("Producer not ready, waiting...");
+            await Task.Delay(1000, cancellationToken);
+        }
 
         await _inner.Produce(stream, messages, options, cancellationToken);
     }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Channels;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
@@ -80,7 +81,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             _positions.RemoveWhere(x => x.Sequence <= commitPosition.Sequence);
         }
         catch (Exception e) {
-            Log.Warn("Error committing", e.ToString());
+            EventuousEventSource.Log.Warn("Error committing", e.ToString());
         }
     }
 

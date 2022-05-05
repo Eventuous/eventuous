@@ -1,5 +1,4 @@
 using System.Diagnostics.Tracing;
-using System.Xml;
 
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -24,6 +23,9 @@ public class EventuousEventSource : EventSource {
     const int TypeNameNotMappedToTypeId         = 9;
     const int TypeMapRegisteredId               = 10;
     const int CannotGetAggregateIdFromCommandId = 11;
+
+    const int InfoId = 100;
+    const int WarnId = 101;
 
     [NonEvent]
     public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
@@ -115,5 +117,16 @@ public class EventuousEventSource : EventSource {
     [Event(TypeMapRegisteredId, Message = "Type {0} registered as {1}", Level = EventLevel.Verbose)]
     public void TypeMapRegistered(string type, string typeName) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) WriteEvent(TypeMapRegisteredId, type, typeName);
+    }
+    
+
+    [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
+    public void Info(string message, string? arg1 = null, string? arg2 = null) {
+        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) WriteEvent(InfoId, message, arg1, arg2);
+    }
+
+    [Event(WarnId, Message = "{0} {1} {2}", Level = EventLevel.Warning)]
+    public void Warn(string message, string? arg1 = null, string? arg2 = null) {
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) WriteEvent(WarnId, message, arg1, arg2);
     }
 }

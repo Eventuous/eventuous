@@ -201,13 +201,13 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                     ? TimeSpan.FromSeconds(10)
                     : TimeSpan.FromSeconds(2);
 
-                Log.Warn($"Will resubscribe after {delay}");
+                EventuousEventSource.Log.Warn($"Will resubscribe after {delay}");
 
                 try {
                     await Resubscribe(delay, Stopping.Token);
                 }
                 catch (Exception e) {
-                    Log.Warn(e.Message);
+                    EventuousEventSource.Log.Warn(e.Message);
                     throw;
                 }
             }

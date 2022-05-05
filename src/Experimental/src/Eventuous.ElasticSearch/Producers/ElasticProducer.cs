@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Diagnostics;
 using Nest;
@@ -27,7 +28,7 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
 
         if (!result.IsValid) {
             if (result.DebugInformation.Contains("version conflict")) {
-                SubscriptionsEventSource.Log.Warn("ElasticProducer: version conflict");
+                EventuousEventSource.Log.Warn("ElasticProducer: version conflict");
             }
             else {
                 var errors = messagesList

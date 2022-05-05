@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics;
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
@@ -61,6 +62,8 @@ public class AllStreamSubscription
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
             Options.CheckpointInterval,
             async (_, p, ct) => {
+                // !!! Checkpointing is disabled as it comes out of sync with delayed events
+                if (Options.ConcurrencyLimit > 0) return;
                 // This doesn't allow to report tie time gap
                 LastProcessed = new EventPosition(p.CommitPosition, DateTime.Now);
                 await StoreCheckpoint(LastProcessed, ct).NoContext();
