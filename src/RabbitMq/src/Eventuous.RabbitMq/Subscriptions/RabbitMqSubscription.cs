@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -84,7 +85,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     protected override ValueTask Subscribe(CancellationToken cancellationToken) {
         var exchange = Ensure.NotEmptyString(Options.Exchange);
 
-        Log.Info("Ensuring exchange", exchange);
+        EventuousEventSource.Log.Info("Ensuring exchange", exchange);
 
         _channel.ExchangeDeclare(
             exchange,
@@ -94,7 +95,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.ExchangeOptions?.Arguments
         );
 
-        Log.Info("Ensuring queue", Options.SubscriptionId);
+        EventuousEventSource.Log.Info("Ensuring queue", Options.SubscriptionId);
 
         _channel.QueueDeclare(
             Options.SubscriptionId,
@@ -104,7 +105,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.QueueOptions?.Arguments
         );
 
-        Log.Info("Binding exchange to queue:", exchange, Options.SubscriptionId);
+        EventuousEventSource.Log.Info("Binding exchange to queue:", exchange, Options.SubscriptionId);
 
         _channel.QueueBind(
             Options.SubscriptionId,
@@ -186,7 +187,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     }
 
     void DefaultEventFailureHandler(IModel channel, BasicDeliverEventArgs message, Exception? exception) {
-        Log.Warn("Error in the consumer, will redeliver", exception?.ToString());
+        EventuousEventSource.Log.Warn("Error in the consumer, will redeliver", exception?.ToString());
         _channel.BasicReject(message.DeliveryTag, true);
     }
 

@@ -1,6 +1,6 @@
 using Google.Api.Gax;
 using Grpc.Core;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous.GooglePubSub.Shared;
 
