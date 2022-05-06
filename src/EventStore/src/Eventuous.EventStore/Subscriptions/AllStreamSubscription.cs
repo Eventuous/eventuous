@@ -1,4 +1,3 @@
-using Eventuous.Diagnostics;
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
@@ -63,7 +62,8 @@ public class AllStreamSubscription
             Options.CheckpointInterval,
             async (_, p, ct) => {
                 // !!! Checkpointing is disabled as it comes out of sync with delayed events
-                if (Options.ConcurrencyLimit > 0) return;
+                if (Options.ConcurrencyLimit > 1) return;
+
                 // This doesn't allow to report tie time gap
                 LastProcessed = new EventPosition(p.CommitPosition, DateTime.Now);
                 await StoreCheckpoint(LastProcessed, ct).NoContext();
@@ -82,7 +82,8 @@ public class AllStreamSubscription
                 filterOptions,
                 Options.Credentials,
                 cancellationToken
-            ).NoContext();
+            )
+            .NoContext();
 
         async Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,
@@ -129,9 +130,6 @@ public class AllStreamSubscription
     ulong _sequence;
 
     public GetSubscriptionGap GetMeasure()
-        => new AllStreamSubscriptionMeasure(
-            Options.SubscriptionId,
-            EventStoreClient,
-            () => LastProcessed
-        ).GetSubscriptionGap;
+        => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient, () => LastProcessed)
+            .GetSubscriptionGap;
 }
