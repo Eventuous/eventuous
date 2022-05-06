@@ -14,7 +14,6 @@
 
     <ItemGroup>
         <PackageReference Include="AutoFixture" Version="4.17.0" />
-        <PackageReference Include="Elasticsearch.Net" Version="7.17.0" />
         <PackageReference Include="EventStore.Client.Grpc.Streams" Version="22.0.0" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
     </ItemGroup>
