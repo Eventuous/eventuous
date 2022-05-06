@@ -1,5 +1,6 @@
 using Eventuous.Diagnostics;
 using Eventuous.Producers;
+using Eventuous.Producers.Diagnostics;
 using Eventuous.Subscriptions.Diagnostics;
 using Nest;
 
@@ -8,10 +9,13 @@ namespace Eventuous.ElasticSearch.Producers;
 public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
     readonly IElasticClient _elasticClient;
 
-    public ElasticProducer(IElasticClient elasticClient) {
-        _elasticClient = elasticClient;
-        ReadyNow();
-    }
+    public ElasticProducer(IElasticClient elasticClient) : base(false, TracingOptions) => _elasticClient = elasticClient;
+
+    static readonly ProducerTracingOptions TracingOptions = new() {
+        MessagingSystem  = "elasticsearch",
+        DestinationKind  = "datastream",
+        ProduceOperation = "create"
+    };
 
     protected override async Task ProduceMessages(
         StreamName                   stream,
@@ -35,15 +39,17 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
                     .Where(x => result.ItemsWithErrors.Any(y => y.Id == x.MessageId.ToString()))
                     .ToList();
 
+                if (errors.Count == 0) errors = messagesList;
+
                 foreach (var error in errors) {
-                    await error.Nack(result.DebugInformation, result.OriginalException).NoContext();
+                    await error.Nack<ElasticProducer>(result.DebugInformation, result.OriginalException).NoContext();
                 }
 
                 messagesList = messagesList.Except(errors).ToList();
             }
         }
 
-        await Task.WhenAll(messagesList.Select(x => x.Ack().AsTask())).NoContext();
+        await Task.WhenAll(messagesList.Select(x => x.Ack<ElasticProducer>().AsTask())).NoContext();
 
         BulkDescriptor GetOp(BulkDescriptor descriptor)
             => mode switch {

@@ -29,7 +29,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         ConnectionFactory        connectionFactory,
         IEventSerializer?        serializer = null,
         RabbitMqExchangeOptions? options    = null
-    ) : base(TracingOptions) {
+    ) : base(true, TracingOptions) {
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
         _connectionFactory = Ensure.NotNull(connectionFactory);
@@ -77,8 +77,12 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
 
         await Confirm(cancellationToken).NoContext();
 
-        await produced.Select(x => x.Ack()).WhenAll().NoContext();
-        await failed.Select(x => x.Item1.Nack("Failed to produce to RabbitMQ", x.Item2)).WhenAll().NoContext();
+        await produced.Select(x => x.Ack<RabbitMqProducer>()).WhenAll().NoContext();
+
+        await failed
+            .Select(x => x.Item1.Nack<RabbitMqProducer>("Failed to produce to RabbitMQ", x.Item2))
+            .WhenAll()
+            .NoContext();
     }
 
     void Publish(string stream, ProducedMessage message, RabbitMqProduceOptions? options) {

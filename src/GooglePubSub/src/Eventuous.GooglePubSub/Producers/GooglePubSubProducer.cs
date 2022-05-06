@@ -47,7 +47,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     public GooglePubSubProducer(
         PubSubProducerOptions options,
         IEventSerializer?     serializer = null
-    ) : base(TracingOptions) {
+    ) : base(true, TracingOptions) {
         Ensure.NotNull(options);
 
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
@@ -90,10 +90,10 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
         async Task ProduceLocal(ProducedMessage x) {
             try {
                 await client.PublishAsync(CreateMessage(x, options)).NoContext();
-                await x.Ack().NoContext();
+                await x.Ack<GooglePubSubProducer>().NoContext();
             }
             catch (Exception e) {
-                await x.Nack("Failed to produce to Google PubSub", e).NoContext();
+                await x.Nack<GooglePubSubProducer>("Failed to produce to Google PubSub", e).NoContext();
             }
         }
 

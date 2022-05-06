@@ -1,5 +1,6 @@
 ﻿using Eventuous.Gateway;
 using Eventuous.Producers;
+using Eventuous.Producers.Diagnostics;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -64,5 +65,7 @@ public class RegistrationTests {
             ProducedMessages.AddRange(messages);
             return Task.CompletedTask;
         }
+
+        public TestProducer() : base(false) { }
     }
 }

@@ -22,12 +22,10 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         EventStoreClient     eventStoreClient,
         IEventSerializer?    serializer     = null,
         IMetadataSerializer? metaSerializer = null
-    ) : base(TracingOptions) {
+    ) : base(false, TracingOptions) {
         _client         = Ensure.NotNull(eventStoreClient);
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
-
-        ReadyNow();
     }
 
     /// <summary>
@@ -71,10 +69,13 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
                     )
                     .NoContext();
 
-                await chunkMessages.Select(x => x.Ack()).WhenAll().NoContext();
+                await chunkMessages.Select(x => x.Ack<EventStoreProducer>()).WhenAll().NoContext();
             }
             catch (Exception e) {
-                await chunkMessages.Select(x => x.Nack("Unable to produce to EventStoreDB", e)).WhenAll().NoContext();
+                await chunkMessages
+                    .Select(x => x.Nack<EventStoreProducer>("Unable to produce to EventStoreDB", e))
+                    .WhenAll()
+                    .NoContext();
             }
         }
     }

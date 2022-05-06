@@ -15,11 +15,10 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
     readonly IEventSerializer          _serializer;
 
     public KafkaBasicProducer(KafkaProducerOptions options, IEventSerializer? serializer = null) :
-        base(TracingOptions) {
+        base(true, TracingOptions) {
         _producerWithKey    = new ProducerBuilder<string, byte[]>(options.ProducerConfig).Build();
         _producerWithoutKey = new DependentProducerBuilder<Null, byte[]>(_producerWithKey.Handle).Build();
-
-        _serializer = serializer ?? DefaultEventSerializer.Instance;
+        _serializer         = serializer ?? DefaultEventSerializer.Instance;
     }
 
     static readonly ProducerTracingOptions TracingOptions = new() {
@@ -61,7 +60,7 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
                 }
 
                 void DeliveryHandler(DeliveryReport<string, byte[]> report, ProducedMessage msg)
-                    => Report(report.Error, msg);
+                    => Report(report.Error);
             }
 
             async Task ProduceNotPartitioned() {
@@ -74,19 +73,18 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedServ
                     await _producerWithoutKey.ProduceAsync(stream, message, cancellationToken).NoContext();
                 }
                 else {
-                    _producerWithoutKey.Produce(stream, message, r => DeliveryHandler(r, producedMessage));
+                    _producerWithoutKey.Produce(stream, message, DeliveryHandler);
                 }
 
-                void DeliveryHandler(DeliveryReport<Null, byte[]> report, ProducedMessage msg)
-                    => Report(report.Error, msg);
+                void DeliveryHandler(DeliveryReport<Null, byte[]> report) => Report(report.Error);
             }
 
-            void Report(Error error, ProducedMessage message) {
+            void Report(Error error) {
                 if (error.IsError) {
-                    producedMessage.OnNack?.Invoke(message, error.Reason, null).NoContext().GetAwaiter().GetResult();
+                    producedMessage.Nack<KafkaBasicProducer>(error.Reason, null).NoContext().GetAwaiter().GetResult();
                 }
                 else {
-                    producedMessage.OnAck(message).NoContext().GetAwaiter().GetResult();
+                    producedMessage.Ack<KafkaBasicProducer>().NoContext().GetAwaiter().GetResult();
                 }
             }
         }
