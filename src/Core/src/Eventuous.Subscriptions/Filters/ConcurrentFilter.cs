@@ -10,12 +10,19 @@ namespace Eventuous.Subscriptions.Filters;
 public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
     readonly ConcurrentChannelWorker<WorkerTask> _worker;
 
-    public ConcurrentFilter(uint concurrencyLimit, uint bufferSize = 10)
-        => _worker = new ConcurrentChannelWorker<WorkerTask>(
-            Channel.CreateBounded<WorkerTask>((int)(concurrencyLimit * bufferSize)),
+    public ConcurrentFilter(uint concurrencyLimit, uint bufferSize = 10) {
+        var capacity = (int)(concurrencyLimit * bufferSize);
+
+        var options = new BoundedChannelOptions(capacity) {
+            SingleReader = true, SingleWriter = true
+        };
+
+        _worker = new ConcurrentChannelWorker<WorkerTask>(
+            Channel.CreateBounded<WorkerTask>(options),
             DelayedConsume,
             (int)concurrencyLimit
         );
+    }
 
     static async ValueTask DelayedConsume(WorkerTask workerTask, CancellationToken ct) {
         var ctx = workerTask.Context;
@@ -32,15 +39,13 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
                 var exception = ctx.HandlingResults.GetException();
 
                 switch (exception) {
-                    case TaskCanceledException:
-                        break;
-                    case null: throw new ApplicationException("Event handler failed");
-                    default: throw exception;
+                    case TaskCanceledException: break;
+                    case null:                  throw new ApplicationException("Event handler failed");
+                    default:                    throw exception;
                 }
             }
 
-            if (!ctx.HandlingResults.IsPending())
-                await ctx.Acknowledge().NoContext();
+            if (!ctx.HandlingResults.IsPending()) await ctx.Acknowledge().NoContext();
         }
         catch (TaskCanceledException) {
             ctx.Ignore<ConcurrentFilter>();

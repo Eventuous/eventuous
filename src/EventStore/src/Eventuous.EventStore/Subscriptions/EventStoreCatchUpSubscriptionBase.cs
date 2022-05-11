@@ -27,7 +27,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventStoreSubscript
     // we won't add the concurrent filter, so it won't clash with any custom setup
     static ConsumePipe ConfigurePipe(ConsumePipe pipe, CatchUpSubscriptionOptions options)
         => options.ConcurrencyLimit > 1 && pipe.RegisteredFilters.All(x => x is not ConcurrentFilter)
-            ? pipe.AddFilterFirst(new ConcurrentFilter(options.ConcurrencyLimit))
+            ? pipe.AddFilterFirst(new PartitioningFilter(options.ConcurrencyLimit))
             : pipe;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
