@@ -14,7 +14,7 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
         var capacity = (int)(concurrencyLimit * bufferSize);
 
         var options = new BoundedChannelOptions(capacity) {
-            SingleReader = true, SingleWriter = true
+            SingleReader = concurrencyLimit == 1, SingleWriter = true
         };
 
         _worker = new ConcurrentChannelWorker<WorkerTask>(
