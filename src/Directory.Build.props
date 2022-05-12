@@ -55,7 +55,7 @@
         <UpdateVersionProperties>true</UpdateVersionProperties>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <PackageIcon>e-logo.png</PackageIcon>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/eventuous/Eventuous.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <Description>Opinionated and volatile Event Sourcing library</Description>

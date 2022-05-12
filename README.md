@@ -25,6 +25,10 @@ Stable versions and release candidates are available on [NuGet](https://www.nuge
 
 In addition, latest dev versions are available on MyGet under the public feed `https://www.myget.org/F/eventuous/api/v3/index.json`.
 
+## Stats
+
+![Alt](https://repobeats.axiom.co/api/embed/c4a3fbe9b19b39fbe80366bb8b5877a4dd329fed.svg "Repobeats analytics image")
+
 ## Support
 
 If you like Eventuous and want to show your appreciation to its contributors, please [:heart: sponsor us](https://github.com/sponsors/alexeyzimarev).
@@ -37,7 +41,7 @@ Authors:
 - [Alexey Zimarev](https://zimarev.com)
 - MongoDB tools - [Sergio Silveira](https://twitter.com/RagingKore)
 
-Licence: MIT
+Licence: Apache 2.0
 
 Use it on your own risk.
 
