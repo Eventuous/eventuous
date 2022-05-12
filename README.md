@@ -37,12 +37,6 @@ For development and production support, get in touch with [Ubiquitous](https://u
 
 ## Other things
 
-Authors: 
-- [Alexey Zimarev](https://zimarev.com)
-- MongoDB tools - [Sergio Silveira](https://twitter.com/RagingKore)
-
 Licence: Apache 2.0
-
-Use it on your own risk.
-
-[Docs (incomplete)](https://eventuous.dev)
+Copyright © Ubiquitous AS
+All rights reserved

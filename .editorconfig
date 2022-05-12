@@ -36,3 +36,5 @@ resharper_place_simple_embedded_statement_on_same_line = true
 resharper_space_within_single_line_array_initializer_braces = true
 resharper_wrap_object_and_collection_initializer_style = chop_if_long
 resharper_wrap_parameters_style = wrap_if_long
+
+file_header_template = Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved\nLicensed under the Apache License, Version 2.0.
