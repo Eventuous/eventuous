@@ -4,6 +4,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="MongoDB.Driver" Version="2.12.2" />
+        <PackageReference Include="System.Reactive" Version="5.0.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />

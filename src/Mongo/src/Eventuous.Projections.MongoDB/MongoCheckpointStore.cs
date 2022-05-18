@@ -1,4 +1,5 @@
-using System.Collections.Concurrent;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Eventuous.Subscriptions.Checkpoints;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver.Linq;
@@ -34,21 +35,53 @@ public class MongoCheckpointStore : ICheckpointStore {
 
         Log.CheckpointLoaded(this, checkpoint);
 
-        _counters[checkpointId] = 0;
+        // _counters[checkpointId] = 0;
+        
+        var subject = new Subject<Checkpoint>();
+
+        subject
+            .Buffer(TimeSpan.FromSeconds(5), _batchSize)
+            .Select(x => Observable.FromAsync(() => StoreInternal(x.Last(), default)))
+            .Concat()
+            .Subscribe();
+        _subjects[checkpointId] = subject;
 
         return checkpoint;
     }
 
-    readonly ConcurrentDictionary<string, int> _counters = new();
+    // readonly ConcurrentDictionary<string, int> _counters = new();
+    
+    readonly Dictionary<string, Subject<Checkpoint>> _subjects = new();
 
     public async ValueTask<Checkpoint> StoreCheckpoint(
         Checkpoint        checkpoint,
         bool              force,
         CancellationToken cancellationToken = default
     ) {
-        _counters[checkpoint.Id]++;
-        if (!force && _counters[checkpoint.Id] < _batchSize) return checkpoint;
+        // _counters[checkpoint.Id]++;
+        // if (!force && _counters[checkpoint.Id] < _batchSize) return checkpoint;
+        if (force) {
+            await StoreInternal(checkpoint, cancellationToken).NoContext();
+            return checkpoint;
+        }
 
+        // await Checkpoints.ReplaceOneAsync(
+        //         x => x.Id == checkpoint.Id,
+        //         checkpoint,
+        //         MongoDefaults.DefaultReplaceOptions,
+        //         cancellationToken
+        //     )
+        //     .NoContext();
+        //
+        // _counters[checkpoint.Id] = 0;
+
+        // Log.CheckpointStored(this, checkpoint);
+        _subjects[checkpoint.Id].OnNext(checkpoint);
+
+        return checkpoint;
+    }
+
+    async Task StoreInternal(Checkpoint checkpoint, CancellationToken cancellationToken) {
         await Checkpoints.ReplaceOneAsync(
                 x => x.Id == checkpoint.Id,
                 checkpoint,
@@ -57,11 +90,7 @@ public class MongoCheckpointStore : ICheckpointStore {
             )
             .NoContext();
 
-        _counters[checkpoint.Id] = 0;
-
         Log.CheckpointStored(this, checkpoint);
-
-        return checkpoint;
     }
 }
 
