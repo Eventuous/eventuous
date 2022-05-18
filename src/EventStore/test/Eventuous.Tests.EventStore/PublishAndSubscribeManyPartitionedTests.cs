@@ -11,12 +11,12 @@ public class PublishAndSubscribeManyPartitionedTests : SubscriptionFixture<TestE
             output,
             new TestEventHandler(TimeSpan.FromMilliseconds(5)),
             false,
-            pipe => pipe.AddFilterFirst(new PartitioningFilter(10, x => (x.Message as TestEvent)!.Data))
+            pipe => pipe.AddFilterLast(new PartitioningFilter(10, x => (x.Message as TestEvent)!.Data))
         ) { }
 
     [Fact]
     public async Task SubscribeAndProduceMany() {
-        const int count = 1000;
+        const int count = 10;
 
         var testEvents = Enumerable.Range(1, count)
             .Select(i => new TestEvent(Auto.Create<string>(), i))

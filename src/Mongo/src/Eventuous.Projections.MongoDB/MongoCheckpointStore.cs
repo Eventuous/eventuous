@@ -40,8 +40,9 @@ public class MongoCheckpointStore : ICheckpointStore {
         var subject = new Subject<Checkpoint>();
 
         subject
-            .Buffer(TimeSpan.FromSeconds(5), _batchSize)
-            .Select(x => Observable.FromAsync(() => StoreInternal(x.Last(), default)))
+            .Buffer(TimeSpan.FromSeconds(5), _batchSize > 0 ? _batchSize : 1)
+            .Where(x => x.Count > 0)
+            .Select(x => Observable.FromAsync(ct => StoreInternal(x.Last(), ct)))
             .Concat()
             .Subscribe();
         _subjects[checkpointId] = subject;

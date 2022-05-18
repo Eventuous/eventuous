@@ -38,8 +38,9 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
         CheckpointStore = new TestCheckpointStore();
 
         _listener = new LoggingEventListener(loggerFactory);
-        var pipe = new ConsumePipe().AddDefaultConsumer(Handler);
+        var pipe = new ConsumePipe();
         configurePipe?.Invoke(pipe);
+        pipe.AddDefaultConsumer(Handler);
 
         Subscription = new StreamSubscription(
             IntegrationFixture.Instance.Client,
