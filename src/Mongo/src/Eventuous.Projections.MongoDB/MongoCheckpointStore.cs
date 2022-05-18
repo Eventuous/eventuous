@@ -14,8 +14,34 @@ public class MongoCheckpointStore : ICheckpointStore {
 
     MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options) {
         Checkpoints = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
-        _batchSize  = options.BatchSize;
+        _getSubject = GetSubject;
+
+        Subject<Checkpoint> GetSubject() {
+            var subject = new Subject<Checkpoint>();
+
+            var observable = options switch {
+                { BatchSize: > 0, BatchIntervalSec: > 0 } => subject.Buffer(
+                    TimeSpan.FromSeconds(options.BatchIntervalSec),
+                    options.BatchSize
+                ),
+                { BatchSize: > 0, BatchIntervalSec: 0 } => subject.Buffer(options.BatchSize),
+                { BatchSize: 0, BatchIntervalSec: > 0 } => subject.Buffer(
+                    TimeSpan.FromSeconds(options.BatchIntervalSec)
+                ),
+                _ => subject.Select(x => new List<Checkpoint> { x })
+            };
+
+            observable
+                .Where(x => x.Count > 0)
+                .Select(x => Observable.FromAsync(ct => StoreInternal(x.Last(), ct)))
+                .Concat()
+                .Subscribe();
+
+            return subject;
+        }
     }
+
+    readonly Func<Subject<Checkpoint>> _getSubject;
 
     public MongoCheckpointStore(IMongoDatabase database) : this(database, new MongoCheckpointStoreOptions()) { }
 
@@ -35,23 +61,11 @@ public class MongoCheckpointStore : ICheckpointStore {
 
         Log.CheckpointLoaded(this, checkpoint);
 
-        // _counters[checkpointId] = 0;
-        
-        var subject = new Subject<Checkpoint>();
-
-        subject
-            .Buffer(TimeSpan.FromSeconds(5), _batchSize > 0 ? _batchSize : 1)
-            .Where(x => x.Count > 0)
-            .Select(x => Observable.FromAsync(ct => StoreInternal(x.Last(), ct)))
-            .Concat()
-            .Subscribe();
-        _subjects[checkpointId] = subject;
+        _subjects[checkpointId] = _getSubject();
 
         return checkpoint;
     }
 
-    // readonly ConcurrentDictionary<string, int> _counters = new();
-    
     readonly Dictionary<string, Subject<Checkpoint>> _subjects = new();
 
     public async ValueTask<Checkpoint> StoreCheckpoint(
@@ -59,24 +73,11 @@ public class MongoCheckpointStore : ICheckpointStore {
         bool              force,
         CancellationToken cancellationToken = default
     ) {
-        // _counters[checkpoint.Id]++;
-        // if (!force && _counters[checkpoint.Id] < _batchSize) return checkpoint;
         if (force) {
             await StoreInternal(checkpoint, cancellationToken).NoContext();
             return checkpoint;
         }
 
-        // await Checkpoints.ReplaceOneAsync(
-        //         x => x.Id == checkpoint.Id,
-        //         checkpoint,
-        //         MongoDefaults.DefaultReplaceOptions,
-        //         cancellationToken
-        //     )
-        //     .NoContext();
-        //
-        // _counters[checkpoint.Id] = 0;
-
-        // Log.CheckpointStored(this, checkpoint);
         _subjects[checkpoint.Id].OnNext(checkpoint);
 
         return checkpoint;
@@ -97,6 +98,7 @@ public class MongoCheckpointStore : ICheckpointStore {
 
 [PublicAPI]
 public record MongoCheckpointStoreOptions {
-    public string CollectionName { get; init; } = "checkpoint";
-    public int    BatchSize      { get; init; }
+    public string CollectionName   { get; init; } = "checkpoint";
+    public int    BatchSize        { get; init; } = 1;
+    public int    BatchIntervalSec { get; init; } = 5;
 }

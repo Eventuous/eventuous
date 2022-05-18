@@ -35,16 +35,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         _subject
             .Buffer(TimeSpan.FromSeconds(5), batchSize)
             .Where(x => x.Count > 0)
-            .Select(
-                x => {
-                    foreach (var position in x) {
-                        _positions.Add(position);
-                    }
-
-                    var next = GetCommitPosition(false);
-                    return next;
-                }
-            )
+            .Select(AddBatchAndGetLast)
             .Where(x => x.Valid)
             .Select(x => Observable.FromAsync(ct => CommitInternal1(x, ct)))
             .Concat()
@@ -56,10 +47,16 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
             _subject.OnNext(position);
             return default;
-            // _positions.Add(position);
-            // if (_positions.Count < batchSize) return;
-            //
-            // await CommitInternal(false, cancellationToken).NoContext();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        CommitPosition AddBatchAndGetLast(IList<CommitPosition> list) {
+            foreach (var position in list) {
+                _positions.Add(position);
+            }
+
+            var next = GetCommitPosition(false);
+            return next;
         }
     }
 
@@ -106,37 +103,6 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
             // Removing positions before and including the committed one
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
-        }
-        catch (Exception e) {
-            EventuousEventSource.Log.Warn("Error committing", e.ToString());
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    async ValueTask CommitInternal(bool force, CancellationToken cancellationToken) {
-        try {
-            switch (_lastCommit.Valid) {
-                // There's a gap between the last committed position and the list head
-                case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force:
-                // The list head is not at the very beginning
-                case false when _positions.Min.Sequence != 0:
-                    return;
-            }
-
-            var commitPosition = _positions.FirstBeforeGap();
-            if (!commitPosition.Valid) return;
-
-            await _commitCheckpoint(
-                    new Checkpoint(_subscriptionId, commitPosition.Position),
-                    force,
-                    cancellationToken
-                )
-                .NoContext();
-
-            _lastCommit = commitPosition;
-
-            // Removing positions before and including the committed one
-            _positions.RemoveWhere(x => x.Sequence <= commitPosition.Sequence);
         }
         catch (Exception e) {
             EventuousEventSource.Log.Warn("Error committing", e.ToString());
