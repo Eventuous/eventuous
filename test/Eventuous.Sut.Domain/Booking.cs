@@ -23,6 +23,12 @@ public class Booking : Aggregate<BookingState, BookingId> {
         var (previousState, currentState) =
             Apply(new BookingPaymentRegistered(State.Id, paymentId, amount));
 
+        if (previousState.AmountPaid != currentState.AmountPaid) {
+            var outstandingAmount = currentState.Price - currentState.AmountPaid;
+            Apply(new BookingOutstandingAmountChanged(State.Id, outstandingAmount));
+            if (outstandingAmount < 0) Apply(new BookingOverpaid(State.Id, -outstandingAmount));
+        }
+
         if (!previousState.IsFullyPaid() && currentState.IsFullyPaid())
             Apply(new BookingFullyPaid(State.Id));
     }

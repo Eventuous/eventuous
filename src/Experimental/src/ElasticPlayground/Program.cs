@@ -28,9 +28,16 @@ await elasticClient.ConfigureIndex();
 
 var esdbSettings     = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
 var eventStoreClient = new EventStoreClient(esdbSettings);
+DefaultEventSerializer.SetDefaultSerializer(new DefaultEventSerializer(options));
 
 // var elasticOnly = new ElasticOnly(client);
 // await elasticOnly.Execute();
 
-var archived = new CombinedStore(elasticClient, eventStoreClient);
-await archived.Execute();
+// var archived = new CombinedStore(elasticClient, eventStoreClient);
+// await archived.Execute();
+
+// var connectorAndArchive = new ConnectorAndArchive(elasticClient, eventStoreClient);
+// await connectorAndArchive.Execute();
+
+var connectorAndArchive = new OnlyArchive(elasticClient, eventStoreClient);
+await connectorAndArchive.Execute();

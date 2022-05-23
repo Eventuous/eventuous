@@ -16,8 +16,8 @@ public record BookingState : AggregateState<BookingState, BookingId> {
         );
     }
 
-    decimal                      Price          { get; init; }
-    decimal                      AmountPaid     { get; init; }
+    internal decimal             Price          { get; init; }
+    internal decimal             AmountPaid     { get; init; }
     ImmutableList<PaymentRecord> PaymentRecords { get; init; } = ImmutableList<PaymentRecord>.Empty;
 
     public bool HasPaymentRecord(string paymentId) => PaymentRecords.Any(x => x.PaymentId == paymentId);

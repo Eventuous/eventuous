@@ -21,9 +21,15 @@ public static class BookingEvents {
         string  PaymentId,
         decimal AmountPaid
     );
+    
+    [EventType("OutstandingAmountChanged")]
+    public record BookingOutstandingAmountChanged(string BookingId, decimal OutstandingAmount);
 
     [EventType("BookingFullyPaid")]
     public record BookingFullyPaid(string BookingId);
+    
+    [EventType("BookingOverpaid")]
+    public record BookingOverpaid(string BookingId, decimal OverpaidAmount);
 
     [EventType(TypeNames.BookingCancelled)]
     public record BookingCancelled(string BookingId);
