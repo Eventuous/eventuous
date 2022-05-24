@@ -119,7 +119,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         }
 
         Task ExecuteUpdate(UpdateOperation<T> upd) {
-            var streamPosition = context.Items.TryGetItem<ulong>(ContextKeys.StreamPosition);
+            var streamPosition = context.Items.GetItem<ulong>(ContextKeys.StreamPosition);
 
             var (filterDefinition, updateDefinition) = upd;
 
@@ -135,7 +135,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     protected virtual ValueTask<Operation<T>> GetUpdate(object evt, ulong? position) => NoOp;
 
     ValueTask<Operation<T>> GetUpdate(IMessageConsumeContext context) {
-        var streamPosition = context.Items.TryGetItem<ulong>(ContextKeys.StreamPosition);
+        var streamPosition = context.Items.GetItem<ulong>(ContextKeys.StreamPosition);
         return GetUpdate(context.Message!, streamPosition);
     }
 

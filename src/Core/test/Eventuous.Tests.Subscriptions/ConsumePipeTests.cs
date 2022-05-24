@@ -36,7 +36,7 @@ public class ConsumePipeTests {
 
         handler.Called.Should().Be(1);
         handler.Received.Should().NotBeNull();
-        handler.Received!.Items.TryGetItem<string>(Key).Should().Be(baggage);
+        handler.Received!.Items.GetItem<string>(Key).Should().Be(baggage);
     }
 
     class TestFilter : ConsumeFilter {

@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Channels;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Filters;
@@ -27,7 +28,11 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
     static async ValueTask DelayedConsume(WorkerTask workerTask, CancellationToken ct) {
         var ctx = workerTask.Context;
 
-        using var activity = ctx.Items.TryGetItem<Activity>("activity")?.Start();
+        using var activity = ctx.Items.GetItem<Activity>(ContextItemKeys.Activity)?.Start();
+
+        if (activity != null) {
+            ctx.Items.AddItem(ContextItemKeys.Trace, new PropagatedTrace(activity));
+        }
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
         ctx.CancellationToken = cts.Token;

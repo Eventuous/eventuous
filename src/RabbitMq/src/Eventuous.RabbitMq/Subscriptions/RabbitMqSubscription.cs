@@ -136,7 +136,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     }
 
     ValueTask Ack(IMessageConsumeContext ctx) {
-        var received = ctx.Items.TryGetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
+        var received = ctx.Items.GetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
         _channel.BasicAck(received.DeliveryTag, false);
         return default;
     }
@@ -144,7 +144,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
         if (Options.ThrowOnError) throw exception;
 
-        var received = ctx.Items.TryGetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
+        var received = ctx.Items.GetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
         _failureHandler(_channel, received, exception);
         return default;
     }

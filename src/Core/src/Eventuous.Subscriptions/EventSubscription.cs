@@ -82,7 +82,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             if (context.Message != null) {
                 if (delayed && activity != null) {
                     activity.SetStartTime(DateTime.UtcNow);
-                    context.Items.AddItem("activity", activity);
+                    context.Items.AddItem(ContextItemKeys.Activity, activity);
                 }
 
                 await Pipe.Send(context).NoContext();
@@ -217,5 +217,5 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
 public record EventPosition(ulong? Position, DateTime Created) {
     public static EventPosition FromContext(IMessageConsumeContext context)
-        => new(context.Items.TryGetItem<ulong>(ContextKeys.StreamPosition), context.Created);
+        => new(context.Items.GetItem<ulong>(ContextKeys.StreamPosition), context.Created);
 }

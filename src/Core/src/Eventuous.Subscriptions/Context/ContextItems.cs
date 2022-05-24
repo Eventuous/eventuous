@@ -24,10 +24,20 @@ public class ContextItems {
     /// <param name="key">Item key</param>
     /// <typeparam name="T">Item type</typeparam>
     /// <returns></returns>
-    public T? TryGetItem<T>(string key)
+    public T? GetItem<T>(string key)
         => _items.TryGetValue(key, out var value) && value is T val
             ? val
             : default;
+    
+    public bool TryGetItem<T>(string key, out T? value) {
+        if (_items.TryGetValue(key, out var val) && val is T val2) {
+            value = val2;
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
 }
 
 /// <summary>

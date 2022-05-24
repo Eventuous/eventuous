@@ -92,12 +92,12 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
     ConcurrentQueue<ResolvedEvent> AckQueue { get; } = new();
 
     async ValueTask Ack(IMessageConsumeContext ctx) {
-        var re = ctx.Items.TryGetItem<ResolvedEvent>(ResolvedEventKey);
+        var re = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
         AckQueue.Enqueue(re);
 
         if (AckQueue.Count < Options.BufferSize) return;
 
-        var subscription = ctx.Items.TryGetItem<PersistentSubscription>(SubscriptionKey)!;
+        var subscription = ctx.Items.GetItem<PersistentSubscription>(SubscriptionKey)!;
 
         var toAck = new List<ResolvedEvent>();
 
@@ -114,8 +114,8 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
         
         if (Options.ThrowOnError) throw exception;
 
-        var re           = ctx.Items.TryGetItem<ResolvedEvent>(ResolvedEventKey);
-        var subscription = ctx.Items.TryGetItem<PersistentSubscription>(SubscriptionKey)!;
+        var re           = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
+        var subscription = ctx.Items.GetItem<PersistentSubscription>(SubscriptionKey)!;
         await _handleEventProcessingFailure(EventStoreClient, subscription, re, exception).NoContext();
     }
 
