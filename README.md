@@ -6,6 +6,10 @@ Event Sourcing library for .NET, which is:
 - [EventStoreDB](https://eventstore.com)-oriented
 - .NET-friendly (decent DI, logging, and diagnostics support)
 
+## News
+
+Read Eventuous blog on Medium: https://medium.com/eventuous. You will find some of the documentation articles published there as blog posts, it is normal as these articles have value for the community.
+
 ## Video
 
 You can watch a bit chaotic introduction to Eventuous on YouTube:
