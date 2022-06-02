@@ -3,7 +3,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="System.Text.Json" Version="[5.0.0,)" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
+        <PackageReference Include="System.Text.Json" Version="[6.0.0,)" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     </ItemGroup>
     <ItemGroup>
       <None Remove="Eventuous.csproj.DotSettings" />

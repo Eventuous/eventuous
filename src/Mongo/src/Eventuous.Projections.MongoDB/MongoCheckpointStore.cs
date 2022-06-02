@@ -8,10 +8,7 @@ using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 
 namespace Eventuous.Projections.MongoDB;
 
-[PublicAPI]
 public class MongoCheckpointStore : ICheckpointStore {
-    readonly int _batchSize;
-
     MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options) {
         Checkpoints = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
         _getSubject = GetSubject;
@@ -43,8 +40,10 @@ public class MongoCheckpointStore : ICheckpointStore {
 
     readonly Func<Subject<Checkpoint>> _getSubject;
 
+    [PublicAPI]
     public MongoCheckpointStore(IMongoDatabase database) : this(database, new MongoCheckpointStoreOptions()) { }
 
+    [PublicAPI]
     public MongoCheckpointStore(IMongoDatabase database, IOptions<MongoCheckpointStoreOptions> options)
         : this(database, options.Value) { }
 

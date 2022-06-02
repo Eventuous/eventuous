@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' != 'true'">
-        <PackageReference Include="MinVer" Version="3.1.0" PrivateAssets="All"/>
+        <PackageReference Include="MinVer" Version="4.0.0" PrivateAssets="All"/>
         <PackageReference Include="JetBrains.Annotations" Version="2022.1.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
         <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
@@ -25,12 +25,12 @@
 
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
         <PackageReference Include="AutoFixture" Version="4.17.0"/>
-        <PackageReference Include="Bogus" Version="33.1.1"/>
-        <PackageReference Include="FluentAssertions" Version="6.2.0"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0"/>
+        <PackageReference Include="Bogus" Version="34.0.2"/>
+        <PackageReference Include="FluentAssertions" Version="6.7.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0"/>
         <PackageReference Include="xunit" Version="2.4.1"/>
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="All"/>
-        <PackageReference Include="coverlet.collector" Version="3.1.0" PrivateAssets="All"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" PrivateAssets="All"/>
+        <PackageReference Include="coverlet.collector" Version="3.1.2" PrivateAssets="All"/>
         <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0"/>
         <Using Include="Xunit"/>
         <Using Include="Xunit.Abstractions"/>
@@ -66,15 +66,15 @@
     
     <PropertyGroup Label="Package versions for .NET Core 3.1" Condition="$(TargetFramework) == 'netcoreapp3.1'">
         <MicrosoftExtensionsVer>[3.1,)</MicrosoftExtensionsVer>
-        <MicrosoftTestHostVer>[3.1,)</MicrosoftTestHostVer>
+        <MicrosoftTestHostVer>[3.1.25,)</MicrosoftTestHostVer>
     </PropertyGroup>
     <PropertyGroup Label="Package versions for .NET 5" Condition="$(TargetFramework) == 'net5.0'">
         <MicrosoftExtensionsVer>[5.0,)</MicrosoftExtensionsVer>
-        <MicrosoftTestHostVer>[5.0,)</MicrosoftTestHostVer>
+        <MicrosoftTestHostVer>[5.0.17,)</MicrosoftTestHostVer>
     </PropertyGroup>
     <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net6.0'">
         <MicrosoftExtensionsVer>[6.0,)</MicrosoftExtensionsVer>
-        <MicrosoftTestHostVer>[6.0,)</MicrosoftTestHostVer>
+        <MicrosoftTestHostVer>[6.0.5,)</MicrosoftTestHostVer>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">

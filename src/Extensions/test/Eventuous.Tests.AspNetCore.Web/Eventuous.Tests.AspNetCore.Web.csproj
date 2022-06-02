@@ -12,7 +12,7 @@
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.4" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.5" />
       <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
       <PackageReference Include="RestSharp" Version="107.3.0" />
     </ItemGroup>

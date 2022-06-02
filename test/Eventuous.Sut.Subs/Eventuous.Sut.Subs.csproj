@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Hypothesist" Version="2.0.22" />
+        <PackageReference Include="Hypothesist" Version="2.0.30" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />

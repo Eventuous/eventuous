@@ -3,7 +3,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="RabbitMQ.Client" Version="6.2.*" />
+        <PackageReference Include="RabbitMQ.Client" Version="6.3.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
