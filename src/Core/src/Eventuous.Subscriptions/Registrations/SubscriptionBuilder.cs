@@ -131,7 +131,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     T?                _resolvedSubscription;
     IMessageConsumer? _resolvedConsumer;
 
-    internal Action<TOptions>? ConfigureOptions { get; private set; }
+    public Action<TOptions>? ConfigureOptions { get; private set; }
 
     internal Dictionary<Type, Type> ParametersMap { get; } = new();
 

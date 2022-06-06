@@ -4,7 +4,7 @@ using Eventuous.Subscriptions.Registrations;
 // ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
-static class NamedRegistrationExtensions {
+public static class NamedRegistrationExtensions {
     public static IServiceCollection AddSubscriptionBuilder<T, TOptions>(
         this IServiceCollection          services,
         SubscriptionBuilder<T, TOptions> builder
