@@ -168,7 +168,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         return _resolvedConsumer;
     }
 
-    internal T ResolveSubscription(IServiceProvider sp) {
+    public T ResolveSubscription(IServiceProvider sp) {
         const string subscriptionIdParameterName = "subscriptionId";
 
         if (_resolvedSubscription != null) return _resolvedSubscription;
