@@ -11,6 +11,7 @@
     </ItemGroup>
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Remove="Eventuous.Projections.MongoDB.csproj.DotSettings" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="MongoDB.Driver" />
