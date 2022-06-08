@@ -14,19 +14,20 @@ public static class DomainFixture {
         return new BookingImported(
             Instance.Auto.Create<string>(),
             Instance.Auto.Create<string>(),
+            Instance.Auto.Create<decimal>(),
             LocalDate.FromDateTime(from),
             LocalDate.FromDateTime(from.AddDays(Instance.Auto.Create<int>()))
         );
     }
 }
 
-record BookingDocument(string Id) : ProjectedDocument(Id) {
+public record BookingDocument(string Id) : ProjectedDocument(Id) {
     public string    GuestId      { get; init; } = null!;
     public string    RoomId       { get; init; } = null!;
     public LocalDate CheckInDate  { get; init; }
     public LocalDate CheckOutDate { get; init; }
-    public float     BookingPrice { get; init; }
-    public float     PaidAmount   { get; init; }
-    public float     Outstanding  { get; init; }
+    public decimal   BookingPrice { get; init; }
+    public decimal   PaidAmount   { get; init; }
+    public decimal   Outstanding  { get; init; }
     public bool      Paid         { get; init; }
 }

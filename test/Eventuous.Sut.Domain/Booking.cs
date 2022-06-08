@@ -9,10 +9,10 @@ public class Booking : Aggregate<BookingState, BookingId> {
         Apply(new RoomBooked(id, roomId, period.CheckIn, period.CheckOut, price, guestId));
     }
 
-    public void Import(BookingId id, string roomId, StayPeriod period) {
+    public void Import(BookingId id, string roomId, StayPeriod period, decimal price) {
         EnsureDoesntExist();
 
-        Apply(new BookingImported(id, roomId, period.CheckIn, period.CheckOut));
+        Apply(new BookingImported(id, roomId, price, period.CheckIn, period.CheckOut));
     }
 
     public void RecordPayment(string paymentId, decimal amount) {

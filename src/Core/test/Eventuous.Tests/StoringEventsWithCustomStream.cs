@@ -61,7 +61,11 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
         var expected = new Change[] {
             new(
-                new BookingPaymentRegistered(secondCmd.BookingId, secondCmd.PaymentId, secondCmd.Amount),
+                new BookingPaymentRegistered(
+                    secondCmd.BookingId,
+                    secondCmd.PaymentId,
+                    secondCmd.Amount
+                ),
                 "PaymentRegistered"
             ),
             new(new BookingFullyPaid(secondCmd.BookingId), "BookingFullyPaid")

@@ -10,7 +10,7 @@ public interface IBaseConsumeContext {
     string            MessageType       { get; }
     string            ContentType       { get; }
     string            Stream            { get; }
-    long              StreamPosition    { get; }
+    ulong             StreamPosition    { get; }
     ulong             GlobalPosition    { get; }
     DateTime          Created           { get; }
     Metadata?         Metadata          { get; }

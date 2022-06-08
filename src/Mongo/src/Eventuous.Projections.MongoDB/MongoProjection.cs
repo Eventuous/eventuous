@@ -69,6 +69,15 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         }
     }
 
+    protected void On<TEvent>(
+        Func<MongoOperationBuilder<TEvent, T>, MongoOperationBuilder<TEvent, T>.IMongoProjectorBuilder> configure
+    )
+        where TEvent : class {
+        var builder   = new MongoOperationBuilder<TEvent, T>();
+        var operation = configure(builder).Build();
+        On(operation);
+    }
+
     readonly ValueTask<EventHandlingStatus> _ignored = new(EventHandlingStatus.Ignored);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -119,7 +128,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         }
 
         Task ExecuteUpdate(UpdateOperation<T> upd) {
-            var streamPosition = context.Items.GetItem<ulong>(ContextKeys.StreamPosition);
+            var streamPosition = context.StreamPosition;
 
             var (filterDefinition, updateDefinition) = upd;
 
@@ -134,10 +143,8 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
 
     protected virtual ValueTask<Operation<T>> GetUpdate(object evt, ulong? position) => NoOp;
 
-    ValueTask<Operation<T>> GetUpdate(IMessageConsumeContext context) {
-        var streamPosition = context.Items.GetItem<ulong>(ContextKeys.StreamPosition);
-        return GetUpdate(context.Message!, streamPosition);
-    }
+    ValueTask<Operation<T>> GetUpdate(IMessageConsumeContext context)
+        => GetUpdate(context.Message!, context.StreamPosition);
 
     protected Operation<T> UpdateOperation(BuildFilter<T> filter, BuildUpdate<T> update)
         => new UpdateOperation<T>(filter(Builders<T>.Filter), update(Builders<T>.Update));
@@ -157,7 +164,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
 }
 
 public delegate ValueTask<Operation<T>> ProjectTypedEvent<T, TEvent>(MessageConsumeContext<TEvent> consumeContext)
-    where T : class where TEvent : class;
+    where T : ProjectedDocument where TEvent : class;
 
 // ReSharper disable once UnusedTypeParameter
 public abstract record Operation<T>;

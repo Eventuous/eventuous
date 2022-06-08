@@ -44,6 +44,6 @@ public class ContextItems {
 /// Pre-defined keys for well-known context items
 /// </summary>
 public static class ContextKeys {
-    public const string GlobalPosition = nameof(GlobalPosition);
-    public const string StreamPosition = nameof(StreamPosition);
+    // public const string GlobalPosition = nameof(GlobalPosition);
+    // public const string StreamPosition = nameof(StreamPosition);
 }

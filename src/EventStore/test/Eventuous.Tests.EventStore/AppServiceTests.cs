@@ -20,6 +20,7 @@ public class AppServiceTests : IDisposable {
             new BookingEvents.BookingImported(
                 cmd.BookingId,
                 cmd.RoomId,
+                cmd.Price,
                 cmd.CheckIn,
                 cmd.CheckOut
             )
