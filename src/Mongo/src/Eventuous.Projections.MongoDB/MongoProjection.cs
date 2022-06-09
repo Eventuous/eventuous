@@ -99,14 +99,13 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
             return EventHandlingStatus.Ignored;
         }
 
-        var status = EventHandlingStatus.Success;
-
         var task = update.Execute(Collection, context.CancellationToken);
 
         if (!task.IsCompleted) await task.NoContext();
-        return status;
+        return EventHandlingStatus.Success;
     }
 
+    [PublicAPI]
     protected virtual ValueTask<MongoProjectOperation<T>> GetUpdate(object evt, ulong? position) => NoOp;
 
     ValueTask<MongoProjectOperation<T>> GetUpdate(IMessageConsumeContext context)
