@@ -6,7 +6,7 @@ public delegate UpdateDefinition<T> BuildUpdate<T>(UpdateDefinitionBuilder<T> up
 
 public delegate UpdateDefinition<T> BuildUpdate<in TEvent, T>(TEvent evt, UpdateDefinitionBuilder<T> update);
 
-public delegate Task<UpdateDefinition<T>> BuildUpdateAsync<in TEvent, T>(TEvent evt, UpdateDefinitionBuilder<T> update);
+public delegate ValueTask<UpdateDefinition<T>> BuildUpdateAsync<in TEvent, T>(TEvent evt, UpdateDefinitionBuilder<T> update);
 
 public delegate FilterDefinition<T> BuildFilter<T>(FilterDefinitionBuilder<T> filter);
 

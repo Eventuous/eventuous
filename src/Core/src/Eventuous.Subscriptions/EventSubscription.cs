@@ -217,5 +217,5 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
 public record EventPosition(ulong? Position, DateTime Created) {
     public static EventPosition FromContext(IMessageConsumeContext context)
-        => new(context.Items.GetItem<ulong>(ContextKeys.StreamPosition), context.Created);
+        => new(context.StreamPosition, context.Created);
 }

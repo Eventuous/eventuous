@@ -64,6 +64,8 @@ public class AllPersistentSubscription
             cancellationToken
         );
 
+    protected override ulong GetContextStreamPosition(ResolvedEvent re) => re.Event.Position.CommitPosition;
+
     public GetSubscriptionGap GetMeasure()
         => new AllStreamSubscriptionMeasure(
             Options.SubscriptionId,

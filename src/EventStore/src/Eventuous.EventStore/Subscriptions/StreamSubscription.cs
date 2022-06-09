@@ -108,21 +108,19 @@ public class StreamSubscription
         );
 
         return new MessageConsumeContext(
-                re.Event.EventId.ToString(),
-                re.Event.EventType,
-                re.Event.ContentType,
-                re.Event.EventStreamId,
-                re.Event.EventNumber.ToInt64(),
-                re.Event.Position.CommitPosition,
-                re.OriginalEventNumber,
-                re.Event.Created,
-                evt,
-                DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
-                SubscriptionId,
-                cancellationToken
-            )
-            .WithItem(ContextKeys.GlobalPosition, re.Event.Position.CommitPosition)
-            .WithItem(ContextKeys.StreamPosition, re.OriginalEventNumber.ToUInt64());
+            re.Event.EventId.ToString(),
+            re.Event.EventType,
+            re.Event.ContentType,
+            re.Event.EventStreamId,
+            re.Event.EventNumber.ToUInt64(),
+            re.Event.Position.CommitPosition,
+            re.OriginalEventNumber,
+            re.Event.Created,
+            evt,
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            SubscriptionId,
+            cancellationToken
+        );
     }
 
     public GetSubscriptionGap GetMeasure()

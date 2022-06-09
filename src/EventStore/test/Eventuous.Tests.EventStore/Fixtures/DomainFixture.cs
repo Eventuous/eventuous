@@ -13,7 +13,8 @@ public static class DomainFixture {
             Instance.Auto.Create<string>(),
             Instance.Auto.Create<string>(),
             LocalDate.FromDateTime(from),
-            LocalDate.FromDateTime(from.AddDays(Instance.Auto.Create<int>()))
+            LocalDate.FromDateTime(from.AddDays(Instance.Auto.Create<int>())),
+            Instance.Auto.Create<decimal>()
         );
     }
 }

@@ -1,7 +1,9 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
-using Eventuous.Subscriptions.Diagnostics;
 using Nest;
 
 namespace Eventuous.ElasticSearch.Producers;

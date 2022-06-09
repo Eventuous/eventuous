@@ -22,6 +22,20 @@ public sealed class IntegrationFixture : IAsyncDisposable {
 
     public static IntegrationFixture Instance { get; } = new();
 
+    public Task<AppendEventsResult> AppendEvent(
+        StreamName             streamName,
+        object                 evt,
+        ExpectedStreamVersion? version = null
+    )
+        => EventStore.AppendEvents(
+            streamName,
+            version ?? ExpectedStreamVersion.Any,
+            new[] {
+                new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "application/json", 0)
+            },
+            CancellationToken.None
+        );
+
     IntegrationFixture() {
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
         var settings = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");

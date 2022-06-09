@@ -71,6 +71,7 @@ public class StreamPersistentSubscription
             cancellationToken
         );
 
+    protected override ulong GetContextStreamPosition(ResolvedEvent re) => re.Event.EventNumber;
 
     public GetSubscriptionGap GetMeasure()
         => new StreamSubscriptionMeasure(

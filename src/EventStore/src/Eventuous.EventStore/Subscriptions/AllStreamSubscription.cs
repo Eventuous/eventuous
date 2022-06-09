@@ -110,21 +110,19 @@ public class AllStreamSubscription
         );
 
         return new MessageConsumeContext(
-                re.Event.EventId.ToString(),
-                re.Event.EventType,
-                re.Event.ContentType,
-                re.OriginalStreamId,
-                re.Event.EventNumber.ToInt64(),
-                re.Event.Position.CommitPosition,
-                _sequence++,
-                re.Event.Created,
-                evt,
-                DeserializeMeta(re.Event.Metadata, re.OriginalStreamId),
-                SubscriptionId,
-                cancellationToken
-            )
-            .WithItem(ContextKeys.GlobalPosition, re.Event.Position.CommitPosition)
-            .WithItem(ContextKeys.StreamPosition, re.Event.Position.CommitPosition);
+            re.Event.EventId.ToString(),
+            re.Event.EventType,
+            re.Event.ContentType,
+            re.OriginalStreamId,
+            re.Event.Position.CommitPosition,
+            re.Event.Position.CommitPosition,
+            _sequence++,
+            re.Event.Created,
+            evt,
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId),
+            SubscriptionId,
+            cancellationToken
+        );
     }
 
     ulong _sequence;

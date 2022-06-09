@@ -3,6 +3,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+
 // ReSharper disable SuggestBaseTypeForParameter
 
 namespace Eventuous.EventStore.Subscriptions;
@@ -32,8 +33,7 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
 
         _handleEventProcessingFailure = options.FailureHandler ?? DefaultEventProcessingFailureHandler;
 
-        if (options.FailureHandler != null && !options.ThrowOnError)
-            Log.ThrowOnErrorIncompatible(SubscriptionId);
+        if (options.FailureHandler != null && !options.ThrowOnError) Log.ThrowOnErrorIncompatible(SubscriptionId);
     }
 
     const string ResolvedEventKey = "resolvedEvent";
@@ -102,8 +102,7 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
         var toAck = new List<ResolvedEvent>();
 
         for (var i = 0; i < Options.BufferSize; i++) {
-            if (AckQueue.TryDequeue(out var evt))
-                toAck.Add(evt);
+            if (AckQueue.TryDequeue(out var evt)) toAck.Add(evt);
         }
 
         await subscription.Ack(toAck).NoContext();
@@ -111,7 +110,7 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
 
     async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
         Log.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
-        
+
         if (Options.ThrowOnError) throw exception;
 
         var re           = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
@@ -129,22 +128,22 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
         );
 
         return new MessageConsumeContext(
-                re.Event.EventId.ToString(),
-                re.Event.EventType,
-                re.Event.ContentType,
-                re.OriginalStreamId,
-                re.Event.EventNumber.ToInt64(),
-                re.Event.Position.CommitPosition,
-                re.OriginalEventNumber,
-                re.Event.Created,
-                evt,
-                DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
-                SubscriptionId,
-                cancellationToken
-            )
-            .WithItem(ContextKeys.GlobalPosition, re.Event.Position.CommitPosition)
-            .WithItem(ContextKeys.StreamPosition, re.Event.EventNumber);
+            re.Event.EventId.ToString(),
+            re.Event.EventType,
+            re.Event.ContentType,
+            re.OriginalStreamId,
+            GetContextStreamPosition(re),
+            re.Event.Position.CommitPosition,
+            re.OriginalEventNumber,
+            re.Event.Created,
+            evt,
+            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            SubscriptionId,
+            cancellationToken
+        );
     }
+
+    protected abstract ulong GetContextStreamPosition(ResolvedEvent re);
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         try {
