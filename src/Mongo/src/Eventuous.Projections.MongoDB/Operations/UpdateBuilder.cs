@@ -36,14 +36,14 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                 async (ctx, collection, token) => {
                     var options = new UpdateOptions { IsUpsert = true };
                     _configureOptions?.Invoke(options);
-                    var update = await GetUpdate(ctx.Message, Builders<T>.Update);
+                    var update = await GetUpdate(ctx.Message, Builders<T>.Update).NoContext();
 
                     await collection.UpdateManyAsync(
                         _filter.GetFilter(ctx.Message),
                         update.Set(x => x.Position, ctx.StreamPosition),
                         options,
                         token
-                    );
+                    ).NoContext();
                 }
             );
     }
