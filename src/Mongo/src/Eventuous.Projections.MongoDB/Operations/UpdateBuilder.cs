@@ -14,32 +14,47 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
-                (ctx, collection, token) => collection
-                    .UpdateOneAsync(
-                        _filter.GetFilter(ctx.Message),
-                        GetUpdate(ctx.Message, Builders<T>.Update).Set(x => x.Position, ctx.StreamPosition),
-                        cancellationToken: token
-                    )
+                async (ctx, collection, token) => {
+                    var options = new UpdateOptions { IsUpsert = true };
+                    _configureOptions?.Invoke(options);
+                    var update = await GetUpdate(ctx.Message, Builders<T>.Update);
+
+                    await collection
+                        .UpdateOneAsync(
+                            _filter.GetFilter(ctx.Message),
+                            update.Set(x => x.Position, ctx.StreamPosition),
+                            options,
+                            token
+                        );
+                }
             );
     }
 
     public class UpdateManyBuilder : UpdateBuilder<UpdateManyBuilder>, IMongoProjectorBuilder {
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
-                (ctx, collection, token) => collection.UpdateManyAsync(
-                    _filter.GetFilter(ctx.Message),
-                    GetUpdate(ctx.Message, Builders<T>.Update).Set(x => x.Position, ctx.StreamPosition),
-                    cancellationToken: token
-                )
+                async (ctx, collection, token) => {
+                    var options = new UpdateOptions { IsUpsert = true };
+                    _configureOptions?.Invoke(options);
+                    var update = await GetUpdate(ctx.Message, Builders<T>.Update);
+
+                    await collection.UpdateManyAsync(
+                        _filter.GetFilter(ctx.Message),
+                        update.Set(x => x.Position, ctx.StreamPosition),
+                        options,
+                        token
+                    );
+                }
             );
     }
 
     public abstract class UpdateBuilder<TBuilder> where TBuilder : UpdateBuilder<TBuilder> {
-        protected readonly FilterBuilder _filter = new();
+        protected readonly FilterBuilder          _filter = new();
+        protected          Action<UpdateOptions>? _configureOptions;
 
-        BuildUpdate<TEvent, T>? _buildUpdate;
+        BuildUpdateAsync<TEvent, T>? _buildUpdate;
 
-        protected BuildUpdate<TEvent, T> GetUpdate => Ensure.NotNull(_buildUpdate, "Update function");
+        protected BuildUpdateAsync<TEvent, T> GetUpdate => Ensure.NotNull(_buildUpdate, "Update function");
 
         public TBuilder Filter(BuildFilter<TEvent, T> buildFilter) {
             _filter.Filter(buildFilter);
@@ -51,8 +66,18 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return Self;
         }
 
-        public TBuilder Update(BuildUpdate<TEvent, T> buildUpdate) {
+        public TBuilder Update(BuildUpdateAsync<TEvent, T> buildUpdate) {
             _buildUpdate = buildUpdate;
+            return Self;
+        }
+
+        public TBuilder Update(BuildUpdate<TEvent, T> buildUpdate) {
+            _buildUpdate = (evt, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(evt, update));
+            return Self;
+        }
+
+        public TBuilder Configure(Action<UpdateOptions> configure) {
+            _configureOptions = configure;
             return Self;
         }
 

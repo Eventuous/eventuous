@@ -11,6 +11,8 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
     public UpdateManyBuilder UpdateMany => new();
     public InsertOneBuilder  InsertOne  => new();
     public InsertManyBuilder InsertMany => new();
+    public DeleteOneBuilder  DeleteOne  => new();
+    public DeleteManyBuilder DeleteMany => new();
 
     public interface IMongoProjectorBuilder {
         ProjectTypedEvent<T, TEvent> Build();
@@ -35,7 +37,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
     ) {
         return Handle;
 
-        ValueTask<Operation<T>> Handle(MessageConsumeContext<TEvent> ctx)
-            => new(new CollectionOperation<T>((collection, token) => handler(ctx, collection, token)));
+        ValueTask<MongoProjectOperation<T>> Handle(MessageConsumeContext<TEvent> ctx)
+            => new(new MongoProjectOperation<T>((collection, token) => handler(ctx, collection, token)));
     }
 }
