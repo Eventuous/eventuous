@@ -4,9 +4,7 @@
 using System.Data;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Text.Json;
 using Eventuous.Diagnostics;
-using Microsoft.Extensions.Options;
 using Npgsql;
 using NpgsqlTypes;
 
