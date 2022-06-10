@@ -1,9 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
-using Eventuous.Tests.Postgres.Fixtures;
-using static Eventuous.Sut.Domain.BookingEvents;
-using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
+using static Eventuous.Tests.Postgres.StoreTests.Helpers;
 
 namespace Eventuous.Tests.Postgres.StoreTests;
 
@@ -58,15 +53,4 @@ public class AppendEvents {
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
 
-    static StreamName GetStreamName() => new(Instance.Auto.Create<string>());
-
-    static BookingImported CreateEvent() {
-        var cmd = DomainFixture.CreateImportBooking();
-        return new BookingImported(cmd.BookingId, cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
-    }
-
-    static Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version) {
-        var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
-        return Instance.EventStore.AppendEvents(stream, version, new[] { streamEvent }, default);
-    }
 }

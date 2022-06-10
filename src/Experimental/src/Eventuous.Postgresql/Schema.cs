@@ -8,6 +8,8 @@ public class Schema {
 
     public Schema(string schema) => _schema = schema;
 
-    public string StreamMessage => $"{_schema}.stream_message";
-    public string AppendEvents  => $"{_schema}.append_events";
+    public string StreamMessage      => $"{_schema}.stream_message";
+    public string AppendEvents       => $"{_schema}.append_events";
+    public string ReadStreamForwards => $"{_schema}.read_stream_forwards";
+    public string StreamExists       => $"select exists (select 1 from {_schema}.streams where stream_name = (@name))";
 }

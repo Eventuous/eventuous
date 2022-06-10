@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Data;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
 using Eventuous.Diagnostics;
@@ -37,12 +38,14 @@ public class PostgresStore : IEventStore {
 
     bool _initialized;
 
+    const string ContentType = "application/json";
+
     async Task<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken) {
         var connection = _getConnection();
         await connection.OpenAsync(cancellationToken).NoContext();
         if (_initialized) return connection;
 
-        connection.TypeMapper.MapComposite<PersistedEvent>(_schema.StreamMessage);
+        connection.TypeMapper.MapComposite<NewPersistedEvent>(_schema.StreamMessage);
         _initialized = true;
         return connection;
     }
@@ -53,7 +56,37 @@ public class PostgresStore : IEventStore {
         int                count,
         CancellationToken  cancellationToken
     ) {
-        throw new NotImplementedException();
+        await using var connection = await OpenConnection(cancellationToken).NoContext();
+        await using var cmd        = new NpgsqlCommand(_schema.ReadStreamForwards, connection);
+
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("_stream_name", NpgsqlDbType.Varchar, stream.ToString());
+        cmd.Parameters.AddWithValue("_from_position", NpgsqlDbType.Integer, start.Value);
+        cmd.Parameters.AddWithValue("_count", NpgsqlDbType.Integer, count);
+
+        try {
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
+
+            var result = new List<StreamEvent>();
+
+            while (await reader.ReadAsync(cancellationToken).NoContext()) {
+                var evt = new PersistedEvent(
+                    reader.GetGuid(0),
+                    reader.GetString(1),
+                    reader.GetInt32(2),
+                    reader.GetInt64(3),
+                    reader.GetString(4),
+                    reader.GetString(5),
+                    reader.GetDateTime(6)
+                );
+                result.Add(ToStreamEvent(evt));
+            }
+
+            return result.ToArray();
+        }
+        catch (PostgresException e) when (e.MessageText.StartsWith("StreamNotFound")) {
+            throw new StreamNotFound(stream);
+        }
     }
 
     public async Task<AppendEventsResult> AppendEvents(
@@ -94,17 +127,24 @@ public class PostgresStore : IEventStore {
             throw new AppendToStreamException(stream, e);
         }
 
-        PersistedEvent Convert(StreamEvent evt) {
+        NewPersistedEvent Convert(StreamEvent evt) {
             var data = _serializer.SerializeEvent(evt.Payload!);
             var meta = _metaSerializer.Serialize(evt.Metadata);
-            return new PersistedEvent(evt.Id, data.EventType, AsString(data.Payload), AsString(meta));
+            return new NewPersistedEvent(evt.Id, data.EventType, AsString(data.Payload), AsString(meta));
         }
 
         string AsString(ReadOnlySpan<byte> bytes) => Encoding.UTF8.GetString(bytes);
     }
 
-    public Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken)
-        => throw new NotImplementedException();
+    public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
+        await using var connection = await OpenConnection(cancellationToken).NoContext();
+        await using var cmd        = connection.CreateCommand();
+        cmd.CommandType = CommandType.Text;
+        cmd.CommandText = _schema.StreamExists;
+        cmd.Parameters.AddWithValue("name", NpgsqlDbType.Varchar, stream.ToString());
+        var result = await cmd.ExecuteScalarAsync(cancellationToken);
+        return (bool)result!;
+    }
 
     public Task TruncateStream(
         StreamName             stream,
@@ -120,6 +160,39 @@ public class PostgresStore : IEventStore {
         CancellationToken     cancellationToken
     )
         => throw new NotImplementedException();
+
+    StreamEvent ToStreamEvent(PersistedEvent evt) {
+        var deserialized = _serializer.DeserializeEvent(
+            Encoding.UTF8.GetBytes(evt.JsonData),
+            evt.MessageType,
+            ContentType
+        );
+
+        var meta = evt.JsonMetadata == null
+            ? new Metadata()
+            : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
+
+        return deserialized switch {
+            SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
+            FailedToDeserialize failed => throw new SerializationException(
+                $"Can't deserialize {evt.MessageType}: {failed.Error}"
+            ),
+            _ => throw new Exception("Unknown deserialization result")
+        };
+
+        StreamEvent AsStreamEvent(object payload)
+            => new(evt.MessageId, payload, meta ?? new Metadata(), ContentType, evt.StreamPosition);
+    }
 }
 
-record PersistedEvent(Guid MessageId, string MessageType, string JsonData, string? JsonMetadata);
+record NewPersistedEvent(Guid MessageId, string MessageType, string JsonData, string? JsonMetadata);
+
+record PersistedEvent(
+    Guid     MessageId,
+    string   MessageType,
+    int      StreamPosition,
+    long     GlobalPosition,
+    string   JsonData,
+    string?  JsonMetadata,
+    DateTime Created
+);
