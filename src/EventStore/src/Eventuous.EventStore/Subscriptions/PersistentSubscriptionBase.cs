@@ -1,6 +1,8 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Concurrent;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
@@ -15,7 +17,7 @@ public delegate Task HandleEventProcessingFailure(
     Exception              exception
 );
 
-public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase<T>
+public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
     where T : PersistentSubscriptionOptions {
     protected EventStorePersistentSubscriptionsClient SubscriptionClient { get; }
 
@@ -24,7 +26,8 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
     PersistentSubscription? _subscription;
 
     protected PersistentSubscriptionBase(EventStoreClient eventStoreClient, T options, ConsumePipe consumePipe)
-        : base(eventStoreClient, options, consumePipe) {
+        : base(options, consumePipe) {
+        EventStoreClient = eventStoreClient;
         var settings   = eventStoreClient.GetSettings().Copy();
         var opSettings = settings.OperationOptions.Clone();
         settings.OperationOptions = opSettings;
@@ -35,6 +38,8 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
 
         if (options.FailureHandler != null && !options.ThrowOnError) Log.ThrowOnErrorIncompatible(SubscriptionId);
     }
+
+    protected EventStoreClient EventStoreClient { get; }
 
     const string ResolvedEventKey = "resolvedEvent";
     const string SubscriptionKey  = "subscription";
@@ -82,6 +87,8 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
             }
         }
     }
+
+    protected EventPosition? LastProcessed { get; set; }
 
     protected abstract Task<PersistentSubscription> LocalSubscribe(
         Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
@@ -137,7 +144,12 @@ public abstract class PersistentSubscriptionBase<T> : EventStoreSubscriptionBase
             re.OriginalEventNumber,
             re.Event.Created,
             evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            Options.MetadataSerializer.DeserializeMeta(
+                Options,
+                re.Event.Metadata,
+                re.OriginalStreamId,
+                re.Event.EventNumber
+            ),
             SubscriptionId,
             cancellationToken
         );

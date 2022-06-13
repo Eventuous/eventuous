@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
@@ -74,7 +77,8 @@ public class StreamSubscription
                 HandleDrop,
                 Options.Credentials,
                 cancellationToken
-            ).NoContext();
+            )
+            .NoContext();
 
         async Task HandleEvent(
             global::EventStore.Client.StreamSubscription _,
@@ -83,8 +87,9 @@ public class StreamSubscription
         ) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (re.Event is null) return;
-            
+
             if (Options.IgnoreSystemEvents && re.Event.EventType.Length > 0 && re.Event.EventType[0] == '$') return;
 
             await HandleInternal(CreateContext(re, ct)).NoContext();
@@ -117,7 +122,12 @@ public class StreamSubscription
             re.OriginalEventNumber,
             re.Event.Created,
             evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            Options.MetadataSerializer.DeserializeMeta(
+                Options,
+                re.Event.Metadata,
+                re.OriginalStreamId,
+                re.Event.EventNumber
+            ),
             SubscriptionId,
             cancellationToken
         );

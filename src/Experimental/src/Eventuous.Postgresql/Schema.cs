@@ -11,5 +11,6 @@ public class Schema {
     public string StreamMessage      => $"{_schema}.stream_message";
     public string AppendEvents       => $"{_schema}.append_events";
     public string ReadStreamForwards => $"{_schema}.read_stream_forwards";
+    public string ReadAllForwards    => $"{_schema}.read_all_forwards";
     public string StreamExists       => $"select exists (select 1 from {_schema}.streams where stream_name = (@name))";
 }

@@ -11,12 +11,15 @@ public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>
     readonly int                          _partitionCount;
 
     public PartitioningFilter(
-        uint                          partitionCount,
+        int                           partitionCount,
         Partitioner.GetPartitionKey?  partitioner = null,
         Partitioner.GetPartitionHash? getHash     = null
     ) {
+        if (partitionCount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(partitionCount), "Partition count must be greater than zero");
+
         _getHash        = getHash ?? MurmurHash3.Hash;
-        _partitionCount = (int)partitionCount;
+        _partitionCount = partitionCount;
         _partitioner    = partitioner ?? (ctx => ctx.Stream);
         _filters        = Enumerable.Range(0, _partitionCount).Select(_ => new ConcurrentFilter(1)).ToArray();
     }

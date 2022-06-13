@@ -5,6 +5,7 @@ using System.Data;
 using System.Runtime.Serialization;
 using System.Text;
 using Eventuous.Diagnostics;
+using Eventuous.Postgresql.Extensions;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -65,22 +66,8 @@ public class PostgresStore : IEventStore {
         try {
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
-            var result = new List<StreamEvent>();
-
-            while (await reader.ReadAsync(cancellationToken).NoContext()) {
-                var evt = new PersistedEvent(
-                    reader.GetGuid(0),
-                    reader.GetString(1),
-                    reader.GetInt32(2),
-                    reader.GetInt64(3),
-                    reader.GetString(4),
-                    reader.GetString(5),
-                    reader.GetDateTime(6)
-                );
-                result.Add(ToStreamEvent(evt));
-            }
-
-            return result.ToArray();
+            var result = reader.ReadEvents(cancellationToken);
+            return await result.Select(x => ToStreamEvent(x)).ToArrayAsync(cancellationToken);
         }
         catch (PostgresException e) when (e.MessageText.StartsWith("StreamNotFound")) {
             throw new StreamNotFound(stream);
@@ -184,13 +171,3 @@ public class PostgresStore : IEventStore {
 }
 
 record NewPersistedEvent(Guid MessageId, string MessageType, string JsonData, string? JsonMetadata);
-
-record PersistedEvent(
-    Guid     MessageId,
-    string   MessageType,
-    int      StreamPosition,
-    long     GlobalPosition,
-    string   JsonData,
-    string?  JsonMetadata,
-    DateTime Created
-);

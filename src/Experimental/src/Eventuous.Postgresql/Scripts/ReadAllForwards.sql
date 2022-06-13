@@ -14,9 +14,10 @@ returns table (
 )
 as $$
 begin
-    return query select m.message_id, m.message_type, s.stream_name,
+    return query select m.message_id, m.message_type, 
                         m.stream_position, m.global_position,
-                        m.json_data, m.json_metadata, m.created
+                        m.json_data, m.json_metadata, m.created,
+                        s.stream_name
         from __schema__.messages m 
         inner join streams s on s.stream_id = m.stream_id
         where m.global_position >= _from_position
