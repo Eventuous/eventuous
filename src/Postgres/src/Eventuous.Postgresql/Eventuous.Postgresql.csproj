@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\Eventuous.Sql.Base\Eventuous.Sql.Base.csproj" />
+    <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
+    <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="6.0.4" />

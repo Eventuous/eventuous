@@ -11,6 +11,6 @@
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
         <ProjectReference Include="$(LocalRoot)\Eventuous.Postgresql\Eventuous.Postgresql.csproj" />
-        <ProjectReference Include="..\..\..\Diagnostics\src\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
     </ItemGroup>
 </Project>
