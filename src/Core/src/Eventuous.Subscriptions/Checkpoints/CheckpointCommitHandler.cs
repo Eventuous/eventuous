@@ -1,11 +1,12 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
-using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Channels;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
@@ -27,6 +28,8 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     internal record CommitEvent(string Id, CommitPosition CommitPosition, CommitPosition? FirstPending);
 
     public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1) {
+        Log = new CheckpointEventSource(subscriptionId);
+
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
         var channel = Channel.CreateBounded<CommitPosition>(batchSize * 1000);
@@ -37,7 +40,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             .Where(x => x.Count > 0)
             .Select(AddBatchAndGetLast)
             .Where(x => x.Valid)
-            .Select(x => Observable.FromAsync(ct => CommitInternal1(x, ct)))
+            .Select(x => Observable.FromAsync(ct => CommitInternal(x, ct)))
             .Concat()
             .Subscribe();
 
@@ -45,6 +48,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
+            Log.PositionReceived(position);
             _subject.OnNext(position);
             return default;
         }
@@ -59,6 +63,8 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             return next;
         }
     }
+
+    CheckpointEventSource Log { get; }
 
     public CheckpointCommitHandler(string subscriptionId, ICheckpointStore checkpointStore, int batchSize = 1)
         : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize) { }
@@ -90,8 +96,10 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         return _positions.FirstBeforeGap();
     }
 
-    async Task CommitInternal1(CommitPosition position, CancellationToken cancellationToken) {
+    async Task CommitInternal(CommitPosition position, CancellationToken cancellationToken) {
         try {
+            Log.Committing(position);
+
             await _commitCheckpoint(
                     new Checkpoint(_subscriptionId, position.Position),
                     false,
@@ -105,14 +113,13 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
         }
         catch (Exception e) {
-            EventuousEventSource.Log.Warn("Error committing", e.ToString());
+            Log.UnableToCommit(e);
         }
     }
 
     public async ValueTask DisposeAsync() {
-        Log.Stopping(nameof(CheckpointCommitHandler), "worker", "");
+        Log.Stopping();
 
-        // await _worker.Stop(ct => CommitInternal(true, ct)).NoContext();
         await _worker.Stop(
                 _ => {
                     _subject.Dispose();

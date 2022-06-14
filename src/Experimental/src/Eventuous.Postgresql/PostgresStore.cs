@@ -35,17 +35,13 @@ public class PostgresStore : IEventStore {
         _schema         = new Schema(options.Schema);
     }
 
-    bool _initialized;
-
     const string ContentType = "application/json";
 
     async Task<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken) {
         var connection = _getConnection();
         await connection.OpenAsync(cancellationToken).NoContext();
-        if (_initialized) return connection;
-
+        connection.ReloadTypes();
         connection.TypeMapper.MapComposite<NewPersistedEvent>(_schema.StreamMessage);
-        _initialized = true;
         return connection;
     }
 
@@ -67,7 +63,7 @@ public class PostgresStore : IEventStore {
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
             var result = reader.ReadEvents(cancellationToken);
-            return await result.Select(x => ToStreamEvent(x)).ToArrayAsync(cancellationToken);
+            return await result.Select(x => ToStreamEvent(x)).ToArrayAsync(cancellationToken).NoContext();
         }
         catch (PostgresException e) when (e.MessageText.StartsWith("StreamNotFound")) {
             throw new StreamNotFound(stream);
@@ -127,7 +123,7 @@ public class PostgresStore : IEventStore {
         cmd.CommandType = CommandType.Text;
         cmd.CommandText = _schema.StreamExists;
         cmd.Parameters.AddWithValue("name", NpgsqlDbType.Varchar, stream.ToString());
-        var result = await cmd.ExecuteScalarAsync(cancellationToken);
+        var result = await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
         return (bool)result!;
     }
 

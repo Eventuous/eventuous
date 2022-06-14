@@ -1,7 +1,7 @@
 using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
-using static Eventuous.Tests.Postgres.StoreTests.Helpers;
+using static Eventuous.Tests.Postgres.Store.Helpers;
 
-namespace Eventuous.Tests.Postgres.StoreTests;
+namespace Eventuous.Tests.Postgres.Store;
 
 public class Read {
     [Fact]

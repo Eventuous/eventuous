@@ -5,12 +5,12 @@ create or replace function __schema__.read_all_forwards(
 returns table (
     message_id uuid,
     message_type varchar,
-    stream_name varchar,
     stream_position integer,
     global_position bigint,
     json_data jsonb,
     json_metadata jsonb,
-    created timestamp
+    created timestamp,
+    stream_name varchar
 )
 as $$
 begin
@@ -19,7 +19,7 @@ begin
                         m.json_data, m.json_metadata, m.created,
                         s.stream_name
         from __schema__.messages m 
-        inner join streams s on s.stream_id = m.stream_id
+        inner join __schema__.streams s on s.stream_id = m.stream_id
         where m.global_position >= _from_position
         limit _count;
 end;

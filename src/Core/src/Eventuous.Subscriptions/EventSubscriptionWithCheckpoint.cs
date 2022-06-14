@@ -23,7 +23,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     // It's not ideal, but for now if there's any filter added on top of the default one,
     // we won't add the concurrent filter, so it won't clash with any custom setup
     static ConsumePipe ConfigurePipe(ConsumePipe pipe, int concurrencyLimit)
-        => concurrencyLimit > 1 && pipe.RegisteredFilters.All(x => x is not ConcurrentFilter)
+        => pipe.RegisteredFilters.All(x => x is not ConcurrentFilter)
             ? pipe.AddFilterFirst(new PartitioningFilter(concurrencyLimit))
             : pipe;
 

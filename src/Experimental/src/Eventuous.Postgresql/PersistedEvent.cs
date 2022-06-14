@@ -3,7 +3,7 @@
 
 namespace Eventuous.Postgresql;
 
-record PersistedEvent(
+public record PersistedEvent(
     Guid     MessageId,
     string   MessageType,
     int      StreamPosition,

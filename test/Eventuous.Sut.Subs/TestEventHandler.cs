@@ -14,6 +14,8 @@ public record TestEvent(string Data, int Number) {
 public class TestEventHandler : BaseEventHandler {
     readonly ITestOutputHelper? _output;
     readonly TimeSpan           _delay;
+    
+    public int Count { get; private set; }
 
     IHypothesis<object>? _hypothesis;
 
@@ -33,8 +35,11 @@ public class TestEventHandler : BaseEventHandler {
         _output?.WriteLine(context.Message!.ToString());
         await Task.Delay(_delay);
         await EnsureHypothesis.Test(context.Message!, context.CancellationToken);
+        Count++;
         return EventHandlingStatus.Success;
     }
+
+    public void Reset() => Count = 0;
 
     IHypothesis<object> EnsureHypothesis =>
         _hypothesis ?? throw new InvalidOperationException("Test handler not specified");

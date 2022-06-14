@@ -20,7 +20,7 @@ static class ReaderExtensions {
                 reader.GetString(4),
                 reader.GetString(5),
                 reader.GetDateTime(6),
-                reader.FieldCount > 6 ? reader.GetString(7) : null
+                reader.FieldCount >= 8 ? reader.GetString(7) : null
             );
 
             yield return evt;

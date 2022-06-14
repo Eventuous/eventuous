@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Bogus;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Tracing;
 using Eventuous.Postgresql;
@@ -10,9 +11,14 @@ using Npgsql;
 namespace Eventuous.Tests.Postgres.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncDisposable {
-    public IEventStore     EventStore     { get; }
-    public IAggregateStore AggregateStore { get; }
-    public Fixture         Auto           { get; } = new();
+    public IEventStore           EventStore     { get; }
+    public IAggregateStore       AggregateStore { get; }
+    public Fixture               Auto           { get; } = new();
+    public GetPostgresConnection GetConnection  { get; }
+    public Faker                 Faker          { get; } = new();
+
+    public string SchemaName => $"{Faker.Hacker.Adjective()}_{Faker.Hacker.Noun()}"
+        .Replace("-", "").Replace(" ", "");
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
 
@@ -24,11 +30,19 @@ public sealed class IntegrationFixture : IAsyncDisposable {
     public static IntegrationFixture Instance { get; } = new();
 
     IntegrationFixture() {
-        const string connString = "Host=localhost;Username=postgres;Password=secret;Database=eventuous;Include Error Detail=true;";
-        NpgsqlConnection GetConnection() => new(connString);
+        const string connString =
+            "Host=localhost;Username=postgres;Password=secret;Database=eventuous;Include Error Detail=true;";
 
+        var schemaName = SchemaName;
+
+        NpgsqlConnection GetConn() => new(connString);
+
+        var schema = new Schema(schemaName);
+        schema.CreateSchema(GetConn).NoContext().GetAwaiter().GetResult();
+
+        GetConnection = GetConn;
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = new PostgresStore(GetConnection, new PostgresStoreOptions("__schema__"), Serializer);
+        EventStore     = new PostgresStore(GetConn, new PostgresStoreOptions(schemaName), Serializer);
         AggregateStore = new AggregateStore(EventStore);
         ActivitySource.AddActivityListener(_listener);
     }

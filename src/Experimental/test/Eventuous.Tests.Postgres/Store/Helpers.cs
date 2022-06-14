@@ -3,7 +3,7 @@ using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
 
-namespace Eventuous.Tests.Postgres.StoreTests;
+namespace Eventuous.Tests.Postgres.Store;
 
 public static class Helpers {
     public static StreamName GetStreamName() => new(Instance.Auto.Create<string>());

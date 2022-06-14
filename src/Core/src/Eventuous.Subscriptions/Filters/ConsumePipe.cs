@@ -13,7 +13,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         // Avoid adding one filter instance multiple times
         if (_filters.Any(x => x.FilterInstance == filter)) return this;
 
-        if (_filters.Count > 0 && !typeof(TOut).IsAssignableFrom(_filters.First().InContext)) {
+        if (_filters.Count > 0 && !_filters.First().InContext.IsAssignableFrom(typeof(TOut))) {
             throw new InvalidContextTypeException(_filters.First().InContext, typeof(TOut));
         }
 

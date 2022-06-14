@@ -22,7 +22,7 @@ begin
             raise exception 'StreamNotFound';
         end if;
     else -- Stream exists
-        if _expected_version != _current_version then
+        if _expected_version != -2 and _expected_version != _current_version then
             raise exception 'WrongExpectedVersion %, current version %', _expected_version, _current_version;
         end if;
     end if;
