@@ -14,7 +14,7 @@ public static class SubscriptionActivity {
         IMessageConsumeContext                      context,
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     ) {
-        context.ParentContext ??= GetParentContext(context.Metadata);
+        context.ParentContext ??= GetParentContext(context);
         var activity = Create(name, activityKind, context.ParentContext, tags);
         return activity?.SetContextTags(context);
     }
@@ -43,8 +43,12 @@ public static class SubscriptionActivity {
             );
     }
 
-    static ActivityContext? GetParentContext(Metadata? metadata) {
-        var tracingData = metadata?.GetTracingMeta();
+    static ActivityContext? GetParentContext(IBaseConsumeContext context) {
+        if (context.Items.TryGetItem<Activity>(ContextItemKeys.Activity, out var parentActivity)) {
+            return parentActivity?.Context;
+        }
+
+        var tracingData = context.Metadata?.GetTracingMeta();
         return tracingData?.ToActivityContext(true);
     }
 
