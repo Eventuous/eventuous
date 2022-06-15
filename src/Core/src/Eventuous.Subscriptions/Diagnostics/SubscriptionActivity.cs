@@ -14,7 +14,7 @@ public static class SubscriptionActivity {
         IMessageConsumeContext                      context,
         IEnumerable<KeyValuePair<string, object?>>? tags = null
     ) {
-        context.ParentContext ??= GetParentContext(context);
+        context.ParentContext = GetParentContext(context);
         var activity = Create(name, activityKind, context.ParentContext, tags);
         return activity?.SetContextTags(context);
     }
@@ -44,6 +44,8 @@ public static class SubscriptionActivity {
     }
 
     static ActivityContext? GetParentContext(IBaseConsumeContext context) {
+        if (Activity.Current != null) return Activity.Current.Context;
+        
         if (context.Items.TryGetItem<Activity>(ContextItemKeys.Activity, out var parentActivity)) {
             return parentActivity?.Context;
         }
