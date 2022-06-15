@@ -14,9 +14,4 @@
     <ItemGroup>
       <None Remove="Eventuous.Subscriptions.csproj.DotSettings" />
     </ItemGroup>
-    <ItemGroup>
-      <Compile Remove="Consumers\ConcurrentConsumer.cs" />
-      <Compile Remove="Consumers\FilterConsumer.cs" />
-      <Compile Remove="Consumers\TracedConsumer.cs" />
-    </ItemGroup>
 </Project>
