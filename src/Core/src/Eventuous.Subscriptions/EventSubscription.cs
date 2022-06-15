@@ -83,9 +83,12 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         try {
             if (context.Message != null) {
-                if (delayed && activity != null) {
-                    activity.SetStartTime(DateTime.UtcNow);
-                    context.Items.AddItem(ContextItemKeys.Activity, activity);
+                if (activity != null) {
+                    context.ParentContext = activity.Context;
+
+                    if (delayed) {
+                        context.Items.AddItem(ContextItemKeys.Activity, activity);
+                    }
                 }
 
                 await Pipe.Send(context).NoContext();

@@ -30,10 +30,6 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
 
         using var activity = ctx.Items.GetItem<Activity>(ContextItemKeys.Activity)?.Start();
 
-        if (activity != null) {
-            ctx.Items.AddItem(ContextItemKeys.Trace, new PropagatedTrace(activity));
-        }
-
         var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
         ctx.CancellationToken = cts.Token;
 

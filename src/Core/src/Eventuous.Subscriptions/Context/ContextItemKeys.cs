@@ -5,5 +5,4 @@ namespace Eventuous.Subscriptions.Context;
 
 public static class ContextItemKeys {
     public const string Activity = "activity";
-    public const string Trace    = "trace";
 }

@@ -31,11 +31,6 @@ public class TracingFilter : ConsumeFilter {
             )
             : Activity.Current;
 
-        if (activity is { Parent: null }
-         && context.Items.TryGetItem<PropagatedTrace>(ContextItemKeys.Trace, out var trace)) {
-            activity.SetParentId(trace!.TraceId, trace.SpanId);
-        }
-
         if (activity?.IsAllDataRequested == true && context is DelayedAckConsumeContext delayedAckContext) {
             activity.SetContextTags(context)?.SetTag(TelemetryTags.Eventuous.Partition, delayedAckContext.PartitionId);
         }
