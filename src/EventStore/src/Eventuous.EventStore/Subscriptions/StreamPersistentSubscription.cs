@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
@@ -13,9 +16,8 @@ public class StreamPersistentSubscription
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
         ConsumePipe                         consumePipe
-    ) : base(eventStoreClient, options, consumePipe) {
-        Ensure.NotEmptyString(options.StreamName);
-    }
+    ) : base(eventStoreClient, options, consumePipe)
+        => Ensure.NotEmptyString(options.StreamName);
 
     /// <summary>
     /// Creates EventStoreDB persistent subscription service for a given stream

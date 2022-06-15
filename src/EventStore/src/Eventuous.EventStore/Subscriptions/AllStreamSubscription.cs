@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
@@ -119,7 +122,7 @@ public class AllStreamSubscription
             _sequence++,
             re.Event.Created,
             evt,
-            DeserializeMeta(re.Event.Metadata, re.OriginalStreamId),
+            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.OriginalStreamId),
             SubscriptionId,
             cancellationToken
         );

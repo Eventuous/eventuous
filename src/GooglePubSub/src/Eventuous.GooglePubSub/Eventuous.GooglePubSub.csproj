@@ -3,7 +3,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Cloud.Monitoring.V3" Version="2.6.0" />
+        <PackageReference Include="Google.Cloud.Monitoring.V3" Version="3.0.0" />
         <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.10.0" />
     </ItemGroup>
     <ItemGroup>

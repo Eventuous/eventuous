@@ -4,19 +4,19 @@ using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 namespace Eventuous.EventStore.Subscriptions;
 
 [PublicAPI]
-public abstract class EventStoreSubscriptionBase<T> : EventSubscription<T>
+public abstract class EventStoreSubscriptionBase1<T> : EventSubscription<T>
     where T : EventStoreSubscriptionOptions {
     readonly IMetadataSerializer _metaSerializer;
 
     protected EventStoreClient EventStoreClient { get; }
 
-    protected EventStoreSubscriptionBase(EventStoreClient eventStoreClient, T options, ConsumePipe consumePipe)
+    protected EventStoreSubscriptionBase1(EventStoreClient eventStoreClient, T options, ConsumePipe consumePipe)
         : base(options, consumePipe) {
         EventStoreClient = Ensure.NotNull(eventStoreClient);
         _metaSerializer  = Options.MetadataSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
-    protected Metadata? DeserializeMeta(ReadOnlyMemory<byte> meta, string stream, ulong position = 0) {
+    protected Metadata? DeserializeMeta1(ReadOnlyMemory<byte> meta, string stream, ulong position = 0) {
         if (meta.IsEmpty) return null;
 
         try {

@@ -5,6 +5,6 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9" />
+      <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9.4" />
     </ItemGroup>
 </Project>

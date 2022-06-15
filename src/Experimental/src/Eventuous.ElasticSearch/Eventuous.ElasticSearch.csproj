@@ -4,7 +4,7 @@
         <PackageReference Include="Polly" Version="7.2.3" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj" />
-      <ProjectReference Include="..\..\..\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+      <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
+      <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     </ItemGroup>
 </Project>
