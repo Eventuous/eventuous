@@ -47,5 +47,8 @@ public sealed class IntegrationFixture : IAsyncDisposable {
         ActivitySource.AddActivityListener(_listener);
     }
 
-    public async ValueTask DisposeAsync() => _listener.Dispose();
+    public ValueTask DisposeAsync() {
+        _listener.Dispose();
+        return default;
+    }
 }

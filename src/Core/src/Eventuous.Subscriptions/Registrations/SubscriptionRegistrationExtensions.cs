@@ -1,3 +1,4 @@
+using Eventuous.Diagnostics;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Diagnostics;
@@ -28,8 +29,7 @@ public static class SubscriptionRegistrationExtensions {
 
         services.TryAddSingleton<ISubscriptionHealth, SubscriptionHealthCheck>();
 
-        if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T)))
-            services.AddSingleton(GetGapMeasure);
+        if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T))) services.AddSingleton(GetGapMeasure);
 
         return services
             .AddSubscriptionBuilder(builder)
@@ -76,21 +76,26 @@ public static class SubscriptionRegistrationExtensions {
     }
 
     public static IServiceCollection AddCheckpointStore<T>(this IServiceCollection services)
-        where T : class, ICheckpointStore
-        => services
-            .AddSingleton<T>()
-            .AddSingleton<ICheckpointStore>(
+        where T : class, ICheckpointStore {
+        services.AddSingleton<T>();
+
+        return EventuousDiagnostics.Enabled
+            ? services.AddSingleton<ICheckpointStore>(
                 sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>())
-            );
+            )
+            : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
+    }
 
     public static IServiceCollection AddCheckpointStore<T>(
         this IServiceCollection   services,
         Func<IServiceProvider, T> getStore
-    )
-        where T : class, ICheckpointStore
-        => services
-            .AddSingleton(getStore)
-            .AddSingleton<ICheckpointStore>(
+    ) where T : class, ICheckpointStore {
+        services.AddSingleton(getStore);
+
+        return EventuousDiagnostics.Enabled
+            ? services.AddSingleton<ICheckpointStore>(
                 sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>())
-            );
+            )
+            : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
+    }
 }
