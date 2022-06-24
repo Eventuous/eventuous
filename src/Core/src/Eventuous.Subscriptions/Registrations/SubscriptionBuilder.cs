@@ -133,7 +133,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
     public Action<TOptions>? ConfigureOptions { get; private set; }
 
-    internal Dictionary<Type, Type> ParametersMap { get; } = new();
+    ParameterMap ParametersMap { get; } = new();
 
     /// <summary>
     /// Configure subscription options
@@ -151,8 +151,15 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         }
     }
 
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>() where TImplementation: TService {
-        ParametersMap.Add(typeof(TService), typeof(TImplementation));
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>()
+        where TImplementation : class, TService {
+        ParametersMap.Add<TService, TImplementation>();
+        return this;
+    }
+
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>(Func<IServiceProvider, TImplementation> resolver)
+        where TImplementation : class, TService {
+        ParametersMap.Add<TService, TImplementation>(resolver);
         return this;
     }
 
@@ -232,8 +239,8 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
             }
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
-            if (ParametersMap.TryGetValue(parameterInfo.ParameterType, out var type)) {
-                return sp.GetRequiredService(type);
+            if (ParametersMap.TryGetResolver(parameterInfo.ParameterType, out var resolver)) {
+                return resolver!(sp);
             }
 
             return sp.GetService(parameterInfo.ParameterType);
@@ -256,7 +263,9 @@ static class TypeExtensionsForRegistrations {
                             y => y.ParameterType == typeof(T) && (name == null || y.Name == name)
                         )
                 )
-            ).Where(x => x.Options != null).ToArray()!;
+            )
+            .Where(x => x.Options != null)
+            .ToArray();
 }
 
 public delegate IEventHandler ResolveHandler(IServiceProvider sp);

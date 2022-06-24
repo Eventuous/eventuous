@@ -28,7 +28,6 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
                     services.AddSingleton(IntegrationFixture.Instance.Client);
                     services.AddEventProducer<EventStoreProducer>();
 
-                    
                     services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
                         SubscriptionId,
                         builder => builder
@@ -50,9 +49,7 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
     }
 
     [Fact]
-    public void CollectorShouldNotFail() {
-        _exporter.Collect(Timeout.Infinite).Should().BeTrue();
-    }
+    public void CollectorShouldNotFail() => _exporter.Collect(Timeout.Infinite).Should().BeTrue();
 
     [Fact]
     public void ShouldMeasureSubscriptionGapCount() {

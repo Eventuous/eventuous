@@ -1,19 +1,20 @@
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters.Partitioning;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+using static Eventuous.Subscriptions.Filters.Partitioning.Partitioner;
 
 namespace Eventuous.Subscriptions.Filters;
 
 public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
-    readonly Partitioner.GetPartitionHash _getHash;
-    readonly Partitioner.GetPartitionKey  _partitioner;
-    readonly ConcurrentFilter[]           _filters;
-    readonly int                          _partitionCount;
+    readonly GetPartitionHash   _getHash;
+    readonly GetPartitionKey    _partitioner;
+    readonly ConcurrentFilter[] _filters;
+    readonly int                _partitionCount;
 
     public PartitioningFilter(
-        int                           partitionCount,
-        Partitioner.GetPartitionKey?  partitioner = null,
-        Partitioner.GetPartitionHash? getHash     = null
+        int               partitionCount,
+        GetPartitionKey?  partitioner = null,
+        GetPartitionHash? getHash     = null
     ) {
         if (partitionCount <= 0)
             throw new ArgumentOutOfRangeException(nameof(partitionCount), "Partition count must be greater than zero");

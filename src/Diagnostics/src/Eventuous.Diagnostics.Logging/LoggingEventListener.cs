@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Diagnostics.Logging;
 
 public sealed class LoggingEventListener : EventListener {
-    readonly string?           _prefix;
+    readonly string            _prefix       = DiagnosticName.BaseName;
     readonly List<EventSource> _eventSources = new();
     readonly ILogger           _log;
 
-    public LoggingEventListener(ILoggerFactory loggerFactory, string prefix = DiagnosticName.BaseName) {
-        _prefix = prefix;
-        _log    = loggerFactory.CreateLogger(DiagnosticName.BaseName);
+    public LoggingEventListener(ILoggerFactory loggerFactory, string? prefix = null) {
+        if (prefix != null) _prefix = prefix;
+        _log = loggerFactory.CreateLogger(DiagnosticName.BaseName);
     }
 
     protected override void OnEventSourceCreated(EventSource? eventSource) {
-        if (eventSource?.Name == null || _prefix == null) return;
+        if (eventSource?.Name == null) return;
 
         if (eventSource.Name.StartsWith(_prefix)) {
             _eventSources.Add(eventSource);
