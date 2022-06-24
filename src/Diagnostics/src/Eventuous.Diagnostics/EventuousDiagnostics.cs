@@ -28,14 +28,8 @@ public static class EventuousDiagnostics {
         if (Tags.Length == 0) return tags;
 
         var combinedTags = new KeyValuePair<string, object?>[Tags.Length + tags.Length];
-
-        for (var i = 0; i < Tags.Length; i++) {
-            tags[i] = Tags[i];
-        }
-
-        for (var i = Tags.Length; i < tags.Length + Tags.Length; i++) {
-            combinedTags[i] = tags[i];
-        }
+        Array.Copy(Tags, combinedTags, Tags.Length);
+        Array.Copy(tags, 0, combinedTags, Tags.Length, tags.Length);
 
         return combinedTags;
     }
