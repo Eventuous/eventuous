@@ -1,4 +1,8 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 // ReSharper disable UnusedTypeParameter
+
 namespace Eventuous;
 
 public interface IApplicationService {
@@ -8,8 +12,8 @@ public interface IApplicationService {
 public interface IApplicationService<T> : IApplicationService where T : Aggregate { }
 
 public interface IApplicationService<T, TState, TId>
-    where T : Aggregate<TState, TId>
-    where TState : AggregateState<TState, TId>, new()
+    where T : Aggregate<TState>
+    where TState : AggregateState<TState>, new()
     where TId : AggregateId {
-    Task<Result<TState, TId>> Handle(object command, CancellationToken cancellationToken);
+    Task<Result<TState>> Handle(object command, CancellationToken cancellationToken);
 }

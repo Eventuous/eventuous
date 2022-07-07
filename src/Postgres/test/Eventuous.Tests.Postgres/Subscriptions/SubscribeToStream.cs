@@ -54,7 +54,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
     }
 
     static BookingImported ToEvent(ImportBooking cmd)
-        => new(cmd.BookingId, cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
+        => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable

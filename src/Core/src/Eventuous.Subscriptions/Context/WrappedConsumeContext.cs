@@ -10,7 +10,7 @@ public abstract class WrappedConsumeContext : IMessageConsumeContext {
     public string          MessageId       => InnerContext.MessageId;
     public string          MessageType     => InnerContext.MessageType;
     public string          ContentType     => InnerContext.ContentType;
-    public string          Stream          => InnerContext.Stream;
+    public StreamName      Stream          => InnerContext.Stream;
     public ulong           StreamPosition  => InnerContext.StreamPosition;
     public ulong           GlobalPosition  => InnerContext.GlobalPosition;
     public DateTime        Created         => InnerContext.Created;

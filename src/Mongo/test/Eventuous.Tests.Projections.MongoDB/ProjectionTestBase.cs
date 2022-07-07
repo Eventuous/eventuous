@@ -32,4 +32,6 @@ public class ProjectionTestBase<TProjection> : IDisposable where TProjection : c
             );
 
     public void Dispose() => _host.Dispose();
+    
+    protected string CreateId() => new(Guid.NewGuid().ToString("N"));
 }

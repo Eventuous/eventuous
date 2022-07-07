@@ -7,6 +7,7 @@ using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
+using Eventuous.Subscriptions.Tools;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
@@ -122,6 +123,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         await _worker.Stop(
                 _ => {
+                    _subject.OnCompleted();
                     _subject.Dispose();
                     return default;
                 }

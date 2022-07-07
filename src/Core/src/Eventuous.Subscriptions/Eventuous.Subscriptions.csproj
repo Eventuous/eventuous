@@ -8,7 +8,6 @@
         <PackageReference Include="System.Reactive" Version="5.0.0" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
         <ProjectReference Include="..\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>

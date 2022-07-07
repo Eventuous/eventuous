@@ -9,7 +9,7 @@ namespace Eventuous.Tests;
 public class StoringEventsWithCustomStream : NaiveFixture {
     public StoringEventsWithCustomStream() {
         var streamNameMap = new StreamNameMap();
-        streamNameMap.Register<Booking, BookingState, BookingId>(GetStreamName);
+        streamNameMap.Register<BookingId>(GetStreamName);
         Service = new BookingService(AggregateStore, streamNameMap);
         TypeMap.RegisterKnownEventTypes();
     }
@@ -27,7 +27,7 @@ public class StoringEventsWithCustomStream : NaiveFixture {
         );
 
         var expected = new Change[] {
-            new(new RoomBooked(cmd.BookingId, cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), "RoomBooked")
+            new(new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), "RoomBooked")
         };
 
         var result = await Service.Handle(cmd, default);
@@ -57,18 +57,18 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
         await Service.Handle(cmd, default);
 
-        var secondCmd = new Commands.RecordPayment(cmd.BookingId, Auto.Create<string>(), cmd.Price);
+        var secondCmd = new Commands.RecordPayment(cmd.BookingId, Auto.Create<string>(), cmd.Price, DateTimeOffset.Now);
 
         var expected = new Change[] {
             new(
                 new BookingPaymentRegistered(
-                    secondCmd.BookingId,
                     secondCmd.PaymentId,
                     secondCmd.Amount
                 ),
                 "PaymentRegistered"
             ),
-            new(new BookingFullyPaid(secondCmd.BookingId), "BookingFullyPaid")
+            new(new BookingOutstandingAmountChanged(0), "OutstandingAmountChanged"),
+            new(new BookingFullyPaid(secondCmd.PaidAt), "BookingFullyPaid")
         };
 
         var result = await Service.Handle(secondCmd, default);
@@ -83,10 +83,9 @@ public class StoringEventsWithCustomStream : NaiveFixture {
             CancellationToken.None
         );
 
-        evt.Skip(1)
-            .Select(x => x.Payload)
-            .Should()
-            .BeEquivalentTo(expected.Select(x => x.Event));
+        var actual = evt.Skip(1).Select(x => x.Payload);
+
+        actual.Should().BeEquivalentTo(expected.Select(x => x.Event));
     }
 
     static StreamName GetStreamName(BookingId bookingId) => new($"hotel-booking-{bookingId}");

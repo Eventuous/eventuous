@@ -18,7 +18,6 @@ public class AppServiceTests : IDisposable {
 
         var expected = new object[] {
             new BookingEvents.BookingImported(
-                cmd.BookingId,
                 cmd.RoomId,
                 cmd.Price,
                 cmd.CheckIn,

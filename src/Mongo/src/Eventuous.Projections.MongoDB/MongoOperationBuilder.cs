@@ -19,17 +19,19 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
     }
 
     public class FilterBuilder {
-        Func<TEvent, FilterDefinition<T>>? _filterFunc;
+        Func<IMessageConsumeContext<TEvent>, FilterDefinition<T>>? _filterFunc;
 
-        public Func<TEvent, FilterDefinition<T>> GetFilter => Ensure.NotNull(_filterFunc, "Filter function");
+        public Func<IMessageConsumeContext<TEvent>, FilterDefinition<T>> GetFilter
+            => Ensure.NotNull(_filterFunc, "Filter function");
 
         public void Filter(BuildFilter<TEvent, T> buildFilter)
             => _filterFunc = evt => buildFilter(evt, Builders<T>.Filter);
 
-        public void Filter(Func<TEvent, T, bool> filter)
+        public void Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter)
             => _filterFunc = evt => new ExpressionFilterDefinition<T>(x => filter(evt, x));
 
-        public void Id(GetDocumentId<TEvent> getId) => Filter((evt, filter) => filter.Eq(x => x.Id, getId(evt)));
+        public void Id(GetDocumentId getId) 
+            => Filter((ctx, filter) => filter.Eq(x => x.Id, getId(ctx.Stream)));
     }
 
     static ProjectTypedEvent<T, TEvent> GetHandler(

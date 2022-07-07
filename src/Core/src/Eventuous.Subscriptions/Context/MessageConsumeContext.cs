@@ -7,7 +7,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
         string            eventId,
         string            eventType,
         string            contentType,
-        string            stream,
+        string        stream,
         ulong             streamPosition,
         ulong             globalPosition,
         ulong             sequence,
@@ -20,7 +20,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
         MessageId         = eventId;
         MessageType       = eventType;
         ContentType       = contentType;
-        Stream            = stream;
+        Stream            = new StreamName(stream);
         StreamPosition    = streamPosition;
         GlobalPosition    = globalPosition;
         Created           = created;
@@ -34,7 +34,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
     public string            MessageId         { get; }
     public string            MessageType       { get; }
     public string            ContentType       { get; }
-    public string            Stream            { get; }
+    public StreamName        Stream            { get; }
     public ulong             StreamPosition    { get; }
     public ulong             GlobalPosition    { get; }
     public DateTime          Created           { get; }

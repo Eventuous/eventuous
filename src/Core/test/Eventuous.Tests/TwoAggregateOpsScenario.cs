@@ -1,4 +1,5 @@
 using Eventuous.Sut.Domain;
+using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests;
 
@@ -9,7 +10,6 @@ public class TwoAggregateOpsScenario {
         _testData = _fixture.Create<TestData>();
 
         _booking.BookRoom(
-            new BookingId(_testData.Id),
             _fixture.Create<string>(),
             new StayPeriod(
                 LocalDate.FromDateTime(DateTime.Today),
@@ -20,24 +20,30 @@ public class TwoAggregateOpsScenario {
 
         _booking.RecordPayment(
             _testData.PaymentId,
-            _testData.Amount
+            _testData.Amount,
+            _testData.PaidAt
         );
     }
 
     [Fact]
     public void should_produce_fully_paid_event() {
-        var expected = new BookingEvents.BookingFullyPaid(_testData.Id);
+        var expected = new BookingFullyPaid(_testData.PaidAt);
         _booking.Changes.Should().Contain(expected);
     }
 
     [Fact]
     public void should_produce_payment_registered() {
-        var expected = new BookingEvents.BookingPaymentRegistered(
-            _testData.Id,
+        var expected = new BookingPaymentRegistered(
             _testData.PaymentId,
             _testData.Amount
         );
 
+        _booking.Changes.Should().Contain(expected);
+    }
+
+    [Fact]
+    public void should_produce_outstanding_changed() {
+        var expected = new BookingOutstandingAmountChanged(0);
         _booking.Changes.Should().Contain(expected);
     }
 
@@ -54,5 +60,5 @@ public class TwoAggregateOpsScenario {
     readonly Booking  _booking = new();
     readonly TestData _testData;
 
-    record TestData(string Id, string PaymentId, decimal Amount);
+    record TestData(string Id, string PaymentId, decimal Amount, DateTimeOffset PaidAt);
 }

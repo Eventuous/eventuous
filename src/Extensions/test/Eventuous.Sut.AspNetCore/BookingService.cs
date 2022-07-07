@@ -8,9 +8,9 @@ public class BookingService : ApplicationService<Booking, BookingState, BookingI
     public BookingService(IAggregateStore store, StreamNameMap? streamNameMap = null)
         : base(store, streamNameMap: streamNameMap)
         => OnNew<BookRoom>(
+            cmd => new BookingId(cmd.BookingId),
             (booking, cmd)
                 => booking.BookRoom(
-                    new BookingId(cmd.BookingId),
                     cmd.RoomId,
                     new StayPeriod(cmd.CheckIn, cmd.CheckOut),
                     cmd.Price,

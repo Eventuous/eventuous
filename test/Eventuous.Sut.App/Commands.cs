@@ -7,5 +7,5 @@ public static class Commands {
 
     public record ImportBooking(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);
     
-    public record RecordPayment(string BookingId, string PaymentId, decimal Amount);
+    public record RecordPayment(string BookingId, string PaymentId, decimal Amount, DateTimeOffset PaidAt);
 }

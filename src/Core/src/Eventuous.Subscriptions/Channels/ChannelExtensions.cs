@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Eventuous.Subscriptions.Tools;
 
 namespace Eventuous.Subscriptions.Channels;
 

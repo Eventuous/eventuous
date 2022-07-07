@@ -26,7 +26,6 @@ public class StoringEvents : NaiveFixture {
         var expected = new Change[] {
             new(
                 new BookingEvents.RoomBooked(
-                    cmd.BookingId,
                     cmd.RoomId,
                     cmd.CheckIn,
                     cmd.CheckOut,

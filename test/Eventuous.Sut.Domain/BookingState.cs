@@ -3,10 +3,10 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Sut.Domain;
 
-public record BookingState : AggregateState<BookingState, BookingId> {
+public record BookingState : AggregateState<BookingState> {
     public BookingState() {
-        On<RoomBooked>((state, booked) => state with { Id = new BookingId(booked.BookingId), Price = booked.Price });
-        On<BookingImported>((state, imported) => state with { Id = new BookingId(imported.BookingId) });
+        On<RoomBooked>((state,      booked) => state with { Price = booked.Price });
+        On<BookingImported>((state, imported) => state with { Price = imported.Price });
 
         On<BookingPaymentRegistered>(
             (state, paid) => state with {

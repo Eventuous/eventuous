@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous;
@@ -49,7 +52,8 @@ public class AggregateStore : IAggregateStore {
     public Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
         => LoadInternal<T>(streamName, true, cancellationToken);
 
-    public Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
+    public Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken)
+        where T : Aggregate
         => LoadInternal<T>(streamName, false, cancellationToken);
 
     async Task<T> LoadInternal<T>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken)

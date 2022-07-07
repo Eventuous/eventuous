@@ -12,8 +12,8 @@ public class StateStore : IStateStore {
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
     }
 
-    public async Task<T> LoadState<T, TId>(StreamName stream, CancellationToken cancellationToken)
-        where T : AggregateState<T, TId>, new() where TId : AggregateId {
+    public async Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken)
+        where T : AggregateState<T>, new() {
         var state = new T();
 
         const int pageSize = 500;

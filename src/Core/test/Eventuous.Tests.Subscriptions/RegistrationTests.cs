@@ -52,7 +52,7 @@ public class RegistrationTests {
         handlers.Should().NotBeNull();
         handlers!.Length.Should().Be(1);
         handlers[0].Should().BeOfType(typeof(TracedEventHandler));
-        var innerHandler = handlers[0].GetPrivateMember<IEventHandler>("_inner");
+        var innerHandler = handlers[0].GetPrivateMember<IEventHandler>("_innerHandler");
         innerHandler.Should().BeOfType(handlerType);
     }
 

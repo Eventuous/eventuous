@@ -40,13 +40,6 @@ public abstract class Aggregate {
     public abstract void Fold(object evt);
 
     /// <summary>
-    /// Get the aggregate id in a storage-friendly format. Allows using a value object as the aggregate id
-    /// inside the model, which then gets converted to a string for storage purposes.
-    /// </summary>
-    /// <returns></returns>
-    public abstract string GetId();
-
-    /// <summary>
     /// Adds an event to the list of pending changes.
     /// </summary>
     /// <param name="evt">New domain event</param>
@@ -59,7 +52,7 @@ public abstract class Aggregate {
     protected void EnsureDoesntExist(Func<Exception>? getException = null) {
         if (CurrentVersion > -1)
             throw getException?.Invoke()
-               ?? new DomainException($"{GetType().Name} already exists: {GetId()}");
+               ?? new DomainException($"{GetType().Name} already exists");
     }
 
     /// <summary>
@@ -69,21 +62,22 @@ public abstract class Aggregate {
     protected void EnsureExists(Func<Exception>? getException = null) {
         if (CurrentVersion == -1)
             throw getException?.Invoke()
-               ?? new DomainException($"{GetType().Name} doesn't exist: {GetId()}");
+               ?? new DomainException($"{GetType().Name} doesn't exist");
     }
 }
 
-[PublicAPI]
-public abstract class Aggregate<T> : Aggregate where T : AggregateState<T>, new() {
-    protected Aggregate() => State = new T();
+public abstract class Aggregate<T> : Aggregate
+    where T : AggregateState<T>, new() {
     
+    protected Aggregate() => State = new T();
+
     /// <summary>
     /// Applies a new event to the state, adds the event to the list of pending changes,
     /// and increases the current version.
     /// </summary>
     /// <param name="evt">New domain event to be applied</param>
     /// <returns>The previous and the new aggregate states</returns>
-    protected virtual (T PreviousState, T CurrentState) Apply(object evt) {
+    protected (T PreviousState, T CurrentState) Apply(object evt) {
         AddChange(evt);
         var previous = State;
         State = State.When(evt);
@@ -108,11 +102,4 @@ public abstract class Aggregate<T> : Aggregate where T : AggregateState<T>, new(
     /// Returns the current aggregate state. Cannot be mutated from the outside.
     /// </summary>
     public T State { get; internal set; }
-}
-
-public abstract class Aggregate<T, TId> : Aggregate<T>
-    where T : AggregateState<T, TId>, new()
-    where TId : AggregateId {
-    /// <inheritdoc />
-    public override string GetId() => State.Id ?? throw new Exceptions.InvalidIdException<TId>();
 }

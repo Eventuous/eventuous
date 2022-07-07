@@ -18,43 +18,43 @@ public class AggregateStoreTests {
 
     [Fact]
     public async Task AppendedEventShouldBeTraced() {
-        var id        = Guid.NewGuid().ToString("N");
+        var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
-        aggregate.DoIt(new TestId(id), "test");
-        await Store.Store(aggregate, CancellationToken.None);
+        aggregate.DoIt("test");
+        await Store.Store(aggregate, id, CancellationToken.None);
     }
 
     [Fact]
     public async Task ShouldReadLongAggregateStream() {
         const int count = 9000;
 
-        var id = Guid.NewGuid().ToString("N");
+        var id = new TestId(Guid.NewGuid().ToString("N"));
 
         var initial = Enumerable
             .Range(1, count)
-            .Select(x => new TestEvent(id, x.ToString()))
+            .Select(x => new TestEvent(x.ToString()))
             .ToArray();
 
         var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
 
         var counter = 0;
 
-        foreach (var (i, data) in initial) {
-            aggregate.DoIt(new TestId(i), data);
+        foreach (var data in initial) {
+            aggregate.DoIt(data.Data);
             counter++;
 
             if (counter != 1000) continue;
 
             _log.LogInformation("Storing batch of events..");
-            await Store.Store(aggregate, CancellationToken.None);
-            aggregate = await Store.Load<TestAggregate>(id, CancellationToken.None);
+            await Store.Store(aggregate, id, CancellationToken.None);
+            aggregate = await Store.Load<TestAggregate, TestId>(id, CancellationToken.None);
             counter   = 0;
         }
 
-        await Store.Store(aggregate, CancellationToken.None);
+        await Store.Store(aggregate, id, CancellationToken.None);
 
         _log.LogInformation("Loading large aggregate stream..");
-        var restored = await Store.Load<TestAggregate>(id, CancellationToken.None);
+        var restored = await Store.Load<TestAggregate, TestId>(id, CancellationToken.None);
 
         restored.State.Values.Count.Should().Be(count);
         restored.State.Values.Should().BeEquivalentTo(aggregate.State.Values);
@@ -62,15 +62,15 @@ public class AggregateStoreTests {
 
     [Fact]
     public async Task ShouldReadAggregateStreamManyTimes() {
+        var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
-        var id        = Guid.NewGuid().ToString("N");
-        aggregate.DoIt(new TestId(id), "test");
-        await Store.Store(aggregate, default);
+        aggregate.DoIt("test");
+        await Store.Store(aggregate,id, default);
 
         const int numberOfReads = 100;
 
         foreach (var unused in Enumerable.Range(0, numberOfReads)) {
-            var read = await Store.Load<TestAggregate>(id, default);
+            var read = await Store.Load<TestAggregate, TestId>(id, default);
             read.State.Should().BeEquivalentTo(aggregate.State);
         }
     }
@@ -81,21 +81,18 @@ public class AggregateStoreTests {
         public TestId(string value) : base(value) { }
     }
 
-    record TestState : AggregateState<TestState, TestId> {
-        public TestState() {
-            On<TestEvent>(
-                (state, evt) => state with {
-                    Id = new TestId(evt.Id), Values = state.Values.Add(evt.Data)
-                }
+    record TestState : AggregateState<TestState> {
+        public TestState()
+            => On<TestEvent>(
+                (state, evt) => state with { Values = state.Values.Add(evt.Data) }
             );
-        }
 
         public ImmutableList<string> Values { get; init; } = ImmutableList<string>.Empty;
     }
 
-    class TestAggregate : Aggregate<TestState, TestId> {
-        public void DoIt(TestId id, string data) => Apply(new TestEvent(id, data));
+    class TestAggregate : Aggregate<TestState> {
+        public void DoIt(string data) => Apply(new TestEvent(data));
     }
 
-    record TestEvent(string Id, string Data);
+    record TestEvent(string Data);
 }

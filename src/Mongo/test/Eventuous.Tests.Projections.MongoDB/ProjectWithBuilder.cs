@@ -12,11 +12,12 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
     [Fact]
     public async Task ShouldProjectImported() {
         var evt    = DomainFixture.CreateImportBooking();
-        var stream = StreamName.For<Booking>(evt.BookingId);
+        var id     = new BookingId(CreateId());
+        var stream = StreamName.For<Booking, BookingState, BookingId>(id);
 
-        var first = await Act(stream, evt, e => e.BookingId);
+        var first = await Act(stream, evt);
 
-        var expected = new BookingDocument(evt.BookingId) {
+        var expected = new BookingDocument(id.ToString()) {
             RoomId       = evt.RoomId,
             CheckInDate  = evt.CheckIn,
             CheckOutDate = evt.CheckOut,
@@ -27,9 +28,9 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
 
         first.Doc.Should().Be(expected);
 
-        var payment = new BookingPaymentRegistered(evt.BookingId, Instance.Auto.Create<string>(), evt.Price);
+        var payment = new BookingPaymentRegistered(Instance.Auto.Create<string>(), evt.Price);
 
-        var second = await Act(stream, payment, x => x.BookingId);
+        var second = await Act(stream, payment);
 
         expected = expected with {
             PaidAmount = payment.AmountPaid,
@@ -39,17 +40,13 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
         second.Doc.Should().Be(expected);
     }
 
-    static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(
-        StreamName      stream,
-        T               evt,
-        Func<T, string> getId
-    )
+    static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)
         where T : class {
         var append = await Instance.AppendEvent(stream, evt);
 
         await Task.Delay(500);
 
-        var actual = await Instance.Mongo.LoadDocument<BookingDocument>(getId(evt));
+        var actual = await Instance.Mongo.LoadDocument<BookingDocument>(stream.GetId());
         return (append, actual);
     }
 
@@ -61,12 +58,12 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
                 b => b
                     .InsertOne
                     .Document(
-                        evt => new BookingDocument(evt.BookingId) {
-                            RoomId       = evt.RoomId,
-                            CheckInDate  = evt.CheckIn,
-                            CheckOutDate = evt.CheckOut,
-                            BookingPrice = evt.Price,
-                            Outstanding  = evt.Price
+                        (stream, e) => new BookingDocument(stream.GetId()) {
+                            RoomId       = e.RoomId,
+                            CheckInDate  = e.CheckIn,
+                            CheckOutDate = e.CheckOut,
+                            BookingPrice = e.Price,
+                            Outstanding  = e.Price
                         }
                     )
             );
@@ -75,7 +72,7 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
                 b => b
                     .InsertOne
                     .Document(
-                        ctx => new BookingDocument(ctx.Message.BookingId) {
+                        ctx => new BookingDocument(ctx.Stream.GetId()) {
                             BookingPrice = ctx.Message.Price,
                             Outstanding  = ctx.Message.Price
                         }
@@ -85,7 +82,7 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
             On<BookingPaymentRegistered>(
                 b => b
                     .UpdateOne
-                    .Id(x => x.BookingId)
+                    .DefaultId()
                     .Update(
                         (evt, update) => update.Set(x => x.PaidAmount, evt.AmountPaid)
                     )

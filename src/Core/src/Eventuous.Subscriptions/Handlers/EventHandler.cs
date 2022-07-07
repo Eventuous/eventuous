@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Tools;
 
 namespace Eventuous.Subscriptions;
 

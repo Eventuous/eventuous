@@ -70,7 +70,6 @@ public class HttpCommandTests : IDisposable {
         actual!.Payload.Should()
             .BeEquivalentTo(
                 new BookingEvents.RoomBooked(
-                    cmd.BookingId,
                     cmd.RoomId,
                     cmd.CheckIn,
                     cmd.CheckOut,

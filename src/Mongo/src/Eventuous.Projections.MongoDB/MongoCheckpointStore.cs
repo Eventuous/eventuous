@@ -1,6 +1,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Tools;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver.Linq;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;

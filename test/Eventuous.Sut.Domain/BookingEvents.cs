@@ -7,7 +7,6 @@ namespace Eventuous.Sut.Domain;
 public static class BookingEvents {
     [EventType("RoomBooked")]
     public record RoomBooked(
-        string    BookingId,
         string    RoomId,
         LocalDate CheckIn,
         LocalDate CheckOut,
@@ -17,26 +16,24 @@ public static class BookingEvents {
 
     [EventType("PaymentRegistered")]
     public record BookingPaymentRegistered(
-        string  BookingId,
         string  PaymentId,
         decimal AmountPaid
     );
 
     [EventType("OutstandingAmountChanged")]
-    public record BookingOutstandingAmountChanged(string BookingId, decimal OutstandingAmount);
+    public record BookingOutstandingAmountChanged(decimal OutstandingAmount);
 
     [EventType("BookingFullyPaid")]
-    public record BookingFullyPaid(string BookingId);
+    public record BookingFullyPaid(DateTimeOffset PaidAt);
 
     [EventType("BookingOverpaid")]
-    public record BookingOverpaid(string BookingId, decimal OverpaidAmount);
+    public record BookingOverpaid(decimal OverpaidAmount);
 
     [EventType(TypeNames.BookingCancelled)]
-    public record BookingCancelled(string BookingId);
+    public record BookingCancelled;
 
     [EventType("V1.BookingImported")]
     public record BookingImported(
-        string    BookingId,
         string    RoomId,
         decimal   Price,
         LocalDate CheckIn,

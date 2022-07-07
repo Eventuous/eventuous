@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous;
@@ -20,7 +23,11 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
         _archiveReader   = Ensure.NotNull(archiveReader);
     }
 
-    public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken)
+    public Task<AppendEventsResult> Store<T>(
+        StreamName        streamName,
+        T                 aggregate,
+        CancellationToken cancellationToken
+    )
         where T : Aggregate
         => _eventStore.Store(streamName, aggregate, _amendEvent, cancellationToken);
 

@@ -47,9 +47,9 @@ public static class ServiceCollectionExtensions {
         bool                    throwOnError = false
     )
         where T : class, IApplicationService<TAggregate, TState, TId>
-        where TState : AggregateState<TState, TId>, new()
+        where TState : AggregateState<TState>, new()
         where TId : AggregateId
-        where TAggregate : Aggregate<TState, TId> {
+        where TAggregate : Aggregate<TState> {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();
 

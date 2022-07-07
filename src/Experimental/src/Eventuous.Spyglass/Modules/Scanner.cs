@@ -65,13 +65,12 @@ public class Scanner {
     static object[] FakeEvents()
         => new object[] {
             new BookingEvents.RoomBooked(
-                "123",
                 "234",
                 LocalDate.MinIsoValue,
                 LocalDate.MaxIsoValue,
                 100
             ),
-            new BookingEvents.BookingPaymentRegistered("123", "444", 100)
+            new BookingEvents.BookingPaymentRegistered("444", 100)
         };
 }
 

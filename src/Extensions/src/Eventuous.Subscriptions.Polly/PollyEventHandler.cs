@@ -1,4 +1,5 @@
 ﻿using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Tools;
 using Polly;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using PollyContext = Polly.Context;

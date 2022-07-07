@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous;
@@ -29,10 +32,10 @@ public static class StoreFunctions {
             return result;
         }
         catch (Exception e) {
-            Log.UnableToStoreAggregate(aggregate, e);
+            Log.UnableToStoreAggregate<T>(streamName, e);
 
             throw e.InnerException?.Message.Contains("WrongExpectedVersion") == true
-                ? new OptimisticConcurrencyException<T>(aggregate, e) : e;
+                ? new OptimisticConcurrencyException<T>(streamName, e) : e;
         }
 
         StreamEvent ToStreamEvent(object evt, int position) {

@@ -1,6 +1,3 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using Eventuous.Postgresql;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.App;
@@ -61,7 +58,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     }
 
     static BookingImported ToEvent(ImportBooking cmd)
-        => new(cmd.BookingId, cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
+        => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
         var commands = Enumerable
@@ -72,7 +69,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
         foreach (var cmd in commands) {
             var result = await _service.Handle(cmd, default);
 
-            if (result is ErrorResult<BookingState, BookingId> error) {
+            if (result is ErrorResult<BookingState> error) {
                 throw error.Exception ?? new Exception(error.Message);
             }
         }
