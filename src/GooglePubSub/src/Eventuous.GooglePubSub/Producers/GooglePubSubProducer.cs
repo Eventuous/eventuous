@@ -1,7 +1,8 @@
-using Eventuous.Diagnostics;
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using static Google.Cloud.PubSub.V1.PublisherClient;
 
@@ -13,7 +14,7 @@ namespace Eventuous.GooglePubSub.Producers;
 /// Producer for Google PubSub
 /// </summary>
 [PublicAPI]
-public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedService {
+public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedProducer {
     readonly IEventSerializer _serializer;
     readonly ClientCache      _clientCache;
     readonly PubSubAttributes _attributes;
@@ -47,7 +48,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     public GooglePubSubProducer(
         PubSubProducerOptions options,
         IEventSerializer?     serializer = null
-    ) : base(true, TracingOptions) {
+    ) : base(TracingOptions) {
         Ensure.NotNull(options);
 
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
@@ -66,7 +67,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
     ) : this(options.Value, serializer) { }
 
     public Task StartAsync(CancellationToken cancellationToken = default) {
-        ReadyNow();
+        Ready = true;
         return Task.CompletedTask;
     }
 
@@ -108,9 +109,9 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
             OrderingKey = options?.OrderingKey ?? "",
             Attributes = {
                 { _attributes.ContentType, contentType },
-                { _attributes.EventType, eventType }
+                { _attributes.EventType, eventType },
+                { _attributes.MessageId, message.MessageId.ToString() }
             },
-            MessageId = message.MessageId.ToString()
         };
 
         if (message.Metadata != null) {
@@ -131,4 +132,6 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedS
 
         return psm;
     }
+
+    public bool Ready { get; private set; }
 }

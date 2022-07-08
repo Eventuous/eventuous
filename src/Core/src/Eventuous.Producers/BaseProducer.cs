@@ -7,8 +7,8 @@ namespace Eventuous.Producers;
 
 public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProducer<TProduceOptions>
     where TProduceOptions : class {
-    protected BaseProducer(bool requiresInit, ProducerTracingOptions? tracingOptions = null) 
-        : base(requiresInit, tracingOptions) { }
+    protected BaseProducer(ProducerTracingOptions? tracingOptions = null) 
+        : base(tracingOptions) { }
     
     protected abstract Task ProduceMessages(
         StreamName                   stream,
@@ -47,10 +47,9 @@ public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProduc
 public abstract class BaseProducer : IEventProducer {
     protected KeyValuePair<string, object?>[] DefaultTags { get; }
 
-    protected BaseProducer(bool requiresInit, ProducerTracingOptions? tracingOptions = null) {
+    protected BaseProducer(ProducerTracingOptions? tracingOptions = null) {
         var options = tracingOptions ?? new ProducerTracingOptions();
         DefaultTags = options.AllTags.Concat(EventuousDiagnostics.Tags).ToArray();
-        if (!requiresInit) ReadyNow();
     }
 
     protected abstract Task ProduceMessages(
@@ -85,8 +84,4 @@ public abstract class BaseProducer : IEventProducer {
             return (act?.Start(), new[] { producedMessage });
         }
     }
-
-    public bool Ready { get; private set; }
-
-    protected void ReadyNow() => Ready = true;
 }

@@ -13,11 +13,7 @@ public class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : c
         T?                           options,
         CancellationToken            cancellationToken = default
     ) {
-        while (!_inner.Ready) {
-            EventuousEventSource.Log.Warn("Producer not ready, waiting...");
-            await Task.Delay(1000, cancellationToken);
-        }
-
+        await WaitForInner(_inner, cancellationToken);
         await _inner.Produce(stream, messages, options, cancellationToken);
     }
 }
@@ -32,10 +28,16 @@ public class GatewayProducer : IEventProducer {
         IEnumerable<ProducedMessage> messages,
         CancellationToken            cancellationToken = default
     ) {
-        while (!_inner.Ready) await Task.Delay(10, cancellationToken);
-
+        await WaitForInner(_inner, cancellationToken);
         await _inner.Produce(stream, messages, cancellationToken);
     }
 
-    public bool Ready => true;
+    protected static async ValueTask WaitForInner(IEventProducer inner, CancellationToken cancellationToken) {
+        if (inner is not IHostedProducer hosted) return;
+
+        while (!hosted.Ready) {
+            EventuousEventSource.Log.Warn("Producer not ready, waiting...");
+            await Task.Delay(1000, cancellationToken);
+        }
+    }
 }

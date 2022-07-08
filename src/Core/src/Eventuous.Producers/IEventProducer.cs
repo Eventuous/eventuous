@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Hosting;
+
 namespace Eventuous.Producers;
 
 [PublicAPI]
@@ -15,8 +17,6 @@ public interface IEventProducer {
         IEnumerable<ProducedMessage> messages,
         CancellationToken            cancellationToken = default
     );
-
-    bool Ready { get; }
 }
 
 [PublicAPI]
@@ -36,4 +36,8 @@ public interface IEventProducer<in TProduceOptions> : IEventProducer where TProd
         TProduceOptions?             options,
         CancellationToken            cancellationToken = default
     );
+}
+
+public interface IHostedProducer : IHostedService {
+    bool Ready { get; }
 }

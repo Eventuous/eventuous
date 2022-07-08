@@ -11,7 +11,7 @@ namespace Eventuous.ElasticSearch.Producers;
 public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
     readonly IElasticClient _elasticClient;
 
-    public ElasticProducer(IElasticClient elasticClient) : base(false, TracingOptions) => _elasticClient = elasticClient;
+    public ElasticProducer(IElasticClient elasticClient) : base(TracingOptions) => _elasticClient = elasticClient;
 
     static readonly ProducerTracingOptions TracingOptions = new() {
         MessagingSystem  = "elasticsearch",

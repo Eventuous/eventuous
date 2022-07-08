@@ -22,7 +22,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         EventStoreClient     eventStoreClient,
         IEventSerializer?    serializer     = null,
         IMetadataSerializer? metaSerializer = null
-    ) : base(false, TracingOptions) {
+    ) : base(TracingOptions) {
         _client         = Ensure.NotNull(eventStoreClient);
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;

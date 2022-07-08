@@ -66,7 +66,7 @@ public class RegistrationTestsWithOptions {
             return Task.CompletedTask;
         }
 
-        public TestProducer() : base(false) { }
+        public TestProducer() : base() { }
     }
 
     record TestProduceOptions { }

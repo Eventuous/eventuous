@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Producers;
@@ -11,7 +14,7 @@ namespace Eventuous.RabbitMq.Producers;
 /// RabbitMQ producer
 /// </summary>
 [PublicAPI]
-public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedService {
+public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedProducer {
     readonly RabbitMqExchangeOptions? _options;
     readonly IEventSerializer         _serializer;
     readonly ConnectionFactory        _connectionFactory;
@@ -29,7 +32,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         ConnectionFactory        connectionFactory,
         IEventSerializer?        serializer = null,
         RabbitMqExchangeOptions? options    = null
-    ) : base(true, TracingOptions) {
+    ) : base(TracingOptions) {
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
         _connectionFactory = Ensure.NotNull(connectionFactory);
@@ -39,9 +42,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
         _connection = _connectionFactory.CreateConnection();
         _channel    = _connection.CreateModel();
         _channel.ConfirmSelect();
-
-        ReadyNow();
-
+        Ready = true;
         return Task.CompletedTask;
     }
 
@@ -146,4 +147,6 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedSer
 
         return Task.CompletedTask;
     }
+
+    public bool Ready { get; private set; }
 }

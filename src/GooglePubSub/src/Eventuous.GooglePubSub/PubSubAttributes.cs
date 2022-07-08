@@ -4,4 +4,5 @@ namespace Eventuous.GooglePubSub;
 public class PubSubAttributes {
     public string EventType   { get; set; } = "eventType";
     public string ContentType { get; set; } = "contentType";
+    public string MessageId   { get; set; } = "messageId";
 }

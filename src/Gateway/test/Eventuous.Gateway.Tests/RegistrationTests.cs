@@ -66,6 +66,6 @@ public class RegistrationTests {
             return Task.CompletedTask;
         }
 
-        public TestProducer() : base(false) { }
+        public TestProducer() : base() { }
     }
 }
