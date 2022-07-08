@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Eventuous.Subscriptions.Tools;
 using static System.String;
 
 namespace Eventuous.Projections.MongoDB.Tools; 

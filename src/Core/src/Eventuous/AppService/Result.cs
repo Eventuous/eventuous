@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Text.Json.Serialization;
 
 namespace Eventuous;
@@ -27,20 +30,17 @@ public record ErrorResult : Result {
 }
 
 [PublicAPI]
-public abstract record Result<TState, TId>(TState? State, bool Success, IEnumerable<Change>? Changes = null)
-    where TState : AggregateState<TState, TId>, new()
-    where TId : AggregateId;
+public abstract record Result<TState>(TState? State, bool Success, IEnumerable<Change>? Changes = null)
+    where TState : AggregateState<TState>, new();
 
 [PublicAPI]
-public record OkResult<TState, TId>(TState State, IEnumerable<Change> Changes, ulong StreamPosition)
-    : Result<TState, TId>(State, true, Changes)
-    where TState : AggregateState<TState, TId>, new()
-    where TId : AggregateId;
+public record OkResult<TState>(TState State, IEnumerable<Change> Changes, ulong StreamPosition)
+    : Result<TState>(State, true, Changes)
+    where TState : AggregateState<TState>, new();
 
 [PublicAPI]
-public record ErrorResult<TState, TId> : Result<TState, TId>
-    where TState : AggregateState<TState, TId>, new()
-    where TId : AggregateId {
+public record ErrorResult<TState> : Result<TState>
+    where TState : AggregateState<TState>, new() {
     public ErrorResult(string message, Exception? exception) : base(null, false) {
         Message   = message;
         Exception = exception;

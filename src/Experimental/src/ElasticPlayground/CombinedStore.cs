@@ -47,10 +47,15 @@ public class CombinedStore {
 
         var service = new ThrowingApplicationService<Booking, BookingState, BookingId>(new BookingService(_store));
 
-        var cmd = new RecordPayment(bookRoom.BookingId, Fixture.Create<string>(), bookRoom.Price / 2);
+        var cmd = new RecordPayment(
+            bookRoom.BookingId,
+            Fixture.Create<string>(),
+            bookRoom.Price / 2,
+            DateTimeOffset.Now
+        );
 
         var result = await service.Handle(cmd, default);
-        
+
         result.Dump();
     }
 
@@ -59,7 +64,13 @@ public class CombinedStore {
 
         await service.Handle(bookRoom, default);
 
-        var processPayment = new RecordPayment(bookRoom.BookingId, Fixture.Create<string>(), bookRoom.Price / 2);
+        var processPayment = new RecordPayment(
+            bookRoom.BookingId,
+            Fixture.Create<string>(),
+            bookRoom.Price / 2,
+            DateTimeOffset.Now
+        );
+
         await service.Handle(processPayment, default);
     }
 }

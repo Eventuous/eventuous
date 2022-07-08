@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Tools;
 
 namespace Eventuous.Subscriptions.Consumers;
 

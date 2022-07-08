@@ -13,6 +13,5 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
         <PackageReference Include="MongoDb.Bson.NodaTime" Version="3.0.0" />
-        <PackageReference Include="Xunit.Extensions.Logging" Version="1.1.0" />
     </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Subscriptions.Tools;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 

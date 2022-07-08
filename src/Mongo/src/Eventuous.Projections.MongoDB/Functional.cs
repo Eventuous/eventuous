@@ -1,6 +1,11 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
+using Eventuous.Subscriptions.Context;
+
 namespace Eventuous.Projections.MongoDB;
 
-public delegate string GetDocumentId<in TEvent>(TEvent evt);
+public delegate string GetDocumentId(StreamName evt);
 
 public delegate UpdateDefinition<T> BuildUpdate<T>(UpdateDefinitionBuilder<T> update);
 
@@ -10,7 +15,7 @@ public delegate ValueTask<UpdateDefinition<T>> BuildUpdateAsync<in TEvent, T>(TE
 
 public delegate FilterDefinition<T> BuildFilter<T>(FilterDefinitionBuilder<T> filter);
 
-public delegate FilterDefinition<T> BuildFilter<in TEvent, T>(TEvent evt, FilterDefinitionBuilder<T> filter);
+public delegate FilterDefinition<T> BuildFilter<in TEvent, T>(IMessageConsumeContext<TEvent> ctx, FilterDefinitionBuilder<T> filter) where TEvent : class;
 
 public delegate IndexKeysDefinition<T> BuildIndex<T>(IndexKeysDefinitionBuilder<T> builder);
     

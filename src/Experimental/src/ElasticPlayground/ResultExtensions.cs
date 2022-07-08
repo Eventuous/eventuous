@@ -1,19 +1,18 @@
 namespace ElasticPlayground;
 
 static class ResultExtensions {
-    public static void Dump<T, TId>(this Result<T, TId> r)
-        where T : AggregateState<T, TId>, new()
-        where TId : AggregateId {
+    public static void Dump<T>(this Result<T> r)
+        where T : AggregateState<T>, new() {
         Console.WriteLine(r.Success ? "Success" : "Failure");
 
         switch (r) {
-            case OkResult<T, TId> ok:
+            case OkResult<T> ok:
                 foreach (var change in ok.Changes!) {
                     Console.WriteLine($"{change.EventType} {change.Event}");
                 }
 
                 break;
-            case ErrorResult<T, TId> error:
+            case ErrorResult<T> error:
                 Console.WriteLine(error.ErrorMessage);
                 break;
         }

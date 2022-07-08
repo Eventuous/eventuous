@@ -99,7 +99,7 @@ public sealed class StreamSubscriptionTests : IDisposable {
         log.LogInformation("Received {Count} events", handler.Count);
 
         var actual = handler.Processed
-            .Select(x => (x.Message as BookingEvents.BookingImported)!.BookingId)
+            .Select(x => x.Stream.GetId())
             .ToList();
 
         log.LogInformation("Actual contains {Count} events", actual.Count);

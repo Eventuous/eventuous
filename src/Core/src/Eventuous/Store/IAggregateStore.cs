@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 namespace Eventuous;
 
 /// <summary>
@@ -9,11 +12,14 @@ public interface IAggregateStore {
     /// Store the new or updated aggregate state
     /// </summary>
     /// <param name="aggregate">Aggregate instance, which needs to be persisted</param>
+    /// <param name="id">Aggregate id</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns></returns>
-    public Task<AppendEventsResult> Store<T>(T aggregate, CancellationToken cancellationToken) where T : Aggregate
-        => this.Store(StreamName.For<T>(aggregate.GetId()), aggregate, cancellationToken);
+    public Task<AppendEventsResult> Store<T, TId>(T aggregate, TId id, CancellationToken cancellationToken) 
+        where T : Aggregate where TId : AggregateId 
+        => this.Store<T>(StreamName.For<T, TId>(id), aggregate, cancellationToken);
 
     /// <summary>
     /// Store the new or updated aggregate state
@@ -32,9 +38,11 @@ public interface IAggregateStore {
     /// <param name="id">Aggregate id</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns></returns>
-    public Task<T> Load<T>(string id, CancellationToken cancellationToken) where T : Aggregate
-        => this.Load<T>(StreamName.For<T>(Ensure.NotEmptyString(id)), cancellationToken);
+    public Task<T> Load<T, TId>(TId id, CancellationToken cancellationToken) 
+        where T : Aggregate where TId : AggregateId 
+        => this.Load<T>(StreamName.For<T, TId>(id), cancellationToken);
 
     /// <summary>
     /// Load the aggregate from the store for a given id
@@ -43,7 +51,8 @@ public interface IAggregateStore {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <returns></returns>
-    Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate;
+    Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) 
+        where T : Aggregate;
 
     /// <summary>
     /// Attempts to load the aggregate from the store for a given id. If the aggregate is not found,
@@ -52,9 +61,11 @@ public interface IAggregateStore {
     /// <param name="id">Aggregate id as string</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns></returns>
-    public Task<T> LoadOrNew<T>(string id, CancellationToken cancellationToken) where T : Aggregate
-        => this.LoadOrNew<T>(StreamName.For<T>(Ensure.NotEmptyString(id)), cancellationToken);
+    public Task<T> LoadOrNew<T, TId>(TId id, CancellationToken cancellationToken) 
+        where T : Aggregate where TId : AggregateId 
+        => this.LoadOrNew<T>(StreamName.For<T, TId>(id), cancellationToken);
 
     /// <summary>
     /// Attempts to load the aggregate from the store for a given id. If the aggregate is not found,
@@ -64,5 +75,6 @@ public interface IAggregateStore {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <returns></returns>
-    Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate;
+    Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken) 
+        where T : Aggregate;
 }

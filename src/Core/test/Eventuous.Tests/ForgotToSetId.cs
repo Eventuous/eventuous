@@ -7,30 +7,32 @@ public class ForgotToSetId : NaiveFixture {
 
     [Fact]
     public async Task ShouldFailWithNoId() {
-        var cmd     = new DoIt(Auto.Create<string>());
-        var result  = await Service.Handle(cmd, default);
-        result.Success.Should().BeFalse();
-        (result as ErrorResult<TestState, TestId>)!.Exception.Should().BeOfType<Exceptions.InvalidIdException>();
+        var cmd    = new DoIt(Auto.Create<string>());
+        var result = await Service.Handle(cmd, default);
+        result.Success.Should().BeTrue();
     }
 
     TestService Service { get; }
 
     class TestService : ApplicationService<TestAggregate, TestState, TestId> {
         public TestService(IAggregateStore store) : base(store)
-            => OnNew<DoIt>((test, cmd) => test.DoIt(new TestId(cmd.Id)));
+            => OnNew<DoIt>(
+                cmd => new TestId(cmd.Id),
+                (test, cmd) => test.Process()
+            );
     }
 
     record DoIt(string Id);
 
-    class TestAggregate : Aggregate<TestState, TestId> {
-        public void DoIt(TestId id) => Apply(new TestEvent(id));
+    class TestAggregate : Aggregate<TestState> {
+        public void Process() => Apply(new TestEvent());
     }
 
-    record TestState : AggregateState<TestState, TestId>;
+    record TestState : AggregateState<TestState>;
 
     record TestId : AggregateId {
         public TestId(string value) : base(value) { }
     }
 
-    record TestEvent(string Id);
+    record TestEvent;
 }

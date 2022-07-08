@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous;
@@ -20,7 +23,11 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
         _archiveReader   = Ensure.NotNull(archiveReader);
     }
 
-    public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken)
+    public Task<AppendEventsResult> Store<T>(
+        StreamName        streamName,
+        T                 aggregate,
+        CancellationToken cancellationToken
+    )
         where T : Aggregate
         => _eventStore.Store(streamName, aggregate, _amendEvent, cancellationToken);
 
@@ -47,18 +54,9 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
             throw new AggregateNotFoundException<T>(streamName, new StreamNotFound(streamName));
         }
 
-        foreach (var streamEvent in streamEvents) {
-            Fold(streamEvent);
-        }
+        aggregate.Load(streamEvents.Select(x => x.Payload));
 
         return aggregate;
-
-        void Fold(StreamEvent streamEvent) {
-            var evt = streamEvent.Payload;
-            if (evt == null) return;
-
-            aggregate.Fold(evt);
-        }
 
         async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition start) {
             try {

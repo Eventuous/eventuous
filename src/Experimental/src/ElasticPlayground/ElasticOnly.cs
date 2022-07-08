@@ -30,8 +30,14 @@ public class ElasticOnly {
         var result = await _service.Handle(bookRoom, default);
         result.Dump();
 
-        var processPayment = new Commands.RecordPayment(bookRoom.BookingId, Fixture.Create<string>(), bookRoom.Price);
-        var secondResult   = await _service.Handle(processPayment, default);
+        var processPayment = new Commands.RecordPayment(
+            bookRoom.BookingId,
+            Fixture.Create<string>(),
+            bookRoom.Price,
+            DateTimeOffset.Now
+        );
+
+        var secondResult = await _service.Handle(processPayment, default);
         secondResult.Dump();
     }
 }

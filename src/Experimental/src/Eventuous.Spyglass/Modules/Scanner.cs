@@ -43,10 +43,11 @@ public class Scanner {
             };
 
         ApplyAndPrint(fakeEvents[0]);
-        ApplyAndPrint(fakeEvents[1]);
+        ApplyAndPrint(fakeEvents[0], fakeEvents[1]);
 
-        void ApplyAndPrint(object ev) {
-            aggr.Fold(ev);
+        void ApplyAndPrint(params object[] events) {
+            aggr.ClearChanges();
+            aggr.Load(events);
             object state = aggrDynamic.State;
             var    json  = JsonConvert.SerializeObject(state, Formatting.Indented, setting);
             Console.Write(json);
@@ -65,13 +66,12 @@ public class Scanner {
     static object[] FakeEvents()
         => new object[] {
             new BookingEvents.RoomBooked(
-                "123",
                 "234",
                 LocalDate.MinIsoValue,
                 LocalDate.MaxIsoValue,
                 100
             ),
-            new BookingEvents.BookingPaymentRegistered("123", "444", 100)
+            new BookingEvents.BookingPaymentRegistered("444", 100)
         };
 }
 

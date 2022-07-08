@@ -12,13 +12,14 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
     [Fact]
     public async Task ShouldProjectImported() {
         var evt    = DomainFixture.CreateImportBooking();
-        var stream = StreamName.For<Booking>(evt.BookingId);
+        var id     = new BookingId(CreateId());
+        var stream = StreamName.For<Booking, BookingState, BookingId>(id);
 
         var append = await Instance.AppendEvent(stream, evt);
 
         await Task.Delay(500);
 
-        var expected = new BookingDocument(evt.BookingId) {
+        var expected = new BookingDocument(id.ToString()) {
             RoomId       = evt.RoomId,
             CheckInDate  = evt.CheckIn,
             CheckOutDate = evt.CheckOut,
@@ -26,7 +27,7 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
             Position     = append.GlobalPosition
         };
 
-        var actual = await Instance.Mongo.LoadDocument<BookingDocument>(evt.BookingId);
+        var actual = await Instance.Mongo.LoadDocument<BookingDocument>(id.ToString());
         actual.Should().Be(expected);
     }
 
@@ -35,7 +36,7 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
     public class SutProjection : MongoProjection<BookingDocument> {
         public SutProjection(IMongoDatabase database) : base(database) {
             On<BookingImported>(
-                evt => evt.BookingId,
+                stream => stream.GetId(),
                 (evt, update) => update
                     .SetOnInsert(x => x.RoomId, evt.RoomId)
                     .Set(x => x.CheckInDate, evt.CheckIn)

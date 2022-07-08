@@ -26,7 +26,7 @@ public class OnlyArchive {
 
         var service = new ThrowingApplicationService<Booking, BookingState, BookingId>(new BookingService(_store));
 
-        var cmd = new RecordPayment(bookingId, Fixture.Create<string>(), 10);
+        var cmd = new RecordPayment(bookingId, Fixture.Create<string>(), 10, DateTimeOffset.Now);
 
         var result = await service.Handle(cmd, default);
 

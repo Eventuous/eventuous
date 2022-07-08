@@ -2,15 +2,19 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Projections.MongoDB.Tools;
+using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Tools;
 
 namespace Eventuous.Projections.MongoDB;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class UpdateOneBuilder : UpdateBuilder<UpdateOneBuilder>, IMongoProjectorBuilder {
-        public UpdateOneBuilder Id(GetDocumentId<TEvent> getId) {
+        public UpdateOneBuilder Id(GetDocumentId getId) {
             _filter.Id(getId);
             return this;
         }
+
+        public UpdateOneBuilder DefaultId() => Id(ctx => ctx.GetId());
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
@@ -21,7 +25,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
                     await collection
                         .UpdateOneAsync(
-                            _filter.GetFilter(ctx.Message),
+                            _filter.GetFilter(ctx),
                             update.Set(x => x.Position, ctx.StreamPosition),
                             options,
                             token
@@ -39,7 +43,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                     var update = await GetUpdate(ctx.Message, Builders<T>.Update).NoContext();
 
                     await collection.UpdateManyAsync(
-                        _filter.GetFilter(ctx.Message),
+                        _filter.GetFilter(ctx),
                         update.Set(x => x.Position, ctx.StreamPosition),
                         options,
                         token
@@ -61,7 +65,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return Self;
         }
 
-        public TBuilder Filter(Func<TEvent, T, bool> filter) {
+        public TBuilder Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter) {
             _filter.Filter(filter);
             return Self;
         }

@@ -17,7 +17,7 @@ public static class Helpers {
     }
 
     static BookingImported ToEvent(ImportBooking cmd)
-        => new(cmd.BookingId, cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
+        => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     public static Task<AppendEventsResult> AppendEvents(
         StreamName            stream,

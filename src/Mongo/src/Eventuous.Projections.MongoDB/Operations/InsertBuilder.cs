@@ -13,8 +13,8 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         Func<MessageConsumeContext<TEvent>, T> GetDocument => Ensure.NotNull(_getDocument, "Get document function");
 
-        public InsertOneBuilder Document(Func<TEvent, T> getDocument) {
-            _getDocument = ctx => getDocument(ctx.Message) with { Position = ctx.StreamPosition };
+        public InsertOneBuilder Document(Func<StreamName, TEvent, T> getDocument) {
+            _getDocument = ctx => getDocument(ctx.Stream, ctx.Message) with { Position = ctx.StreamPosition };
             return this;
         }
 
@@ -66,7 +66,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                 (ctx, collection, token) => {
                     var options = new InsertManyOptions();
                     _configureOptions?.Invoke(options);
-                    var docs    = GetDocuments(ctx);
+                    var docs = GetDocuments(ctx);
                     return collection.InsertManyAsync(docs, options, token);
                 }
             );

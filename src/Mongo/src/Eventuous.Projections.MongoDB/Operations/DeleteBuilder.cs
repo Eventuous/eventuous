@@ -2,22 +2,25 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Projections.MongoDB.Tools;
+using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Projections.MongoDB;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class DeleteOneBuilder : DeleteBuilder<DeleteOneBuilder>, IMongoProjectorBuilder {
-        public DeleteOneBuilder Id(GetDocumentId<TEvent> getId) {
+        public DeleteOneBuilder Id(GetDocumentId getId) {
             _filter.Id(getId);
             return this;
         }
+
+        public DeleteOneBuilder DefaultId() => Id(x => x.GetId());
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 (ctx, collection, token) => {
                     var options = new DeleteOptions();
                     _configureOptions?.Invoke(options);
-                    return collection.DeleteOneAsync(_filter.GetFilter(ctx.Message), options, token);
+                    return collection.DeleteOneAsync(_filter.GetFilter(ctx), options, token);
                 }
             );
     }
@@ -28,7 +31,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                 (ctx, collection, token) => {
                     var options = new DeleteOptions();
                     _configureOptions?.Invoke(options);
-                    return collection.DeleteManyAsync(_filter.GetFilter(ctx.Message), options, token);
+                    return collection.DeleteManyAsync(_filter.GetFilter(ctx), options, token);
                 }
             );
     }
@@ -42,7 +45,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return Self;
         }
 
-        public TBuilder Filter(Func<TEvent, T, bool> filter) {
+        public TBuilder Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter) {
             _filter.Filter(filter);
             return Self;
         }

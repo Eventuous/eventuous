@@ -12,8 +12,7 @@ public interface IStateStore {
     /// <param name="stream">Aggregate event</param>
     /// <param name="cancellationToken"></param>
     /// <typeparam name="T"></typeparam>
-    /// <typeparam name="TId"></typeparam>
     /// <returns></returns>
-    Task<T> LoadState<T, TId>(StreamName stream, CancellationToken cancellationToken)
-        where T : AggregateState<T, TId>, new() where TId : AggregateId;
+    Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken)
+        where T : AggregateState<T>, new();
 }
