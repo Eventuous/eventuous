@@ -43,10 +43,11 @@ public class Scanner {
             };
 
         ApplyAndPrint(fakeEvents[0]);
-        ApplyAndPrint(fakeEvents[1]);
+        ApplyAndPrint(fakeEvents[0], fakeEvents[1]);
 
-        void ApplyAndPrint(object ev) {
-            aggr.Fold(ev);
+        void ApplyAndPrint(params object[] events) {
+            aggr.ClearChanges();
+            aggr.Load(events);
             object state = aggrDynamic.State;
             var    json  = JsonConvert.SerializeObject(state, Formatting.Indented, setting);
             Console.Write(json);
