@@ -68,9 +68,7 @@ public class AggregateStore : IAggregateStore {
                 cancellationToken
             );
 
-            foreach (var streamEvent in events) {
-                Fold(streamEvent);
-            }
+            aggregate.Load(events.Select(x => x.Payload));
         }
         catch (StreamNotFound) when (!failIfNotFound) {
             return aggregate;
@@ -81,12 +79,5 @@ public class AggregateStore : IAggregateStore {
         }
 
         return aggregate;
-
-        void Fold(StreamEvent streamEvent) {
-            var evt = streamEvent.Payload;
-            if (evt == null) return;
-
-            aggregate.Fold(evt);
-        }
     }
 }

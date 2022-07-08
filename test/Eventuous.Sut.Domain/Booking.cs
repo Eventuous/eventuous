@@ -18,7 +18,7 @@ public class Booking : Aggregate<BookingState> {
     public void RecordPayment(string paymentId, decimal amount, DateTimeOffset paidAt) {
         EnsureExists();
 
-        if (State.HasPaymentRecord(paymentId)) return;
+        if (HasPaymentRecord(paymentId)) return;
 
         var (previousState, currentState) =
             Apply(new BookingPaymentRegistered(paymentId, amount));
@@ -32,6 +32,11 @@ public class Booking : Aggregate<BookingState> {
         if (!previousState.IsFullyPaid() && currentState.IsFullyPaid())
             Apply(new BookingFullyPaid(paidAt));
     }
+
+    public bool HasPaymentRecord(string paymentId)
+        => Current.Any(
+            x => (x is BookingPaymentRegistered paymentRegistered) && paymentRegistered.PaymentId == paymentId
+        );
 }
 
 public record BookingId : AggregateId {

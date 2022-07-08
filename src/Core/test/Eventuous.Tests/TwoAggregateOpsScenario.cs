@@ -51,8 +51,8 @@ public class TwoAggregateOpsScenario {
     public void should_make_booking_fully_paid() => _booking.State.IsFullyPaid().Should().BeTrue();
 
     [Fact]
-    public void should_record_payment_in_the_state()
-        => _booking.State.HasPaymentRecord(_testData.PaymentId).Should().BeTrue();
+    public void should_record_payment()
+        => _booking.HasPaymentRecord(_testData.PaymentId).Should().BeTrue();
 
     [Fact]
     public void should_not_be_overpaid() => _booking.State.IsOverpaid().Should().BeFalse();
@@ -60,5 +60,5 @@ public class TwoAggregateOpsScenario {
     readonly Booking  _booking = new();
     readonly TestData _testData;
 
-    record TestData(string Id, string PaymentId, decimal Amount, DateTimeOffset PaidAt);
+    record TestData(string PaymentId, decimal Amount, DateTimeOffset PaidAt);
 }

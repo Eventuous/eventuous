@@ -54,18 +54,9 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
             throw new AggregateNotFoundException<T>(streamName, new StreamNotFound(streamName));
         }
 
-        foreach (var streamEvent in streamEvents) {
-            Fold(streamEvent);
-        }
+        aggregate.Load(streamEvents.Select(x => x.Payload));
 
         return aggregate;
-
-        void Fold(StreamEvent streamEvent) {
-            var evt = streamEvent.Payload;
-            if (evt == null) return;
-
-            aggregate.Fold(evt);
-        }
 
         async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition start) {
             try {
