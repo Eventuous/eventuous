@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Eventuous;
 
 [PublicAPI]

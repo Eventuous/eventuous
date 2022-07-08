@@ -29,14 +29,11 @@ public class Booking : Aggregate<BookingState> {
             if (outstandingAmount < 0) Apply(new BookingOverpaid(-outstandingAmount));
         }
 
-        if (!previousState.IsFullyPaid() && currentState.IsFullyPaid())
-            Apply(new BookingFullyPaid(paidAt));
+        if (!previousState.IsFullyPaid() && currentState.IsFullyPaid()) Apply(new BookingFullyPaid(paidAt));
     }
 
     public bool HasPaymentRecord(string paymentId)
-        => Current.Any(
-            x => (x is BookingPaymentRegistered paymentRegistered) && paymentRegistered.PaymentId == paymentId
-        );
+        => Current.OfType<BookingPaymentRegistered>().Any(x => x.PaymentId == paymentId);
 }
 
 public record BookingId : AggregateId {
