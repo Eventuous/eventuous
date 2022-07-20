@@ -4,7 +4,6 @@
 using System.Runtime.CompilerServices;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Tools;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
@@ -56,17 +55,25 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     }
 
     [PublicAPI]
-    protected void On<TEvent>(GetDocumentId getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Id(getId).Update(getUpdate));
+    protected void On<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message!)).Update(getUpdate));
+
+    protected void On<TEvent>(GetDocumentIdFromStream getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).Update(getUpdate));
 
     [PublicAPI]
     protected void On<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Filter(getFilter).Update(getUpdate));
 
     [PublicAPI]
-    protected void OnAsync<TEvent>(GetDocumentId getId, BuildUpdateAsync<TEvent, T> getUpdate)
+    protected void OnAsync<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdateAsync<TEvent, T> getUpdate)
         where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Id(getId).Update(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message!)).Update(getUpdate));
+
+    [PublicAPI]
+    protected void OnAsync<TEvent>(GetDocumentIdFromStream getId, BuildUpdateAsync<TEvent, T> getUpdate)
+        where TEvent : class
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).Update(getUpdate));
 
     [PublicAPI]
     protected void OnAsync<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdateAsync<TEvent, T> getUpdate)

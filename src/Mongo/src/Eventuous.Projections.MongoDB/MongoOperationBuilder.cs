@@ -30,8 +30,8 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         public void Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter)
             => _filterFunc = evt => new ExpressionFilterDefinition<T>(x => filter(evt, x));
 
-        public void Id(GetDocumentId getId) 
-            => Filter((ctx, filter) => filter.Eq(x => x.Id, getId(ctx.Stream)));
+        public void Id(GetDocumentIdFromContext<TEvent> getId) 
+            => Filter((ctx, filter) => filter.Eq(x => x.Id, getId(ctx)));
     }
 
     static ProjectTypedEvent<T, TEvent> GetHandler(

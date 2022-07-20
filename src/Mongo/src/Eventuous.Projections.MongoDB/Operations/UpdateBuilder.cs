@@ -9,12 +9,15 @@ namespace Eventuous.Projections.MongoDB;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class UpdateOneBuilder : UpdateBuilder<UpdateOneBuilder>, IMongoProjectorBuilder {
-        public UpdateOneBuilder Id(GetDocumentId getId) {
+        public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId) 
+            => Id(x => getId(x.Stream));
+
+        public UpdateOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
             _filter.Id(getId);
             return this;
         }
 
-        public UpdateOneBuilder DefaultId() => Id(ctx => ctx.GetId());
+        public UpdateOneBuilder DefaultId() => IdFromStream(streamName => streamName.GetId());
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(

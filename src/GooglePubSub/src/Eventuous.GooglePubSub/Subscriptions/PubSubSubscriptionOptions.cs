@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.Subscriptions;
 using static Eventuous.GooglePubSub.Subscriptions.GooglePubSubSubscription;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
@@ -17,7 +20,7 @@ public record PubSubSubscriptionOptions : SubscriptionOptions {
     public string TopicId { get; init; } = null!;
     
     /// <summary>
-    /// Set to true to enable subscription monitoring using <see cref="ISubscriptionGapMeasure"/>
+    /// Set to true to enable subscription monitoring using <see cref="GooglePubSubGapMeasure"/>
     /// Disabled by default as you can monitor subscriptions using Google Cloud native monitoring tools
     /// </summary>
     public bool EnableMonitoring { get; init; }

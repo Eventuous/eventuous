@@ -8,7 +8,10 @@ namespace Eventuous.Projections.MongoDB;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class DeleteOneBuilder : DeleteBuilder<DeleteOneBuilder>, IMongoProjectorBuilder {
-        public DeleteOneBuilder Id(GetDocumentId getId) {
+        public DeleteOneBuilder Id(GetDocumentIdFromStream getId) 
+            => Id(x => getId(x.Stream));
+
+        public DeleteOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
             _filter.Id(getId);
             return this;
         }

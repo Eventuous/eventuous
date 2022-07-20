@@ -5,7 +5,11 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Projections.MongoDB;
 
-public delegate string GetDocumentId(StreamName evt);
+public delegate string GetDocumentIdFromEvent<in TEvent>(TEvent evt);
+
+public delegate string GetDocumentIdFromStream(StreamName evt);
+
+public delegate string GetDocumentIdFromContext<in TEvent>(IMessageConsumeContext<TEvent> evt) where TEvent : class;
 
 public delegate UpdateDefinition<T> BuildUpdate<T>(UpdateDefinitionBuilder<T> update);
 
