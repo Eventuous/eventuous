@@ -8,7 +8,7 @@ public abstract record AggregateId {
         Value = value;
     }
 
-    string Value { get; }
+    public string Value { get; }
 
     public sealed override string ToString() => Value;
 
