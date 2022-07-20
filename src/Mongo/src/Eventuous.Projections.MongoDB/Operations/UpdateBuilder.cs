@@ -24,7 +24,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                 async (ctx, collection, token) => {
                     var options = new UpdateOptions { IsUpsert = true };
                     _configureOptions?.Invoke(options);
-                    var update = await GetUpdate(ctx.Message, Builders<T>.Update);
+                    var update = await GetUpdate(ctx, Builders<T>.Update);
 
                     await collection
                         .UpdateOneAsync(
@@ -43,7 +43,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                 async (ctx, collection, token) => {
                     var options = new UpdateOptions { IsUpsert = true };
                     _configureOptions?.Invoke(options);
-                    var update = await GetUpdate(ctx.Message, Builders<T>.Update).NoContext();
+                    var update = await GetUpdate(ctx, Builders<T>.Update).NoContext();
 
                     await collection.UpdateManyAsync(
                         _filter.GetFilter(ctx),
@@ -78,8 +78,18 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return Self;
         }
 
+        public TBuilder Update(BuildUpdateFromEventAsync<TEvent, T> buildUpdate) {
+            _buildUpdate = (ctx, update) => buildUpdate(ctx.Message, update);
+            return Self;
+        }
+
         public TBuilder Update(BuildUpdate<TEvent, T> buildUpdate) {
-            _buildUpdate = (evt, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(evt, update));
+            _buildUpdate = (ctx, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(ctx, update));
+            return Self;
+        }
+
+        public TBuilder Update(BuildUpdateFromEvent<TEvent, T> buildUpdate) {
+            _buildUpdate = (ctx, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(ctx.Message, update));
             return Self;
         }
 

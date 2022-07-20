@@ -249,7 +249,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 }
 
 static class TypeExtensionsForRegistrations {
-    public static (ConstructorInfo Ctor, ParameterInfo Param)[] GetConstructors<T>(
+    public static (ConstructorInfo Ctor, ParameterInfo? Options)[] GetConstructors<T>(
         this Type type,
         string?   name = null
     )
@@ -265,7 +265,7 @@ static class TypeExtensionsForRegistrations {
                 )
             )
             .Where(x => x.Options != null)
-            .ToArray();
+            .ToArray()!;
 }
 
 public delegate IEventHandler ResolveHandler(IServiceProvider sp);

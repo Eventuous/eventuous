@@ -37,10 +37,10 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
         public SutProjection(IMongoDatabase database) : base(database) {
             On<BookingImported>(
                 stream => stream.GetId(),
-                (evt, update) => update
-                    .SetOnInsert(x => x.RoomId, evt.RoomId)
-                    .Set(x => x.CheckInDate, evt.CheckIn)
-                    .Set(x => x.CheckOutDate, evt.CheckOut)
+                (ctx, update) => update
+                    .SetOnInsert(x => x.RoomId, ctx.Message.RoomId)
+                    .Set(x => x.CheckInDate, ctx.Message.CheckIn)
+                    .Set(x => x.CheckOutDate, ctx.Message.CheckOut)
             );
         }
     }

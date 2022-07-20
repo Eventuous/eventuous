@@ -13,9 +13,13 @@ public delegate string GetDocumentIdFromContext<in TEvent>(IMessageConsumeContex
 
 public delegate UpdateDefinition<T> BuildUpdate<T>(UpdateDefinitionBuilder<T> update);
 
-public delegate UpdateDefinition<T> BuildUpdate<in TEvent, T>(TEvent evt, UpdateDefinitionBuilder<T> update);
+public delegate UpdateDefinition<T> BuildUpdate<in TEvent, T>(IMessageConsumeContext<TEvent> ctx, UpdateDefinitionBuilder<T> update) where TEvent : class;
 
-public delegate ValueTask<UpdateDefinition<T>> BuildUpdateAsync<in TEvent, T>(TEvent evt, UpdateDefinitionBuilder<T> update);
+public delegate UpdateDefinition<T> BuildUpdateFromEvent<in TEvent, T>(TEvent ctx, UpdateDefinitionBuilder<T> update) where TEvent : class;
+
+public delegate ValueTask<UpdateDefinition<T>> BuildUpdateFromEventAsync<in TEvent, T>(TEvent evt, UpdateDefinitionBuilder<T> update) where TEvent : class;
+
+public delegate ValueTask<UpdateDefinition<T>> BuildUpdateAsync<in TEvent, T>(IMessageConsumeContext<TEvent> evt, UpdateDefinitionBuilder<T> update) where TEvent : class;
 
 public delegate FilterDefinition<T> BuildFilter<T>(FilterDefinitionBuilder<T> filter);
 

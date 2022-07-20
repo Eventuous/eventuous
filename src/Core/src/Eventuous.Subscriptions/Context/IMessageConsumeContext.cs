@@ -27,5 +27,5 @@ public interface IMessageConsumeContext : IBaseConsumeContext {
 }
 
 public interface IMessageConsumeContext<out T> : IBaseConsumeContext where T : class {
-    T? Message { get; }
+    T Message { get; }
 }

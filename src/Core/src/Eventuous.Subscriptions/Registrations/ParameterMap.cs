@@ -4,10 +4,10 @@
 namespace Eventuous.Subscriptions.Registrations;
 
 class ParameterMap {
-    readonly Dictionary<Type, Func<IServiceProvider, dynamic>> _resolvers = new();
+    readonly Dictionary<Type, Func<IServiceProvider, dynamic?>> _resolvers = new();
 
     public void Add<TService, TImplementation>() where TImplementation : class {
-        dynamic Resolver(IServiceProvider provider) => provider.GetService(typeof(TImplementation));
+        dynamic? Resolver(IServiceProvider provider) => provider.GetService(typeof(TImplementation));
 
         _resolvers.Add(typeof(TService), Resolver);
     }
@@ -16,6 +16,6 @@ class ParameterMap {
         where TImplementation : class
         => _resolvers.Add(typeof(TService), resolver);
 
-    public bool TryGetResolver(Type parameterType, out Func<IServiceProvider, dynamic>? resolver) 
+    public bool TryGetResolver(Type parameterType, out Func<IServiceProvider, dynamic?>? resolver) 
         => _resolvers.TryGetValue(parameterType, out resolver);
 }
