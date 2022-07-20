@@ -83,7 +83,7 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
                 b => b
                     .UpdateOne
                     .DefaultId()
-                    .Update((ctx, update) => update.Set(x => x.PaidAmount, ctx.Message.AmountPaid))
+                    .Update((evt, update) => update.Set(x => x.PaidAmount, evt.AmountPaid))
             );
         }
     }

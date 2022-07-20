@@ -73,22 +73,22 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return Self;
         }
 
-        public TBuilder Update(BuildUpdateAsync<TEvent, T> buildUpdate) {
+        public TBuilder UpdateFromContext(BuildUpdateAsync<TEvent, T> buildUpdate) {
             _buildUpdate = buildUpdate;
             return Self;
         }
 
-        public TBuilder UpdateFromEvent(BuildUpdateFromEventAsync<TEvent, T> buildUpdate) {
+        public TBuilder Update(BuildUpdateFromEventAsync<TEvent, T> buildUpdate) {
             _buildUpdate = (ctx, update) => buildUpdate(ctx.Message, update);
             return Self;
         }
 
-        public TBuilder Update(BuildUpdate<TEvent, T> buildUpdate) {
+        public TBuilder UpdateFromContext(BuildUpdate<TEvent, T> buildUpdate) {
             _buildUpdate = (ctx, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(ctx, update));
             return Self;
         }
 
-        public TBuilder UpdateFromEvent(BuildUpdateFromEvent<TEvent, T> buildUpdate) {
+        public TBuilder Update(BuildUpdateFromEvent<TEvent, T> buildUpdate) {
             _buildUpdate = (ctx, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(ctx.Message, update));
             return Self;
         }

@@ -56,29 +56,29 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
 
     [PublicAPI]
     protected void On<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message!)).Update(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message)).UpdateFromContext(getUpdate));
 
     protected void On<TEvent>(GetDocumentIdFromStream getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).Update(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).UpdateFromContext(getUpdate));
 
     [PublicAPI]
     protected void On<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Filter(getFilter).Update(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Filter(getFilter).UpdateFromContext(getUpdate));
 
     [PublicAPI]
     protected void OnAsync<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdateAsync<TEvent, T> getUpdate)
         where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message!)).Update(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message!)).UpdateFromContext(getUpdate));
 
     [PublicAPI]
     protected void OnAsync<TEvent>(GetDocumentIdFromStream getId, BuildUpdateAsync<TEvent, T> getUpdate)
         where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).Update(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).UpdateFromContext(getUpdate));
 
     [PublicAPI]
     protected void OnAsync<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdateAsync<TEvent, T> getUpdate)
         where TEvent : class 
-        => On<TEvent>(b => b.UpdateOne.Filter(getFilter).Update(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Filter(getFilter).UpdateFromContext(getUpdate));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     ValueTask<MongoProjectOperation<T>> HandleInternal<TEvent>(IMessageConsumeContext context, ProjectTypedEvent<T, TEvent> handler)
