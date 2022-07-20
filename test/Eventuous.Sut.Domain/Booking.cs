@@ -9,7 +9,7 @@ public class Booking : Aggregate<BookingState> {
         Apply(new RoomBooked(roomId, period.CheckIn, period.CheckOut, price, guestId));
     }
 
-    public void Import(BookingId id, string roomId, StayPeriod period, decimal price) {
+    public void Import(string roomId, StayPeriod period, decimal price) {
         EnsureDoesntExist();
 
         Apply(new BookingImported(roomId, price, period.CheckIn, period.CheckOut));
@@ -36,6 +36,4 @@ public class Booking : Aggregate<BookingState> {
         => Current.OfType<BookingPaymentRegistered>().Any(x => x.PaymentId == paymentId);
 }
 
-public record BookingId : AggregateId {
-    public BookingId(string value) : base(value) { }
-}
+public record BookingId(string Value) : AggregateId(Value);
