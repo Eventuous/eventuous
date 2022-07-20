@@ -20,7 +20,6 @@ public class BookingService : ApplicationService<Booking, BookingState, BookingI
             cmd => new BookingId(cmd.BookingId),
             (booking, cmd)
                 => booking.Import(
-                    new BookingId(cmd.BookingId),
                     cmd.RoomId,
                     new StayPeriod(cmd.CheckIn, cmd.CheckOut),
                     cmd.Price
