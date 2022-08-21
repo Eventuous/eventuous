@@ -1,22 +1,25 @@
 // Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Diagnostics;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
 public class NoOpCheckpointStore : ICheckpointStore {
-    readonly Checkpoint _start;
+    Checkpoint _start;
 
     public NoOpCheckpointStore(ulong? start = null) => _start = new Checkpoint("", start);
 
     public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
-        SubscriptionsEventSource.Log.CheckpointLoaded(this, _start);
+        Log.CheckpointLoaded(this, _start);
         return new ValueTask<Checkpoint>(_start);
     }
 
     public ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
-        SubscriptionsEventSource.Log.CheckpointStored(this, checkpoint);
+        _start = checkpoint;
+        CheckpointStored(this, checkpoint);
+        Log.CheckpointStored(this, checkpoint);
         return new ValueTask<Checkpoint>(checkpoint);
     }
+     public event EventHandler<Checkpoint> CheckpointStored;
 }

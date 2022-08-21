@@ -1,10 +1,10 @@
 using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Subscriptions.Tools;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
 
+// ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
 public class SubscriptionHostedService : IHostedService {
     readonly CancellationTokenSource _subscriptionCts = new();
     readonly IMessageSubscription    _subscription;
@@ -47,6 +47,6 @@ public class SubscriptionHostedService : IHostedService {
         );
 
         await _subscription.Unsubscribe(_ => { }, cts.Token).NoContext();
-        Log?.LogInformation("Stopped subscription");
+        Log?.LogInformation("Stopped subscription {SubscriptionId}", _subscription.SubscriptionId);
     }
 }

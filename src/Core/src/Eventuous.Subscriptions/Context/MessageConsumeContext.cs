@@ -7,7 +7,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
         string            eventId,
         string            eventType,
         string            contentType,
-        string        stream,
+        string            stream,
         ulong             streamPosition,
         ulong             globalPosition,
         ulong             sequence,

@@ -11,11 +11,11 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 
 namespace Eventuous.Tests.EventStore;
 
-public sealed class StreamSubscriptionTests : IDisposable {
+public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
     readonly ILoggerFactory       _loggerFactory;
     readonly LoggingEventListener _listener;
 
-    public StreamSubscriptionTests(ITestOutputHelper output) {
+    public StreamSubscriptionDeletedEventsTests(ITestOutputHelper output) {
         _loggerFactory = LoggerFactory.Create(
             cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug)
         );
@@ -91,7 +91,7 @@ public sealed class StreamSubscriptionTests : IDisposable {
 
         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(200));
         while (handler.Count < produceCount - deleteCount && !cts.IsCancellationRequested) {
-            await Task.Delay(100);
+            await Task.Delay(100, cts.Token);
         }
 
         await subscription.UnsubscribeWithLog(log);

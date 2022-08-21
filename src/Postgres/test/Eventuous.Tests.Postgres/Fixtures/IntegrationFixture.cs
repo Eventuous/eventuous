@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text.Json;
 using Bogus;
 using Eventuous.Diagnostics;
-using Eventuous.Diagnostics.Tracing;
 using Eventuous.Postgresql;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;

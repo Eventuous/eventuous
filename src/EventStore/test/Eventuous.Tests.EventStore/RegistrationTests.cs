@@ -10,8 +10,6 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 namespace Eventuous.Tests.EventStore;
 
 public class RegistrationTests {
-    ServiceProvider Provider { get; }
-
     const string SubId = "Test";
 
     static readonly StreamName Stream = new("teststream");
@@ -35,7 +33,8 @@ public class RegistrationTests {
         Sub = Provider.GetService<StreamSubscription>()!;
     }
 
-    StreamSubscription Sub { get; }
+    ServiceProvider    Provider { get; }
+    StreamSubscription Sub      { get; }
 
     [Fact]
     public void ShouldResolveSubscription() {
@@ -82,5 +81,6 @@ public class RegistrationTests {
 }
 
 public class TestHandler : BaseEventHandler {
-    public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext evt) => default;
+    public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext evt)
+        => ValueTask.FromResult(EventHandlingStatus.Success);
 }
