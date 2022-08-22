@@ -119,7 +119,7 @@ public class StreamSubscription
             re.Event.EventStreamId,
             re.OriginalEventNumber,
             re.Event.Position.CommitPosition,
-            re.OriginalEventNumber,
+            _sequence++,
             re.Event.Created,
             evt,
             Options.MetadataSerializer.DeserializeMeta(
@@ -132,6 +132,8 @@ public class StreamSubscription
             cancellationToken
         );
     }
+
+    ulong _sequence;
 
     public GetSubscriptionGap GetMeasure()
         => new StreamSubscriptionMeasure(

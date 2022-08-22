@@ -8,9 +8,12 @@ namespace Eventuous.AspNetCore;
 [PublicAPI]
 public static class LoggingAppBuilderExtensions {
     public static IHost AddEventuousLogs(this IHost host) {
-        listener ??= new LoggingEventListener(host.Services.GetRequiredService<ILoggerFactory>());
+        AddEventuousLogs(host.Services);
         return host;
     }
+
+    public static void AddEventuousLogs(this IServiceProvider provider)
+        => listener ??= new LoggingEventListener(provider.GetRequiredService<ILoggerFactory>());
 
     static LoggingEventListener? listener;
 }
