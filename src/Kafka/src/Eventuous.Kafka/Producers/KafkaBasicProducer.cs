@@ -4,7 +4,6 @@
 using Confluent.Kafka;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
-using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Kafka.Producers;
 
