@@ -56,7 +56,7 @@ public abstract class Aggregate {
     /// </summary>
     /// <exception cref="DomainException"></exception>
     protected void EnsureDoesntExist(Func<Exception>? getException = null) {
-        if (Original.Length > 0)
+        if (CurrentVersion >= 0)
             throw getException?.Invoke()
                ?? new DomainException($"{GetType().Name} already exists");
     }
@@ -66,7 +66,7 @@ public abstract class Aggregate {
     /// </summary>
     /// <exception cref="DomainException"></exception>
     protected void EnsureExists(Func<Exception>? getException = null) {
-        if (Original.Length == 0)
+        if (CurrentVersion < 0)
             throw getException?.Invoke()
                ?? new DomainException($"{GetType().Name} doesn't exist");
     }
