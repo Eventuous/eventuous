@@ -8,36 +8,44 @@ using Eventuous.Diagnostics;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
-[EventSource(Name = $"{DiagnosticName.BaseName}-checkpoint")]
-public class CheckpointEventSource : EventSource {
+public class CheckpointLog {
+    static readonly CheckpointEventSource EventSource = new();
+
     readonly string _id;
 
-    public CheckpointEventSource(string id) => _id = id;
-
-    const int CheckpointReceivedId = 1;
-    const int UnableToCommitId     = 2;
-    const int StoppingId           = 3;
-    const int CommittingId         = 4;
+    public CheckpointLog(string id) => _id = id;
 
     [NonEvent]
     public void PositionReceived(CommitPosition position) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) PositionReceived(_id, position.Position);
+        if (EventSource.IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            EventSource.PositionReceived(_id, position.Position);
     }
 
     [NonEvent]
     public void UnableToCommit(Exception exception) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToCommit(_id, exception.Message);
+        if (EventSource.IsEnabled(EventLevel.Warning, EventKeywords.All))
+            EventSource.UnableToCommit(_id, exception.Message);
     }
 
     [NonEvent]
     public void Stopping() {
-        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) Stopping(_id);
+        if (EventSource.IsEnabled(EventLevel.Informational, EventKeywords.All)) 
+            EventSource.Stopping(_id);
     }
 
     [NonEvent]
     public void Committing(CommitPosition position) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) Committing(_id, (long)position.Position);
+        if (EventSource.IsEnabled(EventLevel.Verbose, EventKeywords.All))
+            EventSource.Committing(_id, (long)position.Position);
     }
+}
+
+[EventSource(Name = $"{DiagnosticName.BaseName}-checkpoint")]
+public class CheckpointEventSource : EventSource {
+    const int CheckpointReceivedId = 1;
+    const int UnableToCommitId     = 2;
+    const int StoppingId           = 3;
+    const int CommittingId         = 4;
 
     [Event(CheckpointReceivedId, Message = "[{0}] Checkpoint received: '{1}'", Level = EventLevel.Verbose)]
     public void PositionReceived(string id, ulong position) => WriteEvent(CheckpointReceivedId, id, position);

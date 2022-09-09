@@ -7,7 +7,6 @@ using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
-using Eventuous.Subscriptions.Tools;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
@@ -29,7 +28,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     internal record CommitEvent(string Id, CommitPosition CommitPosition, CommitPosition? FirstPending);
 
     public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1) {
-        Log = new CheckpointEventSource(subscriptionId);
+        Log = new CheckpointLog(subscriptionId);
 
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
@@ -65,7 +64,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         }
     }
 
-    CheckpointEventSource Log { get; }
+    CheckpointLog Log { get; }
 
     public CheckpointCommitHandler(string subscriptionId, ICheckpointStore checkpointStore, int batchSize = 1)
         : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize) { }
