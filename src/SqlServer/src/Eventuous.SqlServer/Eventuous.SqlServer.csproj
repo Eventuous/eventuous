@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
+    <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.0" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\AppendEvents.sql" />
+    <EmbeddedResource Include="Scripts\CheckStream.sql" />
+    <EmbeddedResource Include="Scripts\ReadAllForwards.sql" />
+    <EmbeddedResource Include="Scripts\ReadStreamForwards.sql" />
+    <EmbeddedResource Include="Scripts\ReadStreamSub.sql" />
+    <EmbeddedResource Include="Scripts\_Schema.sql" />
+  </ItemGroup>
+</Project>
