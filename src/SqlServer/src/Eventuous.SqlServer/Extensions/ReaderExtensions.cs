@@ -8,7 +8,7 @@ namespace Eventuous.SqlServer.Extensions;
 
 static class ReaderExtensions {
     public static async IAsyncEnumerable<PersistedEvent> ReadEvents(
-        this SqlDataReader                      reader,
+        this                     SqlDataReader     reader,
         [EnumeratorCancellation] CancellationToken cancellationToken
     ) {
         while (await reader.ReadAsync(cancellationToken).NoContext()) {

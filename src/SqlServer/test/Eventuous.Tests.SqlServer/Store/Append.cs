@@ -36,7 +36,7 @@ public class AppendEvents {
         var stream = GetStreamName();
 
         await AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
-        
+
         evt = CreateEvent();
 
         var task = () => AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
@@ -49,11 +49,10 @@ public class AppendEvents {
         var stream = GetStreamName();
 
         await AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
-        
+
         evt = CreateEvent();
 
         var task = () => AppendEvent(stream, evt, new ExpectedStreamVersion(3));
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
-
 }

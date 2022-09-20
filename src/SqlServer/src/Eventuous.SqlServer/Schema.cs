@@ -11,20 +11,20 @@ public class Schema {
 
     public Schema(string schema) => _schema = schema;
 
-    public string StreamMessage      => $"{_schema}.stream_message";
     public string AppendEvents       => $"{_schema}.append_events";
     public string ReadStreamForwards => $"{_schema}.read_stream_forwards";
     public string ReadStreamSub      => $"{_schema}.read_stream_sub";
     public string ReadAllForwards    => $"{_schema}.read_all_forwards";
     public string CheckStream        => $"{_schema}.check_stream";
-    public string StreamExists       => $"SELECT CAST(IIF(EXISTS(SELECT 1 FROM {_schema}.streams WHERE stream_name = (@name)), 1, 0) AS BIT)";
-    public string GetCheckpointSql   => $"select position from {_schema}.checkpoints where id=(@checkpointId)";
-    public string AddCheckpointSql   => $"insert into {_schema}.checkpoints (id) values ((@checkpointId))";
+    public string StreamExists       => $"SELECT CAST(IIF(EXISTS(SELECT 1 FROM {_schema}.Streams WHERE StreamName = (@name)), 1, 0) AS BIT)";
+    public string GetCheckpointSql   => $"SELECT Position FROM {_schema}.Checkpoints where Id=(@checkpointId)";
+    public string AddCheckpointSql   => $"INSERT INTO {_schema}.Checkpoints (Id) VALUES ((@checkpointId))";
     public string UpdateCheckpointSql
-        => $"update {_schema}.checkpoints set position=(@position) where id=(@checkpointId)";
+        => $"UPDATE {_schema}.Checkpoints set Position=(@position) where Id=(@checkpointId)";
 
     static readonly Assembly Assembly = typeof(Schema).Assembly;
 
+    [PublicAPI]
     public async Task CreateSchema(GetSqlServerConnection getConnection) {
         var names = Assembly.GetManifestResourceNames()
             .Where(x => x.EndsWith(".sql"))

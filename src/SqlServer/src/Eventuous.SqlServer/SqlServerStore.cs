@@ -19,15 +19,15 @@ public record SqlServerStoreOptions(string Schema = "eventuous");
 
 public class SqlServerStore : IEventStore {
     readonly GetSqlServerConnection _getConnection;
-    readonly IEventSerializer      _serializer;
-    readonly IMetadataSerializer   _metaSerializer;
-    readonly Schema                _schema;
+    readonly IEventSerializer       _serializer;
+    readonly IMetadataSerializer    _metaSerializer;
+    readonly Schema                 _schema;
 
     public SqlServerStore(
         GetSqlServerConnection getConnection,
         SqlServerStoreOptions  options,
-        IEventSerializer?     serializer     = null,
-        IMetadataSerializer?  metaSerializer = null
+        IEventSerializer?      serializer     = null,
+        IMetadataSerializer?   metaSerializer = null
     ) {
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
@@ -40,7 +40,7 @@ public class SqlServerStore : IEventStore {
     async Task<SqlConnection> OpenConnection(CancellationToken cancellationToken) {
         var connection = _getConnection();
         await connection.OpenAsync(cancellationToken).NoContext();
-        
+
         return connection;
     }
 
@@ -55,7 +55,7 @@ public class SqlServerStore : IEventStore {
 
         cmd.CommandType = CommandType.StoredProcedure;
         cmd.Parameters.AddWithValue("@stream_name", SqlDbType.NVarChar, stream.ToString());
-        cmd.Parameters.AddWithValue("@from_position", SqlDbType.Int,  start.Value);
+        cmd.Parameters.AddWithValue("@from_position", SqlDbType.Int, start.Value);
         cmd.Parameters.AddWithValue("@count", SqlDbType.Int, count);
 
         try {
@@ -80,16 +80,18 @@ public class SqlServerStore : IEventStore {
             .Select(x => Convert(x))
             .ToArray();
 
-        await using var connection  = await OpenConnection(cancellationToken).NoContext();
-        await using SqlTransaction transaction = (SqlTransaction) await connection.BeginTransactionAsync(cancellationToken).NoContext();
-        await using var cmd         = new SqlCommand(_schema.AppendEvents, connection, transaction);
-  
+        await using var connection = await OpenConnection(cancellationToken).NoContext();
+
+        await using var transaction =
+            (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken).NoContext();
+
+        await using var cmd = new SqlCommand(_schema.AppendEvents, connection, transaction);
+
         cmd.CommandType = CommandType.StoredProcedure;
-        cmd.Parameters.AddWithValue("@stream_name", SqlDbType.NVarChar,stream.ToString());
-        cmd.Parameters.AddWithValue("@expected_version", SqlDbType.Int,expectedVersion.Value);
+        cmd.Parameters.AddWithValue("@stream_name", SqlDbType.NVarChar, stream.ToString());
+        cmd.Parameters.AddWithValue("@expected_version", SqlDbType.Int, expectedVersion.Value);
         cmd.Parameters.AddWithValue("@created", SqlDbType.DateTime2, DateTime.UtcNow);
         cmd.Parameters.AddPersistedEvent("@messages", persistedEvents);
-     
 
         try {
             AppendEventsResult result;
@@ -122,7 +124,7 @@ public class SqlServerStore : IEventStore {
         await using var cmd        = connection.CreateCommand();
         cmd.CommandType = CommandType.Text;
         cmd.CommandText = _schema.StreamExists;
-        cmd.Parameters.AddWithValue("name", SqlDbType.NVarChar, stream.ToString());
+        cmd.Parameters.AddWithValue("@name", SqlDbType.NVarChar, stream.ToString());
         var result = await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
         return (bool)result!;
     }

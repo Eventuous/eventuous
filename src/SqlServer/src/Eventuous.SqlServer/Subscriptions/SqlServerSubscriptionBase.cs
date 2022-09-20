@@ -17,14 +17,14 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
     readonly IMetadataSerializer     _metaSerializer;
     readonly CancellationTokenSource _cts = new();
 
-    protected Schema                Schema        { get; }
+    protected Schema                 Schema        { get; }
     protected GetSqlServerConnection GetConnection { get; }
 
     protected SqlServerSubscriptionBase(
         GetSqlServerConnection getConnection,
-        T                     options,
-        ICheckpointStore      checkpointStore,
-        ConsumePipe           consumePipe
+        T                      options,
+        ICheckpointStore       checkpointStore,
+        ConsumePipe            consumePipe
     ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit) {
         Schema          = new Schema(options.Schema);
         GetConnection   = Ensure.NotNull(getConnection, "Connection factory");
@@ -59,6 +59,8 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
 
     Task? _runner;
 
+    static List<int> TransientErrorNumbers = new() { 4060, 40197, 40501, 40613, 49918, 49919, 49920, 11001 };
+
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
         var start = position.HasValue ? (long)position : -1;
 
@@ -78,9 +80,9 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
             catch (OperationCanceledException) {
                 // Nothing to do
             }
-            //catch (SqlException e) when (e.IsTransient) {
+            catch (SqlException e) when (TransientErrorNumbers.Contains(e.Number)) {
                 // Try again
-            //}
+            }
             catch (Exception e) {
                 IsDropped = true;
                 SubscriptionsEventSource.Log.SubscriptionDropped(SubscriptionId, DropReason.ServerError, e);

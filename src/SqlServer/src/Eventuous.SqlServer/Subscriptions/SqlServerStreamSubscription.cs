@@ -16,16 +16,14 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
         SqlServerStreamSubscriptionOptions options,
         ICheckpointStore                   checkpointStore,
         ConsumePipe                        consumePipe
-    ) : base(getConnection, options, checkpointStore, consumePipe) {
-        _streamName = options.Stream.ToString();
-    }
+    ) : base(getConnection, options, checkpointStore, consumePipe)
+        => _streamName = options.Stream.ToString();
 
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start) {
         var cmd = new SqlCommand(Schema.ReadStreamSub, connection);
-
         cmd.CommandType = CommandType.StoredProcedure;
         cmd.Parameters.AddWithValue("@stream_id", SqlDbType.Int, _streamId);
-        cmd.Parameters.AddWithValue("@from_position", SqlDbType.Int,  (int)start + 1);
+        cmd.Parameters.AddWithValue("@from_position", SqlDbType.Int, (int)start + 1);
         cmd.Parameters.AddWithValue("@count", SqlDbType.Int, Options.MaxPageSize);
         return cmd;
     }
@@ -38,11 +36,11 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
         cmd.CommandText = Schema.CheckStream;
         cmd.Parameters.AddWithValue("@stream_name", SqlDbType.NVarChar, Options.Stream.ToString());
         cmd.Parameters.AddWithValue("@expected_version", SqlDbType.Int, -2);
-        cmd.Parameters.AddOutput("@current_version", SqlDbType.Int );
-        var streamId =  cmd.Parameters.AddOutput("@stream_id", SqlDbType.Int );
+        cmd.Parameters.AddOutput("@current_version", SqlDbType.Int);
+        var streamId = cmd.Parameters.AddOutput("@stream_id", SqlDbType.Int);
 
-       await  cmd.ExecuteScalarAsync(cancellationToken).NoContext();
-       _streamId = (int)streamId.Value;
+        await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
+        _streamId = (int)streamId.Value;
     }
 
     protected override long MoveStart(PersistedEvent evt) => evt.StreamPosition;

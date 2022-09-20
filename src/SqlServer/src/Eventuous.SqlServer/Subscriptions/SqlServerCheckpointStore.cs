@@ -11,9 +11,9 @@ namespace Eventuous.SqlServer.Subscriptions;
 
 public class SqlServerCheckpointStore : ICheckpointStore {
     readonly GetSqlServerConnection _getConnection;
-    readonly string                _getCheckpointSql;
-    readonly string                _addCheckpointSql;
-    readonly string                _storeCheckpointSql;
+    readonly string                 _getCheckpointSql;
+    readonly string                 _addCheckpointSql;
+    readonly string                 _storeCheckpointSql;
 
     public SqlServerCheckpointStore(GetSqlServerConnection getConnection, string schema) {
         _getConnection = getConnection;

@@ -77,8 +77,8 @@ services:
     container_name: eventuous_postgres
     image: postgres:14.2
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "secret"
     ports:
       - "5432:5432"
   
@@ -86,11 +86,20 @@ services:
     container_name: eventuous_pgadmin
     image: dpage/pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
-      PGADMIN_DEFAULT_PASSWORD: secret
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_DEFAULT_EMAIL: "pgadmin4@pgadmin.org"
+      PGADMIN_DEFAULT_PASSWORD: "secret"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
       - "5050:80"
+        
+  mssql:
+    container_name: eventuous_mssql
+    image: "mcr.microsoft.com/azure-sql-edge"
+    environment:
+      MSSQL_SA_PASSWORD: "Secret_123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
 
 networks:
   default:

@@ -1,34 +1,31 @@
 CREATE OR ALTER PROCEDURE __schema__.append_events
-    @stream_name varchar(1000),
-    @expected_version int,
-    @created datetime2 NULL,
-    @messages __schema__.stream_message READONLY
+    @stream_name VARCHAR(1000),
+    @expected_version INT,
+    @created DATETIME2 NULL,
+    @messages __schema__.StreamMessage READONLY
 AS
 BEGIN
-
-    declare    @current_version int,
-        @stream_id int,
-        @position bigint
-
-
+    DECLARE @current_version INT,
+        @stream_id INT,
+        @position BIGINT
 
     if @created is null
         BEGIN
             SET @created = SYSUTCDATETIME()
         END
 
-    EXEC	[__schema__].[check_stream]	@stream_name, @expected_version, @current_version = @current_version OUTPUT,@stream_id = @stream_id OUTPUT
+    EXEC [__schema__].[check_stream] @stream_name, @expected_version, @current_version = @current_version OUTPUT, @stream_id = @stream_id OUTPUT
 
-    INSERT INTO __schema__.Messages (message_id, message_type, stream_id, stream_position, json_data, json_metadata, created)
-    SELECT  m.message_id, m.message_type, @stream_id, @current_version + (row_number()  OVER(ORDER BY (SELECT NULL))), m.json_data, m.json_metadata, @created -- OVER(ORDER BY (SELECT NULL))  may not garuantee order
-    FROM @messages m
+    INSERT INTO __schema__.Messages (MessageId, MessageType, StreamId, StreamPosition, JsonData, JsonMetadata, Created)
+    SELECT message_id, message_type, @stream_id, @current_version + (ROW_NUMBER() OVER(ORDER BY (SELECT NULL))), json_data, json_metadata, @created
+    FROM @messages
 
-    SELECT TOP 1 @current_version =  m.stream_position, @position = m.global_position
-    FROM __schema__.Messages m
-    WHERE m.stream_id = @stream_id
-    ORDER BY m.global_position DESC
+    SELECT TOP 1 @current_version =  StreamPosition, @position = GlobalPosition
+    FROM __schema__.Messages
+    WHERE StreamId = @stream_id
+    ORDER BY GlobalPosition DESC
 
-    UPDATE __schema__.Streams SET version = @current_version WHERE stream_id = @stream_id
+    UPDATE __schema__.Streams SET Version = @current_version WHERE StreamId = @stream_id
 
     SELECT @current_version AS current_version, @position AS position
 END

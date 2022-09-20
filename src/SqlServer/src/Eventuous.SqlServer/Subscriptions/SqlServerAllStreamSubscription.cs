@@ -12,7 +12,7 @@ namespace Eventuous.SqlServer.Subscriptions;
 
 public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<PostgresAllStreamSubscriptionOptions> {
     public SqlServerAllStreamSubscription(
-        GetSqlServerConnection                getConnection,
+        GetSqlServerConnection               getConnection,
         PostgresAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
         ConsumePipe                          consumePipe
@@ -22,8 +22,8 @@ public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<Postgres
         var cmd = new SqlCommand(Schema.ReadAllForwards, connection);
 
         cmd.CommandType = CommandType.StoredProcedure;
-        cmd.Parameters.AddWithValue("@from_position",  SqlDbType.BigInt, start + 1);
-        cmd.Parameters.AddWithValue("@count",  SqlDbType.Int, Options.MaxPageSize);
+        cmd.Parameters.AddWithValue("@from_position", SqlDbType.BigInt, start + 1);
+        cmd.Parameters.AddWithValue("@count", SqlDbType.Int, Options.MaxPageSize);
         return cmd;
     }
 
