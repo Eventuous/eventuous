@@ -8,8 +8,10 @@ namespace Eventuous.Postgresql;
 
 public class Schema {
     readonly string _schema;
+    
+    public const string DefaultSchema = "eventuous";
 
-    public Schema(string schema) => _schema = schema;
+    public Schema(string schema = DefaultSchema) => _schema = schema;
 
     public string StreamMessage      => $"{_schema}.stream_message";
     public string AppendEvents       => $"{_schema}.append_events";

@@ -15,7 +15,7 @@ namespace Eventuous.SqlServer;
 
 public delegate SqlConnection GetSqlServerConnection();
 
-public record SqlServerStoreOptions(string Schema = "eventuous");
+public record SqlServerStoreOptions(string Schema = Schema.DefaultSchema);
 
 public class SqlServerStore : IEventStore {
     readonly GetSqlServerConnection _getConnection;
