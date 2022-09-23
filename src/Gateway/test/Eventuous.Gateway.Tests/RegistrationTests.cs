@@ -1,6 +1,4 @@
-﻿using Eventuous.Gateway;
-using Eventuous.Producers;
-using Eventuous.Producers.Diagnostics;
+﻿using Eventuous.Producers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -36,8 +34,7 @@ public class RegistrationTests {
     }
 
     class TestTransform : IGatewayTransform {
-        public ValueTask<GatewayMessage[]> RouteAndTransform(IMessageConsumeContext context)
-            => new();
+        public ValueTask<GatewayMessage[]> RouteAndTransform(IMessageConsumeContext context) => new();
     }
 
     record TestOptions : SubscriptionOptions;
