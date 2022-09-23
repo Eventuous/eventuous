@@ -56,6 +56,7 @@ public class GatewayHandler<TProduceOptions> : BaseEventHandler
                             x.Message,
                             x.GetMeta(context),
                             x.ProduceOptions,
+                            GatewayMetaHelper.GetContextMeta(context),
                             onAck,
                             context.CancellationToken
                         )

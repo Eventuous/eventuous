@@ -39,7 +39,10 @@ class GatewayHandler : BaseEventHandler {
 
         Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage> toProduce) {
             var messages = toProduce
-                .Select(x => new ProducedMessage(x.Message, x.GetMeta(context)) { OnAck = onAck });
+                .Select(
+                    x => new ProducedMessage(x.Message, x.GetMeta(context), GatewayMetaHelper.GetContextMeta(context))
+                        { OnAck = onAck }
+                );
 
             return _eventProducer.Produce(streamName, messages, context.CancellationToken);
         }
