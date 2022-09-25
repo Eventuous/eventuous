@@ -6,7 +6,7 @@ using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
 using static Eventuous.Tests.SqlServer.Fixtures.IntegrationFixture;
 
-namespace Eventuous.Tests.SqlServer.Subscriptions;
+namespace Eventuous.Tests.SqlServer.Fixtures;
 
 public abstract class SubscriptionFixture<T> : IAsyncLifetime
     where T : class, IEventHandler {
@@ -57,7 +57,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                         Schema         = SchemaName
                     },
                     CheckpointStore,
-                    pipe
+                    pipe,
+                    loggerFactory
                 )
                 : new SqlServerAllStreamSubscription(
                     Instance.GetConnection,
@@ -66,7 +67,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                         Schema         = SchemaName
                     },
                     CheckpointStore,
-                    pipe
+                    pipe,
+                    loggerFactory
                 );
     }
 

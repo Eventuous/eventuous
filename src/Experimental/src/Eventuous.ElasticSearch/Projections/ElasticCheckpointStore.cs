@@ -4,9 +4,9 @@
 using System.Collections.Concurrent;
 using Elasticsearch.Net;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Options;
 using Nest;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.ElasticSearch.Projections;
 
@@ -37,40 +37,45 @@ public class ElasticCheckpointStore : ICheckpointStore {
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         var response = await _client.GetAsync(
-            DocumentPath<Checkpoint>.Id(checkpointId),
-            x => x.Realtime(),
-            cancellationToken
-        ).NoContext();
+                DocumentPath<Checkpoint>.Id(checkpointId),
+                x => x.Realtime(),
+                cancellationToken
+            )
+            .NoContext();
 
         var checkpoint = response?.Source ?? new Checkpoint(checkpointId, null);
         _counters[checkpointId] = 0;
 
-        Log.CheckpointLoaded(this, checkpoint);
+        Logger.Current.CheckpointLoaded(this, checkpoint);
 
         return checkpoint;
     }
 
-    public async ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
+    public async ValueTask<Checkpoint> StoreCheckpoint(
+        Checkpoint        checkpoint,
+        bool              force,
+        CancellationToken cancellationToken
+    ) {
         _counters[checkpoint.Id]++;
         if (!force && _counters[checkpoint.Id] < _batchSize) return checkpoint;
-        
-        var response = await _client.UpdateAsync(
-            DocumentPath<Checkpoint>.Id(checkpoint.Id),
-            x => x
-                .Doc(checkpoint)
-                .DocAsUpsert()
-                .SourceEnabled(false)
-                .RetryOnConflict(3)
-                .Refresh(Refresh.False),
-            cancellationToken
-        ).NoContext();
 
-        if (response.OriginalException != null)
-            throw response.OriginalException;
-        
+        var response = await _client.UpdateAsync(
+                DocumentPath<Checkpoint>.Id(checkpoint.Id),
+                x => x
+                    .Doc(checkpoint)
+                    .DocAsUpsert()
+                    .SourceEnabled(false)
+                    .RetryOnConflict(3)
+                    .Refresh(Refresh.False),
+                cancellationToken
+            )
+            .NoContext();
+
+        if (response.OriginalException != null) throw response.OriginalException;
+
         _counters[checkpoint.Id] = 0;
-        
-        Log.CheckpointStored(this, checkpoint);
+
+        Logger.Current.CheckpointStored(this, checkpoint, force);
 
         return checkpoint;
     }

@@ -8,8 +8,8 @@ using Eventuous.Diagnostics.Tracing;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Subscriptions.Tools;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+using Eventuous.Subscriptions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
 
@@ -22,17 +22,21 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     protected internal T Options { get; }
 
-    IEventSerializer     EventSerializer { get; }
-    internal ConsumePipe Pipe            { get; }
+    IEventSerializer          EventSerializer { get; }
+    internal  ConsumePipe     Pipe            { get; }
+    protected ILoggerFactory? LoggerFactory   { get; }
+    protected LogContext      Log             { get; }
 
     protected CancellationTokenSource Stopping { get; } = new();
 
-    protected EventSubscription(T options, ConsumePipe consumePipe) {
+    protected EventSubscription(T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory = null) {
         Ensure.NotEmptyString(options.SubscriptionId);
 
+        LoggerFactory   = loggerFactory;
         Pipe            = Ensure.NotNull(consumePipe);
         EventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
         Options         = options;
+        Log             = Logger.CreateContext(options.SubscriptionId);
     }
 
     OnSubscribed? _onSubscribed;
@@ -51,14 +55,15 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         _onDropped    = onDropped;
         await Subscribe(cts.Token).NoContext();
         IsRunning = true;
-        Log.SubscriptionStarted(Options.SubscriptionId);
+        Log.InfoLog?.Log("Started");
+
         onSubscribed(Options.SubscriptionId);
     }
 
     public async ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken) {
         IsRunning = false;
         await Unsubscribe(cancellationToken).NoContext();
-        Log.SubscriptionStopped(Options.SubscriptionId);
+        Log.InfoLog?.Log("Unsubscribed");
         onUnsubscribed(Options.SubscriptionId);
         await Pipe.DisposeAsync().NoContext();
         await Finalize(cancellationToken);
@@ -77,6 +82,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             )
             : null;
 
+        Logger.Current = Log;
         var delayed = context is DelayedAckConsumeContext;
         if (!delayed) activity?.Start();
 
@@ -148,13 +154,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         catch (Exception e) {
             var exception = new DeserializationException(stream, eventType, position, e);
 
-            Log.PayloadDeserializationFailed(
-                Options.SubscriptionId,
-                stream,
-                position,
-                eventType,
-                exception.ToString()
-            );
+            Log.PayloadDeserializationFailed(stream, position, eventType, exception);
 
             if (Options.ThrowOnError) throw;
 
@@ -162,7 +162,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         }
 
         object? LogAndReturnNull(DeserializationError error) {
-            Log.MessagePayloadInconclusive(SubscriptionId, eventType, stream, contentType, error);
+            Log.MessagePayloadInconclusive(eventType, stream, error);
             return null;
         }
     }
@@ -177,18 +177,18 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         while (IsRunning && IsDropped && !cancellationToken.IsCancellationRequested) {
             try {
-                Log.SubscriptionResubscribing(Options.SubscriptionId);
+                Log.WarnLog?.Log("Resubscribing");
 
                 await Subscribe(cancellationToken).NoContext();
 
                 IsDropped = false;
                 _onSubscribed?.Invoke(Options.SubscriptionId);
 
-                Log.SubscriptionRestored(Options.SubscriptionId);
+                Log.InfoLog?.Log("Resubscribed");
             }
             catch (OperationCanceledException) { }
             catch (Exception e) {
-                Log.ResubscribeFailed(Options.SubscriptionId, e.Message);
+                Log.ErrorLog?.Log(e, "Failed to resubscribe");
                 await Task.Delay(1000, cancellationToken).NoContext();
             }
         }
@@ -197,7 +197,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning) return;
 
-        Log.SubscriptionDropped(Options.SubscriptionId, reason, exception);
+        Log.WarnLog?.Log(exception, "Dropped: {Reason}", reason);
 
         IsDropped = true;
         _onDropped?.Invoke(Options.SubscriptionId, reason, exception);

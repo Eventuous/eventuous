@@ -26,6 +26,7 @@ public class StreamSubscription
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
     /// <param name="throwOnError"></param>
+    /// <param name="loggerFactory"></param>
     public StreamSubscription(
         EventStoreClient     eventStoreClient,
         StreamName           streamName,
@@ -34,7 +35,8 @@ public class StreamSubscription
         ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
         IMetadataSerializer? metaSerializer  = null,
-        bool                 throwOnError    = false
+        bool                 throwOnError    = false,
+        ILoggerFactory?      loggerFactory   = null
     ) : this(
         eventStoreClient,
         new StreamSubscriptionOptions {
@@ -45,7 +47,8 @@ public class StreamSubscription
             MetadataSerializer = metaSerializer
         },
         checkpointStore,
-        consumerPipe
+        consumerPipe,
+        loggerFactory
     ) { }
 
     /// <summary>
@@ -55,12 +58,14 @@ public class StreamSubscription
     /// <param name="checkpointStore">Checkpoint store instance</param>
     /// <param name="options">Subscription options</param>
     /// <param name="consumePipe"></param>
+    /// <param name="loggerFactory"></param>
     public StreamSubscription(
         EventStoreClient          client,
         StreamSubscriptionOptions options,
         ICheckpointStore          checkpointStore,
-        ConsumePipe               consumePipe
-    ) : base(client, options, checkpointStore, consumePipe)
+        ConsumePipe               consumePipe,
+        ILoggerFactory?           loggerFactory = null
+    ) : base(client, options, checkpointStore, consumePipe, loggerFactory)
         => Ensure.NotEmptyString(options.StreamName);
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {

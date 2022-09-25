@@ -40,7 +40,8 @@ public abstract class PersistentSubscriptionFixture<T> : IAsyncLifetime where T 
                 StreamName       = Stream,
                 SubscriptionId   = subscriptionId
             },
-            new ConsumePipe().AddDefaultConsumer(Handler)
+            new ConsumePipe().AddDefaultConsumer(Handler),
+            loggerFactory
         );
     }
 

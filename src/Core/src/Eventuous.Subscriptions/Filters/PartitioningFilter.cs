@@ -1,6 +1,5 @@
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters.Partitioning;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using static Eventuous.Subscriptions.Filters.Partitioning.Partitioner;
 
 namespace Eventuous.Subscriptions.Filters;
@@ -13,8 +12,8 @@ public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>
 
     public PartitioningFilter(
         int               partitionCount,
-        GetPartitionKey?  partitioner = null,
-        GetPartitionHash? getHash     = null
+        GetPartitionKey?  partitioner   = null,
+        GetPartitionHash? getHash       = null
     ) {
         if (partitionCount <= 0)
             throw new ArgumentOutOfRangeException(nameof(partitionCount), "Partition count must be greater than zero");
@@ -22,7 +21,10 @@ public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>
         _getHash        = getHash ?? MurmurHash3.Hash;
         _partitionCount = partitionCount;
         _partitioner    = partitioner ?? (ctx => ctx.Stream);
-        _filters        = Enumerable.Range(0, _partitionCount).Select(_ => new ConcurrentFilter(1)).ToArray();
+
+        _filters = Enumerable.Range(0, _partitionCount)
+            .Select(_ => new ConcurrentFilter(1))
+            .ToArray();
     }
 
     public override ValueTask Send(DelayedAckConsumeContext context, Func<DelayedAckConsumeContext, ValueTask>? next) {
@@ -35,7 +37,7 @@ public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>
     }
 
     public async ValueTask DisposeAsync() {
-        Log.Stopping(nameof(PartitioningFilter), "concurrent filters", "");
+        // Logger.Current.Info("Partitioner is stopping concurrent filters");
         await Task.WhenAll(_filters.Select(async x => await x.DisposeAsync()));
     }
 }

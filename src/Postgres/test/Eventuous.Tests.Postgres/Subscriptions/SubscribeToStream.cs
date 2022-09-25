@@ -1,5 +1,6 @@
 using Eventuous.Postgresql;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Sut.Subs;
@@ -18,10 +19,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
         : base(outputHelper, new TestEventHandler(), false, false) {
         outputHelper.WriteLine($"Schema: {SchemaName}");
 
-        _eventStore = new PostgresStore(
-            Instance.GetConnection,
-            new PostgresStoreOptions(SchemaName)
-        );
+        _eventStore = new PostgresStore(Instance.GetConnection, new PostgresStoreOptions(SchemaName));
     }
 
     [Fact]
@@ -35,6 +33,9 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
         await Handler.Validate(2.Seconds());
         await Stop();
         Handler.Count.Should().Be(10);
+        
+        var checkpoint = await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
+        checkpoint.Position.Should().Be(count - 1);
     }
 
     [Fact]
@@ -45,6 +46,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
         Handler.AssertThat().Any(_ => true);
     
         await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
+        Logger.ConfigureIfNull(SubscriptionId, LoggerFactory);
         await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, 9), true, default);
     
         await Start();

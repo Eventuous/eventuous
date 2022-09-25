@@ -4,7 +4,7 @@
 using System.Collections.Concurrent;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+using Eventuous.Subscriptions.Logging;
 
 // ReSharper disable SuggestBaseTypeForParameter
 
@@ -25,8 +25,12 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
 
     PersistentSubscription? _subscription;
 
-    protected PersistentSubscriptionBase(EventStoreClient eventStoreClient, T options, ConsumePipe consumePipe)
-        : base(options, consumePipe) {
+    protected PersistentSubscriptionBase(
+        EventStoreClient eventStoreClient,
+        T                options,
+        ConsumePipe      consumePipe,
+        ILoggerFactory?  loggerFactory
+    ) : base(options, consumePipe, loggerFactory) {
         EventStoreClient = eventStoreClient;
         var settings   = eventStoreClient.GetSettings().Copy();
         var opSettings = settings.OperationOptions.Clone();
@@ -36,7 +40,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
 
         _handleEventProcessingFailure = options.FailureHandler ?? DefaultEventProcessingFailureHandler;
 
-        if (options.FailureHandler != null && !options.ThrowOnError) Log.ThrowOnErrorIncompatible(SubscriptionId);
+        if (options.FailureHandler != null && !options.ThrowOnError) Log.ThrowOnErrorIncompatible();
     }
 
     protected EventStoreClient EventStoreClient { get; }
@@ -116,7 +120,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
     }
 
     async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
-        Log.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
+        ctx.LogContext.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
 
         if (Options.ThrowOnError) throw exception;
 

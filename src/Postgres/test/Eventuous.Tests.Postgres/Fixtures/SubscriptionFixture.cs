@@ -6,7 +6,7 @@ using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
 using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
 
-namespace Eventuous.Tests.Postgres.Subscriptions;
+namespace Eventuous.Tests.Postgres.Fixtures;
 
 public abstract class SubscriptionFixture<T> : IAsyncLifetime
     where T : class, IEventHandler {
@@ -20,6 +20,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
     protected PostgresCheckpointStore CheckpointStore { get; }
     IMessageSubscription              Subscription    { get; }
     protected string                  SchemaName      { get; }
+    protected ILoggerFactory          LoggerFactory   { get; }
 
     protected SubscriptionFixture(
         ITestOutputHelper    outputHelper,
@@ -27,7 +28,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
         bool                 subscribeToAll,
         bool                 autoStart     = true,
         Action<ConsumePipe>? configurePipe = null,
-        LogLevel             logLevel      = LogLevel.Debug
+        LogLevel             logLevel      = LogLevel.Trace
     ) {
         _autoStart = autoStart;
 
@@ -36,14 +37,14 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
         SchemaName = Instance.SchemaName;
         _schema    = new Schema(SchemaName);
 
-        var loggerFactory = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
+        LoggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
         SubscriptionId = $"test-{Guid.NewGuid():N}";
 
         Handler         = handler;
-        Log             = loggerFactory.CreateLogger(GetType());
-        CheckpointStore = new PostgresCheckpointStore(Instance.GetConnection, SchemaName);
+        Log             = LoggerFactory.CreateLogger(GetType());
+        CheckpointStore = new PostgresCheckpointStore(Instance.GetConnection, SchemaName, LoggerFactory);
 
-        _listener = new LoggingEventListener(loggerFactory);
+        _listener = new LoggingEventListener(LoggerFactory);
         var pipe = new ConsumePipe();
         configurePipe?.Invoke(pipe);
         pipe.AddDefaultConsumer(Handler);
@@ -57,7 +58,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                         Schema         = SchemaName
                     },
                     CheckpointStore,
-                    pipe
+                    pipe,
+                    LoggerFactory
                 )
                 : new PostgresAllStreamSubscription(
                     Instance.GetConnection,
@@ -66,7 +68,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                         Schema         = SchemaName
                     },
                     CheckpointStore,
-                    pipe
+                    pipe,
+                    LoggerFactory
                 );
     }
 

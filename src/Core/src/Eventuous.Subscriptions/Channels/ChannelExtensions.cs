@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Threading.Channels;
 using Eventuous.Subscriptions.Tools;
 
@@ -12,7 +15,7 @@ static class ChannelExtensions {
         CancellationToken cancellationToken
     ) {
         try {
-            while (!cancellationToken.IsCancellationRequested && !channel.Reader.Completion.IsCompleted) {
+            while (!cancellationToken.IsCancellationRequested) {
                 var element = await channel.Reader.ReadAsync(cancellationToken).NoContext();
                 await process(element, cancellationToken).NoContext();
             }
@@ -49,7 +52,6 @@ static class ChannelExtensions {
         Func<CancellationToken, ValueTask>? finalize = null
     ) {
         channel.Writer.Complete();
-        await channel.Reader.Completion;
         cts.CancelAfter(TimeSpan.FromSeconds(10));
 
         await Task.WhenAll(readers);

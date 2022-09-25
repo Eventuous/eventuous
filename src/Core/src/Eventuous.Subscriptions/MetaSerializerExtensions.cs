@@ -1,7 +1,7 @@
 // Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions;
 
@@ -19,7 +19,7 @@ public static class MetaSerializerExtensions {
             return (metaSerializer ?? DefaultMetadataSerializer.Instance).Deserialize(meta.Span);
         }
         catch (Exception e) {
-            Log.MetadataDeserializationFailed(options.SubscriptionId, stream, position, e.ToString());
+            Logger.Current.MetadataDeserializationFailed(stream, position, e);
 
             if (options.ThrowOnError) throw new DeserializationException(stream, "metadata", position, e);
 

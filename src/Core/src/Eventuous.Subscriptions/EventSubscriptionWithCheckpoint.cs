@@ -4,9 +4,9 @@
 using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Subscriptions.Tools;
+using Eventuous.Subscriptions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
 
@@ -15,8 +15,9 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
-        int              concurrencyLimit
-    ) : base(options, ConfigurePipe(consumePipe, concurrencyLimit)) {
+        int              concurrencyLimit,
+        ILoggerFactory?  loggerFactory
+    ) : base(options, ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) {
         CheckpointStore         = Ensure.NotNull(checkpointStore);
         CheckpointCommitHandler = new CheckpointCommitHandler(options.SubscriptionId, checkpointStore, 10);
     }
@@ -35,27 +36,28 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
         try {
+            Logger.Configure(Options.SubscriptionId, LoggerFactory);
             var ctx = new DelayedAckConsumeContext(context, Ack, Nack);
             await Handler(ctx).NoContext();
         }
         catch (Exception e) {
-            SubscriptionsEventSource.Log.MessageHandlingFailed(Options.SubscriptionId, context, e);
+            context.LogContext.MessageHandlingFailed(Options.SubscriptionId, context, e);
             if (Options.ThrowOnError) throw;
         }
     }
 
-    ValueTask Ack(IMessageConsumeContext ctx) {
-        var eventPosition = EventPosition.FromContext(ctx);
+    ValueTask Ack(IMessageConsumeContext context) {
+        var eventPosition = EventPosition.FromContext(context);
         LastProcessed = eventPosition;
 
         return CheckpointCommitHandler.Commit(
-            new CommitPosition(eventPosition.Position!.Value, ctx.Sequence),
-            ctx.CancellationToken
+            new CommitPosition(eventPosition.Position!.Value, context.Sequence),
+            context.CancellationToken
         );
     }
 
-    ValueTask Nack(IMessageConsumeContext ctx, Exception exception)
-        => Options.ThrowOnError ? throw exception : Ack(ctx);
+    ValueTask Nack(IMessageConsumeContext context, Exception exception)
+        => Options.ThrowOnError ? throw exception : Ack(context);
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
         if (IsRunning && LastProcessed != null) {
@@ -80,7 +82,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
             cancellationToken
         );
     }
-    
+
     protected override ValueTask Finalize(CancellationToken cancellationToken)
         => CheckpointCommitHandler.DisposeAsync();
 }
