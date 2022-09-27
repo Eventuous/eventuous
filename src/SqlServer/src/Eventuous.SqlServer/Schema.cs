@@ -7,9 +7,11 @@ using Microsoft.Data.SqlClient;
 namespace Eventuous.SqlServer;
 
 public class Schema {
+    public const string DefaultSchema = "eventuous";
+    
     readonly string _schema;
 
-    public Schema(string schema) => _schema = schema;
+    public Schema(string schema = DefaultSchema) => _schema = schema;
 
     public string AppendEvents       => $"{_schema}.append_events";
     public string ReadStreamForwards => $"{_schema}.read_stream_forwards";

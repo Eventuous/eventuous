@@ -15,7 +15,7 @@ namespace Eventuous.Postgresql;
 
 public delegate NpgsqlConnection GetPostgresConnection();
 
-public record PostgresStoreOptions(string Schema = "eventuous");
+public record PostgresStoreOptions(string Schema = Schema.DefaultSchema);
 
 public class PostgresStore : IEventStore {
     readonly GetPostgresConnection _getConnection;
