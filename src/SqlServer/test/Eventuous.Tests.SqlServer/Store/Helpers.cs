@@ -28,8 +28,8 @@ public static class Helpers {
         return Instance.EventStore.AppendEvents(stream, version, streamEvents.ToArray(), default);
     }
 
-    public static Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version) {
-        var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
+    public static Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version, Metadata? metadata = null) {
+        var streamEvent = new StreamEvent(Guid.NewGuid(), evt, metadata ?? new Metadata(), "", 0);
         return Instance.EventStore.AppendEvents(stream, version, new[] { streamEvent }, default);
     }
 }

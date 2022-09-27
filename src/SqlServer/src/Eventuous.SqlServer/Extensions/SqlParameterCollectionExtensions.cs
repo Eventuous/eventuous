@@ -23,7 +23,7 @@ internal static class SqlParameterCollectionExtensions {
             row["message_id"]    = persistedEvent.MessageId;
             row["message_type"]  = persistedEvent.MessageType;
             row["json_data"]     = persistedEvent.JsonData;
-            row["json_metadata"] = persistedEvent.JsonData;
+            row["json_metadata"] = persistedEvent.JsonMetadata;
             tableVariable.Rows.Add(row);
         }
 
