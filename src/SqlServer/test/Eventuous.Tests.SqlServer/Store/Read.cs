@@ -1,3 +1,4 @@
+using System.Text.Json;
 using static Eventuous.Tests.SqlServer.Fixtures.IntegrationFixture;
 using static Eventuous.Tests.SqlServer.Store.Helpers;
 
@@ -19,6 +20,26 @@ public class Read {
 
         result.Length.Should().Be(1);
         result[0].Payload.Should().BeEquivalentTo(evt);
+        result[0].Metadata.Should().BeEquivalentTo(new Metadata());
+    }
+    
+    [Fact]
+    public async Task ShouldReadMetadata() {
+        var evt        = CreateEvent();
+        var streamName = GetStreamName();
+        await AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream, new Metadata {{"Key1","Value1"},{"Key2","Value2"}});
+
+        var result = await Instance.EventStore.ReadEvents(
+            streamName,
+            StreamReadPosition.Start,
+            100,
+            default
+        );
+
+        result.Length.Should().Be(1);
+        result[0].Payload.Should().BeEquivalentTo(evt);
+        result[0].Metadata.ToDictionary(m => m.Key, m => ((JsonElement)m.Value).GetString())
+            .Should().BeEquivalentTo(new Metadata {{"Key1", "Value1"},{"Key2","Value2"}});
     }
 
     [Fact]

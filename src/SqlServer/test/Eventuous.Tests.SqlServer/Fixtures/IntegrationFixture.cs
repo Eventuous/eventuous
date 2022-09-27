@@ -30,7 +30,7 @@ public sealed class IntegrationFixture : IAsyncDisposable {
     public static IntegrationFixture Instance { get; } = new();
 
     IntegrationFixture() {
-        const string connString = "Data Source=localhost;User Id=sa;Password=Secret_123;TrustServerCertificate=True;";
+        const string connString = "Server=.;Database=eventuous;Integrated Security=true;TrustServerCertificate=True;";
         
         var schemaName = SchemaName;
         SqlConnection GetConn() => new(connString);
