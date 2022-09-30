@@ -14,9 +14,8 @@ public class DeserializationException : Exception {
 
 public class SubscriptionException : Exception {
     public SubscriptionException(string stream, string eventType, object? evt, Exception e)
-        : base($"Error processing event {stream} {eventType}", e) {
-        Data.Add("Event", evt);
-    }
+        : base($"Error processing event {stream} {eventType}", e)
+        => Data.Add("Event", evt);
 
     public sealed override IDictionary Data { get; } = new Dictionary<string, object>();
 }
