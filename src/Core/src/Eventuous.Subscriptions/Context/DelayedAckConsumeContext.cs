@@ -1,3 +1,8 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
+using Eventuous.Subscriptions.Logging;
+
 namespace Eventuous.Subscriptions.Context;
 
 /// <summary>
@@ -24,8 +29,9 @@ public class DelayedAckConsumeContext : WrappedConsumeContext {
     /// <param name="acknowledge">Function to ACK the message</param>
     /// <param name="fail">Function to NACK the message in case of failure</param>
     public DelayedAckConsumeContext(IMessageConsumeContext inner, Acknowledge acknowledge, Fail fail) : base(inner) {
-        _acknowledge = acknowledge;
-        _fail        = fail;
+        inner.LogContext ??= Logger.Current;
+        _acknowledge     =   acknowledge;
+        _fail            =   fail;
     }
 
     /// <summary>

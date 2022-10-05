@@ -1,9 +1,12 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics;
 using System.Threading.Channels;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Channels;
 using Eventuous.Subscriptions.Context;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions.Filters;
 
@@ -31,6 +34,7 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
         ctx.CancellationToken = cts.Token;
+        Logger.Current        = ctx.LogContext;
 
         try {
             await workerTask.Next.Value.Send(ctx, workerTask.Next).NoContext();
@@ -51,7 +55,7 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
             ctx.Ignore<ConcurrentFilter>();
         }
         catch (Exception e) {
-            Log.MessageHandlingFailed(nameof(ConcurrentFilter), workerTask.Context, e);
+            ctx.LogContext.MessageHandlingFailed(nameof(ConcurrentFilter), workerTask.Context, e);
             activity?.SetActivityStatus(ActivityStatus.Error(e));
             await ctx.Fail(e).NoContext();
         }
@@ -68,7 +72,8 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
     record struct WorkerTask(DelayedAckConsumeContext Context, LinkedListNode<IConsumeFilter> Next);
 
     public ValueTask DisposeAsync() {
-        Log.Stopping(nameof(ConcurrentFilter), "worker", "");
+        // Logger.Configure(_subscriptionId, _loggerFactory);
+        // Logger.Current.Info("Stopping the concurrent filter worker");
         return _worker.DisposeAsync();
     }
 }

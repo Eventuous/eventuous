@@ -16,8 +16,7 @@ public sealed class IntegrationFixture : IAsyncDisposable {
     public GetPostgresConnection GetConnection  { get; }
     public Faker                 Faker          { get; } = new();
 
-    public string SchemaName => $"{Faker.Hacker.Adjective()}_{Faker.Hacker.Noun()}"
-        .Replace("-", "").Replace(" ", "");
+    public string SchemaName => Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
 

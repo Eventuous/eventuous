@@ -1,4 +1,8 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics;
+using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions.Context;
 
@@ -20,6 +24,7 @@ public interface IBaseConsumeContext {
     CancellationToken CancellationToken { get; set; }
     ulong             Sequence          { get; }
     string            SubscriptionId    { get; }
+    LogContext        LogContext        { get; set; }
 }
 
 public interface IMessageConsumeContext : IBaseConsumeContext {

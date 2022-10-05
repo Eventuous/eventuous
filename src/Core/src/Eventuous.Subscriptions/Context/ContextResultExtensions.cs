@@ -1,7 +1,10 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+using Eventuous.Subscriptions.Logging;
 using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 
 namespace Eventuous.Subscriptions.Context;
@@ -14,7 +17,7 @@ public static class ContextResultExtensions {
     /// <param name="handlerType">Handler type identifier</param>
     public static void Ack(this IBaseConsumeContext context, string handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Succeeded(handlerType));
-        Log.MessageHandled(handlerType, context);
+        context.LogContext.MessageHandled(handlerType, context);
     }
 
     /// <summary>
@@ -26,7 +29,7 @@ public static class ContextResultExtensions {
     public static void Nack(this IBaseConsumeContext context, string handlerType, Exception? exception) {
         context.HandlingResults.Add(EventHandlingResult.Failed(handlerType, exception));
         if (exception is not TaskCanceledException)
-            Log.MessageHandlingFailed(handlerType, context, exception);
+            context.LogContext.MessageHandlingFailed(handlerType, context, exception);
 
         if (Activity.Current != null && Activity.Current.Status != ActivityStatusCode.Error) {
             Activity.Current.SetActivityStatus(
@@ -42,7 +45,7 @@ public static class ContextResultExtensions {
     /// <param name="handlerType">Handler type identifier</param>
     public static void Ignore(this IBaseConsumeContext context, string handlerType) {
         context.HandlingResults.Add(EventHandlingResult.Ignored(handlerType));
-        Log.MessageIgnored(handlerType, context);
+        context.LogContext.MessageIgnored(handlerType, context);
     }
 
     /// <summary>

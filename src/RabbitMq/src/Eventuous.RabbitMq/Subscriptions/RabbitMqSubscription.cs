@@ -5,6 +5,7 @@ using Eventuous.Diagnostics;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Options;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
@@ -50,7 +51,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     )
         : base(
             Ensure.NotNull(options),
-            consumePipe.AddFilterFirst(new ConcurrentFilter(options.ConcurrencyLimit, options.ConcurrencyLimit * 10))
+            consumePipe.AddFilterFirst(new ConcurrentFilter(options.ConcurrencyLimit * 10))
         ) {
         _failureHandler = options.FailureHandler ?? DefaultEventFailureHandler;
         _connection     = Ensure.NotNull(connectionFactory).CreateConnection();
@@ -61,7 +62,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         _channel.BasicQos(0, (ushort)prefetch, false);
 
         if (options.FailureHandler != null && !options.ThrowOnError)
-            Log.ThrowOnErrorIncompatible(SubscriptionId);
+            Log.ThrowOnErrorIncompatible();
     }
 
     /// <summary>

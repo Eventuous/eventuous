@@ -4,8 +4,8 @@
 using System.Data;
 using Eventuous.SqlServer.Extensions;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Logging;
 using Microsoft.Data.SqlClient;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.SqlServer.Subscriptions;
 
@@ -33,7 +33,7 @@ public class SqlServerCheckpointStore : ICheckpointStore {
 
             if (await reader.ReadAsync(cancellationToken).NoContext()) {
                 checkpoint = new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0));
-                Log.CheckpointLoaded(this, checkpoint);
+                Logger.Current.CheckpointLoaded(this, checkpoint);
                 return checkpoint;
             }
         }
@@ -41,7 +41,7 @@ public class SqlServerCheckpointStore : ICheckpointStore {
         await using var add = GetCheckpointCommand(connection, _addCheckpointSql, checkpointId);
         await add.ExecuteNonQueryAsync(cancellationToken).NoContext();
         checkpoint = new Checkpoint(checkpointId, null);
-        Log.CheckpointLoaded(this, checkpoint);
+        Logger.Current.CheckpointLoaded(this, checkpoint);
         return checkpoint;
     }
 
@@ -57,7 +57,7 @@ public class SqlServerCheckpointStore : ICheckpointStore {
         await using var cmd = GetCheckpointCommand(connection, _storeCheckpointSql, checkpoint.Id);
         cmd.Parameters.AddWithValue("position", SqlDbType.BigInt, (long)checkpoint.Position);
         await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
-        Log.CheckpointStored(this, checkpoint);
+        Logger.Current.CheckpointStored(this, checkpoint, force);
         return checkpoint;
     }
 

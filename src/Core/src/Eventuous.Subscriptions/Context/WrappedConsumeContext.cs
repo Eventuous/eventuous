@@ -1,4 +1,8 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics;
+using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions.Context;
 
@@ -20,6 +24,10 @@ public abstract class WrappedConsumeContext : IMessageConsumeContext {
     public HandlingResults HandlingResults => InnerContext.HandlingResults;
     public ulong           Sequence        => InnerContext.Sequence;
     public string          SubscriptionId  => InnerContext.SubscriptionId;
+    public LogContext LogContext {
+        get => InnerContext.LogContext;
+        set => InnerContext.LogContext = value;
+    }
 
     public CancellationToken CancellationToken {
         get => InnerContext.CancellationToken;

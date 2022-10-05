@@ -6,6 +6,7 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Subscriptions.Logging;
 using Google.Protobuf.Collections;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
@@ -71,7 +72,7 @@ public class GooglePubSubSubscription
         _topicName = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
 
         if (options.FailureHandler != null && !options.ThrowOnError)
-            Log.ThrowOnErrorIncompatible(SubscriptionId);
+            Log.ThrowOnErrorIncompatible();
     }
 
     Task _subscriberTask = null!;

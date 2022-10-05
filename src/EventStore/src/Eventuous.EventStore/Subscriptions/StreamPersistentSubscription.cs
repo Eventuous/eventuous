@@ -15,8 +15,9 @@ public class StreamPersistentSubscription
     public StreamPersistentSubscription(
         EventStoreClient                    eventStoreClient,
         StreamPersistentSubscriptionOptions options,
-        ConsumePipe                         consumePipe
-    ) : base(eventStoreClient, options, consumePipe)
+        ConsumePipe                         consumePipe,
+        ILoggerFactory?                     loggerFactory
+    ) : base(eventStoreClient, options, consumePipe, loggerFactory)
         => Ensure.NotEmptyString(options.StreamName);
 
     /// <summary>
@@ -34,7 +35,8 @@ public class StreamPersistentSubscription
         string               subscriptionId,
         ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
-        IMetadataSerializer? metaSerializer  = null
+        IMetadataSerializer? metaSerializer  = null,
+        ILoggerFactory?      loggerFactory   = null
     ) : this(
         eventStoreClient,
         new StreamPersistentSubscriptionOptions {
@@ -43,20 +45,22 @@ public class StreamPersistentSubscription
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
-        consumerPipe
+        consumerPipe,
+        loggerFactory
     ) { }
 
     protected override Task CreatePersistentSubscription(
         PersistentSubscriptionSettings settings,
         CancellationToken              cancellationToken
-    ) => SubscriptionClient.CreateAsync(
-        Options.StreamName,
-        Options.SubscriptionId,
-        settings,
-        Options.Deadline,
-        Options.Credentials,
-        cancellationToken
-    );
+    )
+        => SubscriptionClient.CreateAsync(
+            Options.StreamName,
+            Options.SubscriptionId,
+            settings,
+            Options.Deadline,
+            Options.Credentials,
+            cancellationToken
+        );
 
     protected override Task<PersistentSubscription> LocalSubscribe(
         Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,

@@ -8,7 +8,7 @@ namespace Eventuous.Postgresql;
 
 public class Schema {
     readonly string _schema;
-    
+
     public const string DefaultSchema = "eventuous";
 
     public Schema(string schema = DefaultSchema) => _schema = schema;
@@ -21,7 +21,7 @@ public class Schema {
     public string CheckStream        => $"{_schema}.check_stream";
     public string StreamExists       => $"select exists (select 1 from {_schema}.streams where stream_name = (@name))";
     public string GetCheckpointSql   => $"select position from {_schema}.checkpoints where id=(@checkpointId)";
-    public string AddCheckpointSql   => $"insert into {_schema}.checkpoints (id) values ((@checkpointId))";
+    public string AddCheckpointSql   => $"insert into {_schema}.checkpoints (id) values (@checkpointId)";
     public string UpdateCheckpointSql
         => $"update {_schema}.checkpoints set position=(@position) where id=(@checkpointId)";
 
@@ -42,7 +42,14 @@ public class Schema {
             var             script    = await reader.ReadToEndAsync().NoContext();
             var             cmdScript = script.Replace("__schema__", _schema);
             await using var cmd       = new NpgsqlCommand(cmdScript, connection, transaction);
-            await cmd.ExecuteNonQueryAsync().NoContext();
+
+            try {
+                await cmd.ExecuteNonQueryAsync().NoContext();
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         await transaction.CommitAsync().NoContext();

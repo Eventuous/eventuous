@@ -7,6 +7,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.SqlServer.Subscriptions;
 
@@ -15,8 +16,9 @@ public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServe
         GetSqlServerConnection               getConnection,
         SqlServerAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
-        ConsumePipe                          consumePipe
-    ) : base(getConnection, options, checkpointStore, consumePipe) { }
+        ConsumePipe                          consumePipe,
+        ILoggerFactory?                      loggerFactory = null
+    ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
 
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start) {
         var cmd = new SqlCommand(Schema.ReadAllForwards, connection);

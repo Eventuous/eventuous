@@ -4,6 +4,7 @@
 using System.Runtime.CompilerServices;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Logging;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
@@ -35,7 +36,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         }
 
         if (!_map.IsTypeRegistered<TEvent>()) {
-            Log.UnknownMessageType<TEvent>();
+            Logger.Current.MessageTypeNotFound<TEvent>();
         }
     }
 
@@ -55,7 +56,8 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     }
 
     [PublicAPI]
-    protected void On<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
+    protected void On<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdate<TEvent, T> getUpdate)
+        where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message)).UpdateFromContext(getUpdate));
 
     protected void On<TEvent>(GetDocumentIdFromStream getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
@@ -77,11 +79,14 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
 
     [PublicAPI]
     protected void OnAsync<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdateAsync<TEvent, T> getUpdate)
-        where TEvent : class 
+        where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Filter(getFilter).UpdateFromContext(getUpdate));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    ValueTask<MongoProjectOperation<T>> HandleInternal<TEvent>(IMessageConsumeContext context, ProjectTypedEvent<T, TEvent> handler)
+    ValueTask<MongoProjectOperation<T>> HandleInternal<TEvent>(
+        IMessageConsumeContext       context,
+        ProjectTypedEvent<T, TEvent> handler
+    )
         where TEvent : class {
         return context.Message is not TEvent ? NoHandler() : HandleTypedEvent();
 
@@ -91,7 +96,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         }
 
         ValueTask<MongoProjectOperation<T>> NoHandler() {
-            Log.NoHandlerFound(DiagnosticName, context.MessageType);
+            Logger.Current.MessageHandlerNotFound(DiagnosticName, context.MessageType);
             return NoOp;
         }
     }
@@ -122,13 +127,16 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     ValueTask<MongoProjectOperation<T>> GetUpdate(IMessageConsumeContext context)
         => GetUpdate(context.Message!, context.StreamPosition);
 
-    [PublicAPI]
-    protected static readonly ValueTask<MongoProjectOperation<T>> NoOp = new((MongoProjectOperation<T>)null!);
+    [PublicAPI] protected static readonly ValueTask<MongoProjectOperation<T>> NoOp = new(
+        (MongoProjectOperation<T>)null!
+    );
 
     delegate ValueTask<MongoProjectOperation<T>> ProjectUntypedEvent(IMessageConsumeContext evt);
 }
 
-public delegate ValueTask<MongoProjectOperation<T>> ProjectTypedEvent<T, TEvent>(MessageConsumeContext<TEvent> consumeContext)
+public delegate ValueTask<MongoProjectOperation<T>> ProjectTypedEvent<T, TEvent>(
+    MessageConsumeContext<TEvent> consumeContext
+)
     where T : ProjectedDocument where TEvent : class;
 
 public record MongoProjectOperation<T>(Func<IMongoCollection<T>, CancellationToken, Task> Execute);
