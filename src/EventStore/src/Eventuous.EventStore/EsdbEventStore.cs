@@ -23,7 +23,7 @@ public class EsdbEventStore : IEventStore {
     ) {
         _logger         = logger;
         _client         = Ensure.NotNull(client);
-        _serializer     = serializer ?? DefaultEventSerializer.Instance;
+        _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
@@ -104,7 +104,7 @@ public class EsdbEventStore : IEventStore {
             var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
             return new EventData(
-                Uuid.FromGuid(streamEvent.Id), 
+                Uuid.FromGuid(streamEvent.Id),
                 eventType,
                 payload,
                 _metaSerializer.Serialize(streamEvent.Metadata),
@@ -210,24 +210,25 @@ public class EsdbEventStore : IEventStore {
         StreamName            stream,
         ExpectedStreamVersion expectedVersion,
         CancellationToken     cancellationToken
-    ) => TryExecute(
-        () => AnyOrNot(
-            expectedVersion,
-            () => _client.DeleteAsync(
-                stream,
-                StreamState.Any,
-                cancellationToken: cancellationToken
+    )
+        => TryExecute(
+            () => AnyOrNot(
+                expectedVersion,
+                () => _client.DeleteAsync(
+                    stream,
+                    StreamState.Any,
+                    cancellationToken: cancellationToken
+                ),
+                () => _client.DeleteAsync(
+                    stream,
+                    expectedVersion.AsStreamRevision(),
+                    cancellationToken: cancellationToken
+                )
             ),
-            () => _client.DeleteAsync(
-                stream,
-                expectedVersion.AsStreamRevision(),
-                cancellationToken: cancellationToken
-            )
-        ),
-        stream,
-        () => new ErrorInfo("Unable to delete stream {Stream}", stream),
-        (s, ex) => new DeleteStreamException(s, ex)
-    );
+            stream,
+            () => new ErrorInfo("Unable to delete stream {Stream}", stream),
+            (s, ex) => new DeleteStreamException(s, ex)
+        );
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     async Task<T> TryExecute<T>(
@@ -270,14 +271,32 @@ public class EsdbEventStore : IEventStore {
             FailedToDeserialize failed => throw new SerializationException(
                 $"Can't deserialize {resolvedEvent.Event.EventType}: {failed.Error}"
             ),
-            _ => throw new Exception("Unknown deserialization result")
+            _ => throw new SerializationException("Unknown deserialization result")
         };
+
+        Metadata? DeserializeMetadata() {
+            var meta = resolvedEvent.Event.Metadata.ToArray();
+
+            try {
+                return meta.Length == 0 ? null : _metaSerializer.Deserialize(meta);
+            }
+            catch (MetadataDeserializationException e) {
+                _logger?.LogWarning(
+                    e,
+                    "Failed to deserialize metadata at {Stream}:{Position}",
+                    resolvedEvent.Event.EventStreamId,
+                    resolvedEvent.Event.EventNumber
+                );
+
+                return null;
+            }
+        }
 
         StreamEvent AsStreamEvent(object payload)
             => new(
                 resolvedEvent.Event.EventId.ToGuid(),
                 payload,
-                _metaSerializer.Deserialize(resolvedEvent.Event.Metadata.ToArray()) ?? new Metadata(),
+                DeserializeMetadata() ?? new Metadata(),
                 resolvedEvent.Event.ContentType,
                 resolvedEvent.OriginalEventNumber.ToInt64()
             );

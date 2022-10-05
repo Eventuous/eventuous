@@ -62,7 +62,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                 )
                 : new SqlServerAllStreamSubscription(
                     Instance.GetConnection,
-                    new PostgresAllStreamSubscriptionOptions {
+                    new SqlServerAllStreamSubscriptionOptions {
                         SubscriptionId = SubscriptionId,
                         Schema         = SchemaName
                     },

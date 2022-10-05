@@ -11,10 +11,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.SqlServer.Subscriptions;
 
-public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<PostgresAllStreamSubscriptionOptions> {
+public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions> {
     public SqlServerAllStreamSubscription(
         GetSqlServerConnection               getConnection,
-        PostgresAllStreamSubscriptionOptions options,
+        SqlServerAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
         ConsumePipe                          consumePipe,
         ILoggerFactory?                      loggerFactory = null
@@ -55,4 +55,4 @@ public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<Postgres
         );
 }
 
-public record PostgresAllStreamSubscriptionOptions : SqlServerSubscriptionBaseOptions;
+public record SqlServerAllStreamSubscriptionOptions : SqlServerSubscriptionBaseOptions;

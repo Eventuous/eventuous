@@ -18,6 +18,13 @@ public class DefaultMetadataSerializer : IMetadataSerializer {
     public byte[] Serialize(Metadata evt)
         => JsonSerializer.SerializeToUtf8Bytes(evt, _options);
 
-    public Metadata? Deserialize(ReadOnlySpan<byte> bytes)
-        => JsonSerializer.Deserialize<Metadata>(bytes, _options);
+    /// <inheritdoc/>
+    public Metadata? Deserialize(ReadOnlySpan<byte> bytes) {
+        try {
+            return JsonSerializer.Deserialize<Metadata>(bytes, _options);
+        }
+        catch (JsonException e) {
+            throw new MetadataDeserializationException(e);
+        }
+    }
 }
