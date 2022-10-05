@@ -50,7 +50,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
                 ResolveLinkTos = Stream.ToString().StartsWith("$")
             },
             CheckpointStore,
-            pipe
+            pipe,
+            loggerFactory
         );
     }
 

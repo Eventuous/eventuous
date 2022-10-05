@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Subscriptions.Logging;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.EventStore.Subscriptions;
@@ -23,7 +24,7 @@ public abstract class EventStoreSubscriptionBase1<T> : EventSubscription<T>
             return _metaSerializer.Deserialize(meta.Span);
         }
         catch (Exception e) {
-            Log.MetadataDeserializationFailed(Options.SubscriptionId, stream, position, e.ToString());
+            Log.MetadataDeserializationFailed(stream, position, e);
 
             if (Options.ThrowOnError)
                 throw new DeserializationException(stream, "metadata", position, e);

@@ -18,12 +18,8 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
         : base(outputHelper, new TestEventHandler(), true, false) {
         outputHelper.WriteLine($"Schema: {SchemaName}");
 
-        var eventStore = new PostgresStore(
-            Instance.GetConnection,
-            new PostgresStoreOptions(SchemaName)
-        );
-
-        var store = new AggregateStore(eventStore);
+        var eventStore = new PostgresStore(Instance.GetConnection, new PostgresStoreOptions(SchemaName));
+        var store      = new AggregateStore(eventStore);
         _service = new BookingService(store);
     }
 
@@ -31,7 +27,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     public async Task ShouldConsumeProducedEvents() {
         const int count = 10;
 
-        var commands = await GenerateAndHandleCommands(count);
+        var commands   = await GenerateAndHandleCommands(count);
         var testEvents = commands.Select(ToEvent).ToList();
         Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
@@ -57,8 +53,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
         Handler.Count.Should().Be(0);
     }
 
-    static BookingImported ToEvent(ImportBooking cmd)
-        => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
+    static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
         var commands = Enumerable

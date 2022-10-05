@@ -5,6 +5,7 @@ using System.Data;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -15,8 +16,9 @@ public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAl
         GetPostgresConnection                getConnection,
         PostgresAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
-        ConsumePipe                          consumePipe
-    ) : base(getConnection, options, checkpointStore, consumePipe) { }
+        ConsumePipe                          consumePipe,
+        ILoggerFactory?                      loggerFactory = null
+    ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
 
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start) {
         var cmd = new NpgsqlCommand(Schema.ReadAllForwards, connection);

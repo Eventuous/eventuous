@@ -7,10 +7,13 @@ using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
+using Eventuous.Subscriptions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
 public sealed class CheckpointCommitHandler : IAsyncDisposable {
+    readonly ILoggerFactory?               _loggerFactory;
     readonly string                        _subscriptionId;
     readonly CommitCheckpoint              _commitCheckpoint;
     readonly CommitPositionSequence        _positions = new();
@@ -27,11 +30,23 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
     internal record CommitEvent(string Id, CommitPosition CommitPosition, CommitPosition? FirstPending);
 
-    public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1) {
-        Log = new CheckpointLog(subscriptionId);
+    public CheckpointCommitHandler(
+        string           subscriptionId,
+        ICheckpointStore checkpointStore,
+        int              batchSize     = 1,
+        ILoggerFactory?  loggerFactory = null
+    )
+        : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize, loggerFactory) { }
 
+    public CheckpointCommitHandler(
+        string           subscriptionId,
+        CommitCheckpoint commitCheckpoint,
+        int              batchSize     = 1,
+        ILoggerFactory?  loggerFactory = null
+    ) {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
+        _loggerFactory    = loggerFactory;
         var channel = Channel.CreateBounded<CommitPosition>(batchSize * 1000);
         _subject = new Subject<CommitPosition>();
 
@@ -48,7 +63,8 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
-            Log.PositionReceived(position);
+            Logger.Configure(_subscriptionId, _loggerFactory);
+            Logger.Current.PositionReceived(position);
             _subject.OnNext(position);
             return default;
         }
@@ -63,11 +79,6 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             return next;
         }
     }
-
-    CheckpointLog Log { get; }
-
-    public CheckpointCommitHandler(string subscriptionId, ICheckpointStore checkpointStore, int batchSize = 1)
-        : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize) { }
 
     /// <summary>
     /// Commit a position to be stored, the store action can be delayed
@@ -98,7 +109,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
     async Task CommitInternal(CommitPosition position, CancellationToken cancellationToken) {
         try {
-            Log.Committing(position);
+            Logger.Current.CommittingPosition(position);
 
             await _commitCheckpoint(
                     new Checkpoint(_subscriptionId, position.Position),
@@ -113,12 +124,13 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
         }
         catch (Exception e) {
-            Log.UnableToCommit(e);
+            Logger.Current.UnableToCommitPosition(position, e);
         }
     }
 
     public async ValueTask DisposeAsync() {
-        Log.Stopping();
+        Logger.ConfigureIfNull(_subscriptionId, _loggerFactory);
+        Logger.Current.InfoLog?.Log("Stopping commit handler worker");
 
         await _worker.Stop(
                 _ => {

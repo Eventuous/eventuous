@@ -6,9 +6,9 @@ using Eventuous.SqlServer.Extensions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.SqlServer.Subscriptions;
 
@@ -24,8 +24,9 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
         GetSqlServerConnection getConnection,
         T                      options,
         ICheckpointStore       checkpointStore,
-        ConsumePipe            consumePipe
-    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit) {
+        ConsumePipe            consumePipe,
+        ILoggerFactory?        loggerFactory
+    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
         Schema          = new Schema(options.Schema);
         GetConnection   = Ensure.NotNull(getConnection, "Connection factory");
         _metaSerializer = DefaultMetadataSerializer.Instance;
@@ -59,7 +60,8 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
 
     Task? _runner;
 
-    static List<int> TransientErrorNumbers = new() { 4060, 40197, 40501, 40613, 49918, 49919, 49920, 11001 };
+    // ReSharper disable once StaticMemberInGenericType
+    static readonly List<int> TransientErrorNumbers = new() { 4060, 40197, 40501, 40613, 49918, 49919, 49920, 11001 };
 
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
         var start = position.HasValue ? (long)position : -1;
@@ -85,7 +87,7 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
             }
             catch (Exception e) {
                 IsDropped = true;
-                SubscriptionsEventSource.Log.SubscriptionDropped(SubscriptionId, DropReason.ServerError, e);
+                Log.WarnLog?.Log(e, "Dropped");
                 throw;
             }
         }

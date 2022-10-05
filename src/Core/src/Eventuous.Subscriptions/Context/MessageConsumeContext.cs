@@ -1,4 +1,8 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics;
+using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions.Context;
 
@@ -29,6 +33,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
         Message           = message;
         CancellationToken = cancellationToken;
         SubscriptionId    = subscriptionId;
+        LogContext        = Logger.Current;
     }
 
     public string            MessageId         { get; }
@@ -46,6 +51,7 @@ public class MessageConsumeContext : IMessageConsumeContext {
     public CancellationToken CancellationToken { get; set; }
     public ulong             Sequence          { get; }
     public string            SubscriptionId    { get; }
+    public LogContext        LogContext        { get; set; }
 }
 
 public class MessageConsumeContext<T> : WrappedConsumeContext, IMessageConsumeContext<T>

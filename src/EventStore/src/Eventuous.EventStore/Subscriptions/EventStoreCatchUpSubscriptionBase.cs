@@ -14,8 +14,9 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWi
         EventStoreClient eventStoreClient,
         T                options,
         ICheckpointStore checkpointStore,
-        ConsumePipe      consumePipe
-    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit)
+        ConsumePipe      consumePipe,
+        ILoggerFactory?  loggerFactory
+    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
         => EventStoreClient = eventStoreClient;
 
     protected EventStoreClient EventStoreClient { get; }

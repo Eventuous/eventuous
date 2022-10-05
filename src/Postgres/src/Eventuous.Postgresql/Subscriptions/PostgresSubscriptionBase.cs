@@ -8,6 +8,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace Eventuous.Postgresql.Subscriptions;
@@ -24,8 +25,9 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
         GetPostgresConnection getConnection,
         T                     options,
         ICheckpointStore      checkpointStore,
-        ConsumePipe           consumePipe
-    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit) {
+        ConsumePipe           consumePipe,
+        ILoggerFactory?       loggerFactory
+    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
         Schema          = new Schema(options.Schema);
         GetConnection   = Ensure.NotNull(getConnection, "Connection factory");
         _metaSerializer = DefaultMetadataSerializer.Instance;
@@ -83,7 +85,7 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
             }
             catch (Exception e) {
                 IsDropped = true;
-                SubscriptionsEventSource.Log.SubscriptionDropped(SubscriptionId, DropReason.ServerError, e);
+                Log.WarnLog?.Log(e, "Dropped");
                 throw;
             }
         }

@@ -12,8 +12,9 @@ public class AllPersistentSubscription
     public AllPersistentSubscription(
         EventStoreClient                 eventStoreClient,
         AllPersistentSubscriptionOptions options,
-        ConsumePipe                      consumePipe
-    ) : base(eventStoreClient, options, consumePipe) { }
+        ConsumePipe                      consumePipe,
+        ILoggerFactory?                  loggerFactory
+    ) : base(eventStoreClient, options, consumePipe, loggerFactory) { }
 
     /// <summary>
     /// Creates EventStoreDB persistent subscription service for a given stream
@@ -23,12 +24,14 @@ public class AllPersistentSubscription
     /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
+    /// <param name="loggerFactory"></param>
     public AllPersistentSubscription(
         EventStoreClient     eventStoreClient,
         string               subscriptionId,
         ConsumePipe          consumerPipe,
         IEventSerializer?    eventSerializer = null,
-        IMetadataSerializer? metaSerializer  = null
+        IMetadataSerializer? metaSerializer  = null,
+        ILoggerFactory?      loggerFactory   = null
     ) : this(
         eventStoreClient,
         new AllPersistentSubscriptionOptions {
@@ -36,19 +39,21 @@ public class AllPersistentSubscription
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer
         },
-        consumerPipe
+        consumerPipe,
+        loggerFactory
     ) { }
 
     protected override Task CreatePersistentSubscription(
         PersistentSubscriptionSettings settings,
         CancellationToken              cancellationToken
-    ) => SubscriptionClient.CreateToAllAsync(
-        Options.SubscriptionId,
-        settings,
-        Options.Deadline,
-        Options.Credentials,
-        cancellationToken
-    );
+    )
+        => SubscriptionClient.CreateToAllAsync(
+            Options.SubscriptionId,
+            settings,
+            Options.Deadline,
+            Options.Credentials,
+            cancellationToken
+        );
 
     protected override Task<PersistentSubscription> LocalSubscribe(
         Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,

@@ -1,10 +1,12 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Tools;
+using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver.Linq;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 
 namespace Eventuous.Projections.MongoDB;
@@ -31,7 +33,7 @@ public class MongoCheckpointStore : ICheckpointStore {
 
             observable
                 .Where(x => x.Count > 0)
-                .Select(x => Observable.FromAsync(ct => StoreInternal(x.Last(), ct)))
+                .Select(x => Observable.FromAsync(ct => StoreInternal(x.Last(), false, ct)))
                 .Concat()
                 .Subscribe();
 
@@ -59,7 +61,7 @@ public class MongoCheckpointStore : ICheckpointStore {
             .SingleOrDefaultAsync(cancellationToken)
             .NoContext() ?? new Checkpoint(checkpointId, null);
 
-        Log.CheckpointLoaded(this, checkpoint);
+        Logger.Current.CheckpointLoaded(this, checkpoint);
 
         _subjects[checkpointId] = _getSubject();
 
@@ -74,7 +76,7 @@ public class MongoCheckpointStore : ICheckpointStore {
         CancellationToken cancellationToken = default
     ) {
         if (force) {
-            await StoreInternal(checkpoint, cancellationToken).NoContext();
+            await StoreInternal(checkpoint, true, cancellationToken).NoContext();
             return checkpoint;
         }
 
@@ -83,7 +85,7 @@ public class MongoCheckpointStore : ICheckpointStore {
         return checkpoint;
     }
 
-    async Task StoreInternal(Checkpoint checkpoint, CancellationToken cancellationToken) {
+    async Task StoreInternal(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
         await Checkpoints.ReplaceOneAsync(
                 x => x.Id == checkpoint.Id,
                 checkpoint,
@@ -92,7 +94,7 @@ public class MongoCheckpointStore : ICheckpointStore {
             )
             .NoContext();
 
-        Log.CheckpointStored(this, checkpoint);
+        Logger.Current.CheckpointStored(this, checkpoint, force);
     }
 }
 
