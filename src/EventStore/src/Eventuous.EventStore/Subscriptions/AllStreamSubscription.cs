@@ -85,7 +85,7 @@ public class AllStreamSubscription
 
         Subscription = await EventStoreClient.SubscribeToAllAsync(
                 fromAll,
-                HandleEvent,
+                (subscription, @event, ct) => HandleEvent(subscription, @event, ct),
                 Options.ResolveLinkTos,
                 HandleDrop,
                 filterOptions,

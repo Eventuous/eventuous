@@ -29,7 +29,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     protected CancellationTokenSource Stopping { get; } = new();
 
-    protected EventSubscription(T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory = null) {
+    protected EventSubscription(T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory) {
         Ensure.NotEmptyString(options.SubscriptionId);
 
         LoggerFactory   = loggerFactory;
@@ -208,13 +208,13 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                     ? TimeSpan.FromSeconds(10)
                     : TimeSpan.FromSeconds(2);
 
-                EventuousEventSource.Log.Warn($"Will resubscribe after {delay}");
+                Log.WarnLog?.Log($"Will resubscribe after {delay}");
 
                 try {
                     await Resubscribe(delay, Stopping.Token);
                 }
                 catch (Exception e) {
-                    EventuousEventSource.Log.Warn(e.Message);
+                    Log.WarnLog?.Log(e.Message);
                     throw;
                 }
             }

@@ -45,7 +45,8 @@ public class SubscriptionSpec : IAsyncLifetime, IDisposable {
                 Exchange         = _exchange,
                 ThrowOnError     = true
             },
-            new ConsumePipe().AddDefaultConsumer(_handler)
+            new ConsumePipe().AddDefaultConsumer(_handler),
+            loggerFactory
         );
     }
 

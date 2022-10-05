@@ -46,7 +46,7 @@ public abstract class EventHandler : BaseEventHandler {
             }
 
             ValueTask<EventHandlingStatus> NoHandler() {
-                Logger.Current.MessageHandlerNotFound(DiagnosticName, context.MessageType);
+                context.LogContext.MessageHandlerNotFound(DiagnosticName, context.MessageType);
                 return Ignored;
             }
         }

@@ -77,7 +77,7 @@ public class StreamSubscription
         Subscription = await EventStoreClient.SubscribeToStreamAsync(
                 Options.StreamName,
                 fromStream,
-                HandleEvent,
+                (subscription, @event, ct) => HandleEvent(subscription, @event, ct),
                 Options.ResolveLinkTos,
                 HandleDrop,
                 Options.Credentials,

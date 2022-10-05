@@ -121,11 +121,6 @@ public class EventuousEventSource : EventSource {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) WriteEvent(TypeMapRegisteredId, type, typeName);
     }
 
-    [Event(InfoId, Message = "{0} {1} {2}", Level = EventLevel.Informational)]
-    public void Info(string message, string? arg1 = null, string? arg2 = null) {
-        if (IsEnabled(EventLevel.Informational, EventKeywords.All)) WriteEvent(InfoId, message, arg1, arg2);
-    }
-
     [Event(WarnId, Message = "{0} {1} {2}", Level = EventLevel.Warning)]
     public void Warn(string message, string? arg1 = null, string? arg2 = null) {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All)) WriteEvent(WarnId, message, arg1, arg2);

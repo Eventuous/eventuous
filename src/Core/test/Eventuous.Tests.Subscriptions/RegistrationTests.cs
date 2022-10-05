@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Eventuous.Tests.Subscriptions;
 
@@ -65,7 +66,8 @@ public class RegistrationTests {
     [Fact]
     public void ShouldRegisterBothAsHostedServices() {
         var services = _provider.GetServices<IHostedService>()
-            .Where(x => x is SubscriptionHostedService).ToArray();
+            .Where(x => x is SubscriptionHostedService)
+            .ToArray();
 
         var subs   = _provider.GetServices<TestSub>().ToArray();
         var health = _provider.GetRequiredService<ISubscriptionHealth>();
@@ -73,20 +75,24 @@ public class RegistrationTests {
         services.Length.Should().Be(2);
 
         // Should have one sub each
-        services[0].GetPrivateMember<IMessageSubscription>("_subscription")
+        services[0]
+            .GetPrivateMember<IMessageSubscription>("_subscription")
             .Should()
             .BeSameAs(subs[0]);
 
-        services[1].GetPrivateMember<IMessageSubscription>("_subscription")
+        services[1]
+            .GetPrivateMember<IMessageSubscription>("_subscription")
             .Should()
             .BeSameAs(subs[1]);
 
         // Should have the same health check
-        services[0].GetPrivateMember<ISubscriptionHealth>("_subscriptionHealth")
+        services[0]
+            .GetPrivateMember<ISubscriptionHealth>("_subscriptionHealth")
             .Should()
             .BeSameAs(health);
 
-        services[1].GetPrivateMember<ISubscriptionHealth>("_subscriptionHealth")
+        services[1]
+            .GetPrivateMember<ISubscriptionHealth>("_subscriptionHealth")
             .Should()
             .BeSameAs(health);
     }
@@ -125,16 +131,21 @@ public class RegistrationTests {
     }
 
     class TestSub : EventSubscription<TestOptions>, IMeasuredSubscription {
-        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(options, consumePipe) { }
+        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(
+            options,
+            consumePipe,
+            NullLoggerFactory.Instance
+        ) { }
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
 
-        public GetSubscriptionGap GetMeasure() => _
-            => new ValueTask<SubscriptionGap>(
-                new SubscriptionGap(SubscriptionId, 0, TimeSpan.Zero)
-            );
+        public GetSubscriptionGap GetMeasure()
+            => _
+                => new ValueTask<SubscriptionGap>(
+                    new SubscriptionGap(SubscriptionId, 0, TimeSpan.Zero)
+                );
     }
 
     class Handler1 : BaseEventHandler {

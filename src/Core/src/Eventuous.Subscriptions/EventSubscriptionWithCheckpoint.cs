@@ -62,9 +62,8 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         );
     }
 
-    ValueTask Nack(IMessageConsumeContext context, Exception exception) {
-        return Options.ThrowOnError ? throw exception : Ack(context);
-    }
+    ValueTask Nack(IMessageConsumeContext context, Exception exception)
+        => Options.ThrowOnError ? throw exception : Ack(context);
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
         if (IsRunning && LastProcessed != null) {
@@ -84,6 +83,8 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
 
     protected async Task StoreCheckpoint(EventPosition eventPosition, CancellationToken cancellationToken) {
         LastProcessed = eventPosition;
+
+        Logger.Current = Log;
 
         await CheckpointStore.StoreCheckpoint(
             new Checkpoint(SubscriptionId, eventPosition.Position),

@@ -8,7 +8,6 @@ using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
 using Google.Protobuf.Collections;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
 namespace Eventuous.GooglePubSub.Subscriptions;
@@ -44,6 +43,7 @@ public class GooglePubSubSubscription
         string            topicId,
         string            subscriptionId,
         ConsumePipe       consumePipe,
+        ILoggerFactory?   loggerFactory,
         IEventSerializer? eventSerializer = null
     ) : this(
         new PubSubSubscriptionOptions {
@@ -52,7 +52,8 @@ public class GooglePubSubSubscription
             TopicId         = topicId,
             EventSerializer = eventSerializer
         },
-        consumePipe
+        consumePipe,
+        loggerFactory
     ) { }
 
     /// <summary>
@@ -60,8 +61,12 @@ public class GooglePubSubSubscription
     /// </summary>
     /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
     /// <param name="consumePipe"></param>
-    public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe)
-        : base(options, consumePipe) {
+    public GooglePubSubSubscription(
+        PubSubSubscriptionOptions options,
+        ConsumePipe               consumePipe,
+        ILoggerFactory?           loggerFactory
+    )
+        : base(options, consumePipe, loggerFactory) {
         _failureHandler = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
 
         _subscriptionName = SubscriptionName.FromProjectSubscription(
@@ -71,8 +76,7 @@ public class GooglePubSubSubscription
 
         _topicName = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
 
-        if (options.FailureHandler != null && !options.ThrowOnError)
-            Log.ThrowOnErrorIncompatible();
+        if (options.FailureHandler != null && !options.ThrowOnError) Log.ThrowOnErrorIncompatible();
     }
 
     Task _subscriberTask = null!;
@@ -100,6 +104,8 @@ public class GooglePubSubSubscription
         async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
             var eventType   = msg.Attributes[Options.Attributes.EventType];
             var contentType = msg.Attributes[Options.Attributes.ContentType];
+
+            Logger.Current = Log;
 
             var evt = DeserializeData(
                 contentType,
@@ -148,16 +154,18 @@ public class GooglePubSubSubscription
         CancellationToken     cancellationToken
     ) {
         var emulator = Options.ClientCreationSettings.DetectEmulator();
+        Logger.Current = Log;
 
         await PubSub.CreateTopic(topicName, emulator, cancellationToken).NoContext();
 
         await PubSub.CreateSubscription(
-            subscriptionName,
-            topicName,
-            configureSubscription,
-            emulator,
-            cancellationToken
-        ).NoContext();
+                subscriptionName,
+                topicName,
+                configureSubscription,
+                emulator,
+                cancellationToken
+            )
+            .NoContext();
     }
 
     static ValueTask<Reply> DefaultEventProcessingErrorHandler(

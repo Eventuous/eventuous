@@ -35,7 +35,8 @@ public class PubSubTests : IAsyncLifetime {
             PubSubFixture.ProjectId,
             _pubsubTopic,
             _pubsubSubscription,
-            new ConsumePipe().AddDefaultConsumer(_handler)
+            new ConsumePipe().AddDefaultConsumer(_handler),
+            loggerFactory
         );
     }
 

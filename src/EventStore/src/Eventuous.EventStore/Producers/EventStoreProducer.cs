@@ -61,7 +61,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
                 await _client.AppendToStreamAsync(
                         stream,
                         options.ExpectedState,
-                        chunkMessages.Select(CreateMessage),
+                        chunkMessages.Select(message => CreateMessage(message)),
                         null,
                         options.Deadline,
                         options.Credentials,

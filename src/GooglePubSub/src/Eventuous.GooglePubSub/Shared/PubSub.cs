@@ -1,6 +1,6 @@
+using Eventuous.Subscriptions.Logging;
 using Google.Api.Gax;
 using Grpc.Core;
-using static Eventuous.Diagnostics.EventuousEventSource;
 
 namespace Eventuous.GooglePubSub.Shared;
 
@@ -17,22 +17,23 @@ public static class PubSub {
         CancellationToken cancellationToken
     ) {
         var topicString = topicName.ToString();
+        var log         = Logger.Current.InfoLog;
 
         var publisherServiceApiClient =
             await new PublisherServiceApiClientBuilder { EmulatorDetection = emulatorDetection }
                 .BuildAsync(cancellationToken)
                 .NoContext();
 
-        Log.Info("Checking topic", topicString);
+        log?.Log("Checking topic", topicString);
 
         try {
             await publisherServiceApiClient.GetTopicAsync(topicName).NoContext();
-            Log.Info("Topic exists", topicString);
+            log?.Log("Topic exists", topicString);
         }
         catch (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
-            Log.Info("Topic doesn't exist", topicString);
+            log?.Log("Topic doesn't exist", topicString);
             await publisherServiceApiClient.CreateTopicAsync(topicName).NoContext();
-            Log.Info("Created topic", topicString);
+            log?.Log("Created topic", topicString);
         }
     }
 
@@ -44,6 +45,7 @@ public static class PubSub {
         CancellationToken     cancellationToken
     ) {
         var subName = subscriptionName.ToString();
+        var log     = Logger.Current.InfoLog;
 
         var subscriberServiceApiClient =
             await new SubscriberServiceApiClientBuilder {
@@ -52,15 +54,15 @@ public static class PubSub {
                 .BuildAsync(cancellationToken)
                 .NoContext();
 
-        Log.Info("Checking subscription for topic", subName, topicName.ToString());
+        log?.Log("Checking subscription for topic", subName, topicName.ToString());
 
         try {
             await subscriberServiceApiClient.GetSubscriptionAsync(subscriptionName);
-            Log.Info("Subscription exists", subName);
+            log?.Log("Subscription exists", subName);
         }
         catch
             (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
-            Log.Info("Subscription doesn't exist", subName);
+            log?.Log("Subscription doesn't exist", subName);
 
             var subscriptionRequest = new Subscription { AckDeadlineSeconds = 60 };
 
@@ -73,7 +75,7 @@ public static class PubSub {
                 )
                 .NoContext();
 
-            Log.Info("Created subscription", subName);
+            log?.Log("Created subscription", subName);
         }
     }
 }

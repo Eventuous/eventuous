@@ -3,13 +3,19 @@
 
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Filters;
+using Microsoft.Extensions.Logging;
 
-namespace Eventuous.Kafka.Subscriptions; 
+namespace Eventuous.Kafka.Subscriptions;
 
 public class KafkaBasicSubscription : EventSubscription<KafkaSubscriptionOptions> {
-    public KafkaBasicSubscription(KafkaSubscriptionOptions options, ConsumePipe consumePipe) : base(options, consumePipe) { }
+    public KafkaBasicSubscription(
+        KafkaSubscriptionOptions options,
+        ConsumePipe              consumePipe,
+        ILoggerFactory?          loggerFactory
+    ) : base(options, consumePipe, loggerFactory) { }
 
     protected override ValueTask Subscribe(CancellationToken cancellationToken) => throw new NotImplementedException();
 
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => throw new NotImplementedException();
+    protected override ValueTask Unsubscribe(CancellationToken cancellationToken)
+        => throw new NotImplementedException();
 }

@@ -57,11 +57,22 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
         var settings = Options.SubscriptionSettings ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
 
         try {
-            _subscription = await LocalSubscribe(HandleEvent, HandleDrop, cancellationToken).NoContext();
+            _subscription = await LocalSubscribe(
+                    (subscription, @event, retryCount, ct) => HandleEvent(subscription, @event, retryCount, ct),
+                    HandleDrop,
+                    cancellationToken
+                )
+                .NoContext();
         }
         catch (PersistentSubscriptionNotFoundException) {
             await CreatePersistentSubscription(settings, cancellationToken);
-            _subscription = await LocalSubscribe(HandleEvent, HandleDrop, cancellationToken).NoContext();
+
+            _subscription = await LocalSubscribe(
+                    (subscription, @event, retryCount, ct) => HandleEvent(subscription, @event, retryCount, ct),
+                    HandleDrop,
+                    cancellationToken
+                )
+                .NoContext();
         }
 
         void HandleDrop(
@@ -78,6 +89,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
             CancellationToken      ct
         ) {
             Logger.Configure(Options.SubscriptionId, LoggerFactory);
+
             var context = CreateContext(re, ct)
                 .WithItem(ResolvedEventKey, re)
                 .WithItem(SubscriptionKey, subscription);
