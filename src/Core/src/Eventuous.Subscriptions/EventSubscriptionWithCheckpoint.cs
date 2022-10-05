@@ -18,8 +18,14 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         int              concurrencyLimit,
         ILoggerFactory?  loggerFactory
     ) : base(options, ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) {
-        CheckpointStore         = Ensure.NotNull(checkpointStore);
-        CheckpointCommitHandler = new CheckpointCommitHandler(options.SubscriptionId, checkpointStore, 10);
+        CheckpointStore = Ensure.NotNull(checkpointStore);
+
+        CheckpointCommitHandler = new CheckpointCommitHandler(
+            options.SubscriptionId,
+            checkpointStore,
+            10,
+            loggerFactory
+        );
     }
 
     // It's not ideal, but for now if there's any filter added on top of the default one,
@@ -51,18 +57,21 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         LastProcessed = eventPosition;
 
         return CheckpointCommitHandler.Commit(
-            new CommitPosition(eventPosition.Position!.Value, context.Sequence),
+            new CommitPosition(eventPosition.Position!.Value, context.Sequence) { LogContext = context.LogContext },
             context.CancellationToken
         );
     }
 
-    ValueTask Nack(IMessageConsumeContext context, Exception exception)
-        => Options.ThrowOnError ? throw exception : Ack(context);
+    ValueTask Nack(IMessageConsumeContext context, Exception exception) {
+        return Options.ThrowOnError ? throw exception : Ack(context);
+    }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
         if (IsRunning && LastProcessed != null) {
             return new Checkpoint(Options.SubscriptionId, LastProcessed.Position);
         }
+
+        Logger.Current = Log;
 
         var checkpoint = await CheckpointStore
             .GetLastCheckpoint(Options.SubscriptionId, cancellationToken)

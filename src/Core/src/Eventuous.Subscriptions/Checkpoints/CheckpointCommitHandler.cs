@@ -33,8 +33,8 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     public CheckpointCommitHandler(
         string           subscriptionId,
         ICheckpointStore checkpointStore,
-        int              batchSize     = 1,
-        ILoggerFactory?  loggerFactory = null
+        int              batchSize,
+        ILoggerFactory?  loggerFactory
     )
         : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize, loggerFactory) { }
 
@@ -63,8 +63,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
-            Logger.Configure(_subscriptionId, _loggerFactory);
-            Logger.Current.PositionReceived(position);
+            position.LogContext.PositionReceived(position);
             _subject.OnNext(position);
             return default;
         }
@@ -109,7 +108,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
     async Task CommitInternal(CommitPosition position, CancellationToken cancellationToken) {
         try {
-            Logger.Current.CommittingPosition(position);
+            position.LogContext.CommittingPosition(position);
 
             await _commitCheckpoint(
                     new Checkpoint(_subscriptionId, position.Position),
@@ -124,7 +123,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
         }
         catch (Exception e) {
-            Logger.Current.UnableToCommitPosition(position, e);
+            position.LogContext.UnableToCommitPosition(position, e);
         }
     }
 
@@ -147,6 +146,8 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
 public record struct CommitPosition(ulong Position, ulong Sequence) {
     public bool Valid { get; private init; } = true;
+    
+    public LogContext LogContext { get; init; }
 
     public static readonly CommitPosition None = new(0, 0) { Valid = false };
 }
