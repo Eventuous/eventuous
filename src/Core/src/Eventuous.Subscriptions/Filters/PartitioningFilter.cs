@@ -1,3 +1,6 @@
+// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters.Partitioning;
 using static Eventuous.Subscriptions.Filters.Partitioning.Partitioner;
@@ -27,7 +30,7 @@ public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>
             .ToArray();
     }
 
-    public override ValueTask Send(DelayedAckConsumeContext context, Func<DelayedAckConsumeContext, ValueTask>? next) {
+    protected override ValueTask Send(DelayedAckConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         var partitionKey = _partitioner(context);
         var hash         = _getHash(partitionKey);
         var partition    = hash % _partitionCount;

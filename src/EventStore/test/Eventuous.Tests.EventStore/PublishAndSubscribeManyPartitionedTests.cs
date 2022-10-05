@@ -11,7 +11,7 @@ public class PublishAndSubscribeManyPartitionedTests : SubscriptionFixture<TestE
             output,
             new TestEventHandler(TimeSpan.FromMilliseconds(5)),
             false,
-            pipe => pipe.AddFilterLast(new PartitioningFilter(10, x => (x.Message as TestEvent)!.Data))
+            logLevel: LogLevel.Trace
         ) { }
 
     [Fact]

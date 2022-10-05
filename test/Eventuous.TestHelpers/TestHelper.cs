@@ -6,8 +6,8 @@ namespace Eventuous.TestHelpers;
 
 public static class TestHelper {
     public static IEventHandler[]? GetHandlers(this ConsumePipe pipe) {
-        var filters       = pipe.GetPrivateMember<LinkedList<Filter>>("_filters");
-        var consumeFilter = filters!.Last().FilterInstance;
+        var filters       = pipe.RegisteredFilters;
+        var consumeFilter = filters.Last();
         var consumer      = consumeFilter.GetPrivateMember("_consumer")!;
         var handlers      = consumer.GetPrivateMember<IEventHandler[]>("_eventHandlers");
         return handlers;
@@ -21,9 +21,10 @@ public static class TestHelper {
         => GetMember<TMember>(instance.GetType(), instance, name);
 
     static TMember? GetMember<TMember>(Type instanceType, object instance, string name)
-        where TMember : class => GetMember(instanceType, instance, name) as TMember;
+        where TMember : class
+        => GetMember(instanceType, instance, name) as TMember;
 
-    static object? GetMember(Type instanceType, object instance, string name){
+    static object? GetMember(Type instanceType, object instance, string name) {
         const BindingFlags flags = BindingFlags.Instance
                                  | BindingFlags.Public
                                  | BindingFlags.NonPublic

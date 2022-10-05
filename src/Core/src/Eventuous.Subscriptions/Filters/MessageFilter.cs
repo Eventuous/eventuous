@@ -8,16 +8,16 @@ namespace Eventuous.Subscriptions.Filters;
 
 public delegate bool FilterMessage(IMessageConsumeContext receivedEvent);
 
-public class MessageFilter : ConsumeFilter {
+public class MessageFilter : ConsumeFilter<IMessageConsumeContext> {
     readonly FilterMessage _filter;
 
     public MessageFilter(FilterMessage filter) => _filter = Ensure.NotNull(filter);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override ValueTask Send(IMessageConsumeContext context, Func<IMessageConsumeContext, ValueTask>? next) {
-        if (next == null) return default;
+    protected override ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
+        if (next?.Value == null) return default;
 
-        if (_filter(context)) return next(context);
+        if (_filter(context)) return next.Value.Send(context, next.Next);
 
         context.Ignore<MessageFilter>();
         return default;

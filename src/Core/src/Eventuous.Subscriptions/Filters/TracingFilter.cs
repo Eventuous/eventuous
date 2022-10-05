@@ -6,12 +6,11 @@ using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Tracing;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Subscriptions.Tools;
 using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 
 namespace Eventuous.Subscriptions.Filters;
 
-public class TracingFilter : ConsumeFilter {
+public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
     readonly KeyValuePair<string, object?>[] _defaultTags;
 
     public TracingFilter(string consumerName) {
@@ -20,9 +19,9 @@ public class TracingFilter : ConsumeFilter {
         _defaultTags = tags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
-    public override async ValueTask Send(
-        IMessageConsumeContext                   context,
-        Func<IMessageConsumeContext, ValueTask>? next
+    protected override async ValueTask Send(
+        IMessageConsumeContext          context,
+        LinkedListNode<IConsumeFilter>? next
     ) {
         if (context.Message == null || next == null) return;
 
@@ -40,7 +39,7 @@ public class TracingFilter : ConsumeFilter {
         }
 
         try {
-            await next(context).NoContext();
+            await next.Value.Send(context, next.Next).NoContext();
 
             if (activity != null) {
                 if (context.WasIgnored()) {
