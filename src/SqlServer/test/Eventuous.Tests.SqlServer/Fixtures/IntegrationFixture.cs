@@ -3,6 +3,7 @@ using System.Text.Json;
 using Bogus;
 using Eventuous.Diagnostics;
 using Eventuous.SqlServer;
+using MicroElements.AutoFixture.NodaTime;
 using Microsoft.Data.SqlClient;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
@@ -13,12 +14,11 @@ namespace Eventuous.Tests.SqlServer.Fixtures;
 public sealed class IntegrationFixture : IAsyncDisposable {
     public IEventStore           EventStore     { get; }
     public IAggregateStore       AggregateStore { get; }
-    public Fixture               Auto           { get; } = new();
+    public IFixture               Auto           { get; } = new Fixture().Customize(new NodaTimeCustomization());
     public GetSqlServerConnection GetConnection  { get; }
     public Faker                 Faker          { get; } = new();
 
-    public string SchemaName => $"{Faker.Hacker.Adjective()}_{Faker.Hacker.Noun()}"
-        .Replace("-", "").Replace(" ", "");
+    public string SchemaName => Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
 

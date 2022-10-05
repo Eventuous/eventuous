@@ -79,6 +79,7 @@ services:
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "secret"
+      POSTGRES_DB: "eventuous"
     ports:
       - "5432:5432"
   

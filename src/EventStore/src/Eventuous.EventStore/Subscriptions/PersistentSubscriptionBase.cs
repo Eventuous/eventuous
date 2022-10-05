@@ -77,6 +77,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
             int?                   retryCount,
             CancellationToken      ct
         ) {
+            Logger.Configure(Options.SubscriptionId, LoggerFactory);
             var context = CreateContext(re, ct)
                 .WithItem(ResolvedEventKey, re)
                 .WithItem(SubscriptionKey, subscription);

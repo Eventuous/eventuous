@@ -6,6 +6,7 @@
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
     </ItemGroup>
     <ItemGroup>

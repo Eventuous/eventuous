@@ -4,6 +4,7 @@ using EventStore.Client;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Tracing;
 using Eventuous.EventStore;
+using MicroElements.AutoFixture.NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
@@ -12,7 +13,7 @@ public sealed class IntegrationFixture : IAsyncDisposable {
     public IEventStore      EventStore     { get; }
     public IAggregateStore  AggregateStore { get; }
     public EventStoreClient Client         { get; }
-    public Fixture          Auto           { get; } = new();
+    public IFixture          Auto           { get; } = new Fixture().Customize(new NodaTimeCustomization());
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
 

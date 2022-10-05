@@ -3,6 +3,7 @@ using System.Text.Json;
 using Bogus;
 using Eventuous.Diagnostics;
 using Eventuous.Postgresql;
+using MicroElements.AutoFixture.NodaTime;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Npgsql;
@@ -12,7 +13,7 @@ namespace Eventuous.Tests.Postgres.Fixtures;
 public sealed class IntegrationFixture : IAsyncDisposable {
     public IEventStore           EventStore     { get; }
     public IAggregateStore       AggregateStore { get; }
-    public Fixture               Auto           { get; } = new();
+    public IFixture              Auto           { get; } = new Fixture().Customize(new NodaTimeCustomization());
     public GetPostgresConnection GetConnection  { get; }
     public Faker                 Faker          { get; } = new();
 

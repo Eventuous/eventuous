@@ -1,21 +1,27 @@
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Logging;
 using Eventuous.TestHelpers;
 
 namespace Eventuous.Tests.Subscriptions;
 
 public class DefaultConsumerTests : IDisposable {
-    static readonly Fixture           Fixture = new();
-    readonly        TestEventListener _listener;
+    readonly ITestOutputHelper _output;
+    readonly TestEventListener _listener;
 
-    public DefaultConsumerTests(ITestOutputHelper output) => _listener = new TestEventListener(output);
+    static readonly Fixture Auto = new();
+
+    public DefaultConsumerTests(ITestOutputHelper output) {
+        _output   = output;
+        _listener = new TestEventListener(output);
+    }
 
     [Fact]
     public async Task ShouldFailWhenHandlerNacks() {
         var handler  = new FailingHandler();
         var consumer = new DefaultConsumer(new IEventHandler[] { handler });
-        var ctx      = Fixture.Create<MessageConsumeContext>();
+        var ctx      = Auto.CreateContext(_output);
 
         await consumer.Consume(ctx);
 

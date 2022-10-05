@@ -1,11 +1,15 @@
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 
-namespace Eventuous.Tests.Subscriptions; 
+namespace Eventuous.Tests.Subscriptions;
 
 public class HandlingStatusTests {
-    Fixture Fixture { get; } = new();
-    
+    readonly ITestOutputHelper _output;
+
+    static Fixture Auto { get; } = new();
+
+    public HandlingStatusTests(ITestOutputHelper output) => _output = output;
+
     [Fact]
     public void AckAndNackShouldNack() {
         const EventHandlingStatus actual = EventHandlingStatus.Success | EventHandlingStatus.Failure;
@@ -17,7 +21,7 @@ public class HandlingStatusTests {
         const EventHandlingStatus actual = EventHandlingStatus.Success | EventHandlingStatus.Ignored;
         (actual & EventHandlingStatus.Handled).Should().Be(EventHandlingStatus.Success);
     }
-    
+
     [Fact]
     public void NackAndIgnoreShouldNack() {
         const EventHandlingStatus actual = EventHandlingStatus.Failure | EventHandlingStatus.Ignored;
@@ -39,7 +43,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void NackAndIgnoreShouldFail() {
-        var context = Fixture.Create<MessageConsumeContext>();
+        var context = Auto.CreateContext(_output);
         context.Nack<object>(new Exception());
         context.Ignore("test");
         context.HasFailed().Should().BeTrue();
@@ -49,7 +53,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void NackAckAndIgnoreShouldFail() {
-        var context = Fixture.Create<MessageConsumeContext>();
+        var context = Auto.CreateContext(_output);
         context.Nack<object>(new Exception());
         context.Ack<int>();
         context.Ignore<long>();
@@ -60,7 +64,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void AckAndIgnoreShouldSucceed() {
-        var context = Fixture.Create<MessageConsumeContext>();
+        var context = Auto.CreateContext(_output);
         context.Ack<object>();
         context.Ignore<int>();
         context.HasFailed().Should().BeFalse();
@@ -70,7 +74,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void IgnoreAndIgnoreShouldIgnore() {
-        var context = Fixture.Create<MessageConsumeContext>();
+        var context = Auto.CreateContext(_output);
         context.Ignore<object>();
         context.Ignore<int>();
         context.WasIgnored().Should().BeTrue();
@@ -79,7 +83,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void PendingShouldBePending() {
-        var context = Fixture.Create<MessageConsumeContext>();
+        var context = Auto.CreateContext(_output);
         context.WasIgnored().Should().BeFalse();
         context.HasFailed().Should().BeFalse();
         context.HandlingResults.IsPending().Should().BeTrue();
