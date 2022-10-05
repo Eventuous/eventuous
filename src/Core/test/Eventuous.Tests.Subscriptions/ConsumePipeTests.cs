@@ -39,7 +39,7 @@ public class ConsumePipeTests {
         handler.Received!.Items.GetItem<string>(Key).Should().Be(baggage);
     }
 
-    class TestFilter : ConsumeFilter {
+    class TestFilter : ConsumeFilter<IMessageConsumeContext> {
         readonly string _key;
         readonly string _payload;
 
@@ -48,9 +48,9 @@ public class ConsumePipeTests {
             _payload = payload;
         }
 
-        public override ValueTask Send(IMessageConsumeContext context, Func<IMessageConsumeContext, ValueTask>? next) {
+        protected override ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
             context.Items.AddItem(_key, _payload);
-            return next?.Invoke(context) ?? default;
+            return next?.Value.Send(context, next.Next) ?? default;
         }
     }
 

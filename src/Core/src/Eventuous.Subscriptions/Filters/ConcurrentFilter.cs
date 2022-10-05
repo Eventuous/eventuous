@@ -3,8 +3,6 @@ using System.Threading.Channels;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Channels;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Subscriptions.Tools;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Filters;
@@ -35,7 +33,7 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
         ctx.CancellationToken = cts.Token;
 
         try {
-            await workerTask.Next(ctx).NoContext();
+            await workerTask.Next.Value.Send(ctx, workerTask.Next).NoContext();
 
             if (ctx.HasFailed()) {
                 var exception = ctx.HandlingResults.GetException();
@@ -61,13 +59,13 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
         if (activity != null && ctx.WasIgnored()) activity.ActivityTraceFlags = ActivityTraceFlags.None;
     }
 
-    public override ValueTask Send(DelayedAckConsumeContext context, Func<DelayedAckConsumeContext, ValueTask>? next) {
+    protected override ValueTask Send(DelayedAckConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         if (next == null) throw new InvalidOperationException("Concurrent context must have a next filer");
 
         return _worker.Write(new WorkerTask(context, next), context.CancellationToken);
     }
 
-    record WorkerTask(DelayedAckConsumeContext Context, Func<DelayedAckConsumeContext, ValueTask> Next);
+    record struct WorkerTask(DelayedAckConsumeContext Context, LinkedListNode<IConsumeFilter> Next);
 
     public ValueTask DisposeAsync() {
         Log.Stopping(nameof(ConcurrentFilter), "worker", "");

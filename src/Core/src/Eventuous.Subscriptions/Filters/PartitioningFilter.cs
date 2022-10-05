@@ -25,7 +25,7 @@ public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>
         _filters        = Enumerable.Range(0, _partitionCount).Select(_ => new ConcurrentFilter(1)).ToArray();
     }
 
-    public override ValueTask Send(DelayedAckConsumeContext context, Func<DelayedAckConsumeContext, ValueTask>? next) {
+    protected override ValueTask Send(DelayedAckConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         var partitionKey = _partitioner(context);
         var hash         = _getHash(partitionKey);
         var partition    = hash % _partitionCount;
