@@ -22,7 +22,7 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
 
         _worker = new ConcurrentChannelWorker<WorkerTask>(
             Channel.CreateBounded<WorkerTask>(options),
-            DelayedConsume,
+            (task, token) => DelayedConsume(task, token),
             (int)concurrencyLimit
         );
     }
