@@ -28,7 +28,7 @@ public static class Logger {
         Current = CreateContext(subscriptionId, loggerFactory);
     }
 
-    public static LogContext CreateContext(string subscriptionId, ILoggerFactory? loggerFactory = null)
+    public static LogContext CreateContext(string subscriptionId, ILoggerFactory? loggerFactory)
         => new(subscriptionId, loggerFactory ?? NullLoggerFactory.Instance);
 }
 

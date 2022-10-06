@@ -18,7 +18,7 @@ public class DefaultConsumer : IMessageConsumer {
                 return;
             }
 
-            var tasks = _eventHandlers.Select(Handle);
+            var tasks = _eventHandlers.Select(handler => Handle(handler));
             await tasks.WhenAll().NoContext();
         }
         catch (Exception e) {

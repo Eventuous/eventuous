@@ -18,7 +18,7 @@ public delegate ValueTask Fail(IMessageConsumeContext ctx, Exception exception);
 /// <summary>
 /// Context type that allows to decouple subscriptions from the actual message processing
 /// </summary>
-public class DelayedAckConsumeContext : WrappedConsumeContext {
+public class AsyncConsumeContext : WrappedConsumeContext {
     readonly Acknowledge _acknowledge;
     readonly Fail        _fail;
 
@@ -28,7 +28,7 @@ public class DelayedAckConsumeContext : WrappedConsumeContext {
     /// <param name="inner">The original message context</param>
     /// <param name="acknowledge">Function to ACK the message</param>
     /// <param name="fail">Function to NACK the message in case of failure</param>
-    public DelayedAckConsumeContext(IMessageConsumeContext inner, Acknowledge acknowledge, Fail fail) : base(inner) {
+    public AsyncConsumeContext(IMessageConsumeContext inner, Acknowledge acknowledge, Fail fail) : base(inner) {
         inner.LogContext ??= Logger.Current;
         _acknowledge     =   acknowledge;
         _fail            =   fail;

@@ -6,8 +6,8 @@ using Eventuous.Postgresql.Extensions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
@@ -98,6 +98,7 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
     protected abstract long MoveStart(PersistedEvent evt);
 
     IMessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
+        Logger.Current = Log;
         var data = DeserializeData(
             ContentType,
             evt.MessageType,

@@ -7,10 +7,10 @@ using static Eventuous.Subscriptions.Filters.Partitioning.Partitioner;
 
 namespace Eventuous.Subscriptions.Filters;
 
-public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
+public sealed class PartitioningFilter : ConsumeFilter<AsyncConsumeContext>, IAsyncDisposable {
     readonly GetPartitionHash   _getHash;
     readonly GetPartitionKey    _partitioner;
-    readonly ConcurrentFilter[] _filters;
+    readonly AsyncHandlingFilter[] _filters;
     readonly int                _partitionCount;
 
     public PartitioningFilter(
@@ -26,11 +26,11 @@ public sealed class PartitioningFilter : ConsumeFilter<DelayedAckConsumeContext>
         _partitioner    = partitioner ?? (ctx => ctx.Stream);
 
         _filters = Enumerable.Range(0, _partitionCount)
-            .Select(_ => new ConcurrentFilter(1))
+            .Select(_ => new AsyncHandlingFilter(1))
             .ToArray();
     }
 
-    protected override ValueTask Send(DelayedAckConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
+    protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         var partitionKey = _partitioner(context);
         var hash         = _getHash(partitionKey);
         var partition    = hash % _partitionCount;

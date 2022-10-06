@@ -6,7 +6,6 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.EventStore.Subscriptions;
 
