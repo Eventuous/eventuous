@@ -10,10 +10,10 @@ using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions.Filters;
 
-public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, IAsyncDisposable {
+public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IAsyncDisposable {
     readonly ConcurrentChannelWorker<WorkerTask> _worker;
 
-    public ConcurrentFilter(uint concurrencyLimit, uint bufferSize = 10) {
+    public AsyncHandlingFilter(uint concurrencyLimit, uint bufferSize = 10) {
         var capacity = (int)(concurrencyLimit * bufferSize);
 
         var options = new BoundedChannelOptions(capacity) {
@@ -37,7 +37,7 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
         Logger.Current        = ctx.LogContext;
 
         try {
-            await workerTask.Next.Value.Send(ctx, workerTask.Next).NoContext();
+            await workerTask.Filter.Value.Send(ctx, workerTask.Filter.Next).NoContext();
 
             if (ctx.HasFailed()) {
                 var exception = ctx.HandlingResults.GetException();
@@ -52,10 +52,10 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
             if (!ctx.HandlingResults.IsPending()) await ctx.Acknowledge().NoContext();
         }
         catch (TaskCanceledException) {
-            ctx.Ignore<ConcurrentFilter>();
+            ctx.Ignore<AsyncHandlingFilter>();
         }
         catch (Exception e) {
-            ctx.LogContext.MessageHandlingFailed(nameof(ConcurrentFilter), workerTask.Context, e);
+            ctx.LogContext.MessageHandlingFailed(nameof(AsyncHandlingFilter), workerTask.Context, e);
             activity?.SetActivityStatus(ActivityStatus.Error(e));
             await ctx.Fail(e).NoContext();
         }
@@ -63,13 +63,13 @@ public sealed class ConcurrentFilter : ConsumeFilter<DelayedAckConsumeContext>, 
         if (activity != null && ctx.WasIgnored()) activity.ActivityTraceFlags = ActivityTraceFlags.None;
     }
 
-    protected override ValueTask Send(DelayedAckConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
+    protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         if (next == null) throw new InvalidOperationException("Concurrent context must have a next filer");
 
         return _worker.Write(new WorkerTask(context, next), context.CancellationToken);
     }
 
-    record struct WorkerTask(DelayedAckConsumeContext Context, LinkedListNode<IConsumeFilter> Next);
+    record struct WorkerTask(AsyncConsumeContext Context, LinkedListNode<IConsumeFilter> Filter);
 
     public ValueTask DisposeAsync() {
         // Logger.Configure(_subscriptionId, _loggerFactory);

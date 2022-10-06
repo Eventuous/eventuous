@@ -9,8 +9,7 @@ namespace Eventuous.Projections.MongoDB;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class UpdateOneBuilder : UpdateBuilder<UpdateOneBuilder>, IMongoProjectorBuilder {
-        public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId) 
-            => Id(x => getId(x.Stream));
+        public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId) => Id(x => getId(x.Stream));
 
         public UpdateOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
             _filter.Id(getId);
@@ -29,7 +28,9 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                     await collection
                         .UpdateOneAsync(
                             _filter.GetFilter(ctx),
-                            update.Set(x => x.Position, ctx.StreamPosition),
+                            update
+                                .Set(x => x.StreamPosition, ctx.StreamPosition)
+                                .Set(x => x.Position, ctx.GlobalPosition),
                             options,
                             token
                         );
@@ -46,11 +47,12 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                     var update = await GetUpdate(ctx, Builders<T>.Update).NoContext();
 
                     await collection.UpdateManyAsync(
-                        _filter.GetFilter(ctx),
-                        update.Set(x => x.Position, ctx.StreamPosition),
-                        options,
-                        token
-                    ).NoContext();
+                            _filter.GetFilter(ctx),
+                            update.Set(x => x.Position, ctx.StreamPosition),
+                            options,
+                            token
+                        )
+                        .NoContext();
                 }
             );
     }

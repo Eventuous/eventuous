@@ -29,7 +29,35 @@ public class PublishAndSubscribeManyPartitionedTests : SubscriptionFixture<TestE
 
         await Handler.Validate(5.Seconds());
         await Stop();
-        
+
         CheckpointStore.Last.Position.Should().Be(count - 1);
     }
+
+    [Fact]
+    public async Task SubscribeAndProduceManyWithIgnored() {
+        const int count = 10;
+
+        var testEvents = Generate().ToList();
+
+        Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+
+        TypeMap.AddType<UnknownEvent>("ignored");
+        await Producer.Produce(Stream, testEvents, new Metadata());
+
+        await Start();
+        TypeMap.RemoveType<UnknownEvent>();
+        await Handler.Validate(5.Seconds());
+        await Stop();
+
+        CheckpointStore.Last.Position.Should().Be((ulong)(testEvents.Count - 1));
+
+        IEnumerable<object> Generate() {
+            for (var i = 0; i < count; i++) {
+                yield return new TestEvent(Auto.Create<string>(), i);
+                yield return new UnknownEvent(Auto.Create<string>(), i);
+            }
+        }
+    }
+
+    record UnknownEvent(string Data, int Number);
 }

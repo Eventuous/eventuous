@@ -7,13 +7,33 @@ namespace Eventuous.Subscriptions.Logging;
 
 public static class LoggingExtensions {
     public static void MessageReceived(this LogContext log, IMessageConsumeContext context)
-        => log.DebugLog?.Log("Received {MessageType} from {Stream}", context.MessageType, context.Stream);
+        => log.TraceLog?.Log(
+            "Received {MessageType} from {Stream}:{Position} seq {Sequence}",
+            context.MessageType,
+            context.Stream,
+            context.GlobalPosition,
+            context.Sequence
+        );
 
     public static void MessageHandled(this LogContext log, string handlerType, IBaseConsumeContext context)
-        => log.DebugLog?.Log("{Handler} handled {MessageType}", handlerType, context.MessageType);
+        => log.DebugLog?.Log(
+            "{Handler} handled {MessageType} {Stream}:{Position} seq {Sequence}",
+            handlerType,
+            context.MessageType,
+            context.Stream,
+            context.GlobalPosition,
+            context.Sequence
+        );
 
     public static void MessageIgnored(this LogContext log, string handlerType, IBaseConsumeContext context)
-        => log.DebugLog?.Log("{Handler} ignored {MessageType}", handlerType, context.MessageType);
+        => log.DebugLog?.Log(
+            "{Handler} ignored {MessageType} {Stream}:{Position} seq {Sequence}",
+            handlerType,
+            context.MessageType,
+            context.Stream,
+            context.GlobalPosition,
+            context.Sequence
+        );
 
     public static void MessageTypeNotFound<T>(this LogContext log)
         => log.WarnLog?.Log("Message type {MessageType} not registered in the type map", typeof(T).Name);

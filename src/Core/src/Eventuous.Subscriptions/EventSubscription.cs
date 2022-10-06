@@ -36,7 +36,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         Pipe            = Ensure.NotNull(consumePipe);
         EventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
         Options         = options;
-        Log             = Logger.CreateContext(options.SubscriptionId);
+        Log             = Logger.CreateContext(options.SubscriptionId, loggerFactory);
     }
 
     OnSubscribed? _onSubscribed;
@@ -82,9 +82,9 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             )
             : null;
 
-        Logger.Current = Log;
-        var delayed = context is DelayedAckConsumeContext;
-        if (!delayed) activity?.Start();
+        Logger.Current ??= Log;
+        var isAsync = context is AsyncConsumeContext;
+        if (!isAsync) activity?.Start();
 
         Log.MessageReceived(context);
 
@@ -93,7 +93,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 if (activity != null) {
                     context.ParentContext = activity.Context;
 
-                    if (delayed) {
+                    if (isAsync) {
                         context.Items.AddItem(ContextItemKeys.Activity, activity);
                     }
                 }
@@ -102,6 +102,10 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             }
             else {
                 context.Ignore(SubscriptionId);
+                if (isAsync) {
+                    var asyncContext = context as AsyncConsumeContext;
+                    await asyncContext!.Acknowledge().NoContext();
+                }
             }
 
             if (context.WasIgnored() && activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.None;
@@ -127,7 +131,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             }
         }
 
-        if (!delayed) activity?.Dispose();
+        if (!isAsync) activity?.Dispose();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

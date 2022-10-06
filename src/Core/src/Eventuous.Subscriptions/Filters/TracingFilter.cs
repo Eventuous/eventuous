@@ -34,7 +34,7 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
             )
             : Activity.Current;
 
-        if (activity?.IsAllDataRequested == true && context is DelayedAckConsumeContext delayedAckContext) {
+        if (activity?.IsAllDataRequested == true && context is AsyncConsumeContext delayedAckContext) {
             activity.SetContextTags(context)?.SetTag(TelemetryTags.Eventuous.Partition, delayedAckContext.PartitionId);
         }
 

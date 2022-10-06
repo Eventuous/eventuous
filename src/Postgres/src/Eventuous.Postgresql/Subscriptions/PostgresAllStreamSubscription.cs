@@ -17,7 +17,7 @@ public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAl
         PostgresAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
         ConsumePipe                          consumePipe,
-        ILoggerFactory?                      loggerFactory = null
+        ILoggerFactory?                      loggerFactory
     ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
 
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start) {

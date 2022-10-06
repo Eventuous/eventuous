@@ -28,12 +28,14 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         );
     }
 
+    static bool PipelineIsAsync(ConsumePipe pipe) => pipe.RegisteredFilters.Any(x => x is AsyncHandlingFilter);
+
     // It's not ideal, but for now if there's any filter added on top of the default one,
     // we won't add the concurrent filter, so it won't clash with any custom setup
     static ConsumePipe ConfigurePipe(ConsumePipe pipe, int concurrencyLimit)
-        => pipe.RegisteredFilters.All(x => x is not ConcurrentFilter)
-            ? pipe.AddFilterFirst(new ConcurrentFilter((uint)concurrencyLimit))
-            : pipe;
+        => PipelineIsAsync(pipe)
+            ? pipe
+            : pipe.AddFilterFirst(new AsyncHandlingFilter((uint)concurrencyLimit));
 
     protected EventPosition?          LastProcessed           { get; set; }
     protected CheckpointCommitHandler CheckpointCommitHandler { get; }
@@ -42,8 +44,8 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
         try {
-            Logger.Configure(Options.SubscriptionId, LoggerFactory);
-            var ctx = new DelayedAckConsumeContext(context, Ack, Nack);
+            Logger.Current = Log;
+            var ctx = new AsyncConsumeContext(context, Ack, Nack);
             await Handler(ctx).NoContext();
         }
         catch (Exception e) {

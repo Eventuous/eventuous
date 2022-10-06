@@ -26,6 +26,8 @@ public static class TypeMap {
     public static void AddType<T>(string name) => Instance.AddType<T>(name);
 
     static void AddType(Type type, string name) => Instance.AddType(type, name);
+    
+    public static void RemoveType<T>() => Instance.RemoveType<T>();
 
     public static bool IsTypeRegistered<T>() => Instance.IsTypeRegistered<T>();
 
@@ -90,6 +92,12 @@ public class TypeMapper {
         _reverseMap[name] = type;
         _map[type]        = name;
         Log.TypeMapRegistered(type.Name, name);
+    }
+
+    public void RemoveType<T>() {
+        var name = GetTypeName<T>();
+        _reverseMap.Remove(name);
+        _map.Remove(typeof(T));
     }
 
     public bool IsTypeRegistered<T>() => _map.ContainsKey(typeof(T));

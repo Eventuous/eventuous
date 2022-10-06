@@ -52,7 +52,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     )
         : base(
             Ensure.NotNull(options),
-            consumePipe.AddFilterFirst(new ConcurrentFilter(options.ConcurrencyLimit * 10)),
+            consumePipe.AddFilterFirst(new AsyncHandlingFilter(options.ConcurrencyLimit * 10)),
             loggerFactory
         ) {
         _failureHandler = options.FailureHandler ?? DefaultEventFailureHandler;
@@ -135,7 +135,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         Logger.Current = Log;
         try {
             var ctx = CreateContext(sender, received).WithItem(ReceivedMessageKey, received);
-            await Handler(new DelayedAckConsumeContext(ctx, Ack, Nack)).NoContext();
+            await Handler(new AsyncConsumeContext(ctx, Ack, Nack)).NoContext();
         }
         catch (Exception) {
             // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
