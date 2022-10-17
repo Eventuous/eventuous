@@ -47,8 +47,6 @@ public class TypeMapper {
     readonly Dictionary<string, Type> _reverseMap = new();
     readonly Dictionary<Type, string> _map        = new();
 
-    public TypeMapper() => RegisterKnownEventTypes();
-
     public string GetTypeName<T>() {
         if (!_map.TryGetValue(typeof(T), out var name)) {
             Log.TypeNotMappedToName(typeof(T));
