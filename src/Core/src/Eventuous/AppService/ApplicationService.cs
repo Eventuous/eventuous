@@ -93,6 +93,21 @@ public abstract class ApplicationService<TAggregate, TState, TId>
         _handlers.AddHandler(ExpectedState.Existing, action);
         _idMap.AddCommand(getId);
     }
+    
+    /// <summary>
+    /// Register an asynchronous handler for a command, which is expected to use an existing aggregate instance.
+    /// </summary>
+    /// <param name="getId">Asynchronous function to get the aggregate id from the command</param>
+    /// <param name="action">Asynchronous action to be performed on the aggregate,
+    /// given the aggregate instance and the command</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    protected void OnExistingAsync<TCommand>(
+        GetIdFromCommandAsync<TId, TCommand>           getId,
+        ActOnAggregateAsync<TAggregate, TCommand> action
+    ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Existing, action);
+        _idMap.AddCommand(getId);
+    }
 
     /// <summary>
     /// Register a handler for a command, which is expected to use an a new or an existing aggregate instance.
