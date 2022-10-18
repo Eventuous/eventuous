@@ -170,20 +170,6 @@ public abstract class ApplicationService<TAggregate, TState, TId>
     }
 
     /// <summary>
-    /// Register an asynchronous handler for a command, which can figure out the aggregate instance by itself, and then return one.
-    /// </summary>
-    /// <param name="action">Function, which returns some aggregate instance to store</param>
-    /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAsync<TCommand>(ArbitraryActAsync<TCommand> action)
-        where TCommand : class
-        => _handlers.AddHandler<TCommand>(
-            new RegisteredHandler<TAggregate>(
-                ExpectedState.Unknown,
-                async (_, cmd, ct) => await action((TCommand)cmd, ct).NoContext()
-            )
-        );
-
-    /// <summary>
     /// The command handler. Call this function from your edge (API).
     /// </summary>
     /// <param name="command">Command to execute</param>
