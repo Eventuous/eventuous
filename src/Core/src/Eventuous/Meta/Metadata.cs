@@ -23,7 +23,7 @@ public class Metadata : Dictionary<string, object?> {
     public T? Get<T>(string key) => TryGetValue(key, out var value) && value is T v ? v : default;
 
     public Metadata AddNotNull(string key, string? value) {
-        if (!string.IsNullOrEmpty(value)) Add(key, value);
+        if (!string.IsNullOrEmpty(value)) this[key] = value;
         return this;
     }
 }
