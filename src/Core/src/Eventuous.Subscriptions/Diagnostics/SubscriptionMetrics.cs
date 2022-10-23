@@ -57,14 +57,6 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         var histogram  = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Processing duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>(ErrorCountName, "events", "Number of event processing failures");
 
-        _listener = new ActivityListener {
-            ShouldListenTo  = x => x.Name == EventuousDiagnostics.InstrumentationName,
-            Sample          = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-            ActivityStopped = x => ActivityStopped(histogram, errorCount, x)
-        };
-
-        ActivitySource.AddActivityListener(_listener);
-
         IEnumerable<Measurement<double>> ObserveTimeValues()
             => gaps?
                    .Select(x => Measure(x.TimeGap.TotalSeconds, x.SubscriptionId))
@@ -140,12 +132,10 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     }
 
     readonly Meter                         _meter;
-    readonly ActivityListener              _listener;
     readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics;
     KeyValuePair<string, object?>[]        _customTags = EventuousDiagnostics.Tags;
 
     public void Dispose() {
-        _listener.Dispose();
         _meter.Dispose();
         if (_checkpointMetrics.IsValueCreated) _checkpointMetrics.Value.Dispose();
     }

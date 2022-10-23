@@ -8,7 +8,6 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
     public static readonly string MeterName = EventuousDiagnostics.GetMeterName("core");
 
     readonly Meter                   _meter;
-    readonly ActivityListener        _listener;
     KeyValuePair<string, object?>[]? _customTags;
 
     public EventuousMetrics() {
@@ -25,14 +24,6 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
             "ms",
             "Application service operation duration, milliseconds"
         );
-
-        _listener = new ActivityListener {
-            ShouldListenTo  = x => x.Name == EventuousDiagnostics.InstrumentationName,
-            Sample          = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-            ActivityStopped = Record
-        };
-
-        ActivitySource.AddActivityListener(_listener);
 
         void Record(Activity activity) {
             var dot = activity.OperationName.IndexOf('.');
@@ -81,7 +72,6 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
     }
 
     public void Dispose() {
-        _listener.Dispose();
         _meter.Dispose();
     }
 
