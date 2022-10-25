@@ -33,11 +33,12 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
 
         try {
             var last = await Instance.Client.ReadStreamAsync(
-                Direction.Backwards,
-                categoryStream,
-                StreamPosition.End,
-                1
-            ).ToArrayAsync();
+                    Direction.Backwards,
+                    categoryStream,
+                    StreamPosition.End,
+                    1
+                )
+                .ToArrayAsync();
 
             startPosition = last[0].OriginalEventNumber;
         }
@@ -80,9 +81,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
                 ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
-            new ConsumePipe()
-                .AddFilterLast(new MessageFilter(x => !x.MessageType.StartsWith("$")))
-                .AddDefaultConsumer(handler)
+            new ConsumePipe().AddSystemEventsFilter().AddDefaultConsumer(handler)
         );
 
         var log = _loggerFactory.CreateLogger("Test");
@@ -90,6 +89,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
         await subscription.SubscribeWithLog(log);
 
         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(200));
+
         while (handler.Count < produceCount - deleteCount && !cts.IsCancellationRequested) {
             await Task.Delay(100, cts.Token);
         }

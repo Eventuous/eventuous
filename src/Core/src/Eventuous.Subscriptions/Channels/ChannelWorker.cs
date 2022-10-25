@@ -29,8 +29,14 @@ public class ChannelWorker<T> {
     }
 
     public ValueTask Write(T element, CancellationToken cancellationToken)
-        => _channel.Write(element, _throwOnFull, cancellationToken);
+        => _stopping ? default : _channel.Write(element, _throwOnFull, cancellationToken);
 
-    public ValueTask Stop(Func<CancellationToken, ValueTask>? finalize = null)
-        => _channel.Stop(_cts, new[] { _readerTask }, finalize);
+    public ValueTask Stop(Func<CancellationToken, ValueTask>? finalize = null) {
+        if (_stopping) return default;
+
+        _stopping = true;
+        return _channel.Stop(_cts, new[] { _readerTask }, finalize);
+    }
+
+    bool _stopping;
 }

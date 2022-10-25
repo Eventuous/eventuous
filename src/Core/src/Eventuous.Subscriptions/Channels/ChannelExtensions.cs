@@ -51,10 +51,14 @@ static class ChannelExtensions {
         Task[]                              readers,
         Func<CancellationToken, ValueTask>? finalize = null
     ) {
-        channel.Writer.Complete();
-        cts.CancelAfter(TimeSpan.FromSeconds(10));
+        channel.Writer.TryComplete();
 
-        await Task.WhenAll(readers);
+        var incompleteReaders = readers.Where(r => !r.IsCompleted).ToArray();
+
+        if (readers.Length > 0) {
+            cts.CancelAfter(TimeSpan.FromSeconds(10));
+            await Task.WhenAll(incompleteReaders);
+        }
 
         if (finalize == null) return;
 
