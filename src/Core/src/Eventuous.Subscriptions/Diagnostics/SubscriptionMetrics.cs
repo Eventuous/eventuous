@@ -59,7 +59,6 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
         _listener = new ActivityListener {
             ShouldListenTo  = x => x.Name == EventuousDiagnostics.InstrumentationName,
-            Sample          = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
             ActivityStopped = x => ActivityStopped(histogram, errorCount, x)
         };
 

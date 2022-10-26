@@ -43,13 +43,13 @@ public static class EventuousDiagnostics {
 
             activitySource = new ActivitySource(InstrumentationName, Version?.ToString());
 
-            // listener = DummyActivityListener.Create();
-            // ActivitySource.AddActivityListener(listener);
+            listener = DummyActivityListener.Create();
+            ActivitySource.AddActivityListener(listener);
             return activitySource;
         }
     }
 
-    // public static void RemoveDummyListener() => listener?.Dispose();
+    public static void RemoveDummyListener() => listener?.Dispose();
 
     public static Meter GetCategoryMeter(string category)
         => new(GetMeterName(category), AssemblyName.Version?.ToString());

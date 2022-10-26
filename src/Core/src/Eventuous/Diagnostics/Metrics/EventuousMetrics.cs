@@ -28,7 +28,6 @@ public sealed class EventuousMetrics : IWithCustomTags, IDisposable {
 
         _listener = new ActivityListener {
             ShouldListenTo  = x => x.Name == EventuousDiagnostics.InstrumentationName,
-            Sample          = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
             ActivityStopped = Record
         };
 
