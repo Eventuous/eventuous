@@ -43,7 +43,7 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
 }
 
 public class TracedApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>
-    where TState : AggregateState<TState>, new()
+    where TState : State<TState>, new()
     where TId : AggregateId
     where T : Aggregate<TState> {
     public static IApplicationService<T, TState, TId> Trace(IApplicationService<T, TState, TId> appService)

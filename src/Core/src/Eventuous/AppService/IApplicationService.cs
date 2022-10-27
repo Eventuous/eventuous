@@ -13,7 +13,7 @@ public interface IApplicationService<T> : IApplicationService where T : Aggregat
 
 public interface IApplicationService<T, TState, TId>
     where T : Aggregate<TState>
-    where TState : AggregateState<TState>, new()
+    where TState : State<TState>, new()
     where TId : AggregateId {
     Task<Result<TState>> Handle(object command, CancellationToken cancellationToken);
 }

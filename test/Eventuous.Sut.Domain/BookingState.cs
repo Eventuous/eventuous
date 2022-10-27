@@ -2,7 +2,7 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Sut.Domain;
 
-public record BookingState : AggregateState<BookingState> {
+public record BookingState : State<BookingState> {
     public BookingState() {
         On<RoomBooked>((state,      booked) => state with { Price = booked.Price });
         On<BookingImported>((state, imported) => state with { Price = imported.Price });

@@ -9,27 +9,10 @@ namespace Eventuous;
 /// The TypeMap maintains event type names for known event types so we avoid using CLR type names
 /// as event types. This way, we can rename event classes without breaking deserialization.
 /// </summary>
-[PublicAPI]
 public static class TypeMap {
     public static readonly TypeMapper Instance = new();
 
-    public static string GetTypeName<T>() => Instance.GetTypeName<T>();
-
     public static string GetTypeName(object o, bool fail = true) => Instance.GetTypeName(o, fail);
-
-    public static string GetTypeNameByType(Type type) => Instance.GetTypeNameByType(type);
-
-    public static Type GetType(string typeName) => Instance.GetType(typeName);
-
-    public static bool TryGetType(string typeName, out Type? type) => Instance.TryGetType(typeName, out type);
-
-    public static void AddType<T>(string name) => Instance.AddType<T>(name);
-
-    static void AddType(Type type, string name) => Instance.AddType(type, name);
-    
-    public static void RemoveType<T>() => Instance.RemoveType<T>();
-
-    public static bool IsTypeRegistered<T>() => Instance.IsTypeRegistered<T>();
 
     /// <summary>
     /// Registers all event types, which are decorated with <see cref="EventTypeAttribute"/>.
@@ -47,6 +30,7 @@ public class TypeMapper {
     readonly Dictionary<string, Type> _reverseMap = new();
     readonly Dictionary<Type, string> _map        = new();
 
+    [PublicAPI]
     public string GetTypeName<T>() {
         if (!_map.TryGetValue(typeof(T), out var name)) {
             Log.TypeNotMappedToName(typeof(T));
@@ -60,10 +44,12 @@ public class TypeMapper {
         if (_map.TryGetValue(o.GetType(), out var name)) return name;
 
         if (!fail) return "unknown";
+
         Log.TypeNotMappedToName(o.GetType());
         throw new UnregisteredTypeException(o.GetType());
     }
 
+    [PublicAPI]
     public string GetTypeNameByType(Type type) {
         if (!_map.TryGetValue(type, out var name)) {
             Log.TypeNotMappedToName(type);
@@ -107,15 +93,17 @@ public class TypeMapper {
         foreach (var assembly in assembliesToScan) {
             RegisterAssemblyEventTypes(assembly);
         }
-        
+
         Assembly[] GetDefaultAssemblies() {
             var firstLevel = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(x => NamePredicate(x.GetName()))
                 .ToArray();
+
             return firstLevel
                 .SelectMany(Get)
                 .Concat(firstLevel)
-                .Distinct().ToArray();
+                .Distinct()
+                .ToArray();
 
             IEnumerable<Assembly> Get(Assembly assembly) {
                 var referenced = assembly.GetReferencedAssemblies().Where(NamePredicate);
@@ -125,10 +113,10 @@ public class TypeMapper {
         }
 
         bool NamePredicate(AssemblyName name)
-            => name.Name != null                    &&
-                !name.Name.StartsWith("System.")    &&
-                !name.Name.StartsWith("Microsoft.") &&
-                !name.Name.StartsWith("netstandard");
+            => name.Name != null                   &&
+               !name.Name.StartsWith("System.")    &&
+               !name.Name.StartsWith("Microsoft.") &&
+               !name.Name.StartsWith("netstandard");
     }
 
     static readonly Type AttributeType = typeof(EventTypeAttribute);

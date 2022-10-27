@@ -81,7 +81,7 @@ public class AggregateStoreTests {
         public TestId(string value) : base(value) { }
     }
 
-    record TestState : AggregateState<TestState> {
+    record TestState : State<TestState> {
         public TestState()
             => On<TestEvent>(
                 (state, evt) => state with { Values = state.Values.Add(evt.Data) }

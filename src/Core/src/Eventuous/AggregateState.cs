@@ -1,7 +1,10 @@
-namespace Eventuous; 
+namespace Eventuous;
+
+[Obsolete("Use State<T> instead")]
+public abstract record AggregateState<T>: State<T> where T: AggregateState<T> { }
 
 [PublicAPI]
-public abstract record AggregateState<T> where T : AggregateState<T> {
+public abstract record State<T> where T : State<T> {
     public virtual T When(object @event) {
         var eventType = @event.GetType();
 
@@ -13,6 +16,7 @@ public abstract record AggregateState<T> where T : AggregateState<T> {
     [PublicAPI]
     protected void On<TEvent>(Func<T, TEvent, T> handle) {
         Ensure.NotNull(handle);
+
         if (!_handlers.TryAdd(typeof(TEvent), (state, evt) => handle(state, (TEvent)evt))) {
             throw new InvalidOperationException($"Duplicate handler for {typeof(TEvent).Name}");
         }
