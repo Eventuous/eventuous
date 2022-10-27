@@ -58,9 +58,9 @@
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/eventuous/Eventuous.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <Description>Opinionated and volatile Event Sourcing library</Description>
-        <Authors>Alexey Zimarev</Authors>
-        <Copyright>Eventuous contributors</Copyright>
+        <Description>Production-grade Event Sourcing library</Description>
+        <Authors>Alexey Zimarev and Eventuous community</Authors>
+        <Copyright>Ubiquitous AS</Copyright>
         <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
     </PropertyGroup>
     

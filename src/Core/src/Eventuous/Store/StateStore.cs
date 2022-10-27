@@ -13,7 +13,7 @@ public class StateStore : IStateStore {
     }
 
     public async Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken)
-        where T : AggregateState<T>, new() {
+        where T : State<T>, new() {
         var state = new T();
 
         const int pageSize = 500;

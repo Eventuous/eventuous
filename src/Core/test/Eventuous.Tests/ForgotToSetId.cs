@@ -28,7 +28,7 @@ public class ForgotToSetId : NaiveFixture {
         public void Process() => Apply(new TestEvent());
     }
 
-    record TestState : AggregateState<TestState>;
+    record TestState : State<TestState>;
 
     record TestId : AggregateId {
         public TestId(string value) : base(value) { }

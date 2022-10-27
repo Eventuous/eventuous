@@ -5,7 +5,7 @@ namespace Eventuous;
 
 public class ThrowingApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>, IApplicationService<T>
     where T : Aggregate<TState>
-    where TState : AggregateState<TState>, new()
+    where TState : State<TState>, new()
     where TId : AggregateId {
     readonly IApplicationService<T, TState, TId> _inner;
 

@@ -1,8 +1,7 @@
 namespace ElasticPlayground;
 
 static class ResultExtensions {
-    public static void Dump<T>(this Result<T> r)
-        where T : AggregateState<T>, new() {
+    public static void Dump<T>(this Result<T> r) where T : State<T>, new() {
         Console.WriteLine(r.Success ? "Success" : "Failure");
 
         switch (r) {

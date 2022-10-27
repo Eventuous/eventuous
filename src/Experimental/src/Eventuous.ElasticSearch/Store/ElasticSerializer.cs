@@ -6,10 +6,12 @@ namespace Eventuous.ElasticSearch.Store;
 public class ElasticSerializer : IElasticsearchSerializer {
     readonly IElasticsearchSerializer _builtIn;
     readonly JsonSerializerOptions    _options;
+    readonly TypeMapper               _typeMapper;
 
-    public ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerOptions? options) {
-        _builtIn = builtIn;
-        _options = options ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    public ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerOptions? options, TypeMapper? typeMapper = null) {
+        _builtIn    = builtIn;
+        _options    = options    ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        _typeMapper = typeMapper ?? TypeMap.Instance;
     }
 
     public object Deserialize(Type type, Stream stream) {
@@ -18,7 +20,7 @@ public class ElasticSerializer : IElasticsearchSerializer {
         if (type != typeof(PersistedEvent)) return obj!;
 
         var evt         = (PersistedEvent)obj!;
-        var messageType = TypeMap.GetType(evt.MessageType);
+        var messageType = _typeMapper.GetType(evt.MessageType);
         var element     = (JsonElement)evt.Message!;
         var payload     = JsonSerializer.Deserialize(element.GetRawText(), messageType, _options);
 

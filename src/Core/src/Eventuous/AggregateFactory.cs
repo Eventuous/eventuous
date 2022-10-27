@@ -35,7 +35,7 @@ public class AggregateFactoryRegistry {
 
     internal T CreateInstance<T, TState>()
         where T : Aggregate<TState>
-        where TState : AggregateState<TState>, new() {
+        where TState : State<TState>, new() {
         var instance = _registry.TryGetValue(typeof(T), out var factory)
             ? (T)factory()
             : Activator.CreateInstance<T>();

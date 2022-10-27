@@ -31,16 +31,14 @@ public record ErrorResult : Result {
 
 [PublicAPI]
 public abstract record Result<TState>(TState? State, bool Success, IEnumerable<Change>? Changes = null)
-    where TState : AggregateState<TState>, new();
+    where TState : State<TState>, new();
 
 [PublicAPI]
 public record OkResult<TState>(TState State, IEnumerable<Change> Changes, ulong StreamPosition)
-    : Result<TState>(State, true, Changes)
-    where TState : AggregateState<TState>, new();
+    : Result<TState>(State, true, Changes) where TState : State<TState>, new();
 
 [PublicAPI]
-public record ErrorResult<TState> : Result<TState>
-    where TState : AggregateState<TState>, new() {
+public record ErrorResult<TState> : Result<TState> where TState : State<TState>, new() {
     public ErrorResult(string message, Exception? exception) : base(null, false) {
         Message   = message;
         Exception = exception;

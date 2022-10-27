@@ -20,7 +20,7 @@ public record struct StreamName {
         => new($"{typeof(T).Name}-{Ensure.NotEmptyString(entityId.ToString())}");
 
     public static StreamName For<T, TState, TId>(TId entityId)
-        where T : Aggregate<TState> where TState : AggregateState<TState>, new() where TId : AggregateId
+        where T : Aggregate<TState> where TState : State<TState>, new() where TId : AggregateId
         => new($"{typeof(T).Name}-{Ensure.NotEmptyString(entityId.ToString())}");
 
     public string GetId() => Value[(Value.IndexOf("-", StringComparison.InvariantCulture) + 1)..];

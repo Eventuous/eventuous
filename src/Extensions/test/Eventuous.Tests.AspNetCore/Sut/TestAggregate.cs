@@ -12,6 +12,6 @@ public class AnotherTestAggregate : Aggregate<TestState> {
     public AnotherTestAggregate(TestDependency dependency) => Dependency = dependency;
 }
 
-public record TestState : AggregateState<TestState>;
+public record TestState : State<TestState>;
 
 public record TestId(string Value) : AggregateId(Value);

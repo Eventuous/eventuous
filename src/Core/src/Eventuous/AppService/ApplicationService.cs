@@ -17,7 +17,7 @@ namespace Eventuous;
 public abstract class ApplicationService<TAggregate, TState, TId>
     : IApplicationService<TAggregate, TState, TId>, IApplicationService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
-    where TState : AggregateState<TState>, new()
+    where TState : State<TState>, new()
     where TId : AggregateId {
     protected IAggregateStore Store { get; }
 
@@ -25,14 +25,17 @@ public abstract class ApplicationService<TAggregate, TState, TId>
     readonly IdMap<TId>               _idMap    = new();
     readonly AggregateFactoryRegistry _factoryRegistry;
     readonly StreamNameMap            _streamNameMap;
+    readonly TypeMapper               _typeMap;
 
     protected ApplicationService(
         IAggregateStore           store,
         AggregateFactoryRegistry? factoryRegistry = null,
-        StreamNameMap?            streamNameMap   = null
+        StreamNameMap?            streamNameMap   = null,
+        TypeMapper?               typeMap         = null
     ) {
         _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
         _streamNameMap   = streamNameMap   ?? new StreamNameMap();
+        _typeMap         = typeMap         ?? TypeMap.Instance;
         Store            = store;
     }
 
@@ -239,7 +242,7 @@ public abstract class ApplicationService<TAggregate, TState, TId>
                 )
                 .NoContext();
 
-            var changes = result.Changes.Select(x => new Change(x, TypeMap.GetTypeName(x)));
+            var changes = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
 
             Log.CommandHandled(commandType);
 

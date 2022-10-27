@@ -8,7 +8,7 @@ public abstract class Aggregate {
     /// The collection of previously persisted events
     /// </summary>
     public object[] Original { get; protected set; } = Array.Empty<object>();
-    
+
     /// <summary>
     /// Get the list of pending changes (new events) within the scope of the current operation.
     /// </summary>
@@ -72,9 +72,7 @@ public abstract class Aggregate {
     }
 }
 
-public abstract class Aggregate<T> : Aggregate
-    where T : AggregateState<T>, new() {
-    
+public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
     protected Aggregate() => State = new T();
 
     /// <summary>
