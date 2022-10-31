@@ -2,7 +2,7 @@
 
 Event Sourcing library for .NET, which is:
 - Somewhat volatile as breaking changes keep coming in
-- Very opinionated
+- ~Very~ Somewhat opinionated
 - [EventStoreDB](https://eventstore.com)-oriented
 - .NET-friendly (decent DI, logging, and diagnostics support)
 
