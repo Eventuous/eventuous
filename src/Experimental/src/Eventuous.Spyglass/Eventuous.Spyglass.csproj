@@ -1,10 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <IncludeSutApp>true</IncludeSutApp>
-        <IsPackable>false</IsPackable>
+        <TargetFrameworks></TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
     </ItemGroup>
 </Project>
