@@ -11,11 +11,8 @@ public class StreamNameMap {
         => _map.TryAdd(typeof(TId), id => map((TId)id));
 
     public StreamName GetStreamName<T, TId>(TId aggregateId)
-        where TId : AggregateId where T : Aggregate {
-        if (_map.TryGetValue(typeof(TId), out var map)) return map(aggregateId);
-
-        _map[typeof(TId)] = id => StreamName.For<T, TId>((TId)id);
-
-        return _map[typeof(TId)](aggregateId);
-    }
+        where TId : AggregateId where T : Aggregate
+        => _map.TryGetValue(typeof(TId), out var map)
+            ? map(aggregateId)
+            : StreamName.For<T, TId>(aggregateId);
 }
