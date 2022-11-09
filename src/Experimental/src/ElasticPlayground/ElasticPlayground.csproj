@@ -7,14 +7,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
-        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
-        <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
+        <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoFixture"/>
-        <PackageReference Include="EventStore.Client.Grpc.Streams"/>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="AutoFixture" />
+        <PackageReference Include="EventStore.Client.Grpc.Streams" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
 </Project>

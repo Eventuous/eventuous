@@ -134,7 +134,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     T?                _resolvedSubscription;
     IMessageConsumer? _resolvedConsumer;
 
-    public Action<TOptions>? ConfigureOptions { get; private set; }
+    public Action<TOptions> ConfigureOptions { get; private set; }
 
     ParameterMap ParametersMap { get; } = new();
 
@@ -268,7 +268,7 @@ static class TypeExtensionsForRegistrations {
                 )
             )
             .Where(x => x.Options != null)
-            .ToArray()!;
+            .ToArray();
 }
 
 public delegate IEventHandler ResolveHandler(IServiceProvider sp);

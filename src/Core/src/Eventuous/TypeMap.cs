@@ -24,11 +24,14 @@ public static class TypeMap {
 }
 
 /// <summary>
-/// The actual mapper behind static <see cref="TypeMap"/>. Normally, you won't need to use it.
+/// The actual mapper behind static <see cref="TypeMap"/>.
 /// </summary>
 public class TypeMapper {
     readonly Dictionary<string, Type> _reverseMap = new();
     readonly Dictionary<Type, string> _map        = new();
+
+    public IReadOnlyDictionary<Type, string> Map        => _map;
+    public IReadOnlyDictionary<string, Type> ReverseMap => _reverseMap;
 
     [PublicAPI]
     public string GetTypeName<T>() {
@@ -96,7 +99,7 @@ public class TypeMapper {
 
         Assembly[] GetDefaultAssemblies() {
             var firstLevel = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(x => NamePredicate(x.GetName()))
+                .Where(x => !x.IsDynamic && NamePredicate(x.GetName()))
                 .ToArray();
 
             return firstLevel
@@ -106,7 +109,7 @@ public class TypeMapper {
                 .ToArray();
 
             IEnumerable<Assembly> Get(Assembly assembly) {
-                var referenced = assembly.GetReferencedAssemblies().Where(NamePredicate);
+                var referenced = assembly.GetReferencedAssemblies().Where(name => NamePredicate(name));
                 var assemblies = referenced.Select(Assembly.Load).ToList();
                 return assemblies.Concat(assemblies.SelectMany(Get)).Distinct();
             }

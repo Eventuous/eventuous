@@ -3,20 +3,20 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Cloud.Monitoring.V3"/>
-        <PackageReference Include="Google.Cloud.PubSub.V1"/>
+        <PackageReference Include="Google.Cloud.Monitoring.V3" />
+        <PackageReference Include="Google.Cloud.PubSub.V1" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj"/>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\"/>
+        <None Include="README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
     <ItemGroup>
-        <Using Include="Google.Cloud.PubSub.V1"/>
-        <Using Include="Google.Protobuf"/>
-        <Using Include="Microsoft.Extensions.Logging"/>
+        <Using Include="Google.Cloud.PubSub.V1" />
+        <Using Include="Google.Protobuf" />
+        <Using Include="Microsoft.Extensions.Logging" />
     </ItemGroup>
 </Project>

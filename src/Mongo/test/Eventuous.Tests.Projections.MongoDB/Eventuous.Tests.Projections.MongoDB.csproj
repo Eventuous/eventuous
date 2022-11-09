@@ -5,12 +5,12 @@
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj"/>
-        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>
+        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
+        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
-        <PackageReference Include="MongoDb.Bson.NodaTime"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="MongoDb.Bson.NodaTime" />
     </ItemGroup>
 </Project>

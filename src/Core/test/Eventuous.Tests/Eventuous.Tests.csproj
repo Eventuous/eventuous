@@ -5,9 +5,9 @@
         <IncludeTestHelpers>true</IncludeTestHelpers>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous\Eventuous.csproj"/>
+        <ProjectReference Include="$(LocalRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
 </Project>

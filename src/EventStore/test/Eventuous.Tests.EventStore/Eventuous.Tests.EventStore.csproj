@@ -6,20 +6,20 @@
         <IncludeSutSubs>true</IncludeSutSubs>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
-        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
+        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
-        <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
     </ItemGroup>
     <ItemGroup>
-        <Using Include="NodaTime"/>
-        <Using Include="Eventuous.Subscriptions"/>
-        <Using Include="Eventuous.Subscriptions.Checkpoints"/>
-        <Using Include="Eventuous.Subscriptions.Logging"/>
-        <Using Include="Eventuous.Tests.EventStore.Fixtures"/>
+        <Using Include="NodaTime" />
+        <Using Include="Eventuous.Subscriptions" />
+        <Using Include="Eventuous.Subscriptions.Checkpoints" />
+        <Using Include="Eventuous.Subscriptions.Logging" />
+        <Using Include="Eventuous.Tests.EventStore.Fixtures" />
     </ItemGroup>
 </Project>

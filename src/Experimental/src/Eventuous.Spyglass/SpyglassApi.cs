@@ -23,8 +23,7 @@ public static class SpyglassApi {
                 "/spyglass/events",
                 ([FromServices] TypeMapper? typeMapper) => {
                     var typeMap = typeMapper ?? TypeMap.Instance;
-                    var map     = typeMap.GetPrivateMember<Dictionary<string, Type>>("_reverseMap");
-                    return map?.Select(x => x.Key);
+                    return typeMap.ReverseMap.Select(x => x.Key);
                 }
             )
             .ExcludeFromDescription();
