@@ -7,6 +7,6 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Using Include="RabbitMQ.Client"/>
+        <Using Include="RabbitMQ.Client" />
     </ItemGroup>
 </Project>

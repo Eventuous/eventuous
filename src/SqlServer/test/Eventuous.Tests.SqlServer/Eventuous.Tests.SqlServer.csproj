@@ -5,12 +5,12 @@
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
-        <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.SqlServer\Eventuous.SqlServer.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.SqlServer\Eventuous.SqlServer.csproj" />
     </ItemGroup>
 </Project>

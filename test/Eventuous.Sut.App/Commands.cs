@@ -6,8 +6,8 @@ public static class Commands {
     public record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);
 
     public record ImportBooking {
-        public string    BookingId { get; init; }
-        public string    RoomId    { get; init; }
+        public string    BookingId { get; init; } = null!;
+        public string    RoomId    { get; init; } = null!;
         public LocalDate CheckIn   { get; init; }
         public LocalDate CheckOut  { get; init; }
         public decimal   Price     { get; init; }

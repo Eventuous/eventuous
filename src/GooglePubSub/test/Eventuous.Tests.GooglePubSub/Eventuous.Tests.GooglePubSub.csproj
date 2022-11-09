@@ -4,10 +4,10 @@
         <IncludeSutSubs>true</IncludeSutSubs>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Using Include="Google.Cloud.PubSub.V1"/>
+        <Using Include="Google.Cloud.PubSub.V1" />
     </ItemGroup>
 </Project>

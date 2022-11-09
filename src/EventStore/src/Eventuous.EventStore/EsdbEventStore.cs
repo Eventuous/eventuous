@@ -252,6 +252,7 @@ public class EsdbEventStore : IEventStore {
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static Task<T> AnyOrNot<T>(
         ExpectedStreamVersion version,
         Func<Task<T>>         whenAny,
@@ -303,7 +304,10 @@ public class EsdbEventStore : IEventStore {
     }
 
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
-        => resolvedEvents.Where(x => !x.Event.EventType.StartsWith("$")).Select(ToStreamEvent).ToArray();
+        => resolvedEvents
+            .Where(x => !x.Event.EventType.StartsWith("$"))
+            .Select(e => ToStreamEvent(e))
+            .ToArray();
 
     record ErrorInfo(string Message, params object[] Args);
 }
