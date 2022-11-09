@@ -1,11 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <LangVersion>preview</LangVersion>
-    </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime" Version="3.1.0" />
+        <PackageReference Include="NodaTime"/>
     </ItemGroup>
 </Project>

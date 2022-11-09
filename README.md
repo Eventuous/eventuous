@@ -2,7 +2,7 @@
 
 Event Sourcing library for .NET, which is:
 - Somewhat volatile as breaking changes keep coming in
-- Very opinionated
+- ~Very~ Somewhat opinionated
 - [EventStoreDB](https://eventstore.com)-oriented
 - .NET-friendly (decent DI, logging, and diagnostics support)
 
@@ -35,7 +35,7 @@ In addition, latest dev versions are available on MyGet under the public feed `h
 
 ## Support
 
-If you like Eventuous and want to show your appreciation to its contributors, please [:heart: sponsor us](https://github.com/sponsors/alexeyzimarev).
+If you like Eventuous and want to show your appreciation to its contributors, please [:heart: sponsor us](https://github.com/sponsors/Eventuous).
 
 For development and production support, get in touch with [Ubiquitous](https://ubiquitous.no).
 

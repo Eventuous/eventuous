@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
-        <TargetFrameworks>net6.0</TargetFrameworks>
         <IncludeSutApp>true</IncludeSutApp>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
@@ -13,6 +12,6 @@
         <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
 </Project>
