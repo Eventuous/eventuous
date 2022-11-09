@@ -1,17 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net6.0</TargetFrameworks>
         <IsTestProject>true</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
-        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
+        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj"/>
+        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
-        <PackageReference Include="MongoDb.Bson.NodaTime" Version="3.0.0" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="MongoDb.Bson.NodaTime"/>
     </ItemGroup>
 </Project>

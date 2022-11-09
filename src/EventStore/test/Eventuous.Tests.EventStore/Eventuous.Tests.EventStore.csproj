@@ -4,7 +4,6 @@
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeSutSubs>true</IncludeSutSubs>
-        <TargetFrameworks>net6.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
@@ -13,8 +12,8 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0"/>
-        <PackageReference Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>

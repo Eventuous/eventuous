@@ -11,7 +11,7 @@
         <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>

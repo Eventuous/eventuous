@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="Eventuous.Subscriptions" />
+        <Using Include="Eventuous.Subscriptions"/>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Polly" Version="7.2.*" />
+        <PackageReference Include="Polly"/>
     </ItemGroup>
 </Project>
