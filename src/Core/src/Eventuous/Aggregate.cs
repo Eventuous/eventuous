@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 namespace Eventuous;
 
 [PublicAPI]
@@ -81,7 +79,7 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
     /// </summary>
     /// <param name="evt">New domain event to be applied</param>
     /// <returns>The previous and the new aggregate states</returns>
-    protected (T PreviousState, T CurrentState) Apply(object evt) {
+    protected (T PreviousState, T CurrentState) Apply<TEvent>(TEvent evt) where TEvent : class {
         AddChange(evt);
         var previous = State;
         State = State.When(evt);
@@ -91,7 +89,7 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
     /// <inheritdoc />
     public override void Load(IEnumerable<object?> events) {
         Original = events.Where(x => x != null).ToArray()!;
-        State    = Original.Aggregate(new T(), Fold);
+        State    = Original.Aggregate(new T(), (state, o) => Fold(state, o));
     }
 
     static T Fold(T state, object evt) => state.When(evt);

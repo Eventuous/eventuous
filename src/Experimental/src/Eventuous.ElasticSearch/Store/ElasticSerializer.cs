@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elasticsearch.Net;
+using Eventuous.TypeMap;
 
 namespace Eventuous.ElasticSearch.Store;
 
@@ -11,7 +12,7 @@ public class ElasticSerializer : IElasticsearchSerializer {
     public ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerOptions? options, TypeMapper? typeMapper = null) {
         _builtIn    = builtIn;
         _options    = options    ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        _typeMapper = typeMapper ?? TypeMap.Instance;
+        _typeMapper = typeMapper ?? TypeMap.TypeMap.Instance;
     }
 
     public object Deserialize(Type type, Stream stream) {

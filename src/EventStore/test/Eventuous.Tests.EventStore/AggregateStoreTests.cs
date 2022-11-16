@@ -7,7 +7,7 @@ public class AggregateStoreTests {
 
     public AggregateStoreTests(ITestOutputHelper output) {
         Store = IntegrationFixture.Instance.AggregateStore;
-        TypeMap.Instance.AddType<TestEvent>("testEvent");
+        TypeMap.TypeMap.Instance.AddType<TestEvent>("testEvent");
 
         var loggerFactory = LoggerFactory.Create(
             cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug)

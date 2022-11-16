@@ -1,7 +1,9 @@
 // Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics.CodeAnalysis;
 using Eventuous.Diagnostics;
+using Eventuous.TypeMap;
 
 namespace Eventuous;
 
@@ -16,19 +18,21 @@ public delegate void ActOnAggregate<in TAggregate, in TCommand>(TAggregate aggre
 
 record RegisteredHandler<T>(ExpectedState ExpectedState, Func<T, object, CancellationToken, ValueTask<T>> Handler);
 
-class HandlersMap<TAggregate> : Dictionary<Type, RegisteredHandler<TAggregate>>
-    where TAggregate : Aggregate {
+class HandlersMap<TAggregate> where TAggregate : Aggregate {
+    readonly TypeMap<RegisteredHandler<TAggregate>> _typeMap = new();
+
     public void AddHandler<TCommand>(RegisteredHandler<TAggregate> handler) {
-        if (ContainsKey(typeof(TCommand))) {
+        try {
+            _typeMap.Add<TCommand>(handler);
+        }
+        catch (Exceptions.DuplicateTypeException<TCommand>) {
             EventuousEventSource.Log.CommandHandlerAlreadyRegistered<TCommand>();
             throw new Exceptions.CommandHandlerAlreadyRegistered<TCommand>();
         }
-
-        Add(typeof(TCommand), handler);
     }
 
-    public void AddHandler<TCommand>(ExpectedState expectedState, ActOnAggregateAsync<TAggregate, TCommand> action) {
-        AddHandler<TCommand>(
+    public void AddHandler<TCommand>(ExpectedState expectedState, ActOnAggregateAsync<TAggregate, TCommand> action)
+        => AddHandler<TCommand>(
             new RegisteredHandler<TAggregate>(
                 expectedState,
                 async (aggregate, cmd, ct) => {
@@ -37,17 +41,6 @@ class HandlersMap<TAggregate> : Dictionary<Type, RegisteredHandler<TAggregate>>
                 }
             )
         );
-        //
-        // static async ValueTask<TAggregate> AsTask(
-        //     TAggregate                                aggregate,
-        //     TCommand                                  cmd,
-        //     ActOnAggregateAsync<TAggregate, TCommand> action,
-        //     CancellationToken                         cancellationToken
-        // ) {
-        //     await action(aggregate, cmd, cancellationToken).NoContext();
-        //     return aggregate;
-        // }
-    }
 
     public void AddHandler<TCommand>(ExpectedState expectedState, ActOnAggregate<TAggregate, TCommand> action)
         => AddHandler<TCommand>(
@@ -60,12 +53,6 @@ class HandlersMap<TAggregate> : Dictionary<Type, RegisteredHandler<TAggregate>>
             )
         );
 
-    // static ValueTask<TAggregate> SyncAsTask<TCommand>(
-    //     TAggregate                           aggregate,
-    //     TCommand                             cmd,
-    //     ActOnAggregate<TAggregate, TCommand> action
-    // ) {
-    //     action(aggregate, cmd);
-    //     return new ValueTask<TAggregate>(aggregate);
-    // }
+    public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TAggregate>? handler)
+        => _typeMap.TryGetValue<TCommand>(out handler);
 }

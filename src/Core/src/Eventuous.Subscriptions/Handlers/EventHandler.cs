@@ -4,6 +4,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Subscriptions.Tools;
+using Eventuous.TypeMap;
 
 namespace Eventuous.Subscriptions;
 
@@ -14,7 +15,7 @@ namespace Eventuous.Subscriptions;
 public abstract class EventHandler : BaseEventHandler {
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
 
-    protected EventHandler(TypeMapper? mapper = null) => _map = mapper ?? TypeMap.Instance;
+    protected EventHandler(TypeMapper? mapper = null) => _map = mapper ?? TypeMap.TypeMap.Instance;
 
     static readonly ValueTask<EventHandlingStatus> Ignored = new(EventHandlingStatus.Ignored);
 

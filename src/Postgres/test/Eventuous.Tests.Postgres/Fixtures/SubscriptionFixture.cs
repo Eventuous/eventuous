@@ -10,7 +10,7 @@ namespace Eventuous.Tests.Postgres.Fixtures;
 
 public abstract class SubscriptionFixture<T> : IAsyncLifetime
     where T : class, IEventHandler {
-    static SubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static SubscriptionFixture() => TypeMap.TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     protected readonly Fixture Auto = new();
 

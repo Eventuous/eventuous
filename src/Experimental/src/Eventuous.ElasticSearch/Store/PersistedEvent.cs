@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Eventuous.TypeMap;
 using Nest;
 
 namespace Eventuous.ElasticSearch.Store;

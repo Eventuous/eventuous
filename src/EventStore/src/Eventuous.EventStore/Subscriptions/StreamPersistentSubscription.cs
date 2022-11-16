@@ -29,6 +29,7 @@ public class StreamPersistentSubscription
     /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
+    /// <param name="loggerFactory"></param>
     public StreamPersistentSubscription(
         EventStoreClient     eventStoreClient,
         StreamName           streamName,

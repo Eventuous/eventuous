@@ -1,9 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using static Eventuous.Diagnostics.EventuousEventSource;
 
 // ReSharper disable InvertIf
 
-namespace Eventuous;
+namespace Eventuous.TypeMap;
 
 /// <summary>
 /// The TypeMap maintains event type names for known event types so we avoid using CLR type names
@@ -71,20 +72,29 @@ public class TypeMapper {
         return type;
     }
 
-    public bool TryGetType(string typeName, out Type? type) => _reverseMap.TryGetValue(typeName, out type);
+    public bool TryGetType(string typeName, [NotNullWhen(true)] out Type? type)
+        => _reverseMap.TryGetValue(typeName, out type);
 
     public void AddType<T>(string name) => AddType(typeof(T), name);
 
+    readonly object _lock = new();
+
     internal void AddType(Type type, string name) {
-        _reverseMap[name] = type;
-        _map[type]        = name;
+        lock (_lock) {
+            _reverseMap[name] = type;
+            _map[type]        = name;
+        }
+
         Log.TypeMapRegistered(type.Name, name);
     }
 
     public void RemoveType<T>() {
         var name = GetTypeName<T>();
-        _reverseMap.Remove(name);
-        _map.Remove(typeof(T));
+
+        lock (_lock) {
+            _reverseMap.Remove(name);
+            _map.Remove(typeof(T));
+        }
     }
 
     public bool IsTypeRegistered<T>() => _map.ContainsKey(typeof(T));

@@ -1,3 +1,4 @@
+using Eventuous.TypeMap;
 using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Producers;

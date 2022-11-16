@@ -3,6 +3,7 @@
         <IsTestProject>true</IsTestProject>
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeTestHelpers>true</IncludeTestHelpers>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />

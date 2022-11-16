@@ -41,11 +41,11 @@ public class PublishAndSubscribeManyPartitionedTests : SubscriptionFixture<TestE
 
         Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
-        TypeMap.Instance.AddType<UnknownEvent>("ignored");
+        TypeMap.TypeMap.Instance.AddType<UnknownEvent>("ignored");
         await Producer.Produce(Stream, testEvents, new Metadata());
 
         await Start();
-        TypeMap.Instance.RemoveType<UnknownEvent>();
+        TypeMap.TypeMap.Instance.RemoveType<UnknownEvent>();
         await Handler.Validate(5.Seconds());
         await Stop();
 

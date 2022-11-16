@@ -6,7 +6,7 @@ using static Eventuous.Tests.Projections.MongoDB.Fixtures.IntegrationFixture;
 namespace Eventuous.Tests.Projections.MongoDB.Fixtures;
 
 public static class DomainFixture {
-    static DomainFixture() => TypeMap.RegisterKnownEventTypes();
+    static DomainFixture() => TypeMap.TypeMap.RegisterKnownEventTypes();
 
     public static BookingImported CreateImportBooking() {
         var from = Instance.Auto.Create<DateTime>();

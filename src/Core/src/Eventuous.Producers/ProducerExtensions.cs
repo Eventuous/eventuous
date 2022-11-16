@@ -1,9 +1,11 @@
+using Eventuous.TypeMap;
+
 namespace Eventuous.Producers;
 
 [PublicAPI]
 public static class ProducerExtensions {
     /// <summary>
-    /// Produce a message of type <see cref="TMessage"/>. The type is used to look up the type name
+    /// Produce a message of type TMessage. The type is used to look up the type name
     /// in the <seealso cref="TypeMap"/>.
     /// </summary>
     /// <param name="producer"></param>

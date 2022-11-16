@@ -18,7 +18,7 @@ public abstract record State<T> where T : State<T> {
         Ensure.NotNull(handle);
 
         if (!_handlers.TryAdd(typeof(TEvent), (state, evt) => handle(state, (TEvent)evt))) {
-            throw new InvalidOperationException($"Duplicate handler for {typeof(TEvent).Name}");
+            throw new Exceptions.DuplicateTypeException<TEvent>();
         }
     }
 

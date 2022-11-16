@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
+using Eventuous.TypeMap;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
@@ -19,15 +20,14 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
 
     protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) {
         Collection = Ensure.NotNull(database).GetDocumentCollection<T>();
-        _map       = typeMap ?? TypeMap.Instance;
+        _map       = typeMap ?? TypeMap.TypeMap.Instance;
     }
 
     /// <summary>
     /// Register a handler for a particular event type
     /// </summary>
     /// <param name="handler">Function which handles an event</param>
-    /// <typeparam name="T">Event type</typeparam>
-    /// <typeparam name="TEvent"></typeparam>
+    /// <typeparam name="TEvent">Event type</typeparam>
     /// <exception cref="ArgumentException">Throws if a handler for the given event type has already been registered</exception>
     [PublicAPI]
     protected void On<TEvent>(ProjectTypedEvent<T, TEvent> handler) where TEvent : class {

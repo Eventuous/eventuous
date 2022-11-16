@@ -1,8 +1,6 @@
 // Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Concurrent;
-
 namespace Eventuous;
 
 /// <summary>
@@ -15,7 +13,7 @@ public class AggregateFactoryRegistry {
     /// </summary>
     public static readonly AggregateFactoryRegistry Instance = new();
 
-    readonly ConcurrentDictionary<Type, Func<dynamic>> _registry = new();
+    readonly Dictionary<Type, Func<Aggregate>> _registry = new();
 
     /// <summary>
     /// Adds a custom aggregate factory to the registry

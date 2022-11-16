@@ -31,7 +31,6 @@ public static class ActivityExtensions {
         return activity;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TracingMeta GetTracingData(this Activity activity)
         => new(
             activity.TraceId.ToString(),

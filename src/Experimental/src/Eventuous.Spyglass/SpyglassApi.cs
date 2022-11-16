@@ -1,6 +1,7 @@
 // Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Eventuous.TypeMap;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +23,7 @@ public static class SpyglassApi {
             .MapGet(
                 "/spyglass/events",
                 ([FromServices] TypeMapper? typeMapper) => {
-                    var typeMap = typeMapper ?? TypeMap.Instance;
+                    var typeMap = typeMapper ?? TypeMap.TypeMap.Instance;
                     return typeMap.ReverseMap.Select(x => x.Key);
                 }
             )

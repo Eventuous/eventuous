@@ -38,5 +38,5 @@ public class ChannelWorker<T> {
         return _channel.Stop(_cts, new[] { _readerTask }, finalize);
     }
 
-    bool _stopping;
+    volatile bool _stopping;
 }

@@ -18,7 +18,8 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
         InnerService        = appService;
     }
 
-    public async Task<Result> Handle(object command, CancellationToken cancellationToken) {
+    public async Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+        where TCommand : class {
         using var activity = AppServiceActivity.StartActivity(_appServiceTypeName, command);
 
         try {
@@ -58,7 +59,8 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
         InnerService        = appService;
     }
 
-    public async Task<Result<TState>> Handle(object command, CancellationToken cancellationToken) {
+    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+        where TCommand : class {
         using var activity = AppServiceActivity.StartActivity(_appServiceTypeName, command);
 
         try {

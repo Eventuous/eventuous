@@ -11,7 +11,8 @@ public class ThrowingApplicationService<T, TState, TId> : IApplicationService<T,
 
     public ThrowingApplicationService(IApplicationService<T, TState, TId> inner) => _inner = inner;
 
-    public async Task<Result<TState>> Handle(object command, CancellationToken cancellationToken) {
+    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+        where TCommand : class {
         var result = await _inner.Handle(command, cancellationToken);
 
         if (result is ErrorResult<TState> error)
@@ -20,7 +21,7 @@ public class ThrowingApplicationService<T, TState, TId> : IApplicationService<T,
         return result;
     }
 
-    async Task<Result> IApplicationService.Handle(object command, CancellationToken cancellationToken) {
+    async Task<Result> IApplicationService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) {
         var result = await Handle(command, cancellationToken).NoContext();
 
         return result switch {

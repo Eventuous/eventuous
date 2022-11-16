@@ -1,6 +1,7 @@
 // Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Eventuous.TypeMap;
 using static Eventuous.Diagnostics.EventuousEventSource;
 
 // ReSharper disable MemberCanBePrivate.Global
@@ -35,7 +36,7 @@ public abstract class ApplicationService<TAggregate, TState, TId>
     ) {
         _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
         _streamNameMap   = streamNameMap   ?? new StreamNameMap();
-        _typeMap         = typeMap         ?? TypeMap.Instance;
+        _typeMap         = typeMap         ?? TypeMap.TypeMap.Instance;
         Store            = store;
     }
 
@@ -193,10 +194,11 @@ public abstract class ApplicationService<TAggregate, TState, TId>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns><see cref="Result{TState}"/> of the execution</returns>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
-    public async Task<Result<TState>> Handle(object command, CancellationToken cancellationToken) {
+    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+        where TCommand : class {
         var commandType = Ensure.NotNull(command).GetType();
 
-        if (!_handlers.TryGetValue(commandType, out var registeredHandler)) {
+        if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound(commandType);
             var exception = new Exceptions.CommandHandlerNotFound(commandType);
             return new ErrorResult<TState>(exception);
@@ -259,7 +261,8 @@ public abstract class ApplicationService<TAggregate, TState, TId>
         StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
     }
 
-    async Task<Result> IApplicationService.Handle(object command, CancellationToken cancellationToken) {
+    async Task<Result> IApplicationService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+        where TCommand : class {
         var result = await Handle(command, cancellationToken).NoContext();
 
         return result switch {

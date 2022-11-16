@@ -13,7 +13,7 @@ public record ProducedMessage {
         Metadata          = metadata;
         AdditionalHeaders = additionalHeaders;
         MessageId         = messageId ?? Guid.NewGuid();
-        MessageType       = TypeMap.GetTypeName(message, false);
+        MessageType       = TypeMap.TypeMap.GetTypeName(message, false);
     }
 
     public object               Message           { get; }

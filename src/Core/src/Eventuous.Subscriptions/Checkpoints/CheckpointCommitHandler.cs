@@ -70,8 +70,9 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         CommitPosition AddBatchAndGetLast(IList<CommitPosition> list) {
-            foreach (var position in list) {
-                _positions.Add(position);
+            // ReSharper disable once ForCanBeConvertedToForeach
+            for (var i = 0; i < list.Count; i++) {
+                _positions.Add(list[i]);
             }
 
             var next = GetCommitPosition(false);
@@ -146,7 +147,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
 public record struct CommitPosition(ulong Position, ulong Sequence) {
     public bool Valid { get; private init; } = true;
-    
+
     public LogContext LogContext { get; init; }
 
     public static readonly CommitPosition None = new(0, 0) { Valid = false };

@@ -30,7 +30,7 @@ public class ElasticEventStore : IEventReader, IEventWriter {
         PersistedEvent AsDocument(StreamEvent evt)
             => new(
                 evt.Id.ToString(),
-                TypeMap.Instance.GetTypeName(evt.Payload!),
+                TypeMap.TypeMap.Instance.GetTypeName(evt.Payload!),
                 evt.Position + 1,
                 evt.ContentType,
                 streamName,
