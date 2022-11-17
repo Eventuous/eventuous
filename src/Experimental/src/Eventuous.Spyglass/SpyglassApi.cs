@@ -12,12 +12,20 @@ namespace Eventuous.Spyglass;
 
 public static class SpyglassApi {
     [PublicAPI]
-    public static IEndpointRouteBuilder MapEventuousSpyglass(this WebApplication app, string? key) {
+    public static IEndpointRouteBuilder MapEventuousSpyglass(this WebApplication app, string? key = null) {
         if (!app.Environment.IsDevelopment() && key == null) {
             app.Logger.LogWarning("Insecure Spyglass API is only available in development environment");
             key = Guid.NewGuid().ToString("N");
             app.Logger.LogInformation("Using generated key: {Key}", key);
         }
+
+        if (key == null) {
+            app.Logger.LogWarning("Spyglass API is not secured, ensure that it's not exposed to the Internet");
+        }
+
+        app
+            .MapGet("/spyglass/ping", (HttpRequest request) => CheckAndReturn(request, () => "Okay"))
+            .ExcludeFromDescription();
 
         app
             .MapGet(
