@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.EventStore.Subscriptions.Diagnostics;
@@ -6,6 +6,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Tools;
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -49,7 +50,8 @@ public class StreamSubscription
         checkpointStore,
         consumerPipe,
         loggerFactory
-    ) { }
+    ) {
+    }
 
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
@@ -77,7 +79,7 @@ public class StreamSubscription
         Subscription = await EventStoreClient.SubscribeToStreamAsync(
                 Options.StreamName,
                 fromStream,
-                (subscription, @event, ct) => HandleEvent(subscription, @event, ct),
+                (_, @event, ct) => HandleEvent(@event, ct),
                 Options.ResolveLinkTos,
                 HandleDrop,
                 Options.Credentials,
@@ -85,10 +87,8 @@ public class StreamSubscription
             )
             .NoContext();
 
-        async Task HandleEvent(
-            global::EventStore.Client.StreamSubscription _,
-            ResolvedEvent                                re,
-            CancellationToken                            ct
+        async Task HandleEvent(ResolvedEvent re,
+            CancellationToken                ct
         ) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse

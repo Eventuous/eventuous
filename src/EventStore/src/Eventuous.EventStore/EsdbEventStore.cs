@@ -1,11 +1,12 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 // ReSharper disable CoVariantArrayConversion
 
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
-using Eventuous.Diagnostics;
+using Eventuous.Tools;
+using static Eventuous.Diagnostics.PersistenceEventSource;
 
 namespace Eventuous.EventStore;
 
@@ -49,7 +50,8 @@ public class EsdbEventStore : IEventStore {
             cancellationToken: cancellationToken
         );
 
-        var state = await read.ReadState.NoContext();
+        using var readState = read.ReadState;
+        var state = await readState.NoContext();
         return state == ReadState.Ok;
     }
 
@@ -95,7 +97,7 @@ public class EsdbEventStore : IEventStore {
             stream,
             () => new ErrorInfo("Unable to appends events to {Stream}", stream),
             (s, ex) => {
-                EventuousEventSource.Log.UnableToAppendEvents(stream, ex);
+                Log.UnableToAppendEvents(stream, ex);
                 return new AppendToStreamException(s, ex);
             }
         );

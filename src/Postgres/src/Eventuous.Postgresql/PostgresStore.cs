@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Data;
@@ -6,6 +6,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using Eventuous.Diagnostics;
 using Eventuous.Postgresql.Extensions;
+using Eventuous.Tools;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -104,7 +105,7 @@ public class PostgresStore : IEventStore {
         }
         catch (PostgresException e) when (e.MessageText.StartsWith("WrongExpectedVersion")) {
             await transaction.RollbackAsync(cancellationToken).NoContext();
-            EventuousEventSource.Log.UnableToAppendEvents(stream, e);
+            PersistenceEventSource.Log.UnableToAppendEvents(stream, e);
             throw new AppendToStreamException(stream, e);
         }
 

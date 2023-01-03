@@ -1,9 +1,13 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics.Tracing;
 using Eventuous.Diagnostics;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Eventuous.Producers.Diagnostics;
 
-[EventSource(Name = $"{DiagnosticName.BaseName}-producer")]
+[EventSource(Name = $"{DiagnosticName.BaseName}.producer")]
 public class ProducerEventSource<T> : EventSource where T : IEventProducer {
     public static readonly ProducerEventSource<T> Log = new();
     
@@ -21,10 +25,10 @@ public class ProducerEventSource<T> : EventSource where T : IEventProducer {
 
     [NonEvent]
     public void ProduceNotAcknowledged(ProducedMessage message, string error, Exception? e) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) {
-            var errorMessage = $"{error} {e?.Message}";
-            ProduceNotAcknowledged(ProducerName, message.MessageType, errorMessage);
-        }
+        if (!IsEnabled(EventLevel.Verbose, EventKeywords.All)) return;
+
+        var errorMessage = $"{error} {e?.Message}";
+        ProduceNotAcknowledged(ProducerName, message.MessageType, errorMessage);
     }
 
     [Event(ProduceAcknowledgedId, Level = EventLevel.Verbose, Message = "[{0}] Produce acknowledged: {1}")]

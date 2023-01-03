@@ -17,4 +17,12 @@
         <Using Include="MongoDB.Driver" />
         <Using Include="Eventuous.Subscriptions" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
+            <Link>Tools\TaskExtensions.cs</Link>
+        </Compile>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
+            <Link>Tools\Ensure.cs</Link>
+        </Compile>
+    </ItemGroup>
 </Project>

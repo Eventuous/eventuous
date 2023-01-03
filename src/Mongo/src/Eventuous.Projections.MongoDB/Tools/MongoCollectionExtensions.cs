@@ -1,5 +1,8 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Linq.Expressions;
-using Eventuous.Subscriptions.Tools;
+using Eventuous.Tools;
 using static System.String;
 
 namespace Eventuous.Projections.MongoDB.Tools; 

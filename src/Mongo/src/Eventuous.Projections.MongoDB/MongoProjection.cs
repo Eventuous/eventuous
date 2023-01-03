@@ -1,12 +1,12 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
+using Eventuous.Tools;
 using Eventuous.TypeMap;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
 
@@ -70,7 +70,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     [PublicAPI]
     protected void OnAsync<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdateAsync<TEvent, T> getUpdate)
         where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message!)).UpdateFromContext(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message)).UpdateFromContext(getUpdate));
 
     [PublicAPI]
     protected void OnAsync<TEvent>(GetDocumentIdFromStream getId, BuildUpdateAsync<TEvent, T> getUpdate)

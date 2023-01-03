@@ -5,4 +5,9 @@
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <Compile Include="$(CoreRoot)\Eventuous.Diagnostics\DiagnosticName.cs">
+        <Link>DiagnosticName.cs</Link>
+      </Compile>
+    </ItemGroup>
 </Project>

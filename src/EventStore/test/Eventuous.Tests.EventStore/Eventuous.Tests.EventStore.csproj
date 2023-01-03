@@ -22,4 +22,9 @@
         <Using Include="Eventuous.Subscriptions.Logging" />
         <Using Include="Eventuous.Tests.EventStore.Fixtures" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
+            <Link>Tools\TaskExtensions.cs</Link>
+        </Compile>
+    </ItemGroup>
 </Project>

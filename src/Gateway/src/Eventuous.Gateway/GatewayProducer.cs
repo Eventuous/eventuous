@@ -1,3 +1,6 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.Diagnostics;
 
 namespace Eventuous.Gateway;
@@ -36,7 +39,7 @@ public class GatewayProducer : IEventProducer {
         if (inner is not IHostedProducer hosted) return;
 
         while (!hosted.Ready) {
-            EventuousEventSource.Log.Warn("Producer not ready, waiting...");
+            // EventuousEventSource.Log.Warn("Producer not ready, waiting...");
             await Task.Delay(1000, cancellationToken);
         }
     }

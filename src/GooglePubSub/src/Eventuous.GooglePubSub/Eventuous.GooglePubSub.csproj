@@ -9,7 +9,6 @@
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
@@ -18,5 +17,13 @@
         <Using Include="Google.Cloud.PubSub.V1" />
         <Using Include="Google.Protobuf" />
         <Using Include="Microsoft.Extensions.Logging" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
+            <Link>Tools\TaskExtensions.cs</Link>
+        </Compile>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
+            <Link>Tools\Ensure.cs</Link>
+        </Compile>
     </ItemGroup>
 </Project>

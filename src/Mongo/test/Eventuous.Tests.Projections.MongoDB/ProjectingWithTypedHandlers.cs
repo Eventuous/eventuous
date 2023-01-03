@@ -13,7 +13,7 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
     public async Task ShouldProjectImported() {
         var evt    = DomainFixture.CreateImportBooking();
         var id     = new BookingId(CreateId());
-        var stream = StreamName.For<Booking, BookingState, BookingId>(id);
+        var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
 
         var append = await Instance.AppendEvent(stream, evt);
 

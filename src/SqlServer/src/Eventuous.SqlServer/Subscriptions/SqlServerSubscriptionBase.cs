@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Text;
@@ -7,6 +7,7 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Tools;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 

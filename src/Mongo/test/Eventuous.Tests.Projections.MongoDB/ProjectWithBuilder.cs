@@ -13,7 +13,7 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
     public async Task ShouldProjectImported() {
         var evt    = DomainFixture.CreateImportBooking();
         var id     = new BookingId(CreateId());
-        var stream = StreamName.For<Booking, BookingState, BookingId>(id);
+        var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
 
         var first = await Act(stream, evt);
 

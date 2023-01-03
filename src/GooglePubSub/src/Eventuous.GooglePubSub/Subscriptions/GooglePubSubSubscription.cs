@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.GooglePubSub.Shared;
@@ -7,6 +7,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
+using Eventuous.Tools;
 using Google.Protobuf.Collections;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
@@ -34,9 +35,10 @@ public class GooglePubSubSubscription
     /// Creates a Google PubSub subscription service
     /// </summary>
     /// <param name="projectId">GCP project ID</param>
-    /// <param name="topicId"></param>
+    /// <param name="topicId">Topic where the subscription receives messages rom</param>
     /// <param name="subscriptionId">Google PubSub subscription ID (within the project), which must already exist</param>
-    /// <param name="consumePipe"></param>
+    /// <param name="consumePipe">Consumer pipeline</param>
+    /// <param name="loggerFactory">Logger factory instance</param>
     /// <param name="eventSerializer">Event serializer instance</param>
     public GooglePubSubSubscription(
         string            projectId,
@@ -60,7 +62,8 @@ public class GooglePubSubSubscription
     /// Creates a Google PubSub subscription service
     /// </summary>
     /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
-    /// <param name="consumePipe"></param>
+    /// <param name="consumePipe">Consumer pipeline</param>
+    /// <param name="loggerFactory">Logger factory instance</param>
     public GooglePubSubSubscription(
         PubSubSubscriptionOptions options,
         ConsumePipe               consumePipe,
@@ -76,7 +79,7 @@ public class GooglePubSubSubscription
 
         _topicName = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
 
-        if (options.FailureHandler != null && !options.ThrowOnError) Log.ThrowOnErrorIncompatible();
+        if (options is { FailureHandler: { }, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
     }
 
     Task _subscriberTask = null!;

@@ -1,0 +1,2 @@
+AggregateIdEmpty=Aggregate id {0} cannot have an empty value
+DuplicateTypeKey=Type {0} has already been added to the map

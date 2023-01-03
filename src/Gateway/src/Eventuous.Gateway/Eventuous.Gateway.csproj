@@ -11,4 +11,9 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
+            <Link>Tools\TaskExtensions.cs</Link>
+        </Compile>
+    </ItemGroup>
 </Project>

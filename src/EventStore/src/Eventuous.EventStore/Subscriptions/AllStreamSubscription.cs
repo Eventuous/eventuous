@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.EventStore.Subscriptions.Diagnostics;
@@ -6,6 +6,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Tools;
 
 namespace Eventuous.EventStore.Subscriptions;
 

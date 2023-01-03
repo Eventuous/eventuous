@@ -1,6 +1,5 @@
 ﻿using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Subscriptions.Tools;
 using Polly;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 using PollyContext = Polly.Context;
@@ -26,11 +25,11 @@ public class PollyEventHandler : IEventHandler {
         const string retryKey = "eventuous-retry";
 
         var pollyContext = new PollyContext { { retryKey, new RetryCounter() } };
-        return await _retryPolicy.ExecuteAsync(Execute, pollyContext).NoContext();
+        return await _retryPolicy.ExecuteAsync(Execute, pollyContext).ConfigureAwait(false);
 
         async Task<EventHandlingStatus> Execute(PollyContext ctx) {
             try {
-                return await _inner.HandleEvent(context).NoContext();
+                return await _inner.HandleEvent(context).ConfigureAwait(false);
             }
             catch (Exception e) {
                 var counter = ctx[retryKey] as RetryCounter;
