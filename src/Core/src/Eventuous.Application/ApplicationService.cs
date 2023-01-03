@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Tools;
-using Eventuous.TypeMap;
 using static Eventuous.Diagnostics.ApplicationEventSource;
 
 // ReSharper disable MemberCanBePrivate.Global
@@ -37,7 +36,7 @@ public abstract class ApplicationService<TAggregate, TState, TId>
     ) {
         _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
         _streamNameMap   = streamNameMap   ?? new StreamNameMap();
-        _typeMap         = typeMap         ?? TypeMap.TypeMap.Instance;
+        _typeMap         = typeMap         ?? TypeMap.Instance;
         Store            = store;
     }
 

@@ -2,6 +2,7 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IncludeSutSubs>true</IncludeSutSubs>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj" />

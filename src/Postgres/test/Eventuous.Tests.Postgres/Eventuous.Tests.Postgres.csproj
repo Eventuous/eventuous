@@ -3,6 +3,7 @@
         <IsTestProject>true</IsTestProject>
         <IncludeSutSubs>true</IncludeSutSubs>
         <IncludeSutApp>true</IncludeSutApp>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="MicroElements.AutoFixture.NodaTime" />

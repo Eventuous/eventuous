@@ -3,6 +3,7 @@
         <IsTestProject>true</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeTestHelpers>true</IncludeTestHelpers>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />

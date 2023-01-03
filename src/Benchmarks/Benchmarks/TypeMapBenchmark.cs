@@ -3,7 +3,7 @@
 
 using BenchmarkDotNet.Attributes;
 using Benchmarks.Tools;
-using Eventuous.TypeMap;
+using Eventuous;
 
 namespace Benchmarks;
 

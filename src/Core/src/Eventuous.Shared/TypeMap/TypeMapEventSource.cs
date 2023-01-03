@@ -4,7 +4,7 @@
 using System.Diagnostics.Tracing;
 using Eventuous.Diagnostics;
 
-namespace Eventuous.TypeMap; 
+namespace Eventuous; 
 
 [EventSource(Name = DiagnosticName.BaseName)]
 class TypeMapEventSource : EventSource {

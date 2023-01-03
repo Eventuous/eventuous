@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Eventuous.TypeMap;
+namespace Eventuous;
 
 public class TypeMap<TV> : ITypeMap<TV> {
     private MapEntry[] _values;

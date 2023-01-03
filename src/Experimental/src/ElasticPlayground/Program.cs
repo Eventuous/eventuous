@@ -4,7 +4,6 @@ using Elasticsearch.Net;
 using EventStore.Client;
 using Eventuous.ElasticSearch.Store;
 using Eventuous.Sut.Domain;
-using Eventuous.TypeMap;
 using Nest;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;

@@ -3,7 +3,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Eventuous.Tools;
-using Eventuous.TypeMap;
 using static Eventuous.Diagnostics.ApplicationEventSource;
 
 namespace Eventuous;

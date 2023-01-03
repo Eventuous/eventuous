@@ -1,3 +1,6 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Elasticsearch.Net;
 using Nest;
 
@@ -30,7 +33,7 @@ public class ElasticEventStore : IEventReader, IEventWriter {
         PersistedEvent AsDocument(StreamEvent evt)
             => new(
                 evt.Id.ToString(),
-                TypeMap.TypeMap.Instance.GetTypeName(evt.Payload!),
+                TypeMap.Instance.GetTypeName(evt.Payload!),
                 evt.Position + 1,
                 evt.ContentType,
                 streamName,

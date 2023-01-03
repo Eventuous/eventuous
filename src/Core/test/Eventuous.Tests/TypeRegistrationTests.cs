@@ -1,4 +1,3 @@
-using Eventuous.TypeMap;
 using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests;

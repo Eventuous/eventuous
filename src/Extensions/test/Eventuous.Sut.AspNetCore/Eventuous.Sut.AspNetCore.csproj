@@ -2,6 +2,7 @@
     <PropertyGroup>
         <IncludeSutApp>true</IncludeSutApp>
         <IsPackable>false</IsPackable>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>

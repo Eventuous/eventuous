@@ -6,7 +6,7 @@ using Eventuous.Sut.Subs;
 namespace Eventuous.Tests.OpenTelemetry;
 
 public sealed class MetricsTests : IAsyncLifetime, IDisposable {
-    static MetricsTests() => TypeMap.TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static MetricsTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     const string SubscriptionId = "test-sub";
 

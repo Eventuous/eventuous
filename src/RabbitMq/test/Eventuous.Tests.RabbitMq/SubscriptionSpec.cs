@@ -9,7 +9,7 @@ using Hypothesist;
 namespace Eventuous.Tests.RabbitMq;
 
 public class SubscriptionSpec : IAsyncLifetime, IDisposable {
-    static SubscriptionSpec() => TypeMap.TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     static readonly Fixture Auto = new();
     

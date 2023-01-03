@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Eventuous.TypeMap;
 
 namespace Eventuous;
 
@@ -15,7 +14,7 @@ public class DefaultEventSerializer : IEventSerializer {
 
     public DefaultEventSerializer(JsonSerializerOptions options, TypeMapper? typeMapper = null) {
         _options    = options;
-        _typeMapper = typeMapper ?? TypeMap.TypeMap.Instance;
+        _typeMapper = typeMapper ?? TypeMap.Instance;
     }
 
     public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType) {

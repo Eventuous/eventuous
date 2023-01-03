@@ -8,7 +8,7 @@ namespace Eventuous.Tests;
 public class StoringEvents : NaiveFixture {
     public StoringEvents() {
         Service = new BookingService(AggregateStore, null);
-        TypeMap.TypeMap.RegisterKnownEventTypes();
+        TypeMap.RegisterKnownEventTypes();
     }
 
     BookingService Service { get; }

@@ -3,11 +3,11 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using static Eventuous.TypeMap.TypeMapEventSource;
+using static Eventuous.TypeMapEventSource;
 
 // ReSharper disable InvertIf
 
-namespace Eventuous.TypeMap;
+namespace Eventuous;
 
 /// <summary>
 /// The TypeMap maintains event type names for known event types so we avoid using CLR type names

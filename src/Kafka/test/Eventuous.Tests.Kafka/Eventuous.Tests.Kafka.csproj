@@ -4,6 +4,7 @@
         <IsPackable>false</IsPackable>
         <IncludeSutSubs>true</IncludeSutSubs>
         <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx-x64</RuntimeIdentifier>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="$(LocalRoot)\Eventuous.Kafka\Eventuous.Kafka.csproj" />

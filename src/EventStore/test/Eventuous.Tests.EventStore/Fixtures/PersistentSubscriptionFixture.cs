@@ -8,7 +8,7 @@ namespace Eventuous.Tests.EventStore.Fixtures;
 
 public abstract class PersistentSubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
     static PersistentSubscriptionFixture()
-        => TypeMap.TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+        => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     protected readonly Fixture Auto = new();
 

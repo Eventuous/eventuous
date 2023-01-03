@@ -1,4 +1,3 @@
-using Eventuous.TypeMap;
 using NodaTime;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
@@ -46,5 +45,5 @@ public static class BookingEvents {
         public const string BookingCancelled = "V1.BookingCancelled";
     }
 
-    public static void MapBookingEvents() => TypeMap.TypeMap.RegisterKnownEventTypes();
+    public static void MapBookingEvents() => TypeMap.RegisterKnownEventTypes();
 }

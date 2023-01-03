@@ -8,7 +8,7 @@ using Hypothesist;
 namespace Eventuous.Tests.GooglePubSub;
 
 public class PubSubTests : IAsyncLifetime {
-    static PubSubTests() => TypeMap.TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     static readonly Fixture Auto = new();
 

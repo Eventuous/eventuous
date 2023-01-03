@@ -5,7 +5,7 @@ using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
 namespace Eventuous.Tests.Postgres.Fixtures;
 
 public static class DomainFixture {
-    static DomainFixture() => TypeMap.TypeMap.RegisterKnownEventTypes();
+    static DomainFixture() => TypeMap.RegisterKnownEventTypes();
         
     public static Commands.ImportBooking CreateImportBooking() {
         var from = Instance.Auto.Create<LocalDate>();

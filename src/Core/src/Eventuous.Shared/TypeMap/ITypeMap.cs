@@ -3,7 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Eventuous.TypeMap;
+namespace Eventuous;
 
 public interface IReadOnlyTypeMap<TV> {
     bool TryGetValue<TK>([MaybeNullWhen(false)] out TV value);

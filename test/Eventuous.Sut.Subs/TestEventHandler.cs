@@ -1,6 +1,5 @@
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
-using Eventuous.TypeMap;
 using Hypothesist;
 using Xunit.Abstractions;
 

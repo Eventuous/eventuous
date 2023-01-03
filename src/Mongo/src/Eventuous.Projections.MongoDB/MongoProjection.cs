@@ -6,7 +6,6 @@ using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
-using Eventuous.TypeMap;
 
 namespace Eventuous.Projections.MongoDB;
 
@@ -20,7 +19,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
 
     protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) {
         Collection = Ensure.NotNull(database).GetDocumentCollection<T>();
-        _map       = typeMap ?? TypeMap.TypeMap.Instance;
+        _map       = typeMap ?? TypeMap.Instance;
     }
 
     /// <summary>

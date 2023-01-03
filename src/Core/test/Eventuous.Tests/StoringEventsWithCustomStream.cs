@@ -11,7 +11,7 @@ public class StoringEventsWithCustomStream : NaiveFixture {
         var streamNameMap = new StreamNameMap();
         streamNameMap.Register<BookingId>(GetStreamName);
         Service = new BookingService(AggregateStore, streamNameMap);
-        TypeMap.TypeMap.RegisterKnownEventTypes();
+        TypeMap.RegisterKnownEventTypes();
     }
 
     BookingService Service { get; }
