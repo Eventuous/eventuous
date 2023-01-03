@@ -4,7 +4,6 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj"/>
         <ProjectReference Include="..\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
     </ItemGroup>
 </Project>

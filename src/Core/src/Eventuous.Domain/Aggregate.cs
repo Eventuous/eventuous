@@ -38,7 +38,7 @@ public abstract class Aggregate {
     readonly List<object> _changes = new();
 
     /// <summary>
-    /// Restores the aggregate state from a collection of events, previously stored in the <seealso cref="AggregateStore"/>
+    /// Restores the aggregate state from a collection of events, previously stored in the AggregateStore/>
     /// </summary>
     /// <param name="events">Domain events from the aggregate stream</param>
     public abstract void Load(IEnumerable<object?> events);

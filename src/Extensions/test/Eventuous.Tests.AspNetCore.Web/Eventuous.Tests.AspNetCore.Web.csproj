@@ -6,7 +6,6 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
         <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj" />
     </ItemGroup>

@@ -6,7 +6,7 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
-      <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
+      <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj" />
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="BenchmarkDotNet" />
