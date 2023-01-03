@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>Eventuous</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+    </ItemGroup>
+    <ItemGroup>
+      <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">
+        <LogicalName>Eventuous.ExceptionMessages.resources</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="Eventuous.Shared.csproj.DotSettings" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Include="..\Eventuous.Diagnostics\DiagnosticName.cs">
+        <Link>Diagnostics\DiagnosticName.cs</Link>
+      </Compile>
+    </ItemGroup>
+</Project>
