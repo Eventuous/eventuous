@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Threading.Channels;
@@ -38,5 +38,5 @@ public class ChannelWorker<T> {
         return _channel.Stop(_cts, new[] { _readerTask }, finalize);
     }
 
-    bool _stopping;
+    volatile bool _stopping;
 }

@@ -1,10 +1,11 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
+using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -31,6 +32,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     /// <param name="connectionFactory"></param>
     /// <param name="options"></param>
     /// <param name="consumePipe"></param>
+    /// <param name="loggerFactory"></param>
     public RabbitMqSubscription(
         ConnectionFactory                     connectionFactory,
         IOptions<RabbitMqSubscriptionOptions> options,
@@ -44,6 +46,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     /// <param name="connectionFactory"></param>
     /// <param name="options"></param>
     /// <param name="consumePipe"></param>
+    /// <param name="loggerFactory"></param>
     public RabbitMqSubscription(
         ConnectionFactory           connectionFactory,
         RabbitMqSubscriptionOptions options,
@@ -73,6 +76,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     /// <param name="exchange">Exchange to consume events from, the queue will get bound to this exchange</param>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="consumePipe"></param>
+    /// <param name="loggerFactory"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     public RabbitMqSubscription(
         ConnectionFactory connectionFactory,
@@ -133,6 +137,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
 
     async Task HandleReceived(object sender, BasicDeliverEventArgs received) {
         Logger.Current = Log;
+
         try {
             var ctx = CreateContext(sender, received).WithItem(ReceivedMessageKey, received);
             await Handler(new AsyncConsumeContext(ctx, Ack, Nack)).NoContext();

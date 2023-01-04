@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Tools;
 
 namespace Eventuous.EventStore.Subscriptions.Diagnostics;
 

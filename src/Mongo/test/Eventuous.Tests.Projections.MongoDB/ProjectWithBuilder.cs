@@ -13,17 +13,18 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
     public async Task ShouldProjectImported() {
         var evt    = DomainFixture.CreateImportBooking();
         var id     = new BookingId(CreateId());
-        var stream = StreamName.For<Booking, BookingState, BookingId>(id);
+        var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
 
         var first = await Act(stream, evt);
 
         var expected = new BookingDocument(id.ToString()) {
-            RoomId       = evt.RoomId,
-            CheckInDate  = evt.CheckIn,
-            CheckOutDate = evt.CheckOut,
-            BookingPrice = evt.Price,
-            Outstanding  = evt.Price,
-            Position     = first.Append.GlobalPosition
+            RoomId         = evt.RoomId,
+            CheckInDate    = evt.CheckIn,
+            CheckOutDate   = evt.CheckOut,
+            BookingPrice   = evt.Price,
+            Outstanding    = evt.Price,
+            Position       = first.Append.GlobalPosition,
+            StreamPosition = (ulong)first.Append.NextExpectedVersion
         };
 
         first.Doc.Should().Be(expected);
@@ -34,7 +35,8 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
 
         expected = expected with {
             PaidAmount = payment.AmountPaid,
-            Position = second.Append.GlobalPosition
+            Position = second.Append.GlobalPosition,
+            StreamPosition = (ulong)second.Append.NextExpectedVersion
         };
 
         second.Doc.Should().Be(expected);

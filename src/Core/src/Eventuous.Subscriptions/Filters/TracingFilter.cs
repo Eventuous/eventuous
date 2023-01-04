@@ -1,12 +1,13 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
 using Eventuous.Diagnostics;
-using Eventuous.Diagnostics.Tracing;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Tools;
 using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
+using Constants = Eventuous.Diagnostics.Tracing.Constants;
 
 namespace Eventuous.Subscriptions.Filters;
 

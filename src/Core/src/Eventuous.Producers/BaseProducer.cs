@@ -1,6 +1,10 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Producers.Diagnostics;
+using Eventuous.Tools;
 using static Eventuous.Diagnostics.TelemetryTags;
 
 namespace Eventuous.Producers;

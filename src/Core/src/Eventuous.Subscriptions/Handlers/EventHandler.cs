@@ -1,9 +1,12 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Runtime.CompilerServices;
 using System.Text;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Subscriptions.Tools;
+using Eventuous.Tools;
 
 namespace Eventuous.Subscriptions;
 
@@ -32,7 +35,7 @@ public abstract class EventHandler : BaseEventHandler {
         }
 
         if (!_map.IsTypeRegistered<T>()) {
-            Logger.Current.MessageTypeNotFound<T>();
+            SubscriptionsEventSource.Log.MessageTypeNotRegistered<T>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

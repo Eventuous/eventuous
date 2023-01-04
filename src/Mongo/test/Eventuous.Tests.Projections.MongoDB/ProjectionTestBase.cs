@@ -14,14 +14,14 @@ public class ProjectionTestBase<TProjection> : IDisposable where TProjection : c
 
     protected ProjectionTestBase(string id,  ITestOutputHelper output) {
         var builder = new WebHostBuilder()
-            .ConfigureLogging(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug))
+            .ConfigureLogging(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Trace))
             .ConfigureServices(collection => ConfigureServices(collection, id))
             .Configure(x => x.UseEventuousLogs());
 
         _host = new TestServer(builder);
     }
 
-    void ConfigureServices(IServiceCollection services, string id)
+    static void ConfigureServices(IServiceCollection services, string id)
         => services
             .AddSingleton(Instance.Client)
             .AddSingleton(Instance.Mongo)

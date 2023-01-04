@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
@@ -9,6 +9,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
+using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
@@ -229,4 +230,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 public record EventPosition(ulong? Position, DateTime Created) {
     public static EventPosition FromContext(IMessageConsumeContext context)
         => new(context.StreamPosition, context.Created);
+    
+    public static EventPosition FromAllContext(IMessageConsumeContext context)
+        => new(context.GlobalPosition, context.Created);
 }

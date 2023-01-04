@@ -1,9 +1,9 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Tools;
+using Eventuous.Tools;
 
 namespace Eventuous.Projections.MongoDB;
 
@@ -48,7 +48,9 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
                     await collection.UpdateManyAsync(
                             _filter.GetFilter(ctx),
-                            update.Set(x => x.Position, ctx.StreamPosition),
+                            update
+                                .Set(x => x.Position, ctx.GlobalPosition)
+                                .Set(x => x.StreamPosition, ctx.StreamPosition),
                             options,
                             token
                         )

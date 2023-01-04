@@ -3,11 +3,12 @@
         <IsTestProject>true</IsTestProject>
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeTestHelpers>true</IncludeTestHelpers>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous\Eventuous.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Application\Eventuous.Application.csproj" />
     </ItemGroup>
 </Project>

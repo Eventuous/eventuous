@@ -1,11 +1,12 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Logging;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+using Eventuous.Tools;
 
 namespace Eventuous.Projections.MongoDB;
 
@@ -26,8 +27,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     /// Register a handler for a particular event type
     /// </summary>
     /// <param name="handler">Function which handles an event</param>
-    /// <typeparam name="T">Event type</typeparam>
-    /// <typeparam name="TEvent"></typeparam>
+    /// <typeparam name="TEvent">Event type</typeparam>
     /// <exception cref="ArgumentException">Throws if a handler for the given event type has already been registered</exception>
     [PublicAPI]
     protected void On<TEvent>(ProjectTypedEvent<T, TEvent> handler) where TEvent : class {
@@ -36,7 +36,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         }
 
         if (!_map.IsTypeRegistered<TEvent>()) {
-            Logger.Current.MessageTypeNotFound<TEvent>();
+            SubscriptionsEventSource.Log.MessageTypeNotRegistered<TEvent>();
         }
     }
 
@@ -70,7 +70,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     [PublicAPI]
     protected void OnAsync<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdateAsync<TEvent, T> getUpdate)
         where TEvent : class
-        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message!)).UpdateFromContext(getUpdate));
+        => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message)).UpdateFromContext(getUpdate));
 
     [PublicAPI]
     protected void OnAsync<TEvent>(GetDocumentIdFromStream getId, BuildUpdateAsync<TEvent, T> getUpdate)

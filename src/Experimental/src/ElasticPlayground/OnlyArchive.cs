@@ -5,7 +5,6 @@ using Eventuous.EventStore;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Nest;
-using NodaTime;
 using static Eventuous.Sut.App.Commands;
 
 namespace ElasticPlayground;

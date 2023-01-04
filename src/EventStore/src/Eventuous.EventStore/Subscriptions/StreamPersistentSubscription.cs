@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.EventStore.Subscriptions.Diagnostics;
@@ -29,6 +29,7 @@ public class StreamPersistentSubscription
     /// <param name="consumerPipe"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     /// <param name="metaSerializer"></param>
+    /// <param name="loggerFactory"></param>
     public StreamPersistentSubscription(
         EventStoreClient     eventStoreClient,
         StreamName           streamName,

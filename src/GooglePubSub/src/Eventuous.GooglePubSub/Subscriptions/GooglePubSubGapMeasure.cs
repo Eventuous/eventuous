@@ -1,7 +1,8 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions.Diagnostics;
+using Eventuous.Tools;
 using Google.Cloud.Monitoring.V3;
 using Google.Protobuf.WellKnownTypes;
 

@@ -1,10 +1,10 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Tools;
+using Eventuous.Tools;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 

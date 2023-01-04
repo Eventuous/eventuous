@@ -1,12 +1,12 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Threading.Channels;
-using Eventuous.Subscriptions.Tools;
+using Eventuous.Tools;
 
 namespace Eventuous.Subscriptions.Channels;
 
-public delegate ValueTask ProcessElement<T>(T element, CancellationToken cancellationToken);
+public delegate ValueTask ProcessElement<in T>(T element, CancellationToken cancellationToken);
 
 static class ChannelExtensions {
     public static async Task Read<T>(

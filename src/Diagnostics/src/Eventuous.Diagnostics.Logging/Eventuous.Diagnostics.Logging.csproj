@@ -3,6 +3,8 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
+      <Compile Include="$(CoreRoot)\Eventuous.Diagnostics\DiagnosticName.cs">
+        <Link>DiagnosticName.cs</Link>
+      </Compile>
     </ItemGroup>
 </Project>

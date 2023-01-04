@@ -1,17 +1,22 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
+using Eventuous.Tools;
+using Microsoft.Extensions.Logging;
 using Nest;
 
 namespace Eventuous.ElasticSearch.Producers;
 
 public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
-    readonly IElasticClient _elasticClient;
+    readonly IElasticClient           _elasticClient;
+    readonly ILogger<ElasticProducer> _log;
 
-    public ElasticProducer(IElasticClient elasticClient) : base(TracingOptions) => _elasticClient = elasticClient;
+    public ElasticProducer(IElasticClient elasticClient, ILogger<ElasticProducer> log) : base(TracingOptions) {
+        _elasticClient = elasticClient;
+        _log           = log;
+    }
 
     static readonly ProducerTracingOptions TracingOptions = new() {
         MessagingSystem  = "elasticsearch",
@@ -26,15 +31,15 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
         CancellationToken            cancellationToken = default
     ) {
         var messagesList = messages.ToList();
-        var documents    = messagesList.Select(x => x.Message);
-        var mode         = options?.ProduceMode ?? ProduceMode.Create;
+        var documents = messagesList.Select(x => x.Message);
+        var mode = options?.ProduceMode ?? ProduceMode.Create;
 
-        var bulk   = GetOp(new BulkDescriptor(stream.ToString()));
+        var bulk = GetOp(new BulkDescriptor(stream.ToString()));
         var result = await _elasticClient.BulkAsync(bulk, cancellationToken);
 
         if (!result.IsValid) {
             if (result.DebugInformation.Contains("version conflict")) {
-                EventuousEventSource.Log.Warn("ElasticProducer: version conflict");
+                _log.LogWarning("ElasticProducer: version conflict");
             }
             else {
                 var errors = messagesList
@@ -63,7 +68,7 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
                     }
                 ),
                 ProduceMode.Index => descriptor.IndexMany(documents),
-                _                 => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException()
             };
     }
 }

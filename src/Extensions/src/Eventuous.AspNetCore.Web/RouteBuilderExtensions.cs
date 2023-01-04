@@ -107,11 +107,11 @@ public static class RouteBuilderExtensions {
         return builder;
     }
 
-    static RouteHandlerBuilder Map<TAggregate, TCommand>(
+    static RouteHandlerBuilder Map<TAggregate, [NotNull] TCommand>(
         IEndpointRouteBuilder                   builder,
         string?                                 route,
         EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
-    ) where TAggregate : Aggregate where TCommand : notnull
+    ) where TAggregate : Aggregate where TCommand : class
         => builder
             .MapPost(
                 GetRoute<TCommand>(route),

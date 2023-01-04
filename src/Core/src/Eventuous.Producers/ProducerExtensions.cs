@@ -1,9 +1,12 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 namespace Eventuous.Producers;
 
 [PublicAPI]
 public static class ProducerExtensions {
     /// <summary>
-    /// Produce a message of type <see cref="TMessage"/>. The type is used to look up the type name
+    /// Produce a message of type TMessage. The type is used to look up the type name
     /// in the <seealso cref="TypeMap"/>.
     /// </summary>
     /// <param name="producer"></param>
@@ -33,7 +36,7 @@ public static class ProducerExtensions {
     }
 
     /// <summary>
-    /// Produce a message of type <see cref="TMessage"/>. The type is used to look up the type name
+    /// Produce a message of type <code>TMessage</code>. The type is used to look up the type name
     /// in the <seealso cref="TypeMap"/>.
     /// </summary>
     /// <param name="producer">Producer instance</param>

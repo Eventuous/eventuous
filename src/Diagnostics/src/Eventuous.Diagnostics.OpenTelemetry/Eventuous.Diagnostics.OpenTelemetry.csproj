@@ -2,9 +2,16 @@
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
+            <Link>Tools\Ensure.cs</Link>
+        </Compile>
+        <Compile Include="$(CoreRoot)\Eventuous.Diagnostics\DiagnosticName.cs">
+          <Link>DiagnosticName.cs</Link>
+        </Compile>
     </ItemGroup>
 </Project>

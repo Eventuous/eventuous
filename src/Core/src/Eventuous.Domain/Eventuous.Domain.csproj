@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>Eventuous</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+      <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">
+        <LogicalName>Eventuous.ExceptionMessages.resources</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
+            <Link>Tools\Ensure.cs</Link>
+        </Compile>
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="Eventuous.Domain.csproj.DotSettings" />
+    </ItemGroup>
+</Project>

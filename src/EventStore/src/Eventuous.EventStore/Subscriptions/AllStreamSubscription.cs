@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.EventStore.Subscriptions.Diagnostics;
@@ -6,6 +6,8 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Tools;
+// ReSharper disable ConvertClosureToMethodGroup
 
 namespace Eventuous.EventStore.Subscriptions;
 
@@ -122,7 +124,7 @@ public class AllStreamSubscription
             re.Event.EventType,
             re.Event.ContentType,
             re.OriginalStreamId,
-            re.Event.Position.CommitPosition,
+            re.Event.EventNumber,
             re.Event.Position.CommitPosition,
             _sequence++,
             re.Event.Created,
@@ -138,4 +140,7 @@ public class AllStreamSubscription
     public GetSubscriptionGap GetMeasure()
         => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient, () => LastProcessed)
             .GetSubscriptionGap;
+
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+        => EventPosition.FromAllContext(context);
 }

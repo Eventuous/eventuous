@@ -5,6 +5,7 @@ using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Sut.Subs;
+using Eventuous.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;

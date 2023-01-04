@@ -14,7 +14,7 @@
         <LocalRoot>..\..\src</LocalRoot>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
         <PackageReference Include="MinVer" PrivateAssets="All"/>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
@@ -42,6 +42,7 @@
 
     <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
         <IsPackable>false</IsPackable>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
@@ -58,6 +59,7 @@
         <Authors>Alexey Zimarev and Eventuous community</Authors>
         <Copyright>Ubiquitous AS</Copyright>
         <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">

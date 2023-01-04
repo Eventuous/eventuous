@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
@@ -6,6 +6,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
+using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
@@ -40,6 +41,8 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     protected EventPosition?          LastProcessed           { get; set; }
     protected CheckpointCommitHandler CheckpointCommitHandler { get; }
     protected ICheckpointStore        CheckpointStore         { get; }
+    
+    protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
@@ -55,7 +58,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     }
 
     ValueTask Ack(IMessageConsumeContext context) {
-        var eventPosition = EventPosition.FromContext(context);
+        var eventPosition = GetPositionFromContext(context);
         LastProcessed = eventPosition;
 
         return CheckpointCommitHandler.Commit(

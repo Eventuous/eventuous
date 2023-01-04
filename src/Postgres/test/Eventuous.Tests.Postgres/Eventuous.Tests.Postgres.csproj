@@ -3,13 +3,13 @@
         <IsTestProject>true</IsTestProject>
         <IncludeSutSubs>true</IncludeSutSubs>
         <IncludeSutApp>true</IncludeSutApp>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
         <ProjectReference Include="$(LocalRoot)\Eventuous.Postgresql\Eventuous.Postgresql.csproj" />
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
     </ItemGroup>

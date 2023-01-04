@@ -2,16 +2,17 @@
     <PropertyGroup>
         <IncludeSutApp>true</IncludeSutApp>
         <IsPackable>false</IsPackable>
+        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous\Eventuous.csproj" />
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web" />
+        <Using Include="Eventuous"/>
+        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
     </ItemGroup>
 </Project>
