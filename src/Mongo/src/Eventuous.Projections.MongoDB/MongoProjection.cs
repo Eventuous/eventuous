@@ -4,6 +4,7 @@
 using System.Runtime.CompilerServices;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
 
@@ -35,7 +36,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         }
 
         if (!_map.IsTypeRegistered<TEvent>()) {
-            Logger.Current.MessageTypeNotFound<TEvent>();
+            SubscriptionsEventSource.Log.MessageTypeNotRegistered<TEvent>();
         }
     }
 

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions.Context;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions.Logging;
 
@@ -35,8 +36,8 @@ public static class LoggingExtensions {
             context.Sequence
         );
 
-    public static void MessageTypeNotFound<T>(this LogContext log)
-        => log.WarnLog?.Log("Message type {MessageType} not registered in the type map", typeof(T).Name);
+    public static void MessageTypeNotFound<T>(this ILogger? log)
+        => log?.LogWarning("Message type {MessageType} not registered in the type map", typeof(T).Name);
 
     public static void MessageHandlerNotFound(this LogContext log, string handler, string messageType)
         => log.WarnLog?.Log("No handler found in {Handler} for message type {MessageType}", handler, messageType);

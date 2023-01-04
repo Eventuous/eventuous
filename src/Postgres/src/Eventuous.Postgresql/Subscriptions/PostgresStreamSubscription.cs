@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Data;
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -71,6 +72,9 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
             Options.SubscriptionId,
             cancellationToken
         );
+
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+        => EventPosition.FromContext(context);
 }
 
 public record PostgresStreamSubscriptionOptions(StreamName Stream) : PostgresSubscriptionBaseOptions;

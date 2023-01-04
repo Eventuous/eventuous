@@ -4,6 +4,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
 
@@ -34,7 +35,7 @@ public abstract class EventHandler : BaseEventHandler {
         }
 
         if (!_map.IsTypeRegistered<T>()) {
-            Logger.Current.MessageTypeNotFound<T>();
+            SubscriptionsEventSource.Log.MessageTypeNotRegistered<T>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

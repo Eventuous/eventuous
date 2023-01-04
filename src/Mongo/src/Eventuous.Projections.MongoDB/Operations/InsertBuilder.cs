@@ -14,7 +14,11 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         Func<MessageConsumeContext<TEvent>, T> GetDocument => Ensure.NotNull(_getDocument, "Get document function");
 
         public InsertOneBuilder Document(Func<StreamName, TEvent, T> getDocument) {
-            _getDocument = ctx => getDocument(ctx.Stream, ctx.Message) with { Position = ctx.StreamPosition };
+            _getDocument = ctx => getDocument(ctx.Stream, ctx.Message) with {
+                Position = ctx.GlobalPosition,
+                StreamPosition = ctx.StreamPosition
+            };
+
             return this;
         }
 
@@ -47,7 +51,9 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => Ensure.NotNull(_getDocuments, "Get documents function");
 
         public InsertManyBuilder Documents(Func<TEvent, IEnumerable<T>> getDocuments) {
-            _getDocuments = ctx => getDocuments(ctx.Message).Select(x => x with { Position = ctx.StreamPosition });
+            _getDocuments = ctx => getDocuments(ctx.Message)
+                .Select(x => x with { Position = ctx.GlobalPosition, StreamPosition = ctx.StreamPosition });
+
             return this;
         }
 

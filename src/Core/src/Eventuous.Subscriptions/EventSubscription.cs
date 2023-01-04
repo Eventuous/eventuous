@@ -230,4 +230,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 public record EventPosition(ulong? Position, DateTime Created) {
     public static EventPosition FromContext(IMessageConsumeContext context)
         => new(context.StreamPosition, context.Created);
+    
+    public static EventPosition FromAllContext(IMessageConsumeContext context)
+        => new(context.GlobalPosition, context.Created);
 }

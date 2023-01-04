@@ -3,7 +3,7 @@
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
         <IncludeSutSubs>true</IncludeSutSubs>
-        <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx-x64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx.13-arm64</RuntimeIdentifier>
         <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>

@@ -3,6 +3,7 @@
 
 using System.Data;
 using Eventuous.SqlServer.Extensions;
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -53,6 +54,9 @@ public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServe
             Options.SubscriptionId,
             cancellationToken
         );
+
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+        => EventPosition.FromAllContext(context);
 }
 
 public record SqlServerAllStreamSubscriptionOptions : SqlServerSubscriptionBaseOptions;

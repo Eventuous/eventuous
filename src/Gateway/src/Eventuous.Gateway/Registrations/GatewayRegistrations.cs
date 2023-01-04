@@ -19,6 +19,8 @@ public static class GatewayRegistrations {
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer
         where TSubscriptionOptions : SubscriptionOptions {
+        services.TryAddSingleton<TProducer>();
+        services.AddHostedServiceIfSupported<TProducer>();
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
             builder => {
@@ -48,6 +50,8 @@ public static class GatewayRegistrations {
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer
         where TSubscriptionOptions : SubscriptionOptions {
+        services.TryAddSingleton<TProducer>();
+        services.AddHostedServiceIfSupported<TProducer>();
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
             builder => {

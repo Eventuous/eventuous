@@ -9,7 +9,10 @@ namespace Eventuous.Tests.Kafka;
 public class BasicProducerTests {
     readonly ITestOutputHelper _output;
 
-    public BasicProducerTests(ITestOutputHelper output) => _output = output;
+    public BasicProducerTests(ITestOutputHelper output) {
+        _output = output;
+        TypeMap.Instance.AddType<TestEvent>("testEvent");
+    }
 
     const string BrokerList = "localhost:9092";
 
@@ -54,23 +57,28 @@ public class BasicProducerTests {
 
         var consumed = new List<TestEvent>();
 
-        while (!cts.IsCancellationRequested) {
-            var msg = consumer.Consume(cts.Token);
-            if (msg == null) return;
+        try {
+            while (!cts.IsCancellationRequested) {
+                var msg = consumer.Consume(cts.Token);
+                if (msg == null) return;
 
-            var meta = msg.Message.Headers.AsMetadata();
+                var meta = msg.Message.Headers.AsMetadata();
 
-            var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
-            var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
+                var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
+                var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
 
-            var result =
-                DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as
-                    SuccessfullyDeserialized;
+                var result =
+                    DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as
+                        SuccessfullyDeserialized;
 
-            var evt = (result!.Payload as TestEvent)!;
-            _output.WriteLine($"Consumed {evt}");
-            consumed.Add(evt);
-            if (consumed.Count == events.Length) break;
+                var evt = (result!.Payload as TestEvent)!;
+                _output.WriteLine($"Consumed {evt}");
+                consumed.Add(evt);
+                if (consumed.Count == events.Length) break;
+            }
+        }
+        catch (OperationCanceledException) {
+            // ignore
         }
 
         _output.WriteLine($"Consumed {consumed.Count} events");
@@ -95,9 +103,9 @@ public class BasicProducerTests {
             .SetPartitionsAssignedHandler(
                 (c, partitions) => {
                     _output.WriteLine(
-                        "Partitions incrementally assigned: ["                                           +
-                        string.Join(',', partitions.Select(p => p.Partition.Value))                      +
-                        "], all: ["                                                                      +
+                        "Partitions incrementally assigned: [" +
+                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
+                        "], all: [" +
                         string.Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value)) +
                         "]"
                     );
@@ -110,10 +118,10 @@ public class BasicProducerTests {
                     );
 
                     _output.WriteLine(
-                        "Partitions incrementally revoked: ["                       +
+                        "Partitions incrementally revoked: [" +
                         string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "], remaining: ["                                           +
-                        string.Join(',', remaining.Select(p => p.Partition.Value))  +
+                        "], remaining: [" +
+                        string.Join(',', remaining.Select(p => p.Partition.Value)) +
                         "]"
                     );
                 }

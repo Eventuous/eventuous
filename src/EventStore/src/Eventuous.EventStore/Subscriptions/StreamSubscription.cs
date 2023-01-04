@@ -147,4 +147,7 @@ public class StreamSubscription
             EventStoreClient,
             () => LastProcessed
         ).GetSubscriptionGap;
+
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+        => EventPosition.FromContext(context);
 }

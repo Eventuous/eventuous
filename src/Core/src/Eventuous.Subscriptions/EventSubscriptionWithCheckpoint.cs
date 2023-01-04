@@ -41,6 +41,8 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     protected EventPosition?          LastProcessed           { get; set; }
     protected CheckpointCommitHandler CheckpointCommitHandler { get; }
     protected ICheckpointStore        CheckpointStore         { get; }
+    
+    protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
@@ -56,7 +58,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     }
 
     ValueTask Ack(IMessageConsumeContext context) {
-        var eventPosition = EventPosition.FromContext(context);
+        var eventPosition = GetPositionFromContext(context);
         LastProcessed = eventPosition;
 
         return CheckpointCommitHandler.Commit(

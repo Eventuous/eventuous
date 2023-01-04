@@ -48,7 +48,9 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
                     await collection.UpdateManyAsync(
                             _filter.GetFilter(ctx),
-                            update.Set(x => x.Position, ctx.StreamPosition),
+                            update
+                                .Set(x => x.Position, ctx.GlobalPosition)
+                                .Set(x => x.StreamPosition, ctx.StreamPosition),
                             options,
                             token
                         )
