@@ -5,6 +5,6 @@
         <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Gateway\Eventuous.Gateway.csproj" />
     </ItemGroup>
 </Project>
