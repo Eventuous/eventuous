@@ -37,7 +37,10 @@ public class PostgresCheckpointStore : ICheckpointStore {
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
             if (await reader.ReadAsync(cancellationToken).NoContext()) {
-                checkpoint = new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0));
+                var hasPosition = !reader.IsDBNull(0);
+                checkpoint = hasPosition 
+                    ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0))
+                    : Checkpoint.Empty(checkpointId);
                 Logger.Current.CheckpointLoaded(this, checkpoint);
                 return checkpoint;
             }
@@ -45,7 +48,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
 
         await using var add = GetCheckpointCommand(connection, _addCheckpointSql, checkpointId);
         await add.ExecuteNonQueryAsync(cancellationToken).NoContext();
-        checkpoint = new Checkpoint(checkpointId, null);
+        checkpoint = Checkpoint.Empty(checkpointId);
         Logger.Current.CheckpointLoaded(this, checkpoint);
         return checkpoint;
     }

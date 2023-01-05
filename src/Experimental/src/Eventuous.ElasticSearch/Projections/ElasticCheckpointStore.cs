@@ -8,6 +8,7 @@ using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
 using Microsoft.Extensions.Options;
 using Nest;
+using EventuousCheckpoint = Eventuous.Subscriptions.Checkpoints.Checkpoint;
 
 namespace Eventuous.ElasticSearch.Projections;
 
@@ -36,7 +37,7 @@ public class ElasticCheckpointStore : ICheckpointStore {
 
     readonly ConcurrentDictionary<string, int> _counters = new();
 
-    public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+    public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         var response = await _client.GetAsync(
                 DocumentPath<Checkpoint>.Id(checkpointId),
                 x => x.Realtime(),
@@ -44,7 +45,7 @@ public class ElasticCheckpointStore : ICheckpointStore {
             )
             .NoContext();
 
-        var checkpoint = response?.Source ?? new Checkpoint(checkpointId, null);
+        var checkpoint = response?.Source.ToCheckpoint() ?? EventuousCheckpoint.Empty(checkpointId);
         _counters[checkpointId] = 0;
 
         Logger.Current.CheckpointLoaded(this, checkpoint);
@@ -52,8 +53,8 @@ public class ElasticCheckpointStore : ICheckpointStore {
         return checkpoint;
     }
 
-    public async ValueTask<Checkpoint> StoreCheckpoint(
-        Checkpoint        checkpoint,
+    public async ValueTask<EventuousCheckpoint> StoreCheckpoint(
+        EventuousCheckpoint checkpoint,
         bool              force,
         CancellationToken cancellationToken
     ) {
@@ -63,7 +64,7 @@ public class ElasticCheckpointStore : ICheckpointStore {
         var response = await _client.UpdateAsync(
                 DocumentPath<Checkpoint>.Id(checkpoint.Id),
                 x => x
-                    .Doc(checkpoint)
+                    .Doc(Checkpoint.FromCheckpoint(checkpoint))
                     .DocAsUpsert()
                     .SourceEnabled(false)
                     .RetryOnConflict(3)
@@ -80,6 +81,13 @@ public class ElasticCheckpointStore : ICheckpointStore {
 
         return checkpoint;
     }
+}
+
+file record Checkpoint(string Id, ulong? Position) {
+    public static Checkpoint FromCheckpoint(EventuousCheckpoint checkpoint) =>
+        new(checkpoint.Id, checkpoint.Position);
+    
+    public EventuousCheckpoint ToCheckpoint() => new(Id, Position);
 }
 
 [PublicAPI]
