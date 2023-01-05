@@ -60,7 +60,7 @@ public class MongoCheckpointStore : ICheckpointStore {
         var checkpoint = await Checkpoints.AsQueryable()
             .Where(x => x.Id == checkpointId)
             .SingleOrDefaultAsync(cancellationToken)
-            .NoContext() ?? new Checkpoint(checkpointId, null);
+            .NoContext() ?? Checkpoint.Empty(checkpointId);
 
         Logger.Current.CheckpointLoaded(this, checkpoint);
 
