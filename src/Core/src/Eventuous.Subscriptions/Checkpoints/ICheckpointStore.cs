@@ -4,7 +4,9 @@
 namespace Eventuous.Subscriptions.Checkpoints;
 
 [PublicAPI]
-public record Checkpoint(string Id, ulong? Position);
+public record struct Checkpoint(string Id, ulong? Position) {
+    public static Checkpoint Empty(string id) => new(id, null);
+}
 
 [PublicAPI]
 public interface ICheckpointStore {
