@@ -2,7 +2,6 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
-        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Gateway\Eventuous.Gateway.csproj" />

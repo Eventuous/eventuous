@@ -43,7 +43,6 @@
     <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
         <IsPackable>false</IsPackable>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
-        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
@@ -61,7 +60,7 @@
         <Copyright>Ubiquitous AS</Copyright>
         <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">

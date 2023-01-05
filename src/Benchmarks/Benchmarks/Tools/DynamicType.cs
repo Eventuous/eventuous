@@ -32,6 +32,6 @@ public class DynamicAssembly {
             MethodAttributes.RTSpecialName
         );
 
-        return dynamicType.CreateType();
+        return dynamicType.CreateType()!;
     }
 }
