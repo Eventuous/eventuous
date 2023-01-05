@@ -59,6 +59,7 @@
         <Authors>Alexey Zimarev and Eventuous community</Authors>
         <Copyright>Ubiquitous AS</Copyright>
         <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     </PropertyGroup>
 
