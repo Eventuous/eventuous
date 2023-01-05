@@ -3,7 +3,7 @@
         <IsTestProject>true</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeSutApp>true</IncludeSutApp>
-        <DocumentationFile></DocumentationFile>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />

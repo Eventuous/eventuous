@@ -9,6 +9,7 @@ using Eventuous.Tools;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver.Linq;
 using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
+using EventuousCheckpoint = Eventuous.Subscriptions.Checkpoints.Checkpoint;
 
 namespace Eventuous.Projections.MongoDB;
 
@@ -17,8 +18,8 @@ public class MongoCheckpointStore : ICheckpointStore {
         Checkpoints = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
         _getSubject = GetSubject;
 
-        Subject<Checkpoint> GetSubject() {
-            var subject = new Subject<Checkpoint>();
+        Subject<EventuousCheckpoint> GetSubject() {
+            var subject = new Subject<EventuousCheckpoint>();
 
             var observable = options switch {
                 { BatchSize: > 0, BatchIntervalSec: > 0 } => subject.Buffer(
@@ -29,7 +30,7 @@ public class MongoCheckpointStore : ICheckpointStore {
                 { BatchSize: 0, BatchIntervalSec: > 0 } => subject.Buffer(
                     TimeSpan.FromSeconds(options.BatchIntervalSec)
                 ),
-                _ => subject.Select(x => new List<Checkpoint> { x })
+                _ => subject.Select(x => new List<EventuousCheckpoint> { x })
             };
 
             observable
@@ -42,18 +43,20 @@ public class MongoCheckpointStore : ICheckpointStore {
         }
     }
 
-    readonly Func<Subject<Checkpoint>> _getSubject;
+    readonly Func<Subject<EventuousCheckpoint>> _getSubject;
 
     [PublicAPI]
-    public MongoCheckpointStore(IMongoDatabase database) : this(database, new MongoCheckpointStoreOptions()) { }
+    public MongoCheckpointStore(IMongoDatabase database) : this(database, new MongoCheckpointStoreOptions()) {
+    }
 
     [PublicAPI]
     public MongoCheckpointStore(IMongoDatabase database, IOptions<MongoCheckpointStoreOptions> options)
-        : this(database, options.Value) { }
+        : this(database, options.Value) {
+    }
 
     IMongoCollection<Checkpoint> Checkpoints { get; }
 
-    public async ValueTask<Checkpoint> GetLastCheckpoint(
+    public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(
         string            checkpointId,
         CancellationToken cancellationToken = default
     ) {
@@ -62,8 +65,8 @@ public class MongoCheckpointStore : ICheckpointStore {
             .SingleOrDefaultAsync(cancellationToken)
             .NoContext();
 
-        var checkpoint = storedCheckpoint == default ? Checkpoint.Empty(checkpointId) : storedCheckpoint;
-        
+        var checkpoint = storedCheckpoint?.ToCheckpoint() ?? EventuousCheckpoint.Empty(checkpointId);
+
         Logger.Current.CheckpointLoaded(this, checkpoint);
 
         _subjects[checkpointId] = _getSubject();
@@ -71,12 +74,12 @@ public class MongoCheckpointStore : ICheckpointStore {
         return checkpoint;
     }
 
-    readonly Dictionary<string, Subject<Checkpoint>> _subjects = new();
+    readonly Dictionary<string, Subject<EventuousCheckpoint>> _subjects = new();
 
-    public async ValueTask<Checkpoint> StoreCheckpoint(
-        Checkpoint        checkpoint,
-        bool              force,
-        CancellationToken cancellationToken = default
+    public async ValueTask<EventuousCheckpoint> StoreCheckpoint(
+        EventuousCheckpoint checkpoint,
+        bool                force,
+        CancellationToken   cancellationToken = default
     ) {
         if (force) {
             await StoreInternal(checkpoint, true, cancellationToken).NoContext();
@@ -88,16 +91,23 @@ public class MongoCheckpointStore : ICheckpointStore {
         return checkpoint;
     }
 
-    async Task StoreInternal(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
+    async Task StoreInternal(EventuousCheckpoint checkpoint, bool force, CancellationToken cancellationToken) {
         await Checkpoints.ReplaceOneAsync(
                 x => x.Id == checkpoint.Id,
-                checkpoint,
+                Checkpoint.FromCheckpoint(checkpoint),
                 MongoDefaults.DefaultReplaceOptions,
                 cancellationToken
             )
             .NoContext();
 
         Logger.Current.CheckpointStored(this, checkpoint, force);
+    }
+
+    record Checkpoint(string Id, ulong? Position) {
+        public static Checkpoint FromCheckpoint(EventuousCheckpoint checkpoint) =>
+            new(checkpoint.Id, checkpoint.Position);
+    
+        public EventuousCheckpoint ToCheckpoint() => new(Id, Position);
     }
 }
 

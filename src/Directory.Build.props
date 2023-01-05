@@ -42,6 +42,7 @@
 
     <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
         <IsPackable>false</IsPackable>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <DocumentationFile></DocumentationFile>
     </PropertyGroup>
 

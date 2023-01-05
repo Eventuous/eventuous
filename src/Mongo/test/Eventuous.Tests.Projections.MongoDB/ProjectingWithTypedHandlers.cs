@@ -24,6 +24,7 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
             CheckInDate    = evt.CheckIn,
             CheckOutDate   = evt.CheckOut,
             BookingPrice   = evt.Price,
+            Outstanding    = evt.Price,
             Position       = append.GlobalPosition,
             StreamPosition = (ulong)append.NextExpectedVersion
         };
