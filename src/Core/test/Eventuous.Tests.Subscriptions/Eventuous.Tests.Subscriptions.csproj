@@ -8,5 +8,6 @@
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
         <ProjectReference Include="$(LocalRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="..\..\..\Extensions\src\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
     </ItemGroup>
 </Project>

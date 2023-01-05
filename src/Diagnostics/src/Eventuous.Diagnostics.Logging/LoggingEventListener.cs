@@ -7,10 +7,17 @@ public sealed class LoggingEventListener : EventListener {
     readonly string            _prefix       = DiagnosticName.BaseName;
     readonly List<EventSource> _eventSources = new();
     readonly ILogger           _log;
+    readonly EventLevel        _level;
+    readonly EventKeywords     _keywords;
 
-    public LoggingEventListener(ILoggerFactory loggerFactory, string? prefix = null) {
+    public LoggingEventListener(ILoggerFactory loggerFactory,
+        string?                                prefix   = null,
+        EventLevel                             level    = EventLevel.Verbose,
+        EventKeywords                          keywords = EventKeywords.All) {
         if (prefix != null) _prefix = prefix;
-        _log = loggerFactory.CreateLogger(DiagnosticName.BaseName);
+        _log      = loggerFactory.CreateLogger(DiagnosticName.BaseName);
+        _level    = level;
+        _keywords = keywords;
     }
 
     protected override void OnEventSourceCreated(EventSource? eventSource) {
@@ -18,7 +25,7 @@ public sealed class LoggingEventListener : EventListener {
 
         if (eventSource.Name.StartsWith(_prefix)) {
             _eventSources.Add(eventSource);
-            EnableEvents(eventSource, EventLevel.Verbose, EventKeywords.All);
+            EnableEvents(eventSource, _level, _keywords);
         }
 
         base.OnEventSourceCreated(eventSource);
@@ -28,12 +35,12 @@ public sealed class LoggingEventListener : EventListener {
         if (evt.Message == null) return;
 
         var level = evt.Level switch {
-            EventLevel.Critical      => LogLevel.Critical,
-            EventLevel.Error         => LogLevel.Error,
+            EventLevel.Critical => LogLevel.Critical,
+            EventLevel.Error => LogLevel.Error,
             EventLevel.Informational => LogLevel.Information,
-            EventLevel.Warning       => LogLevel.Warning,
-            EventLevel.Verbose       => LogLevel.Debug,
-            _                        => LogLevel.Information
+            EventLevel.Warning => LogLevel.Warning,
+            EventLevel.Verbose => LogLevel.Debug,
+            _ => LogLevel.Information
         };
 
 #pragma warning disable CA2254

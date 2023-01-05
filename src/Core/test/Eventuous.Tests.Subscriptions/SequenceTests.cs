@@ -1,8 +1,20 @@
+using Eventuous.AspNetCore;
 using Eventuous.Subscriptions.Checkpoints;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit.Extensions.Logging;
 
 namespace Eventuous.Tests.Subscriptions;
 
 public class SequenceTests {
+    public SequenceTests(ITestOutputHelper output) {
+        var factory = new LoggerFactory();
+        factory.AddProvider(new XunitLoggerProvider(output, (s, level) => true));
+        var services = new ServiceCollection();
+        services.AddSingleton<ILoggerFactory>(factory);
+        var provider = services.BuildServiceProvider();
+        provider.AddEventuousLogs();
+    }
+
     [Theory]
     [MemberData(nameof(TestData))]
     public void ShouldReturnFirstBefore(CommitPositionSequence sequence, CommitPosition expected) {
@@ -18,9 +30,9 @@ public class SequenceTests {
 
     [Fact]
     public void ShouldWorkForRandomGap() {
-        var random   = new Random();
+        var random = new Random();
         var sequence = new CommitPositionSequence();
-        var start    = (ulong)random.Next(1);
+        var start = (ulong)random.Next(1);
 
         for (var i = start; i < start + 100; i++) {
             sequence.Add(new CommitPosition(i, i));
@@ -47,9 +59,10 @@ public class SequenceTests {
     }
 
     public static IEnumerable<object[]> TestData =>
-        new List<object[]>
-        {
-            new object[] {new CommitPositionSequence { new(0, 1), new(0, 2), new(0, 4), new(0, 6) }, new CommitPosition(0, 2)},
-            new object[] {new CommitPositionSequence { new(0, 1), new(0, 2), new(0, 8), new(0, 6) }, new CommitPosition(0, 2)}
+        new List<object[]> {
+            new object[]
+                { new CommitPositionSequence { new(0, 1), new(0, 2), new(0, 4), new(0, 6) }, new CommitPosition(0, 2) },
+            new object[]
+                { new CommitPositionSequence { new(0, 1), new(0, 2), new(0, 8), new(0, 6) }, new CommitPosition(0, 2) }
         };
 }

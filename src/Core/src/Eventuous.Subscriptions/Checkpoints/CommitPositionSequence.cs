@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
+using Eventuous.Subscriptions.Diagnostics;
 // ReSharper disable UseDeconstructionOnParameter
 
 namespace Eventuous.Subscriptions.Checkpoints;
@@ -12,7 +13,7 @@ public class CommitPositionSequence : SortedSet<CommitPosition> {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CommitPosition FirstBeforeGap() => Count switch {
         0 => CommitPosition.None,
-        1 => Min!,
+        1 => Min,
         _ => Get()
     };
 
@@ -22,7 +23,11 @@ public class CommitPositionSequence : SortedSet<CommitPosition> {
             .Zip(this.Skip(1), Tuple.Create)
             .FirstOrDefault(tup => tup.Item1.Sequence + 1 != tup.Item2.Sequence);
 
-        return result?.Item1 ?? this.Last();
+        if (result == null) return Max;
+
+        SubscriptionsEventSource.Log.CheckpointGapDetected(result.Item1, result.Item2);
+        return result.Item1;
+
     }
 
     class PositionsComparer : IComparer<CommitPosition> {

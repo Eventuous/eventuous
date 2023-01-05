@@ -32,10 +32,10 @@ public class ProducerEventSource<T> : EventSource where T : IEventProducer {
     }
 
     [Event(ProduceAcknowledgedId, Level = EventLevel.Verbose, Message = "[{0}] Produce acknowledged: {1}")]
-    public void ProduceAcknowledged(string producer, string message)
+    void ProduceAcknowledged(string producer, string message)
         => WriteEvent(ProduceAcknowledgedId, producer, message);
 
     [Event(ProduceNotAcknowledgedId, Level = EventLevel.Verbose, Message = "[{0}] Produce not acknowledged: {1} {2}")]
-    public void ProduceNotAcknowledged(string producer, string message, string error)
+    void ProduceNotAcknowledged(string producer, string message, string error)
         => WriteEvent(ProduceNotAcknowledgedId, producer, message, error);
 }
