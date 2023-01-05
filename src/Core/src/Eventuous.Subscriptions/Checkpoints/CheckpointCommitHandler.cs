@@ -34,10 +34,11 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     public CheckpointCommitHandler(
         string           subscriptionId,
         ICheckpointStore checkpointStore,
-        int              batchSize,
-        ILoggerFactory?  loggerFactory
+        int              batchSize     = 1,
+        ILoggerFactory?  loggerFactory = null
     )
-        : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize, loggerFactory) { }
+        : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize, loggerFactory) {
+    }
 
     public CheckpointCommitHandler(
         string           subscriptionId,

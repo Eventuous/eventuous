@@ -7,6 +7,7 @@
     </PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj" />
+      <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="BenchmarkDotNet" />
