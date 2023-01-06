@@ -34,28 +34,27 @@ class ApplicationEventSource : EventSource {
     public void CommandHandlerAlreadyRegistered<T>() => CommandHandlerAlreadyRegistered(typeof(T).Name);
 
     [Event(CommandHandlerNotFoundId, Message = "Handler not found for command: '{0}'", Level = EventLevel.Error)]
-    public void CommandHandlerNotFound(string commandType) => WriteEvent(CommandHandlerNotFoundId, commandType);
+    void CommandHandlerNotFound(string commandType) => WriteEvent(CommandHandlerNotFoundId, commandType);
 
     [Event(
         CannotGetAggregateIdFromCommandId,
         Message = "Cannot get aggregate id from command: '{0}'",
         Level = EventLevel.Error
     )]
-    public void CannotCalculateAggregateId(string commandType)
+    void CannotCalculateAggregateId(string commandType)
         => WriteEvent(CannotGetAggregateIdFromCommandId, commandType);
 
     [Event(ErrorHandlingCommandId, Message = "Error handling command: '{0}' {1}", Level = EventLevel.Error)]
-    public void ErrorHandlingCommand(string commandType, string exception)
+    void ErrorHandlingCommand(string commandType, string exception)
         => WriteEvent(ErrorHandlingCommandId, commandType, exception);
 
     [Event(CommandHandledId, Message = "Command handled: '{0}'", Level = EventLevel.Verbose)]
-    public void CommandHandled(string commandType) => WriteEvent(CommandHandledId, commandType);
+    void CommandHandled(string commandType) => WriteEvent(CommandHandledId, commandType);
 
     [Event(
         CommandHandlerAlreadyRegisteredId,
         Message = "Command handler already registered for {0}",
         Level = EventLevel.Critical
     )]
-    public void CommandHandlerAlreadyRegistered(string type) => WriteEvent(CommandHandlerAlreadyRegisteredId, type);
-
+    void CommandHandlerAlreadyRegistered(string type) => WriteEvent(CommandHandlerAlreadyRegisteredId, type);
 }
