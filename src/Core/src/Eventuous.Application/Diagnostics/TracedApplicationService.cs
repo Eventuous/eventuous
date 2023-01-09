@@ -13,36 +13,31 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
 
     IApplicationService<T> InnerService { get; }
 
-    readonly string _appServiceTypeName;
+    readonly string                _appServiceTypeName;
+    readonly HandleCommand<Result> _handleCommand;
+    readonly GetError<Result>      _getError;
 
     TracedApplicationService(IApplicationService<T> appService) {
         _appServiceTypeName = appService.GetType().Name;
         InnerService        = appService;
-    }
+        _handleCommand      = (cmd, ct) => InnerService.Handle(cmd, ct);
 
-    public async Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
-        where TCommand : class {
-        using var activity = AppServiceActivity.StartActivity(_appServiceTypeName, command);
-
-        try {
-            var result = await InnerService.Handle(command, cancellationToken).NoContext();
-
-            if (activity != null) {
-                if (result is ErrorResult error) {
-                    activity.SetActivityStatus(ActivityStatus.Error(error.Exception));
-                }
-                else {
-                    activity.SetActivityStatus(ActivityStatus.Ok());
-                }
+        bool GetError(Result result, out Exception? exception) {
+            if (result is ErrorResult err) {
+                exception = err.Exception;
+                return true;
             }
 
-            return result;
+            exception = null;
+            return false;
         }
-        catch (Exception e) {
-            activity?.SetActivityStatus(ActivityStatus.Error(e));
-            throw;
-        }
+
+        _getError = GetError;
     }
+
+    public Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+        where TCommand : class
+        => AppServiceActivity.TryExecute(_appServiceTypeName, command, _handleCommand, _getError, cancellationToken);
 }
 
 public class TracedApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>
@@ -54,28 +49,55 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
 
     IApplicationService<T, TState, TId> InnerService { get; }
 
-    readonly string _appServiceTypeName;
+    readonly string                        _appServiceTypeName;
+    readonly HandleCommand<Result<TState>> _handleCommand;
+    readonly GetError<Result<TState>>      _getError;
 
     TracedApplicationService(IApplicationService<T, TState, TId> appService) {
         _appServiceTypeName = appService.GetType().Name;
         InnerService        = appService;
+        _handleCommand      = (cmd, ct) => InnerService.Handle(cmd, ct);
+
+        bool GetError(Result<TState> result, out Exception? exception) {
+            if (result is ErrorResult<TState> err) {
+                exception = err.Exception;
+                return true;
+            }
+
+            exception = null;
+            return false;
+        }
+
+        _getError = GetError;
     }
 
-    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
-        where TCommand : class {
-        using var activity = AppServiceActivity.StartActivity(_appServiceTypeName, command);
+    public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+        where TCommand : class
+        => AppServiceActivity.TryExecute(_appServiceTypeName, command, _handleCommand, _getError, cancellationToken);
+}
+
+delegate Task<T> HandleCommand<T>(object command, CancellationToken cancellationToken);
+
+delegate bool GetError<in T>(T result, out Exception? exception);
+
+static class AppServiceActivity {
+    public static async Task<T> TryExecute<T>(
+        string            appServiceTypeName,
+        object            command,
+        HandleCommand<T>  handleCommand,
+        GetError<T>       getError,
+        CancellationToken cancellationToken
+    ) {
+        using var activity = StartActivity(appServiceTypeName, command);
 
         try {
-            var result = await InnerService.Handle(command, cancellationToken).NoContext();
+            var result = await handleCommand(command, cancellationToken).NoContext();
 
-            if (activity != null) {
-                if (result is ErrorResult<TState> error) {
-                    activity.SetActivityStatus(ActivityStatus.Error(error.Exception));
-                }
-                else {
-                    activity.SetActivityStatus(ActivityStatus.Ok());
-                }
-            }
+            activity?.SetActivityStatus(
+                getError(result, out var exception)
+                    ? ActivityStatus.Error(exception)
+                    : ActivityStatus.Ok()
+            );
 
             return result;
         }
@@ -84,10 +106,8 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
             throw;
         }
     }
-}
 
-static class AppServiceActivity {
-    public static Activity? StartActivity(string serviceName, object command) {
+    static Activity? StartActivity(string serviceName, object command) {
         if (!EventuousDiagnostics.Enabled) return null;
 
         var cmdName = command.GetType().Name;

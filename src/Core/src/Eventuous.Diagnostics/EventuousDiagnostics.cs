@@ -13,8 +13,8 @@ public static class EventuousDiagnostics {
 
     public const string InstrumentationName = DiagnosticName.BaseName;
 
-    static ActivitySource?   _activitySource;
-    static ActivityListener? _listener;
+    static ActivitySource?   activitySource;
+    static ActivityListener? listener;
 
     public static KeyValuePair<string, object?>[] Tags { get; private set; } =
         Array.Empty<KeyValuePair<string, object?>>();
@@ -39,20 +39,17 @@ public static class EventuousDiagnostics {
 
     public static ActivitySource ActivitySource {
         get {
-            if (_activitySource != null) return _activitySource;
+            if (activitySource != null) return activitySource;
 
-            _activitySource = new ActivitySource(InstrumentationName, Version?.ToString());
+            activitySource = new ActivitySource(InstrumentationName, Version?.ToString());
 
-            _listener = DummyActivityListener.Create();
-            ActivitySource.AddActivityListener(_listener);
-            return _activitySource;
+            listener = DummyActivityListener.Create();
+            ActivitySource.AddActivityListener(listener);
+            return activitySource;
         }
     }
 
-    public static void RemoveDummyListener() => _listener?.Dispose();
-
-    public static Meter GetCategoryMeter(string category)
-        => new(GetMeterName(category), AssemblyName.Version?.ToString());
+    public static void RemoveDummyListener() => listener?.Dispose();
 
     public static Meter GetMeter(string name) => new(name, AssemblyName.Version?.ToString());
 
