@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eventuous.Diagnostics.Metrics;
 using Eventuous.Tools;
 using static Eventuous.Diagnostics.Tracing.Constants;
 
@@ -12,6 +13,8 @@ public class TracedEventStore : IEventStore {
     public TracedEventStore(IEventStore eventStore) => Inner = eventStore;
 
     IEventStore Inner { get; }
+
+    readonly DiagnosticSource _metricsSource = new DiagnosticListener(PersistenceMetrics.ListenerName);
 
     static readonly KeyValuePair<string, object?>[] DefaultTags = EventuousDiagnostics.Tags
         .Concat(new KeyValuePair<string, object?>[] { new(TelemetryTags.Db.System, "eventstore") })
@@ -27,6 +30,10 @@ public class TracedEventStore : IEventStore {
         CancellationToken                cancellationToken
     ) {
         using var activity = StartActivity(stream, Operations.AppendEvents);
+        using var measure = Measure.Start(
+            _metricsSource,
+            new EventStoreMetricsContext(Operations.AppendEvents)
+        );
 
         var tracedEvents = events.Select(
                 x => x with { Metadata = x.Metadata.AddActivityTags(activity) }
@@ -40,6 +47,7 @@ public class TracedEventStore : IEventStore {
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
+            measure.SetError();
             throw;
         }
     }
@@ -71,8 +79,9 @@ public class TracedEventStore : IEventStore {
     )
         => Trace(stream, Operations.DeleteStream, () => Inner.DeleteStream(stream, expectedVersion, cancellationToken));
 
-    static async Task Trace(StreamName stream, string operation, Func<Task> task) {
+    async Task Trace(StreamName stream, string operation, Func<Task> task) {
         using var activity = StartActivity(stream, operation);
+        using var measure = Measure.Start(_metricsSource, new EventStoreMetricsContext(operation));
 
         try {
             await task().NoContext();
@@ -80,12 +89,14 @@ public class TracedEventStore : IEventStore {
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
+            measure.SetError();
             throw;
         }
     }
 
-    static async Task<T> Trace<T>(StreamName stream, string operation, Func<Task<T>> task) {
+    async Task<T> Trace<T>(StreamName stream, string operation, Func<Task<T>> task) {
         using var activity = StartActivity(stream, operation);
+        using var measure = Measure.Start(_metricsSource, new EventStoreMetricsContext(operation));
 
         try {
             var result = await task().NoContext();
@@ -94,6 +105,7 @@ public class TracedEventStore : IEventStore {
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
+            measure.SetError();
             throw;
         }
     }

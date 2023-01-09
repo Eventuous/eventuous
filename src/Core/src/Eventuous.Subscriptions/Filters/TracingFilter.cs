@@ -20,10 +20,7 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
         _defaultTags = tags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
-    protected override async ValueTask Send(
-        IMessageConsumeContext          context,
-        LinkedListNode<IConsumeFilter>? next
-    ) {
+    protected override async ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         if (context.Message == null || next == null) return;
 
         using var activity = Activity.Current?.Context != context.ParentContext
@@ -35,8 +32,9 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
             )
             : Activity.Current;
 
-        if (activity?.IsAllDataRequested == true && context is AsyncConsumeContext delayedAckContext) {
-            activity.SetContextTags(context)?.SetTag(TelemetryTags.Eventuous.Partition, delayedAckContext.PartitionId);
+        if (activity?.IsAllDataRequested == true && context is AsyncConsumeContext asyncConsumeContext) {
+            activity.SetContextTags(context)
+                ?.SetTag(TelemetryTags.Eventuous.Partition, asyncConsumeContext.PartitionId);
         }
 
         try {

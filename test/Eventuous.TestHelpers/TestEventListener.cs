@@ -13,6 +13,7 @@ public sealed class TestEventListener : EventListener {
     }
 
     protected override void OnEventSourceCreated(EventSource? eventSource) {
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (_prefixes == null || eventSource?.Name == null) {
             return;
         }

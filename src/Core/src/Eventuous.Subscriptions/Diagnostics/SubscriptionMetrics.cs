@@ -4,7 +4,10 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics;
+using Eventuous.Diagnostics.Metrics;
+using Eventuous.Subscriptions.Context;
 using Eventuous.Tools;
+using Microsoft.Extensions.Logging;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 // ReSharper disable ParameterTypeCanBeEnumerable.Local
@@ -26,11 +29,12 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     public const string SubscriptionIdTag = "subscription-id";
     public const string MessageTypeTag    = "message-type";
     public const string PartitionIdTag    = "partition";
+    public const string EventHandlerTag   = "event-handler";
+
+    public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 
     public SubscriptionMetrics(IEnumerable<GetSubscriptionGap> measures) {
-        _meter = EventuousDiagnostics.GetMeter(MeterName);
         var getGaps = measures.ToArray();
-        _checkpointMetrics = new Lazy<CheckpointCommitMetrics>(() => new CheckpointCommitMetrics());
         IEnumerable<SubscriptionGap>? gaps = null;
 
         _meter.CreateObservableGauge(
@@ -54,15 +58,10 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             "Number of pending checkpoints"
         );
 
-        var histogram  = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Processing duration, milliseconds");
+        var duration = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Processing duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>(ErrorCountName, "events", "Number of event processing failures");
 
-        _listener = new ActivityListener {
-            ShouldListenTo  = x => x.Name == EventuousDiagnostics.InstrumentationName,
-            ActivityStopped = x => ActivityStopped(histogram, errorCount, x)
-        };
-
-        ActivitySource.AddActivityListener(_listener);
+        _listener = new MetricsListener<SubscriptionMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
         IEnumerable<Measurement<double>> ObserveTimeValues()
             => gaps?
@@ -83,6 +82,22 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             var tags = new List<KeyValuePair<string, object?>>(_customTags) { SubTag(subscriptionId) };
             return new Measurement<T>(value, tags);
         }
+
+        TagList GetTags(SubscriptionMetricsContext ctx) {
+            var subTag = SubTag(ctx.Context.SubscriptionId);
+
+            var tags = new TagList(_customTags) {
+                subTag,
+                new(MessageTypeTag, ctx.Context.MessageType),
+                new(EventHandlerTag, ctx.EventHandler)
+            };
+
+            if (ctx.Context is AsyncConsumeContext asyncConsumeContext) {
+                tags.Add(PartitionIdTag, asyncConsumeContext.PartitionId);
+            }
+
+            return tags;
+        }
     }
 
     static IEnumerable<Measurement<T>> TryObserving<T>(string metric, Func<IEnumerable<Measurement<T>>> observe)
@@ -97,32 +112,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         }
     }
 
-    static KeyValuePair<string, object?> GetTag(string key, object? id) => new(key, id);
-
     static KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
-
-    void ActivityStopped(Histogram<double> histogram, Counter<long> errorCount, Activity activity) {
-        if (activity.Kind != ActivityKind.Consumer) return;
-
-        var subId = activity.GetTagItem(TelemetryTags.Eventuous.Subscription);
-        if (subId == null) return;
-
-        var subTag       = SubTag(subId);
-        var typeTag      = GetTag(MessageTypeTag, activity.GetTagItem(TelemetryTags.Message.Type));
-        var partitionTag = GetTag(PartitionIdTag, activity.GetTagItem(TelemetryTags.Eventuous.Partition));
-
-        var tags = new TagList(_customTags) {
-            subTag,
-            typeTag,
-            partitionTag
-        };
-
-        histogram.Record(activity.Duration.TotalMilliseconds, tags);
-
-        if (activity.Status == ActivityStatusCode.Error) {
-            errorCount.Add(1, tags);
-        }
-    }
 
     static SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
         var cts = new CancellationTokenSource(500);
@@ -138,16 +128,21 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         }
     }
 
-    readonly Meter                         _meter;
-    readonly ActivityListener              _listener;
-    readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics;
-    KeyValuePair<string, object?>[]        _customTags = EventuousDiagnostics.Tags;
+    readonly Meter _meter = EventuousDiagnostics.GetMeter(MeterName);
+
+    readonly MetricsListener<SubscriptionMetricsContext> _listener;
+
+    readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics = new(() => new CheckpointCommitMetrics());
+
+    KeyValuePair<string, object?>[] _customTags = EventuousDiagnostics.Tags;
+
+    public void SetCustomTags(TagList customTags) => _customTags = _customTags.Concat(customTags).ToArray();
 
     public void Dispose() {
-        _listener.Dispose();
         _meter.Dispose();
+        _listener.Dispose();
         if (_checkpointMetrics.IsValueCreated) _checkpointMetrics.Value.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags) => _customTags = _customTags.Concat(customTags).ToArray();
+    internal record SubscriptionMetricsContext(string EventHandler, IMessageConsumeContext Context);
 }

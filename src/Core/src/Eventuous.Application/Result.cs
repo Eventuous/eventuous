@@ -21,8 +21,7 @@ public record ErrorResult : Result {
         Exception = exception;
     }
 
-    [JsonIgnore]
-    public Exception? Exception { get; }
+    [JsonIgnore] public Exception? Exception { get; }
 
     public string ErrorMessage => Exception?.Message ?? "Unknown error";
 
@@ -31,7 +30,7 @@ public record ErrorResult : Result {
 
 [PublicAPI]
 public abstract record Result<TState>(TState? State, bool Success, IEnumerable<Change>? Changes = null)
-    where TState : State<TState>, new();
+    where TState : new();
 
 [PublicAPI]
 public record OkResult<TState>(TState State, IEnumerable<Change> Changes, ulong StreamPosition)
@@ -51,8 +50,7 @@ public record ErrorResult<TState> : Result<TState> where TState : State<TState>,
 
     public string Message { get; init; }
 
-    [JsonIgnore]
-    public Exception? Exception { get; init; }
+    [JsonIgnore] public Exception? Exception { get; init; }
 
     public string? ErrorMessage => Exception?.Message;
 }

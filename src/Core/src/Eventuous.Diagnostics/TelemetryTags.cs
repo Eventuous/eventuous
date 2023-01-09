@@ -86,5 +86,6 @@ public static class TelemetryTags {
         public const string Stream       = "eventuous.stream";
         public const string Partition    = "eventuous.partition";
         public const string Command      = "eventuous.command";
+        public const string AppService   = "eventuous.appservice";
     }
 }
