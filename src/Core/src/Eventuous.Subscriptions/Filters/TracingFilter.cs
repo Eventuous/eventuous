@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using Eventuous.Diagnostics;
-using Eventuous.Diagnostics.Metrics;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Tools;
@@ -14,8 +13,6 @@ namespace Eventuous.Subscriptions.Filters;
 
 public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
     readonly KeyValuePair<string, object?>[] _defaultTags;
-
-    readonly DiagnosticSource _metricsSource = new DiagnosticListener(SubscriptionMetrics.ListenerName);
 
     public TracingFilter(string consumerName) {
         var tags = new KeyValuePair<string, object?>[] { new(TelemetryTags.Eventuous.Consumer, consumerName) };
@@ -40,8 +37,6 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
                 ?.SetTag(TelemetryTags.Eventuous.Partition, asyncConsumeContext.PartitionId);
         }
 
-        using var measure = Measure.Start(_metricsSource, context);
-
         try {
             await next.Value.Send(context, next.Next).NoContext();
 
@@ -55,7 +50,6 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
-            measure.SetError();
             throw;
         }
     }

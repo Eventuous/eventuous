@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using Eventuous.Diagnostics;
+using Eventuous.Diagnostics.Metrics;
 using Eventuous.Diagnostics.Tracing;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
@@ -11,6 +12,8 @@ using Eventuous.Tools;
 namespace Eventuous.Subscriptions;
 
 public class TracedEventHandler : IEventHandler {
+    readonly DiagnosticSource _metricsSource = new DiagnosticListener(SubscriptionMetrics.ListenerName);
+
     public TracedEventHandler(IEventHandler eventHandler) {
         _innerHandler = eventHandler;
 
@@ -39,6 +42,10 @@ public class TracedEventHandler : IEventHandler {
             ?.SetContextTags(context)
             ?.Start();
 
+        using var measure = Measure.Start(_metricsSource,
+            new SubscriptionMetrics.SubscriptionMetricsContext(DiagnosticName, context)
+        );
+
         try {
             var status = await _innerHandler.HandleEvent(context).NoContext();
 
@@ -51,6 +58,7 @@ public class TracedEventHandler : IEventHandler {
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
+            measure.SetError();
             throw;
         }
     }

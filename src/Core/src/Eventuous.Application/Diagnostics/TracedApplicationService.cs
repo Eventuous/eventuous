@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
+using Eventuous.Diagnostics.Metrics;
 using Eventuous.Diagnostics.Tracing;
 using Eventuous.Tools;
 
@@ -16,6 +17,8 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
     readonly string                _appServiceTypeName;
     readonly HandleCommand<Result> _handleCommand;
     readonly GetError<Result>      _getError;
+
+    readonly DiagnosticSource _metricsSource = new DiagnosticListener(ApplicationServiceMetrics.ListenerName);
 
     TracedApplicationService(IApplicationService<T> appService) {
         _appServiceTypeName = appService.GetType().Name;
@@ -37,7 +40,13 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
 
     public Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class
-        => AppServiceActivity.TryExecute(_appServiceTypeName, command, _handleCommand, _getError, cancellationToken);
+        => AppServiceActivity.TryExecute(_appServiceTypeName,
+            command,
+            _metricsSource,
+            _handleCommand,
+            _getError,
+            cancellationToken
+        );
 }
 
 public class TracedApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>
@@ -48,6 +57,8 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
         => new TracedApplicationService<T, TState, TId>(appService);
 
     IApplicationService<T, TState, TId> InnerService { get; }
+
+    readonly DiagnosticSource _metricsSource = new DiagnosticListener(ApplicationServiceMetrics.ListenerName);
 
     readonly string                        _appServiceTypeName;
     readonly HandleCommand<Result<TState>> _handleCommand;
@@ -73,7 +84,13 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
 
     public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class
-        => AppServiceActivity.TryExecute(_appServiceTypeName, command, _handleCommand, _getError, cancellationToken);
+        => AppServiceActivity.TryExecute(_appServiceTypeName,
+            command,
+            _metricsSource,
+            _handleCommand,
+            _getError,
+            cancellationToken
+        );
 }
 
 delegate Task<T> HandleCommand<T>(object command, CancellationToken cancellationToken);
@@ -84,11 +101,17 @@ static class AppServiceActivity {
     public static async Task<T> TryExecute<T>(
         string            appServiceTypeName,
         object            command,
+        DiagnosticSource  diagnosticSource,
         HandleCommand<T>  handleCommand,
         GetError<T>       getError,
         CancellationToken cancellationToken
     ) {
-        using var activity = StartActivity(appServiceTypeName, command);
+        var cmdName = command.GetType().Name;
+
+        using var activity = StartActivity(appServiceTypeName, cmdName);
+        using var measure = Measure.Start(diagnosticSource,
+            new AppServiceMetricsContext(appServiceTypeName, cmdName)
+        );
 
         try {
             var result = await handleCommand(command, cancellationToken).NoContext();
@@ -103,14 +126,13 @@ static class AppServiceActivity {
         }
         catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
+            measure.SetError();
             throw;
         }
     }
 
-    static Activity? StartActivity(string serviceName, object command) {
+    static Activity? StartActivity(string serviceName, string cmdName) {
         if (!EventuousDiagnostics.Enabled) return null;
-
-        var cmdName = command.GetType().Name;
 
         var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
                 $"{Constants.Components.AppService}.{serviceName}/{cmdName}",

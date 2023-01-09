@@ -29,6 +29,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     public const string SubscriptionIdTag = "subscription-id";
     public const string MessageTypeTag    = "message-type";
     public const string PartitionIdTag    = "partition";
+    public const string EventHandlerTag   = "event-handler";
 
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 
@@ -60,7 +61,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         var duration = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Processing duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>(ErrorCountName, "events", "Number of event processing failures");
 
-        _listener = new MetricsListener<IMessageConsumeContext>(ListenerName, duration, errorCount, GetTags);
+        _listener = new MetricsListener<SubscriptionMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
         IEnumerable<Measurement<double>> ObserveTimeValues()
             => gaps?
@@ -82,13 +83,16 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             return new Measurement<T>(value, tags);
         }
 
-        TagList GetTags(IMessageConsumeContext ctx) {
-            var subTag = SubTag(ctx.SubscriptionId);
-            var typeTag = GetTag(MessageTypeTag, ctx.MessageType);
+        TagList GetTags(SubscriptionMetricsContext ctx) {
+            var subTag = SubTag(ctx.Context.SubscriptionId);
 
-            var tags = new TagList(_customTags) { subTag, typeTag };
+            var tags = new TagList(_customTags) {
+                subTag,
+                new(MessageTypeTag, ctx.Context.MessageType),
+                new(EventHandlerTag, ctx.EventHandler)
+            };
 
-            if (ctx is AsyncConsumeContext asyncConsumeContext) {
+            if (ctx.Context is AsyncConsumeContext asyncConsumeContext) {
                 tags.Add(PartitionIdTag, asyncConsumeContext.PartitionId);
             }
 
@@ -108,8 +112,6 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         }
     }
 
-    static KeyValuePair<string, object?> GetTag(string key, object? id) => new(key, id);
-
     static KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
 
     static SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
@@ -128,10 +130,9 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
     readonly Meter _meter = EventuousDiagnostics.GetMeter(MeterName);
 
-    readonly MetricsListener<IMessageConsumeContext> _listener;
+    readonly MetricsListener<SubscriptionMetricsContext> _listener;
 
-    readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics =
-        new Lazy<CheckpointCommitMetrics>(() => new CheckpointCommitMetrics());
+    readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics = new(() => new CheckpointCommitMetrics());
 
     KeyValuePair<string, object?>[] _customTags = EventuousDiagnostics.Tags;
 
@@ -142,4 +143,6 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         _listener.Dispose();
         if (_checkpointMetrics.IsValueCreated) _checkpointMetrics.Value.Dispose();
     }
+
+    internal record SubscriptionMetricsContext(string EventHandler, IMessageConsumeContext Context);
 }

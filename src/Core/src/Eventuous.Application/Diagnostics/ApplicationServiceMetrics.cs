@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics.Metrics;
-using Eventuous.Diagnostics.Tracing;
 using static Eventuous.Diagnostics.Tracing.Constants.Components;
 
 namespace Eventuous.Diagnostics;
@@ -16,7 +15,11 @@ public sealed class ApplicationServiceMetrics : IWithCustomTags, IDisposable {
 
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 
-    readonly Meter _meter;
+    public const string AppServiceTag = "command-service";
+    public const string CommandTag    = "command-type";
+
+    readonly Meter                                     _meter;
+    readonly MetricsListener<AppServiceMetricsContext> _listener;
 
     KeyValuePair<string, object?>[]? _customTags;
 
@@ -24,41 +27,24 @@ public sealed class ApplicationServiceMetrics : IWithCustomTags, IDisposable {
         _meter = EventuousDiagnostics.GetMeter(MeterName);
 
         var duration =
-            _meter.CreateHistogram<double>(AppService, "ms", "Application service operation duration, milliseconds");
+            _meter.CreateHistogram<double>(AppService, "ms", "Command execution duration, milliseconds");
 
         var errorCount = _meter.CreateCounter<long>($"{AppService}.errors", "errors", "Number of failed commands");
-        _listener = new MetricsListener<IMessageConsumeContext>(ListenerName, duration, errorCount, GetTags);
+        _listener = new MetricsListener<AppServiceMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
-        void Record(Activity activity) {
-            var dot = activity.OperationName.IndexOf('.');
-            if (dot == -1) return;
-
-            var prefix = activity.OperationName[..dot];
-
-            RecordWithTags(
-                duration,
-                activity.Duration.TotalMilliseconds,
-                new KeyValuePair<string, object?>(
-                    "command",
-                    activity.GetTagItem(TelemetryTags.Eventuous.Command)
-                )
-            );
-        }
-
-        void RecordWithTags(Histogram<double> histogram, double value, KeyValuePair<string, object?> tag) {
-            if (_customTags == null) {
-                histogram.Record(value, tag);
-                return;
-            }
-
-            var tags = new TagList(_customTags) { tag };
-            histogram.Record(value, tags);
-        }
+        TagList GetTags(AppServiceMetricsContext ctx)
+            => new TagList(_customTags) {
+                new(AppServiceTag, ctx.ServiceName),
+                new(CommandTag, ctx.CommandName),
+            };
     }
 
     public void Dispose() {
+        _listener.Dispose();
         _meter.Dispose();
     }
 
     public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
 }
+
+record AppServiceMetricsContext(string ServiceName, string CommandName);
