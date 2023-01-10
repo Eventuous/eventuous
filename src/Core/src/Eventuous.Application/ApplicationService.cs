@@ -198,7 +198,7 @@ public abstract class ApplicationService<TAggregate, TState, TId>
         where TCommand : class {
         var commandType = Ensure.NotNull(command).GetType();
 
-        if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
+        if (!_handlers.TryGetValue(commandType, out var registeredHandler)) {
             Log.CommandHandlerNotFound(commandType);
             var exception = new Exceptions.CommandHandlerNotFound(commandType);
             return new ErrorResult<TState>(exception);
