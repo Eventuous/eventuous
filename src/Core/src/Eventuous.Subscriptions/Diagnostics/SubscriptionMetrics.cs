@@ -7,8 +7,8 @@ using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Metrics;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Tools;
-using Microsoft.Extensions.Logging;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+// ReSharper disable ConvertClosureToMethodGroup
 
 // ReSharper disable ParameterTypeCanBeEnumerable.Local
 
@@ -35,7 +35,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
     public SubscriptionMetrics(IEnumerable<GetSubscriptionGap> measures) {
         var getGaps = measures.ToArray();
-        IEnumerable<SubscriptionGap>? gaps = null;
+        Dictionary<string, SubscriptionGap> gaps = new();
 
         _meter.CreateObservableGauge(
             GapCountMetricName,
@@ -64,13 +64,11 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         _listener = new MetricsListener<SubscriptionMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
         IEnumerable<Measurement<double>> ObserveTimeValues()
-            => gaps?
-                   .Select(x => Measure(x.TimeGap.TotalSeconds, x.SubscriptionId))
-            ?? Array.Empty<Measurement<double>>();
+            => gaps.Values.Select(x => Measure(x.TimeGap.TotalSeconds, x.SubscriptionId));
 
         IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionGap[] gapMeasure)
             => gapMeasure
-                .Select(GetGap)
+                .Select(gap => GetGap(gap))
                 .Where(x => x != SubscriptionGap.Invalid)
                 .Select(x => Measure((long)x.PositionGap, x.SubscriptionId));
 
@@ -98,6 +96,22 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
             return tags;
         }
+
+        SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
+            var cts = new CancellationTokenSource(500);
+
+            try {
+                var t = gapMeasure(cts.Token);
+
+                var gap = t.IsCompleted ? t.Result : t.NoContext().GetAwaiter().GetResult();
+                gaps[gap.SubscriptionId] = gap;
+                return gap;
+            }
+            catch (Exception e) {
+                Log.MetricCollectionFailed("Subscription Gap", e);
+                return SubscriptionGap.Invalid;
+            }
+        }
     }
 
     static IEnumerable<Measurement<T>> TryObserving<T>(string metric, Func<IEnumerable<Measurement<T>>> observe)
@@ -113,20 +127,6 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     }
 
     static KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
-
-    static SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
-        var cts = new CancellationTokenSource(500);
-
-        try {
-            var t = gapMeasure(cts.Token);
-
-            return t.IsCompleted ? t.Result : t.NoContext().GetAwaiter().GetResult();
-        }
-        catch (Exception e) {
-            Log.MetricCollectionFailed("Subscription Gap", e);
-            return SubscriptionGap.Invalid;
-        }
-    }
 
     readonly Meter _meter = EventuousDiagnostics.GetMeter(MeterName);
 

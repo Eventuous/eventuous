@@ -27,7 +27,7 @@ public sealed class MetricsListener<T> : IDisposable {
             if (ctx.Error) _errors.Add(1, tags);
         }
 
-        var iobserver = new Observer<KeyValuePair<string, object?>>(WhenHeard, null);
+        var observer = new Observer<KeyValuePair<string, object?>>(WhenHeard, null);
 
         void OnNewListener(DiagnosticListener listener) {
             if (listener.Name != name) return;
@@ -35,35 +35,19 @@ public sealed class MetricsListener<T> : IDisposable {
             lock (_allListeners) {
                 _networkSubscription?.Dispose();
 
-                _networkSubscription = listener.Subscribe(iobserver);
+                _networkSubscription = listener.Subscribe(observer);
             }
         }
 
-        var observer = new Observer<DiagnosticListener>((Action<DiagnosticListener>)OnNewListener, null);
+        var newListenerObserver = new Observer<DiagnosticListener>((Action<DiagnosticListener>)OnNewListener, null);
 
-        _listenerSubscription = DiagnosticListener.AllListeners.Subscribe(observer);
+        _listenerSubscription = DiagnosticListener.AllListeners.Subscribe(newListenerObserver);
     }
 
     public void Dispose() {
         _networkSubscription?.Dispose();
         _listenerSubscription?.Dispose();
     }
-}
-
-class Observer<T> : IObserver<T> {
-    public Observer(Action<T>? onNext, Action? onCompleted) {
-        _onNext      = onNext ?? new Action<T>(_ => { });
-        _onCompleted = onCompleted ?? new Action(() => { });
-    }
-
-    public void OnCompleted() => _onCompleted();
-
-    public void OnError(Exception error) { }
-
-    public void OnNext(T value) => _onNext(value);
-
-    readonly Action<T> _onNext;
-    readonly Action    _onCompleted;
 }
 
 record MeasureContext(TimeSpan Duration, bool Error, object Context);
