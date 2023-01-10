@@ -6,6 +6,7 @@ using System.Reactive.Subjects;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver.Linq;
 using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
@@ -14,9 +15,10 @@ using EventuousCheckpoint = Eventuous.Subscriptions.Checkpoints.Checkpoint;
 namespace Eventuous.Projections.MongoDB;
 
 public class MongoCheckpointStore : ICheckpointStore {
-    MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options) {
-        Checkpoints = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
-        _getSubject = GetSubject;
+    MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options, ILoggerFactory loggerFactory) {
+        _loggerFactory = loggerFactory;
+        Checkpoints    = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
+        _getSubject    = GetSubject;
 
         Subject<EventuousCheckpoint> GetSubject() {
             var subject = new Subject<EventuousCheckpoint>();
@@ -44,15 +46,19 @@ public class MongoCheckpointStore : ICheckpointStore {
     }
 
     readonly Func<Subject<EventuousCheckpoint>> _getSubject;
+    readonly ILoggerFactory                     _loggerFactory;
 
     [PublicAPI]
-    public MongoCheckpointStore(IMongoDatabase database) : this(database, new MongoCheckpointStoreOptions()) {
-    }
+    public MongoCheckpointStore(IMongoDatabase database, ILoggerFactory loggerFactory)
+        : this(database, new MongoCheckpointStoreOptions(), loggerFactory) { }
 
     [PublicAPI]
-    public MongoCheckpointStore(IMongoDatabase database, IOptions<MongoCheckpointStoreOptions> options)
-        : this(database, options.Value) {
-    }
+    public MongoCheckpointStore(
+        IMongoDatabase                        database,
+        IOptions<MongoCheckpointStoreOptions> options,
+        ILoggerFactory                        loggerFactory
+    )
+        : this(database, options.Value, loggerFactory) { }
 
     IMongoCollection<Checkpoint> Checkpoints { get; }
 
@@ -100,13 +106,14 @@ public class MongoCheckpointStore : ICheckpointStore {
             )
             .NoContext();
 
+        Logger.ConfigureIfNull(checkpoint.Id, _loggerFactory);
         Logger.Current.CheckpointStored(this, checkpoint, force);
     }
 
     record Checkpoint(string Id, ulong? Position) {
         public static Checkpoint FromCheckpoint(EventuousCheckpoint checkpoint) =>
             new(checkpoint.Id, checkpoint.Position);
-    
+
         public EventuousCheckpoint ToCheckpoint() => new(Id, Position);
     }
 }
