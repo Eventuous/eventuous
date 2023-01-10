@@ -53,6 +53,6 @@ class HandlersMap<TAggregate> where TAggregate : Aggregate {
             )
         );
 
-    public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TAggregate>? handler)
-        => _typeMap.TryGetValue<TCommand>(out handler);
+    public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TAggregate> handler)
+        => _typeMap.TryGetValue<TCommand>(out handler!);
 }

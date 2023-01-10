@@ -6,14 +6,18 @@ namespace Eventuous.Sut.App;
 public class BookingService : ApplicationService<Booking, BookingState, BookingId> {
     public BookingService(IAggregateStore store, StreamNameMap? streamNameMap = null)
         : base(store, streamNameMap: streamNameMap) {
-        OnNew<BookRoom>(
+        OnNewAsync<BookRoom>(
             cmd => new BookingId(cmd.BookingId),
-            (booking, cmd)
-                => booking.BookRoom(
+            (booking, cmd, _)
+                => {
+                booking.BookRoom(
                     cmd.RoomId,
                     new StayPeriod(cmd.CheckIn, cmd.CheckOut),
                     cmd.Price
-                )
+                );
+
+                return Task.CompletedTask;
+            }
         );
 
         OnAny<ImportBooking>(
