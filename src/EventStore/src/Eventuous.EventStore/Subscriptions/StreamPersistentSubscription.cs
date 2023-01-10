@@ -80,11 +80,7 @@ public class StreamPersistentSubscription
 
     protected override ulong GetContextStreamPosition(ResolvedEvent re) => re.Event.EventNumber;
 
-    public GetSubscriptionGap GetMeasure()
-        => new StreamSubscriptionMeasure(
-            Options.SubscriptionId,
-            Options.StreamName,
-            EventStoreClient,
-            () => LastProcessed
-        ).GetSubscriptionGap;
+    public GetSubscriptionEndOfStream GetMeasure()
+        => new StreamSubscriptionMeasure(Options.SubscriptionId, Options.StreamName, EventStoreClient)
+            .GetEndOfStream;
 }

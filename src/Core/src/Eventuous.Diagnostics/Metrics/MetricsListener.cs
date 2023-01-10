@@ -6,47 +6,25 @@ using System.Diagnostics.Metrics;
 
 namespace Eventuous.Diagnostics.Metrics;
 
-public sealed class MetricsListener<T> : IDisposable {
+public sealed class MetricsListener<T> : GenericListener, IDisposable {
     readonly Histogram<double> _duration;
     readonly Counter<long>     _errors;
-    readonly IDisposable?      _listenerSubscription;
-    readonly object            _allListeners = new();
+    readonly Func<T, TagList>  _getTags;
 
-    IDisposable? _networkSubscription;
-
-    public MetricsListener(string name, Histogram<double> duration, Counter<long> errors, Func<T, TagList> getTags) {
+    public MetricsListener(string name, Histogram<double> duration, Counter<long> errors, Func<T, TagList> getTags)
+        : base(name) {
         _duration = duration;
         _errors   = errors;
-
-        void WhenHeard(KeyValuePair<string, object?> data) {
-            if (data.Value is not MeasureContext { Context: T context } ctx) return;
-
-            var tags = getTags(context);
-            
-            _duration.Record(ctx.Duration.TotalMilliseconds, tags);
-            if (ctx.Error) _errors.Add(1, tags);
-        }
-
-        var observer = new Observer<KeyValuePair<string, object?>>(WhenHeard, null);
-
-        void OnNewListener(DiagnosticListener listener) {
-            if (listener.Name != name) return;
-
-            lock (_allListeners) {
-                _networkSubscription?.Dispose();
-
-                _networkSubscription = listener.Subscribe(observer);
-            }
-        }
-
-        var newListenerObserver = new Observer<DiagnosticListener>((Action<DiagnosticListener>)OnNewListener, null);
-
-        _listenerSubscription = DiagnosticListener.AllListeners.Subscribe(newListenerObserver);
+        _getTags  = getTags;
     }
 
-    public void Dispose() {
-        _networkSubscription?.Dispose();
-        _listenerSubscription?.Dispose();
+    protected override void OnEvent(KeyValuePair<string, object?> data) {
+        if (data.Value is not MeasureContext { Context: T context } ctx) return;
+
+        var tags = _getTags(context);
+
+        _duration.Record(ctx.Duration.TotalMilliseconds, tags);
+        if (ctx.Error) _errors.Add(1, tags);
     }
 }
 

@@ -32,7 +32,7 @@ public static class SubscriptionRegistrationExtensions {
 
         services.TryAddSingleton<ISubscriptionHealth, SubscriptionHealthCheck>();
 
-        if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T))) services.AddSingleton(GetGapMeasure);
+        if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T))) services.AddSingleton(GetEndOfStream);
 
         return services
             .AddSubscriptionBuilder(builder)
@@ -49,7 +49,7 @@ public static class SubscriptionRegistrationExtensions {
         SubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp)
             => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);
 
-        GetSubscriptionGap GetGapMeasure(IServiceProvider sp) {
+        GetSubscriptionEndOfStream GetEndOfStream(IServiceProvider sp) {
             var subscription = GetBuilder(sp).ResolveSubscription(sp) as IMeasuredSubscription;
             return subscription!.GetMeasure();
         }

@@ -9,6 +9,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Tools;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 // ReSharper disable ConvertClosureToMethodGroup
+// ReSharper disable ConvertToLocalFunction
 
 // ReSharper disable ParameterTypeCanBeEnumerable.Local
 
@@ -33,27 +34,29 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 
-    public SubscriptionMetrics(IEnumerable<GetSubscriptionGap> measures) {
+    public SubscriptionMetrics(IEnumerable<GetSubscriptionEndOfStream> measures) {
         var getGaps = measures.ToArray();
-        Dictionary<string, SubscriptionGap> gaps = new();
+        Dictionary<string, EndOfStream> streams = new();
+
+        ObserveMetric<long> observeGapValues = () => ObserveGapValues(getGaps);
 
         _meter.CreateObservableGauge(
             GapCountMetricName,
-            () => TryObserving(GapCountMetricName, () => ObserveGapValues(getGaps)),
+            () => TryObserving(GapCountMetricName, observeGapValues),
             "events",
             "Gap between the last processed event and the stream tail"
         );
 
-        _meter.CreateObservableGauge(
-            GapTimeMetricName,
-            () => TryObserving(GapTimeMetricName, ObserveTimeValues),
-            "s",
-            "Subscription time lag, seconds"
-        );
+        // _meter.CreateObservableGauge(
+        //     GapTimeMetricName,
+        //     () => TryObserving(GapTimeMetricName, () => ObserveTimeValues()),
+        //     "s",
+        //     "Subscription time lag, seconds"
+        // );
 
         _meter.CreateObservableGauge(
             CheckpointQueueLength,
-            () => TryObserving(CheckpointQueueLength, _checkpointMetrics.Value.Record),
+            () => TryObserving(CheckpointQueueLength, () => _checkpointMetrics.Record()),
             "events",
             "Number of pending checkpoints"
         );
@@ -63,14 +66,14 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
         _listener = new MetricsListener<SubscriptionMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
-        IEnumerable<Measurement<double>> ObserveTimeValues()
-            => gaps.Values.Select(x => Measure(x.TimeGap.TotalSeconds, x.SubscriptionId));
+        // IEnumerable<Measurement<double>> ObserveTimeValues()
+            // => gaps.Values.Select(x => Measure(x.Timestamp.TotalSeconds, x.SubscriptionId));
 
-        IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionGap[] gapMeasure)
-            => gapMeasure
-                .Select(gap => GetGap(gap))
-                .Where(x => x != SubscriptionGap.Invalid)
-                .Select(x => Measure((long)x.PositionGap, x.SubscriptionId));
+        IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionEndOfStream[] getEndOfStreams)
+            => getEndOfStreams
+                .Select(endOfStream => GetGap(endOfStream))
+                .Where(x => x.Item1 != EndOfStream.Invalid)
+                .Select(x => Measure((long)(x.Item1.Position - x.Item2), x.Item1.SubscriptionId));
 
         Measurement<T> Measure<T>(T value, string subscriptionId) where T : struct {
             if (_customTags.Length == 0) {
@@ -97,24 +100,25 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             return tags;
         }
 
-        SubscriptionGap GetGap(GetSubscriptionGap gapMeasure) {
+        (EndOfStream, ulong) GetGap(GetSubscriptionEndOfStream getEndOfStream) {
             var cts = new CancellationTokenSource(500);
 
             try {
-                var t = gapMeasure(cts.Token);
+                var t = getEndOfStream(cts.Token);
 
-                var gap = t.IsCompleted ? t.Result : t.NoContext().GetAwaiter().GetResult();
-                gaps[gap.SubscriptionId] = gap;
-                return gap;
+                var endOfStream = t.IsCompleted ? t.Result : t.NoContext().GetAwaiter().GetResult();
+                streams[endOfStream.SubscriptionId] = endOfStream;
+                var lastProcessed = _checkpointMetrics.GetLastCommitPosition(endOfStream.SubscriptionId);
+                return (endOfStream, lastProcessed);
             }
             catch (Exception e) {
                 Log.MetricCollectionFailed("Subscription Gap", e);
-                return SubscriptionGap.Invalid;
+                return (EndOfStream.Invalid, 0);
             }
         }
     }
 
-    static IEnumerable<Measurement<T>> TryObserving<T>(string metric, Func<IEnumerable<Measurement<T>>> observe)
+    static IEnumerable<Measurement<T>> TryObserving<T>(string metric, ObserveMetric<T> observe)
         where T : struct {
         try {
             return observe();
@@ -132,7 +136,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
     readonly MetricsListener<SubscriptionMetricsContext> _listener;
 
-    readonly Lazy<CheckpointCommitMetrics> _checkpointMetrics = new(() => new CheckpointCommitMetrics());
+    readonly CheckpointCommitMetrics _checkpointMetrics = new();
 
     KeyValuePair<string, object?>[] _customTags = EventuousDiagnostics.Tags;
 
@@ -141,8 +145,10 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     public void Dispose() {
         _meter.Dispose();
         _listener.Dispose();
-        if (_checkpointMetrics.IsValueCreated) _checkpointMetrics.Value.Dispose();
+        _checkpointMetrics.Dispose();
     }
 
     internal record SubscriptionMetricsContext(string EventHandler, IMessageConsumeContext Context);
+    
+    delegate IEnumerable<Measurement<T>> ObserveMetric<T>() where T : struct;
 }

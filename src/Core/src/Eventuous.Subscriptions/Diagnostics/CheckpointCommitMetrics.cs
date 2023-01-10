@@ -10,28 +10,23 @@ using static Eventuous.Subscriptions.Checkpoints.CheckpointCommitHandler;
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
-sealed class CheckpointCommitMetrics : IDisposable {
-    readonly IDisposable                               _commitHandlerSub;
+sealed class CheckpointCommitMetrics : GenericListener, IDisposable {
     readonly ConcurrentDictionary<string, CommitEvent> _commitEvents = new();
 
-    public CheckpointCommitMetrics()
-        => _commitHandlerSub = DiagnosticListener.AllListeners.Subscribe(
-            listener => {
-                if (listener.Name != CheckpointCommitHandler.DiagnosticName) return;
+    public CheckpointCommitMetrics() : base(CheckpointCommitHandler.DiagnosticName) { }
 
-                listener.Subscribe(RecordCheckpointCommit);
-            }
-        );
-
-    void RecordCheckpointCommit(KeyValuePair<string, object?> evt) {
+    protected override void OnEvent(KeyValuePair<string, object?> evt) {
         var (key, value) = evt;
 
-        if (key != CommitOperation || value is not CommitEvent commitEvent) return;
+        if (value is not CommitEvent commitEvent) return;
 
         _commitEvents[commitEvent.Id] = commitEvent;
     }
 
-    public void Dispose() => _commitHandlerSub.Dispose();
+    public ulong GetLastCommitPosition(string subscriptionId)
+        => _commitEvents.TryGetValue(subscriptionId, out var commitEvent)
+            ? commitEvent.CommitPosition.Position
+            : 0;
 
     public IEnumerable<Measurement<long>> Record()
         => _commitEvents

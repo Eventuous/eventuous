@@ -3,9 +3,9 @@
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
-public delegate ValueTask<SubscriptionGap> GetSubscriptionGap(CancellationToken cancellationToken);
+public delegate ValueTask<EndOfStream> GetSubscriptionEndOfStream(CancellationToken cancellationToken);
 
 [PublicAPI]
-public record struct SubscriptionGap(string SubscriptionId, ulong PositionGap, TimeSpan TimeGap) {
-    public static readonly SubscriptionGap Invalid = new("error", 0, TimeSpan.Zero);
+public record struct EndOfStream(string SubscriptionId, ulong Position, DateTime Timestamp) {
+    public static readonly EndOfStream Invalid = new("error", 0, DateTime.MinValue);
 }

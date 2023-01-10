@@ -71,10 +71,6 @@ public class AllPersistentSubscription
 
     protected override ulong GetContextStreamPosition(ResolvedEvent re) => re.Event.Position.CommitPosition;
 
-    public GetSubscriptionGap GetMeasure()
-        => new AllStreamSubscriptionMeasure(
-            Options.SubscriptionId,
-            EventStoreClient,
-            () => LastProcessed
-        ).GetSubscriptionGap;
+    public GetSubscriptionEndOfStream GetMeasure()
+        => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient).GetEndOfStream;
 }

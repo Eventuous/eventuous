@@ -18,7 +18,7 @@ namespace Eventuous.GooglePubSub.Subscriptions;
 /// </summary>
 [PublicAPI]
 public class GooglePubSubSubscription
-    : EventSubscription<PubSubSubscriptionOptions>, IMeasuredSubscription {
+    : EventSubscription<PubSubSubscriptionOptions> {
     public delegate ValueTask<Reply> HandleEventProcessingFailure(
         SubscriberClient client,
         PubsubMessage    pubsubMessage,
@@ -177,6 +177,4 @@ public class GooglePubSubSubscription
         Exception        exception
     )
         => new(Reply.Nack);
-
-    public GetSubscriptionGap GetMeasure() => new GooglePubSubGapMeasure(Options).GetSubscriptionGap;
 }

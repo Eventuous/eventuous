@@ -46,7 +46,7 @@ public class RegistrationTests {
     [InlineData(0, typeof(Handler1))]
     [InlineData(1, typeof(Handler2))]
     public void SubsShouldHaveHandlers(int position, Type handlerType) {
-        var subs     = _provider.GetServices<TestSub>().ToArray();
+        var subs = _provider.GetServices<TestSub>().ToArray();
         var consumer = subs[position].Pipe;
         var handlers = consumer.GetHandlers();
 
@@ -69,7 +69,7 @@ public class RegistrationTests {
             .Where(x => x is SubscriptionHostedService)
             .ToArray();
 
-        var subs   = _provider.GetServices<TestSub>().ToArray();
+        var subs = _provider.GetServices<TestSub>().ToArray();
         var health = _provider.GetRequiredService<ISubscriptionHealth>();
 
         services.Length.Should().Be(2);
@@ -99,7 +99,7 @@ public class RegistrationTests {
 
     [Fact]
     public void ShouldRegisterTwoMeasures() {
-        var subs    = _provider.GetServices<TestSub>().ToArray();
+        var subs = _provider.GetServices<TestSub>().ToArray();
         var measure = _provider.GetRequiredService<SubscriptionMetrics>();
     }
 
@@ -141,11 +141,8 @@ public class RegistrationTests {
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
 
-        public GetSubscriptionGap GetMeasure()
-            => _
-                => new ValueTask<SubscriptionGap>(
-                    new SubscriptionGap(SubscriptionId, 0, TimeSpan.Zero)
-                );
+        public GetSubscriptionEndOfStream GetMeasure()
+            => _ => new ValueTask<EndOfStream>(new EndOfStream(SubscriptionId, 0, DateTime.UtcNow));
     }
 
     class Handler1 : BaseEventHandler {

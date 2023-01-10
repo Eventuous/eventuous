@@ -137,10 +137,9 @@ public class AllStreamSubscription
 
     ulong _sequence;
 
-    public GetSubscriptionGap GetMeasure()
-        => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient, () => LastProcessed)
-            .GetSubscriptionGap;
+    public GetSubscriptionEndOfStream GetMeasure()
+        => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient).GetEndOfStream;
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromAllContext(context);
 }

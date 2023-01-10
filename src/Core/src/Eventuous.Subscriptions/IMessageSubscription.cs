@@ -24,5 +24,5 @@ public interface IMessageSubscription {
 }
 
 public interface IMeasuredSubscription {
-    GetSubscriptionGap GetMeasure();
+    GetSubscriptionEndOfStream GetMeasure();
 }

@@ -20,12 +20,6 @@ public record PubSubSubscriptionOptions : SubscriptionOptions {
     public string TopicId { get; set; } = null!;
     
     /// <summary>
-    /// Set to true to enable subscription monitoring using <see cref="GooglePubSubGapMeasure"/>
-    /// Disabled by default as you can monitor subscriptions using Google Cloud native monitoring tools
-    /// </summary>
-    public bool EnableMonitoring { get; set; }
-
-    /// <summary>
     /// The subscription will try creating a PubSub subscription by default, but it requires extended permissions for PubSub.
     /// If you run the application with lower permissions, you can pre-create the subscription using your DevOps tools,
     /// then set this option to false

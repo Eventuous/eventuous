@@ -50,8 +50,7 @@ public class StreamSubscription
         checkpointStore,
         consumerPipe,
         loggerFactory
-    ) {
-    }
+    ) { }
 
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
@@ -87,8 +86,9 @@ public class StreamSubscription
             )
             .NoContext();
 
-        async Task HandleEvent(ResolvedEvent re,
-            CancellationToken                ct
+        async Task HandleEvent(
+            ResolvedEvent     re,
+            CancellationToken ct
         ) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
@@ -140,14 +140,10 @@ public class StreamSubscription
 
     ulong _sequence;
 
-    public GetSubscriptionGap GetMeasure()
-        => new StreamSubscriptionMeasure(
-            Options.SubscriptionId,
-            Options.StreamName,
-            EventStoreClient,
-            () => LastProcessed
-        ).GetSubscriptionGap;
+    public GetSubscriptionEndOfStream GetMeasure()
+        => new StreamSubscriptionMeasure(Options.SubscriptionId, Options.StreamName, EventStoreClient)
+            .GetEndOfStream;
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromContext(context);
 }
