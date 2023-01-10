@@ -10,11 +10,19 @@ Event Sourcing library for .NET, which is:
 
 Read Eventuous blog on Medium: https://medium.com/eventuous. You will find some of the documentation articles published there as blog posts, it is normal as these articles have value for the community.
 
+## Community
+
+Join our [Slack](https://join.slack.com/t/eventuousworkspace/shared_invite/zt-tzrhtbxf-Tk7dSMuoVBvjkSf0Eq~Zpg) channel.
+
+Eventuous also has its own channel on [DDD-CQRS-ES](https://discord.gg/P4WcBp8r) Discord server.
+
 ## Video
 
 You can watch a bit chaotic introduction to Eventuous on YouTube:
 
 [![Link to YouTube](http://img.youtube.com/vi/IbnXdERLDjk/0.jpg)](http://www.youtube.com/watch?v=IbnXdERLDjk "InfoZone Eventuous talk")
+
+Subscribe to Eventuous [YouTube channel](https://www.youtube.com/@eventuous).
 
 ## Documentation
 
