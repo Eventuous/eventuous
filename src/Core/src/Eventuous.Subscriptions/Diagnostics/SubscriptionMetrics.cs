@@ -69,7 +69,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         IEnumerable<Measurement<double>> ObserveTimeValues()
             => streams.Values.Select(
                 x => Measure(
-                    (_checkpointMetrics.GetLastTimestamp(x.SubscriptionId) - x.Timestamp).TotalSeconds,
+                    Math.Round((_checkpointMetrics.GetLastTimestamp(x.SubscriptionId) - x.Timestamp).TotalSeconds),
                     x.SubscriptionId
                 )
             );
