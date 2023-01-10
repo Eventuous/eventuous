@@ -156,12 +156,12 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     }
 }
 
-public record struct CommitPosition(ulong Position, ulong Sequence) {
+public record struct CommitPosition(ulong Position, ulong Sequence, DateTime Timestamp) {
     public bool Valid { get; private init; } = true;
 
     public LogContext LogContext { get; init; }
 
-    public static readonly CommitPosition None = new(0, 0) { Valid = false };
+    public static readonly CommitPosition None = new(0, 0, DateTime.MinValue) { Valid = false };
 }
 
 public delegate ValueTask<Checkpoint> CommitCheckpoint(

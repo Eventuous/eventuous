@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
@@ -22,6 +21,11 @@ sealed class CheckpointCommitMetrics : GenericListener, IDisposable {
 
         _commitEvents[commitEvent.Id] = commitEvent;
     }
+    
+    public DateTime GetLastTimestamp(string subscriptionId)
+        => _commitEvents.TryGetValue(subscriptionId, out var commitEvent)
+            ? commitEvent.CommitPosition.Timestamp
+            : DateTime.MinValue;
 
     public ulong GetLastCommitPosition(string subscriptionId)
         => _commitEvents.TryGetValue(subscriptionId, out var commitEvent)

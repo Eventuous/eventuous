@@ -47,12 +47,12 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             "Gap between the last processed event and the stream tail"
         );
 
-        // _meter.CreateObservableGauge(
-        //     GapTimeMetricName,
-        //     () => TryObserving(GapTimeMetricName, () => ObserveTimeValues()),
-        //     "s",
-        //     "Subscription time lag, seconds"
-        // );
+        _meter.CreateObservableGauge(
+            GapTimeMetricName,
+            () => TryObserving(GapTimeMetricName, () => ObserveTimeValues()),
+            "s",
+            "Subscription time lag, seconds"
+        );
 
         _meter.CreateObservableGauge(
             CheckpointQueueLength,
@@ -66,8 +66,13 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
         _listener = new MetricsListener<SubscriptionMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
-        // IEnumerable<Measurement<double>> ObserveTimeValues()
-            // => gaps.Values.Select(x => Measure(x.Timestamp.TotalSeconds, x.SubscriptionId));
+        IEnumerable<Measurement<double>> ObserveTimeValues()
+            => streams.Values.Select(
+                x => Measure(
+                    (_checkpointMetrics.GetLastTimestamp(x.SubscriptionId) - x.Timestamp).TotalSeconds,
+                    x.SubscriptionId
+                )
+            );
 
         IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionEndOfStream[] getEndOfStreams)
             => getEndOfStreams
@@ -149,6 +154,6 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     }
 
     internal record SubscriptionMetricsContext(string EventHandler, IMessageConsumeContext Context);
-    
+
     delegate IEnumerable<Measurement<T>> ObserveMetric<T>() where T : struct;
 }

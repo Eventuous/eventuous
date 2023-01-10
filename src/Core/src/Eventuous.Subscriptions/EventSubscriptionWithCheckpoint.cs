@@ -41,7 +41,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     protected EventPosition?          LastProcessed           { get; set; }
     protected CheckpointCommitHandler CheckpointCommitHandler { get; }
     protected ICheckpointStore        CheckpointStore         { get; }
-    
+
     protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -62,7 +62,8 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         LastProcessed = eventPosition;
 
         return CheckpointCommitHandler.Commit(
-            new CommitPosition(eventPosition.Position!.Value, context.Sequence) { LogContext = context.LogContext },
+            new CommitPosition(eventPosition.Position!.Value, context.Sequence, eventPosition.Created)
+                { LogContext = context.LogContext },
             context.CancellationToken
         );
     }

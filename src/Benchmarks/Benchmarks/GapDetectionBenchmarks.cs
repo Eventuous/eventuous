@@ -41,7 +41,7 @@ public class GapDetectionBenchmarks {
     [Benchmark]
     public async Task CheckpointCommitHandler() {
         foreach (var number in _numbers) {
-            var p = new CommitPosition((ulong)number, (ulong)number) { LogContext = _log };
+            var p = new CommitPosition((ulong)number, (ulong)number, DateTime.MinValue) { LogContext = _log };
             await _cch.Commit(p, CancellationToken.None);
         }
     }

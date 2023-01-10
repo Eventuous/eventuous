@@ -8,7 +8,7 @@ namespace Eventuous.Tests.Subscriptions;
 public class SequenceTests {
     public SequenceTests(ITestOutputHelper output) {
         var factory = new LoggerFactory();
-        factory.AddProvider(new XunitLoggerProvider(output, (s, level) => true));
+        factory.AddProvider(new XunitLoggerProvider(output, (_, _) => true));
         var services = new ServiceCollection();
         services.AddSingleton<ILoggerFactory>(factory);
         var provider = services.BuildServiceProvider();
@@ -24,8 +24,9 @@ public class SequenceTests {
 
     [Fact]
     public void ShouldWorkForOne() {
-        var sequence = new CommitPositionSequence { new(0, 1) };
-        sequence.FirstBeforeGap().Should().Be(new CommitPosition(0, 1));
+        var timestamp = DateTime.Now;
+        var sequence = new CommitPositionSequence { new(0, 1, timestamp) };
+        sequence.FirstBeforeGap().Should().Be(new CommitPosition(0, 1, timestamp));
     }
 
     [Fact]
@@ -35,7 +36,7 @@ public class SequenceTests {
         var start = (ulong)random.Next(1);
 
         for (var i = start; i < start + 100; i++) {
-            sequence.Add(new CommitPosition(i, i));
+            sequence.Add(new CommitPosition(i, i, DateTime.Now));
         }
 
         var gapPlace = random.Next(1, sequence.Count - 1);
@@ -49,20 +50,38 @@ public class SequenceTests {
     [Fact]
     public void ShouldWorkForNormalCase() {
         var sequence = new CommitPositionSequence();
+        var timestamp = DateTime.Now;
 
         for (ulong i = 0; i < 10; i++) {
-            sequence.Add(new CommitPosition(i, i));
+            sequence.Add(new CommitPosition(i, i, timestamp));
         }
 
         var first = sequence.FirstBeforeGap();
-        first.Should().Be(new CommitPosition(9, 9));
+        first.Should().Be(new CommitPosition(9, 9, timestamp));
     }
 
-    public static IEnumerable<object[]> TestData =>
-        new List<object[]> {
-            new object[]
-                { new CommitPositionSequence { new(0, 1), new(0, 2), new(0, 4), new(0, 6) }, new CommitPosition(0, 2) },
-            new object[]
-                { new CommitPositionSequence { new(0, 1), new(0, 2), new(0, 8), new(0, 6) }, new CommitPosition(0, 2) }
-        };
+    public static IEnumerable<object[]> TestData {
+        get {
+            var timestamp = DateTime.Now;
+            return new List<object[]> {
+                new object[] {
+                    new CommitPositionSequence {
+                        new(0, 1, timestamp), 
+                        new(0, 2, timestamp), 
+                        new(0, 4, timestamp), 
+                        new(0, 6, timestamp)
+                    },
+                    new CommitPosition(0, 2, timestamp)
+                },
+                new object[] {
+                    new CommitPositionSequence {
+                        new(0, 1, timestamp), 
+                        new(0, 2, timestamp), 
+                        new(0, 8, timestamp), 
+                        new(0, 6, timestamp)
+                    }, new CommitPosition(0, 2, timestamp)
+                }
+            };
+        }
+    }
 }
