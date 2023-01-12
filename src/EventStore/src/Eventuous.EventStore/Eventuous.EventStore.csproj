@@ -1,28 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IncludeExtensions>true</IncludeExtensions>
+    </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions" />
-        <PackageReference Include="EventStore.Client.Grpc.Streams" />
+        <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions"/>
+        <PackageReference Include="EventStore.Client.Grpc.Streams"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj" />
-        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
+        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="EventStore.Client" />
-        <Using Include="Eventuous.Subscriptions" />
-        <Using Include="Microsoft.Extensions.Logging" />
+        <Using Include="EventStore.Client"/>
+        <Using Include="Eventuous.Subscriptions"/>
+        <Using Include="Microsoft.Extensions.Logging"/>
     </ItemGroup>
     <ItemGroup>
-        <None Remove="Eventuous.EventStore.csproj.DotSettings" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
-            <Link>Tools\TaskExtensions.cs</Link>
-        </Compile>
-        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
-            <Link>Tools\Ensure.cs</Link>
-        </Compile>
+        <None Remove="Eventuous.EventStore.csproj.DotSettings"/>
     </ItemGroup>
 </Project>
