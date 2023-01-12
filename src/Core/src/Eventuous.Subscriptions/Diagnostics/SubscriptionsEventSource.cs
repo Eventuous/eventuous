@@ -20,6 +20,7 @@ public class SubscriptionsEventSource : EventSource {
     const int CheckpointSequenceInvalidHeadId = 102;
     const int CheckpointAlreadyCommittedId    = 103;
     const int CheckpointGapDetectedId         = 104;
+    const int CheckpointLastCommitDuplicateId = 105;
 
     [NonEvent]
     public void MetricCollectionFailed(string metric, Exception exception)
@@ -36,28 +37,31 @@ public class SubscriptionsEventSource : EventSource {
 
     [NonEvent]
     public void CheckpointLastCommitGap(CommitPosition lastCommitPosition, CommitPosition latestPosition) {
-        if (!IsEnabled(EventLevel.Verbose, Keywords.Checkpoints)) return;
+        if (IsEnabled(EventLevel.Verbose, Keywords.Checkpoints))
+            CheckpointLastCommitGap(
+                lastCommitPosition.Sequence,
+                lastCommitPosition.Position,
+                latestPosition.Sequence,
+                latestPosition.Position
+            );
+    }
 
-        CheckpointLastCommitGap(
-            lastCommitPosition.Sequence,
-            lastCommitPosition.Position,
-            latestPosition.Sequence,
-            latestPosition.Position
-        );
+    [NonEvent]
+    public void CheckpointLastCommitDuplicate(CommitPosition lastCommitPosition) {
+        if (IsEnabled(EventLevel.Verbose, Keywords.Checkpoints))
+            CheckpointLastCommitDuplicate(lastCommitPosition.Sequence, lastCommitPosition.Position);
     }
 
     [NonEvent]
     public void CheckpointSequenceInvalidHead(CommitPosition latestPosition) {
-        if (!IsEnabled(EventLevel.Verbose, Keywords.Checkpoints)) return;
-
-        CheckpointSequenceInvalidHead(latestPosition.Sequence, latestPosition.Position);
+        if (IsEnabled(EventLevel.Verbose, Keywords.Checkpoints))
+            CheckpointSequenceInvalidHead(latestPosition.Sequence, latestPosition.Position);
     }
 
     [NonEvent]
     public void CheckpointGapDetected(CommitPosition before, CommitPosition after) {
-        if (!IsEnabled(EventLevel.Verbose, Keywords.Checkpoints)) return;
-
-        CheckpointGapDetected(before.Sequence, before.Position, after.Sequence, after.Position);
+        if (IsEnabled(EventLevel.Verbose, Keywords.Checkpoints))
+            CheckpointGapDetected(before.Sequence, before.Position, after.Sequence, after.Position);
     }
 
     [Event(MetricCollectionFailedId, Message = "Failed to collect metric {0}: {1}", Level = EventLevel.Warning)]
@@ -94,6 +98,14 @@ public class SubscriptionsEventSource : EventSource {
             latestSequence,
             latestPosition
         );
+
+    [Event(CheckpointLastCommitGapId,
+        Message = "Last commit position {0}:{1} is the same as the latest position",
+        Level = EventLevel.Warning,
+        Keywords = Keywords.Checkpoints
+    )]
+    void CheckpointLastCommitDuplicate(ulong latestSequence, ulong latestPosition)
+        => WriteEvent(CheckpointLastCommitGapId, latestSequence, latestPosition);
 
     [Event(CheckpointSequenceInvalidHeadId,
         Message = "Last commit position {0}:{1} sequence is not zero",

@@ -7,10 +7,10 @@ using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Eventuous.Subscriptions.Channels;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
@@ -102,12 +102,15 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         switch (_lastCommit.Valid) {
             // There's a gap between the last committed position and the list head
             case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force:
-                SubscriptionsEventSource.Log.CheckpointLastCommitGap(_lastCommit, _positions.Min);
+                Log.CheckpointLastCommitGap(_lastCommit, _positions.Min);
                 return CommitPosition.None;
             // The list head is not at the very beginning
             case false when _positions.Min.Sequence != 0:
-                SubscriptionsEventSource.Log.CheckpointSequenceInvalidHead(_positions.Min);
+                Log.CheckpointSequenceInvalidHead(_positions.Min);
                 return CommitPosition.None;
+            case true when _lastCommit.Sequence == _positions.Min.Sequence:
+                Log.CheckpointLastCommitDuplicate(_positions.Min);
+                break;
         }
 
         return _positions.FirstBeforeGap();
@@ -116,7 +119,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     async Task CommitInternal(CommitPosition position, CancellationToken cancellationToken) {
         try {
             if (_lastCommit == position) {
-                SubscriptionsEventSource.Log.CheckpointAlreadyCommitted(_subscriptionId, position);
+                Log.CheckpointAlreadyCommitted(_subscriptionId, position);
                 return;
             }
 

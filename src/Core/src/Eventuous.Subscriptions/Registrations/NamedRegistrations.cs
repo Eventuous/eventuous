@@ -18,11 +18,7 @@ public static class NamedRegistrationExtensions {
             );
         }
 
-        var descriptor = new NamedDescriptor(
-            builder.SubscriptionId,
-            typeof(SubscriptionBuilder<T, TOptions>),
-            builder
-        );
+        var descriptor = new NamedDescriptor(builder.SubscriptionId, typeof(SubscriptionBuilder<T, TOptions>), builder);
 
         services.Add(descriptor);
         services.Configure(builder.SubscriptionId, builder.ConfigureOptions);
@@ -41,8 +37,5 @@ public static class NamedRegistrationExtensions {
 class NamedDescriptor : ServiceDescriptor {
     public string Name { get; }
 
-    public NamedDescriptor(string name, Type serviceType, object instance) : base(
-        serviceType,
-        instance
-    ) => Name = name;
+    public NamedDescriptor(string name, Type serviceType, object instance) : base(serviceType, instance) => Name = name;
 }
