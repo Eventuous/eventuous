@@ -13,7 +13,7 @@ public class AggregateFactoryRegistry {
     /// </summary>
     public static readonly AggregateFactoryRegistry Instance = new();
 
-    readonly Dictionary<Type, Func<Aggregate>> _registry = new();
+    internal readonly Dictionary<Type, Func<Aggregate>> _registry = new();
 
     /// <summary>
     /// Adds a custom aggregate factory to the registry

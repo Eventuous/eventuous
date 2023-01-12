@@ -1,7 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 
@@ -37,7 +36,7 @@ public class InsidePeek {
             .Where(x => DeepBaseType(x, aggregateType))
             .ToList();
 
-        var reg = _registry.GetPrivateMember<ConcurrentDictionary<Type, Func<dynamic>>>("_registry");
+        var reg = _registry._registry;
 
         foreach (var type in cl) {
             var stateType = GetStateType(type);
@@ -51,7 +50,7 @@ public class InsidePeek {
                     type,
                     stateType,
                     methods!,
-                    () => CreateInstance(reg!, type)
+                    () => CreateInstance(reg, type)
                 )
             );
         }
@@ -62,7 +61,7 @@ public class InsidePeek {
                 : type.BaseType!.GenericTypeArguments[0];
     }
 
-    static dynamic CreateInstance(ConcurrentDictionary<Type, Func<dynamic>> reg, Type aggregateType) {
+    static dynamic CreateInstance(IReadOnlyDictionary<Type, Func<Aggregate>> reg, Type aggregateType) {
         var instance = reg.TryGetValue(aggregateType, out var factory)
             ? factory()
             : Activator.CreateInstance(aggregateType)!;

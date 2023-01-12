@@ -19,4 +19,7 @@
       <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj" />
       <ProjectReference Include="..\Eventuous.Shared\Eventuous.Shared.csproj" />
     </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Eventuous.Spyglass" />
+    </ItemGroup>
 </Project>
