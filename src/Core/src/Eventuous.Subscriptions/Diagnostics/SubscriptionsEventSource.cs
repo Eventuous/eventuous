@@ -99,13 +99,13 @@ public class SubscriptionsEventSource : EventSource {
             latestPosition
         );
 
-    [Event(CheckpointLastCommitGapId,
+    [Event(CheckpointLastCommitDuplicateId,
         Message = "Last commit position {0}:{1} is the same as the latest position",
         Level = EventLevel.Warning,
         Keywords = Keywords.Checkpoints
     )]
     void CheckpointLastCommitDuplicate(ulong latestSequence, ulong latestPosition)
-        => WriteEvent(CheckpointLastCommitGapId, latestSequence, latestPosition);
+        => WriteEvent(CheckpointLastCommitDuplicateId, latestSequence, latestPosition);
 
     [Event(CheckpointSequenceInvalidHeadId,
         Message = "Last commit position {0}:{1} sequence is not zero",
