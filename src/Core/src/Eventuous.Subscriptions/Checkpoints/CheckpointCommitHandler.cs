@@ -38,8 +38,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         int              batchSize     = 1,
         ILoggerFactory?  loggerFactory = null
     )
-        : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize, loggerFactory) {
-    }
+        : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize, loggerFactory) { }
 
     public CheckpointCommitHandler(
         string           subscriptionId,
@@ -73,11 +72,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         CommitPosition AddBatchAndGetLast(IList<CommitPosition> list) {
-            // ReSharper disable once ForCanBeConvertedToForeach
-            for (var i = 0; i < list.Count; i++) {
-                _positions.Add(list[i]);
-            }
-
+            _positions.UnionWith(list);
             var next = GetCommitPosition(false);
             return next;
         }
