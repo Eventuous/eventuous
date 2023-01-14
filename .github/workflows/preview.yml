@@ -22,8 +22,7 @@ jobs:
           dotnet-version: '7.0.x'
       - name: Create and push NuGet package
         run: |
-          dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+          dotnet pack -c Debug -o nuget
           dotnet nuget push nuget/**/*.nupkg --skip-duplicate --api-key ${{ secrets.MYGET_API_KEY }} --source https://www.myget.org/F/eventuous/api/v2/package
-          dotnet nuget push nuget/**/*.snupkg --skip-duplicate --api-key ${{ secrets.MYGET_API_KEY }} --source https://www.myget.org/F/eventuous/api/v2/package
         env:
           NUGET_AUTH_TOKEN: ${{ github.token }}

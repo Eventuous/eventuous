@@ -306,3 +306,4 @@ exclusive.lck
 .vscode
 version.txt
 /public/
+/nuget/
