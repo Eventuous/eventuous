@@ -21,6 +21,7 @@ begin
         from __schema__.messages m 
         inner join __schema__.streams s on s.stream_id = m.stream_id
         where m.global_position >= _from_position
+        order by m.global_position
         limit _count;
 end;
 

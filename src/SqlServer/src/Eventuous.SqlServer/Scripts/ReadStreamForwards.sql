@@ -22,6 +22,6 @@ SELECT TOP (@count)
     JsonData, JsonMetadata, Created
 FROM __schema__.Messages
 WHERE StreamId = @stream_id AND StreamPosition >= @from_position
-
+ORDER BY Messages.GlobalPosition
 
 END
