@@ -26,7 +26,7 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start) {
         var cmd = new NpgsqlCommand(Schema.ReadStreamSub, connection);
 
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.Parameters.AddWithValue("_stream_id", NpgsqlDbType.Integer, _streamId);
         cmd.Parameters.AddWithValue("_from_position", NpgsqlDbType.Integer, (int)start + 1);
         cmd.Parameters.AddWithValue("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
@@ -37,7 +37,7 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
         await using var connection = GetConnection();
         await connection.OpenAsync(cancellationToken).NoContext();
         await using var cmd = connection.CreateCommand();
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.CommandText = Schema.CheckStream;
         cmd.Parameters.AddWithValue("_stream_name", NpgsqlDbType.Varchar, Options.Stream.ToString());
         cmd.Parameters.AddWithValue("_expected_version", NpgsqlDbType.Integer, -2);

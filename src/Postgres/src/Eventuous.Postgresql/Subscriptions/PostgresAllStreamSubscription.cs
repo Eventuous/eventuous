@@ -24,7 +24,7 @@ public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAl
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start) {
         var cmd = new NpgsqlCommand(Schema.ReadAllForwards, connection);
 
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.Parameters.AddWithValue("_from_position", NpgsqlDbType.Bigint, start + 1);
         cmd.Parameters.AddWithValue("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
         return cmd;

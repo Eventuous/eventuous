@@ -52,7 +52,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
         Subscription =
             !subscribeToAll
                 ? new PostgresStreamSubscription(
-                    Instance.GetConnection,
+                    Instance.GetConnection.Build().CreateConnection,
                     new PostgresStreamSubscriptionOptions(Stream) {
                         SubscriptionId = SubscriptionId,
                         Schema         = SchemaName
@@ -62,7 +62,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                     LoggerFactory
                 )
                 : new PostgresAllStreamSubscription(
-                    Instance.GetConnection,
+                    Instance.GetConnection.Build().CreateConnection,
                     new PostgresAllStreamSubscriptionOptions {
                         SubscriptionId = SubscriptionId,
                         Schema         = SchemaName
@@ -84,7 +84,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
     readonly Schema               _schema;
 
     public async Task InitializeAsync() {
-        await _schema.CreateSchema(Instance.GetConnection);
+        await _schema.CreateSchema(Instance.GetConnection.Build().CreateConnection);
         if (_autoStart) await Start();
     }
 

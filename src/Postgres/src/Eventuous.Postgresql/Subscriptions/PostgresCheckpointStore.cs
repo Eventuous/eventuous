@@ -18,13 +18,14 @@ public class PostgresCheckpointStore : ICheckpointStore {
     readonly string                _addCheckpointSql;
     readonly string                _storeCheckpointSql;
 
-    public PostgresCheckpointStore(GetPostgresConnection getConnection, string schema, ILoggerFactory? loggerFactory) {
-        _getConnection = getConnection;
+    public PostgresCheckpointStore(NpgsqlDataSourceBuilder dataSourceBuilder, string schema, ILoggerFactory? loggerFactory) {
         _loggerFactory = loggerFactory;
         var sch = new Schema(schema);
         _getCheckpointSql   = sch.GetCheckpointSql;
         _addCheckpointSql   = sch.AddCheckpointSql;
         _storeCheckpointSql = sch.UpdateCheckpointSql;
+
+        _getConnection = (GetPostgresConnection) dataSourceBuilder.Build().CreateConnection;
     }
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {

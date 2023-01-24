@@ -11,11 +11,11 @@ using Npgsql;
 namespace Eventuous.Tests.Postgres.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncDisposable {
-    public IEventStore           EventStore     { get; }
-    public IAggregateStore       AggregateStore { get; }
-    public IFixture              Auto           { get; } = new Fixture().Customize(new NodaTimeCustomization());
-    public GetPostgresConnection GetConnection  { get; }
-    public Faker                 Faker          { get; } = new();
+    public IEventStore             EventStore     { get; }
+    public IAggregateStore         AggregateStore { get; }
+    public IFixture                Auto           { get; } = new Fixture().Customize(new NodaTimeCustomization());
+    public NpgsqlDataSourceBuilder GetConnection  { get; }
+    public Faker                   Faker          { get; } = new();
 
     public string SchemaName => Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
@@ -34,14 +34,14 @@ public sealed class IntegrationFixture : IAsyncDisposable {
 
         var schemaName = SchemaName;
 
-        NpgsqlConnection GetConn() => new(connString);
+        NpgsqlDataSourceBuilder GetConn() => new(connString);
 
         var schema = new Schema(schemaName);
-        schema.CreateSchema(GetConn).ConfigureAwait(false).GetAwaiter().GetResult();
+        schema.CreateSchema(GetConn().Build().CreateConnection).ConfigureAwait(false).GetAwaiter().GetResult();
 
-        GetConnection = GetConn;
+        GetConnection = GetConn();
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = new PostgresStore(GetConn, new PostgresStoreOptions(schemaName), Serializer);
+        EventStore     = new PostgresStore(GetConnection, new PostgresStoreOptions(schemaName), Serializer);
         AggregateStore = new AggregateStore(EventStore);
         ActivitySource.AddActivityListener(_listener);
     }

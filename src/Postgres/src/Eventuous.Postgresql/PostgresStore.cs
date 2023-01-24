@@ -25,15 +25,19 @@ public class PostgresStore : IEventStore {
     readonly Schema                _schema;
 
     public PostgresStore(
-        GetPostgresConnection getConnection,
-        PostgresStoreOptions  options,
-        IEventSerializer?     serializer     = null,
-        IMetadataSerializer?  metaSerializer = null
+        NpgsqlDataSourceBuilder dataSourceBuilder,
+        PostgresStoreOptions    options,
+        IEventSerializer?       serializer     = null,
+        IMetadataSerializer?    metaSerializer = null
     ) {
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
-        _getConnection  = Ensure.NotNull(getConnection, "Connection factory");
         _schema         = new Schema(options.Schema);
+
+        Ensure.NotNull(dataSourceBuilder, "Npgsql Data Source Builder");
+
+        dataSourceBuilder.MapComposite<NewPersistedEvent>(_schema.StreamMessage);
+        _getConnection = (GetPostgresConnection)dataSourceBuilder.Build().CreateConnection;
     }
 
     const string ContentType = "application/json";
@@ -41,8 +45,7 @@ public class PostgresStore : IEventStore {
     async Task<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken) {
         var connection = _getConnection();
         await connection.OpenAsync(cancellationToken).NoContext();
-        connection.ReloadTypes();
-        connection.TypeMapper.MapComposite<NewPersistedEvent>(_schema.StreamMessage);
+        await connection.ReloadTypesAsync();
         return connection;
     }
 
@@ -55,7 +58,7 @@ public class PostgresStore : IEventStore {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = new NpgsqlCommand(_schema.ReadStreamForwards, connection);
 
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.Parameters.AddWithValue("_stream_name", NpgsqlDbType.Varchar, stream.ToString());
         cmd.Parameters.AddWithValue("_from_position", NpgsqlDbType.Integer, start.Value);
         cmd.Parameters.AddWithValue("_count", NpgsqlDbType.Integer, count);
@@ -86,7 +89,7 @@ public class PostgresStore : IEventStore {
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken).NoContext();
         await using var cmd         = new NpgsqlCommand(_schema.AppendEvents, connection, transaction);
 
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.Parameters.AddWithValue("_stream_name", NpgsqlDbType.Varchar, stream.ToString());
         cmd.Parameters.AddWithValue("_expected_version", NpgsqlDbType.Integer, expectedVersion.Value);
         cmd.Parameters.AddWithValue("_created", DateTime.UtcNow);
