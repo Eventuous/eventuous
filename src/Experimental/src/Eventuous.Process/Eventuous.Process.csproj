@@ -3,12 +3,9 @@
         <IncludeExtensions>true</IncludeExtensions>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="NEST" />
-        <PackageReference Include="Polly" />
-    </ItemGroup>
-    <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Domain\Eventuous.Domain.csproj" />
     </ItemGroup>
 </Project>

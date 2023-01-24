@@ -1,26 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeExtensions>true</IncludeExtensions>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Include="README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Confluent.Kafka" />
+        <PackageReference Include="Confluent.Kafka"/>
     </ItemGroup>
     <ItemGroup>
-        <InternalsVisibleTo Include="Eventuous.Tests.Kafka" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
-            <Link>Tools\TaskExtensions.cs</Link>
-        </Compile>
-        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
-            <Link>Tools\Ensure.cs</Link>
-        </Compile>
+        <InternalsVisibleTo Include="Eventuous.Tests.Kafka"/>
     </ItemGroup>
 </Project>

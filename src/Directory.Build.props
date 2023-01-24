@@ -77,6 +77,19 @@
     <ItemGroup Condition="'$(IncludeTestHelpers)' == 'true'">
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
     </ItemGroup>
+    <ItemGroup Condition="'$(IncludeExtensions)' == 'true'">
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
+            <Link>Tools\TaskExtensions.cs</Link>
+        </Compile>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
+            <Link>Tools\Ensure.cs</Link>
+        </Compile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(IncludeDiagName)' == 'true'">
+        <Compile Include="$(CoreRoot)\Eventuous.Diagnostics\DiagnosticName.cs">
+            <Link>Diagnostics\DiagnosticName.cs</Link>
+        </Compile>
+    </ItemGroup>
 
     <Target Name="CustomVersion" AfterTargets="MinVer">
         <PropertyGroup>

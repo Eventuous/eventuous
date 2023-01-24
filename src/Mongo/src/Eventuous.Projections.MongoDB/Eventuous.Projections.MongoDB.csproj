@@ -1,28 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeExtensions>true</IncludeExtensions>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="MongoDB.Driver" />
-        <PackageReference Include="System.Reactive" />
+        <PackageReference Include="MongoDB.Driver"/>
+        <PackageReference Include="System.Reactive"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\" />
-        <None Remove="Eventuous.Projections.MongoDB.csproj.DotSettings" />
+        <None Include="README.md" Pack="true" PackagePath="\"/>
+        <None Remove="Eventuous.Projections.MongoDB.csproj.DotSettings"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="MongoDB.Driver" />
-        <Using Include="Eventuous.Subscriptions" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
-            <Link>Tools\TaskExtensions.cs</Link>
-        </Compile>
-        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
-            <Link>Tools\Ensure.cs</Link>
-        </Compile>
+        <Using Include="MongoDB.Driver"/>
+        <Using Include="Eventuous.Subscriptions"/>
     </ItemGroup>
 </Project>

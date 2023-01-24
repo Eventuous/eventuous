@@ -17,7 +17,7 @@ namespace Eventuous;
 // [PublicAPI]
 public abstract class ApplicationService<TAggregate, TState, TId>
     : IApplicationService<TAggregate, TState, TId>, IApplicationService<TAggregate>
-    where TAggregate : Aggregate<TState>, new()
+    where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : AggregateId {
     protected IAggregateStore Store { get; }

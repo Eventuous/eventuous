@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 namespace Eventuous.RabbitMq.Subscriptions;
 
 /// <summary>
-/// RabbitMQ subscription service
+/// RabbitMQ subscription.
 /// </summary>
 [PublicAPI]
 public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOptions> {
@@ -94,33 +94,34 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     ) { }
 
     protected override ValueTask Subscribe(CancellationToken cancellationToken) {
-        var exchange = Ensure.NotEmptyString(Options.Exchange);
+        var exchangeName = Ensure.NotEmptyString(Options.Exchange);
+        var queueName = Options.Queue ?? Options.SubscriptionId;
 
-        Log.InfoLog?.Log("Ensuring exchange", exchange);
+        Log.InfoLog?.Log("Ensuring exchange", exchangeName);
 
         _channel.ExchangeDeclare(
-            exchange,
+            exchangeName,
             Options.ExchangeOptions?.Type       ?? ExchangeType.Fanout,
             Options.ExchangeOptions?.Durable    ?? true,
             Options.ExchangeOptions?.AutoDelete ?? true,
             Options.ExchangeOptions?.Arguments
         );
 
-        Log.InfoLog?.Log("Ensuring queue", Options.SubscriptionId);
+        Log.InfoLog?.Log("Ensuring queue", queueName);
 
         _channel.QueueDeclare(
-            Options.SubscriptionId,
+            queueName,
             Options.QueueOptions?.Durable    ?? true,
             Options.QueueOptions?.Exclusive  ?? false,
             Options.QueueOptions?.AutoDelete ?? false,
             Options.QueueOptions?.Arguments
         );
 
-        Log.InfoLog?.Log("Binding exchange to queue:", exchange, Options.SubscriptionId);
+        Log.InfoLog?.Log("Binding exchange to queue:", exchangeName, queueName);
 
         _channel.QueueBind(
-            Options.SubscriptionId,
-            exchange,
+            queueName,
+            exchangeName,
             Options.BindingOptions?.RoutingKey ?? "",
             Options.BindingOptions?.Arguments
         );
