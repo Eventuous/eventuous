@@ -10,5 +10,6 @@ SELECT TOP (@count)
 FROM __schema__.Messages
 INNER JOIN __schema__.Streams ON Messages.StreamId = Streams.StreamId
 WHERE Messages.GlobalPosition >= @from_position
+ORDER BY Messages.GlobalPosition
 
 END
