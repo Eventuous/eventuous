@@ -14,14 +14,18 @@ using NpgsqlTypes;
 namespace Eventuous.Postgresql.Subscriptions;
 
 public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStreamSubscriptionOptions> {
+    readonly NpgsqlDataSource _dataSource;
+
     public PostgresStreamSubscription(
-        GetPostgresConnection             getConnection,
+        NpgsqlDataSourceBuilder           dataSourceBuilder,
         PostgresStreamSubscriptionOptions options,
         ICheckpointStore                  checkpointStore,
         ConsumePipe                       consumePipe,
         ILoggerFactory?                   loggerFactory = null
-    ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory)
-        => _streamName = options.Stream.ToString();
+    ) : base(dataSourceBuilder, options, checkpointStore, consumePipe, loggerFactory) {
+        _dataSource = dataSourceBuilder.Build();
+        _streamName = options.Stream.ToString(); 
+    }
 
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start) {
         var cmd = new NpgsqlCommand(Schema.ReadStreamSub, connection);
@@ -34,8 +38,7 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
     }
 
     protected override async Task BeforeSubscribe(CancellationToken cancellationToken) {
-        await using var connection = GetConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
         await using var cmd = connection.CreateCommand();
         cmd.CommandType = CommandType.Text;
         cmd.CommandText = Schema.CheckStream;

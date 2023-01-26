@@ -18,26 +18,22 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
     where T : PostgresSubscriptionBaseOptions {
     readonly IMetadataSerializer     _metaSerializer;
     readonly CancellationTokenSource _cts = new();
+    readonly NpgsqlDataSource        _dataSource;
 
     protected Schema                Schema        { get; }
-    protected GetPostgresConnection GetConnection { get; }
 
     protected PostgresSubscriptionBase(
-        GetPostgresConnection getConnection,
-        T                     options,
-        ICheckpointStore      checkpointStore,
-        ConsumePipe           consumePipe,
-        ILoggerFactory?       loggerFactory
+        NpgsqlDataSourceBuilder dataSourceBuilder,
+        T                       options,
+        ICheckpointStore        checkpointStore,
+        ConsumePipe             consumePipe,
+        ILoggerFactory?         loggerFactory
     ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
-        Schema          = new Schema(options.Schema);
-        GetConnection   = Ensure.NotNull(getConnection, "Connection factory");
-        _metaSerializer = DefaultMetadataSerializer.Instance;
-    }
+        Ensure.NotNull(dataSourceBuilder, "Npgsql Data Source Builder");
 
-    async Task<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken) {
-        var connection = GetConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
-        return connection;
+        Schema          = new Schema(options.Schema);
+        _dataSource     = dataSourceBuilder.Build();
+        _metaSerializer = DefaultMetadataSerializer.Instance;
     }
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
@@ -67,7 +63,7 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
 
         while (!cancellationToken.IsCancellationRequested) {
             try {
-                await using var connection = await OpenConnection(cancellationToken).NoContext();
+                await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
                 await using var cmd        = PrepareCommand(connection, start);
                 await using var reader     = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 

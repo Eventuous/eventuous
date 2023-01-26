@@ -12,11 +12,11 @@ using NpgsqlTypes;
 namespace Eventuous.Postgresql.Subscriptions;
 
 public class PostgresCheckpointStore : ICheckpointStore {
-    readonly GetPostgresConnection _getConnection;
-    readonly ILoggerFactory?       _loggerFactory;
-    readonly string                _getCheckpointSql;
-    readonly string                _addCheckpointSql;
-    readonly string                _storeCheckpointSql;
+    readonly NpgsqlDataSource _dataSource;
+    readonly ILoggerFactory?  _loggerFactory;
+    readonly string           _getCheckpointSql;
+    readonly string           _addCheckpointSql;
+    readonly string           _storeCheckpointSql;
 
     public PostgresCheckpointStore(NpgsqlDataSourceBuilder dataSourceBuilder, string schema, ILoggerFactory? loggerFactory) {
         _loggerFactory = loggerFactory;
@@ -24,14 +24,12 @@ public class PostgresCheckpointStore : ICheckpointStore {
         _getCheckpointSql   = sch.GetCheckpointSql;
         _addCheckpointSql   = sch.AddCheckpointSql;
         _storeCheckpointSql = sch.UpdateCheckpointSql;
-
-        _getConnection = (GetPostgresConnection) dataSourceBuilder.Build().CreateConnection;
+        _dataSource         = dataSourceBuilder.Build();
     }
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, _loggerFactory);
-        await using var connection = _getConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
         Checkpoint checkpoint;
 
         await using (var cmd = GetCheckpointCommand(connection, _getCheckpointSql, checkpointId)) {
@@ -61,8 +59,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
     ) {
         if (checkpoint.Position == null) return checkpoint;
 
-        await using var connection = _getConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
         await using var cmd = GetCheckpointCommand(connection, _storeCheckpointSql, checkpoint.Id);
         cmd.Parameters.AddWithValue("position", NpgsqlDbType.Bigint, (long)checkpoint.Position);
         await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();

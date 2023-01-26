@@ -37,7 +37,7 @@ public sealed class IntegrationFixture : IAsyncDisposable {
         NpgsqlDataSourceBuilder GetConn() => new(connString);
 
         var schema = new Schema(schemaName);
-        schema.CreateSchema(GetConn().Build().CreateConnection).ConfigureAwait(false).GetAwaiter().GetResult();
+        schema.CreateSchema(GetConn()).ConfigureAwait(false).GetAwaiter().GetResult();
 
         GetConnection = GetConn();
         DefaultEventSerializer.SetDefaultSerializer(Serializer);

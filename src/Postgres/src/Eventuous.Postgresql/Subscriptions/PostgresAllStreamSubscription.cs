@@ -14,12 +14,12 @@ namespace Eventuous.Postgresql.Subscriptions;
 
 public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions> {
     public PostgresAllStreamSubscription(
-        GetPostgresConnection                getConnection,
+        NpgsqlDataSourceBuilder              dataSourceBuilder,
         PostgresAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
         ConsumePipe                          consumePipe,
         ILoggerFactory?                      loggerFactory
-    ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
+    ) : base(dataSourceBuilder, options, checkpointStore, consumePipe, loggerFactory) { }
 
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start) {
         var cmd = new NpgsqlCommand(Schema.ReadAllForwards, connection);

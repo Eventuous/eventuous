@@ -14,15 +14,13 @@ using NpgsqlTypes;
 
 namespace Eventuous.Postgresql;
 
-public delegate NpgsqlConnection GetPostgresConnection();
-
 public record PostgresStoreOptions(string Schema = Schema.DefaultSchema);
 
 public class PostgresStore : IEventStore {
-    readonly GetPostgresConnection _getConnection;
-    readonly IEventSerializer      _serializer;
-    readonly IMetadataSerializer   _metaSerializer;
-    readonly Schema                _schema;
+    readonly NpgsqlDataSource    _dataSource;
+    readonly IEventSerializer    _serializer;
+    readonly IMetadataSerializer _metaSerializer;
+    readonly Schema              _schema;
 
     public PostgresStore(
         NpgsqlDataSourceBuilder dataSourceBuilder,
@@ -37,17 +35,10 @@ public class PostgresStore : IEventStore {
         Ensure.NotNull(dataSourceBuilder, "Npgsql Data Source Builder");
 
         dataSourceBuilder.MapComposite<NewPersistedEvent>(_schema.StreamMessage);
-        _getConnection = (GetPostgresConnection)dataSourceBuilder.Build().CreateConnection;
+        _dataSource = dataSourceBuilder.Build();
     }
 
     const string ContentType = "application/json";
-
-    async Task<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken) {
-        var connection = _getConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
-        await connection.ReloadTypesAsync();
-        return connection;
-    }
 
     public async Task<StreamEvent[]> ReadEvents(
         StreamName         stream,
@@ -55,7 +46,7 @@ public class PostgresStore : IEventStore {
         int                count,
         CancellationToken  cancellationToken
     ) {
-        await using var connection = await OpenConnection(cancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
         await using var cmd        = new NpgsqlCommand(_schema.ReadStreamForwards, connection);
 
         cmd.CommandType = CommandType.Text;
@@ -85,7 +76,7 @@ public class PostgresStore : IEventStore {
             .Select(x => Convert(x))
             .ToArray();
 
-        await using var connection  = await OpenConnection(cancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken).NoContext();
         await using var cmd         = new NpgsqlCommand(_schema.AppendEvents, connection, transaction);
 
@@ -122,8 +113,8 @@ public class PostgresStore : IEventStore {
     }
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
-        await using var connection = await OpenConnection(cancellationToken).NoContext();
-        await using var cmd        = connection.CreateCommand();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
+        await using var cmd = connection.CreateCommand();
         cmd.CommandType = CommandType.Text;
         cmd.CommandText = _schema.StreamExists;
         cmd.Parameters.AddWithValue("name", NpgsqlDbType.Varchar, stream.ToString());

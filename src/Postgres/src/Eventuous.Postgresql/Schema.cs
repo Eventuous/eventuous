@@ -28,12 +28,13 @@ public class Schema {
 
     static readonly Assembly Assembly = typeof(Schema).Assembly;
 
-    public async Task CreateSchema(GetPostgresConnection getConnection) {
+    public async Task CreateSchema(NpgsqlDataSourceBuilder dataSourceBuilder) {
+        var connection = dataSourceBuilder.Build().CreateConnection();
+
         var names = Assembly.GetManifestResourceNames()
             .Where(x => x.EndsWith(".sql"))
             .OrderBy(x => x);
 
-        await using var connection = getConnection();
         await connection.OpenAsync().NoContext();
         await using var transaction = await connection.BeginTransactionAsync().NoContext();
 
