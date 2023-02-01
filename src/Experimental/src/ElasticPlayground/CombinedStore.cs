@@ -45,7 +45,7 @@ public class CombinedStore {
             default
         );
 
-        var service = new ThrowingApplicationService<Booking, BookingState, BookingId>(new BookingService(_store));
+        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_store));
 
         var cmd = new RecordPayment(
             bookRoom.BookingId,
@@ -60,7 +60,7 @@ public class CombinedStore {
     }
 
     static async Task Seed(IAggregateStore store, BookRoom bookRoom) {
-        var service = new ThrowingApplicationService<Booking, BookingState, BookingId>(new BookingService(store));
+        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(store));
 
         await service.Handle(bookRoom, default);
 

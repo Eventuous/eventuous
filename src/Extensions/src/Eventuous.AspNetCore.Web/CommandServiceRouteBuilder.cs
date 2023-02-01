@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Routing;
 namespace Eventuous.AspNetCore.Web;
 
 [PublicAPI]
-public class ApplicationServiceRouteBuilder<T> where T : Aggregate {
+public class CommandServiceRouteBuilder<T> where T : Aggregate {
     readonly IEndpointRouteBuilder _builder;
 
-    public ApplicationServiceRouteBuilder(IEndpointRouteBuilder builder) => _builder = builder;
+    public CommandServiceRouteBuilder(IEndpointRouteBuilder builder) => _builder = builder;
 
     /// <summary>
     /// Maps the given command type to an HTTP endpoint. The command class can be annotated with
@@ -15,7 +15,7 @@ public class ApplicationServiceRouteBuilder<T> where T : Aggregate {
     /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <typeparam name="TCommand">Command class</typeparam>
     /// <returns></returns>
-    public ApplicationServiceRouteBuilder<T> MapCommand<TCommand>(
+    public CommandServiceRouteBuilder<T> MapCommand<TCommand>(
         EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
     ) where TCommand : class {
         _builder.MapCommand<TCommand, T>(enrichCommand);
@@ -29,7 +29,7 @@ public class ApplicationServiceRouteBuilder<T> where T : Aggregate {
     /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
-    public ApplicationServiceRouteBuilder<T> MapCommand<TCommand>(
+    public CommandServiceRouteBuilder<T> MapCommand<TCommand>(
         string                                  route,
         EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
     ) where TCommand : class {

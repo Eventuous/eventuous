@@ -14,16 +14,13 @@ public class TracedCommandService<T> : ICommandService<T> where T : Aggregate {
 
     ICommandService<T> InnerService { get; }
 
-    readonly string                _appServiceTypeName;
-    readonly HandleCommand<Result> _handleCommand;
-    readonly GetError<Result>      _getError;
-
+    readonly string           _appServiceTypeName;
+    readonly GetError<Result> _getError;
     readonly DiagnosticSource _metricsSource = new DiagnosticListener(CommandServiceMetrics.ListenerName);
 
     TracedCommandService(ICommandService<T> appService) {
         _appServiceTypeName = appService.GetType().Name;
         InnerService        = appService;
-        _handleCommand      = (cmd, ct) => InnerService.Handle(cmd, ct);
 
         bool GetError(Result result, out Exception? exception) {
             if (result is ErrorResult err) {
@@ -44,7 +41,7 @@ public class TracedCommandService<T> : ICommandService<T> where T : Aggregate {
             _appServiceTypeName,
             command,
             _metricsSource,
-            _handleCommand,
+            InnerService.Handle,
             _getError,
             cancellationToken
         );
@@ -59,16 +56,13 @@ public class TracedCommandService<T, TState, TId> : ICommandService<T, TState, T
 
     ICommandService<T, TState, TId> InnerService { get; }
 
-    readonly DiagnosticSource _metricsSource = new DiagnosticListener(CommandServiceMetrics.ListenerName);
-
-    readonly string                        _appServiceTypeName;
-    readonly HandleCommand<Result<TState>> _handleCommand;
-    readonly GetError<Result<TState>>      _getError;
+    readonly DiagnosticSource         _metricsSource = new DiagnosticListener(CommandServiceMetrics.ListenerName);
+    readonly string                   _appServiceTypeName;
+    readonly GetError<Result<TState>> _getError;
 
     TracedCommandService(ICommandService<T, TState, TId> appService) {
         _appServiceTypeName = appService.GetType().Name;
         InnerService        = appService;
-        _handleCommand      = (cmd, ct) => InnerService.Handle(cmd, ct);
 
         bool GetError(Result<TState> result, out Exception? exception) {
             if (result is ErrorResult<TState> err) {
@@ -89,25 +83,25 @@ public class TracedCommandService<T, TState, TId> : ICommandService<T, TState, T
             _appServiceTypeName,
             command,
             _metricsSource,
-            _handleCommand,
+            InnerService.Handle,
             _getError,
             cancellationToken
         );
 }
 
-delegate Task<T> HandleCommand<T>(object command, CancellationToken cancellationToken);
+delegate Task<T> HandleCommand<T, TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class;
 
 delegate bool GetError<in T>(T result, out Exception? exception);
 
 static class CommandServiceActivity {
-    public static async Task<T> TryExecute<T>(
-        string            appServiceTypeName,
-        object            command,
-        DiagnosticSource  diagnosticSource,
-        HandleCommand<T>  handleCommand,
-        GetError<T>       getError,
-        CancellationToken cancellationToken
-    ) {
+    public static async Task<T> TryExecute<T, TCommand>(
+        string                     appServiceTypeName,
+        TCommand                   command,
+        DiagnosticSource           diagnosticSource,
+        HandleCommand<T, TCommand> handleCommand,
+        GetError<T>                getError,
+        CancellationToken          cancellationToken
+    ) where TCommand : class {
         var cmdName = command.GetType().Name;
 
         using var activity = StartActivity(appServiceTypeName, cmdName);

@@ -59,7 +59,7 @@ public static class ServiceCollectionExtensions {
 
         ICommandService<TAggregate, TState, TId> GetThrowingService(ICommandService<TAggregate, TState, TId> inner)
             => throwOnError
-                ? new ThrowingApplicationService<TAggregate, TState, TId>(inner)
+                ? new ThrowingCommandService<TAggregate, TState, TId>(inner)
                 : inner;
 
         ICommandService<TAggregate, TState, TId> GetTracedService(IServiceProvider serviceProvider)
@@ -80,7 +80,7 @@ public static class ServiceCollectionExtensions {
         this IServiceCollection   services,
         Func<IServiceProvider, T> getService
     )
-        where T : class, IApplicationService<TAggregate>
+        where T : class, ICommandService<TAggregate>
         where TAggregate : Aggregate {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton(getService);
@@ -91,7 +91,7 @@ public static class ServiceCollectionExtensions {
             );
         }
         else {
-            services.AddSingleton<IApplicationService<TAggregate>>(sp => sp.GetRequiredService<T>());
+            services.AddSingleton<ICommandService<TAggregate>>(sp => sp.GetRequiredService<T>());
         }
 
         return services;

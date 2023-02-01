@@ -195,20 +195,17 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
-        var commandType = Ensure.NotNull(command).GetType();
-
-        // if (!_handlers.TryGetValue(commandType, out var registeredHandler)) {
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
-            Log.CommandHandlerNotFound(commandType);
-            var exception = new Exceptions.CommandHandlerNotFound(commandType);
+            Log.CommandHandlerNotFound<TCommand>();
+            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
             return new ErrorResult<TState>(exception);
         }
 
-        var hasGetIdFunction = _idMap.TryGetValue(commandType, out var getId);
+        var hasGetIdFunction = _idMap.TryGet<TCommand>(out var getId);
 
         if (!hasGetIdFunction || getId == null) {
-            Log.CannotCalculateAggregateId(commandType);
-            var exception = new Exceptions.CommandHandlerNotFound(commandType);
+            Log.CannotCalculateAggregateId<TCommand>();
+            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
             return new ErrorResult<TState>(exception);
         }
 
@@ -238,7 +235,9 @@ public abstract class CommandService<TAggregate, TState, TId>
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
             var storeResult = await Store.Store(
-                    streamName != default ? streamName : GetAggregateStreamName(),
+                    streamName != default
+                        ? streamName
+                        : GetAggregateStreamName(),
                     result,
                     cancellationToken
                 )
@@ -246,19 +245,21 @@ public abstract class CommandService<TAggregate, TState, TId>
 
             var changes = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
 
-            Log.CommandHandled(commandType);
+            Log.CommandHandled<TCommand>();
 
             return new OkResult<TState>(result.State, changes, storeResult.GlobalPosition);
         }
         catch (Exception e) {
-            Log.ErrorHandlingCommand(commandType, e);
+            Log.ErrorHandlingCommand<TCommand>(e);
 
-            return new ErrorResult<TState>($"Error handling command {commandType.Name}", e);
+            return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
         }
 
-        TAggregate Create() => _factoryRegistry.CreateInstance<TAggregate, TState>();
+        TAggregate Create()
+            => _factoryRegistry.CreateInstance<TAggregate, TState>();
 
-        StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
+        StreamName GetAggregateStreamName()
+            => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
     }
 
     async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
@@ -267,8 +268,8 @@ public abstract class CommandService<TAggregate, TState, TId>
 
         return result switch {
             OkResult<TState>(var aggregateState, var enumerable, _) => new OkResult(aggregateState, enumerable),
-            ErrorResult<TState> error => new ErrorResult(error.Message, error.Exception),
-            _ => throw new ApplicationException("Unknown result type")
+            ErrorResult<TState> error                               => new ErrorResult(error.Message, error.Exception),
+            _                                                       => throw new ApplicationException("Unknown result type")
         };
     }
 

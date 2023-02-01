@@ -19,17 +19,17 @@ class ApplicationEventSource : EventSource {
     const int CannotGetAggregateIdFromCommandId = 11;
 
     [NonEvent]
-    public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
+    public void CommandHandlerNotFound<TCommand>() => CommandHandlerNotFound(typeof(TCommand).Name);
 
     [NonEvent]
-    public void CannotCalculateAggregateId(Type type) => CannotCalculateAggregateId(type.Name);
+    public void CannotCalculateAggregateId<TCommand>() => CannotCalculateAggregateId(typeof(TCommand).Name);
 
     [NonEvent]
-    public void ErrorHandlingCommand(Type type, Exception e) => ErrorHandlingCommand(type.Name, e.ToString());
+    public void ErrorHandlingCommand<TCommand>(Exception e) => ErrorHandlingCommand(typeof(TCommand).Name, e.ToString());
 
     [NonEvent]
-    public void CommandHandled(Type commandType) {
-        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) CommandHandled(commandType.Name);
+    public void CommandHandled<TCommand>() {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) CommandHandled(typeof(TCommand).Name);
     }
 
     [NonEvent]

@@ -4,7 +4,7 @@ using NodaTime;
 
 namespace Eventuous.Sut.AspNetCore;
 
-public class BookingService : ApplicationService<Booking, BookingState, BookingId> {
+public class BookingService : CommandService<Booking, BookingState, BookingId> {
     public BookingService(IAggregateStore store, StreamNameMap? streamNameMap = null)
         : base(store, streamNameMap: streamNameMap)
         => OnNew<BookRoom>(

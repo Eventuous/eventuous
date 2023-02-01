@@ -13,7 +13,7 @@ DefaultEventSerializer.SetDefaultSerializer(
 );
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddApplicationService<BookingService, Booking>();
+builder.Services.AddCommandService<BookingService, Booking>();
 
 builder.Services.Configure<JsonOptions>(
     options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)

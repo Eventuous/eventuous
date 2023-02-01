@@ -46,21 +46,21 @@ public static class RouteBuilderExtensions {
         => Map<TAggregate, TCommand>(builder, route, enrichCommand);
 
     /// <summary>
-    /// Creates an instance of <see cref="ApplicationServiceRouteBuilder{T}"/> for a given aggregate type, so you
+    /// Creates an instance of <see cref="CommandServiceRouteBuilder{T}"/> for a given aggregate type, so you
     /// can explicitly map commands to HTTP endpoints. 
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static ApplicationServiceRouteBuilder<TAggregate> MapAggregateCommands<TAggregate>(
+    public static CommandServiceRouteBuilder<TAggregate> MapAggregateCommands<TAggregate>(
         this IEndpointRouteBuilder builder
     ) where TAggregate : Aggregate
         => new(builder);
 
     /// <summary>
     /// Maps all commands annotated by <seealso cref="HttpCommandAttribute"/> to HTTP endpoints to be handled
-    /// by <seealso cref="IApplicationService{T}"/> where T is the aggregate type provided. Only use it if your
+    /// by <seealso cref="ICommandService{T}"/> where T is the aggregate type provided. Only use it if your
     /// application only handles commands for one aggregate type.
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
@@ -115,7 +115,7 @@ public static class RouteBuilderExtensions {
         => builder
             .MapPost(
                 GetRoute<TCommand>(route),
-                async Task<IResult>(HttpContext context, IApplicationService<TAggregate> service) => {
+                async Task<IResult>(HttpContext context, ICommandService<TAggregate> service) => {
                     var cmd = await context.Request.ReadFromJsonAsync<TCommand>(context.RequestAborted);
 
                     if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
@@ -171,7 +171,7 @@ public static class RouteBuilderExtensions {
         }
 
         void LocalMap(Type aggregateType, Type type, string? route) {
-            var appServiceBase = typeof(IApplicationService<>);
+            var appServiceBase = typeof(ICommandService<>);
             var appServiceType = appServiceBase.MakeGenericType(aggregateType);
 
             builder
@@ -182,7 +182,7 @@ public static class RouteBuilderExtensions {
 
                         if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
 
-                        if (context.RequestServices.GetRequiredService(appServiceType) is not IApplicationService
+                        if (context.RequestServices.GetRequiredService(appServiceType) is not ICommandService
                             service) throw new InvalidOperationException("Unable to resolve the application service");
 
                         var result = await service.Handle(cmd, context.RequestAborted);

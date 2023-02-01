@@ -6,9 +6,9 @@ namespace Eventuous.AspNetCore.Web;
 /// <typeparam name="TAggregate">Aggregate type</typeparam>
 [PublicAPI]
 public abstract class CommandHttpApiBase<TAggregate> : ControllerBase where TAggregate : Aggregate {
-    readonly IApplicationService<TAggregate> _service;
+    readonly ICommandService<TAggregate> _service;
 
-    protected CommandHttpApiBase(IApplicationService<TAggregate> service) => _service = service;
+    protected CommandHttpApiBase(ICommandService<TAggregate> service) => _service = service;
 
     /// <summary>
     /// Call this method from your HTTP endpoints to handle commands and wrap the result properly.
