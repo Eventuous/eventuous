@@ -2,20 +2,22 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics.Tracing;
+
 // ReSharper disable MemberCanBePrivate.Global
 
-namespace Eventuous.Diagnostics; 
+namespace Eventuous.Diagnostics;
 
 [EventSource(Name = $"{DiagnosticName.BaseName}.application")]
 class ApplicationEventSource : EventSource {
     public static ApplicationEventSource Log { get; } = new();
-    
+
     const int CommandHandlerNotFoundId          = 1;
     const int ErrorHandlingCommandId            = 2;
     const int CommandHandledId                  = 3;
     const int CommandHandlerAlreadyRegisteredId = 4;
+    const int CommandHandlerRegisteredId        = 5;
     const int CannotGetAggregateIdFromCommandId = 11;
-    
+
     [NonEvent]
     public void CommandHandlerNotFound(Type type) => CommandHandlerNotFound(type.Name);
 
@@ -33,6 +35,11 @@ class ApplicationEventSource : EventSource {
     [NonEvent]
     public void CommandHandlerAlreadyRegistered<T>() => CommandHandlerAlreadyRegistered(typeof(T).Name);
 
+    [NonEvent]
+    public void CommandHandlerRegistered<T>() {
+        if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) CommandHandlerRegistered(typeof(T).Name);
+    }
+
     [Event(CommandHandlerNotFoundId, Message = "Handler not found for command: '{0}'", Level = EventLevel.Error)]
     void CommandHandlerNotFound(string commandType) => WriteEvent(CommandHandlerNotFoundId, commandType);
 
@@ -41,8 +48,7 @@ class ApplicationEventSource : EventSource {
         Message = "Cannot get aggregate id from command: '{0}'",
         Level = EventLevel.Error
     )]
-    void CannotCalculateAggregateId(string commandType)
-        => WriteEvent(CannotGetAggregateIdFromCommandId, commandType);
+    void CannotCalculateAggregateId(string commandType) => WriteEvent(CannotGetAggregateIdFromCommandId, commandType);
 
     [Event(ErrorHandlingCommandId, Message = "Error handling command: '{0}' {1}", Level = EventLevel.Error)]
     void ErrorHandlingCommand(string commandType, string exception)
@@ -57,4 +63,7 @@ class ApplicationEventSource : EventSource {
         Level = EventLevel.Critical
     )]
     void CommandHandlerAlreadyRegistered(string type) => WriteEvent(CommandHandlerAlreadyRegisteredId, type);
+
+    [Event(CommandHandlerRegisteredId, Message = "Command handler registered for {0}", Level = EventLevel.Verbose)]
+    void CommandHandlerRegistered(string type) => WriteEvent(CommandHandlerRegisteredId, type);
 }

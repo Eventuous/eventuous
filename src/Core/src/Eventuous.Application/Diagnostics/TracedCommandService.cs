@@ -1,4 +1,4 @@
-// Copyright (C) Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
@@ -8,19 +8,19 @@ using Eventuous.Tools;
 
 namespace Eventuous.Diagnostics;
 
-public class TracedApplicationService<T> : IApplicationService<T> where T : Aggregate {
-    public static IApplicationService<T> Trace(IApplicationService<T> appService)
-        => new TracedApplicationService<T>(appService);
+public class TracedCommandService<T> : ICommandService<T> where T : Aggregate {
+    public static ICommandService<T> Trace(ICommandService<T> appService)
+        => new TracedCommandService<T>(appService);
 
-    IApplicationService<T> InnerService { get; }
+    ICommandService<T> InnerService { get; }
 
     readonly string                _appServiceTypeName;
     readonly HandleCommand<Result> _handleCommand;
     readonly GetError<Result>      _getError;
 
-    readonly DiagnosticSource _metricsSource = new DiagnosticListener(ApplicationServiceMetrics.ListenerName);
+    readonly DiagnosticSource _metricsSource = new DiagnosticListener(CommandServiceMetrics.ListenerName);
 
-    TracedApplicationService(IApplicationService<T> appService) {
+    TracedCommandService(ICommandService<T> appService) {
         _appServiceTypeName = appService.GetType().Name;
         InnerService        = appService;
         _handleCommand      = (cmd, ct) => InnerService.Handle(cmd, ct);
@@ -40,7 +40,8 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
 
     public Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class
-        => AppServiceActivity.TryExecute(_appServiceTypeName,
+        => CommandServiceActivity.TryExecute(
+            _appServiceTypeName,
             command,
             _metricsSource,
             _handleCommand,
@@ -49,22 +50,22 @@ public class TracedApplicationService<T> : IApplicationService<T> where T : Aggr
         );
 }
 
-public class TracedApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>
+public class TracedCommandService<T, TState, TId> : ICommandService<T, TState, TId>
     where TState : State<TState>, new()
     where TId : AggregateId
     where T : Aggregate<TState> {
-    public static IApplicationService<T, TState, TId> Trace(IApplicationService<T, TState, TId> appService)
-        => new TracedApplicationService<T, TState, TId>(appService);
+    public static ICommandService<T, TState, TId> Trace(ICommandService<T, TState, TId> appService)
+        => new TracedCommandService<T, TState, TId>(appService);
 
-    IApplicationService<T, TState, TId> InnerService { get; }
+    ICommandService<T, TState, TId> InnerService { get; }
 
-    readonly DiagnosticSource _metricsSource = new DiagnosticListener(ApplicationServiceMetrics.ListenerName);
+    readonly DiagnosticSource _metricsSource = new DiagnosticListener(CommandServiceMetrics.ListenerName);
 
     readonly string                        _appServiceTypeName;
     readonly HandleCommand<Result<TState>> _handleCommand;
     readonly GetError<Result<TState>>      _getError;
 
-    TracedApplicationService(IApplicationService<T, TState, TId> appService) {
+    TracedCommandService(ICommandService<T, TState, TId> appService) {
         _appServiceTypeName = appService.GetType().Name;
         InnerService        = appService;
         _handleCommand      = (cmd, ct) => InnerService.Handle(cmd, ct);
@@ -84,7 +85,8 @@ public class TracedApplicationService<T, TState, TId> : IApplicationService<T, T
 
     public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class
-        => AppServiceActivity.TryExecute(_appServiceTypeName,
+        => CommandServiceActivity.TryExecute(
+            _appServiceTypeName,
             command,
             _metricsSource,
             _handleCommand,
@@ -97,7 +99,7 @@ delegate Task<T> HandleCommand<T>(object command, CancellationToken cancellation
 
 delegate bool GetError<in T>(T result, out Exception? exception);
 
-static class AppServiceActivity {
+static class CommandServiceActivity {
     public static async Task<T> TryExecute<T>(
         string            appServiceTypeName,
         object            command,
@@ -109,8 +111,10 @@ static class AppServiceActivity {
         var cmdName = command.GetType().Name;
 
         using var activity = StartActivity(appServiceTypeName, cmdName);
-        using var measure = Measure.Start(diagnosticSource,
-            new AppServiceMetricsContext(appServiceTypeName, cmdName)
+
+        using var measure = Measure.Start(
+            diagnosticSource,
+            new CommandServiceMetricsContext(appServiceTypeName, cmdName)
         );
 
         try {
@@ -135,7 +139,7 @@ static class AppServiceActivity {
         if (!EventuousDiagnostics.Enabled) return null;
 
         var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
-                $"{Constants.Components.AppService}.{serviceName}/{cmdName}",
+                $"{Constants.Components.CommandService}.{serviceName}/{cmdName}",
                 ActivityKind.Internal,
                 parentContext: default,
                 idFormat: ActivityIdFormat.W3C,

@@ -4,22 +4,21 @@
 using Eventuous.Tools;
 using static Eventuous.Diagnostics.ApplicationEventSource;
 
-// ReSharper disable MemberCanBePrivate.Global
-
 namespace Eventuous;
 
 /// <summary>
-/// Application service base class. A derived class should be scoped to handle commands for one aggregate type only.
+/// Command service base class. A derived class should be scoped to handle commands for one aggregate type only.
 /// </summary>
 /// <typeparam name="TAggregate">The aggregate type</typeparam>
 /// <typeparam name="TState">The aggregate state type</typeparam>
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 // [PublicAPI]
-public abstract class ApplicationService<TAggregate, TState, TId>
-    : IApplicationService<TAggregate, TState, TId>, IApplicationService<TAggregate>
+public abstract class CommandService<TAggregate, TState, TId>
+    : ICommandService<TAggregate, TState, TId>, ICommandService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
     where TId : AggregateId {
+    [PublicAPI]
     protected IAggregateStore Store { get; }
 
     readonly HandlersMap<TAggregate>  _handlers = new();
@@ -28,7 +27,7 @@ public abstract class ApplicationService<TAggregate, TState, TId>
     readonly StreamNameMap            _streamNameMap;
     readonly TypeMapper               _typeMap;
 
-    protected ApplicationService(
+    protected CommandService(
         IAggregateStore           store,
         AggregateFactoryRegistry? factoryRegistry = null,
         StreamNameMap?            streamNameMap   = null,
@@ -198,7 +197,8 @@ public abstract class ApplicationService<TAggregate, TState, TId>
         where TCommand : class {
         var commandType = Ensure.NotNull(command).GetType();
 
-        if (!_handlers.TryGetValue(commandType, out var registeredHandler)) {
+        // if (!_handlers.TryGetValue(commandType, out var registeredHandler)) {
+        if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound(commandType);
             var exception = new Exceptions.CommandHandlerNotFound(commandType);
             return new ErrorResult<TState>(exception);
@@ -261,7 +261,7 @@ public abstract class ApplicationService<TAggregate, TState, TId>
         StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
     }
 
-    async Task<Result> IApplicationService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await Handle(command, cancellationToken).NoContext();
 

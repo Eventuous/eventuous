@@ -5,13 +5,13 @@ using Eventuous.Tools;
 
 namespace Eventuous;
 
-public class ThrowingApplicationService<T, TState, TId> : IApplicationService<T, TState, TId>, IApplicationService<T>
+public class ThrowingCommandService<T, TState, TId> : ICommandService<T, TState, TId>, ICommandService<T>
     where T : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : AggregateId {
-    readonly IApplicationService<T, TState, TId> _inner;
+    readonly ICommandService<T, TState, TId> _inner;
 
-    public ThrowingApplicationService(IApplicationService<T, TState, TId> inner) => _inner = inner;
+    public ThrowingCommandService(ICommandService<T, TState, TId> inner) => _inner = inner;
 
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
@@ -23,7 +23,7 @@ public class ThrowingApplicationService<T, TState, TId> : IApplicationService<T,
         return result;
     }
 
-    async Task<Result> IApplicationService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) {
+    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) {
         var result = await Handle(command, cancellationToken).NoContext();
 
         return result switch {

@@ -22,6 +22,7 @@ class HandlersMap<TAggregate> : Dictionary<Type, RegisteredHandler<TAggregate>> 
     public void AddHandler<TCommand>(RegisteredHandler<TAggregate> handler) {
         try {
             Add(typeof(TCommand), handler);
+            Log.CommandHandlerRegistered<TCommand>();
         }
         catch (Exceptions.DuplicateTypeException<TCommand>) {
             Log.CommandHandlerAlreadyRegistered<TCommand>();

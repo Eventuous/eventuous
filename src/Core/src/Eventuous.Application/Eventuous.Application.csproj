@@ -22,4 +22,7 @@
         <LogicalName>Eventuous.ExceptionMessages.resources</LogicalName>
       </EmbeddedResource>
     </ItemGroup>
+    <ItemGroup>
+      <None Remove="Eventuous.Application.csproj.DotSettings" />
+    </ItemGroup>
 </Project>

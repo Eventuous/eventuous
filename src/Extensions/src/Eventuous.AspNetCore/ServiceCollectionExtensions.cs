@@ -14,19 +14,19 @@ public static class ServiceCollectionExtensions {
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TAggregate"></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddApplicationService<T, TAggregate>(this IServiceCollection services)
-        where T : class, IApplicationService<TAggregate>
+    public static IServiceCollection AddCommandService<T, TAggregate>(this IServiceCollection services)
+        where T : class, ICommandService<TAggregate>
         where TAggregate : Aggregate {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();
 
         if (EventuousDiagnostics.Enabled) {
             services.AddSingleton(
-                sp => TracedApplicationService<TAggregate>.Trace(sp.GetRequiredService<T>())
+                sp => TracedCommandService<TAggregate>.Trace(sp.GetRequiredService<T>())
             );
         }
         else {
-            services.AddSingleton<IApplicationService<TAggregate>>(sp => sp.GetRequiredService<T>());
+            services.AddSingleton<ICommandService<TAggregate>>(sp => sp.GetRequiredService<T>());
         }
 
         return services;
@@ -42,11 +42,11 @@ public static class ServiceCollectionExtensions {
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddApplicationService<T, TAggregate, TState, TId>(
+    public static IServiceCollection AddCommandService<T, TAggregate, TState, TId>(
         this IServiceCollection services,
         bool                    throwOnError = false
     )
-        where T : class, IApplicationService<TAggregate, TState, TId>
+        where T : class, ICommandService<TAggregate, TState, TId>
         where TState : State<TState>, new()
         where TId : AggregateId
         where TAggregate : Aggregate<TState> {
@@ -57,16 +57,14 @@ public static class ServiceCollectionExtensions {
 
         return services;
 
-        IApplicationService<TAggregate, TState, TId> GetThrowingService(
-            IApplicationService<TAggregate, TState, TId> inner
-        )
+        ICommandService<TAggregate, TState, TId> GetThrowingService(ICommandService<TAggregate, TState, TId> inner)
             => throwOnError
                 ? new ThrowingApplicationService<TAggregate, TState, TId>(inner)
                 : inner;
 
-        IApplicationService<TAggregate, TState, TId> GetTracedService(IServiceProvider serviceProvider)
+        ICommandService<TAggregate, TState, TId> GetTracedService(IServiceProvider serviceProvider)
             => EventuousDiagnostics.Enabled
-                ? TracedApplicationService<TAggregate, TState, TId>.Trace(serviceProvider.GetRequiredService<T>())
+                ? TracedCommandService<TAggregate, TState, TId>.Trace(serviceProvider.GetRequiredService<T>())
                 : serviceProvider.GetRequiredService<T>();
     }
 
@@ -78,7 +76,7 @@ public static class ServiceCollectionExtensions {
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TAggregate"></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddApplicationService<T, TAggregate>(
+    public static IServiceCollection AddCommandService<T, TAggregate>(
         this IServiceCollection   services,
         Func<IServiceProvider, T> getService
     )
@@ -89,7 +87,7 @@ public static class ServiceCollectionExtensions {
 
         if (EventuousDiagnostics.Enabled) {
             services.AddSingleton(
-                sp => TracedApplicationService<TAggregate>.Trace(sp.GetRequiredService<T>())
+                sp => TracedCommandService<TAggregate>.Trace(sp.GetRequiredService<T>())
             );
         }
         else {
@@ -152,7 +150,7 @@ public static class ServiceCollectionExtensions {
         where T : class, IEventStore
         where TArchive : class, IEventReader {
         services.TryAddSingleton<AggregateFactoryRegistry>();
-        
+
         if (EventuousDiagnostics.Enabled) {
             services
                 .AddSingleton<T>()
