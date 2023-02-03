@@ -40,6 +40,7 @@ resharper_nested_ternary_style = expanded
 resharper_outdent_binary_ops = true
 resharper_place_expr_method_on_single_line = false
 resharper_place_expr_property_on_single_line = true
+resharper_place_field_attribute_on_same_line = false
 resharper_place_simple_embedded_statement_on_same_line = true
 resharper_space_within_single_line_array_initializer_braces = true
 resharper_use_heuristics_for_body_style = true

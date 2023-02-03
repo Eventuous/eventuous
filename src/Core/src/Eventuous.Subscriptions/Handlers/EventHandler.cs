@@ -43,7 +43,7 @@ public abstract class EventHandler : BaseEventHandler {
             return context.Message is not T ? NoHandler() : HandleTypedEvent();
 
             async ValueTask<EventHandlingStatus> HandleTypedEvent() {
-                var typedContext = new MessageConsumeContext<T>(context);
+                var typedContext = context as MessageConsumeContext<T> ?? new MessageConsumeContext<T>(context);
                 await handler(typedContext).NoContext();
                 return EventHandlingStatus.Success;
             }

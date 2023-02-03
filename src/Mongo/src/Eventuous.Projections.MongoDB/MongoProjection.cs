@@ -4,9 +4,9 @@
 using System.Runtime.CompilerServices;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
+using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
 
@@ -15,7 +15,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     [PublicAPI]
     protected IMongoCollection<T> Collection { get; }
 
-    readonly Dictionary<Type, ProjectUntypedEvent> _handlersMap = new();
+    readonly Dictionary<Type, ProjectUntypedEvent> _handlers = new();
     readonly TypeMapper                            _map;
 
     protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) {
@@ -31,12 +31,12 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     /// <exception cref="ArgumentException">Throws if a handler for the given event type has already been registered</exception>
     [PublicAPI]
     protected void On<TEvent>(ProjectTypedEvent<T, TEvent> handler) where TEvent : class {
-        if (!_handlersMap.TryAdd(typeof(TEvent), x => HandleInternal(x, handler))) {
+        if (!_handlers.TryAdd(typeof(TEvent), x => HandleInternal(x, handler))) {
             throw new ArgumentException($"Type {typeof(TEvent).Name} already has a handler");
         }
 
         if (!_map.IsTypeRegistered<TEvent>()) {
-            SubscriptionsEventSource.Log.MessageTypeNotRegistered<TEvent>();
+            Log.MessageTypeNotRegistered<TEvent>();
         }
     }
 
@@ -46,9 +46,7 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     /// <param name="configure">Builder configuration delegate</param>
     /// <typeparam name="TEvent">Event type</typeparam>
     [PublicAPI]
-    protected void On<TEvent>(
-        Func<MongoOperationBuilder<TEvent, T>, MongoOperationBuilder<TEvent, T>.IMongoProjectorBuilder> configure
-    )
+    protected void On<TEvent>(Func<MongoOperationBuilder<TEvent, T>, MongoOperationBuilder<TEvent, T>.IMongoProjectorBuilder> configure)
         where TEvent : class {
         var builder   = new MongoOperationBuilder<TEvent, T>();
         var operation = configure(builder).Build();
@@ -88,10 +86,12 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
         ProjectTypedEvent<T, TEvent> handler
     )
         where TEvent : class {
-        return context.Message is not TEvent ? NoHandler() : HandleTypedEvent();
+        return context.Message is not TEvent
+            ? NoHandler()
+            : HandleTypedEvent();
 
         ValueTask<MongoProjectOperation<T>> HandleTypedEvent() {
-            var typedContext = new MessageConsumeContext<TEvent>(context);
+            var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
             return handler(typedContext);
         }
 
@@ -102,8 +102,9 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     }
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        var updateTask = _handlersMap.TryGetValue(context.Message!.GetType(), out var handler)
-            ? handler(context) : GetUpdate(context);
+        var updateTask = _handlers.TryGetValue(context.Message!.GetType(), out var handler)
+            ? handler(context)
+            : GetUpdate(context);
 
         var update = updateTask == NoOp
             ? null
@@ -122,21 +123,19 @@ public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedD
     }
 
     [PublicAPI]
-    protected virtual ValueTask<MongoProjectOperation<T>> GetUpdate(object evt, ulong? position) => NoOp;
+    protected virtual ValueTask<MongoProjectOperation<T>> GetUpdate(object evt, ulong? position)
+        => NoOp;
 
     ValueTask<MongoProjectOperation<T>> GetUpdate(IMessageConsumeContext context)
         => GetUpdate(context.Message!, context.StreamPosition);
 
-    [PublicAPI] protected static readonly ValueTask<MongoProjectOperation<T>> NoOp = new(
-        (MongoProjectOperation<T>)null!
-    );
+    [PublicAPI]
+    protected static readonly ValueTask<MongoProjectOperation<T>> NoOp = new((MongoProjectOperation<T>)null!);
 
     delegate ValueTask<MongoProjectOperation<T>> ProjectUntypedEvent(IMessageConsumeContext evt);
 }
 
-public delegate ValueTask<MongoProjectOperation<T>> ProjectTypedEvent<T, TEvent>(
-    MessageConsumeContext<TEvent> consumeContext
-)
+public delegate ValueTask<MongoProjectOperation<T>> ProjectTypedEvent<T, TEvent>(MessageConsumeContext<TEvent> consumeContext)
     where T : ProjectedDocument where TEvent : class;
 
 public record MongoProjectOperation<T>(Func<IMongoCollection<T>, CancellationToken, Task> Execute);

@@ -9,7 +9,8 @@ namespace Eventuous.Subscriptions.Consumers;
 public class DefaultConsumer : IMessageConsumer {
     readonly IEventHandler[] _eventHandlers;
 
-    public DefaultConsumer(IEventHandler[] eventHandlers) => _eventHandlers = eventHandlers;
+    public DefaultConsumer(IEventHandler[] eventHandlers)
+        => _eventHandlers = eventHandlers;
 
     public async ValueTask Consume(IMessageConsumeContext context) {
         try {
@@ -18,16 +19,17 @@ public class DefaultConsumer : IMessageConsumer {
                 return;
             }
 
-            var tasks = _eventHandlers.Select(handler => Handle(handler));
+            var typedContext = context.ConvertToGeneric();
+            var tasks        = _eventHandlers.Select(handler => Handle(typedContext, handler));
             await tasks.WhenAll().NoContext();
         }
         catch (Exception e) {
             context.Nack<DefaultConsumer>(e);
         }
 
-        async ValueTask Handle(IEventHandler handler) {
+        async ValueTask Handle(IMessageConsumeContext typedContext, IEventHandler handler) {
             try {
-                var status = await handler.HandleEvent(context).NoContext();
+                var status = await handler.HandleEvent(typedContext).NoContext();
 
                 switch (status) {
                     case EventHandlingStatus.Success:
