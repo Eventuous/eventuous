@@ -3,15 +3,22 @@
 
 namespace Eventuous;
 
-public class CommandMap {
+public class MessageMap {
     readonly TypeMap<Func<object, object>> _typeMap = new();
 
-    public CommandMap Add<TIn, TOut>(Func<TIn, TOut> map) where TIn : class where TOut : class {
+    public MessageMap Add<TIn, TOut>(Func<TIn, TOut> map) where TIn : class where TOut : class {
         _typeMap.Add<TIn>(Map);
         return this;
 
-        object Map(object inCmd) => map((TIn)inCmd);
+        object Map(object inCmd)
+            => map((TIn)inCmd);
     }
 
-    // public
+    public TOut Convert<TIn, TOut>(TIn command) where TIn : class {
+        if (!_typeMap.TryGetValue<TIn>(out var mapper)) {
+            throw new Exceptions.CommandMappingException<TIn, TOut>();
+        }
+
+        return (TOut)mapper(command);
+    }
 }

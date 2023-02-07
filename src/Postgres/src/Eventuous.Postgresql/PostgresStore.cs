@@ -17,16 +17,16 @@ namespace Eventuous.Postgresql;
 
 public delegate NpgsqlConnection GetPostgresConnection();
 
-public record PostgresStoreOptions {
-    public PostgresStoreOptions(string schema = Postgresql.Schema.DefaultSchema) {
-        Schema = schema;
-    }
+public class PostgresStoreOptions {
+    // ReSharper disable once ConvertToPrimaryConstructor
+    public PostgresStoreOptions(string schema = Postgresql.Schema.DefaultSchema)
+        => Schema = schema;
 
-    public string Schema { get; init; }
-
-    public void Deconstruct(out string schema) {
-        schema = this.Schema;
-    }
+    /// <summary>
+    /// Override the default schema name.
+    /// The property is mutable to allow using ASP.NET Core configuration.
+    /// </summary>
+    public string Schema { get; set; }
 }
 
 public class PostgresStore : IEventStore {

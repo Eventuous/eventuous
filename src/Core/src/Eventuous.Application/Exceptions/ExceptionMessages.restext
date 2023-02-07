@@ -1,3 +1,5 @@
 AggregateIdEmpty=Aggregate id {0} cannot have an empty value
 MissingCommandHandler=No handler found for command {0}
 DuplicateTypeKey=Type {0} has already been added to the map
+DuplicateCommandHandler=Command handler for {0} already registered
+MissingCommandMap=No map found between {0} and {1}

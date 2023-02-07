@@ -13,7 +13,7 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
                 booking.BookRoom(
                     cmd.RoomId,
                     new StayPeriod(cmd.CheckIn, cmd.CheckOut),
-                    cmd.Price
+                    new Money(cmd.Price)
                 );
 
                 return Task.CompletedTask;
@@ -26,12 +26,12 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
                 => booking.Import(
                     cmd.RoomId,
                     new StayPeriod(cmd.CheckIn, cmd.CheckOut),
-                    cmd.Price
+                    new Money(cmd.Price)
                 )
         );
 
         OnExisting<RecordPayment>(
-            cmd => new BookingId(cmd.BookingId),
+            cmd => cmd.BookingId,
             (booking, cmd) => booking.RecordPayment(cmd.PaymentId, cmd.Amount, cmd.PaidAt)
         );
     }

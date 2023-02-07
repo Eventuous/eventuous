@@ -4,14 +4,14 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Using Include="Eventuous"/>
-        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web"/>
+        <Using Include="Eventuous" />
+        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
 </Project>

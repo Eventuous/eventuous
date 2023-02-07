@@ -6,10 +6,23 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using NpgsqlTypes;
 
 namespace Eventuous.Postgresql.Subscriptions;
+
+public class PostgresCheckpointStoreOptions {
+    // ReSharper disable once ConvertToPrimaryConstructor
+    public PostgresCheckpointStoreOptions(string schema = Postgresql.Schema.DefaultSchema)
+        => Schema = schema;
+
+    /// <summary>
+    /// Override the default schema name.
+    /// The property is mutable to allow using ASP.NET Core configuration.
+    /// </summary>
+    public string Schema { get; set; }
+}
 
 public class PostgresCheckpointStore : ICheckpointStore {
     readonly GetPostgresConnection _getConnection;
@@ -27,6 +40,13 @@ public class PostgresCheckpointStore : ICheckpointStore {
         _storeCheckpointSql = sch.UpdateCheckpointSql;
     }
 
+    [PublicAPI]
+    public PostgresCheckpointStore(
+        GetPostgresConnection                     getConnection,
+        IOptions<PostgresCheckpointStoreOptions>? options,
+        ILoggerFactory?                           loggerFactory
+    ) : this(getConnection, options?.Value?.Schema ?? Schema.DefaultSchema, loggerFactory) { }
+
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, _loggerFactory);
         await using var connection = _getConnection();
@@ -38,9 +58,11 @@ public class PostgresCheckpointStore : ICheckpointStore {
 
             if (await reader.ReadAsync(cancellationToken).NoContext()) {
                 var hasPosition = !reader.IsDBNull(0);
-                checkpoint = hasPosition 
+
+                checkpoint = hasPosition
                     ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0))
                     : Checkpoint.Empty(checkpointId);
+
                 Logger.Current.CheckpointLoaded(this, checkpoint);
                 return checkpoint;
             }

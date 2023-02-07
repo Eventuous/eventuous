@@ -4,6 +4,7 @@
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeTestHelpers>true</IncludeTestHelpers>
         <IsPackable>false</IsPackable>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />

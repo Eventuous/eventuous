@@ -5,6 +5,7 @@ using Eventuous.Sut.AspNetCore;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers;
 using Eventuous.TestHelpers.Fakes;
+using Eventuous.Tests.AspNetCore.Web.Fixture;
 using Microsoft.AspNetCore.Mvc.Testing;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
@@ -31,20 +32,9 @@ public class HttpCommandTests : IDisposable {
 
     [Fact]
     public async Task MapEnrichedCommand() {
-        var store = new InMemoryEventStore();
+        var fixture = new ServerFixture();
 
-        var app = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(
-                builder => builder.ConfigureServices(services => services.AddAggregateStore(_ => store))
-            );
-
-        var httpClient = app.CreateClient();
-
-        using var client = new RestClient(httpClient, disposeHttpClient: true).UseSerializer(
-            () => new SystemTextJsonSerializer(
-                new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-            )
-        );
+        using var client = fixture.GetClient();
 
         var cmd = new BookRoom(
             "123",
@@ -57,12 +47,7 @@ public class HttpCommandTests : IDisposable {
         var response = await client.PostJsonAsync("/book", cmd);
         response.Should().Be(HttpStatusCode.OK);
 
-        var storedEvents = await store.ReadEvents(
-            StreamName.For<Booking>(cmd.BookingId),
-            StreamReadPosition.Start,
-            100,
-            default
-        );
+        var storedEvents = await fixture.ReadStream<Booking>(cmd.BookingId);
 
         var actual = storedEvents.FirstOrDefault();
         actual.Should().NotBeNull();
@@ -82,7 +67,7 @@ public class HttpCommandTests : IDisposable {
     public void Dispose() => _listener.Dispose();
 }
 
-record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);
+record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price);
 
 [HttpCommand(Route = "book")]
-record BookAnotherRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, decimal Price);
+record BookAnotherRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price);

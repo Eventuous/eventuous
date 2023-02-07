@@ -18,13 +18,7 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
     [Fact]
     public async Task TestOnNew() {
-        var cmd = new Commands.BookRoom(
-            Auto.Create<string>(),
-            Auto.Create<string>(),
-            LocalDate.FromDateTime(DateTime.Today),
-            LocalDate.FromDateTime(DateTime.Today.AddDays(2)),
-            Auto.Create<decimal>()
-        );
+        var cmd = CreateBookRoomCommand();
 
         var expected = new Change[] {
             new(new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), "RoomBooked")
@@ -47,23 +41,22 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
     [Fact]
     public async Task TestOnExisting() {
-        var cmd = new Commands.BookRoom(
-            Auto.Create<string>(),
-            Auto.Create<string>(),
-            LocalDate.FromDateTime(DateTime.Today),
-            LocalDate.FromDateTime(DateTime.Today.AddDays(2)),
-            Auto.Create<decimal>()
-        );
+        var cmd = CreateBookRoomCommand();
 
         await Service.Handle(cmd, default);
 
-        var secondCmd = new Commands.RecordPayment(cmd.BookingId, Auto.Create<string>(), cmd.Price, DateTimeOffset.Now);
+        var secondCmd = new Commands.RecordPayment(
+            new BookingId(cmd.BookingId),
+            Auto.Create<string>(),
+            new Money(cmd.Price),
+            DateTimeOffset.Now
+        );
 
         var expected = new Change[] {
             new(
                 new BookingPaymentRegistered(
                     secondCmd.PaymentId,
-                    secondCmd.Amount
+                    secondCmd.Amount.Amount
                 ),
                 "PaymentRegistered"
             ),
@@ -88,5 +81,6 @@ public class StoringEventsWithCustomStream : NaiveFixture {
         actual.Should().BeEquivalentTo(expected.Select(x => x.Event));
     }
 
-    static StreamName GetStreamName(BookingId bookingId) => new($"hotel-booking-{bookingId}");
+    static StreamName GetStreamName(BookingId bookingId)
+        => new($"hotel-booking-{bookingId}");
 }

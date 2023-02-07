@@ -9,4 +9,7 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
+    <ItemGroup>
+      <None Remove="Eventuous.AspNetCore.Web.csproj.DotSettings" />
+    </ItemGroup>
 </Project>

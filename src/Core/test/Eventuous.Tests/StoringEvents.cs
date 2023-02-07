@@ -20,7 +20,7 @@ public class StoringEvents : NaiveFixture {
             Auto.Create<string>(),
             LocalDate.FromDateTime(DateTime.Today),
             LocalDate.FromDateTime(DateTime.Today.AddDays(2)),
-            Auto.Create<decimal>()
+            Auto.Create<float>()
         );
 
         var expected = new Change[] {

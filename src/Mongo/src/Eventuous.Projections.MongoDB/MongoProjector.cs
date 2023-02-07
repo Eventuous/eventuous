@@ -10,15 +10,20 @@ using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
 
+[Obsolete("Use MongoProjector instead")]
+public abstract class MongoProjection<T> : MongoProjector<T> where T : ProjectedDocument {
+    protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) : base(database, typeMap) { }
+}
+
 [UsedImplicitly]
-public abstract class MongoProjection<T> : BaseEventHandler where T : ProjectedDocument {
+public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDocument {
     [PublicAPI]
     protected IMongoCollection<T> Collection { get; }
 
     readonly Dictionary<Type, ProjectUntypedEvent> _handlers = new();
     readonly TypeMapper                            _map;
 
-    protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) {
+    protected MongoProjector(IMongoDatabase database, TypeMapper? typeMap = null) {
         Collection = Ensure.NotNull(database).GetDocumentCollection<T>();
         _map       = typeMap ?? TypeMap.Instance;
     }
