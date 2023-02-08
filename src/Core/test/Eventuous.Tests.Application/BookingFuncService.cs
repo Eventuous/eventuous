@@ -20,12 +20,15 @@ public class BookingFuncService : FunctionalCommandService<BookingState> {
         }
 
         static IEnumerable<object> RecordPayment(BookingState state, object[] originalEvents, Commands.RecordPayment cmd) {
-            yield return new BookingPaymentRegistered(cmd.PaymentId, cmd.Amount.Amount);
+            if (state.HasPayment(cmd.PaymentId)) yield break;
 
-            var paid        = state.AmountPaid + cmd.Amount;
-            var outstanding = state.Price      - paid;
-            if (outstanding.Amount <= 0) yield return new BookingFullyPaid(cmd.PaidAt);
-            if (outstanding.Amount < 0) yield return new BookingOverpaid(-paid.Amount);
+            var registered = new BookingPaymentRegistered(cmd.PaymentId, cmd.Amount.Amount);
+
+            yield return registered;
+
+            var newState = state.When(registered);
+            if (newState.IsFullyPaid()) yield return new BookingFullyPaid(cmd.PaidAt);
+            if (newState.IsOverpaid()) yield return new BookingOverpaid((state.AmountPaid - state.Price).Amount);
         }
     }
 }
