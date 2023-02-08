@@ -2,38 +2,47 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Net;
+using Eventuous.AspNetCore.Web;
+using Eventuous.Sut.App;
 using Eventuous.Sut.AspNetCore;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers;
 using Eventuous.Tests.AspNetCore.Web.Fixture;
-using NodaTime;
 using RestSharp;
 
 namespace Eventuous.Tests.AspNetCore.Web;
 
-public class ControllerTests {
+public class ControllerTests : IDisposable {
     readonly ServerFixture       _fixture;
-    readonly AutoFixture.Fixture _autoFixture = new();
     readonly TestEventListener   _listener;
 
     public ControllerTests(ITestOutputHelper output) {
-        _fixture  = new ServerFixture();
+        var commandMap = new MessageMap()
+            .Add<BookingApi.RegisterPaymentHttp, Commands.RecordPayment>(
+                x => new Commands.RecordPayment(
+                    new BookingId(x.BookingId),
+                    x.PaymentId,
+                    new Money(x.Amount),
+                    x.PaidAt
+                )
+            );
+
+        _fixture = new ServerFixture(
+            services => {
+                services.AddSingleton(commandMap);
+                services.AddControllers();
+            },
+            app => app.MapControllers()
+        );
+
         _listener = new TestEventListener(output);
     }
 
     [Fact]
     public async Task RecordPaymentUsingMappedCommand() {
-        var service = _fixture.Resolve<ICommandService<Booking>>();
-
         using var client = _fixture.GetClient();
 
-        var bookRoom = new BookRoom(
-            _autoFixture.Create<string>(),
-            _autoFixture.Create<string>(),
-            LocalDate.FromDateTime(DateTime.Now),
-            LocalDate.FromDateTime(DateTime.Now.AddDays(1)),
-            100
-        );
+        var bookRoom = _fixture.GetBookRoom();
 
         var firstResponse = await client.PostJsonAsync("/book", bookRoom);
 
@@ -51,7 +60,12 @@ public class ControllerTests {
         var expected = new BookingEvents.BookingFullyPaid(registerPayment.PaidAt);
 
         var events = await _fixture.ReadStream<Booking>(bookRoom.BookingId);
-        var last = events.LastOrDefault();
+        var last   = events.LastOrDefault();
         last?.Payload.Should().BeEquivalentTo(expected);
+    }
+
+    public void Dispose() {
+        _fixture.Dispose();
+        _listener.Dispose();
     }
 }

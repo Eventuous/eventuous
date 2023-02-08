@@ -9,9 +9,13 @@ public interface ICommandService {
 
 public interface ICommandService<T> : ICommandService where T : Aggregate { }
 
-public interface ICommandService<T, TState, TId>
+public interface IStateCommandService<TState>
+    where TState : State<TState>, new() {
+    Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class;
+}
+
+public interface ICommandService<T, TState, TId> : IStateCommandService<TState>
     where T : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : AggregateId {
-    Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class;
 }

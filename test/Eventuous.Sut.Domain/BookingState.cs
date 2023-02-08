@@ -21,8 +21,8 @@ public record BookingState : State<BookingState> {
         );
     }
 
-    internal Money Price      { get; private init; }
-    internal Money AmountPaid { get; private init; }
+    public Money Price      { get; private init; }
+    public Money AmountPaid { get; private init; }
 
     public bool IsFullyPaid()
         => AmountPaid.Amount >= Price.Amount;

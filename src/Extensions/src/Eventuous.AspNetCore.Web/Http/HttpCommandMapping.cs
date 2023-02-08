@@ -1,5 +1,6 @@
 using System.Reflection;
 using Eventuous.AspNetCore.Web;
+using Eventuous.AspNetCore.Web.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
@@ -9,7 +10,7 @@ namespace Microsoft.AspNetCore.Routing;
 
 public delegate TCommand EnrichCommandFromHttpContext<TCommand>(TCommand command, HttpContext httpContext);
 
-public static class RouteBuilderExtensions {
+public static partial class RouteBuilderExtensions {
     /// <summary>
     /// Allows to add an HTTP endpoint for controller-less apps
     /// </summary>
@@ -24,8 +25,7 @@ public static class RouteBuilderExtensions {
         EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
     ) where TAggregate : Aggregate where TCommand : class {
         var attr  = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
-        var route = GetRoute<TCommand>(attr?.Route);
-        return builder.MapCommand<TCommand, TAggregate>(route, enrichCommand);
+        return builder.MapCommand<TCommand, TAggregate>(attr?.Route, enrichCommand);
     }
 
     /// <summary>
@@ -40,10 +40,18 @@ public static class RouteBuilderExtensions {
     [PublicAPI]
     public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
         this IEndpointRouteBuilder              builder,
-        string                                  route,
+        string?                                 route,
         EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
-    ) where TAggregate : Aggregate where TCommand : class
-        => Map<TAggregate, TCommand>(builder, route, enrichCommand);
+    ) where TAggregate : Aggregate where TCommand : class {
+        return Map<TAggregate, TCommand, TCommand>(
+            builder,
+            route,
+            enrichCommand != null
+                ? (command, context) => enrichCommand(command, context)
+                : (command, _) => command
+        );
+
+    }
 
     /// <summary>
     /// Creates an instance of <see cref="CommandServiceRouteBuilder{T}"/> for a given aggregate type, so you
@@ -53,9 +61,8 @@ public static class RouteBuilderExtensions {
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static CommandServiceRouteBuilder<TAggregate> MapAggregateCommands<TAggregate>(
-        this IEndpointRouteBuilder builder
-    ) where TAggregate : Aggregate
+    public static CommandServiceRouteBuilder<TAggregate> MapAggregateCommands<TAggregate>(this IEndpointRouteBuilder builder)
+        where TAggregate : Aggregate
         => new(builder);
 
     /// <summary>
@@ -73,7 +80,9 @@ public static class RouteBuilderExtensions {
         this   IEndpointRouteBuilder builder,
         params Assembly[]            assemblies
     ) where TAggregate : Aggregate {
-        var assembliesToScan = assemblies.Length == 0 ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
+        var assembliesToScan = assemblies.Length == 0
+            ? AppDomain.CurrentDomain.GetAssemblies()
+            : assemblies;
 
         var attributeType = typeof(HttpCommandAttribute);
 
@@ -99,7 +108,7 @@ public static class RouteBuilderExtensions {
                         $"Command aggregate is {attr.AggregateType.Name} but expected to be {typeof(TAggregate).Name}"
                     );
 
-                var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type);
+                var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type, type);
                 genericMethod.Invoke(null, new object?[] { builder, attr.Route, null });
             }
         }
@@ -107,22 +116,30 @@ public static class RouteBuilderExtensions {
         return builder;
     }
 
-    static RouteHandlerBuilder Map<TAggregate, [NotNull] TCommand>(
-        IEndpointRouteBuilder                   builder,
-        string?                                 route,
-        EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
-    ) where TAggregate : Aggregate where TCommand : class
-        => builder
+    static RouteHandlerBuilder Map<TAggregate, TContract, TCommand>(
+        IEndpointRouteBuilder                         builder,
+        string?                                       route,
+        ConvertAndEnrichCommand<TContract, TCommand>? convert = null
+    ) where TAggregate : Aggregate where TCommand : class where TContract : class {
+        if (convert == null && typeof(TCommand) != typeof(TContract))
+            throw new InvalidOperationException($"Command type {typeof(TCommand).Name} is not assignable from {typeof(TContract).Name}");
+
+        var resolvedRoute = GetRoute<TContract>(route);
+        ExtensionsEventSource.Log.HttpEndpointRegistered<TContract>(resolvedRoute);
+
+        return builder
             .MapPost(
-                GetRoute<TCommand>(route),
+                resolvedRoute,
                 async Task<IResult>(HttpContext context, ICommandService<TAggregate> service) => {
-                    var cmd = await context.Request.ReadFromJsonAsync<TCommand>(context.RequestAborted);
+                    var cmd = await context.Request.ReadFromJsonAsync<TContract>(context.RequestAborted);
 
                     if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
 
-                    if (enrichCommand != null) cmd = enrichCommand(cmd, context);
+                    var command = convert != null
+                        ? convert(cmd, context)
+                        : (cmd as TCommand)!;
 
-                    var result = await service.Handle(cmd, context.RequestAborted);
+                    var result = await service.Handle(command, context.RequestAborted);
                     return result.AsResult();
                 }
             )
@@ -131,6 +148,7 @@ public static class RouteBuilderExtensions {
             .Produces<ErrorResult>(StatusCodes.Status404NotFound)
             .Produces<ErrorResult>(StatusCodes.Status409Conflict)
             .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
+    }
 
     /// <summary>
     /// Maps commands that are annotated either with <seealso cref="AggregateCommands"/> and/or
@@ -146,7 +164,9 @@ public static class RouteBuilderExtensions {
         this   IEndpointRouteBuilder builder,
         params Assembly[]            assemblies
     ) {
-        var assembliesToScan = assemblies.Length == 0 ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
+        var assembliesToScan = assemblies.Length == 0
+            ? AppDomain.CurrentDomain.GetAssemblies()
+            : assemblies;
 
         var attributeType = typeof(HttpCommandAttribute);
 
@@ -163,7 +183,7 @@ public static class RouteBuilderExtensions {
 
             foreach (var type in decoratedTypes) {
                 var attr            = type.GetAttribute<HttpCommandAttribute>()!;
-                var parentAttribute = type.DeclaringType?.GetAttribute<AggregateCommands>();
+                var parentAttribute = type.DeclaringType?.GetAttribute<AggregateCommandsAttribute>();
                 if (parentAttribute == null) continue;
 
                 LocalMap(parentAttribute.AggregateType, type, attr.Route);
@@ -198,7 +218,8 @@ public static class RouteBuilderExtensions {
         }
     }
 
-    static string GetRoute<TCommand>(string? route) => GetRoute(typeof(TCommand), route);
+    static string GetRoute<TCommand>(string? route)
+        => GetRoute(typeof(TCommand), route);
 
     static string GetRoute(MemberInfo type, string? route) {
         return route ?? Generate();

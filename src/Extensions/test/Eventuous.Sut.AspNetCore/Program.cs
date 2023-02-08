@@ -13,20 +13,11 @@ DefaultEventSerializer.SetDefaultSerializer(
     )
 );
 
-var commandMap = new MessageMap()
-    .Add<BookingApi.RegisterPaymentHttp, Commands.RecordPayment>(
-        x => new Commands.RecordPayment(
-            new BookingId(x.BookingId),
-            x.PaymentId,
-            new Money(x.Amount),
-            x.PaidAt
-        )
-    );
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCommandService<BookingService, Booking>();
-builder.Services.AddSingleton(commandMap);
-builder.Services.AddControllers();
+// builder.Services.AddSingleton(commandMap);
+// builder.Services.AddControllers();
 
 builder.Services.Configure<JsonOptions>(
     options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
@@ -34,7 +25,10 @@ builder.Services.Configure<JsonOptions>(
 
 var app = builder.Build();
 
-app.MapControllers();
+var config = app.Services.GetService<ConfigureWebApplication>();
+config?.Invoke(app);
+
+// app.MapControllers();
 
 app
     .MapAggregateCommands<Booking>()

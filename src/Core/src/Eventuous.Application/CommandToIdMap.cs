@@ -10,8 +10,11 @@ public delegate Task<TId> GetIdFromCommandAsync<TId, in TCommand>(TCommand comma
 
 public delegate TId GetIdFromCommand<out TId, in TCommand>(TCommand command) where TId : AggregateId where TCommand : class;
 
+delegate ValueTask<TId> GetIdFromUntypedCommand<TId>(object command, CancellationToken cancellationToken)
+    where TId : AggregateId;
+
 class IdMap<TId> where TId : AggregateId {
-    readonly TypeMap<Func<object, CancellationToken, ValueTask<TId>>> _typeMap = new();
+    readonly TypeMap<GetIdFromUntypedCommand<TId>> _typeMap = new();
 
     public void AddCommand<TCommand>(GetIdFromCommand<TId, TCommand> getId) where TCommand : class
         => _typeMap.Add<TCommand>((cmd, _) => new ValueTask<TId>(getId((TCommand)cmd)));
@@ -19,6 +22,6 @@ class IdMap<TId> where TId : AggregateId {
     public void AddCommand<TCommand>(GetIdFromCommandAsync<TId, TCommand> getId) where TCommand : class
         => _typeMap.Add<TCommand>(async (cmd, ct) => await getId((TCommand)cmd, ct));
 
-    public bool TryGet<TCommand>([NotNullWhen(true)] out Func<object, CancellationToken, ValueTask<TId>>? getId) where TCommand : class
+    internal bool TryGet<TCommand>([NotNullWhen(true)] out GetIdFromUntypedCommand<TId>? getId) where TCommand : class
         => _typeMap.TryGetValue<TCommand>(out getId);
 }

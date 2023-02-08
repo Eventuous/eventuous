@@ -23,6 +23,11 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
             cmd => cmd.BookingId,
             (booking, cmd) => booking.RecordPayment(cmd.PaymentId, cmd.Amount, cmd.PaidAt)
         );
+
+        OnNew<ImportBooking>(
+            cmd => cmd.BookingId,
+            (booking, cmd) => booking.Import(cmd.RoomId, cmd.Period, cmd.Price)
+        );
     }
 }
 
@@ -35,3 +40,5 @@ record BookRoom(
     float     Price,
     string?   GuestId
 );
+
+record ImportBooking(BookingId BookingId, string RoomId, StayPeriod Period, Money Price);

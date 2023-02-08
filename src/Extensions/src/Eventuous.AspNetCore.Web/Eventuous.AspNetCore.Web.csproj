@@ -10,6 +10,14 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
     <ItemGroup>
-      <None Remove="Eventuous.AspNetCore.Web.csproj.DotSettings" />
+        <None Remove="Eventuous.AspNetCore.Web.csproj.DotSettings" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(DiagRoot)\Eventuous.Diagnostics\DiagnosticName.cs">
+            <Link>Diagnostics\DiagnosticName.cs</Link>
+        </Compile>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
+            <Link>Tools\Ensure.cs</Link>
+        </Compile>
     </ItemGroup>
 </Project>

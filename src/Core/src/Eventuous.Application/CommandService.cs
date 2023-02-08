@@ -1,10 +1,10 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Tools;
-using static Eventuous.Diagnostics.ApplicationEventSource;
-
 namespace Eventuous;
+
+using Tools;
+using static Diagnostics.ApplicationEventSource;
 
 /// <summary>
 /// Command service base class. A derived class should be scoped to handle commands for one aggregate type only.
@@ -267,9 +267,9 @@ public abstract class CommandService<TAggregate, TState, TId>
         var result = await Handle(command, cancellationToken).NoContext();
 
         return result switch {
-            OkResult<TState>(var aggregateState, var enumerable, _) => new OkResult(aggregateState, enumerable),
-            ErrorResult<TState> error                               => new ErrorResult(error.Message, error.Exception),
-            _                                                       => throw new ApplicationException("Unknown result type")
+            OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),
+            ErrorResult<TState> error                      => new ErrorResult(error.Message, error.Exception),
+            _                                              => throw new ApplicationException("Unknown result type")
         };
     }
 
