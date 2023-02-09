@@ -84,7 +84,7 @@ public class TestProjector : PostgresProjector {
         var insert = $"insert into {schema}.bookings (booking_id, checkin_date, price) values (@booking_id, @checkin_date, @price)";
 
         On<BookingEvents.BookingImported>(
-            (connection, ctx) => ValueTask.FromResult(
+            (connection, ctx) =>
                 Project(
                     connection,
                     insert,
@@ -92,7 +92,6 @@ public class TestProjector : PostgresProjector {
                     new NpgsqlParameter("@checkin_date", ctx.Message.CheckIn.ToDateTimeUnspecified()),
                     new NpgsqlParameter("@price", ctx.Message.Price)
                 )
-            )
         );
     }
 }
