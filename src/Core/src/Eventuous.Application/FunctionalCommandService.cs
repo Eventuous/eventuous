@@ -6,7 +6,7 @@ namespace Eventuous;
 using Tools;
 using static Diagnostics.ApplicationEventSource;
 
-public class FunctionalCommandService<T> : ICommandService, IStateCommandService<T> where T : State<T>, new() {
+public class FunctionalCommandService<T> : IFuncCommandService<T>, IStateCommandService<T> where T : State<T>, new() {
     [PublicAPI]
     protected IEventStore Store { get; }
 
