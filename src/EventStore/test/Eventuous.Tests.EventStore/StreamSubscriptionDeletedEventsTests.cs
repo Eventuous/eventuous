@@ -42,7 +42,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
 
             startPosition = last[0].OriginalEventNumber;
         }
-        catch (StreamNotFound) { }
+        catch (StreamNotFoundException) { }
 
         const int produceCount = 20;
         const int deleteCount  = 5;
