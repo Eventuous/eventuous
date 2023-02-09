@@ -1,7 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions;
+using System.Data;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Tools;
 using Npgsql;
@@ -26,7 +26,15 @@ public abstract class PostgresProjector : EventHandler {
             await cmd.ExecuteNonQueryAsync(context.CancellationToken).NoContext();
         }
     }
+
+    protected static NpgsqlCommand Project(NpgsqlConnection connection, string commandText, params NpgsqlParameter[] parameters) {
+        var cmd = connection.CreateCommand();
+        cmd.CommandText = commandText;
+        cmd.Parameters.AddRange(parameters);
+        cmd.CommandType = CommandType.Text;
+        return cmd;
+    }
 }
 
-public delegate Task<NpgsqlCommand> ProjectToPostgres<T>(NpgsqlConnection connection, MessageConsumeContext<T> consumeContext)
+public delegate ValueTask<NpgsqlCommand> ProjectToPostgres<T>(NpgsqlConnection connection, MessageConsumeContext<T> consumeContext)
     where T : class;

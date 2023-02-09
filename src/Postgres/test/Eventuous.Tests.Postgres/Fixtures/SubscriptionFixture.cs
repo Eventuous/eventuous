@@ -4,27 +4,24 @@ using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
-using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Postgres.Fixtures;
 
 public abstract class SubscriptionFixture<T> : IAsyncLifetime
     where T : class, IEventHandler {
-    static SubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static SubscriptionFixture()
+        => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    protected readonly Fixture Auto = new();
-
-    protected StreamName              Stream          { get; }
-    protected T                       Handler         { get; }
-    protected ILogger                 Log             { get; }
-    protected PostgresCheckpointStore CheckpointStore { get; }
-    IMessageSubscription              Subscription    { get; }
-    protected string                  SchemaName      { get; }
-    protected ILoggerFactory          LoggerFactory   { get; }
+    protected IntegrationFixture      IntegrationFixture { get; } = new();
+    protected StreamName              Stream             { get; }
+    protected T                       Handler            { get; }
+    protected ILogger                 Log                { get; }
+    protected PostgresCheckpointStore CheckpointStore    { get; }
+    IMessageSubscription              Subscription       { get; }
+    protected ILoggerFactory          LoggerFactory      { get; }
 
     protected SubscriptionFixture(
         ITestOutputHelper    outputHelper,
-        T                    handler,
         bool                 subscribeToAll,
         bool                 autoStart     = true,
         Action<ConsumePipe>? configurePipe = null,
@@ -32,17 +29,16 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
     ) {
         _autoStart = autoStart;
 
-        Stream = new StreamName(Instance.Auto.Create<string>());
+        Stream = new StreamName(SharedAutoFixture.Auto.Create<string>());
 
-        SchemaName = Instance.SchemaName;
-        _schema    = new Schema(SchemaName);
+        _schema = new Schema(IntegrationFixture.SchemaName);
 
         LoggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
         SubscriptionId = $"test-{Guid.NewGuid():N}";
 
-        Handler         = handler;
+        Handler         = GetHandler();
         Log             = LoggerFactory.CreateLogger(GetType());
-        CheckpointStore = new PostgresCheckpointStore(Instance.GetConnection, SchemaName, LoggerFactory);
+        CheckpointStore = new PostgresCheckpointStore(IntegrationFixture.GetConnection, IntegrationFixture.SchemaName, LoggerFactory);
 
         _listener = new LoggingEventListener(LoggerFactory);
         var pipe = new ConsumePipe();
@@ -52,20 +48,20 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
         Subscription =
             !subscribeToAll
                 ? new PostgresStreamSubscription(
-                    Instance.GetConnection,
+                    IntegrationFixture.GetConnection,
                     new PostgresStreamSubscriptionOptions(Stream) {
                         SubscriptionId = SubscriptionId,
-                        Schema         = SchemaName
+                        Schema         = IntegrationFixture.SchemaName
                     },
                     CheckpointStore,
                     pipe,
                     LoggerFactory
                 )
                 : new PostgresAllStreamSubscription(
-                    Instance.GetConnection,
+                    IntegrationFixture.GetConnection,
                     new PostgresAllStreamSubscriptionOptions {
                         SubscriptionId = SubscriptionId,
-                        Schema         = SchemaName
+                        Schema         = IntegrationFixture.SchemaName
                     },
                     CheckpointStore,
                     pipe,
@@ -73,23 +69,38 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                 );
     }
 
+    protected abstract T GetHandler();
+
     public string SubscriptionId { get; }
 
-    protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
+    protected ValueTask Start()
+        => Subscription.SubscribeWithLog(Log);
 
-    protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
+    protected ValueTask Stop()
+        => Subscription.UnsubscribeWithLog(Log);
 
     readonly bool                 _autoStart;
     readonly LoggingEventListener _listener;
     readonly Schema               _schema;
 
     public async Task InitializeAsync() {
-        await _schema.CreateSchema(Instance.GetConnection);
+        await _schema.CreateSchema(IntegrationFixture.GetConnection);
         if (_autoStart) await Start();
     }
 
     public async Task DisposeAsync() {
         if (_autoStart) await Stop();
+        await DropSchema();
         _listener.Dispose();
+        await IntegrationFixture.DisposeAsync();
+    }
+
+    async Task DropSchema() {
+        await using var connection = IntegrationFixture.GetConnection();
+
+        await connection.OpenAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = $"drop schema if exists {IntegrationFixture.SchemaName} cascade;";
+        await cmd.ExecuteNonQueryAsync();
     }
 }
