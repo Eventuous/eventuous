@@ -8,14 +8,14 @@ using NodaTime;
 namespace ElasticPlayground;
 
 public class ElasticOnly {
-    readonly IApplicationService<Booking, BookingState, BookingId> _service;
+    readonly ICommandService<Booking, BookingState, BookingId> _service;
 
     static readonly Fixture Fixture = new();
 
     public ElasticOnly(IElasticClient client) {
         var eventStore = new ElasticEventStore(client);
         var store      = new AggregateStore(eventStore, eventStore);
-        _service = new ThrowingApplicationService<Booking, BookingState, BookingId>(new BookingService(store));
+        _service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(store));
     }
 
     public async Task Execute() {
@@ -30,12 +30,7 @@ public class ElasticOnly {
         var result = await _service.Handle(bookRoom, default);
         result.Dump();
 
-        var processPayment = new Commands.RecordPayment(
-            bookRoom.BookingId,
-            Fixture.Create<string>(),
-            bookRoom.Price,
-            DateTimeOffset.Now
-        );
+        var processPayment = bookRoom.ToRecordPayment(Fixture.Create<string>());
 
         var secondResult = await _service.Handle(processPayment, default);
         secondResult.Dump();

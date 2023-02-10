@@ -8,6 +8,7 @@ public class TwoAggregateOpsScenario {
 
     public TwoAggregateOpsScenario() {
         _testData = _fixture.Create<TestData>();
+        var amount = new Money(_testData.Amount);
 
         _booking.BookRoom(
             _fixture.Create<string>(),
@@ -15,14 +16,10 @@ public class TwoAggregateOpsScenario {
                 LocalDate.FromDateTime(DateTime.Today),
                 LocalDate.FromDateTime(DateTime.Today.AddDays(2))
             ),
-            _testData.Amount
+            amount
         );
 
-        _booking.RecordPayment(
-            _testData.PaymentId,
-            _testData.Amount,
-            _testData.PaidAt
-        );
+        _booking.RecordPayment(_testData.PaymentId, amount, _testData.PaidAt);
     }
 
     [Fact]
@@ -48,17 +45,19 @@ public class TwoAggregateOpsScenario {
     }
 
     [Fact]
-    public void should_make_booking_fully_paid() => _booking.State.IsFullyPaid().Should().BeTrue();
+    public void should_make_booking_fully_paid()
+        => _booking.State.IsFullyPaid().Should().BeTrue();
 
     [Fact]
     public void should_record_payment()
         => _booking.HasPaymentRecord(_testData.PaymentId).Should().BeTrue();
 
     [Fact]
-    public void should_not_be_overpaid() => _booking.State.IsOverpaid().Should().BeFalse();
+    public void should_not_be_overpaid()
+        => _booking.State.IsOverpaid().Should().BeFalse();
 
     readonly Booking  _booking = new();
     readonly TestData _testData;
 
-    record TestData(string PaymentId, decimal Amount, DateTimeOffset PaidAt);
+    record TestData(string PaymentId, float Amount, DateTimeOffset PaidAt);
 }

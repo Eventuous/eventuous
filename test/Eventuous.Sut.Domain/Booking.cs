@@ -3,30 +3,30 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Sut.Domain;
 
 public class Booking : Aggregate<BookingState> {
-    public void BookRoom(string roomId, StayPeriod period, decimal price, string? guestId = null) {
+    public void BookRoom(string roomId, StayPeriod period, Money price, string? guestId = null) {
         EnsureDoesntExist();
 
-        Apply(new RoomBooked(roomId, period.CheckIn, period.CheckOut, price, guestId));
+        Apply(new RoomBooked(roomId, period.CheckIn, period.CheckOut, price.Amount, guestId));
     }
 
-    public void Import(string roomId, StayPeriod period, decimal price) {
+    public void Import(string roomId, StayPeriod period, Money price) {
         EnsureDoesntExist();
 
-        Apply(new BookingImported(roomId, price, period.CheckIn, period.CheckOut));
+        Apply(new BookingImported(roomId, price.Amount, period.CheckIn, period.CheckOut));
     }
 
-    public void RecordPayment(string paymentId, decimal amount, DateTimeOffset paidAt) {
+    public void RecordPayment(string paymentId, Money amount, DateTimeOffset paidAt) {
         EnsureExists();
 
         if (HasPaymentRecord(paymentId)) return;
 
         var (previousState, currentState) =
-            Apply(new BookingPaymentRegistered(paymentId, amount));
+            Apply(new BookingPaymentRegistered(paymentId, amount.Amount));
 
         if (previousState.AmountPaid != currentState.AmountPaid) {
             var outstandingAmount = currentState.Price - currentState.AmountPaid;
-            Apply(new BookingOutstandingAmountChanged(outstandingAmount));
-            if (outstandingAmount < 0) Apply(new BookingOverpaid(-outstandingAmount));
+            Apply(new BookingOutstandingAmountChanged(outstandingAmount.Amount));
+            if (outstandingAmount.Amount < 0) Apply(new BookingOverpaid(-outstandingAmount.Amount));
         }
 
         if (!previousState.IsFullyPaid() && currentState.IsFullyPaid()) Apply(new BookingFullyPaid(paidAt));

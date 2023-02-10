@@ -7,20 +7,21 @@ using System.Runtime.InteropServices;
 
 namespace Eventuous;
 
-public class TypeMap<TV> : ITypeMap<TV> {
-    private MapEntry[] _values;
+public class TypeMap<TV> {
+    MapEntry[] _values;
 
-    public TypeMap() => _values = new MapEntry[ITypeMap<TV>.RecommendedCapacity];
+    public TypeMap()
+        => _values = new MapEntry[RecommendedCapacity];
 
-    public ITypeMap<TV> Add<TK>(TV value) {
-        if (!TryAdd(ITypeMap<TV>.GetIndex<TK>(), value))
-            throw new Exceptions.DuplicateTypeException<TK>();
+    public TypeMap<TV> Add<TK>(TV value) {
+        var index = GetIndex<TK>();
+        if (!TryAdd(index, value)) throw new Exceptions.DuplicateTypeException<TK>();
 
         return this;
     }
 
     public bool TryGetValue<TK>([MaybeNullWhen(false)] out TV value) {
-        var index = ITypeMap<TV>.GetIndex<TK>();
+        var index = GetIndex<TK>();
 
         if ((uint)index >= (uint)_values.Length) {
             value = default;
@@ -33,7 +34,7 @@ public class TypeMap<TV> : ITypeMap<TV> {
     }
 
     void EnsureCapacity(int index) {
-        if ((uint)index >= (uint)_values.Length) Array.Resize(ref _values, ITypeMap<TV>.RecommendedCapacity);
+        if ((uint)index >= (uint)_values.Length) Array.Resize(ref _values, RecommendedCapacity);
     }
 
     bool TryAdd(int index, TV value) {
@@ -49,5 +50,35 @@ public class TypeMap<TV> : ITypeMap<TV> {
     struct MapEntry {
         public bool HasValue { get; set; }
         public TV?  Value    { get; set; }
+    }
+
+    // ReSharper disable once InconsistentNaming
+    // ReSharper disable once StaticMemberInGenericType
+    static volatile int _index = -1;
+
+    const int DefaultCapacity = 10;
+
+    static class TypeSlot<T> {
+        // ReSharper disable once StaticMemberInGenericType
+        internal static readonly int Index = Interlocked.Increment(ref _index);
+    }
+
+    static int GetIndex<TK>()
+        => TypeSlot<TK>.Index;
+
+    static int RecommendedCapacity {
+        get {
+            var capacity = _index + 1;
+
+            if (capacity < DefaultCapacity) {
+                capacity = DefaultCapacity;
+            }
+            else {
+                capacity += DefaultCapacity;
+                if ((uint)capacity > Array.MaxLength) capacity = Array.MaxLength;
+            }
+
+            return capacity;
+        }
     }
 }

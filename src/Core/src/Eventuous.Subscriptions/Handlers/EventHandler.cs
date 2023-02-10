@@ -17,11 +17,11 @@ namespace Eventuous.Subscriptions;
 public abstract class EventHandler : BaseEventHandler {
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
 
-    protected EventHandler(TypeMapper? mapper = null) => _map = mapper ?? TypeMap.Instance;
+    protected EventHandler(TypeMapper? mapper = null) => _typeMapper = mapper ?? TypeMap.Instance;
 
     static readonly ValueTask<EventHandlingStatus> Ignored = new(EventHandlingStatus.Ignored);
 
-    readonly TypeMapper _map;
+    readonly TypeMapper _typeMapper;
 
     /// <summary>
     /// Register a handler for a particular event type
@@ -34,7 +34,7 @@ public abstract class EventHandler : BaseEventHandler {
             throw new ArgumentException($"Type {typeof(T).Name} already has a handler");
         }
 
-        if (!_map.IsTypeRegistered<T>()) {
+        if (!_typeMapper.IsTypeRegistered<T>()) {
             SubscriptionsEventSource.Log.MessageTypeNotRegistered<T>();
         }
 
@@ -43,7 +43,7 @@ public abstract class EventHandler : BaseEventHandler {
             return context.Message is not T ? NoHandler() : HandleTypedEvent();
 
             async ValueTask<EventHandlingStatus> HandleTypedEvent() {
-                var typedContext = new MessageConsumeContext<T>(context);
+                var typedContext = context as MessageConsumeContext<T> ?? new MessageConsumeContext<T>(context);
                 await handler(typedContext).NoContext();
                 return EventHandlingStatus.Success;
             }
@@ -76,9 +76,5 @@ public abstract class EventHandler : BaseEventHandler {
 
     delegate ValueTask<EventHandlingStatus> HandleUntypedEvent(IMessageConsumeContext evt);
 }
-
-[PublicAPI]
-[Obsolete("Use EventHandler instead")]
-public abstract class TypedEventHandler : EventHandler { }
 
 public delegate ValueTask HandleTypedEvent<T>(MessageConsumeContext<T> consumeContext) where T : class;

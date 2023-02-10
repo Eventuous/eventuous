@@ -14,7 +14,7 @@ public class ForgotToSetId : NaiveFixture {
 
     TestService Service { get; }
 
-    class TestService : ApplicationService<TestAggregate, TestState, TestId> {
+    class TestService : CommandService<TestAggregate, TestState, TestId> {
         public TestService(IAggregateStore store) : base(store)
             => OnNew<DoIt>(
                 cmd => new TestId(cmd.Id),

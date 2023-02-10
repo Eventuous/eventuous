@@ -30,8 +30,8 @@ public static class MeterProviderBuilderExtensions {
     /// <returns></returns>
     public static MeterProviderBuilder AddEventuous(this MeterProviderBuilder builder, TagList? customTags = null)
         => Ensure.NotNull(builder)
-            .AddMeter(ApplicationServiceMetrics.MeterName)
-            .AddMetrics<ApplicationServiceMetrics>(customTags);
+            .AddMeter(CommandServiceMetrics.MeterName)
+            .AddMetrics<CommandServiceMetrics>(customTags);
 
     static MeterProviderBuilder AddMetrics<T>(this MeterProviderBuilder builder, TagList? customTags = null)
         where T : class, IWithCustomTags {

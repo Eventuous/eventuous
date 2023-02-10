@@ -1,21 +1,47 @@
+using System.Collections.Immutable;
 using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Sut.Domain;
 
 public record BookingState : State<BookingState> {
     public BookingState() {
-        On<RoomBooked>((state,      booked) => state with { Price = booked.Price });
-        On<BookingImported>((state, imported) => state with { Price = imported.Price });
+        On<RoomBooked>(
+            (state, booked) => state with {
+                Price = new Money(booked.Price),
+                AmountPaid = new Money(0)
+            }
+        );
+
+        On<BookingImported>(
+            (state, imported) => state with {
+                Price = new Money(imported.Price),
+                AmountPaid = new Money(0)
+            }
+        );
 
         On<BookingPaymentRegistered>(
-            (state, paid) => state with { AmountPaid = state.AmountPaid + paid.AmountPaid }
+            (state, paid) => state with {
+                AmountPaid = state.AmountPaid + new Money(paid.AmountPaid),
+                _registeredPayments = state._registeredPayments.Add(
+                    new Payment(paid.PaymentId, new Money(paid.AmountPaid))
+                )
+            }
         );
     }
 
-    internal decimal Price      { get; private init; }
-    internal decimal AmountPaid { get; private init; }
+    ImmutableArray<Payment> _registeredPayments = ImmutableArray<Payment>.Empty;
 
-    public bool IsFullyPaid() => AmountPaid >= Price;
+    public Money Price      { get; private init; }
+    public Money AmountPaid { get; private init; }
 
-    public bool IsOverpaid() => AmountPaid > Price;
+    public bool IsFullyPaid()
+        => AmountPaid.Amount >= Price.Amount;
+
+    public bool IsOverpaid()
+        => AmountPaid.Amount > Price.Amount;
+
+    public bool HasPayment(string paymentId)
+        => _registeredPayments.Any(p => p.PaymentId == paymentId);
+
+    record Payment(string PaymentId, Money Amount);
 }

@@ -3,7 +3,6 @@ using System.Text.Json;
 using Bogus;
 using Eventuous.Diagnostics;
 using Eventuous.Postgresql;
-using MicroElements.AutoFixture.NodaTime;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Npgsql;
@@ -13,35 +12,31 @@ namespace Eventuous.Tests.Postgres.Fixtures;
 public sealed class IntegrationFixture : IAsyncDisposable {
     public IEventStore           EventStore     { get; }
     public IAggregateStore       AggregateStore { get; }
-    public IFixture              Auto           { get; } = new Fixture().Customize(new NodaTimeCustomization());
     public GetPostgresConnection GetConnection  { get; }
-    public Faker                 Faker          { get; } = new();
-
-    public string SchemaName => Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
+
+    public string SchemaName { get; }
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
             .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
     );
 
-    public static IntegrationFixture Instance { get; } = new();
-
-    IntegrationFixture() {
+    public IntegrationFixture() {
+        SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
         const string connString =
             "Host=localhost;Username=postgres;Password=secret;Database=eventuous;Include Error Detail=true;";
 
-        var schemaName = SchemaName;
+        NpgsqlConnection GetConn()
+            => new(connString);
 
-        NpgsqlConnection GetConn() => new(connString);
-
-        var schema = new Schema(schemaName);
+        var schema = new Schema(SchemaName);
         schema.CreateSchema(GetConn).ConfigureAwait(false).GetAwaiter().GetResult();
 
         GetConnection = GetConn;
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = new PostgresStore(GetConn, new PostgresStoreOptions(schemaName), Serializer);
+        EventStore     = new PostgresStore(GetConn, new PostgresStoreOptions(SchemaName), Serializer);
         AggregateStore = new AggregateStore(EventStore);
         ActivitySource.AddActivityListener(_listener);
     }

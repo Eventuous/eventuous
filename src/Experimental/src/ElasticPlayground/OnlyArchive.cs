@@ -23,9 +23,9 @@ public class OnlyArchive {
     public async Task Execute() {
         var bookingId = "deea3663-17c0-45a6-86b2-70c66fd407fd";
 
-        var service = new ThrowingApplicationService<Booking, BookingState, BookingId>(new BookingService(_store));
+        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_store));
 
-        var cmd = new RecordPayment(bookingId, Fixture.Create<string>(), 10, DateTimeOffset.Now);
+        var cmd = new RecordPayment(new BookingId(bookingId), Fixture.Create<string>(), new Money(10), DateTimeOffset.Now);
 
         var result = await service.Handle(cmd, default);
 

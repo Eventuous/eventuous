@@ -6,14 +6,14 @@
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
-        <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj"/>
-        <Using Include="Eventuous"/>
+        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
+        <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj" />
+        <Using Include="Eventuous" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="AutoFixture"/>
-        <PackageReference Include="EventStore.Client.Grpc.Streams"/>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="AutoFixture" />
+        <PackageReference Include="EventStore.Client.Grpc.Streams" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">

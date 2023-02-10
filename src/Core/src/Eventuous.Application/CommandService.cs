@@ -1,25 +1,24 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Tools;
-using static Eventuous.Diagnostics.ApplicationEventSource;
-
-// ReSharper disable MemberCanBePrivate.Global
-
 namespace Eventuous;
 
+using Tools;
+using static Diagnostics.ApplicationEventSource;
+
 /// <summary>
-/// Application service base class. A derived class should be scoped to handle commands for one aggregate type only.
+/// Command service base class. A derived class should be scoped to handle commands for one aggregate type only.
 /// </summary>
 /// <typeparam name="TAggregate">The aggregate type</typeparam>
 /// <typeparam name="TState">The aggregate state type</typeparam>
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 // [PublicAPI]
-public abstract class ApplicationService<TAggregate, TState, TId>
-    : IApplicationService<TAggregate, TState, TId>, IApplicationService<TAggregate>
+public abstract class CommandService<TAggregate, TState, TId>
+    : ICommandService<TAggregate, TState, TId>, ICommandService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
     where TId : AggregateId {
+    [PublicAPI]
     protected IAggregateStore Store { get; }
 
     readonly HandlersMap<TAggregate>  _handlers = new();
@@ -28,7 +27,7 @@ public abstract class ApplicationService<TAggregate, TState, TId>
     readonly StreamNameMap            _streamNameMap;
     readonly TypeMapper               _typeMap;
 
-    protected ApplicationService(
+    protected CommandService(
         IAggregateStore           store,
         AggregateFactoryRegistry? factoryRegistry = null,
         StreamNameMap?            streamNameMap   = null,
@@ -196,19 +195,17 @@ public abstract class ApplicationService<TAggregate, TState, TId>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
-        var commandType = Ensure.NotNull(command).GetType();
-
-        if (!_handlers.TryGetValue(commandType, out var registeredHandler)) {
-            Log.CommandHandlerNotFound(commandType);
-            var exception = new Exceptions.CommandHandlerNotFound(commandType);
+        if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
+            Log.CommandHandlerNotFound<TCommand>();
+            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
             return new ErrorResult<TState>(exception);
         }
 
-        var hasGetIdFunction = _idMap.TryGetValue(commandType, out var getId);
+        var hasGetIdFunction = _idMap.TryGet<TCommand>(out var getId);
 
         if (!hasGetIdFunction || getId == null) {
-            Log.CannotCalculateAggregateId(commandType);
-            var exception = new Exceptions.CommandHandlerNotFound(commandType);
+            Log.CannotCalculateAggregateId<TCommand>();
+            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
             return new ErrorResult<TState>(exception);
         }
 
@@ -238,7 +235,9 @@ public abstract class ApplicationService<TAggregate, TState, TId>
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
             var storeResult = await Store.Store(
-                    streamName != default ? streamName : GetAggregateStreamName(),
+                    streamName != default
+                        ? streamName
+                        : GetAggregateStreamName(),
                     result,
                     cancellationToken
                 )
@@ -246,29 +245,31 @@ public abstract class ApplicationService<TAggregate, TState, TId>
 
             var changes = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
 
-            Log.CommandHandled(commandType);
+            Log.CommandHandled<TCommand>();
 
             return new OkResult<TState>(result.State, changes, storeResult.GlobalPosition);
         }
         catch (Exception e) {
-            Log.ErrorHandlingCommand(commandType, e);
+            Log.ErrorHandlingCommand<TCommand>(e);
 
-            return new ErrorResult<TState>($"Error handling command {commandType.Name}", e);
+            return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
         }
 
-        TAggregate Create() => _factoryRegistry.CreateInstance<TAggregate, TState>();
+        TAggregate Create()
+            => _factoryRegistry.CreateInstance<TAggregate, TState>();
 
-        StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
+        StreamName GetAggregateStreamName()
+            => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
     }
 
-    async Task<Result> IApplicationService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await Handle(command, cancellationToken).NoContext();
 
         return result switch {
-            OkResult<TState>(var aggregateState, var enumerable, _) => new OkResult(aggregateState, enumerable),
-            ErrorResult<TState> error => new ErrorResult(error.Message, error.Exception),
-            _ => throw new ApplicationException("Unknown result type")
+            OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),
+            ErrorResult<TState> error                      => new ErrorResult(error.Message, error.Exception),
+            _                                              => throw new ApplicationException("Unknown result type")
         };
     }
 

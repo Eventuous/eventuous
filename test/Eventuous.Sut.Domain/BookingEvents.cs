@@ -10,24 +10,24 @@ public static class BookingEvents {
         string    RoomId,
         LocalDate CheckIn,
         LocalDate CheckOut,
-        decimal   Price,
+        float     Price,
         string?   GuestId = null
     );
 
     [EventType("PaymentRegistered")]
     public record BookingPaymentRegistered(
-        string  PaymentId,
-        decimal AmountPaid
+        string PaymentId,
+        float  AmountPaid
     );
 
     [EventType("OutstandingAmountChanged")]
-    public record BookingOutstandingAmountChanged(decimal OutstandingAmount);
+    public record BookingOutstandingAmountChanged(float OutstandingAmount);
 
     [EventType("BookingFullyPaid")]
     public record BookingFullyPaid(DateTimeOffset PaidAt);
 
     [EventType("BookingOverpaid")]
-    public record BookingOverpaid(decimal OverpaidAmount);
+    public record BookingOverpaid(float OverpaidAmount);
 
     [EventType(TypeNames.BookingCancelled)]
     public record BookingCancelled;
@@ -35,7 +35,7 @@ public static class BookingEvents {
     [EventType("V1.BookingImported")]
     public record BookingImported(
         string    RoomId,
-        decimal   Price,
+        float     Price,
         LocalDate CheckIn,
         LocalDate CheckOut
     );
@@ -45,5 +45,6 @@ public static class BookingEvents {
         public const string BookingCancelled = "V1.BookingCancelled";
     }
 
-    public static void MapBookingEvents() => TypeMap.RegisterKnownEventTypes();
+    public static void MapBookingEvents()
+        => TypeMap.RegisterKnownEventTypes();
 }

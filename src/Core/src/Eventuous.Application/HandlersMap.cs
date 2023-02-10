@@ -18,10 +18,13 @@ public delegate void ActOnAggregate<in TAggregate, in TCommand>(TAggregate aggre
 
 record RegisteredHandler<T>(ExpectedState ExpectedState, Func<T, object, CancellationToken, ValueTask<T>> Handler);
 
-class HandlersMap<TAggregate> : Dictionary<Type, RegisteredHandler<TAggregate>> where TAggregate : Aggregate {
+class HandlersMap<TAggregate> where TAggregate : Aggregate {
+    readonly TypeMap<RegisteredHandler<TAggregate>> _typeMap = new();
+
     public void AddHandler<TCommand>(RegisteredHandler<TAggregate> handler) {
         try {
-            Add(typeof(TCommand), handler);
+            _typeMap.Add<TCommand>(handler);
+            Log.CommandHandlerRegistered<TCommand>();
         }
         catch (Exceptions.DuplicateTypeException<TCommand>) {
             Log.CommandHandlerAlreadyRegistered<TCommand>();
@@ -52,5 +55,8 @@ class HandlersMap<TAggregate> : Dictionary<Type, RegisteredHandler<TAggregate>> 
         );
 
     public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TAggregate>? handler)
-        => TryGetValue(typeof(TCommand), out handler);
+        => _typeMap.TryGetValue<TCommand>(out handler);
 }
+
+public delegate IEnumerable<object> ExecuteCommand<in T, in TCommand>(T state, object[] originalEvents, TCommand command)
+    where T : State<T> where TCommand : class;

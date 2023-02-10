@@ -11,28 +11,31 @@ namespace Eventuous.Diagnostics;
 public class PersistenceEventSource : EventSource {
     public static readonly PersistenceEventSource Log = new();
 
-    const int UnableToStoreAggregateId  = 5;
-    const int UnableToReadAggregateId   = 6;
-    const int UnableToAppendEventsId    = 7;
+    const int UnableToLoadStreamId     = 1;
+    const int UnableToStoreAggregateId = 5;
+    const int UnableToReadAggregateId  = 6;
+    const int UnableToAppendEventsId   = 7;
 
     [NonEvent]
     public void UnableToLoadAggregate<T>(StreamName streamName, Exception exception)
         where T : Aggregate {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            UnableToLoadAggregate(typeof(T).Name, streamName, exception.ToString());
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToLoadAggregate(typeof(T).Name, streamName, exception.ToString());
     }
 
     [NonEvent]
     public void UnableToStoreAggregate<T>(StreamName streamName, Exception exception)
         where T : Aggregate {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            UnableToStoreAggregate(typeof(T).Name, streamName, exception.ToString());
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToStoreAggregate(typeof(T).Name, streamName, exception.ToString());
     }
 
     [NonEvent]
     public void UnableToAppendEvents(string stream, Exception exception) {
-        if (IsEnabled(EventLevel.Warning, EventKeywords.All))
-            UnableToAppendEvents(stream, exception.ToString());
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToAppendEvents(stream, exception.ToString());
+    }
+
+    [NonEvent]
+    public void UnableToLoadStream(StreamName streamName, Exception exception) {
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToLoadStream(streamName, exception.ToString());
     }
 
     [Event(UnableToAppendEventsId, Message = "Unable to append events to {0}: {1}", Level = EventLevel.Error)]
@@ -54,4 +57,8 @@ public class PersistenceEventSource : EventSource {
     )]
     void UnableToLoadAggregate(string type, string stream, string exception)
         => WriteEvent(UnableToReadAggregateId, type, stream, exception);
+
+    [Event(UnableToLoadStreamId, Message = "Unable to load stream {0}: {1}", Level = EventLevel.Warning)]
+    void UnableToLoadStream(string stream, string exception)
+        => WriteEvent(UnableToLoadStreamId, stream, exception);
 }

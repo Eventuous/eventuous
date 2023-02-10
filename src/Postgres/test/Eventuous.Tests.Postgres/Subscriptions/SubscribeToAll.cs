@@ -1,4 +1,3 @@
-using Eventuous.Postgresql;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
@@ -7,20 +6,16 @@ using Eventuous.Tests.Postgres.Fixtures;
 using Hypothesist;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
-using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
 public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     readonly BookingService _service;
 
-    public SubscribeToAll(ITestOutputHelper outputHelper)
-        : base(outputHelper, new TestEventHandler(), true, false) {
-        outputHelper.WriteLine($"Schema: {SchemaName}");
+    public SubscribeToAll(ITestOutputHelper outputHelper) : base(outputHelper, true, false) {
+        outputHelper.WriteLine($"Schema: {IntegrationFixture.SchemaName}");
 
-        var eventStore = new PostgresStore(Instance.GetConnection, new PostgresStoreOptions(SchemaName));
-        var store      = new AggregateStore(eventStore);
-        _service = new BookingService(store);
+        _service = new BookingService(IntegrationFixture.AggregateStore);
     }
 
     [Fact]
@@ -71,4 +66,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
 
         return commands;
     }
+
+    protected override TestEventHandler GetHandler()
+        => new();
 }

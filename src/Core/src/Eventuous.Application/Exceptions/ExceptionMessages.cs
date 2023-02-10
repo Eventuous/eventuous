@@ -17,4 +17,10 @@ static class ExceptionMessages {
 
     internal static string DuplicateTypeKey<T>()
         => string.Format(Resources.GetString("DuplicateTypeKey")!, typeof(T).Name);
+
+    internal static string DuplicateCommandHandler<T>()
+        => string.Format(Resources.GetString("DuplicateCommandHandler")!, typeof(T).Name);
+
+    internal static string MissingCommandMap<TIn, TOut>()
+        => string.Format(Resources.GetString("MissingCommandMap")!, typeof(TIn).Name, typeof(TOut).Name);
 }
