@@ -10,10 +10,10 @@ using EventHandler = Eventuous.Subscriptions.EventHandler;
 namespace Eventuous.Postgresql.Projections;
 
 public abstract class PostgresProjector : EventHandler {
-    readonly GetPostgresConnection _getConnection;
+    readonly NpgsqlDataSource _dataSource;
 
-    protected PostgresProjector(GetPostgresConnection getConnection, TypeMapper? mapper = null) : base(mapper)
-        => _getConnection = getConnection;
+    protected PostgresProjector(NpgsqlDataSource dataSource, TypeMapper? mapper = null) : base(mapper)
+        => _dataSource = dataSource;
 
     protected void On<T>(ProjectToPostgres<T> handler) where T : class {
         base.On<T>(async ctx => await Handle(ctx, GetCommand).NoContext());
@@ -26,14 +26,13 @@ public abstract class PostgresProjector : EventHandler {
         => base.On<T>(async ctx => await Handle(ctx, handler).NoContext());
 
     async Task Handle<T>(MessageConsumeContext<T> context, ProjectToPostgresAsync<T> handler) where T : class {
-        await using var connection = _getConnection();
-        await connection.OpenAsync(context.CancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync().NoContext();
         var cmd = await handler(connection, context).NoContext();
         await cmd.ExecuteNonQueryAsync(context.CancellationToken).NoContext();
     }
 
-    protected static NpgsqlCommand Project(NpgsqlConnection connection, string commandText, params NpgsqlParameter[] parameters) {
-        var cmd = connection.CreateCommand();
+    protected static NpgsqlCommand Project(NpgsqlDataSource dataSource, string commandText, params NpgsqlParameter[] parameters) {
+        var cmd = dataSource.CreateCommand();
         cmd.CommandText = commandText;
         cmd.Parameters.AddRange(parameters);
         cmd.CommandType = CommandType.Text;

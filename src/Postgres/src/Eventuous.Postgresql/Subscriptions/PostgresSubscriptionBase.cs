@@ -16,28 +16,21 @@ namespace Eventuous.Postgresql.Subscriptions;
 
 public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T>
     where T : PostgresSubscriptionBaseOptions {
-    readonly IMetadataSerializer     _metaSerializer;
-    readonly CancellationTokenSource _cts = new();
-
-    protected Schema                Schema        { get; }
-    protected GetPostgresConnection GetConnection { get; }
+    readonly           IMetadataSerializer     _metaSerializer;
+    readonly           CancellationTokenSource _cts = new();
+    protected readonly NpgsqlDataSource        DataSource;
+    protected          Schema                  Schema { get; }
 
     protected PostgresSubscriptionBase(
-        GetPostgresConnection getConnection,
-        T                     options,
-        ICheckpointStore      checkpointStore,
-        ConsumePipe           consumePipe,
-        ILoggerFactory?       loggerFactory
+        NpgsqlDataSource dataSource,
+        T                options,
+        ICheckpointStore checkpointStore,
+        ConsumePipe      consumePipe,
+        ILoggerFactory?  loggerFactory
     ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
         Schema          = new Schema(options.Schema);
-        GetConnection   = Ensure.NotNull(getConnection, "Connection factory");
+        DataSource      = dataSource;
         _metaSerializer = DefaultMetadataSerializer.Instance;
-    }
-
-    async Task<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken) {
-        var connection = GetConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
-        return connection;
     }
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
@@ -63,16 +56,17 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
     Task? _runner;
 
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
-        var start = position.HasValue ? (long)position : -1;
+        var start = position.HasValue
+            ? (long) position
+            : -1;
 
         while (!cancellationToken.IsCancellationRequested) {
             try {
-                await using var connection = await OpenConnection(cancellationToken).NoContext();
-                await using var cmd        = PrepareCommand(connection, start);
-                await using var reader     = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
+                await using var connection = await DataSource.OpenConnectionAsync(cancellationToken);
+                await using var cmd = PrepareCommand(connection, start);
+                await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
                 var result = reader.ReadEvents(cancellationToken);
-
                 await foreach (var persistedEvent in result.WithCancellation(cancellationToken).ConfigureAwait(false)) {
                     await HandleInternal(ToConsumeContext(persistedEvent, cancellationToken)).NoContext();
                     start = MoveStart(persistedEvent);
@@ -105,7 +99,7 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
             evt.MessageType,
             Encoding.UTF8.GetBytes(evt.JsonData),
             evt.StreamName!,
-            (ulong)evt.StreamPosition
+            (ulong) evt.StreamPosition
         );
 
         var meta = evt.JsonMetadata == null

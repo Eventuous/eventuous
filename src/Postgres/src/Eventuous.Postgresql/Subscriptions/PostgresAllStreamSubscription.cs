@@ -14,17 +14,17 @@ namespace Eventuous.Postgresql.Subscriptions;
 
 public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions> {
     public PostgresAllStreamSubscription(
-        GetPostgresConnection                getConnection,
+        NpgsqlDataSource                     dataSource,
         PostgresAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
         ConsumePipe                          consumePipe,
         ILoggerFactory?                      loggerFactory
-    ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
+    ) : base(dataSource, options, checkpointStore, consumePipe, loggerFactory) { }
 
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start) {
         var cmd = new NpgsqlCommand(Schema.ReadAllForwards, connection);
 
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.Parameters.AddWithValue("_from_position", NpgsqlDbType.Bigint, start + 1);
         cmd.Parameters.AddWithValue("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
         return cmd;
@@ -45,8 +45,8 @@ public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAl
             evt.MessageType,
             ContentType,
             Ensure.NotEmptyString(evt.StreamName),
-            (ulong)evt.GlobalPosition - 1,
-            (ulong)evt.GlobalPosition - 1,
+            (ulong) evt.GlobalPosition - 1,
+            (ulong) evt.GlobalPosition - 1,
             _sequence++,
             evt.Created,
             e,
@@ -55,7 +55,7 @@ public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAl
             cancellationToken
         );
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromAllContext(context);
 }
 

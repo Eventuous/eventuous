@@ -38,7 +38,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
 
         Handler         = GetHandler();
         Log             = LoggerFactory.CreateLogger(GetType());
-        CheckpointStore = new PostgresCheckpointStore(IntegrationFixture.GetConnection, IntegrationFixture.SchemaName, LoggerFactory);
+        CheckpointStore = new PostgresCheckpointStore(IntegrationFixture.DataSource, IntegrationFixture.SchemaName, LoggerFactory);
 
         _listener = new LoggingEventListener(LoggerFactory);
         var pipe = new ConsumePipe();
@@ -48,7 +48,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
         Subscription =
             !subscribeToAll
                 ? new PostgresStreamSubscription(
-                    IntegrationFixture.GetConnection,
+                    IntegrationFixture.DataSource,
                     new PostgresStreamSubscriptionOptions(Stream) {
                         SubscriptionId = SubscriptionId,
                         Schema         = IntegrationFixture.SchemaName
@@ -58,7 +58,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                     LoggerFactory
                 )
                 : new PostgresAllStreamSubscription(
-                    IntegrationFixture.GetConnection,
+                    IntegrationFixture.DataSource,
                     new PostgresAllStreamSubscriptionOptions {
                         SubscriptionId = SubscriptionId,
                         Schema         = IntegrationFixture.SchemaName
@@ -84,7 +84,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
     readonly Schema               _schema;
 
     public async Task InitializeAsync() {
-        await _schema.CreateSchema(IntegrationFixture.GetConnection);
+        await _schema.CreateSchema(IntegrationFixture.DataSource);
         if (_autoStart) await Start();
     }
 
@@ -96,9 +96,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
     }
 
     async Task DropSchema() {
-        await using var connection = IntegrationFixture.GetConnection();
-
-        await connection.OpenAsync();
+        await using var dataSource = IntegrationFixture.DataSource;
+        await using var connection = await dataSource.OpenConnectionAsync();
         await using var cmd = connection.CreateCommand();
         cmd.CommandText = $"drop schema if exists {IntegrationFixture.SchemaName} cascade;";
         await cmd.ExecuteNonQueryAsync();

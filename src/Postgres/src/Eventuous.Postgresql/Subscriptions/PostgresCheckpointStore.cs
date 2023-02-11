@@ -25,14 +25,14 @@ public class PostgresCheckpointStoreOptions {
 }
 
 public class PostgresCheckpointStore : ICheckpointStore {
-    readonly GetPostgresConnection _getConnection;
-    readonly ILoggerFactory?       _loggerFactory;
-    readonly string                _getCheckpointSql;
-    readonly string                _addCheckpointSql;
-    readonly string                _storeCheckpointSql;
+    readonly NpgsqlDataSource _dataSource;
+    readonly ILoggerFactory?  _loggerFactory;
+    readonly string           _getCheckpointSql;
+    readonly string           _addCheckpointSql;
+    readonly string           _storeCheckpointSql;
 
-    public PostgresCheckpointStore(GetPostgresConnection getConnection, string schema, ILoggerFactory? loggerFactory) {
-        _getConnection = getConnection;
+    public PostgresCheckpointStore(NpgsqlDataSource dataSource, string schema, ILoggerFactory? loggerFactory) {
+        _dataSource    = dataSource;
         _loggerFactory = loggerFactory;
         var sch = new Schema(schema);
         _getCheckpointSql   = sch.GetCheckpointSql;
@@ -42,15 +42,14 @@ public class PostgresCheckpointStore : ICheckpointStore {
 
     [PublicAPI]
     public PostgresCheckpointStore(
-        GetPostgresConnection                     getConnection,
+        NpgsqlDataSource                          dataSource,
         IOptions<PostgresCheckpointStoreOptions>? options,
         ILoggerFactory?                           loggerFactory
-    ) : this(getConnection, options?.Value?.Schema ?? Schema.DefaultSchema, loggerFactory) { }
+    ) : this(dataSource, options?.Value?.Schema ?? Schema.DefaultSchema, loggerFactory) { }
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, _loggerFactory);
-        await using var connection = _getConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
         Checkpoint checkpoint;
 
         await using (var cmd = GetCheckpointCommand(connection, _getCheckpointSql, checkpointId)) {
@@ -60,7 +59,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
                 var hasPosition = !reader.IsDBNull(0);
 
                 checkpoint = hasPosition
-                    ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0))
+                    ? new Checkpoint(checkpointId, (ulong?) reader.GetInt64(0))
                     : Checkpoint.Empty(checkpointId);
 
                 Logger.Current.CheckpointLoaded(this, checkpoint);
@@ -82,10 +81,9 @@ public class PostgresCheckpointStore : ICheckpointStore {
     ) {
         if (checkpoint.Position == null) return checkpoint;
 
-        await using var connection = _getConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
         await using var cmd = GetCheckpointCommand(connection, _storeCheckpointSql, checkpoint.Id);
-        cmd.Parameters.AddWithValue("position", NpgsqlDbType.Bigint, (long)checkpoint.Position);
+        cmd.Parameters.AddWithValue("position", NpgsqlDbType.Bigint, (long) checkpoint.Position);
         await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
         Logger.Current.CheckpointStored(this, checkpoint, force);
         return checkpoint;

@@ -10,9 +10,9 @@ using Npgsql;
 namespace Eventuous.Tests.Postgres.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncDisposable {
-    public IEventStore           EventStore     { get; }
-    public IAggregateStore       AggregateStore { get; }
-    public GetPostgresConnection GetConnection  { get; }
+    public IEventStore      EventStore     { get; }
+    public IAggregateStore  AggregateStore { get; }
+    public NpgsqlDataSource DataSource     { get; }
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
 
@@ -28,15 +28,18 @@ public sealed class IntegrationFixture : IAsyncDisposable {
         const string connString =
             "Host=localhost;Username=postgres;Password=secret;Database=eventuous;Include Error Detail=true;";
 
-        NpgsqlConnection GetConn()
-            => new(connString);
-
         var schema = new Schema(SchemaName);
-        schema.CreateSchema(GetConn).ConfigureAwait(false).GetAwaiter().GetResult();
 
-        GetConnection = GetConn;
+        var builder = new NpgsqlDataSourceBuilder(connString);
+        builder.MapComposite<NewPersistedEvent>(schema.StreamMessage);
+
+        NpgsqlDataSource GetDataSource() => builder.Build();
+
+        schema.CreateSchema(GetDataSource()).ConfigureAwait(false).GetAwaiter().GetResult();
+
+        DataSource = GetDataSource();
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = new PostgresStore(GetConn, new PostgresStoreOptions(SchemaName), Serializer);
+        EventStore     = new PostgresStore(GetDataSource(), new PostgresStoreOptions(SchemaName), Serializer);
         AggregateStore = new AggregateStore(EventStore);
         ActivitySource.AddActivityListener(_listener);
     }
