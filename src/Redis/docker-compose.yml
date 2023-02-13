@@ -1,0 +1,23 @@
+version: '3.4'
+
+volumes:
+  redis-data:
+  redis-insight:
+
+services:
+  redis:
+    image: redis:7.0.8-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+
+  # redisinsight:
+  #   image: redislabs/redisinsight:latest
+  #   ports:
+  #     - '8001:8001'
+  #   volumes:
+  #     - type: volume
+  #       source: redis-insight
+  #       target: /db
+

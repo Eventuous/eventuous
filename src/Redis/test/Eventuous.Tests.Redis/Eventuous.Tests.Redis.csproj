@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IsTestProject>true</IsTestProject>
+        <IncludeSutSubs>true</IncludeSutSubs>
+        <IncludeSutApp>true</IncludeSutApp>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+        <ItemGroup>
+            <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
+            <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+            <PackageReference Include="StackExchange.Redis" />
+            <PackageVersion Include="StackExchange.Redis" Version="2.6.90" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Redis\Eventuous.Redis.csproj" />
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
+    </ItemGroup>
+</Project>
