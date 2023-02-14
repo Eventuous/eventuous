@@ -17,7 +17,11 @@ namespace Eventuous.Postgresql;
 
 public class PostgresStoreOptions {
     // ReSharper disable once ConvertToPrimaryConstructor
-    public PostgresStoreOptions(string schema = Postgresql.Schema.DefaultSchema)
+    public PostgresStoreOptions() {
+        Schema = Postgresql.Schema.DefaultSchema;
+    }
+
+    public PostgresStoreOptions(string schema)
         => Schema = schema;
 
     /// <summary>
