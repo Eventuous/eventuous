@@ -20,7 +20,7 @@ public sealed class IntegrationFixture : IAsyncDisposable {
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
             .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
     );
-
+    public static IntegrationFixture Instance { get; } = new();
     public IntegrationFixture() {
         const string connString = "localhost";
 
