@@ -3,7 +3,7 @@ using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
 
-public class AppendEvents {
+public class AppendEvents : IAsyncLifetime {
     readonly IntegrationFixture _fixture = new();
 
     [Fact]
@@ -56,4 +56,11 @@ public class AppendEvents {
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
 
+    public Task InitializeAsync()
+        => _fixture.Initialize();
+
+    public Task DisposeAsync() {
+        _fixture.Dispose();
+        return Task.CompletedTask;
+    }
 }

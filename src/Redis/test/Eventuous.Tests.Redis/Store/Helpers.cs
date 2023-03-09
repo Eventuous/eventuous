@@ -21,7 +21,7 @@ public static class Helpers {
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     public static Task<AppendEventsResult> AppendEvents(
-        this IEventStore           store,
+        this IEventStore      store,
         StreamName            stream,
         object[]              evt,
         ExpectedStreamVersion version

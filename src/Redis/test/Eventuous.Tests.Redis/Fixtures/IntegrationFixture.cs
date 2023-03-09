@@ -4,17 +4,17 @@ using Eventuous.Diagnostics;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using StackExchange.Redis;
-
 using Eventuous.Redis;
 
 namespace Eventuous.Tests.Redis.Fixtures;
 
-public sealed class IntegrationFixture : IAsyncDisposable {
-    public IEventStore      EventStore { get; }
+public sealed class IntegrationFixture : IDisposable {
+    public IEventStore      EventStore     { get; }
     public IAggregateStore  AggregateStore { get; }
-    public GetRedisDatabase GetDatabase { get; }
+    public GetRedisDatabase GetDatabase    { get; }
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
+    readonly GetRedisDatabase  _getDb;
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -28,18 +28,18 @@ public sealed class IntegrationFixture : IAsyncDisposable {
             var muxer = ConnectionMultiplexer.Connect(connString);
             return muxer.GetDatabase();
         }
-               
-        var module = new Module();
-        module.LoadModule(GetDb).ConfigureAwait(false).GetAwaiter().GetResult();
+
+        _getDb = GetDb;
 
         GetDatabase = GetDb;
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore = new RedisStore(GetDb, new RedisStoreOptions(), Serializer);
+        EventStore     = new RedisStore(GetDb, Serializer);
         AggregateStore = new AggregateStore(EventStore);
     }
 
-    public ValueTask DisposeAsync() {
-        _listener.Dispose();
-        return default;
-    }
+    public Task Initialize()
+        => RedisEventStoreModule.LoadModule(_getDb);
+
+    public void Dispose()
+        => _listener.Dispose();
 }
