@@ -42,14 +42,9 @@ public class ConnectorAndArchive {
             default
         );
 
-        var service = new ThrowingApplicationService<Booking, BookingState, BookingId>(new BookingService(_store));
+        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_store));
 
-        var cmd = new RecordPayment(
-            bookRoom.BookingId,
-            Fixture.Create<string>(),
-            bookRoom.Price / 2,
-            DateTimeOffset.Now
-        );
+        var cmd = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
 
         var result = await service.Handle(cmd, default);
 
@@ -57,16 +52,11 @@ public class ConnectorAndArchive {
     }
 
     static async Task Seed(IAggregateStore store, BookRoom bookRoom) {
-        var service = new ThrowingApplicationService<Booking, BookingState, BookingId>(new BookingService(store));
+        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(store));
 
         await service.Handle(bookRoom, default);
 
-        var processPayment = new RecordPayment(
-            bookRoom.BookingId,
-            Fixture.Create<string>(),
-            bookRoom.Price / 2,
-            DateTimeOffset.Now
-        );
+        var processPayment = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
 
         await service.Handle(processPayment, default);
     }

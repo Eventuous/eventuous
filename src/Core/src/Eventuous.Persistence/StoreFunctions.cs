@@ -7,6 +7,43 @@ using static Eventuous.Diagnostics.PersistenceEventSource;
 namespace Eventuous;
 
 public static class StoreFunctions {
+    public static async Task<AppendEventsResult> Store(
+        this IEventWriter              eventWriter,
+        StreamName                     streamName,
+        int                            originalVersion,
+        IReadOnlyCollection<object>    changes,
+        Func<StreamEvent, StreamEvent> amendEvent,
+        CancellationToken              cancellationToken
+    ) {
+        Ensure.NotNull(changes);
+
+        if (changes.Count == 0) return AppendEventsResult.NoOp;
+
+        var expectedVersion = new ExpectedStreamVersion(originalVersion);
+
+        try {
+            var result = await eventWriter.AppendEvents(
+                    streamName,
+                    expectedVersion,
+                    changes.Select((o, i) => ToStreamEvent(o, i + originalVersion)).ToArray(),
+                    cancellationToken
+                )
+                .NoContext();
+
+            return result;
+        }
+        catch (Exception e) {
+            throw e.InnerException?.Message.Contains("WrongExpectedVersion") == true
+                ? new OptimisticConcurrencyException(streamName, e)
+                : e;
+        }
+
+        StreamEvent ToStreamEvent(object evt, int position) {
+            var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", position);
+            return amendEvent(streamEvent);
+        }
+    }
+
     public static async Task<AppendEventsResult> Store<T>(
         this IEventWriter              eventWriter,
         StreamName                     streamName,
@@ -16,32 +53,12 @@ public static class StoreFunctions {
     ) where T : Aggregate {
         Ensure.NotNull(aggregate);
 
-        if (aggregate.Changes.Count == 0) return AppendEventsResult.NoOp;
-
-        var originalVersion = aggregate.OriginalVersion;
-        var expectedVersion = new ExpectedStreamVersion(originalVersion);
-
         try {
-            var result = await eventWriter.AppendEvents(
-                    streamName,
-                    expectedVersion,
-                    aggregate.Changes.Select((o, i) => ToStreamEvent(o, i + originalVersion)).ToArray(),
-                    cancellationToken
-                )
-                .NoContext();
-
-            return result;
+            return await eventWriter.Store(streamName, aggregate.OriginalVersion, aggregate.Changes, amendEvent, cancellationToken);
         }
-        catch (Exception e) {
+        catch (OptimisticConcurrencyException e) {
             Log.UnableToStoreAggregate<T>(streamName, e);
-
-            throw e.InnerException?.Message.Contains("WrongExpectedVersion") == true
-                ? new OptimisticConcurrencyException<T>(streamName, e) : e;
-        }
-
-        StreamEvent ToStreamEvent(object evt, int position) {
-            var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", position);
-            return amendEvent(streamEvent);
+            throw new OptimisticConcurrencyException<T>(streamName, e.InnerException!);
         }
     }
 

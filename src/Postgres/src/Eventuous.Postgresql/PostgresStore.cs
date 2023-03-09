@@ -7,6 +7,7 @@ using System.Text;
 using Eventuous.Diagnostics;
 using Eventuous.Postgresql.Extensions;
 using Eventuous.Tools;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -16,7 +17,17 @@ namespace Eventuous.Postgresql;
 
 public delegate NpgsqlConnection GetPostgresConnection();
 
-public record PostgresStoreOptions(string Schema = Schema.DefaultSchema);
+public class PostgresStoreOptions {
+    // ReSharper disable once ConvertToPrimaryConstructor
+    public PostgresStoreOptions(string schema = Postgresql.Schema.DefaultSchema)
+        => Schema = schema;
+
+    /// <summary>
+    /// Override the default schema name.
+    /// The property is mutable to allow using ASP.NET Core configuration.
+    /// </summary>
+    public string Schema { get; set; }
+}
 
 public class PostgresStore : IEventStore {
     readonly GetPostgresConnection _getConnection;
@@ -26,15 +37,23 @@ public class PostgresStore : IEventStore {
 
     public PostgresStore(
         GetPostgresConnection getConnection,
-        PostgresStoreOptions  options,
+        PostgresStoreOptions? options,
         IEventSerializer?     serializer     = null,
         IMetadataSerializer?  metaSerializer = null
     ) {
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         _getConnection  = Ensure.NotNull(getConnection, "Connection factory");
-        _schema         = new Schema(options.Schema);
+        var pgOptions = options ?? new PostgresStoreOptions();
+        _schema = new Schema(pgOptions.Schema);
     }
+
+    public PostgresStore(
+        GetPostgresConnection          getConnection,
+        IOptions<PostgresStoreOptions> options,
+        IEventSerializer?              serializer     = null,
+        IMetadataSerializer?           metaSerializer = null
+    ) : this(getConnection, options.Value, serializer, metaSerializer) { }
 
     const string ContentType = "application/json";
 
@@ -133,15 +152,13 @@ public class PostgresStore : IEventStore {
         StreamTruncatePosition truncatePosition,
         ExpectedStreamVersion  expectedVersion,
         CancellationToken      cancellationToken
-    )
-        => throw new NotImplementedException();
+    ) => throw new NotImplementedException();
 
     public Task DeleteStream(
         StreamName            stream,
         ExpectedStreamVersion expectedVersion,
         CancellationToken     cancellationToken
-    )
-        => throw new NotImplementedException();
+    ) => throw new NotImplementedException();
 
     StreamEvent ToStreamEvent(PersistedEvent evt) {
         var deserialized = _serializer.DeserializeEvent(
@@ -162,8 +179,13 @@ public class PostgresStore : IEventStore {
             _ => throw new Exception("Unknown deserialization result")
         };
 
-        StreamEvent AsStreamEvent(object payload)
-            => new(evt.MessageId, payload, meta ?? new Metadata(), ContentType, evt.StreamPosition);
+        StreamEvent AsStreamEvent(object payload) => new(
+            evt.MessageId,
+            payload,
+            meta ?? new Metadata(),
+            ContentType,
+            evt.StreamPosition
+        );
     }
 }
 

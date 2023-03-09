@@ -6,13 +6,17 @@ namespace Eventuous;
 public class StreamNameMap {
     readonly Dictionary<Type, Func<AggregateId, StreamName>> _map = new();
 
-    public void Register<TId>(Func<TId, StreamName> map)
-        where TId : AggregateId
-        => _map.TryAdd(typeof(TId), id => map((TId)id));
+    readonly TypeMap<Func<AggregateId, StreamName>> _typeMap = new();
 
-    public StreamName GetStreamName<T, TId>(TId aggregateId)
-        where TId : AggregateId where T : Aggregate
-        => _map.TryGetValue(typeof(TId), out var map)
+    public void Register<TId>(Func<TId, StreamName> map) where TId : AggregateId {
+        // _map.TryAdd(typeof(TId), id => map((TId)id));
+        _typeMap.Add<TId>(id => map((TId)id));
+    }
+
+    public StreamName GetStreamName<T, TId>(TId aggregateId) where TId : AggregateId where T : Aggregate {
+        // return _map.TryGetValue(typeof(TId), out var map)
+        return _typeMap.TryGetValue<TId>(out var map)
             ? map(aggregateId)
             : StreamNameFactory.For<T, TId>(aggregateId);
+    }
 }

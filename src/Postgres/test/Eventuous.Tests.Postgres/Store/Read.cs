@@ -1,16 +1,18 @@
-using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
+using Eventuous.Tests.Postgres.Fixtures;
 using static Eventuous.Tests.Postgres.Store.Helpers;
 
 namespace Eventuous.Tests.Postgres.Store;
 
 public class Read {
+    readonly IntegrationFixture _fixture = new();
+
     [Fact]
     public async Task ShouldReadOne() {
         var evt        = CreateEvent();
         var streamName = GetStreamName();
-        await AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
+        await _fixture.EventStore.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
-        var result = await Instance.EventStore.ReadEvents(
+        var result = await _fixture.EventStore.ReadEvents(
             streamName,
             StreamReadPosition.Start,
             100,
@@ -26,9 +28,9 @@ public class Read {
         // ReSharper disable once CoVariantArrayConversion
         object[] events = CreateEvents(20).ToArray();
         var streamName = GetStreamName();
-        await AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+        await _fixture.EventStore.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
         
-        var result = await Instance.EventStore.ReadEvents(
+        var result = await _fixture.EventStore.ReadEvents(
             streamName,
             StreamReadPosition.Start,
             100,
@@ -44,9 +46,9 @@ public class Read {
         // ReSharper disable once CoVariantArrayConversion
         object[] events = CreateEvents(20).ToArray();
         var streamName = GetStreamName();
-        await AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+        await _fixture.EventStore.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
         
-        var result = await Instance.EventStore.ReadEvents(
+        var result = await _fixture.EventStore.ReadEvents(
             streamName,
             new StreamReadPosition(10),
             100,
@@ -63,9 +65,9 @@ public class Read {
         // ReSharper disable once CoVariantArrayConversion
         object[] events = CreateEvents(20).ToArray();
         var streamName = GetStreamName();
-        await AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+        await _fixture.EventStore.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
         
-        var result = await Instance.EventStore.ReadEvents(
+        var result = await _fixture.EventStore.ReadEvents(
             streamName,
             StreamReadPosition.Start, 
             10,

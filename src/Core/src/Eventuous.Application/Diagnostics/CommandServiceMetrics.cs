@@ -1,4 +1,4 @@
-// Copyright (C) Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using static Eventuous.Diagnostics.Tracing.Constants.Components;
 
 namespace Eventuous.Diagnostics;
 
-public sealed class ApplicationServiceMetrics : IWithCustomTags, IDisposable {
+public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
     const string Category = "application";
 
     public static readonly string MeterName = EventuousDiagnostics.GetMeterName(Category);
@@ -19,23 +19,23 @@ public sealed class ApplicationServiceMetrics : IWithCustomTags, IDisposable {
     public const string CommandTag    = "command-type";
 
     readonly Meter                                     _meter;
-    readonly MetricsListener<AppServiceMetricsContext> _listener;
+    readonly MetricsListener<CommandServiceMetricsContext> _listener;
 
     KeyValuePair<string, object?>[]? _customTags;
 
-    public ApplicationServiceMetrics() {
+    public CommandServiceMetrics() {
         _meter = EventuousDiagnostics.GetMeter(MeterName);
 
         var duration =
-            _meter.CreateHistogram<double>(AppService, "ms", "Command execution duration, milliseconds");
+            _meter.CreateHistogram<double>(CommandService, "ms", "Command execution duration, milliseconds");
 
-        var errorCount = _meter.CreateCounter<long>($"{AppService}.errors", "errors", "Number of failed commands");
-        _listener = new MetricsListener<AppServiceMetricsContext>(ListenerName, duration, errorCount, GetTags);
+        var errorCount = _meter.CreateCounter<long>($"{CommandService}.errors", "errors", "Number of failed commands");
+        _listener = new MetricsListener<CommandServiceMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
-        TagList GetTags(AppServiceMetricsContext ctx)
-            => new TagList(_customTags) {
-                new(AppServiceTag, ctx.ServiceName),
-                new(CommandTag, ctx.CommandName),
+        TagList GetTags(CommandServiceMetricsContext ctx)
+            => new(_customTags) {
+                new KeyValuePair<string, object?>(AppServiceTag, ctx.ServiceName),
+                new KeyValuePair<string, object?>(CommandTag, ctx.CommandName)
             };
     }
 
@@ -47,4 +47,4 @@ public sealed class ApplicationServiceMetrics : IWithCustomTags, IDisposable {
     public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
 }
 
-record AppServiceMetricsContext(string ServiceName, string CommandName);
+record CommandServiceMetricsContext(string ServiceName, string CommandName);

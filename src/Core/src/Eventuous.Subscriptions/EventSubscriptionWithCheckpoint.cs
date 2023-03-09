@@ -18,7 +18,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         ConsumePipe      consumePipe,
         int              concurrencyLimit,
         ILoggerFactory?  loggerFactory
-    ) : base(options, ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) {
+    ) : base(Ensure.NotNull(options), ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) {
         CheckpointStore = Ensure.NotNull(checkpointStore);
 
         CheckpointCommitHandler = new CheckpointCommitHandler(

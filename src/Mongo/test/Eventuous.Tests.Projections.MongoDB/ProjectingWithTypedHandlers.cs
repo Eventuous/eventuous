@@ -1,3 +1,4 @@
+using Bogus;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Sut.Domain;
@@ -45,6 +46,7 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
                     .Set(x => x.CheckInDate, ctx.Message.CheckIn)
                     .Set(x => x.CheckOutDate, ctx.Message.CheckOut)
                     .Set(x => x.BookingPrice, ctx.Message.Price)
+                    .Set(x => x.Outstanding, ctx.Message.Price)
             );
         }
     }

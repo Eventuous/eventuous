@@ -6,6 +6,12 @@ public class OptimisticConcurrencyException : Exception {
             $"Update of {aggregateType.Name} failed due to the wrong version in stream {streamName}."
           + $" {inner.Message} {inner.InnerException?.Message}"
         ) { }
+
+    public OptimisticConcurrencyException(StreamName streamName, Exception inner)
+        : base(
+            $"Update failed due to the wrong version in stream {streamName}."
+          + $" {inner.Message} {inner.InnerException?.Message}"
+        ) { }
 }
 
 public class OptimisticConcurrencyException<T> : OptimisticConcurrencyException
