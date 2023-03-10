@@ -9,7 +9,6 @@
             <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
             <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
             <PackageReference Include="StackExchange.Redis" />
-            <PackageVersion Include="StackExchange.Redis" Version="2.6.90" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Redis\Eventuous.Redis.csproj" />
