@@ -3,7 +3,6 @@ using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 using static Eventuous.Tests.Redis.Fixtures.IntegrationFixture;
 
-
 namespace Eventuous.Tests.Redis.Store;
 
 public static class Helpers {

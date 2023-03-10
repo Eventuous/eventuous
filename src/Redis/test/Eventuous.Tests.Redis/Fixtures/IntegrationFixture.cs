@@ -4,7 +4,6 @@ using Eventuous.Diagnostics;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using StackExchange.Redis;
-
 using Eventuous.Redis;
 
 namespace Eventuous.Tests.Redis.Fixtures;

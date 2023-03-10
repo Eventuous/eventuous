@@ -3,7 +3,7 @@ using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
 
-public class AppendEvents {
+public class AppendEvents : IAsyncLifetime {
     readonly IntegrationFixture _fixture = new();
 
     [Fact]
@@ -11,7 +11,6 @@ public class AppendEvents {
         var evt        = CreateEvent();
         var streamName = GetStreamName();
         var result     = await AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
-
         result.NextExpectedVersion.Should().Be(0);
     }
 
@@ -21,12 +20,10 @@ public class AppendEvents {
         var stream = GetStreamName();
 
         var result = await AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
-
         evt = CreateEvent();
 
         var version = new ExpectedStreamVersion(result.NextExpectedVersion);
         result = await AppendEvent(stream, evt, version);
-
         result.NextExpectedVersion.Should().Be(1);
     }
 
@@ -48,12 +45,19 @@ public class AppendEvents {
         var evt    = CreateEvent();
         var stream = GetStreamName();
 
-        await AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        await _fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
 
         evt = CreateEvent();
 
-        var task = () => AppendEvent(stream, evt, new ExpectedStreamVersion(3));
+        var task = () => _fixture.EventStore.AppendEvent(stream, evt, new ExpectedStreamVersion(3));
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
 
+    public Task InitializeAsync()
+        => _fixture.Initialize();
+
+    public Task DisposeAsync() {
+        _fixture.Dispose();
+      return Task.CompletedTask;
+    }
 }
