@@ -1,10 +1,9 @@
-using Eventuous.Tests.Redis.Fixtures;
+using static Eventuous.Tests.Redis.Fixtures.IntegrationFixture;
 using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
 
 public class ReadEvents {
-    readonly IntegrationFixture _fixture = new();
 
     [Fact]
     public async Task ShouldReadOne() {
@@ -44,18 +43,23 @@ public class ReadEvents {
     [Fact]
     public async Task ShouldReadTail() {
         // ReSharper disable once CoVariantArrayConversion
-        object[] events = CreateEvents(20).ToArray();
         var streamName = GetStreamName();
-        await AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+
+        object[] events1 = CreateEvents(10).ToArray();
+        var appended = await AppendEvents(streamName, events1, ExpectedStreamVersion.NoStream);
+        var position = appended.GlobalPosition;
+
+        object[] events2 = CreateEvents(10).ToArray();
+        await AppendEvents(streamName, events2, ExpectedStreamVersion.Any);        
         
         var result = await Instance.EventStore.ReadEvents(
             streamName,
-            new StreamReadPosition(10),
+            new StreamReadPosition((long)position),
             100,
             default
         );
 
-        var expected = events.Skip(10);
+        var expected = events2;
         var actual   = result.Select(x => x.Payload);
         actual.Should().BeEquivalentTo(expected);
     }

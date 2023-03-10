@@ -42,7 +42,8 @@ public class RedisStore : IEventStore
         int                count,
         CancellationToken  cancellationToken
     ) {
-            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), ULongToStreamId(start), null, count);
+            var nextPosition = new StreamReadPosition(start.Value + 1);
+            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), ULongToStreamId(nextPosition), null, count);
             if (result == null)
                 throw new StreamNotFound(stream);
             return result.Select(x => ToStreamEvent(x)).ToArray();        
@@ -141,6 +142,7 @@ public class RedisStore : IEventStore
             => new(Guid.Parse(evt["message_id"].ToString()), payload, meta ?? new Metadata(), ContentType, StreamIdToLong(evt.Id));
     }
 
+
     /*
         16761513606580 -> 1676151360658-0
     */
@@ -148,7 +150,7 @@ public class RedisStore : IEventStore
     {
         if (position == StreamReadPosition.Start)
             return "0-0";
-        return new RedisValue($"{position.Value/10}-{position.Value%10}");
+        return new RedisValue($"{position.Value/10}-{(position.Value +1)%10}");
     }
 
     /*
