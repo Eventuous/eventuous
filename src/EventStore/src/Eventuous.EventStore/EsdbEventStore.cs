@@ -264,7 +264,7 @@ public class EsdbEventStore : IEventStore {
 
     StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent) {
         var deserialized = _serializer.DeserializeEvent(
-            resolvedEvent.Event.Data.ToArray(),
+            resolvedEvent.Event.Data.Span,
             resolvedEvent.Event.EventType,
             resolvedEvent.Event.ContentType
         );
@@ -278,7 +278,7 @@ public class EsdbEventStore : IEventStore {
         };
 
         Metadata? DeserializeMetadata() {
-            var meta = resolvedEvent.Event.Metadata.ToArray();
+            var meta = resolvedEvent.Event.Metadata.Span;
 
             try {
                 return meta.Length == 0 ? null : _metaSerializer.Deserialize(meta);
