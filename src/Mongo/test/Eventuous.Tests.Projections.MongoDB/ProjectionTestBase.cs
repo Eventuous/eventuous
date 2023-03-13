@@ -1,24 +1,23 @@
-using Eventuous.AspNetCore.Web;
+using Eventuous.AspNetCore;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Subscriptions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using static Eventuous.Tests.Projections.MongoDB.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Projections.MongoDB; 
 
-public class ProjectionTestBase<TProjection> : IDisposable where TProjection : class, IEventHandler {
-    readonly TestServer _host;
+public class ProjectionTestBase<TProjection> : IAsyncLifetime where TProjection : class, IEventHandler {
+    readonly IHost _host;
 
     protected ProjectionTestBase(string id,  ITestOutputHelper output) {
-        var builder = new WebHostBuilder()
+        var builder = Host.CreateDefaultBuilder()
             .ConfigureLogging(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Trace))
-            .ConfigureServices(collection => ConfigureServices(collection, id))
-            .Configure(x => x.UseEventuousLogs());
+            .ConfigureServices(collection => ConfigureServices(collection, id));
 
-        _host = new TestServer(builder);
+        _host = builder.Build();
+        _host.AddEventuousLogs();
     }
 
     static void ConfigureServices(IServiceCollection services, string id)
@@ -31,7 +30,11 @@ public class ProjectionTestBase<TProjection> : IDisposable where TProjection : c
                 builder => builder.AddEventHandler<TProjection>()
             );
 
-    public void Dispose() => _host.Dispose();
-    
     protected string CreateId() => new(Guid.NewGuid().ToString("N"));
+
+    public Task InitializeAsync()
+        => _host.StartAsync();
+
+    public Task DisposeAsync()
+        => _host.StopAsync();
 }

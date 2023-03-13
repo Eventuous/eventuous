@@ -1,61 +1,61 @@
 <Project>
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  </PropertyGroup>
-  <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net6.0'">
-    <MicrosoftExtensionsVer>6.0</MicrosoftExtensionsVer>
-    <MicrosoftTestHostVer>[6.0.5,7)</MicrosoftTestHostVer>
-  </PropertyGroup>
-  <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net7.0'">
-    <MicrosoftExtensionsVer>7.0</MicrosoftExtensionsVer>
-    <MicrosoftTestHostVer>7.0.2</MicrosoftTestHostVer>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageVersion Include="BenchmarkDotNet" Version="0.13.4" />
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(MicrosoftExtensionsVer)" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftExtensionsVer)" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsVer)" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVer)" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsVer)" />
-    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftExtensionsVer)" />
-    <PackageVersion Include="System.Reactive" Version="5.0.0" />
-    <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9.4" />
-    <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="22.0.0" />
-    <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="22.0.0" />
-    <PackageVersion Include="MongoDB.Driver" Version="2.19.0" />
-    <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.3.0" />
-    <PackageVersion Include="Confluent.Kafka" Version="2.0.2" />
-    <PackageVersion Include="Npgsql" Version="6.0.4" />
-    <PackageVersion Include="RabbitMQ.Client" Version="6.4.0" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.0" />
-    <PackageVersion Include="NEST" Version="7.17.2" />
-    <PackageVersion Include="Polly" Version="7.2.3" />
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageVersion Include="StackExchange.Redis" Version="2.6.90" />
-  </ItemGroup>
-  <ItemGroup Label="References for packable projects">
-    <PackageVersion Include="MinVer" Version="4.3.0" PrivateAssets="All" />
-    <PackageVersion Include="JetBrains.Annotations" Version="2022.3.1" PrivateAssets="All" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-  </ItemGroup>
-  <ItemGroup Label="References for test projects">
-    <PackageVersion Include="AutoFixture" Version="4.17.0" />
-    <PackageVersion Include="Bogus" Version="34.0.2" />
-    <PackageVersion Include="FluentAssertions" Version="6.9.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
-    <PackageVersion Include="xunit" Version="2.4.2" />
-    <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" PrivateAssets="All" />
-    <PackageVersion Include="coverlet.collector" Version="3.2.0" PrivateAssets="All" />
-    <PackageVersion Include="Xunit.Extensions.Logging" Version="1.1.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(MicrosoftTestHostVer)" />
-    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)" />
-    <PackageVersion Include="RestSharp" Version="107.3.0" />
-    <PackageVersion Include="Hypothesist" Version="2.1.50" />
-    <PackageVersion Include="NodaTime" Version="3.1.6" />
-    <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
-    <PackageVersion Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0" />
-    <PackageVersion Include="MongoDb.Bson.NodaTime" Version="3.0.0" />
-  </ItemGroup>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+    <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net6.0'">
+        <MicrosoftExtensionsVer>6.0</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>[6.0.5,7)</MicrosoftTestHostVer>
+    </PropertyGroup>
+    <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net7.0'">
+        <MicrosoftExtensionsVer>7.0</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>7.0.2</MicrosoftTestHostVer>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageVersion Include="BenchmarkDotNet" Version="0.13.4"/>
+        <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(MicrosoftExtensionsVer)"/>
+        <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftExtensionsVer)"/>
+        <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsVer)"/>
+        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVer)"/>
+        <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsVer)"/>
+        <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftExtensionsVer)"/>
+        <PackageVersion Include="System.Reactive" Version="5.0.0"/>
+        <PackageVersion Include="System.Linq.Async" Version="6.0.1"/>
+        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9.4"/>
+        <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="22.0.0"/>
+        <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="22.0.0"/>
+        <PackageVersion Include="MongoDB.Driver" Version="2.19.0"/>
+        <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.3.0"/>
+        <PackageVersion Include="Confluent.Kafka" Version="2.0.2"/>
+        <PackageVersion Include="Npgsql" Version="6.0.4"/>
+        <PackageVersion Include="RabbitMQ.Client" Version="6.4.0"/>
+        <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.0"/>
+        <PackageVersion Include="NEST" Version="7.17.2"/>
+        <PackageVersion Include="Polly" Version="7.2.3"/>
+        <PackageVersion Include="Newtonsoft.Json" Version="13.0.1"/>
+        <PackageVersion Include="StackExchange.Redis" Version="2.6.90"/>
+    </ItemGroup>
+    <ItemGroup Label="References for packable projects">
+        <PackageVersion Include="MinVer" Version="4.3.0" PrivateAssets="All"/>
+        <PackageVersion Include="JetBrains.Annotations" Version="2022.3.1" PrivateAssets="All"/>
+        <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
+    </ItemGroup>
+    <ItemGroup Label="References for test projects">
+        <PackageVersion Include="AutoFixture" Version="4.17.0"/>
+        <PackageVersion Include="Bogus" Version="34.0.2"/>
+        <PackageVersion Include="FluentAssertions" Version="6.9.0"/>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.4.0"/>
+        <PackageVersion Include="xunit" Version="2.4.2"/>
+        <PackageVersion Include="xunit.abstractions" Version="2.0.3"/>
+        <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" PrivateAssets="All"/>
+        <PackageVersion Include="coverlet.collector" Version="3.2.0" PrivateAssets="All"/>
+        <PackageVersion Include="Xunit.Extensions.Logging" Version="1.1.0"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(MicrosoftTestHostVer)"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)"/>
+        <PackageVersion Include="RestSharp" Version="107.3.0"/>
+        <PackageVersion Include="Hypothesist" Version="2.1.50"/>
+        <PackageVersion Include="NodaTime" Version="3.1.6"/>
+        <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0"/>
+        <PackageVersion Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0"/>
+        <PackageVersion Include="MongoDb.Bson.NodaTime" Version="3.0.0"/>
+    </ItemGroup>
 </Project>

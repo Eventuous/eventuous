@@ -3,10 +3,10 @@
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
         <IncludeTestHost>true</IncludeTestHost>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
         <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
     </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@
 
 This package adds several DI extensions for `IServiceCollection`:
 
-- `AddApplicationService` to register app services
+- `AddCommandService` to register app services
 - `AddAggregateStore` to register the `AggregateStore` and a given `IEventStore`
 - `AddAggregate` to register aggregate types that require dependencies
 
