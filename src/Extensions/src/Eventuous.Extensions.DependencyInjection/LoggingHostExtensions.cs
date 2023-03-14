@@ -4,7 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.AspNetCore;
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.Hosting;
 
 [PublicAPI]
 public static class LoggingAppBuilderExtensions {
@@ -15,6 +16,16 @@ public static class LoggingAppBuilderExtensions {
     /// <param name="level">Event level, default is Verbose. Decrease the level to improve performance.</param>
     /// <param name="keywords">Event keywords, default is All</param>
     /// <returns></returns>
+    public static IHost UseEventuousLogs(
+        this IHost    host,
+        EventLevel    level    = EventLevel.Verbose,
+        EventKeywords keywords = EventKeywords.All
+    ) {
+        AddEventuousLogs(host.Services, level, keywords);
+        return host;
+    }
+
+    [Obsolete("Use UseEventuousLogs instead")]
     public static IHost AddEventuousLogs(
         this IHost    host,
         EventLevel    level    = EventLevel.Verbose,
@@ -25,12 +36,12 @@ public static class LoggingAppBuilderExtensions {
     }
 
     /// <summary>
-    /// Add Eventuous logging from internal event sources to the application logging
+    /// Adds the Eventuous logging from internal event sources to the application logging.
+    /// You'd not normally call this method directly, but use <see cref="UseEventuousLogs"/>
     /// </summary>
-    /// <param name="provider">DI container, which has a logger factory registered</param>
-    /// <param name="level">Event level, default is Verbose. Decrease the level to improve performance.</param>
-    /// <param name="keywords">Event keywords, default is All</param>
-    /// <returns></returns>
+    /// <param name="provider"></param>
+    /// <param name="level"></param>
+    /// <param name="keywords"></param>
     public static void AddEventuousLogs(
         this IServiceProvider provider,
         EventLevel            level    = EventLevel.Verbose,

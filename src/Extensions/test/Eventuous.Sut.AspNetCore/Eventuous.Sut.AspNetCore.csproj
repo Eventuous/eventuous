@@ -5,7 +5,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="Eventuous" />

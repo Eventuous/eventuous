@@ -8,6 +8,7 @@
     <ItemGroup>
         <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
         <ProjectReference Include="$(LocalRoot)\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
+        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />

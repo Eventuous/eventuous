@@ -1,9 +1,9 @@
-﻿using Eventuous.AspNetCore;
-using Eventuous.Tests.AspNetCore.Sut;
+﻿using Eventuous.Tests.AspNetCore.Sut;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Tests.AspNetCore;
 

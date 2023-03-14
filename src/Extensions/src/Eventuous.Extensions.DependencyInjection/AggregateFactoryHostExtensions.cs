@@ -1,7 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+// ReSharper disable CheckNamespace
 
-namespace Eventuous.AspNetCore;
+namespace Microsoft.Extensions.Hosting;
 
 [PublicAPI]
 public static class AggregateFactoryBuilderExtensions {

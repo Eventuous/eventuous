@@ -1,4 +1,3 @@
-using Eventuous.AspNetCore;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Subscriptions;
@@ -17,7 +16,7 @@ public class ProjectionTestBase<TProjection> : IAsyncLifetime where TProjection 
             .ConfigureServices(collection => ConfigureServices(collection, id));
 
         _host = builder.Build();
-        _host.AddEventuousLogs();
+        _host.UseEventuousLogs();
     }
 
     static void ConfigureServices(IServiceCollection services, string id)

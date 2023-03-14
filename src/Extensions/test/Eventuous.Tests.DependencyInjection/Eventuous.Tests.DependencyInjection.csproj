@@ -4,9 +4,10 @@
         <IsPackable>false</IsPackable>
         <IncludeTestHost>true</IncludeTestHost>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <RootNamespace>Eventuous.Tests.AspNetCore</RootNamespace>
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
     </ItemGroup>
 </Project>
