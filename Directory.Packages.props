@@ -20,7 +20,7 @@
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="System.Reactive" Version="5.0.0" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9.4" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.4.0" />
     <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="22.0.0" />
     <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="22.0.0" />
     <PackageVersion Include="MongoDB.Driver" Version="2.19.0" />

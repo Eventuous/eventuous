@@ -120,7 +120,7 @@ public class RegistrationTests {
                     .AddEventHandler<Handler2>()
             );
 
-            services.AddOpenTelemetryMetrics(builder => builder.AddEventuousSubscriptions());
+            services.AddOpenTelemetry().WithMetrics(builder => builder.AddEventuousSubscriptions());
         }
 
         public void Configure(IApplicationBuilder app) { }
