@@ -35,7 +35,7 @@ public static class MeterProviderBuilderExtensions {
 
     static MeterProviderBuilder AddMetrics<T>(this MeterProviderBuilder builder, TagList? customTags = null)
         where T : class, IWithCustomTags {
-        builder.GetServices().AddSingleton<T>();
+        builder.ConfigureServices(services => services.AddSingleton<T>());
 
         return builder is IDeferredMeterProviderBuilder deferredMeterProviderBuilder
             ? deferredMeterProviderBuilder.Configure(
@@ -48,6 +48,7 @@ public static class MeterProviderBuilderExtensions {
                         }
                     );
                 }
-            ) : builder;
+            )
+            : builder;
     }
 }
