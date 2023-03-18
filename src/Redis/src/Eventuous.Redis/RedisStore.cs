@@ -3,6 +3,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using Eventuous.Diagnostics;
 using StackExchange.Redis;
+using Eventuous.Redis.Extension;
 
 namespace Eventuous.Redis;
 
@@ -37,7 +38,7 @@ public class RedisStore : IEventStore
         CancellationToken  cancellationToken
     ) {
             var nextPosition = new StreamReadPosition(start.Value + 1);
-            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), ULongToStreamId(nextPosition), null, count);
+            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), nextPosition.ToRedisValue(), null, count);
             if (result == null)
                 throw new StreamNotFound(stream);
             return result.Select(x => ToStreamEvent(x)).ToArray();        
@@ -76,7 +77,8 @@ public class RedisStore : IEventStore
 
         try {
             var response = (string[]?)await database.ExecuteAsync("FCALL", fCallParams);
-            return new AppendEventsResult(StreamIdToULong(response?[1]), Convert.ToInt64(response?[0]));
+            var position = new RedisValue(response?[1]!);
+            return new AppendEventsResult(position.ToULong(), Convert.ToInt64(response?[0]));
         }
         catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
             PersistenceEventSource.Log.UnableToAppendEvents(stream, e);
@@ -136,31 +138,6 @@ public class RedisStore : IEventStore
             _ => throw new Exception("Unknown deserialization result")
         };
         StreamEvent AsStreamEvent(object payload)
-            => new(Guid.Parse(evt["message_id"].ToString()), payload, meta ?? new Metadata(), ContentType, StreamIdToLong(evt.Id));
-    }
-
-    /*
-        16761513606580 -> 1676151360658-0
-    */
-    static RedisValue ULongToStreamId(StreamReadPosition position) {
-        if (position == StreamReadPosition.Start) return "0-0";
-
-        return new RedisValue($"{position.Value / 10}-{position.Value % 10}");
-    }
-
-    /*
-        1676151360658-0 -> 16761513606580
-    */
-    static ulong StreamIdToULong(RedisValue value) {
-        var parts = ((string?)value)?.Split('-');
-        return Convert.ToUInt64(parts?[0]) * 10 + Convert.ToUInt64(parts?[1]);
-    }
-
-    /*
-        1676151360658-0 -> 16761513606580
-    */
-    static long StreamIdToLong(RedisValue value) {
-        var parts = ((string?)value)?.Split('-');
-        return Convert.ToInt64(parts?[0]) * 10 + Convert.ToInt64(parts?[1]);
+            => new(Guid.Parse(evt["message_id"].ToString()), payload, meta ?? new Metadata(), ContentType, evt.Id.ToLong());
     }
 }
