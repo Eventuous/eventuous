@@ -13,8 +13,8 @@ public static class Extensions
         return Convert.ToUInt64(parts?[0]) * 10 + Convert.ToUInt64(parts?[1]);
     }
 
-    public static RedisValue ToRedisValue(this StreamReadPosition position) {
-        if (position == StreamReadPosition.Start) return "0-0";
-        return new RedisValue($"{position.Value / 10}-{position.Value % 10}");
+    public static RedisValue ToRedisValue(this long position) {
+        if (position == 0) return "0-0";
+        return new RedisValue($"{position / 10}-{position % 10}");
     }
 }

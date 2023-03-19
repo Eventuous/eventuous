@@ -52,7 +52,7 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
     Task? _runner;
 
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
-        var start = position.HasValue ? (long)position : -1;
+        var start = position.HasValue ? (long)position : 0;
 
         while (!cancellationToken.IsCancellationRequested) {
             try {

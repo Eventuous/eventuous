@@ -24,24 +24,29 @@ public class RedisAllStreamSubscription : RedisSubscriptionBase<RedisSubscriptio
 
     protected override async Task<PersistentEvent[]> ReadEvents(IDatabase database, long position)
     {
-        var allEvents = await database.StreamReadAsync("_all", (RedisValue)position, 100);
+        var linkedEvents = await database.StreamReadAsync("_all", position.ToRedisValue(), 100);
+        var persistentEvents = new List<PersistentEvent>();
 
-        var positions = allEvents.Select(allEvent => new StreamPosition(
-            new RedisKey(allEvent["stream"]), allEvent["position"]
-        )).ToArray();
-        
-        var streams = await database.StreamReadAsync(positions, 1);
+        foreach(var linkEvent in linkedEvents) {
+            var stream = linkEvent["stream"];
+            var streamPosition = linkEvent["position"];
 
-        return streams.Select( stream => new PersistentEvent(
-            Guid.Parse(stream.Entries[0]["message_id"]!),
-            stream.Entries[0]["message_type"]!,
-            stream.Entries[0].Id.ToLong(),
-            stream.Entries[0].Id.ToLong(),
-            stream.Entries[0]["json_data"]!,
-            stream.Entries[0]["json_metadata"],
-            System.DateTime.Parse(stream.Entries[0]["created"]!),
-            stream.Key!
-        )).ToArray();
+            var streamEvents = await database.StreamRangeAsync(new RedisKey(stream), streamPosition);
+            var entry = streamEvents[0];
+
+            DateTime date;
+            System.DateTime.TryParse(entry["created"]!, out date);
+            persistentEvents.Add(new PersistentEvent(
+                Guid.Parse(entry["message_id"]!),
+                entry["message_type"]!,
+                entry.Id.ToLong(),
+                entry.Id.ToLong(),
+                entry["json_data"]!,
+                entry["json_metadata"],
+                date,
+                stream!));
+        }
+        return persistentEvents.ToArray();
     }
 
     protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 

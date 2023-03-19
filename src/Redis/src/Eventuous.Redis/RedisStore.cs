@@ -38,7 +38,7 @@ public class RedisStore : IEventStore
         CancellationToken  cancellationToken
     ) {
             var nextPosition = new StreamReadPosition(start.Value + 1);
-            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), nextPosition.ToRedisValue(), null, count);
+            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), nextPosition.Value.ToRedisValue(), null, count);
             if (result == null)
                 throw new StreamNotFound(stream);
             return result.Select(x => ToStreamEvent(x)).ToArray();        
@@ -77,8 +77,9 @@ public class RedisStore : IEventStore
 
         try {
             var response = (string[]?)await database.ExecuteAsync("FCALL", fCallParams);
-            var position = new RedisValue(response?[1]!);
-            return new AppendEventsResult(position.ToULong(), Convert.ToInt64(response?[0]));
+            var streamPosition = response?[0];
+            var globalPosition = response?[1];
+            return new AppendEventsResult(new RedisValue(globalPosition!).ToULong(), Convert.ToInt64(streamPosition));
         }
         catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
             PersistenceEventSource.Log.UnableToAppendEvents(stream, e);

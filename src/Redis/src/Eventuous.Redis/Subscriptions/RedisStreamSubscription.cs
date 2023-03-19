@@ -31,17 +31,22 @@ public class RedisStreamSubscription : RedisSubscriptionBase<RedisSubscriptionBa
 
     protected override async Task<PersistentEvent[]> ReadEvents(IDatabase database, long position)
     {
-        var evts = await database.StreamReadAsync(_streamName, (RedisValue)position, 100);
-        return evts.Select( evt => new PersistentEvent (
-            Guid.Parse(evt["message_id"]!),
-            evt["message_type"]!,
-            evt.Id.ToLong(),
-            evt.Id.ToLong(),
-            evt["json_data"]!,
-            evt["json_metadata"],
-            System.DateTime.Parse(evt["created"]!),
-            _streamName
-        )).ToArray();
+        var evts = await database.StreamReadAsync(_streamName, position.ToRedisValue(), 100);
+        return evts.Select( evt =>  {
+
+            DateTime date;
+            System.DateTime.TryParse(evt["created"]!, out date);
+            return new PersistentEvent (
+                Guid.Parse(evt["message_id"]!),
+                evt["message_type"]!,
+                evt.Id.ToLong(),
+                evt.Id.ToLong(),
+                evt["json_data"]!,
+                evt["json_metadata"],
+                date,
+                _streamName);
+        }
+        ).ToArray();
     }
 
     readonly string _streamName;
