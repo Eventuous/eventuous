@@ -8,6 +8,7 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Redis.Subscriptions;
 
+[Collection("Sequential")]
 public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     public SubscribeToAll(ITestOutputHelper outputHelper)
         : base(outputHelper, true, false) {

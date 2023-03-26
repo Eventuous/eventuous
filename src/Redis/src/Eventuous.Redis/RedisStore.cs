@@ -37,8 +37,7 @@ public class RedisStore : IEventStore
         int                count,
         CancellationToken  cancellationToken
     ) {
-            var nextPosition = new StreamReadPosition(start.Value + 1);
-            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), nextPosition.Value.ToRedisValue(), null, count);
+            var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count);
             if (result == null)
                 throw new StreamNotFound(stream);
             return result.Select(x => ToStreamEvent(x)).ToArray();        

@@ -3,6 +3,7 @@ using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
 
+[Collection("Sequential")]
 public class ReadEvents {
 
     [Fact]
