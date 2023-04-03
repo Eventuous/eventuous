@@ -1,7 +1,7 @@
 namespace Eventuous;
 
 [Obsolete("Use State<T> instead")]
-public abstract record AggregateState<T>: State<T> where T: AggregateState<T> { }
+public abstract record AggregateState<T> : State<T> where T : AggregateState<T> { }
 
 [PublicAPI]
 public abstract record State<T> where T : State<T> {
@@ -23,4 +23,9 @@ public abstract record State<T> where T : State<T> {
     }
 
     readonly Dictionary<Type, Func<T, object, T>> _handlers = new();
+}
+
+[PublicAPI]
+public abstract record State<T, TId> : State<T> where T : State<T> where TId : AggregateId {
+    public TId Id { get; internal set; } = null!;
 }

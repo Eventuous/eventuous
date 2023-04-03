@@ -3,9 +3,9 @@
         <RootNamespace>Eventuous</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-      <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">
-        <LogicalName>Eventuous.ExceptionMessages.resources</LogicalName>
-      </EmbeddedResource>
+        <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">
+            <LogicalName>Eventuous.ExceptionMessages.resources</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
@@ -13,6 +13,9 @@
         </Compile>
     </ItemGroup>
     <ItemGroup>
-      <None Remove="Eventuous.Domain.csproj.DotSettings" />
+        <None Remove="Eventuous.Domain.csproj.DotSettings"/>
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Eventuous.Persistence"/>
     </ItemGroup>
 </Project>
