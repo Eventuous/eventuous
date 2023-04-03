@@ -1,6 +1,7 @@
 using Eventuous.Sut.App;
 using MicroElements.AutoFixture.NodaTime;
 using NodaTime;
+using static Eventuous.Tests.Redis.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Redis.Fixtures;
 
