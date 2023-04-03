@@ -7,14 +7,8 @@
         <ProjectReference Include="..\Eventuous.Persistence\Eventuous.Persistence.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="..\Eventuous.Diagnostics\DiagnosticName.cs">
-            <Link>Diagnostics\DiagnosticName.cs</Link>
-        </Compile>
         <Compile Include="..\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
-        </Compile>
-        <Compile Include="..\Eventuous.Shared\Tools\TaskExtensions.cs">
-            <Link>Tools\TaskExtensions.cs</Link>
         </Compile>
     </ItemGroup>
     <ItemGroup>

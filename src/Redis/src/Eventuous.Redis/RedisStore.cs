@@ -3,26 +3,32 @@ using System.Runtime.Serialization;
 using System.Text;
 using Eventuous.Diagnostics;
 using StackExchange.Redis;
+using Eventuous.Redis.Extension;
 
 namespace Eventuous.Redis;
 
 public delegate IDatabase GetRedisDatabase();
 
-public class RedisStore : IEventStore {
-    readonly GetRedisDatabase    _getDatabase;
-    readonly IEventSerializer    _serializer;
-    readonly IMetadataSerializer _metaSerializer;
+public record RedisStoreOptions();
+
+public class RedisStore : IEventStore
+{
+    readonly GetRedisDatabase       _getDatabase;
+    readonly IEventSerializer       _serializer;
+    readonly IMetadataSerializer    _metaSerializer;
 
     public RedisStore(
-        GetRedisDatabase     getDatabase,
-        IEventSerializer?    serializer     = null,
-        IMetadataSerializer? metaSerializer = null
-    ) {
+        GetRedisDatabase getDatabase,
+        RedisStoreOptions  options,
+        IEventSerializer?     serializer     = null,
+        IMetadataSerializer?  metaSerializer = null
+    )
+    {
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
-        _getDatabase    = Ensure.NotNull(getDatabase, "Connection factory");
+        _getDatabase  = Ensure.NotNull(getDatabase, "Connection factory");
+        
     }
-
     const string ContentType = "application/json";
 
     public async Task<StreamEvent[]> ReadEvents(
@@ -31,10 +37,10 @@ public class RedisStore : IEventStore {
         int                count,
         CancellationToken  cancellationToken
     ) {
-        var result = await _getDatabase().StreamRangeAsync(stream.ToString(), ULongToStreamId(start), null, count);
-        if (result == null) throw new StreamNotFound(stream);
-
-        return result.Select(x => ToStreamEvent(x)).ToArray();
+            var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count);
+            if (result == null)
+                throw new StreamNotFound(stream);
+            return result.Select(x => ToStreamEvent(x)).ToArray();        
     }
 
     public async Task<AppendEventsResult> AppendEvents(
@@ -70,7 +76,9 @@ public class RedisStore : IEventStore {
 
         try {
             var response = (string[]?)await database.ExecuteAsync("FCALL", fCallParams);
-            return new AppendEventsResult(StreamIdToULong(response?[1]), Convert.ToInt64(response?[0]));
+            var streamPosition = response?[0];
+            var globalPosition = response?[1];
+            return new AppendEventsResult(new RedisValue(globalPosition!).ToULong(), Convert.ToInt64(streamPosition));
         }
         catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
             PersistenceEventSource.Log.UnableToAppendEvents(stream, e);
@@ -129,33 +137,7 @@ public class RedisStore : IEventStore {
             ),
             _ => throw new Exception("Unknown deserialization result")
         };
-
         StreamEvent AsStreamEvent(object payload)
-            => new(Guid.Parse(evt["message_id"].ToString()), payload, meta ?? new Metadata(), ContentType, StreamIdToLong(evt.Id));
-    }
-
-    /*
-        16761513606580 -> 1676151360658-0
-    */
-    static RedisValue ULongToStreamId(StreamReadPosition position) {
-        if (position == StreamReadPosition.Start) return "0-0";
-
-        return new RedisValue($"{position.Value / 10}-{position.Value % 10}");
-    }
-
-    /*
-        1676151360658-0 -> 16761513606580
-    */
-    static ulong StreamIdToULong(RedisValue value) {
-        var parts = ((string?)value)?.Split('-');
-        return Convert.ToUInt64(parts?[0]) * 10 + Convert.ToUInt64(parts?[1]);
-    }
-
-    /*
-        1676151360658-0 -> 16761513606580
-    */
-    static long StreamIdToLong(RedisValue value) {
-        var parts = ((string?)value)?.Split('-');
-        return Convert.ToInt64(parts?[0]) * 10 + Convert.ToInt64(parts?[1]);
+            => new(Guid.Parse(evt["message_id"].ToString()), payload, meta ?? new Metadata(), ContentType, evt.Id.ToLong());
     }
 }

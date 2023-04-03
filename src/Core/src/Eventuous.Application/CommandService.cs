@@ -89,6 +89,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
+    [PublicAPI]
     protected void OnExistingAsync<TCommand>(
         GetIdFromCommand<TId, TCommand>           getId,
         ActOnAggregateAsync<TAggregate, TCommand> action
@@ -104,6 +105,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
+    [PublicAPI]
     protected void OnExistingAsync<TCommand>(
         GetIdFromCommandAsync<TId, TCommand>      getId,
         ActOnAggregateAsync<TAggregate, TCommand> action
@@ -134,6 +136,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="action">Action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
+    [PublicAPI]
     protected void OnAny<TCommand>(
         GetIdFromCommandAsync<TId, TCommand> getId,
         ActOnAggregate<TAggregate, TCommand> action
@@ -149,6 +152,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
+    [PublicAPI]
     protected void OnAnyAsync<TCommand>(
         GetIdFromCommand<TId, TCommand>           getId,
         ActOnAggregateAsync<TAggregate, TCommand> action
@@ -164,6 +168,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
+    [PublicAPI]
     protected void OnAnyAsync<TCommand>(
         GetIdFromCommandAsync<TId, TCommand>      getId,
         ActOnAggregateAsync<TAggregate, TCommand> action
@@ -177,6 +182,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// </summary>
     /// <param name="action">Function, which returns some aggregate instance to store</param>
     /// <typeparam name="TCommand">Command type</typeparam>
+    [PublicAPI]
     protected void OnAsync<TCommand>(ArbitraryActAsync<TCommand> action)
         where TCommand : class
         => _handlers.AddHandler<TCommand>(
@@ -211,20 +217,13 @@ public abstract class CommandService<TAggregate, TState, TId>
 
         var aggregateId = await getId(command, cancellationToken).NoContext();
 
-        var streamName = _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
-
         try {
             var aggregate = registeredHandler.ExpectedState switch {
-                ExpectedState.Any => await Store.LoadOrNew<TAggregate>(streamName, cancellationToken)
-                    .NoContext(),
-                ExpectedState.Existing => await Store.Load<TAggregate>(streamName, cancellationToken)
-                    .NoContext(),
-                ExpectedState.New     => Create(),
-                ExpectedState.Unknown => default,
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(registeredHandler.ExpectedState),
-                    "Unknown expected state"
-                )
+                ExpectedState.Any      => await Store.LoadOrNew<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
+                ExpectedState.Existing => await Store.Load<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
+                ExpectedState.New      => Create(aggregateId),
+                ExpectedState.Unknown  => default,
+                _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
             var result = await registeredHandler
@@ -234,14 +233,7 @@ public abstract class CommandService<TAggregate, TState, TId>
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
-            var storeResult = await Store.Store(
-                    streamName != default
-                        ? streamName
-                        : GetAggregateStreamName(),
-                    result,
-                    cancellationToken
-                )
-                .NoContext();
+            var storeResult = await Store.Store(GetAggregateStreamName(), result, cancellationToken).NoContext();
 
             var changes = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
 
@@ -255,8 +247,8 @@ public abstract class CommandService<TAggregate, TState, TId>
             return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
         }
 
-        TAggregate Create()
-            => _factoryRegistry.CreateInstance<TAggregate, TState>();
+        TAggregate Create(TId id)
+            => _factoryRegistry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
 
         StreamName GetAggregateStreamName()
             => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);

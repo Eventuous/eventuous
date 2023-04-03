@@ -1,6 +1,7 @@
 using Eventuous.Tests.Redis.Fixtures;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
+using static Eventuous.Tests.Redis.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Redis.Store;
 
@@ -21,22 +22,16 @@ public static class Helpers {
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     public static Task<AppendEventsResult> AppendEvents(
-        this IEventStore      store,
         StreamName            stream,
         object[]              evt,
         ExpectedStreamVersion version
     ) {
         var streamEvents = evt.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
-        return store.AppendEvents(stream, version, streamEvents.ToArray(), default);
+        return Instance.EventStore.AppendEvents(stream, version, streamEvents.ToArray(), default);
     }
 
-    public static Task<AppendEventsResult> AppendEvent(
-        this IEventStore      store,
-        StreamName            stream,
-        object                evt,
-        ExpectedStreamVersion version
-    ) {
+    public static Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version) {
         var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
-        return store.AppendEvents(stream, version, new[] { streamEvent }, default);
+        return Instance.EventStore.AppendEvents(stream, version, new[] { streamEvent }, default);
     }
 }
