@@ -161,7 +161,7 @@ public static partial class RouteBuilderExtensions {
     }
 
     /// <summary>
-    /// Maps commands that are annotated either with <seealso cref="AggregateCommands"/> and/or
+    /// Maps commands that are annotated either with <seealso cref="AggregateCommandsAttribute"/> and/or
     /// <seealso cref="HttpCommandAttribute"/> in given assemblies. Will use assemblies of the current
     /// application domain if no assembly is specified explicitly.
     /// </summary>

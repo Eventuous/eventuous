@@ -1,11 +1,12 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Microsoft.Extensions.DependencyInjection;
+using Eventuous.Producers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
-namespace Eventuous.Producers;
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection;
 
 [PublicAPI]
 public static class RegistrationExtensions {
