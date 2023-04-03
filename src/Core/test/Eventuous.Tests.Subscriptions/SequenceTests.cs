@@ -1,6 +1,6 @@
-using Eventuous.AspNetCore;
 using Eventuous.Subscriptions.Checkpoints;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Xunit.Extensions.Logging;
 
 namespace Eventuous.Tests.Subscriptions;

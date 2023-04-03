@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Eventuous.Sut.App;
 using Eventuous.Sut.AspNetCore;
 using Eventuous.Sut.Domain;
 using Microsoft.AspNetCore.Http.Json;

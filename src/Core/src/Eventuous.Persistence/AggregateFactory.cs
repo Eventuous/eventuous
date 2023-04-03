@@ -5,7 +5,7 @@ namespace Eventuous;
 
 /// <summary>
 /// The aggregate factory registry allows customising the way how aggregate instances are
-/// created by <see cref="AggregateStore"/> and <see cref="ApplicationService{T,TState,TId}"/>
+/// created by <see cref="AggregateStore"/> and <see langword="CommandService{T,TState,TId}"/>
 /// </summary>
 public class AggregateFactoryRegistry {
     /// <summary>

@@ -47,8 +47,8 @@ public static partial class RouteBuilderExtensions {
         string?                                 route,
         EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
         string?                                 policyName    = null
-    ) where TAggregate : Aggregate where TCommand : class {
-        return Map<TAggregate, TCommand, TCommand>(
+    ) where TAggregate : Aggregate where TCommand : class
+        => Map<TAggregate, TCommand, TCommand>(
             builder,
             route,
             enrichCommand != null
@@ -56,7 +56,6 @@ public static partial class RouteBuilderExtensions {
                 : (command, _) => command,
             policyName
         );
-    }
 
     /// <summary>
     /// Creates an instance of <see cref="CommandServiceRouteBuilder{T}"/> for a given aggregate type, so you

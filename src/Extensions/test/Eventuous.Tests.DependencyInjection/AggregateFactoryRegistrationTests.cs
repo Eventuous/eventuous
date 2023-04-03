@@ -1,9 +1,9 @@
-﻿using Eventuous.AspNetCore.Web;
-using Eventuous.Tests.AspNetCore.Sut;
+﻿using Eventuous.Tests.AspNetCore.Sut;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Tests.AspNetCore;
 
@@ -52,6 +52,6 @@ public class AggregateFactoryRegistrationTests {
             services.AddAggregate<AnotherTestAggregate>();
         }
 
-        public void Configure(IApplicationBuilder app) => app.UseAggregateFactory();
+        public void Configure(WebApplication app) => app.UseAggregateFactory();
     }
 }

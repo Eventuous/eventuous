@@ -31,8 +31,8 @@ public record BookingState : State<BookingState, BookingId> {
 
     ImmutableArray<Payment> _registeredPayments = ImmutableArray<Payment>.Empty;
 
-    public Money Price      { get; private init; }
-    public Money AmountPaid { get; private init; }
+    public Money Price      { get; private init; } = null!;
+    public Money AmountPaid { get; private init; } = null!;
 
     public bool IsFullyPaid()
         => AmountPaid.Amount >= Price.Amount;
