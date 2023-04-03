@@ -6,7 +6,7 @@ namespace Eventuous.AspNetCore.Web;
 public static class AggregateFactoryBuilderExtensions {
     /// <summary>
     /// Adds registered aggregate factories to the registry. The registry is then used by
-    /// <see cref="ApplicationService{T,TState,TId}"/> and <see cref="AggregateStore"/>
+    /// <see cref="CommandService{T,TState,TId}"/> and <see cref="AggregateStore"/>
     /// </summary>
     /// <param name="builder"></param>
     /// <returns></returns>
