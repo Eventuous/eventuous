@@ -17,15 +17,16 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.4" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="System.Reactive" Version="5.0.0" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9.4" />
-    <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="22.0.0" />
-    <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="22.0.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.4.0" />
+    <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="23.0.0" />
+    <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.0.0" />
     <PackageVersion Include="MongoDB.Driver" Version="2.19.0" />
     <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.3.0" />
     <PackageVersion Include="Confluent.Kafka" Version="2.0.2" />
@@ -36,6 +37,7 @@
     <PackageVersion Include="NEST" Version="7.17.2" />
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageVersion Include="StackExchange.Redis" Version="2.6.90" />
   </ItemGroup>
   <ItemGroup Label="References for packable projects">
     <PackageVersion Include="MinVer" Version="4.3.0" PrivateAssets="All" />

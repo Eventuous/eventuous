@@ -1,5 +1,4 @@
 using Bogus;
-using Eventuous.AspNetCore;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;

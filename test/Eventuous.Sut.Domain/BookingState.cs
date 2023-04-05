@@ -3,7 +3,7 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Sut.Domain;
 
-public record BookingState : State<BookingState> {
+public record BookingState : State<BookingState, BookingId> {
     public BookingState() {
         On<RoomBooked>(
             (state, booked) => state with {
@@ -31,8 +31,8 @@ public record BookingState : State<BookingState> {
 
     ImmutableArray<Payment> _registeredPayments = ImmutableArray<Payment>.Empty;
 
-    public Money Price      { get; private init; }
-    public Money AmountPaid { get; private init; }
+    public Money Price      { get; private init; } = null!;
+    public Money AmountPaid { get; private init; } = null!;
 
     public bool IsFullyPaid()
         => AmountPaid.Amount >= Price.Amount;

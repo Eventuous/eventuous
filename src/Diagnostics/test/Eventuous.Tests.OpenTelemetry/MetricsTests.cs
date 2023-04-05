@@ -2,11 +2,13 @@ using Eventuous.Diagnostics;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Sut.Subs;
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace Eventuous.Tests.OpenTelemetry;
 
 public sealed class MetricsTests : IAsyncLifetime, IDisposable {
-    static MetricsTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static MetricsTests()
+        => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     const string SubscriptionId = "test-sub";
 
@@ -18,7 +20,7 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
         _output   = outputHelper;
 
         _es = new TestEventListener(outputHelper);
-        
+
         EventuousDiagnostics.AddDefaultTag("test", "foo");
 
         var builder = new WebHostBuilder()
@@ -36,11 +38,12 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
                             .AddEventHandler<TestHandler>()
                     );
 
-                    services.AddOpenTelemetryMetrics(
-                        builder => builder
-                            .AddEventuousSubscriptions()
-                            .AddReader(new BaseExportingMetricReader(_exporter))
-                    );
+                    services.AddOpenTelemetry()
+                        .WithMetrics(
+                            builder => builder
+                                .AddEventuousSubscriptions()
+                                .AddReader(new BaseExportingMetricReader(_exporter))
+                        );
                 }
             )
             .ConfigureLogging(cfg => cfg.AddXunit(outputHelper));
@@ -49,7 +52,8 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
     }
 
     [Fact]
-    public void CollectorShouldNotFail() => _exporter.Collect(Timeout.Infinite).Should().BeTrue();
+    public void CollectorShouldNotFail()
+        => _exporter.Collect(Timeout.Infinite).Should().BeTrue();
 
     [Fact]
     public void ShouldMeasureSubscriptionGapCount() {
@@ -90,7 +94,8 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
         await Task.Delay(1000);
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public Task DisposeAsync()
+        => Task.CompletedTask;
 
     readonly TestServer        _host;
     readonly TestExporter      _exporter;

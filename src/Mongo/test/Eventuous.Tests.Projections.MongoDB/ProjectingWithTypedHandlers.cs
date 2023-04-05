@@ -37,7 +37,7 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
     public ProjectingWithTypedHandlers(ITestOutputHelper output) : base(nameof(ProjectingWithTypedHandlers), output) {
     }
 
-    public class SutProjection : MongoProjection<BookingDocument> {
+    public class SutProjection : MongoProjector<BookingDocument> {
         public SutProjection(IMongoDatabase database) : base(database) {
             On<BookingImported>(
                 stream => stream.GetId(),

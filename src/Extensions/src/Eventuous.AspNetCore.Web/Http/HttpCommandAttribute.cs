@@ -9,8 +9,20 @@ namespace Eventuous.AspNetCore.Web;
 [PublicAPI]
 [AttributeUsage(AttributeTargets.Class)]
 public class HttpCommandAttribute : Attribute {
+    /// <summary>
+    /// HTTP POST route for the command
+    /// </summary>
     public string? Route         { get; set; }
+
+    /// <summary>
+    /// Aggregate type for the command, will be used to resolve the command service
+    /// </summary>
     public Type?   AggregateType { get; set; }
+
+    /// <summary>
+    /// Authorization policy name
+    /// </summary>
+    public string? PolicyName    { get; set; }
 }
 
 public class HttpCommandAttribute<T> : HttpCommandAttribute where T : Aggregate {
