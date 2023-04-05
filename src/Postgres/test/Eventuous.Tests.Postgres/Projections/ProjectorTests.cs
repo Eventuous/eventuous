@@ -27,8 +27,7 @@ create table if not exists __schema__.bookings (
 
         await Task.Delay(1000);
 
-        await using var connection = IntegrationFixture.GetConnection();
-        await connection.OpenAsync();
+        await using var connection = await IntegrationFixture.DataSource.OpenConnectionAsync();
 
         var select = $"select * from {IntegrationFixture.SchemaName}.bookings where booking_id = @bookingId";
 
@@ -43,16 +42,15 @@ create table if not exists __schema__.bookings (
     }
 
     async Task CreateSchema() {
-        await using var connection = IntegrationFixture.GetConnection();
+        await using var connection = await IntegrationFixture.DataSource.OpenConnectionAsync();
 
-        await connection.OpenAsync();
         await using var cmd = connection.CreateCommand();
         cmd.CommandText = Schema.Replace("__schema__", IntegrationFixture.SchemaName);
         await cmd.ExecuteNonQueryAsync();
     }
 
     protected override TestProjector GetHandler()
-        => new(IntegrationFixture.GetConnection, IntegrationFixture.SchemaName);
+        => new(IntegrationFixture.DataSource, IntegrationFixture.SchemaName);
 
     async Task<List<Commands.ImportBooking>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable
@@ -61,7 +59,7 @@ create table if not exists __schema__.bookings (
             .ToList();
 
         foreach (var command in commands) {
-            var evt         = ToEvent(command);
+            var evt = ToEvent(command);
             var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
 
             await IntegrationFixture.EventStore.AppendEvents(
@@ -80,13 +78,13 @@ create table if not exists __schema__.bookings (
 }
 
 public class TestProjector : PostgresProjector {
-    public TestProjector(GetPostgresConnection getConnection, string schema) : base(getConnection) {
+    public TestProjector(NpgsqlDataSource dataSource, string schema) : base(dataSource) {
         var insert = $"insert into {schema}.bookings (booking_id, checkin_date, price) values (@booking_id, @checkin_date, @price)";
 
         On<BookingEvents.BookingImported>(
             (connection, ctx) =>
                 Project(
-                    connection,
+                    dataSource,
                     insert,
                     new NpgsqlParameter("@booking_id", ctx.Stream.GetId()),
                     new NpgsqlParameter("@checkin_date", ctx.Message.CheckIn.ToDateTimeUnspecified()),

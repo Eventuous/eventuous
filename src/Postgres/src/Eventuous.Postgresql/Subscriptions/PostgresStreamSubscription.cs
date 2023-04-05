@@ -15,29 +15,28 @@ namespace Eventuous.Postgresql.Subscriptions;
 
 public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStreamSubscriptionOptions> {
     public PostgresStreamSubscription(
-        GetPostgresConnection             getConnection,
+        NpgsqlDataSource                  dataSource,
         PostgresStreamSubscriptionOptions options,
         ICheckpointStore                  checkpointStore,
         ConsumePipe                       consumePipe,
         ILoggerFactory?                   loggerFactory = null
-    ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory)
+    ) : base(dataSource, options, checkpointStore, consumePipe, loggerFactory)
         => _streamName = options.Stream.ToString();
 
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start) {
         var cmd = new NpgsqlCommand(Schema.ReadStreamSub, connection);
 
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.Parameters.AddWithValue("_stream_id", NpgsqlDbType.Integer, _streamId);
-        cmd.Parameters.AddWithValue("_from_position", NpgsqlDbType.Integer, (int)start + 1);
+        cmd.Parameters.AddWithValue("_from_position", NpgsqlDbType.Integer, (int) start + 1);
         cmd.Parameters.AddWithValue("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
         return cmd;
     }
 
     protected override async Task BeforeSubscribe(CancellationToken cancellationToken) {
-        await using var connection = GetConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
+        await using var connection = await DataSource.OpenConnectionAsync(cancellationToken).NoContext();
         await using var cmd = connection.CreateCommand();
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.CommandText = Schema.CheckStream;
         cmd.Parameters.AddWithValue("_stream_name", NpgsqlDbType.Varchar, Options.Stream.ToString());
         cmd.Parameters.AddWithValue("_expected_version", NpgsqlDbType.Integer, -2);
@@ -63,8 +62,8 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
             evt.MessageType,
             ContentType,
             _streamName,
-            (ulong)evt.StreamPosition,
-            (ulong)evt.GlobalPosition,
+            (ulong) evt.StreamPosition,
+            (ulong) evt.GlobalPosition,
             _sequence++,
             evt.Created,
             e,
@@ -73,7 +72,7 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
             cancellationToken
         );
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromContext(context);
 }
 

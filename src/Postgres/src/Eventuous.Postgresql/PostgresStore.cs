@@ -15,11 +15,13 @@ using NpgsqlTypes;
 
 namespace Eventuous.Postgresql;
 
-public delegate NpgsqlConnection GetPostgresConnection();
-
 public class PostgresStoreOptions {
     // ReSharper disable once ConvertToPrimaryConstructor
-    public PostgresStoreOptions(string schema = Postgresql.Schema.DefaultSchema)
+    public PostgresStoreOptions() {
+        Schema = Postgresql.Schema.DefaultSchema;
+    }
+
+    public PostgresStoreOptions(string schema)
         => Schema = schema;
 
     /// <summary>
@@ -30,40 +32,33 @@ public class PostgresStoreOptions {
 }
 
 public class PostgresStore : IEventStore {
-    readonly GetPostgresConnection _getConnection;
-    readonly IEventSerializer      _serializer;
-    readonly IMetadataSerializer   _metaSerializer;
-    readonly Schema                _schema;
+    readonly NpgsqlDataSource    _dataSource;
+    readonly IEventSerializer    _serializer;
+    readonly IMetadataSerializer _metaSerializer;
+    readonly Schema              _schema;
 
     public PostgresStore(
-        GetPostgresConnection getConnection,
+        NpgsqlDataSource      dataSource,
         PostgresStoreOptions? options,
         IEventSerializer?     serializer     = null,
         IMetadataSerializer?  metaSerializer = null
     ) {
-        _serializer     = serializer     ?? DefaultEventSerializer.Instance;
-        _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
-        _getConnection  = Ensure.NotNull(getConnection, "Connection factory");
         var pgOptions = options ?? new PostgresStoreOptions();
         _schema = new Schema(pgOptions.Schema);
+
+        _serializer     = serializer ?? DefaultEventSerializer.Instance;
+        _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
+        _dataSource     = Ensure.NotNull(dataSource, "Data Source");
     }
 
     public PostgresStore(
-        GetPostgresConnection          getConnection,
+        NpgsqlDataSource               dataSource,
         IOptions<PostgresStoreOptions> options,
         IEventSerializer?              serializer     = null,
         IMetadataSerializer?           metaSerializer = null
-    ) : this(getConnection, options.Value, serializer, metaSerializer) { }
+    ) : this(dataSource, options.Value, serializer, metaSerializer) { }
 
     const string ContentType = "application/json";
-
-    async Task<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken) {
-        var connection = _getConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
-        connection.ReloadTypes();
-        connection.TypeMapper.MapComposite<NewPersistedEvent>(_schema.StreamMessage);
-        return connection;
-    }
 
     public async Task<StreamEvent[]> ReadEvents(
         StreamName         stream,
@@ -71,10 +66,10 @@ public class PostgresStore : IEventStore {
         int                count,
         CancellationToken  cancellationToken
     ) {
-        await using var connection = await OpenConnection(cancellationToken).NoContext();
-        await using var cmd        = new NpgsqlCommand(_schema.ReadStreamForwards, connection);
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
+        await using var cmd = new NpgsqlCommand(_schema.ReadStreamForwards, connection);
 
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.Parameters.AddWithValue("_stream_name", NpgsqlDbType.Varchar, stream.ToString());
         cmd.Parameters.AddWithValue("_from_position", NpgsqlDbType.Integer, start.Value);
         cmd.Parameters.AddWithValue("_count", NpgsqlDbType.Integer, count);
@@ -101,11 +96,11 @@ public class PostgresStore : IEventStore {
             .Select(x => Convert(x))
             .ToArray();
 
-        await using var connection  = await OpenConnection(cancellationToken).NoContext();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken).NoContext();
-        await using var cmd         = new NpgsqlCommand(_schema.AppendEvents, connection, transaction);
+        await using var cmd = new NpgsqlCommand(_schema.AppendEvents, connection, transaction);
 
-        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandType = CommandType.Text;
         cmd.Parameters.AddWithValue("_stream_name", NpgsqlDbType.Varchar, stream.ToString());
         cmd.Parameters.AddWithValue("_expected_version", NpgsqlDbType.Integer, expectedVersion.Value);
         cmd.Parameters.AddWithValue("_created", DateTime.UtcNow);
@@ -116,7 +111,7 @@ public class PostgresStore : IEventStore {
 
             await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext()) {
                 await reader.ReadAsync(cancellationToken).NoContext();
-                result = new AppendEventsResult((ulong)reader.GetInt64(1), reader.GetInt32(0));
+                result = new AppendEventsResult((ulong) reader.GetInt64(1), reader.GetInt32(0));
             }
 
             await transaction.CommitAsync(cancellationToken).NoContext();
@@ -138,13 +133,13 @@ public class PostgresStore : IEventStore {
     }
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
-        await using var connection = await OpenConnection(cancellationToken).NoContext();
-        await using var cmd        = connection.CreateCommand();
+        await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
+        await using var cmd = connection.CreateCommand();
         cmd.CommandType = CommandType.Text;
         cmd.CommandText = _schema.StreamExists;
         cmd.Parameters.AddWithValue("name", NpgsqlDbType.Varchar, stream.ToString());
         var result = await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
-        return (bool)result!;
+        return (bool) result!;
     }
 
     public Task TruncateStream(
@@ -189,4 +184,4 @@ public class PostgresStore : IEventStore {
     }
 }
 
-record NewPersistedEvent(Guid MessageId, string MessageType, string JsonData, string? JsonMetadata);
+internal record NewPersistedEvent(Guid MessageId, string MessageType, string JsonData, string? JsonMetadata);

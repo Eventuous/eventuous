@@ -5,6 +5,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Npgsql" />
+        <PackageReference Include="Npgsql.DependencyInjection" />
         <PackageReference Include="System.Linq.Async" />
     </ItemGroup>
     <ItemGroup>
@@ -22,5 +23,10 @@
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
         </Compile>
+    </ItemGroup>
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Eventuous.Tests.Postgres</_Parameter1>
+        </AssemblyAttribute>
     </ItemGroup>
 </Project>
