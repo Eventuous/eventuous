@@ -1,15 +1,16 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Text;
-using Eventuous;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tools;
-using Eventuous.Redis;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
-using Eventuous.Redis.Extension;
+
+namespace Eventuous.Redis.Subscriptions;
 
 public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T>
     where T : RedisSubscriptionBaseOptions {
@@ -19,13 +20,13 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
     protected GetRedisDatabase GetDatabase { get; }
 
     protected RedisSubscriptionBase(
-        GetRedisDatabase      getDatabase,
-        T                     options,
-        ICheckpointStore      checkpointStore,
-        ConsumePipe           consumePipe,
-        ILoggerFactory?       loggerFactory
+        GetRedisDatabase getDatabase,
+        T                options,
+        ICheckpointStore checkpointStore,
+        ConsumePipe      consumePipe,
+        ILoggerFactory?  loggerFactory
     ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
-        GetDatabase   = Ensure.NotNull(getDatabase, "Connection factory");
+        GetDatabase     = Ensure.NotNull(getDatabase, "Connection factory");
         _metaSerializer = DefaultMetadataSerializer.Instance;
     }
 
@@ -56,7 +57,6 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
 
         while (!cancellationToken.IsCancellationRequested) {
             try {
-                
                 var persistentEvents = await ReadEvents(GetDatabase(), start);
 
                 foreach (var persistentEvent in persistentEvents) {
@@ -69,14 +69,15 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
             }
             catch (Exception e) {
                 IsDropped = true;
-                Log.WarnLog?.Log(e, "Dropped");
+                Log.WarnLog?.Log(e, "Subscription dropped");
                 throw;
             }
         }
     }
-   
-    IMessageConsumeContext ToConsumeContext(PersistentEvent evt, CancellationToken cancellationToken) {
+
+    IMessageConsumeContext ToConsumeContext(ReceivedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
+
         var data = DeserializeData(
             ContentType,
             evt.MessageType,
@@ -92,12 +93,7 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
         return AsContext(evt, data, meta, cancellationToken);
     }
 
-    IMessageConsumeContext AsContext(
-        PersistentEvent     evt,
-        object?             e,
-        Metadata?           meta,
-        CancellationToken   cancellationToken
-    )
+    IMessageConsumeContext AsContext(ReceivedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(
             evt.MessageId.ToString(),
             evt.MessageType,
@@ -113,14 +109,15 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
             cancellationToken
         );
 
-    protected abstract Task<PersistentEvent[]> ReadEvents(IDatabase database, long position);
-    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
-    
-    ulong           _sequence;
+    protected abstract Task<ReceivedEvent[]> ReadEvents(IDatabase database, long position);
 
+    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken)
+        => Task.CompletedTask;
+
+    ulong _sequence;
 }
 
 public abstract record RedisSubscriptionBaseOptions : SubscriptionOptions {
-    public int    ConcurrencyLimit { get; set; } = 1;
-    public int    MaxPageSize      { get; set; } = 1024;
+    public int ConcurrencyLimit { get; set; } = 1;
+    public int MaxPageSize      { get; set; } = 100;
 }

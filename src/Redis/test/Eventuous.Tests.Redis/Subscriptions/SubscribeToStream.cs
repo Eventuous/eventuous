@@ -1,4 +1,3 @@
-using System.Linq;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Sut.Subs;
@@ -11,9 +10,7 @@ namespace Eventuous.Tests.Redis.Subscriptions;
 
 [Collection("Sequential")]
 public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
-    public SubscribeToStream(ITestOutputHelper outputHelper)
-        : base(outputHelper, false, false) {
-    }
+    public SubscribeToStream(ITestOutputHelper outputHelper) : base(outputHelper, false, false) { }
 
     [Fact]
     public async Task ShouldConsumeProducedEvents() {
@@ -25,7 +22,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
         await Start();
         await Handler.Validate(2.Seconds());
         await Stop();
-        
+
         Handler.Count.Should().Be(10);
     }
 
@@ -36,7 +33,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
         await GenerateAndProduceEvents(count);
         Handler.AssertThat().Any(_ => true);
 
-        var checkpoint = await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
+        await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
         var streamPosition = await GetStreamPosition(count);
         Logger.ConfigureIfNull(SubscriptionId, LoggerFactory);
         await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, (ulong)streamPosition), true, default);
@@ -60,7 +57,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
 
         var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
 
-        await IntegrationFixture.EventStore.AppendEvents(
+        await IntegrationFixture.EventWriter.AppendEvents(
             Stream,
             ExpectedStreamVersion.Any,
             streamEvents.ToArray(),
@@ -71,12 +68,13 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
     }
 
     async Task<long> GetStreamPosition(int count) {
-        var readEvents = await IntegrationFixture.EventStore.ReadEvents(
+        var readEvents = await IntegrationFixture.EventReader.ReadEvents(
             Stream,
             StreamReadPosition.Start,
             count,
             default
         );
+
         return readEvents.Last().Position;
     }
 

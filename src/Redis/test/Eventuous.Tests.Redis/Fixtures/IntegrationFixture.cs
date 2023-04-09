@@ -9,9 +9,10 @@ using Eventuous.Redis;
 namespace Eventuous.Tests.Redis.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncDisposable {
-    public IEventStore      EventStore { get; }
+    public IEventWriter     EventWriter    { get; }
+    public IEventReader     EventReader    { get; }
     public IAggregateStore  AggregateStore { get; }
-    public GetRedisDatabase GetDatabase { get; }
+    public GetRedisDatabase GetDatabase    { get; }
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
 
@@ -19,7 +20,9 @@ public sealed class IntegrationFixture : IAsyncDisposable {
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
             .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
     );
+
     public static IntegrationFixture Instance { get; } = new();
+
     public IntegrationFixture() {
         const string connString = "localhost";
 
@@ -27,14 +30,15 @@ public sealed class IntegrationFixture : IAsyncDisposable {
             var muxer = ConnectionMultiplexer.Connect(connString);
             return muxer.GetDatabase();
         }
-               
-        var module = new Module();
-        module.LoadModule(GetDb).ConfigureAwait(false).GetAwaiter().GetResult();
+
+        Module.LoadModule(GetDb).ConfigureAwait(false).GetAwaiter().GetResult();
 
         GetDatabase = GetDb;
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore = new RedisStore(GetDb, new RedisStoreOptions(), Serializer);
-        AggregateStore = new AggregateStore(EventStore);
+        var store = new RedisStore(GetDb, new RedisStoreOptions(), Serializer);
+        EventWriter    = store;
+        EventReader    = store;
+        AggregateStore = new AggregateStore(store, store);
     }
 
     public ValueTask DisposeAsync() {

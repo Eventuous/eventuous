@@ -12,7 +12,7 @@ public static class Helpers {
     public static BookingImported CreateEvent()
         => ToEvent(DomainFixture.CreateImportBooking());
 
-    public static IEnumerable<BookingImported> CreateEvents(int count) {
+    public static IEnumerable<object> CreateEvents(int count) {
         for (var i = 0; i < count; i++) {
             yield return CreateEvent();
         }
@@ -27,11 +27,11 @@ public static class Helpers {
         ExpectedStreamVersion version
     ) {
         var streamEvents = evt.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
-        return Instance.EventStore.AppendEvents(stream, version, streamEvents.ToArray(), default);
+        return Instance.EventWriter.AppendEvents(stream, version, streamEvents.ToArray(), default);
     }
 
     public static Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version) {
         var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
-        return Instance.EventStore.AppendEvents(stream, version, new[] { streamEvent }, default);
+        return Instance.EventWriter.AppendEvents(stream, version, new[] { streamEvent }, default);
     }
 }

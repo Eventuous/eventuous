@@ -1,15 +1,15 @@
 using Eventuous.Sut.App;
 using MicroElements.AutoFixture.NodaTime;
 using NodaTime;
-using static Eventuous.Tests.Redis.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Redis.Fixtures;
 
 public static class DomainFixture {
     static IFixture Auto { get; } = new Fixture().Customize(new NodaTimeCustomization());
 
-    static DomainFixture() => TypeMap.RegisterKnownEventTypes();
-        
+    static DomainFixture()
+        => TypeMap.RegisterKnownEventTypes();
+
     public static Commands.ImportBooking CreateImportBooking() {
         var from = Auto.Create<LocalDate>();
 

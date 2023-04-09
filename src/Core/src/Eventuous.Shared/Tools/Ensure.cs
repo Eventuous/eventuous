@@ -20,6 +20,11 @@ static class Ensure {
     public static T NotNull<T>(T? value, [CallerArgumentExpression("value")] string? name = default) where T : class
         => value ?? throw new ArgumentNullException(name);
 
+    [DebuggerHidden]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T NotNull<T>(T? value, [CallerArgumentExpression("value")] string? name = default) where T : struct
+        => value ?? throw new ArgumentNullException(name);
+
     /// <summary>
     /// Checks if the string is not null or empty, otherwise throws
     /// </summary>

@@ -62,15 +62,10 @@ public class FunctionalCommandService<T> : IFuncCommandService<T>, IStateCommand
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
-                ExpectedState.Any => await Store.LoadStateOrNew<T>(streamName, cancellationToken)
-                    .NoContext(),
-                ExpectedState.Existing => await Store.LoadState<T>(streamName, cancellationToken)
-                    .NoContext(),
-                ExpectedState.New => new FoldedEventStream<T>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>()),
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(registeredHandler.ExpectedState),
-                    "Unknown expected state"
-                )
+                ExpectedState.Any      => await Store.LoadStateOrNew<T>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Existing => await Store.LoadState<T>(streamName, cancellationToken).NoContext(),
+                ExpectedState.New      => new FoldedEventStream<T>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>()),
+                _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
             var result = await registeredHandler

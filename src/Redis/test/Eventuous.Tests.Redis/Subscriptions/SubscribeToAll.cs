@@ -10,9 +10,7 @@ namespace Eventuous.Tests.Redis.Subscriptions;
 
 [Collection("Sequential")]
 public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
-    public SubscribeToAll(ITestOutputHelper outputHelper)
-        : base(outputHelper, true, false) {
-    }
+    public SubscribeToAll(ITestOutputHelper outputHelper) : base(outputHelper, true, false) { }
 
     [Fact]
     public async Task ShouldConsumeProducedEvents() {
@@ -24,7 +22,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
         await Start();
         await Handler.Validate(2.Seconds());
         await Stop();
-        
+
         Handler.Count.Should().Be(10);
     }
 
@@ -58,7 +56,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
 
         var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
 
-        var result = await IntegrationFixture.EventStore.AppendEvents(
+        var result = await IntegrationFixture.EventWriter.AppendEvents(
             Stream,
             ExpectedStreamVersion.Any,
             streamEvents.ToArray(),

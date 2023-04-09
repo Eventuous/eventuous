@@ -1,12 +1,9 @@
-using Eventuous.Tests.Redis.Fixtures;
 using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
 
 [Collection("Sequential")]
 public class AppendEvents {
-    readonly IntegrationFixture _fixture = new();
-
     [Fact]
     public async Task ShouldAppendToNoStream() {
         var evt        = CreateEvent();

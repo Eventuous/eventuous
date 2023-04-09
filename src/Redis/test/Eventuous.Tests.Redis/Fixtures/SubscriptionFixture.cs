@@ -1,5 +1,4 @@
 using Eventuous.Diagnostics.Logging;
-using Eventuous.Redis;
 using Eventuous.Redis.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Filters;
@@ -12,13 +11,13 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
     static SubscriptionFixture()
         => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    protected IntegrationFixture      IntegrationFixture { get; } = new();
-    protected StreamName              Stream             { get; }
-    protected T                       Handler            { get; }
-    protected ILogger                 Log                { get; }
+    protected IntegrationFixture   IntegrationFixture { get; } = new();
+    protected StreamName           Stream             { get; }
+    protected T                    Handler            { get; }
+    protected ILogger              Log                { get; }
     protected RedisCheckpointStore CheckpointStore    { get; }
-    IMessageSubscription              Subscription       { get; }
-    protected ILoggerFactory          LoggerFactory      { get; }
+    IMessageSubscription           Subscription       { get; }
+    protected ILoggerFactory       LoggerFactory      { get; }
 
     protected SubscriptionFixture(
         ITestOutputHelper    outputHelper,

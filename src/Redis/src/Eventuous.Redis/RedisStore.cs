@@ -1,34 +1,34 @@
-﻿using System.Globalization;
+﻿// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
+using System.Globalization;
 using System.Runtime.Serialization;
 using System.Text;
 using Eventuous.Diagnostics;
-using StackExchange.Redis;
-using Eventuous.Redis.Extension;
+using Eventuous.Redis.Tools;
 
 namespace Eventuous.Redis;
 
 public delegate IDatabase GetRedisDatabase();
 
-public record RedisStoreOptions();
+public record RedisStoreOptions;
 
-public class RedisStore : IEventStore
-{
-    readonly GetRedisDatabase       _getDatabase;
-    readonly IEventSerializer       _serializer;
-    readonly IMetadataSerializer    _metaSerializer;
+public class RedisStore : IEventReader, IEventWriter {
+    readonly GetRedisDatabase    _getDatabase;
+    readonly IEventSerializer    _serializer;
+    readonly IMetadataSerializer _metaSerializer;
 
     public RedisStore(
-        GetRedisDatabase getDatabase,
-        RedisStoreOptions  options,
-        IEventSerializer?     serializer     = null,
-        IMetadataSerializer?  metaSerializer = null
-    )
-    {
+        GetRedisDatabase     getDatabase,
+        RedisStoreOptions    options,
+        IEventSerializer?    serializer     = null,
+        IMetadataSerializer? metaSerializer = null
+    ) {
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
-        _getDatabase  = Ensure.NotNull(getDatabase, "Connection factory");
-        
+        _getDatabase    = Ensure.NotNull(getDatabase, "Connection factory");
     }
+
     const string ContentType = "application/json";
 
     public async Task<StreamEvent[]> ReadEvents(
@@ -37,10 +37,10 @@ public class RedisStore : IEventStore
         int                count,
         CancellationToken  cancellationToken
     ) {
-            var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count);
-            if (result == null)
-                throw new StreamNotFound(stream);
-            return result.Select(x => ToStreamEvent(x)).ToArray();        
+        var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count);
+        if (result == null) throw new StreamNotFound(stream);
+
+        return result.Select(x => ToStreamEvent(x)).ToArray();
     }
 
     public async Task<AppendEventsResult> AppendEvents(
@@ -59,13 +59,7 @@ public class RedisStore : IEventStore
 
         var args = events
             .Where(x => x.Payload != null)
-            .Aggregate(
-                new List<object>(),
-                (agg, x) => {
-                    agg.AddRange(ConvertStreamEvent(x));
-                    return agg;
-                }
-            )
+            .SelectMany(ConvertStreamEvent)
             .ToArray();
 
         var fCallParams = new object[keys.Length + args.Length];
@@ -75,10 +69,10 @@ public class RedisStore : IEventStore
         var database = _getDatabase();
 
         try {
-            var response = (string[]?)await database.ExecuteAsync("FCALL", fCallParams);
-            var streamPosition = response?[0];
-            var globalPosition = response?[1];
-            return new AppendEventsResult(new RedisValue(globalPosition!).ToULong(), Convert.ToInt64(streamPosition));
+            var response       = (RedisValue[]?)await database.ExecuteAsync("FCALL", fCallParams);
+            var streamPosition = (long)Ensure.NotNull(response?[0]);
+            var globalPosition = Ensure.NotNull(response?[1]).ToString().AsSpan().ToULong();
+            return new AppendEventsResult(globalPosition, streamPosition);
         }
         catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
             PersistenceEventSource.Log.UnableToAppendEvents(stream, e);
@@ -99,25 +93,8 @@ public class RedisStore : IEventStore
         var database = _getDatabase();
         var info     = await database.StreamInfoAsync(stream.ToString());
 
-        return (info.Length > 0)
-            ? true
-            : false;
+        return (info.Length > 0);
     }
-
-    public Task TruncateStream(
-        StreamName             stream,
-        StreamTruncatePosition truncatePosition,
-        ExpectedStreamVersion  expectedVersion,
-        CancellationToken      cancellationToken
-    )
-        => throw new NotImplementedException();
-
-    public Task DeleteStream(
-        StreamName            stream,
-        ExpectedStreamVersion expectedVersion,
-        CancellationToken     cancellationToken
-    )
-        => throw new NotImplementedException();
 
     StreamEvent ToStreamEvent(StreamEntry evt) {
         var deserialized = _serializer.DeserializeEvent(
@@ -137,6 +114,7 @@ public class RedisStore : IEventStore
             ),
             _ => throw new Exception("Unknown deserialization result")
         };
+
         StreamEvent AsStreamEvent(object payload)
             => new(Guid.Parse(evt["message_id"].ToString()), payload, meta ?? new Metadata(), ContentType, evt.Id.ToLong());
     }
