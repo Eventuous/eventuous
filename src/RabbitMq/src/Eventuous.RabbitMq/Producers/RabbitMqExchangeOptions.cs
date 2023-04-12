@@ -1,4 +1,7 @@
-namespace Eventuous.RabbitMq.Producers; 
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
+namespace Eventuous.RabbitMq.Producers;
 
 [PublicAPI]
 public class RabbitMqExchangeOptions {

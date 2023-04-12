@@ -3,19 +3,23 @@
 
 namespace Eventuous;
 
-using Tools;
 using static Diagnostics.ApplicationEventSource;
 
-public class FunctionalCommandService<T> : IFuncCommandService<T>, IStateCommandService<T> where T : State<T>, new() {
+public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, IStateCommandService<T> where T : State<T>, new() {
     [PublicAPI]
-    protected IEventStore Store { get; }
+    protected IEventReader Reader { get; }
+    [PublicAPI]
+    protected IEventWriter Writer { get; }
 
     readonly TypeMapper               _typeMap;
     readonly FunctionalHandlersMap<T> _handlers  = new();
     readonly CommandToStreamMap       _streamMap = new();
 
-    public FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null) {
-        Store    = store;
+    protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null) : this(store, store, typeMap) { }
+
+    protected FunctionalCommandService(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null) {
+        Reader   = reader;
+        Writer   = writer;
         _typeMap = typeMap ?? TypeMap.Instance;
     }
 
@@ -62,8 +66,8 @@ public class FunctionalCommandService<T> : IFuncCommandService<T>, IStateCommand
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await Store.LoadStateOrNew<T>(streamName, cancellationToken).NoContext(),
-                ExpectedState.Existing => await Store.LoadState<T>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Any      => await Reader.LoadStateOrNew<T>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Existing => await Reader.LoadState<T>(streamName, cancellationToken).NoContext(),
                 ExpectedState.New      => new FoldedEventStream<T>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>()),
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
@@ -79,7 +83,7 @@ public class FunctionalCommandService<T> : IFuncCommandService<T>, IStateCommand
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<T>(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await Store.Store(
+            var storeResult = await Writer.Store(
                     streamName,
                     (int)loadedState.StreamVersion.Value,
                     newEvents,

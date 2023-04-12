@@ -1,9 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Logging;
-
 namespace Eventuous.Subscriptions;
+
+using Logging;
 
 public static class MetaSerializerExtensions {
     public static Metadata? DeserializeMeta(

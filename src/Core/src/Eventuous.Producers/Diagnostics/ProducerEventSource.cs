@@ -3,6 +3,7 @@
 
 using System.Diagnostics.Tracing;
 using Eventuous.Diagnostics;
+
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Eventuous.Producers.Diagnostics;

@@ -1,8 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics;
-
 namespace Eventuous.Diagnostics.Metrics;
 
 public sealed class Measure : IDisposable {

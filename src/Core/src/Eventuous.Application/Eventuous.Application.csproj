@@ -3,20 +3,21 @@
         <RootNamespace>Eventuous</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Eventuous.Domain\Eventuous.Domain.csproj" />
-        <ProjectReference Include="..\Eventuous.Persistence\Eventuous.Persistence.csproj" />
+        <ProjectReference Include="..\Eventuous.Domain\Eventuous.Domain.csproj"/>
+        <ProjectReference Include="..\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="..\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
         </Compile>
+        <Using Include="Eventuous.Tools"/>
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">
-        <LogicalName>Eventuous.ExceptionMessages.resources</LogicalName>
-      </EmbeddedResource>
+        <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">
+            <LogicalName>Eventuous.ExceptionMessages.resources</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
-      <None Remove="Eventuous.Application.csproj.DotSettings" />
+        <None Remove="Eventuous.Application.csproj.DotSettings"/>
     </ItemGroup>
 </Project>

@@ -1,10 +1,14 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 // ReSharper disable CheckNamespace
 
 using Eventuous.Gateway;
 using Eventuous.Subscriptions.Registrations;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Microsoft.Extensions.DependencyInjection;
+
+using Extensions;
 
 [PublicAPI]
 public static class GatewayWithOptionsRegistrations {
@@ -22,6 +26,7 @@ public static class GatewayWithOptionsRegistrations {
         where TSubscriptionOptions : SubscriptionOptions {
         services.TryAddSingleton<TProducer>();
         services.AddHostedServiceIfSupported<TProducer>();
+
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
             builder => {
@@ -54,6 +59,7 @@ public static class GatewayWithOptionsRegistrations {
         where TSubscriptionOptions : SubscriptionOptions {
         services.TryAddSingleton<TProducer>();
         services.AddHostedServiceIfSupported<TProducer>();
+
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
             builder => {

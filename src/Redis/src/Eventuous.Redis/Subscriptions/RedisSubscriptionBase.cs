@@ -7,7 +7,6 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Redis.Subscriptions;
@@ -48,7 +47,7 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
         }
     }
 
-    protected const string ContentType = "application/json";
+    const string ContentType = "application/json";
 
     Task? _runner;
 
@@ -57,7 +56,7 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
 
         while (!cancellationToken.IsCancellationRequested) {
             try {
-                var persistentEvents = await ReadEvents(GetDatabase(), start);
+                var persistentEvents = await ReadEvents(GetDatabase(), start).NoContext();
 
                 foreach (var persistentEvent in persistentEvents) {
                     await HandleInternal(ToConsumeContext(persistentEvent, cancellationToken)).NoContext();

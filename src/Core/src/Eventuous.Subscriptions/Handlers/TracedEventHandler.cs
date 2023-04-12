@@ -5,11 +5,11 @@ using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Metrics;
 using Eventuous.Diagnostics.Tracing;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Tools;
 
 namespace Eventuous.Subscriptions;
+
+using Context;
+using Diagnostics;
 
 public class TracedEventHandler : IEventHandler {
     readonly DiagnosticSource _metricsSource = new DiagnosticListener(SubscriptionMetrics.ListenerName);
@@ -42,15 +42,15 @@ public class TracedEventHandler : IEventHandler {
             ?.SetContextTags(context)
             ?.Start();
 
-        using var measure = Measure.Start(_metricsSource,
+        using var measure = Measure.Start(
+            _metricsSource,
             new SubscriptionMetrics.SubscriptionMetricsContext(DiagnosticName, context)
         );
 
         try {
             var status = await _innerHandler.HandleEvent(context).NoContext();
 
-            if (activity != null && status == EventHandlingStatus.Ignored)
-                activity.ActivityTraceFlags = ActivityTraceFlags.None;
+            if (activity != null && status == EventHandlingStatus.Ignored) activity.ActivityTraceFlags = ActivityTraceFlags.None;
 
             activity?.SetActivityStatus(ActivityStatus.Ok());
 

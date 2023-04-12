@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
-using Eventuous.Tools;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 

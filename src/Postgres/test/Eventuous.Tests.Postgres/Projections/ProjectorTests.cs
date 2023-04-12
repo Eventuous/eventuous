@@ -1,7 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Postgresql;
 using Eventuous.Postgresql.Projections;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
@@ -84,7 +83,7 @@ public class TestProjector : PostgresProjector {
         On<BookingEvents.BookingImported>(
             (connection, ctx) =>
                 Project(
-                    dataSource,
+                    connection,
                     insert,
                     new NpgsqlParameter("@booking_id", ctx.Stream.GetId()),
                     new NpgsqlParameter("@checkin_date", ctx.Message.CheckIn.ToDateTimeUnspecified()),

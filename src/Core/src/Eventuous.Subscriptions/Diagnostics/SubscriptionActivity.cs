@@ -3,11 +3,12 @@
 
 using System.Diagnostics;
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
-public static class SubscriptionActivity {
+using Context;
+
+static class SubscriptionActivity {
     public static Activity? Create(
         string                                      name,
         ActivityKind                                activityKind,
@@ -45,7 +46,7 @@ public static class SubscriptionActivity {
 
     static ActivityContext? GetParentContext(IBaseConsumeContext context) {
         if (Activity.Current != null) return Activity.Current.Context;
-        
+
         if (context.Items.TryGetItem<Activity>(ContextItemKeys.Activity, out var parentActivity)) {
             return parentActivity?.Context;
         }

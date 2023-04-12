@@ -6,13 +6,13 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
-using Eventuous.Subscriptions.Channels;
-using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Subscriptions.Checkpoints;
+
+using Channels;
+using Logging;
+using static Diagnostics.SubscriptionsEventSource;
 
 public sealed class CheckpointCommitHandler : IAsyncDisposable {
     readonly ILoggerFactory?               _loggerFactory;
@@ -40,12 +40,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     )
         : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize, loggerFactory) { }
 
-    public CheckpointCommitHandler(
-        string           subscriptionId,
-        CommitCheckpoint commitCheckpoint,
-        int              batchSize     = 1,
-        ILoggerFactory?  loggerFactory = null
-    ) {
+    public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1, ILoggerFactory? loggerFactory = null) {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
         _loggerFactory    = loggerFactory;
@@ -86,8 +81,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     /// <returns></returns>
     [PublicAPI]
     public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken) {
-        if (Diagnostic.IsEnabled(CommitOperation))
-            Diagnostic.Write(CommitOperation, new CommitEvent(_subscriptionId, position, _positions.Min));
+        if (Diagnostic.IsEnabled(CommitOperation)) Diagnostic.Write(CommitOperation, new CommitEvent(_subscriptionId, position, _positions.Min));
 
         return _worker.Write(position, cancellationToken);
     }
@@ -162,8 +156,4 @@ public record struct CommitPosition(ulong Position, ulong Sequence, DateTime Tim
     public static readonly CommitPosition None = new(0, 0, DateTime.MinValue) { Valid = false };
 }
 
-public delegate ValueTask<Checkpoint> CommitCheckpoint(
-    Checkpoint        checkpoint,
-    bool              force,
-    CancellationToken cancellationToken
-);
+public delegate ValueTask<Checkpoint> CommitCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken);

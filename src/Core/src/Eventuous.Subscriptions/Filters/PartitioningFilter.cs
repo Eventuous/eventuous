@@ -1,25 +1,24 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Filters.Partitioning;
-using static Eventuous.Subscriptions.Filters.Partitioning.Partitioner;
-
 namespace Eventuous.Subscriptions.Filters;
 
+using Context;
+using Partitioning;
+using static Partitioning.Partitioner;
+
 public sealed class PartitioningFilter : ConsumeFilter<AsyncConsumeContext>, IAsyncDisposable {
-    readonly GetPartitionHash   _getHash;
-    readonly GetPartitionKey    _partitioner;
+    readonly GetPartitionHash      _getHash;
+    readonly GetPartitionKey       _partitioner;
     readonly AsyncHandlingFilter[] _filters;
-    readonly int                _partitionCount;
+    readonly int                   _partitionCount;
 
     public PartitioningFilter(
         int               partitionCount,
-        GetPartitionKey?  partitioner   = null,
-        GetPartitionHash? getHash       = null
+        GetPartitionKey?  partitioner = null,
+        GetPartitionHash? getHash     = null
     ) {
-        if (partitionCount <= 0)
-            throw new ArgumentOutOfRangeException(nameof(partitionCount), "Partition count must be greater than zero");
+        if (partitionCount <= 0) throw new ArgumentOutOfRangeException(nameof(partitionCount), "Partition count must be greater than zero");
 
         _getHash        = getHash ?? MurmurHash3.Hash;
         _partitionCount = partitionCount;
@@ -41,6 +40,6 @@ public sealed class PartitioningFilter : ConsumeFilter<AsyncConsumeContext>, IAs
 
     public async ValueTask DisposeAsync() {
         // Logger.Current.Info("Partitioner is stopping concurrent filters");
-        await Task.WhenAll(_filters.Select(async x => await x.DisposeAsync()));
+        await Task.WhenAll(_filters.Select(async x => await x.DisposeAsync().NoContext())).NoContext();
     }
 }

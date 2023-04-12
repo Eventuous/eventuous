@@ -1,17 +1,11 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics.CodeAnalysis;
-using static Eventuous.Diagnostics.ApplicationEventSource;
-
 namespace Eventuous;
 
-delegate ValueTask<IEnumerable<object>> ExecuteUntypedCommand<T>(
-    T                 state,
-    object[]          events,
-    object            command,
-    CancellationToken cancellationToken
-) where T : State<T>;
+using static Diagnostics.ApplicationEventSource;
+
+delegate ValueTask<IEnumerable<object>> ExecuteUntypedCommand<in T>(T state, object[] events, object command, CancellationToken cancellationToken) where T : State<T>;
 
 record RegisteredFuncHandler<T>(ExpectedState ExpectedState, ExecuteUntypedCommand<T> Handler) where T : State<T>;
 
@@ -28,17 +22,6 @@ class FunctionalHandlersMap<T> where T : State<T> {
             throw new Exceptions.CommandHandlerAlreadyRegistered<TCommand>();
         }
     }
-
-    // public void AddHandler<TCommand>(ExpectedState expectedState, ExecuteCommand<T, TCommand> action) where TCommand : class
-    //     => AddHandler<TCommand>(
-    // new RegisteredHandler<T>(
-    // expectedState,
-    // async (aggregate, cmd, ct) => {
-    //     await action(aggregate, (TCommand)cmd, ct).NoContext();
-    //     return aggregate;
-    // }
-    // )
-    // );
 
     public void AddHandler<TCommand>(ExpectedState expectedState, ExecuteCommand<T, TCommand> action) where TCommand : class {
         ValueTask<IEnumerable<object>> Handler(T state, object[] events, object command, CancellationToken token) {

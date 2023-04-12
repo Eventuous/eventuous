@@ -3,9 +3,7 @@
 
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
-using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
-using Nest;
 
 namespace Eventuous.ElasticSearch.Producers;
 

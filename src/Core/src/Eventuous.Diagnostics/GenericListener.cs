@@ -1,10 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics;
-using Eventuous.Diagnostics.Metrics;
-
 namespace Eventuous.Diagnostics;
+
+using Metrics;
 
 public abstract class GenericListener {
     readonly IDisposable? _listenerSubscription;

@@ -21,6 +21,7 @@
         <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
         <Using Include="JetBrains.Annotations"/>
         <Using Include="Eventuous"/>
+        <Using Include="System.Diagnostics.CodeAnalysis"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">

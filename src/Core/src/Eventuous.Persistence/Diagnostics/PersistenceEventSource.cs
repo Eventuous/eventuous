@@ -17,14 +17,12 @@ public class PersistenceEventSource : EventSource {
     const int UnableToAppendEventsId   = 7;
 
     [NonEvent]
-    public void UnableToLoadAggregate<T>(StreamName streamName, Exception exception)
-        where T : Aggregate {
+    public void UnableToLoadAggregate<T>(StreamName streamName, Exception exception) where T : Aggregate {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToLoadAggregate(typeof(T).Name, streamName, exception.ToString());
     }
 
     [NonEvent]
-    public void UnableToStoreAggregate<T>(StreamName streamName, Exception exception)
-        where T : Aggregate {
+    public void UnableToStoreAggregate<T>(StreamName streamName, Exception exception) where T : Aggregate {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToStoreAggregate(typeof(T).Name, streamName, exception.ToString());
     }
 
@@ -42,19 +40,11 @@ public class PersistenceEventSource : EventSource {
     void UnableToAppendEvents(string stream, string exception)
         => WriteEvent(UnableToAppendEventsId, stream, exception);
 
-    [Event(
-        UnableToStoreAggregateId,
-        Message = "Unable to store aggregate {0} to stream {2}: {3}",
-        Level = EventLevel.Warning
-    )]
+    [Event(UnableToStoreAggregateId, Message = "Unable to store aggregate {0} to stream {2}: {3}", Level = EventLevel.Warning)]
     void UnableToStoreAggregate(string type, string stream, string exception)
         => WriteEvent(UnableToStoreAggregateId, type, stream, exception);
 
-    [Event(
-        UnableToReadAggregateId,
-        Message = "Unable to read aggregate {0} with from stream {1}: {2}",
-        Level = EventLevel.Warning
-    )]
+    [Event(UnableToReadAggregateId, Message = "Unable to read aggregate {0} with from stream {1}: {2}", Level = EventLevel.Warning)]
     void UnableToLoadAggregate(string type, string stream, string exception)
         => WriteEvent(UnableToReadAggregateId, type, stream, exception);
 

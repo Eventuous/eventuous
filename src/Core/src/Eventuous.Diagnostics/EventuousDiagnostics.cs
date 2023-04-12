@@ -1,7 +1,8 @@
-using System.Diagnostics;
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics.Metrics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace Eventuous.Diagnostics;
 

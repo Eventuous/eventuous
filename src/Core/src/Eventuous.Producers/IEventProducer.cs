@@ -15,11 +15,7 @@ public interface IEventProducer {
     /// <param name="messages">Collection of messages to produce</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task Produce(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        CancellationToken            cancellationToken = default
-    );
+    Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default);
 }
 
 [PublicAPI]
@@ -33,12 +29,7 @@ public interface IEventProducer<in TProduceOptions> : IEventProducer where TProd
     /// <param name="options">Produce options</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task Produce(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        TProduceOptions?             options,
-        CancellationToken            cancellationToken = default
-    );
+    Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
 }
 
 public interface IHostedProducer : IHostedService {

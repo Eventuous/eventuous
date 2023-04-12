@@ -2,10 +2,10 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Concurrent;
-using Eventuous.GooglePubSub.Shared;
-using Eventuous.Tools;
 
 namespace Eventuous.GooglePubSub.Producers;
+
+using Shared;
 
 class ClientCache {
     readonly string                _projectId;
@@ -30,16 +30,12 @@ class ClientCache {
         var topicName = TopicName.FromProjectTopic(_projectId, topicId);
 
         if (_options.CreateTopic) {
-            await PubSub.CreateTopic(
-                topicName,
-                _options.ClientCreationSettings.DetectEmulator(),
-                cancellationToken
-            ).NoContext();
+            await PubSub.CreateTopic(topicName, _options.ClientCreationSettings.DetectEmulator(), cancellationToken).NoContext();
         }
 
-        return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings)
-            .NoContext();
+        return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings).NoContext();
     }
 
-    public IEnumerable<PublisherClient> GetAllClients() => _clients.Values;
+    public IEnumerable<PublisherClient> GetAllClients()
+        => _clients.Values;
 }

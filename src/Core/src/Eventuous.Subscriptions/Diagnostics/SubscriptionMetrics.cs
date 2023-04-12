@@ -5,15 +5,15 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Metrics;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Tools;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+
 // ReSharper disable ConvertClosureToMethodGroup
 // ReSharper disable ConvertToLocalFunction
-
 // ReSharper disable ParameterTypeCanBeEnumerable.Local
 
 namespace Eventuous.Subscriptions.Diagnostics;
+
+using Context;
+using static SubscriptionsEventSource;
 
 public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     const string MetricPrefix = "eventuous";
@@ -35,7 +35,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 
     public SubscriptionMetrics(IEnumerable<GetSubscriptionEndOfStream> measures) {
-        var getGaps = measures.ToArray();
+        var                             getGaps = measures.ToArray();
         Dictionary<string, EndOfStream> streams = new();
 
         ObserveMetric<long> observeGapValues = () => ObserveGapValues(getGaps);
@@ -61,7 +61,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             "Number of pending checkpoints"
         );
 
-        var duration = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Processing duration, milliseconds");
+        var duration   = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Processing duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>(ErrorCountName, "events", "Number of event processing failures");
 
         _listener = new MetricsListener<SubscriptionMetricsContext>(ListenerName, duration, errorCount, GetTags);
@@ -135,7 +135,8 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         }
     }
 
-    static KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
+    static KeyValuePair<string, object?> SubTag(object? id)
+        => new(SubscriptionIdTag, id);
 
     readonly Meter _meter = EventuousDiagnostics.GetMeter(MeterName);
 
@@ -145,7 +146,8 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
     KeyValuePair<string, object?>[] _customTags = EventuousDiagnostics.Tags;
 
-    public void SetCustomTags(TagList customTags) => _customTags = _customTags.Concat(customTags).ToArray();
+    public void SetCustomTags(TagList customTags)
+        => _customTags = _customTags.Concat(customTags).ToArray();
 
     public void Dispose() {
         _meter.Dispose();

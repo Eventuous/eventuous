@@ -3,7 +3,6 @@
 
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
-using Eventuous.Tools;
 using Microsoft.Extensions.Options;
 using static Google.Cloud.PubSub.V1.PublisherClient;
 
@@ -27,29 +26,18 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     /// <param name="serializer">Event serializer instance</param>
     /// <param name="settings"></param>
     /// <param name="clientCreationSettings"></param>
-    public GooglePubSubProducer(
-        string                  projectId,
-        IEventSerializer?       serializer             = null,
-        ClientCreationSettings? clientCreationSettings = null,
-        Settings?               settings               = null
-    ) : this(
-        new PubSubProducerOptions {
-            ProjectId              = Ensure.NotEmptyString(projectId),
-            Settings               = settings,
-            ClientCreationSettings = clientCreationSettings
-        },
-        serializer
-    ) { }
+    public GooglePubSubProducer(string projectId, IEventSerializer? serializer = null, ClientCreationSettings? clientCreationSettings = null, Settings? settings = null)
+        : this(
+            new PubSubProducerOptions { ProjectId = Ensure.NotEmptyString(projectId), Settings = settings, ClientCreationSettings = clientCreationSettings },
+            serializer
+        ) { }
 
     /// <summary>
     /// Create a new instance of a Google PubSub producer
     /// </summary>
     /// <param name="options">Producer options</param>
     /// <param name="serializer">Optional: event serializer. Will use the default instance if missing.</param>
-    public GooglePubSubProducer(
-        PubSubProducerOptions options,
-        IEventSerializer?     serializer = null
-    ) : base(TracingOptions) {
+    public GooglePubSubProducer(PubSubProducerOptions options, IEventSerializer? serializer = null) : base(TracingOptions) {
         Ensure.NotNull(options);
 
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
@@ -62,10 +50,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     /// </summary>
     /// <param name="options">Producer options</param>
     /// <param name="serializer">Optional: event serializer. Will use the default instance if missing.</param>
-    public GooglePubSubProducer(
-        IOptions<PubSubProducerOptions> options,
-        IEventSerializer?               serializer = null
-    ) : this(options.Value, serializer) { }
+    public GooglePubSubProducer(IOptions<PubSubProducerOptions> options, IEventSerializer? serializer = null) : this(options.Value, serializer) { }
 
     public Task StartAsync(CancellationToken cancellationToken = default) {
         Ready = true;

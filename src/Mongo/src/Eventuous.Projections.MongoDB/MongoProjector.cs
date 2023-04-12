@@ -2,13 +2,13 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
-using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 
 namespace Eventuous.Projections.MongoDB;
+
+using Tools;
 
 [Obsolete("Use MongoProjector instead")]
 public abstract class MongoProjection<T> : MongoProjector<T> where T : ProjectedDocument {
@@ -59,8 +59,7 @@ public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDo
     }
 
     [PublicAPI]
-    protected void On<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdate<TEvent, T> getUpdate)
-        where TEvent : class
+    protected void On<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message)).UpdateFromContext(getUpdate));
 
     protected void On<TEvent>(GetDocumentIdFromStream getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
@@ -71,29 +70,21 @@ public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDo
         => On<TEvent>(b => b.UpdateOne.Filter(getFilter).UpdateFromContext(getUpdate));
 
     [PublicAPI]
-    protected void OnAsync<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdateAsync<TEvent, T> getUpdate)
-        where TEvent : class
+    protected void OnAsync<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdateAsync<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message)).UpdateFromContext(getUpdate));
 
     [PublicAPI]
-    protected void OnAsync<TEvent>(GetDocumentIdFromStream getId, BuildUpdateAsync<TEvent, T> getUpdate)
-        where TEvent : class
+    protected void OnAsync<TEvent>(GetDocumentIdFromStream getId, BuildUpdateAsync<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).UpdateFromContext(getUpdate));
 
     [PublicAPI]
-    protected void OnAsync<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdateAsync<TEvent, T> getUpdate)
-        where TEvent : class
+    protected void OnAsync<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdateAsync<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Filter(getFilter).UpdateFromContext(getUpdate));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    ValueTask<MongoProjectOperation<T>> HandleInternal<TEvent>(
-        IMessageConsumeContext       context,
-        ProjectTypedEvent<T, TEvent> handler
-    )
+    ValueTask<MongoProjectOperation<T>> HandleInternal<TEvent>(IMessageConsumeContext context, ProjectTypedEvent<T, TEvent> handler)
         where TEvent : class {
-        return context.Message is not TEvent
-            ? NoHandler()
-            : HandleTypedEvent();
+        return context.Message is not TEvent ? NoHandler() : HandleTypedEvent();
 
         ValueTask<MongoProjectOperation<T>> HandleTypedEvent() {
             var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);

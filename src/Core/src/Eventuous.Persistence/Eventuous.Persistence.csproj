@@ -3,21 +3,25 @@
         <RootNamespace>Eventuous</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-      <Compile Include="..\Eventuous.Diagnostics\DiagnosticName.cs">
-        <Link>Diagnostics\DiagnosticName.cs</Link>
-      </Compile>
-      <Compile Include="..\Eventuous.Shared\Tools\TaskExtensions.cs">
-        <Link>Tools\TaskExtensions.cs</Link>
-      </Compile>
+        <Compile Include="..\Eventuous.Diagnostics\DiagnosticName.cs">
+            <Link>Diagnostics\DiagnosticName.cs</Link>
+        </Compile>
+        <Compile Include="..\Eventuous.Shared\Tools\TaskExtensions.cs">
+            <Link>Tools\TaskExtensions.cs</Link>
+        </Compile>
+        <Using Include="Eventuous.Tools" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
-      <ProjectReference Include="..\Eventuous.Domain\Eventuous.Domain.csproj" />
-      <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj" />
-      <ProjectReference Include="..\Eventuous.Shared\Eventuous.Shared.csproj" />
+        <ProjectReference Include="..\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
+        <ProjectReference Include="..\Eventuous.Domain\Eventuous.Domain.csproj" />
+        <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj" />
+        <ProjectReference Include="..\Eventuous.Shared\Eventuous.Shared.csproj" />
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="Eventuous.Spyglass" />
-        <InternalsVisibleTo Include="Eventuous.Application"/>
+        <InternalsVisibleTo Include="Eventuous.Application" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="Eventuous.Persistence.csproj.DotSettings" />
     </ItemGroup>
 </Project>

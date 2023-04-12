@@ -1,14 +1,15 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Projections.MongoDB;
 
+using Tools;
+
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class DeleteOneBuilder : DeleteBuilder<DeleteOneBuilder>, IMongoProjectorBuilder {
-        public DeleteOneBuilder Id(GetDocumentIdFromStream getId) 
+        public DeleteOneBuilder Id(GetDocumentIdFromStream getId)
             => Id(x => getId(x.Stream));
 
         public DeleteOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
@@ -16,7 +17,8 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return this;
         }
 
-        public DeleteOneBuilder DefaultId() => Id(x => x.GetId());
+        public DeleteOneBuilder DefaultId()
+            => Id(x => x.GetId());
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(

@@ -4,12 +4,12 @@
 using System.Diagnostics;
 using System.Threading.Channels;
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Channels;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 
 namespace Eventuous.Subscriptions.Filters;
+
+using Channels;
+using Context;
+using Logging;
 
 public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IAsyncDisposable {
     readonly ConcurrentChannelWorker<WorkerTask> _worker;

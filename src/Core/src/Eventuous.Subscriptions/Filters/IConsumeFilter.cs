@@ -1,15 +1,15 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Context;
-
 namespace Eventuous.Subscriptions.Filters;
+
+using Context;
 
 public interface IConsumeFilter {
     ValueTask Send(IBaseConsumeContext context, LinkedListNode<IConsumeFilter>? next);
 
     Type Consumes { get; }
-    
+
     Type Produces { get; }
 }
 
@@ -38,7 +38,7 @@ public abstract class ConsumeFilter<TIn, TOut> : IConsumeFilter<TIn, TOut>
     }
 
     public Type Consumes => typeof(TIn);
-    
+
     public Type Produces => typeof(TOut);
 }
 

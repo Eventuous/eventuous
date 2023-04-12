@@ -1,9 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Consumers;
+namespace Eventuous.Subscriptions.Filters;
 
-namespace Eventuous.Subscriptions.Filters; 
+using Consumers;
 
 public static class ConsumePipeExtensions {
     public static ConsumePipe AddDefaultConsumer(this ConsumePipe consumePipe, params IEventHandler[] handlers)

@@ -1,29 +1,23 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.GooglePubSub.Shared;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Google.Protobuf.Collections;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
 namespace Eventuous.GooglePubSub.Subscriptions;
 
+using Shared;
+
 /// <summary>
 /// Google PubSub subscription service
 /// </summary>
 [PublicAPI]
-public class GooglePubSubSubscription
-    : EventSubscription<PubSubSubscriptionOptions> {
-    public delegate ValueTask<Reply> HandleEventProcessingFailure(
-        SubscriberClient client,
-        PubsubMessage    pubsubMessage,
-        Exception        exception
-    );
+public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOptions> {
+    public delegate ValueTask<Reply> HandleEventProcessingFailure(SubscriberClient client, PubsubMessage pubsubMessage, Exception exception);
 
     readonly HandleEventProcessingFailure _failureHandler;
     readonly SubscriptionName             _subscriptionName;
@@ -64,11 +58,7 @@ public class GooglePubSubSubscription
     /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
     /// <param name="consumePipe">Consumer pipeline</param>
     /// <param name="loggerFactory">Logger factory instance</param>
-    public GooglePubSubSubscription(
-        PubSubSubscriptionOptions options,
-        ConsumePipe               consumePipe,
-        ILoggerFactory?           loggerFactory
-    )
+    public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
         : base(options, consumePipe, loggerFactory) {
         _failureHandler = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
 
@@ -86,21 +76,10 @@ public class GooglePubSubSubscription
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         if (Options.CreateSubscription) {
-            await CreateSubscription(
-                    _subscriptionName,
-                    _topicName,
-                    Options.ConfigureSubscription,
-                    cancellationToken
-                )
-                .NoContext();
+            await CreateSubscription(_subscriptionName, _topicName, Options.ConfigureSubscription, cancellationToken).NoContext();
         }
 
-        _client = await CreateAsync(
-                _subscriptionName,
-                Options.ClientCreationSettings,
-                Options.Settings
-            )
-            .NoContext();
+        _client = await CreateAsync(_subscriptionName, Options.ClientCreationSettings, Options.Settings).NoContext();
 
         _subscriberTask = _client.StartAsync(Handle);
 
@@ -110,12 +89,7 @@ public class GooglePubSubSubscription
 
             Logger.Current = Log;
 
-            var evt = DeserializeData(
-                contentType,
-                eventType,
-                msg.Data.ToByteArray(),
-                _topicName.TopicId
-            );
+            var evt = DeserializeData(contentType, eventType, msg.Data.ToByteArray(), _topicName.TopicId);
 
             var ctx = new MessageConsumeContext(
                 msg.MessageId,
@@ -150,31 +124,13 @@ public class GooglePubSubSubscription
         await _subscriberTask.NoContext();
     }
 
-    public async Task CreateSubscription(
-        SubscriptionName      subscriptionName,
-        TopicName             topicName,
-        Action<Subscription>? configureSubscription,
-        CancellationToken     cancellationToken
-    ) {
+    public async Task CreateSubscription(SubscriptionName subscriptionName, TopicName topicName, Action<Subscription>? configureSubscription, CancellationToken cancellationToken) {
         var emulator = Options.ClientCreationSettings.DetectEmulator();
         Logger.Current = Log;
-
         await PubSub.CreateTopic(topicName, emulator, cancellationToken).NoContext();
-
-        await PubSub.CreateSubscription(
-                subscriptionName,
-                topicName,
-                configureSubscription,
-                emulator,
-                cancellationToken
-            )
-            .NoContext();
+        await PubSub.CreateSubscription(subscriptionName, topicName, configureSubscription, emulator, cancellationToken).NoContext();
     }
 
-    static ValueTask<Reply> DefaultEventProcessingErrorHandler(
-        SubscriberClient client,
-        PubsubMessage    message,
-        Exception        exception
-    )
+    static ValueTask<Reply> DefaultEventProcessingErrorHandler(SubscriberClient client, PubsubMessage message, Exception exception)
         => new(Reply.Nack);
 }

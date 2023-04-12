@@ -2,14 +2,14 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
-using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Filters;
-using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
+
+using Checkpoints;
+using Context;
+using Filters;
+using Logging;
 
 public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> where T : SubscriptionOptions {
     protected EventSubscriptionWithCheckpoint(
@@ -29,7 +29,8 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         );
     }
 
-    static bool PipelineIsAsync(ConsumePipe pipe) => pipe.RegisteredFilters.Any(x => x is AsyncHandlingFilter);
+    static bool PipelineIsAsync(ConsumePipe pipe)
+        => pipe.RegisteredFilters.Any(x => x is AsyncHandlingFilter);
 
     // It's not ideal, but for now if there's any filter added on top of the default one,
     // we won't add the concurrent filter, so it won't clash with any custom setup
@@ -96,7 +97,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
             new Checkpoint(SubscriptionId, eventPosition.Position),
             true,
             cancellationToken
-        );
+        ).NoContext();
     }
 
     protected override ValueTask Finalize(CancellationToken cancellationToken)

@@ -3,12 +3,12 @@
 
 using System.Runtime.CompilerServices;
 using System.Text;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 
 namespace Eventuous.Subscriptions;
+
+using Context;
+using Diagnostics;
+using Logging;
 
 /// <summary>
 /// Base class for event handlers, which allows registering typed handlers for different event types
@@ -17,7 +17,8 @@ namespace Eventuous.Subscriptions;
 public abstract class EventHandler : BaseEventHandler {
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
 
-    protected EventHandler(TypeMapper? mapper = null) => _typeMapper = mapper ?? TypeMap.Instance;
+    protected EventHandler(TypeMapper? mapper = null)
+        => _typeMapper = mapper ?? TypeMap.Instance;
 
     static readonly ValueTask<EventHandlingStatus> Ignored = new(EventHandlingStatus.Ignored);
 

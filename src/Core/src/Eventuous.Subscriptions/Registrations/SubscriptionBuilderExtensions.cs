@@ -1,10 +1,10 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Filters;
-using Eventuous.Subscriptions.Filters.Partitioning;
-
 namespace Eventuous.Subscriptions.Registrations;
+
+using Filters;
+using Filters.Partitioning;
 
 public static class SubscriptionBuilderExtensions {
     /// <summary>
@@ -29,9 +29,7 @@ public static class SubscriptionBuilderExtensions {
     /// <param name="builder">Subscription builder</param>
     /// <param name="partitionsCount">Number of partitions</param>
     /// <returns></returns>
-    public static SubscriptionBuilder WithPartitioningByStream(
-        this SubscriptionBuilder builder,
-        int                      partitionsCount
-    )
+    [PublicAPI]
+    public static SubscriptionBuilder WithPartitioningByStream(this SubscriptionBuilder builder, int partitionsCount)
         => builder.WithPartitioning(partitionsCount, ctx => ctx.Stream);
 }

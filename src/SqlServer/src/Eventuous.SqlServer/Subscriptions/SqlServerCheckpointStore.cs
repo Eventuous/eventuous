@@ -1,14 +1,12 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Data;
-using Eventuous.SqlServer.Extensions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
-using Microsoft.Data.SqlClient;
 
 namespace Eventuous.SqlServer.Subscriptions;
+
+using Extensions;
 
 public class SqlServerCheckpointStore : ICheckpointStore {
     readonly GetSqlServerConnection _getConnection;
@@ -34,6 +32,7 @@ public class SqlServerCheckpointStore : ICheckpointStore {
 
             if (await reader.ReadAsync(cancellationToken).NoContext()) {
                 var hasPosition = !reader.IsDBNull(0);
+
                 checkpoint = hasPosition
                     ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0))
                     : Checkpoint.Empty(checkpointId);
@@ -59,18 +58,15 @@ public class SqlServerCheckpointStore : ICheckpointStore {
 
         await using var connection = _getConnection();
         await connection.OpenAsync(cancellationToken).NoContext();
-        await using var cmd = GetCheckpointCommand(connection, _storeCheckpointSql, checkpoint.Id);
-        cmd.Parameters.AddWithValue("position", SqlDbType.BigInt, (long)checkpoint.Position);
+
+        await using var cmd = GetCheckpointCommand(connection, _storeCheckpointSql, checkpoint.Id)
+            .Add("position", SqlDbType.BigInt, (long)checkpoint.Position);
+
         await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
         Logger.Current.CheckpointStored(this, checkpoint, force);
         return checkpoint;
     }
 
-    static SqlCommand GetCheckpointCommand(SqlConnection connection, string sql, string checkpointId) {
-        var cmd = connection.CreateCommand();
-        cmd.CommandType = CommandType.Text;
-        cmd.CommandText = sql;
-        cmd.Parameters.AddWithValue("checkpointId", SqlDbType.NVarChar, checkpointId);
-        return cmd;
-    }
+    static SqlCommand GetCheckpointCommand(SqlConnection connection, string sql, string checkpointId)
+        => connection.GetTextCommand(sql).Add("checkpointId", SqlDbType.NVarChar, checkpointId);
 }

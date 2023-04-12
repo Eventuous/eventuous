@@ -1,5 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-      <ProjectReference Include="..\Eventuous.Shared\Eventuous.Shared.csproj" />
+        <ProjectReference Include="..\Eventuous.Shared\Eventuous.Shared.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="System.Diagnostics" />
+        <Using Include="System.Runtime.CompilerServices" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="Eventuous.Diagnostics.csproj.DotSettings" />
     </ItemGroup>
 </Project>

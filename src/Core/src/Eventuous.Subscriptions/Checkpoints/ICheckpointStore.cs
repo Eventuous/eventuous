@@ -6,6 +6,8 @@ namespace Eventuous.Subscriptions.Checkpoints;
 [PublicAPI]
 public record struct Checkpoint(string Id, ulong? Position) {
     public static Checkpoint Empty(string id) => new(id, null);
+
+    public bool IsEmpty => Position == null;
 }
 
 [PublicAPI]

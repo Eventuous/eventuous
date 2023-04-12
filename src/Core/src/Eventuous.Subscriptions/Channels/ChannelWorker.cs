@@ -17,11 +17,7 @@ public class ChannelWorker<T> {
     /// <param name="channel">Channel to use for writes and reads</param>
     /// <param name="process">Function to process each element the worker reads from the channel</param>
     /// <param name="throwOnFull">Throw if the channel is full to prevent partition blocks</param>
-    public ChannelWorker(
-        Channel<T>        channel,
-        ProcessElement<T> process,
-        bool              throwOnFull = false
-    ) {
+    public ChannelWorker(Channel<T> channel, ProcessElement<T> process, bool throwOnFull = false) {
         _channel     = channel;
         _throwOnFull = throwOnFull;
         _cts         = new CancellationTokenSource();

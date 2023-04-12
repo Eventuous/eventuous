@@ -2,56 +2,32 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Linq.Expressions;
-using Eventuous.Tools;
 using static System.String;
 
-namespace Eventuous.Projections.MongoDB.Tools; 
+namespace Eventuous.Projections.MongoDB.Tools;
 
 [PublicAPI]
 public static class MongoCollectionExtensions {
-    public static IMongoCollection<T> GetDocumentCollection<T>(
-        this IMongoDatabase  database,
-        MongoCollectionName? collectionName = null
-    )
-        where T : Document
+    public static IMongoCollection<T> GetDocumentCollection<T>(this IMongoDatabase database, MongoCollectionName? collectionName = null) where T : Document
         => GetDocumentCollection<T>(database, collectionName ?? MongoCollectionName.For<T>(), null);
 
-    public static IMongoCollection<T> GetDocumentCollection<T>(
-        this IMongoDatabase     database,
-        MongoCollectionSettings settings
-    ) where T : Document
+    public static IMongoCollection<T> GetDocumentCollection<T>(this IMongoDatabase database, MongoCollectionSettings settings) where T : Document
         => GetDocumentCollection<T>(database, MongoCollectionName.For<T>(), settings);
 
-    public static IMongoCollection<T> GetDocumentCollection<T>(
-        this IMongoDatabase      database,
-        MongoCollectionName?     collectionName,
-        MongoCollectionSettings? settings
-    ) where T : Document
-        => database.GetCollection<T>(
-            collectionName ?? MongoCollectionName.For<T>(),
-            settings
-        );
+    public static IMongoCollection<T> GetDocumentCollection<T>(this IMongoDatabase database, MongoCollectionName? collectionName, MongoCollectionSettings? settings)
+        where T : Document
+        => database.GetCollection<T>(collectionName ?? MongoCollectionName.For<T>(), settings);
 
-    public static Task<bool> DocumentExists<T>(
-        this IMongoCollection<T> collection,
-        string                   id,
-        CancellationToken        cancellationToken = default
-    ) where T : Document {
-        if (IsNullOrWhiteSpace(id))
-            throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+    public static Task<bool> DocumentExists<T>(this IMongoCollection<T> collection, string id, CancellationToken cancellationToken = default) where T : Document {
+        if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
         return collection
             .Find(x => x.Id == id)
             .AnyAsync(cancellationToken);
     }
 
-    public static Task<T?> LoadDocument<T>(
-        this IMongoCollection<T> collection,
-        string                   id,
-        CancellationToken        cancellationToken = default
-    ) where T : Document {
-        if (IsNullOrWhiteSpace(id))
-            throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+    public static Task<T?> LoadDocument<T>(this IMongoCollection<T> collection, string id, CancellationToken cancellationToken = default) where T : Document {
+        if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
         return collection
             .Find(x => x.Id == id)
@@ -65,8 +41,7 @@ public static class MongoCollectionExtensions {
         Expression<Func<T, TResult>> projection,
         CancellationToken            cancellationToken = default
     ) where T : Document {
-        if (IsNullOrWhiteSpace(id))
-            throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+        if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
         if (projection == null) throw new ArgumentNullException(nameof(projection));
 
@@ -77,18 +52,11 @@ public static class MongoCollectionExtensions {
             .SingleOrDefaultAsync(cancellationToken)!;
     }
 
-    public static Task<List<T>> LoadDocuments<T>(
-        this IMongoCollection<T> collection,
-        IEnumerable<string>      ids,
-        CancellationToken        cancellationToken = default
-    ) where T : Document {
+    public static Task<List<T>> LoadDocuments<T>(this IMongoCollection<T> collection, IEnumerable<string> ids, CancellationToken cancellationToken = default) where T : Document {
         var idsList = ids.ToList();
 
         if (ids == null || idsList.Count == 0 || idsList.Any(IsNullOrWhiteSpace))
-            throw new ArgumentException(
-                "Document ids collection cannot be empty or contain empty values",
-                nameof(ids)
-            );
+            throw new ArgumentException("Document ids collection cannot be empty or contain empty values", nameof(ids));
 
         return collection
             .Find(Builders<T>.Filter.In(x => x.Id, idsList))
@@ -104,10 +72,7 @@ public static class MongoCollectionExtensions {
         var idsList = ids.ToList();
 
         if (ids == null || idsList.Count == 0 || idsList.Any(IsNullOrWhiteSpace))
-            throw new ArgumentException(
-                "Document ids collection cannot be empty or contain empty values",
-                nameof(ids)
-            );
+            throw new ArgumentException("Document ids collection cannot be empty or contain empty values", nameof(ids));
 
         if (projection == null) throw new ArgumentNullException(nameof(projection), "Projection must be specified");
 
@@ -123,8 +88,7 @@ public static class MongoCollectionExtensions {
         ProjectionDefinition<T, TResult> projection,
         CancellationToken                cancellationToken = default
     ) where T : Document {
-        if (IsNullOrWhiteSpace(id))
-            throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+        if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
         if (projection == null) throw new ArgumentNullException(nameof(projection));
 
@@ -156,38 +120,27 @@ public static class MongoCollectionExtensions {
         configure?.Invoke(options);
 
         return await collection.ReplaceOneAsync(
-            x => x.Id == document.Id,
-            document,
-            options,
-            cancellationToken
-        ).NoContext();
+                x => x.Id == document.Id,
+                document,
+                options,
+                cancellationToken
+            )
+            .NoContext();
     }
 
-    public static Task ReplaceDocument<T>(
-        this IMongoCollection<T> collection,
-        T                        document,
-        CancellationToken        cancellationToken = default
-    ) where T : Document
+    public static Task ReplaceDocument<T>(this IMongoCollection<T> collection, T document, CancellationToken cancellationToken = default) where T : Document
         => collection.ReplaceDocument(document, null, cancellationToken);
 
-    public static async Task<bool> DeleteDocument<T>(
-        this IMongoCollection<T> collection,
-        string                   id,
-        CancellationToken        cancellationToken = default
-    ) where T : Document {
-        if (IsNullOrWhiteSpace(id))
-            throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+    public static async Task<bool> DeleteDocument<T>(this IMongoCollection<T> collection, string id, CancellationToken cancellationToken = default) where T : Document {
+        if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
         var result = await collection.DeleteOneAsync(x => x.Id == id, cancellationToken).NoContext();
 
         return result.DeletedCount == 1;
     }
 
-    public static async Task<long> DeleteManyDocuments<T>(
-        this IMongoCollection<T> collection,
-        FilterDefinition<T>      filter,
-        CancellationToken        cancellationToken = default
-    ) where T : Document {
+    public static async Task<long> DeleteManyDocuments<T>(this IMongoCollection<T> collection, FilterDefinition<T> filter, CancellationToken cancellationToken = default)
+        where T : Document {
         if (filter == null) throw new ArgumentNullException(nameof(filter));
 
         var result = await collection.DeleteManyAsync(filter, cancellationToken).NoContext();
@@ -195,11 +148,7 @@ public static class MongoCollectionExtensions {
         return result.DeletedCount;
     }
 
-    public static Task<long> DeleteManyDocuments<T>(
-        this IMongoCollection<T> collection,
-        BuildFilter<T>           filter,
-        CancellationToken        cancellationToken = default
-    ) where T : Document
+    public static Task<long> DeleteManyDocuments<T>(this IMongoCollection<T> collection, BuildFilter<T> filter, CancellationToken cancellationToken = default) where T : Document
         => collection.DeleteManyDocuments(filter(Builders<T>.Filter), cancellationToken);
 
     public static async Task<long> BulkUpdateDocuments<T>(
@@ -249,21 +198,12 @@ public static class MongoCollectionExtensions {
     ) where T : Document
         => collection.BulkUpdateDocuments(documents, filter, update, null, cancellationToken);
 
-    public static Task<string> CreateDocumentIndex<T>(
-        this IMongoCollection<T>    collection,
-        BuildIndex<T>               index,
-        Action<CreateIndexOptions>? configure = null
-    ) where T : Document {
+    public static Task<string> CreateDocumentIndex<T>(this IMongoCollection<T> collection, BuildIndex<T> index, Action<CreateIndexOptions>? configure = null) where T : Document {
         var options = new CreateIndexOptions();
 
         configure?.Invoke(options);
 
-        return collection.Indexes.CreateOneAsync(
-            new CreateIndexModel<T>(
-                index(Builders<T>.IndexKeys),
-                options
-            )
-        );
+        return collection.Indexes.CreateOneAsync(new CreateIndexModel<T>(index(Builders<T>.IndexKeys), options));
     }
 
     public static async Task<string> CreateDocumentIndex<T>(
@@ -286,13 +226,7 @@ public static class MongoCollectionExtensions {
         return Empty;
 
         Task<string> CreateIndex()
-            => collection.Indexes.CreateOneAsync(
-                new CreateIndexModel<T>(
-                    index(Builders<T>.IndexKeys),
-                    options
-                ),
-                cancellationToken: cancellationToken
-            );
+            => collection.Indexes.CreateOneAsync(new CreateIndexModel<T>(index(Builders<T>.IndexKeys), options), cancellationToken: cancellationToken);
     }
 
     public static async Task UpdateDocument<T>(
@@ -306,12 +240,7 @@ public static class MongoCollectionExtensions {
 
         configure?.Invoke(options);
 
-        await collection.UpdateOneAsync(
-            filter,
-            update,
-            options,
-            cancellationToken
-        ).NoContext();
+        await collection.UpdateOneAsync(filter, update, options, cancellationToken).NoContext();
     }
 
     public static Task UpdateDocument<T>(
@@ -321,12 +250,7 @@ public static class MongoCollectionExtensions {
         Action<UpdateOptions>?   configure,
         CancellationToken        cancellationToken = default
     ) where T : Document
-        => collection.UpdateDocument(
-            filter(Builders<T>.Filter),
-            update(Builders<T>.Update),
-            configure,
-            cancellationToken
-        );
+        => collection.UpdateDocument(filter(Builders<T>.Filter), update(Builders<T>.Update), configure, cancellationToken);
 
     public static Task UpdateDocument<T>(
         this IMongoCollection<T> collection,
@@ -342,12 +266,7 @@ public static class MongoCollectionExtensions {
         BuildUpdate<T>           update,
         CancellationToken        cancellationToken = default
     ) where T : Document
-        => collection.UpdateDocument(
-            filter(Builders<T>.Filter),
-            update(Builders<T>.Update),
-            null,
-            cancellationToken
-        );
+        => collection.UpdateDocument(filter(Builders<T>.Filter), update(Builders<T>.Update), null, cancellationToken);
 
     public static Task UpdateDocument<T>(
         this IMongoCollection<T> collection,
@@ -356,15 +275,9 @@ public static class MongoCollectionExtensions {
         Action<UpdateOptions>?   configure,
         CancellationToken        cancellationToken = default
     ) where T : Document {
-        if (IsNullOrWhiteSpace(id))
-            throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
+        if (IsNullOrWhiteSpace(id)) throw new ArgumentException("Document Id cannot be null or whitespace.", nameof(id));
 
-        return collection.UpdateDocument(
-            Builders<T>.Filter.Eq(x => x.Id, id),
-            update,
-            configure,
-            cancellationToken
-        );
+        return collection.UpdateDocument(Builders<T>.Filter.Eq(x => x.Id, id), update, configure, cancellationToken);
     }
 
     /// <summary>
@@ -377,12 +290,7 @@ public static class MongoCollectionExtensions {
         Action<UpdateOptions>?   configure,
         CancellationToken        cancellationToken = default
     ) where T : Document
-        => collection.UpdateDocument(
-            id,
-            update(Builders<T>.Update),
-            configure,
-            cancellationToken
-        );
+        => collection.UpdateDocument(id, update(Builders<T>.Update), configure, cancellationToken);
 
     public static Task UpdateDocument<T>(
         this IMongoCollection<T> collection,
@@ -426,12 +334,7 @@ public static class MongoCollectionExtensions {
         Action<UpdateOptions>?   configure,
         CancellationToken        cancellationToken = default
     ) where T : Document
-        => collection.UpdateManyDocuments(
-            filter(Builders<T>.Filter),
-            update(Builders<T>.Update),
-            configure,
-            cancellationToken
-        );
+        => collection.UpdateManyDocuments(filter(Builders<T>.Filter), update(Builders<T>.Update), configure, cancellationToken);
 
     public static Task<long> UpdateManyDocuments<T>(
         this IMongoCollection<T> collection,
@@ -447,10 +350,5 @@ public static class MongoCollectionExtensions {
         BuildUpdate<T>           update,
         CancellationToken        cancellationToken = default
     ) where T : Document
-        => collection.UpdateManyDocuments(
-            filter(Builders<T>.Filter),
-            update(Builders<T>.Update),
-            null,
-            cancellationToken
-        );
+        => collection.UpdateManyDocuments(filter(Builders<T>.Filter), update(Builders<T>.Update), null, cancellationToken);
 }

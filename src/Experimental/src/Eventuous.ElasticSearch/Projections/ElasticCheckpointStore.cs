@@ -2,12 +2,9 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Concurrent;
-using Elasticsearch.Net;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Microsoft.Extensions.Options;
-using Nest;
 using EventuousCheckpoint = Eventuous.Subscriptions.Checkpoints.Checkpoint;
 
 namespace Eventuous.ElasticSearch.Projections;

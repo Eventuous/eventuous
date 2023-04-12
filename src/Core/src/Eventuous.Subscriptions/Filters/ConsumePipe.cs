@@ -1,9 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Context;
-
 namespace Eventuous.Subscriptions.Filters;
+
+using Context;
 
 public sealed class ConsumePipe : IAsyncDisposable {
     readonly LinkedList<IConsumeFilter> _filters = new();
@@ -15,7 +15,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         where TOut : class, IBaseConsumeContext {
         // Avoid adding one filter instance multiple times
         if (_filters.Any(x => x == filter)) return this;
-        
+
         // Deny adding filter of the same type twice
         if (_filters.Any(x => x.GetType() == filter.GetType())) throw new DuplicateFilterException(filter);
 
@@ -33,7 +33,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         where TOut : class, IBaseConsumeContext {
         // Avoid adding one filter instance multiple times
         if (_filters.Any(x => x == filter)) return this;
-        
+
         // Deny adding filter of the same type twice
         if (_filters.Any(x => x.GetType() == filter.GetType())) throw new DuplicateFilterException(filter);
 
@@ -46,7 +46,8 @@ public sealed class ConsumePipe : IAsyncDisposable {
         return this;
     }
 
-    public ValueTask Send(IBaseConsumeContext context) => Move(_filters.First, context);
+    public ValueTask Send(IBaseConsumeContext context)
+        => Move(_filters.First, context);
 
     static ValueTask Move(LinkedListNode<IConsumeFilter>? node, IBaseConsumeContext context)
         => node == null ? default : node.Value.Send(context, node.Next);

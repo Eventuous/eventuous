@@ -16,6 +16,9 @@
         <Compile Include="$(DiagRoot)\Eventuous.Diagnostics\DiagnosticName.cs">
             <Link>Diagnostics\DiagnosticName.cs</Link>
         </Compile>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TypeExtensions.cs">
+            <Link>Tools\TypeExtensions.cs</Link>
+        </Compile>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
         </Compile>

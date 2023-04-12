@@ -1,9 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Producers.Diagnostics;
-
 namespace Eventuous.Producers;
+
+using Diagnostics;
 
 public record ProducedMessage {
     public ProducedMessage(

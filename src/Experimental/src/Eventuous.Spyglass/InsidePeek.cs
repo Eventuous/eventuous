@@ -73,26 +73,13 @@ public class InsidePeek {
         var typeName = streamName[..streamName.IndexOf('-')];
         var agg      = AggregateInfos.First(x => x.AggregateType == typeName);
 
-        var events = await _eventStore.ReadStream(
-            new StreamName(streamName),
-            StreamReadPosition.Start,
-            true,
-            CancellationToken.None
-        );
+        var events = await _eventStore.ReadStream(new StreamName(streamName), StreamReadPosition.Start, true, CancellationToken.None);
 
         var aggregate      = agg.GetAggregate();
         var selectedEvents = version == -1 ? events : events.Take(version + 1);
         aggregate.Load(selectedEvents.Select(x => x.Payload));
 
-        return new {
-            aggregate.State,
-            Events = events.Select(
-                x => new {
-                    EventType = x.Payload!.GetType().Name,
-                    x.Payload,
-                }
-            )
-        };
+        return new { aggregate.State, Events = events.Select(x => new { EventType = x.Payload!.GetType().Name, x.Payload, }) };
     }
 
     public object[] Aggregates => AggregateInfos.Select(x => x.GetInfo()).ToArray();
@@ -116,7 +103,8 @@ public class InsidePeek {
             _factory       = factory;
         }
 
-        public dynamic GetAggregate() => _factory();
+        public dynamic GetAggregate()
+            => _factory();
 
         public object GetInfo() {
             var    instance = GetAggregate();
@@ -126,8 +114,9 @@ public class InsidePeek {
             var handlerType     = typeof(Func<,,>).MakeGenericType(_stateType, typeof(object), _stateType);
             var handlersDicType = typeof(Dictionary<,>).MakeGenericType(typeof(Type), handlerType);
 
-            dynamic           handlersDic = Convert.ChangeType(handlers, handlersDicType)!;
-            IEnumerable<Type> keys        = handlersDic.Keys;
+            dynamic handlersDic = Convert.ChangeType(handlers, handlersDicType)!;
+
+            IEnumerable<Type> keys = handlersDic.Keys;
 
             return new {
                 Type      = _aggregateType.Name,
@@ -137,7 +126,8 @@ public class InsidePeek {
             };
         }
 
-        public override string ToString() => $"{_aggregateType.Name} ({_stateType.Name})";
+        public override string ToString()
+            => $"{_aggregateType.Name} ({_stateType.Name})";
 
         readonly Type          _aggregateType;
         readonly Type          _stateType;

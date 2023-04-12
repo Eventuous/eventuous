@@ -3,14 +3,15 @@
 
 using System.Reflection;
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Consumers;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Eventuous.Subscriptions.Registrations;
+
+using Consumers;
+using Context;
+using Filters;
 
 public abstract class SubscriptionBuilder {
     public string             SubscriptionId { get; }
@@ -26,7 +27,8 @@ public abstract class SubscriptionBuilder {
     protected ConsumePipe     Pipe            { get; }      = new();
     protected ResolveConsumer ResolveConsumer { get; set; } = null!;
 
-    protected IEventHandler[] ResolveHandlers(IServiceProvider sp) => _handlers.Select(x => x(sp)).ToArray();
+    protected IEventHandler[] ResolveHandlers(IServiceProvider sp)
+        => _handlers.Select(x => x(sp)).ToArray();
 
     /// <summary>
     /// Adds an event handler to the subscription
@@ -55,9 +57,8 @@ public abstract class SubscriptionBuilder {
         return this;
     }
 
-    public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(
-        Func<THandler, TWrappingHandler> getWrappingHandler
-    ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
+    public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(Func<THandler, TWrappingHandler> getWrappingHandler)
+        where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         Services.TryAddSingleton<THandler>();
         AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
         return this;
@@ -125,8 +126,7 @@ public abstract class SubscriptionBuilder {
 public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
-    public SubscriptionBuilder(IServiceCollection services, string subscriptionId)
-        : base(services, subscriptionId) {
+    public SubscriptionBuilder(IServiceCollection services, string subscriptionId) : base(services, subscriptionId) {
         ResolveConsumer  = ResolveDefaultConsumer;
         ConfigureOptions = options => options.SubscriptionId = subscriptionId;
     }
@@ -215,8 +215,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
         var args = ctor.GetParameters().Select(CreateArg).ToArray();
 
-        if (ctor.Invoke(args) is not T instance)
-            throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
+        if (ctor.Invoke(args) is not T instance) throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
 
         _resolvedSubscription = instance;
         return instance;

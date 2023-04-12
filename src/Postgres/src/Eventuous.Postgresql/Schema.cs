@@ -2,8 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Reflection;
-using Eventuous.Tools;
-using Npgsql;
 
 namespace Eventuous.Postgresql;
 

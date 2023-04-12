@@ -1,11 +1,14 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Diagnostics.Tracing;
 using Eventuous.Diagnostics.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.Hosting;
+
+using DependencyInjection;
+using Logging;
 
 [PublicAPI]
 public static class LoggingAppBuilderExtensions {
@@ -47,7 +50,8 @@ public static class LoggingAppBuilderExtensions {
         EventLevel            level    = EventLevel.Verbose,
         EventKeywords         keywords = EventKeywords.All
     )
-        => listener ??= new LoggingEventListener(provider.GetRequiredService<ILoggerFactory>(),
+        => listener ??= new LoggingEventListener(
+            provider.GetRequiredService<ILoggerFactory>(),
             level: level,
             keywords: keywords
         );

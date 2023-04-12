@@ -1,14 +1,17 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Reflection;
 using Eventuous.AspNetCore.Web;
 using Eventuous.AspNetCore.Web.Diagnostics;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 
 // ReSharper disable CheckNamespace
 
 namespace Microsoft.AspNetCore.Routing;
+
+using Authorization;
+using Builder;
+using Http;
 
 public delegate TCommand EnrichCommandFromHttpContext<TCommand>(TCommand command, HttpContext httpContext);
 
@@ -135,7 +138,7 @@ public static partial class RouteBuilderExtensions {
         var routeBuilder = builder
             .MapPost(
                 resolvedRoute,
-                async Task<IResult>(HttpContext context, ICommandService<TAggregate> service) => {
+                async Task<IResult> (HttpContext context, ICommandService<TAggregate> service) => {
                     var cmd = await context.Request.ReadFromJsonAsync<TContract>(context.RequestAborted);
 
                     if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
@@ -207,7 +210,7 @@ public static partial class RouteBuilderExtensions {
             var routeBuilder = builder
                 .MapPost(
                     GetRoute(type, route),
-                    async Task<IResult>(HttpContext context) => {
+                    async Task<IResult> (HttpContext context) => {
                         var cmd = await context.Request.ReadFromJsonAsync(type, context.RequestAborted);
 
                         if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");

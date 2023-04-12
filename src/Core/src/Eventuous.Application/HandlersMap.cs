@@ -1,20 +1,13 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics.CodeAnalysis;
-using Eventuous.Tools;
-using static Eventuous.Diagnostics.ApplicationEventSource;
-
 namespace Eventuous;
 
-public delegate Task ActOnAggregateAsync<in TAggregate, in TCommand>(
-    TAggregate        aggregate,
-    TCommand          command,
-    CancellationToken cancellationToken
-) where TAggregate : Aggregate;
+using static Diagnostics.ApplicationEventSource;
 
-public delegate void ActOnAggregate<in TAggregate, in TCommand>(TAggregate aggregate, TCommand command)
-    where TAggregate : Aggregate;
+public delegate Task ActOnAggregateAsync<in TAggregate, in TCommand>(TAggregate aggregate, TCommand command, CancellationToken cancellationToken) where TAggregate : Aggregate;
+
+public delegate void ActOnAggregate<in TAggregate, in TCommand>(TAggregate aggregate, TCommand command) where TAggregate : Aggregate;
 
 record RegisteredHandler<T>(ExpectedState ExpectedState, Func<T, object, CancellationToken, ValueTask<T>> Handler);
 

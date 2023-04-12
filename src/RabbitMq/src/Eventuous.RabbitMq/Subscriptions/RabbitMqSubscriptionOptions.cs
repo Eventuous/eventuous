@@ -2,17 +2,18 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions;
-using static Eventuous.RabbitMq.Subscriptions.RabbitMqSubscription;
 
 namespace Eventuous.RabbitMq.Subscriptions;
+
+using static RabbitMqSubscription;
 
 [PublicAPI]
 public record RabbitMqSubscriptionOptions : SubscriptionOptions {
     public string                        Exchange        { get; set; } = null!;
     public HandleEventProcessingFailure? FailureHandler  { get; set; }
-    public RabbitMqExchangeOptions?      ExchangeOptions { get; set; } = new();
-    public RabbitMqQueueOptions?         QueueOptions    { get; set; } = new();
-    public RabbitMqBindingOptions?       BindingOptions  { get; set; } = new();
+    public RabbitMqExchangeOptions       ExchangeOptions { get; set; } = new();
+    public RabbitMqQueueOptions          QueueOptions    { get; set; } = new();
+    public RabbitMqBindingOptions        BindingOptions  { get; set; } = new();
 
     public uint   ConcurrencyLimit { get; set; } = 1;
     public ushort PrefetchCount    { get; set; }
@@ -37,7 +38,7 @@ public record RabbitMqSubscriptionOptions : SubscriptionOptions {
 
     [PublicAPI]
     public record RabbitMqBindingOptions {
-        public string? RoutingKey { get; set; }
+        public string RoutingKey { get; set; } = "";
 
         public IDictionary<string, object>? Arguments { get; set; }
     }

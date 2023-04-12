@@ -1,10 +1,11 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Projections.MongoDB;
+
+using Tools;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class InsertOneBuilder : IMongoProjectorBuilder {
@@ -47,8 +48,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         Func<MessageConsumeContext<TEvent>, IEnumerable<T>>? _getDocuments;
         Action<InsertManyOptions>?                           _configureOptions;
 
-        Func<MessageConsumeContext<TEvent>, IEnumerable<T>> GetDocuments
-            => Ensure.NotNull(_getDocuments, "Get documents function");
+        Func<MessageConsumeContext<TEvent>, IEnumerable<T>> GetDocuments => Ensure.NotNull(_getDocuments, "Get documents function");
 
         public InsertManyBuilder Documents(Func<TEvent, IEnumerable<T>> getDocuments) {
             _getDocuments = ctx => getDocuments(ctx.Message)

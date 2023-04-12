@@ -1,6 +1,9 @@
-using static Eventuous.ExceptionMessages;
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
 
 namespace Eventuous;
+
+using static ExceptionMessages;
 
 public static class Exceptions {
     public class CommandHandlerNotFound : Exception {

@@ -1,5 +1,6 @@
-using Elasticsearch.Net;
-using Nest;
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Polly;
 
 namespace Eventuous.ElasticSearch.Index;

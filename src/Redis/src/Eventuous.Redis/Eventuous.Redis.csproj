@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="StackExchange.Redis" />
+        <PackageReference Include="StackExchange.Redis"/>
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="Scripts\AppendEvents.lua" />
+        <EmbeddedResource Include="Scripts\AppendEvents.lua"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
@@ -16,11 +16,12 @@
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
         </Compile>
+        <Using Include="Eventuous.Tools"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="StackExchange.Redis" />
+        <Using Include="StackExchange.Redis"/>
     </ItemGroup>
     <ItemGroup>
-        <InternalsVisibleTo Include="Eventuous.Tests.Redis" />
+        <InternalsVisibleTo Include="Eventuous.Tests.Redis"/>
     </ItemGroup>
 </Project>

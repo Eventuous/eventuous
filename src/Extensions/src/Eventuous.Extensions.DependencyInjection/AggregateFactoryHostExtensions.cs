@@ -1,8 +1,11 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 // ReSharper disable CheckNamespace
 
 namespace Microsoft.Extensions.Hosting;
+
+using DependencyInjection;
 
 [PublicAPI]
 public static class AggregateFactoryBuilderExtensions {
@@ -16,7 +19,7 @@ public static class AggregateFactoryBuilderExtensions {
         UseAggregateFactory(host.Services);
         return host;
     }
-    
+
     static void UseAggregateFactory(IServiceProvider sp) {
         var resolvers = sp.GetServices<ResolveAggregateFactory>();
         var registry  = sp.GetService<AggregateFactoryRegistry>() ?? AggregateFactoryRegistry.Instance;

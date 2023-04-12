@@ -2,14 +2,12 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
-using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
-using Eventuous.RabbitMq.Diagnostics;
-using Eventuous.Tools;
-using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.RabbitMq.Producers;
+
+using Diagnostics;
 
 /// <summary>
 /// RabbitMQ producer
@@ -29,11 +27,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
     /// <param name="connectionFactory">RabbitMQ connection factory</param>
     /// <param name="serializer">Optional: event serializer instance</param>
     /// <param name="options">Optional: additional configuration for the exchange</param>
-    public RabbitMqProducer(
-        ConnectionFactory        connectionFactory,
-        IEventSerializer?        serializer = null,
-        RabbitMqExchangeOptions? options    = null
-    ) : base(TracingOptions) {
+    public RabbitMqProducer(ConnectionFactory connectionFactory, IEventSerializer? serializer = null, RabbitMqExchangeOptions? options = null) : base(TracingOptions) {
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
         _connectionFactory = Ensure.NotNull(connectionFactory);

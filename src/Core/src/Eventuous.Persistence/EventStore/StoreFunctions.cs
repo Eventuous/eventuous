@@ -1,10 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Tools;
-using static Eventuous.Diagnostics.PersistenceEventSource;
-
 namespace Eventuous;
+
+using static Diagnostics.PersistenceEventSource;
 
 public static class StoreFunctions {
     public static async Task<AppendEventsResult> Store(
@@ -54,7 +53,7 @@ public static class StoreFunctions {
         Ensure.NotNull(aggregate);
 
         try {
-            return await eventWriter.Store(streamName, aggregate.OriginalVersion, aggregate.Changes, amendEvent, cancellationToken);
+            return await eventWriter.Store(streamName, aggregate.OriginalVersion, aggregate.Changes, amendEvent, cancellationToken).NoContext();
         }
         catch (OptimisticConcurrencyException e) {
             Log.UnableToStoreAggregate<T>(streamName, e);

@@ -2,9 +2,10 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
-using Eventuous.Subscriptions.Logging;
 
 namespace Eventuous.Subscriptions.Context;
+
+using Logging;
 
 /// <summary>
 /// Base interface for a consume context, which doesn't include the payload.

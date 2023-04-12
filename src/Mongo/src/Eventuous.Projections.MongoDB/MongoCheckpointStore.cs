@@ -5,14 +5,14 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver.Linq;
-using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 using EventuousCheckpoint = Eventuous.Subscriptions.Checkpoints.Checkpoint;
 
 namespace Eventuous.Projections.MongoDB;
+
+using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 
 public class MongoCheckpointStore : ICheckpointStore {
     MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options, ILoggerFactory loggerFactory) {
@@ -53,19 +53,12 @@ public class MongoCheckpointStore : ICheckpointStore {
         : this(database, new MongoCheckpointStoreOptions(), loggerFactory) { }
 
     [PublicAPI]
-    public MongoCheckpointStore(
-        IMongoDatabase                        database,
-        IOptions<MongoCheckpointStoreOptions> options,
-        ILoggerFactory                        loggerFactory
-    )
+    public MongoCheckpointStore(IMongoDatabase database, IOptions<MongoCheckpointStoreOptions> options, ILoggerFactory loggerFactory)
         : this(database, options.Value, loggerFactory) { }
 
     IMongoCollection<Checkpoint> Checkpoints { get; }
 
-    public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(
-        string            checkpointId,
-        CancellationToken cancellationToken = default
-    ) {
+    public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken = default) {
         var storedCheckpoint = await Checkpoints.AsQueryable()
             .Where(x => x.Id == checkpointId)
             .SingleOrDefaultAsync(cancellationToken)
@@ -82,11 +75,7 @@ public class MongoCheckpointStore : ICheckpointStore {
 
     readonly Dictionary<string, Subject<EventuousCheckpoint>> _subjects = new();
 
-    public async ValueTask<EventuousCheckpoint> StoreCheckpoint(
-        EventuousCheckpoint checkpoint,
-        bool                force,
-        CancellationToken   cancellationToken = default
-    ) {
+    public async ValueTask<EventuousCheckpoint> StoreCheckpoint(EventuousCheckpoint checkpoint, bool force, CancellationToken cancellationToken = default) {
         if (force) {
             await StoreInternal(checkpoint, true, cancellationToken).NoContext();
             return checkpoint;
@@ -111,10 +100,11 @@ public class MongoCheckpointStore : ICheckpointStore {
     }
 
     record Checkpoint(string Id, ulong? Position) {
-        public static Checkpoint FromCheckpoint(EventuousCheckpoint checkpoint) =>
-            new(checkpoint.Id, checkpoint.Position);
+        public static Checkpoint FromCheckpoint(EventuousCheckpoint checkpoint)
+            => new(checkpoint.Id, checkpoint.Position);
 
-        public EventuousCheckpoint ToCheckpoint() => new(Id, Position);
+        public EventuousCheckpoint ToCheckpoint()
+            => new(Id, Position);
     }
 }
 

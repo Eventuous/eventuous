@@ -7,10 +7,7 @@ using Eventuous.Diagnostics;
 namespace Eventuous.Producers.Diagnostics;
 
 public static class ProducerActivity {
-    public static (Activity? act, ProducedMessage msgs) Start(
-        ProducedMessage                             message,
-        IEnumerable<KeyValuePair<string, object?>>? tags
-    ) {
+    public static (Activity? act, ProducedMessage msgs) Start(ProducedMessage message, IEnumerable<KeyValuePair<string, object?>>? tags) {
         var activity = GetActivity(tags);
 
         var meta      = GetMeta(message.Metadata);

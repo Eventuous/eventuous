@@ -5,14 +5,14 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Tracing;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Subscriptions.Filters;
-using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
+
+using Context;
+using Diagnostics;
+using Filters;
+using Logging;
 
 public abstract class EventSubscription<T> : IMessageSubscription where T : SubscriptionOptions {
     [PublicAPI]
@@ -70,9 +70,11 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         await Finalize(cancellationToken);
     }
 
-    protected virtual ValueTask Finalize(CancellationToken cancellationToken) => default;
+    protected virtual ValueTask Finalize(CancellationToken cancellationToken)
+        => default;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    // ReSharper disable once CognitiveComplexity
     protected async ValueTask Handler(IMessageConsumeContext context) {
         var activity = EventuousDiagnostics.Enabled
             ? SubscriptionActivity.Create(
@@ -83,6 +85,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             )
             : null;
 
+        // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         Logger.Current ??= Log;
         var isAsync = context is AsyncConsumeContext;
         if (!isAsync) activity?.Start();
@@ -103,6 +106,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             }
             else {
                 context.Ignore(SubscriptionId);
+
                 if (isAsync) {
                     var asyncContext = context as AsyncConsumeContext;
                     await asyncContext!.Acknowledge().NoContext();
@@ -230,7 +234,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 public record EventPosition(ulong? Position, DateTime Created) {
     public static EventPosition FromContext(IMessageConsumeContext context)
         => new(context.StreamPosition, context.Created);
-    
+
     public static EventPosition FromAllContext(IMessageConsumeContext context)
         => new(context.GlobalPosition, context.Created);
 }

@@ -1,12 +1,12 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Tools;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
+
+using Diagnostics;
 
 // ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
 public class SubscriptionHostedService : IHostedService {
@@ -36,10 +36,11 @@ public class SubscriptionHostedService : IHostedService {
         );
 
         await _subscription.Subscribe(
-            id => _subscriptionHealth?.ReportHealthy(id),
-            (id, _, ex) => _subscriptionHealth?.ReportUnhealthy(id, ex),
-            cts.Token
-        ).NoContext();
+                id => _subscriptionHealth?.ReportHealthy(id),
+                (id, _, ex) => _subscriptionHealth?.ReportUnhealthy(id, ex),
+                cts.Token
+            )
+            .NoContext();
 
         Log?.LogInformation("Started subscription {SubscriptionId}", _subscription.SubscriptionId);
     }

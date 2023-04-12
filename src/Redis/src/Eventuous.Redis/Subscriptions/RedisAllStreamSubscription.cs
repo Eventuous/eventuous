@@ -1,7 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Redis.Tools;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
@@ -9,6 +8,8 @@ using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Redis.Subscriptions;
+
+using Tools;
 
 public class RedisAllStreamSubscription : RedisSubscriptionBase<RedisSubscriptionBaseOptions> {
     public RedisAllStreamSubscription(
@@ -20,14 +21,14 @@ public class RedisAllStreamSubscription : RedisSubscriptionBase<RedisSubscriptio
     ) : base(getDatabase, options, checkpointStore, consumePipe, loggerFactory) { }
 
     protected override async Task<ReceivedEvent[]> ReadEvents(IDatabase database, long position) {
-        var linkedEvents     = await database.StreamReadAsync("_all", position.ToRedisValue(), Options.MaxPageSize);
+        var linkedEvents     = await database.StreamReadAsync("_all", position.ToRedisValue(), Options.MaxPageSize).NoContext();
         var persistentEvents = new List<ReceivedEvent>();
 
         foreach (var linkEvent in linkedEvents) {
             var stream         = linkEvent["stream"];
             var streamPosition = linkEvent["position"];
 
-            var streamEvents = await database.StreamRangeAsync(new RedisKey(stream), streamPosition);
+            var streamEvents = await database.StreamRangeAsync(new RedisKey(stream), streamPosition).NoContext();
             var entry        = streamEvents[0];
 
             persistentEvents.Add(

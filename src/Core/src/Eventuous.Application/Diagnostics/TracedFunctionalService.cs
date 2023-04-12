@@ -2,9 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
-using Eventuous.Diagnostics.Metrics;
-using Eventuous.Diagnostics.Tracing;
-using Eventuous.Tools;
 
 namespace Eventuous.Diagnostics;
 

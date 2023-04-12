@@ -1,10 +1,12 @@
-﻿using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Logging;
-using Polly;
-using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
+﻿// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using PollyContext = Polly.Context;
 
 namespace Eventuous.Subscriptions.Polly;
+
+using Context;
+using Logging;
 
 /// <summary>
 /// Wrapping handler to execute the inner handler with a given retry policy
@@ -25,22 +27,15 @@ public class PollyEventHandler : IEventHandler {
         const string retryKey = "eventuous-retry";
 
         var pollyContext = new PollyContext { { retryKey, new RetryCounter() } };
-        return await _retryPolicy.ExecuteAsync(Execute, pollyContext).ConfigureAwait(false);
+        return await _retryPolicy.ExecuteAsync(Execute, pollyContext).NoContext();
 
         async Task<EventHandlingStatus> Execute(PollyContext ctx) {
             try {
-                return await _inner.HandleEvent(context).ConfigureAwait(false);
+                return await _inner.HandleEvent(context).NoContext();
             }
             catch (Exception e) {
                 var counter = ctx[retryKey] as RetryCounter;
-
-                context.LogContext.FailedToHandleMessageWithRetry(
-                    DiagnosticName,
-                    context.MessageType,
-                    counter!.Counter,
-                    e
-                );
-
+                context.LogContext.FailedToHandleMessageWithRetry(DiagnosticName, context.MessageType, counter!.Counter, e);
                 counter.Increase();
                 throw;
             }
@@ -50,6 +45,7 @@ public class PollyEventHandler : IEventHandler {
     class RetryCounter {
         public int Counter { get; private set; }
 
-        public void Increase() => Counter++;
+        public void Increase()
+            => Counter++;
     }
 }

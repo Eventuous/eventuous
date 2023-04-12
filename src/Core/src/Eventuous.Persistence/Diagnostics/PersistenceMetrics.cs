@@ -3,10 +3,11 @@
 
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using Eventuous.Diagnostics.Metrics;
-using static Eventuous.Diagnostics.Tracing.Constants.Components;
 
 namespace Eventuous.Diagnostics;
+
+using Metrics;
+using static Tracing.Constants.Components;
 
 public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
     const string Category = "persistence";
@@ -37,7 +38,7 @@ public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
         );
 
         _listener = new MetricsListener<EventStoreMetricsContext>(ListenerName, duration, errorCount, GetTags);
-        
+
         TagList GetTags(EventStoreMetricsContext ctx)
             => new TagList(_customTags) { new(OperationTag, ctx.Operation) };
     }
@@ -47,7 +48,8 @@ public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
         _meter.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
+    public void SetCustomTags(TagList customTags)
+        => _customTags = customTags.ToArray();
 }
 
 record EventStoreMetricsContext(string Operation);

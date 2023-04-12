@@ -1,36 +1,32 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Data;
-using Eventuous.SqlServer.Extensions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.SqlServer.Subscriptions;
 
+using Extensions;
+
 public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions> {
     public SqlServerAllStreamSubscription(
-        GetSqlServerConnection               getConnection,
+        GetSqlServerConnection                getConnection,
         SqlServerAllStreamSubscriptionOptions options,
-        ICheckpointStore                     checkpointStore,
-        ConsumePipe                          consumePipe,
-        ILoggerFactory?                      loggerFactory = null
+        ICheckpointStore                      checkpointStore,
+        ConsumePipe                           consumePipe,
+        ILoggerFactory?                       loggerFactory = null
     ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
 
-    protected override SqlCommand PrepareCommand(SqlConnection connection, long start) {
-        var cmd = new SqlCommand(Schema.ReadAllForwards, connection);
+    protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
+        => connection.GetStoredProcCommand(Schema.ReadAllForwards)
+            .Add("@from_position", SqlDbType.BigInt, start + 1)
+            .Add("@count", SqlDbType.Int, Options.MaxPageSize);
 
-        cmd.CommandType = CommandType.StoredProcedure;
-        cmd.Parameters.AddWithValue("@from_position", SqlDbType.BigInt, start + 1);
-        cmd.Parameters.AddWithValue("@count", SqlDbType.Int, Options.MaxPageSize);
-        return cmd;
-    }
-
-    protected override long MoveStart(PersistedEvent evt) => evt.GlobalPosition;
+    protected override long MoveStart(PersistedEvent evt)
+        => evt.GlobalPosition;
 
     ulong _sequence;
 
@@ -55,7 +51,7 @@ public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServe
             cancellationToken
         );
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromAllContext(context);
 }
 

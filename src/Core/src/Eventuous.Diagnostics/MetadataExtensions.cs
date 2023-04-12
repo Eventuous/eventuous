@@ -1,11 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using static Eventuous.Diagnostics.DiagnosticTags;
-
 namespace Eventuous.Diagnostics;
+
+using static DiagnosticTags;
 
 public static class MetadataExtensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

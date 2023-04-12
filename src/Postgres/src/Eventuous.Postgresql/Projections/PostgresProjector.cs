@@ -2,9 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Data;
+using Eventuous.Postgresql.Extensions;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Tools;
-using Npgsql;
 using EventHandler = Eventuous.Subscriptions.EventHandler;
 
 namespace Eventuous.Postgresql.Projections;
@@ -31,11 +30,9 @@ public abstract class PostgresProjector : EventHandler {
         await cmd.ExecuteNonQueryAsync(context.CancellationToken).NoContext();
     }
 
-    protected static NpgsqlCommand Project(NpgsqlDataSource dataSource, string commandText, params NpgsqlParameter[] parameters) {
-        var cmd = dataSource.CreateCommand();
-        cmd.CommandText = commandText;
+    protected static NpgsqlCommand Project(NpgsqlConnection connection, string commandText, params NpgsqlParameter[] parameters) {
+        var cmd = connection.GetCommand(commandText);
         cmd.Parameters.AddRange(parameters);
-        cmd.CommandType = CommandType.Text;
         return cmd;
     }
 }

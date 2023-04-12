@@ -2,11 +2,12 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.AspNetCore.Web;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.AspNetCore.Routing;
+
+using Builder;
+using Http;
 
 public delegate TCommand ConvertAndEnrichCommand<in TContract, out TCommand>(TContract command, HttpContext httpContext);
 

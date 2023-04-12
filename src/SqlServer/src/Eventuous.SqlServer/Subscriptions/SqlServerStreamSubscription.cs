@@ -1,17 +1,15 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Data;
-using Eventuous.SqlServer.Extensions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Tools;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.SqlServer.Subscriptions;
+
+using Extensions;
 
 public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions> {
     public SqlServerStreamSubscription(
@@ -23,42 +21,35 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
     ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory)
         => _streamName = options.Stream.ToString();
 
-    protected override SqlCommand PrepareCommand(SqlConnection connection, long start) {
-        var cmd = new SqlCommand(Schema.ReadStreamSub, connection);
-        cmd.CommandType = CommandType.StoredProcedure;
-        cmd.Parameters.AddWithValue("@stream_id", SqlDbType.Int, _streamId);
-        cmd.Parameters.AddWithValue("@from_position", SqlDbType.Int, (int)start + 1);
-        cmd.Parameters.AddWithValue("@count", SqlDbType.Int, Options.MaxPageSize);
-        return cmd;
-    }
+    protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
+        => connection.GetStoredProcCommand(Schema.ReadStreamSub)
+            .Add("@stream_id", SqlDbType.Int, _streamId)
+            .Add("@from_position", SqlDbType.Int, (int)start + 1)
+            .Add("@count", SqlDbType.Int, Options.MaxPageSize);
 
     protected override async Task BeforeSubscribe(CancellationToken cancellationToken) {
         await using var connection = GetConnection();
         await connection.OpenAsync(cancellationToken).NoContext();
-        await using var cmd = connection.CreateCommand();
-        cmd.CommandType = CommandType.StoredProcedure;
-        cmd.CommandText = Schema.CheckStream;
-        cmd.Parameters.AddWithValue("@stream_name", SqlDbType.NVarChar, Options.Stream.ToString());
-        cmd.Parameters.AddWithValue("@expected_version", SqlDbType.Int, -2);
-        cmd.Parameters.AddOutput("@current_version", SqlDbType.Int);
-        var streamId = cmd.Parameters.AddOutput("@stream_id", SqlDbType.Int);
+
+        await using var cmd = connection.GetStoredProcCommand(Schema.CheckStream)
+            .Add("@stream_name", SqlDbType.NVarChar, Options.Stream.ToString())
+            .Add("@expected_version", SqlDbType.Int, -2)
+            .AddOutput("@current_version", SqlDbType.Int);
+
+        var streamId = cmd.AddOutputParameter("@stream_id", SqlDbType.Int);
 
         await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
         _streamId = (int)streamId.Value;
     }
 
-    protected override long MoveStart(PersistedEvent evt) => evt.StreamPosition;
+    protected override long MoveStart(PersistedEvent evt)
+        => evt.StreamPosition;
 
     ulong           _sequence;
     int             _streamId;
     readonly string _streamName;
 
-    protected override IMessageConsumeContext AsContext(
-        PersistedEvent    evt,
-        object?           e,
-        Metadata?         meta,
-        CancellationToken cancellationToken
-    )
+    protected override IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(
             evt.MessageId.ToString(),
             evt.MessageType,
@@ -74,7 +65,7 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
             cancellationToken
         );
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) 
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromContext(context);
 }
 

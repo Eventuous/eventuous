@@ -2,10 +2,11 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions;
-using static Eventuous.GooglePubSub.Subscriptions.GooglePubSubSubscription;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
-namespace Eventuous.GooglePubSub.Subscriptions; 
+namespace Eventuous.GooglePubSub.Subscriptions;
+
+using static GooglePubSubSubscription;
 
 [PublicAPI]
 public record PubSubSubscriptionOptions : SubscriptionOptions {
@@ -18,7 +19,7 @@ public record PubSubSubscriptionOptions : SubscriptionOptions {
     /// PubSub topic id
     /// </summary>
     public string TopicId { get; set; } = null!;
-    
+
     /// <summary>
     /// The subscription will try creating a PubSub subscription by default, but it requires extended permissions for PubSub.
     /// If you run the application with lower permissions, you can pre-create the subscription using your DevOps tools,
@@ -40,7 +41,7 @@ public record PubSubSubscriptionOptions : SubscriptionOptions {
     /// Custom failure handler, which allows overriding the default behaviour (NACK)
     /// </summary>
     public HandleEventProcessingFailure? FailureHandler { get; set; }
-        
+
     /// <summary>
     /// A function to customise the subscription options when the subscription is created
     /// </summary>

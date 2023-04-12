@@ -6,13 +6,14 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Registrations;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
+
+using Extensions;
+using Diagnostics.HealthChecks;
+using Hosting;
+using Logging;
 
 [PublicAPI]
 public static class SubscriptionRegistrationExtensions {

@@ -23,7 +23,7 @@ public class Module {
             var script = await reader.ReadToEndAsync().NoContext();
 
             try {
-                await db.ExecuteAsync("FUNCTION", "LOAD", "REPLACE", script);
+                await db.ExecuteAsync("FUNCTION", "LOAD", "REPLACE", script).NoContext();
             }
             catch (Exception e) {
                 if (!e.Message.Contains("'append_events' already exists")) throw;

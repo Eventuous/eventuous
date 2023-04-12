@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Google.Api.Gax;
 using Grpc.Core;
 
@@ -15,11 +14,7 @@ public static class PubSub {
     public static EmulatorDetection DetectEmulator(this PublisherClient.ClientCreationSettings? value)
         => value?.EmulatorDetection ?? EmulatorDetection.None;
 
-    public static async Task CreateTopic(
-        TopicName         topicName,
-        EmulatorDetection emulatorDetection,
-        CancellationToken cancellationToken
-    ) {
+    public static async Task CreateTopic(TopicName topicName, EmulatorDetection emulatorDetection, CancellationToken cancellationToken) {
         var topicString = topicName.ToString();
         var log         = Logger.Current.InfoLog;
 
@@ -74,10 +69,7 @@ public static class PubSub {
             subscriptionRequest.SubscriptionName = subscriptionName;
             subscriptionRequest.TopicAsTopicName = topicName;
 
-            await subscriberServiceApiClient.CreateSubscriptionAsync(
-                    subscriptionRequest
-                )
-                .NoContext();
+            await subscriberServiceApiClient.CreateSubscriptionAsync(subscriptionRequest).NoContext();
 
             log?.Log("Created subscription", subName);
         }

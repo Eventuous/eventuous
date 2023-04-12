@@ -1,4 +1,5 @@
-using Eventuous.Tools;
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
 
 namespace Eventuous;
 
@@ -23,13 +24,7 @@ public class StateStore : IStateStore {
         var position = StreamReadPosition.Start;
 
         while (true) {
-            var events = await _eventReader.ReadEvents(
-                    stream,
-                    position,
-                    pageSize,
-                    cancellationToken
-                )
-                .NoContext();
+            var events = await _eventReader.ReadEvents(stream, position, pageSize, cancellationToken).NoContext();
 
             foreach (var streamEvent in events) {
                 Fold(streamEvent);

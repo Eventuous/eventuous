@@ -5,7 +5,6 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Tools;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -16,11 +15,7 @@ namespace Eventuous.RabbitMq.Subscriptions;
 /// </summary>
 [PublicAPI]
 public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOptions> {
-    public delegate void HandleEventProcessingFailure(
-        IModel                channel,
-        BasicDeliverEventArgs message,
-        Exception?            exception
-    );
+    public delegate void HandleEventProcessingFailure(IModel channel, BasicDeliverEventArgs message, Exception? exception);
 
     readonly HandleEventProcessingFailure _failureHandler;
     readonly IConnection                  _connection;
@@ -100,20 +95,20 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
 
         _channel.ExchangeDeclare(
             exchange,
-            Options.ExchangeOptions?.Type       ?? ExchangeType.Fanout,
-            Options.ExchangeOptions?.Durable    ?? true,
-            Options.ExchangeOptions?.AutoDelete ?? true,
-            Options.ExchangeOptions?.Arguments
+            Options.ExchangeOptions.Type,
+            Options.ExchangeOptions.Durable,
+            Options.ExchangeOptions.AutoDelete,
+            Options.ExchangeOptions.Arguments
         );
 
         Log.InfoLog?.Log("Ensuring queue", Options.SubscriptionId);
 
         _channel.QueueDeclare(
             Options.SubscriptionId,
-            Options.QueueOptions?.Durable    ?? true,
-            Options.QueueOptions?.Exclusive  ?? false,
-            Options.QueueOptions?.AutoDelete ?? false,
-            Options.QueueOptions?.Arguments
+            Options.QueueOptions.Durable,
+            Options.QueueOptions.Exclusive,
+            Options.QueueOptions.AutoDelete,
+            Options.QueueOptions.Arguments
         );
 
         Log.InfoLog?.Log("Binding exchange to queue:", exchange, Options.SubscriptionId);
@@ -121,8 +116,8 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         _channel.QueueBind(
             Options.SubscriptionId,
             exchange,
-            Options.BindingOptions?.RoutingKey ?? "",
-            Options.BindingOptions?.Arguments
+            Options.BindingOptions.RoutingKey,
+            Options.BindingOptions.Arguments
         );
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
@@ -163,12 +158,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     }
 
     IMessageConsumeContext CreateContext(object sender, BasicDeliverEventArgs received) {
-        var evt = DeserializeData(
-            received.BasicProperties.ContentType,
-            received.BasicProperties.Type,
-            received.Body,
-            received.Exchange
-        );
+        var evt = DeserializeData(received.BasicProperties.ContentType, received.BasicProperties.Type, received.Body, received.Exchange);
 
         var meta = received.BasicProperties.Headers != null
             ? new Metadata(received.BasicProperties.Headers.ToDictionary(x => x.Key, x => x.Value)!)

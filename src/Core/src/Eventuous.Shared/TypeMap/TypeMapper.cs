@@ -1,13 +1,13 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using static Eventuous.TypeMapEventSource;
 
 // ReSharper disable InvertIf
 
 namespace Eventuous;
+
+using static TypeMapEventSource;
 
 /// <summary>
 /// The TypeMap maintains event type names for known event types so we avoid using CLR type names
@@ -16,7 +16,8 @@ namespace Eventuous;
 public static class TypeMap {
     public static readonly TypeMapper Instance = new();
 
-    public static string GetTypeName(object o, bool fail = true) => Instance.GetTypeName(o, fail);
+    public static string GetTypeName(object o, bool fail = true)
+        => Instance.GetTypeName(o, fail);
 
     /// <summary>
     /// Registers all event types, which are decorated with <see cref="EventTypeAttribute"/>.
@@ -78,7 +79,8 @@ public class TypeMapper {
     public bool TryGetType(string typeName, [NotNullWhen(true)] out Type? type)
         => _reverseMap.TryGetValue(typeName, out type);
 
-    public void AddType<T>(string name) => AddType(typeof(T), name);
+    public void AddType<T>(string name)
+        => AddType(typeof(T), name);
 
     readonly object _lock = new();
 
@@ -100,11 +102,13 @@ public class TypeMapper {
         }
     }
 
-    public bool IsTypeRegistered<T>() => _map.ContainsKey(typeof(T));
+    public bool IsTypeRegistered<T>()
+        => _map.ContainsKey(typeof(T));
 
     public void RegisterKnownEventTypes(params Assembly[] assembliesWithEvents) {
         var assembliesToScan = assembliesWithEvents.Length == 0
-            ? GetDefaultAssemblies() : assembliesWithEvents;
+            ? GetDefaultAssemblies()
+            : assembliesWithEvents;
 
         foreach (var assembly in assembliesToScan) {
             RegisterAssemblyEventTypes(assembly);
@@ -159,7 +163,8 @@ public class TypeMapper {
 public class EventTypeAttribute : Attribute {
     public string EventType { get; }
 
-    public EventTypeAttribute(string eventType) => EventType = eventType;
+    public EventTypeAttribute(string eventType)
+        => EventType = eventType;
 }
 
 public class UnregisteredTypeException : Exception {

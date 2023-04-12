@@ -2,19 +2,17 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Text;
-using Eventuous.SqlServer.Extensions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Tools;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.SqlServer.Subscriptions;
 
-public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T>
-    where T : SqlServerSubscriptionBaseOptions {
+using Extensions;
+
+public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T> where T : SqlServerSubscriptionBaseOptions {
     readonly IMetadataSerializer     _metaSerializer;
     readonly CancellationTokenSource _cts = new();
 
@@ -96,18 +94,13 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
 
     protected abstract SqlCommand PrepareCommand(SqlConnection connection, long start);
 
-    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
+    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken)
+        => Task.CompletedTask;
 
     protected abstract long MoveStart(PersistedEvent evt);
 
     IMessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
-        var data = DeserializeData(
-            ContentType,
-            evt.MessageType,
-            Encoding.UTF8.GetBytes(evt.JsonData),
-            evt.StreamName!,
-            (ulong)evt.StreamPosition
-        );
+        var data = DeserializeData(ContentType, evt.MessageType, Encoding.UTF8.GetBytes(evt.JsonData), evt.StreamName!, (ulong)evt.StreamPosition);
 
         var meta = evt.JsonMetadata == null
             ? new Metadata()
@@ -116,12 +109,7 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
         return AsContext(evt, data, meta, cancellationToken);
     }
 
-    protected abstract IMessageConsumeContext AsContext(
-        PersistedEvent    evt,
-        object?           e,
-        Metadata?         meta,
-        CancellationToken cancellationToken
-    );
+    protected abstract IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken);
 }
 
 public abstract record SqlServerSubscriptionBaseOptions : SubscriptionOptions {

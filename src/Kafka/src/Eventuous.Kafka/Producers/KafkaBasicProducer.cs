@@ -1,10 +1,8 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Confluent.Kafka;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
-using Eventuous.Tools;
 
 namespace Eventuous.Kafka.Producers;
 
@@ -17,8 +15,7 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
     readonly IProducer<Null, byte[]>   _producerWithoutKey;
     readonly IEventSerializer          _serializer;
 
-    public KafkaBasicProducer(KafkaProducerOptions options, IEventSerializer? serializer = null) :
-        base(TracingOptions) {
+    public KafkaBasicProducer(KafkaProducerOptions options, IEventSerializer? serializer = null) : base(TracingOptions) {
         _producerWithKey    = new ProducerBuilder<string, byte[]>(options.ProducerConfig).Build();
         _producerWithoutKey = new DependentProducerBuilder<Null, byte[]>(_producerWithKey.Handle).Build();
         _serializer         = serializer ?? DefaultEventSerializer.Instance;

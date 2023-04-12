@@ -3,29 +3,30 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
-        <PackageReference Include="System.Reactive" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
+        <PackageReference Include="System.Reactive"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
-        <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj" />
+        <ProjectReference Include="..\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj"/>
+        <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <None Remove="Eventuous.Subscriptions.csproj.DotSettings" />
+        <None Remove="Eventuous.Subscriptions.csproj.DotSettings"/>
     </ItemGroup>
     <ItemGroup>
-      <Compile Include="..\Eventuous.Diagnostics\DiagnosticName.cs">
-        <Link>Diagnostics\DiagnosticName.cs</Link>
-      </Compile>
-      <Compile Include="..\Eventuous.Shared\Tools\Ensure.cs">
-        <Link>Tools\Ensure.cs</Link>
-      </Compile>
+        <Compile Include="..\Eventuous.Diagnostics\DiagnosticName.cs">
+            <Link>Diagnostics\DiagnosticName.cs</Link>
+        </Compile>
+        <Compile Include="..\Eventuous.Shared\Tools\Ensure.cs">
+            <Link>Tools\Ensure.cs</Link>
+        </Compile>
         <Compile Include="..\Eventuous.Shared\Tools\TaskExtensions.cs">
             <Link>Tools\TaskExtensions.cs</Link>
         </Compile>
-      <Compile Include="..\Eventuous.Shared\Tools\TypeExtensions.cs">
-        <Link>Tools\TypeExtensions.cs</Link>
-      </Compile>
+        <Compile Include="..\Eventuous.Shared\Tools\TypeExtensions.cs">
+            <Link>Tools\TypeExtensions.cs</Link>
+        </Compile>
+        <Using Include="Eventuous.Tools"/>
     </ItemGroup>
 </Project>

@@ -4,10 +4,11 @@
 using System.Globalization;
 using System.Runtime.Serialization;
 using System.Text;
-using Eventuous.Diagnostics;
-using Eventuous.Redis.Tools;
+using static Eventuous.Diagnostics.PersistenceEventSource;
 
 namespace Eventuous.Redis;
+
+using Tools;
 
 public delegate IDatabase GetRedisDatabase();
 
@@ -37,7 +38,7 @@ public class RedisStore : IEventReader, IEventWriter {
         int                count,
         CancellationToken  cancellationToken
     ) {
-        var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count);
+        var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count).NoContext();
         if (result == null) throw new StreamNotFound(stream);
 
         return result.Select(x => ToStreamEvent(x)).ToArray();
@@ -69,13 +70,13 @@ public class RedisStore : IEventReader, IEventWriter {
         var database = _getDatabase();
 
         try {
-            var response       = (RedisValue[]?)await database.ExecuteAsync("FCALL", fCallParams);
+            var response       = (RedisValue[]?)await database.ExecuteAsync("FCALL", fCallParams).NoContext();
             var streamPosition = (long)Ensure.NotNull(response?[0]);
             var globalPosition = Ensure.NotNull(response?[1]).ToString().AsSpan().ToULong();
             return new AppendEventsResult(globalPosition, streamPosition);
         }
         catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
-            PersistenceEventSource.Log.UnableToAppendEvents(stream, e);
+            Log.UnableToAppendEvents(stream, e);
             throw new AppendToStreamException(stream, e);
         }
 
@@ -91,7 +92,7 @@ public class RedisStore : IEventReader, IEventWriter {
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
         var database = _getDatabase();
-        var info     = await database.StreamInfoAsync(stream.ToString());
+        var info     = await database.StreamInfoAsync(stream.ToString()).NoContext();
 
         return (info.Length > 0);
     }

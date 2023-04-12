@@ -1,9 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using static Eventuous.Diagnostics.PersistenceEventSource;
-
 namespace Eventuous;
+
+using static Diagnostics.PersistenceEventSource;
 
 public record FoldedEventStream<T> where T : State<T>, new() {
     public FoldedEventStream(
@@ -35,14 +35,12 @@ public record FoldedEventStream<T> where T : State<T>, new() {
 
 public static class StateStoreFunctions {
     public static Task<FoldedEventStream<T>> LoadState<T>(this IEventReader reader, StreamName streamName, CancellationToken cancellationToken)
-        where T : State<T>, new() {
-        return reader.LoadEventsInternal<T>(streamName, true, cancellationToken);
-    }
+        where T : State<T>, new()
+        => reader.LoadEventsInternal<T>(streamName, true, cancellationToken);
 
     public static Task<FoldedEventStream<T>> LoadStateOrNew<T>(this IEventReader reader, StreamName streamName, CancellationToken cancellationToken)
-        where T : State<T>, new() {
-        return reader.LoadEventsInternal<T>(streamName, false, cancellationToken);
-    }
+        where T : State<T>, new()
+        => reader.LoadEventsInternal<T>(streamName, false, cancellationToken);
 
     static async Task<FoldedEventStream<T>> LoadEventsInternal<T>(
         this IEventReader reader,
@@ -56,7 +54,7 @@ public static class StateStoreFunctions {
                 StreamReadPosition.Start,
                 failIfNotFound,
                 cancellationToken
-            );
+            ).NoContext();
 
             var events = streamEvents.Select(x => x.Payload!).ToArray();
             return (new FoldedEventStream<T>(streamName, new ExpectedStreamVersion(streamEvents.Last().Position), events));

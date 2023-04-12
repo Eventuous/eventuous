@@ -2,18 +2,13 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Threading.Channels;
-using Eventuous.Tools;
 
 namespace Eventuous.Subscriptions.Channels;
 
 public delegate ValueTask ProcessElement<in T>(T element, CancellationToken cancellationToken);
 
 static class ChannelExtensions {
-    public static async Task Read<T>(
-        this Channel<T>   channel,
-        ProcessElement<T> process,
-        CancellationToken cancellationToken
-    ) {
+    public static async Task Read<T>(this Channel<T> channel, ProcessElement<T> process, CancellationToken cancellationToken) {
         try {
             while (!cancellationToken.IsCancellationRequested) {
                 var element = await channel.Reader.ReadAsync(cancellationToken).NoContext();
@@ -28,12 +23,7 @@ static class ChannelExtensions {
         }
     }
 
-    public static ValueTask Write<T>(
-        this Channel<T>   channel,
-        T                 element,
-        bool              throwOnFull,
-        CancellationToken cancellationToken
-    ) {
+    public static ValueTask Write<T>(this Channel<T> channel, T element, bool throwOnFull, CancellationToken cancellationToken) {
         return throwOnFull ? WriteOrThrow() : channel.Writer.WriteAsync(element, cancellationToken);
 
         ValueTask WriteOrThrow() {
@@ -45,19 +35,14 @@ static class ChannelExtensions {
         }
     }
 
-    public static async ValueTask Stop<T>(
-        this Channel<T>                     channel,
-        CancellationTokenSource             cts,
-        Task[]                              readers,
-        Func<CancellationToken, ValueTask>? finalize = null
-    ) {
+    public static async ValueTask Stop<T>(this Channel<T> channel, CancellationTokenSource cts, Task[] readers, Func<CancellationToken, ValueTask>? finalize = null) {
         channel.Writer.TryComplete();
 
         var incompleteReaders = readers.Where(r => !r.IsCompleted).ToArray();
 
         if (readers.Length > 0) {
             cts.CancelAfter(TimeSpan.FromSeconds(10));
-            await Task.WhenAll(incompleteReaders);
+            await Task.WhenAll(incompleteReaders).NoContext();
         }
 
         if (finalize == null) return;

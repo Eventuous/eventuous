@@ -1,8 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics.CodeAnalysis;
-
 namespace Eventuous;
 
 public delegate StreamName GetStreamNameFromCommand<in TCommand>(TCommand command) where TCommand : class;

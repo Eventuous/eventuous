@@ -2,8 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
-using Eventuous.Tools;
-using Microsoft.Data.SqlClient;
 
 namespace Eventuous.SqlServer.Extensions;
 

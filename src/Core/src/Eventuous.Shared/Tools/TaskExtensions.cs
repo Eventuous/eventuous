@@ -14,7 +14,7 @@ static class TaskExtensions {
 
     public static ConfiguredValueTaskAwaitable<T> NoContext<T>(this ValueTask<T> task) => task.ConfigureAwait(false);
 
-    public static ConfiguredCancelableAsyncEnumerable<T> IgnoreWithCancellation<T>(
+    public static ConfiguredCancelableAsyncEnumerable<T> NoContext<T>(
         this IAsyncEnumerable<T> source,
         CancellationToken        cancellationToken
     )

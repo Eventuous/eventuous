@@ -3,7 +3,7 @@
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
-public record struct HealthReport {
+record struct HealthReport {
     HealthReport(bool isHealthy, Exception? lastException) {
         IsHealthy     = isHealthy;
         LastException = lastException;

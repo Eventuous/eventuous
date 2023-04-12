@@ -3,17 +3,17 @@
 
 using System.Diagnostics;
 using Eventuous.Diagnostics;
-using Eventuous.Producers.Diagnostics;
-using Eventuous.Tools;
 using static Eventuous.Diagnostics.TelemetryTags;
 
 namespace Eventuous.Producers;
 
+using Diagnostics;
+
 public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProducer<TProduceOptions>
     where TProduceOptions : class {
-    protected BaseProducer(ProducerTracingOptions? tracingOptions = null) 
+    protected BaseProducer(ProducerTracingOptions? tracingOptions = null)
         : base(tracingOptions) { }
-    
+
     protected abstract Task ProduceMessages(
         StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
@@ -40,11 +40,7 @@ public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProduc
     }
 
     /// <inheritdoc />
-    protected override Task ProduceMessages(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        CancellationToken            cancellationToken = default
-    )
+    protected override Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default)
         => ProduceMessages(stream, messages, null, cancellationToken);
 }
 

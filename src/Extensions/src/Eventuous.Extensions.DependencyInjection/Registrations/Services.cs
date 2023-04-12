@@ -15,16 +15,12 @@ public static partial class ServiceCollectionExtensions {
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TAggregate"></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddCommandService<T, TAggregate>(this IServiceCollection services)
-        where T : class, ICommandService<TAggregate>
-        where TAggregate : Aggregate {
+    public static IServiceCollection AddCommandService<T, TAggregate>(this IServiceCollection services) where T : class, ICommandService<TAggregate> where TAggregate : Aggregate {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();
 
         if (EventuousDiagnostics.Enabled) {
-            services.AddSingleton(
-                sp => TracedCommandService<TAggregate>.Trace(sp.GetRequiredService<T>())
-            );
+            services.AddSingleton(sp => TracedCommandService<TAggregate>.Trace(sp.GetRequiredService<T>()));
         }
         else {
             services.AddSingleton<ICommandService<TAggregate>>(sp => sp.GetRequiredService<T>());
@@ -43,19 +39,14 @@ public static partial class ServiceCollectionExtensions {
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddCommandService<T, TAggregate, TState, TId>(
-        this IServiceCollection services,
-        bool                    throwOnError = false
-    )
+    public static IServiceCollection AddCommandService<T, TAggregate, TState, TId>(this IServiceCollection services, bool throwOnError = false)
         where T : class, ICommandService<TAggregate, TState, TId>
         where TState : State<TState>, new()
         where TId : AggregateId
         where TAggregate : Aggregate<TState> {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();
-
         services.AddSingleton(sp => GetThrowingService(GetTracedService(sp)));
-
         return services;
 
         ICommandService<TAggregate, TState, TId> GetThrowingService(ICommandService<TAggregate, TState, TId> inner)
@@ -77,19 +68,14 @@ public static partial class ServiceCollectionExtensions {
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TAggregate"></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddCommandService<T, TAggregate>(
-        this IServiceCollection   services,
-        Func<IServiceProvider, T> getService
-    )
+    public static IServiceCollection AddCommandService<T, TAggregate>(this IServiceCollection services, Func<IServiceProvider, T> getService)
         where T : class, ICommandService<TAggregate>
         where TAggregate : Aggregate {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton(getService);
 
         if (EventuousDiagnostics.Enabled) {
-            services.AddSingleton(
-                sp => TracedCommandService<TAggregate>.Trace(sp.GetRequiredService<T>())
-            );
+            services.AddSingleton(sp => TracedCommandService<TAggregate>.Trace(sp.GetRequiredService<T>()));
         }
         else {
             services.AddSingleton<ICommandService<TAggregate>>(sp => sp.GetRequiredService<T>());
@@ -111,9 +97,7 @@ public static partial class ServiceCollectionExtensions {
         services.AddSingleton<T>();
 
         if (EventuousDiagnostics.Enabled) {
-            services.AddSingleton(
-                sp => TracedFunctionalService<TState>.Trace(sp.GetRequiredService<T>())
-            );
+            services.AddSingleton(sp => TracedFunctionalService<TState>.Trace(sp.GetRequiredService<T>()));
         }
         else {
             services.AddSingleton<IFuncCommandService<TState>>(sp => sp.GetRequiredService<T>());
@@ -130,16 +114,12 @@ public static partial class ServiceCollectionExtensions {
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TState"></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddFunctionalService<T, TState>(
-        this IServiceCollection   services,
-        Func<IServiceProvider, T> getService
-    ) where T : class, IFuncCommandService<TState> where TState : State<TState>, new() {
+    public static IServiceCollection AddFunctionalService<T, TState>(this IServiceCollection services, Func<IServiceProvider, T> getService)
+        where T : class, IFuncCommandService<TState> where TState : State<TState>, new() {
         services.AddSingleton(getService);
 
         if (EventuousDiagnostics.Enabled) {
-            services.AddSingleton(
-                sp => TracedFunctionalService<TState>.Trace(sp.GetRequiredService<T>())
-            );
+            services.AddSingleton(sp => TracedFunctionalService<TState>.Trace(sp.GetRequiredService<T>()));
         }
         else {
             services.AddSingleton<IFuncCommandService<TState>>(sp => sp.GetRequiredService<T>());

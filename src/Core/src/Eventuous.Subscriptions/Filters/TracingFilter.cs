@@ -3,13 +3,12 @@
 
 using System.Diagnostics;
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Diagnostics;
-using Eventuous.Tools;
-using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 using Constants = Eventuous.Diagnostics.Tracing.Constants;
 
 namespace Eventuous.Subscriptions.Filters;
+
+using Context;
+using Diagnostics;
 
 public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
     readonly KeyValuePair<string, object?>[] _defaultTags;
@@ -33,8 +32,7 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
             : Activity.Current;
 
         if (activity?.IsAllDataRequested == true && context is AsyncConsumeContext asyncConsumeContext) {
-            activity.SetContextTags(context)
-                ?.SetTag(TelemetryTags.Eventuous.Partition, asyncConsumeContext.PartitionId);
+            activity.SetContextTags(context)?.SetTag(TelemetryTags.Eventuous.Partition, asyncConsumeContext.PartitionId);
         }
 
         try {

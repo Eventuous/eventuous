@@ -3,7 +3,6 @@
 
 namespace Eventuous;
 
-using Tools;
 using static Diagnostics.ApplicationEventSource;
 
 /// <summary>

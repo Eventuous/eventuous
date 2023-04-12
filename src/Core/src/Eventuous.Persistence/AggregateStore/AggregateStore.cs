@@ -1,9 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using static Eventuous.Diagnostics.PersistenceEventSource;
-
 namespace Eventuous;
+
+using static Diagnostics.PersistenceEventSource;
 
 public class AggregateStore : IAggregateStore {
     readonly Func<StreamEvent, StreamEvent> _amendEvent;

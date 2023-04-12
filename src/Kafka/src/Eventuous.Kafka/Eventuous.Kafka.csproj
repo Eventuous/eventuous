@@ -3,17 +3,18 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Include="README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Confluent.Kafka" />
+        <PackageReference Include="Confluent.Kafka"/>
+        <Using Include="Confluent.Kafka"/>
     </ItemGroup>
     <ItemGroup>
-        <InternalsVisibleTo Include="Eventuous.Tests.Kafka" />
+        <InternalsVisibleTo Include="Eventuous.Tests.Kafka"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
@@ -22,5 +23,6 @@
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
         </Compile>
+        <Using Include="Eventuous.Tools"/>
     </ItemGroup>
 </Project>

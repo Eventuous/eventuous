@@ -4,9 +4,10 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics.Metrics;
-using static Eventuous.Diagnostics.Tracing.Constants.Components;
 
 namespace Eventuous.Diagnostics;
+
+using static Tracing.Constants.Components;
 
 public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
     const string Category = "application";
@@ -18,7 +19,7 @@ public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
     public const string AppServiceTag = "command-service";
     public const string CommandTag    = "command-type";
 
-    readonly Meter                                     _meter;
+    readonly Meter                                         _meter;
     readonly MetricsListener<CommandServiceMetricsContext> _listener;
 
     KeyValuePair<string, object?>[]? _customTags;
@@ -44,7 +45,8 @@ public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
         _meter.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
+    public void SetCustomTags(TagList customTags)
+        => _customTags = customTags.ToArray();
 }
 
 record CommandServiceMetricsContext(string ServiceName, string CommandName);

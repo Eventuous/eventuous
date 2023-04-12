@@ -2,26 +2,17 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions.Context;
-using Eventuous.Tools;
 
 namespace Eventuous.Gateway;
 
-public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<TProduceOptions>(
-    IMessageConsumeContext message
-);
+public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<TProduceOptions>(IMessageConsumeContext message);
 
-public class GatewayHandler<TProduceOptions> : BaseEventHandler
-    where TProduceOptions : class {
-    readonly IEventProducer<TProduceOptions> _eventProducer;
-
+public class GatewayHandler<TProduceOptions> : BaseEventHandler where TProduceOptions : class {
+    readonly IEventProducer<TProduceOptions>    _eventProducer;
     readonly RouteAndTransform<TProduceOptions> _transform;
     readonly bool                               _awaitProduce;
 
-    public GatewayHandler(
-        IEventProducer<TProduceOptions>    eventProducer,
-        RouteAndTransform<TProduceOptions> transform,
-        bool                               awaitProduce
-    ) {
+    public GatewayHandler(IEventProducer<TProduceOptions> eventProducer, RouteAndTransform<TProduceOptions> transform, bool awaitProduce) {
         _eventProducer = eventProducer;
         _transform     = transform;
         _awaitProduce  = awaitProduce;

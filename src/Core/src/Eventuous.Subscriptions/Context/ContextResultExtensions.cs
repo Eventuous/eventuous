@@ -4,10 +4,10 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Logging;
-using ActivityStatus = Eventuous.Diagnostics.ActivityStatus;
 
 namespace Eventuous.Subscriptions.Context;
+
+using Logging;
 
 public static class ContextResultExtensions {
     /// <summary>
@@ -28,8 +28,7 @@ public static class ContextResultExtensions {
     /// <param name="exception">Optional: handler exception</param>
     public static void Nack(this IBaseConsumeContext context, string handlerType, Exception? exception) {
         context.HandlingResults.Add(EventHandlingResult.Failed(handlerType, exception));
-        if (exception is not TaskCanceledException)
-            context.LogContext.MessageHandlingFailed(handlerType, context, exception);
+        if (exception is not TaskCanceledException) context.LogContext.MessageHandlingFailed(handlerType, context, exception);
 
         if (Activity.Current != null && Activity.Current.Status != ActivityStatusCode.Error) {
             Activity.Current.SetActivityStatus(
@@ -53,14 +52,16 @@ public static class ContextResultExtensions {
     /// </summary>
     /// <param name="context">Consume context</param>
     /// <typeparam name="T">Handler type</typeparam>
-    public static void Ack<T>(this IBaseConsumeContext context) => context.Ack(typeof(T).Name);
+    public static void Ack<T>(this IBaseConsumeContext context)
+        => context.Ack(typeof(T).Name);
 
     /// <summary>
     /// Allows to convey the fact that the message was ignored by the handler
     /// </summary>
     /// <param name="context">Consume context</param>
     /// <typeparam name="T">Handler type</typeparam>
-    public static void Ignore<T>(this IBaseConsumeContext context) => context.Ignore(typeof(T).Name);
+    public static void Ignore<T>(this IBaseConsumeContext context)
+        => context.Ignore(typeof(T).Name);
 
     /// <summary>
     /// Allows to convey the message handling failure that occurred in a specific handler

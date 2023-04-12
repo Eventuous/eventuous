@@ -1,9 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Subscriptions.Logging;
-
 namespace Eventuous.Subscriptions.Context;
+
+using Logging;
 
 /// <summary>
 /// Function to acknowledge the message to the transport

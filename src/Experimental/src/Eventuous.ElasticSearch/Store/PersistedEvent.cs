@@ -2,18 +2,13 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Text.Json.Serialization;
-using Nest;
 
 namespace Eventuous.ElasticSearch.Store;
-
-public class ElasticMeta {
-    public static Dictionary<string, string?>? FromMetadata(Metadata? metadata)
-        => metadata?.ToDictionary(x => x.Key, x => x.Value?.ToString());
-}
 
 [ElasticsearchType(IdProperty = "MessageId")]
 [EventType("Event")]
 public record PersistedEvent {
+    // ReSharper disable once ConvertToPrimaryConstructor
     public PersistedEvent(
         string                       messageId,
         string                       messageType,
@@ -51,26 +46,4 @@ public record PersistedEvent {
     [Date(Name = "@timestamp")]
     [JsonPropertyName("@timestamp")]
     public DateTime Created { get; }
-
-    public void Deconstruct(
-        out string                       messageId,
-        out string                       messageType,
-        out long                         streamPosition,
-        out string                       contentType,
-        out string                       stream,
-        out ulong                        globalPosition,
-        out object?                      message,
-        out Dictionary<string, string?>? metadata,
-        out DateTime                     created
-    ) {
-        messageId      = MessageId;
-        messageType    = MessageType;
-        streamPosition = StreamPosition;
-        contentType    = ContentType;
-        stream         = Stream;
-        globalPosition = GlobalPosition;
-        message        = Message;
-        metadata       = Metadata;
-        created        = Created;
-    }
 }

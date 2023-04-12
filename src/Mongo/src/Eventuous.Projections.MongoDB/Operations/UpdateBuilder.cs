@@ -1,22 +1,25 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Tools;
 
 namespace Eventuous.Projections.MongoDB;
 
+using Tools;
+
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class UpdateOneBuilder : UpdateBuilder<UpdateOneBuilder>, IMongoProjectorBuilder {
-        public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId) => Id(x => getId(x.Stream));
+        public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId)
+            => Id(x => getId(x.Stream));
 
         public UpdateOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
             _filter.Id(getId);
             return this;
         }
 
-        public UpdateOneBuilder DefaultId() => IdFromStream(streamName => streamName.GetId());
+        public UpdateOneBuilder DefaultId()
+            => IdFromStream(streamName => streamName.GetId());
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
