@@ -1,5 +1,4 @@
 using Eventuous.Producers;
-using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
 using Hypothesist;
 

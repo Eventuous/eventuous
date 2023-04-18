@@ -23,6 +23,7 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
 
         _worker = new ConcurrentChannelWorker<WorkerTask>(
             Channel.CreateBounded<WorkerTask>(options),
+            // ReSharper disable once ConvertClosureToMethodGroup
             (task, token) => DelayedConsume(task, token),
             (int)concurrencyLimit
         );

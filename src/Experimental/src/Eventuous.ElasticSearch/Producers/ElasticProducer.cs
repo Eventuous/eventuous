@@ -66,7 +66,7 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
                     }
                 ),
                 ProduceMode.Index => descriptor.IndexMany(documents),
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(nameof(mode))
             };
     }
 }

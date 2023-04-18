@@ -126,6 +126,7 @@ public class TypeMapper {
                 .ToArray();
 
             IEnumerable<Assembly> Get(Assembly assembly) {
+                // ReSharper disable once ConvertClosureToMethodGroup
                 var referenced = assembly.GetReferencedAssemblies().Where(name => NamePredicate(name));
                 var assemblies = referenced.Select(Assembly.Load).ToList();
                 return assemblies.Concat(assemblies.SelectMany(Get)).Distinct();

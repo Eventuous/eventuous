@@ -32,16 +32,11 @@ public class RedisStore : IEventReader, IEventWriter {
 
     const string ContentType = "application/json";
 
-    public async Task<StreamEvent[]> ReadEvents(
-        StreamName         stream,
-        StreamReadPosition start,
-        int                count,
-        CancellationToken  cancellationToken
-    ) {
+    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
         var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count).NoContext();
         if (result == null) throw new StreamNotFound(stream);
 
-        return result.Select(x => ToStreamEvent(x)).ToArray();
+        return result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer)).ToArray();
     }
 
     public async Task<AppendEventsResult> AppendEvents(
@@ -97,8 +92,8 @@ public class RedisStore : IEventReader, IEventWriter {
         return (info.Length > 0);
     }
 
-    StreamEvent ToStreamEvent(StreamEntry evt) {
-        var deserialized = _serializer.DeserializeEvent(
+    static StreamEvent ToStreamEvent(StreamEntry evt, IEventSerializer serializer, IMetadataSerializer metaSerializer) {
+        var deserialized = serializer.DeserializeEvent(
             Encoding.UTF8.GetBytes(evt["json_data"].ToString()),
             evt["message_type"].ToString(),
             ContentType
@@ -106,7 +101,7 @@ public class RedisStore : IEventReader, IEventWriter {
 
         var meta = (string?)evt["json_metadata"] == null
             ? new Metadata()
-            : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt["json_metadata"]!));
+            : metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt["json_metadata"]!));
 
         return deserialized switch {
             SuccessfullyDeserialized success => AsStreamEvent(success.Payload),

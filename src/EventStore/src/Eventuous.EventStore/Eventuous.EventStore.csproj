@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <NoWarn>CA2254</NoWarn>
+    </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions" />
         <PackageReference Include="EventStore.Client.Grpc.Streams" />

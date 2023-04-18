@@ -1,7 +1,6 @@
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
-using Eventuous.Subscriptions.Logging;
 using Eventuous.TestHelpers;
 
 namespace Eventuous.Tests.Subscriptions;

@@ -29,6 +29,7 @@ public class AsyncConsumeContext : WrappedConsumeContext {
     /// <param name="acknowledge">Function to ACK the message</param>
     /// <param name="fail">Function to NACK the message in case of failure</param>
     public AsyncConsumeContext(IMessageConsumeContext inner, Acknowledge acknowledge, Fail fail) : base(inner) {
+        // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         inner.LogContext ??= Logger.Current;
         _acknowledge     =   acknowledge;
         _fail            =   fail;

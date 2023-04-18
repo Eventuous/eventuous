@@ -62,6 +62,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
                 await _client.AppendToStreamAsync(
                         stream,
                         options.ExpectedState,
+                        // ReSharper disable once ConvertClosureToMethodGroup
                         chunkMessages.Select(message => CreateMessage(message)),
                         null,
                         options.Deadline,

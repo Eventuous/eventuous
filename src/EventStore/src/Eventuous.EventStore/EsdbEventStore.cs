@@ -248,7 +248,6 @@ public class EsdbEventStore : IEventStore {
         }
         catch (Exception ex) {
             var (message, args) = getError();
-            // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             _logger?.LogWarning(ex, message, args);
             throw getException(stream, ex);
         }
@@ -308,6 +307,7 @@ public class EsdbEventStore : IEventStore {
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents
             .Where(x => !x.Event.EventType.StartsWith("$"))
+            // ReSharper disable once ConvertClosureToMethodGroup
             .Select(e => ToStreamEvent(e))
             .ToArray();
 

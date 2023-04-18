@@ -40,6 +40,7 @@ public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
         _listener = new MetricsListener<EventStoreMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
         TagList GetTags(EventStoreMetricsContext ctx)
+            // ReSharper disable once ArrangeObjectCreationWhenTypeEvident
             => new TagList(_customTags) { new(OperationTag, ctx.Operation) };
     }
 

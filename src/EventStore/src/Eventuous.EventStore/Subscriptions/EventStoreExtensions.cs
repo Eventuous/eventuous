@@ -19,6 +19,6 @@ static class EventStoreExtensions {
             ConnectivitySettings = settings.ConnectivitySettings,
             DefaultCredentials   = settings.DefaultCredentials,
             LoggerFactory        = settings.LoggerFactory,
-            OperationOptions     = settings.OperationOptions,
+            OperationOptions     = settings.OperationOptions
         };
 }

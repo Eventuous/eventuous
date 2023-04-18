@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Net;
-using Eventuous.AspNetCore.Web;
 using Eventuous.Sut.App;
 using Eventuous.Sut.AspNetCore;
 using Eventuous.Sut.Domain;
@@ -44,7 +43,7 @@ public class ControllerTests : IDisposable {
 
         var bookRoom = _fixture.GetBookRoom();
 
-        var firstResponse = await client.PostJsonAsync("/book", bookRoom);
+        await client.PostJsonAsync("/book", bookRoom);
 
         var registerPayment = new BookingApi.RegisterPaymentHttp(
             bookRoom.BookingId,

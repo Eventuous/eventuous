@@ -127,7 +127,7 @@ public class BasicProducerTests {
                 }
             )
             .SetPartitionsLostHandler(
-                (c, partitions) => _output.WriteLine($"Partitions were lost: [{string.Join(", ", partitions)}]")
+                (_, partitions) => _output.WriteLine($"Partitions were lost: [{string.Join(", ", partitions)}]")
             )
             .Build();
     }

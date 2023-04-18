@@ -8,7 +8,8 @@ using Hypothesist;
 namespace Eventuous.Tests.GooglePubSub;
 
 public class PubSubTests : IAsyncLifetime {
-    static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static PubSubTests()
+        => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     static readonly Fixture Auto = new();
 
@@ -20,8 +21,7 @@ public class PubSubTests : IAsyncLifetime {
     readonly ILogger<PubSubTests>     _log;
 
     public PubSubTests(ITestOutputHelper outputHelper) {
-        var loggerFactory =
-            LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
+        var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
         _log                = loggerFactory.CreateLogger<PubSubTests>();
         _pubsubTopic        = new StreamName($"test-{Guid.NewGuid():N}");
@@ -29,10 +29,10 @@ public class PubSubTests : IAsyncLifetime {
 
         _handler = new TestEventHandler();
 
-        _producer = new GooglePubSubProducer(PubSubFixture.ProjectId);
+        _producer = new GooglePubSubProducer(PubSubFixture.PubsubProjectId, log: loggerFactory.CreateLogger<GooglePubSubProducer>());
 
         _subscription = new GooglePubSubSubscription(
-            PubSubFixture.ProjectId,
+            PubSubFixture.PubsubProjectId,
             _pubsubTopic,
             _pubsubSubscription,
             new ConsumePipe().AddDefaultConsumer(_handler),

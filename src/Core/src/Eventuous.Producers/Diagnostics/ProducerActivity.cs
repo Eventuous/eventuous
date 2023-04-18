@@ -46,9 +46,7 @@ public static class ProducerActivity {
         return (activity, messages.Select(GetMessage));
 
         ProducedMessage GetMessage(ProducedMessage message)
-            => message with {
-                Metadata = GetMeta(message.Metadata).AddActivityTags(activity),
-            };
+            => message with { Metadata = GetMeta(message.Metadata).AddActivityTags(activity) };
     }
 
     static Activity? GetActivity(IEnumerable<KeyValuePair<string, object?>>? tags)

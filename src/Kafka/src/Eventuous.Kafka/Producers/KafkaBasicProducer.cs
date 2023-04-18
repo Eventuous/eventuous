@@ -59,6 +59,7 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
                     _producerWithKey.Produce(stream, message, r => DeliveryHandler(r, producedMessage));
                 }
 
+                // ReSharper disable once UnusedParameter.Local
                 void DeliveryHandler(DeliveryReport<string, byte[]> report, ProducedMessage msg)
                     => Report(report.Error);
             }

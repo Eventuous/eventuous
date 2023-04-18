@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.RabbitMq.Producers;
 
@@ -12,11 +13,12 @@ using Diagnostics;
 /// <summary>
 /// RabbitMQ producer
 /// </summary>
-[PublicAPI]
 public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedProducer {
-    readonly RabbitMqExchangeOptions? _options;
-    readonly IEventSerializer         _serializer;
-    readonly ConnectionFactory        _connectionFactory;
+    readonly ILogger<RabbitMqProducer>? _log;
+    readonly RabbitMqExchangeOptions?   _options;
+    readonly IEventSerializer           _serializer;
+    readonly ConnectionFactory          _connectionFactory;
+    readonly ExchangeCache              _exchangeCache;
 
     IConnection? _connection;
     IModel?      _channel;
@@ -25,12 +27,21 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
     /// Creates a RabbitMQ producer instance
     /// </summary>
     /// <param name="connectionFactory">RabbitMQ connection factory</param>
-    /// <param name="serializer">Optional: event serializer instance</param>
-    /// <param name="options">Optional: additional configuration for the exchange</param>
-    public RabbitMqProducer(ConnectionFactory connectionFactory, IEventSerializer? serializer = null, RabbitMqExchangeOptions? options = null) : base(TracingOptions) {
+    /// <param name="serializer">Optional event serializer instance</param>
+    /// <param name="log">Optional logger</param>
+    /// <param name="options">Optional additional configuration for the exchange</param>
+    public RabbitMqProducer(
+        ConnectionFactory          connectionFactory,
+        IEventSerializer?          serializer = null,
+        ILogger<RabbitMqProducer>? log        = null,
+        RabbitMqExchangeOptions?   options    = null
+    )
+        : base(TracingOptions) {
+        _log               = log;
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
         _connectionFactory = Ensure.NotNull(connectionFactory);
+        _exchangeCache     = new(_log);
     }
 
     public Task StartAsync(CancellationToken cancellationToken = default) {
@@ -55,7 +66,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
     ) {
         EnsureExchange(stream);
         var produced = new List<ProducedMessage>();
-        var failed   = new List<(ProducedMessage, Exception)>();
+        var failed   = new List<(ProducedMessage Msg, Exception Ex)>();
 
         foreach (var message in messages) {
             if (Activity.Current is { IsAllDataRequested: true }) {
@@ -67,6 +78,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
                 produced.Add(message);
             }
             catch (Exception e) {
+                _log?.LogError(e, "Failed to produce message to RabbitMQ");
                 failed.Add((message, e));
             }
         }
@@ -76,7 +88,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
         await produced.Select(x => x.Ack<RabbitMqProducer>()).WhenAll().NoContext();
 
         await failed
-            .Select(x => x.Item1.Nack<RabbitMqProducer>("Failed to produce to RabbitMQ", x.Item2))
+            .Select(x => x.Msg.Nack<RabbitMqProducer>("Failed to produce to RabbitMQ", x.Ex))
             .WhenAll()
             .NoContext();
     }
@@ -108,8 +120,6 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
         _channel.BasicPublish(stream, options?.RoutingKey ?? "", true, prop, payload);
     }
 
-    readonly ExchangeCache _exchangeCache = new();
-
     void EnsureExchange(string exchange)
         => _exchangeCache.EnsureExchange(
             exchange,
@@ -128,8 +138,6 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
             await Task.Delay(ConfirmIdle, cancellationToken).NoContext();
         }
     }
-
-    const string EventType = "event-type";
 
     static readonly TimeSpan ConfirmTimeout = TimeSpan.FromSeconds(1);
     static readonly TimeSpan ConfirmIdle    = TimeSpan.FromMilliseconds(100);

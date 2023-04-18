@@ -1,13 +1,10 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Data;
 using System.Runtime.Serialization;
 using System.Text;
 using Eventuous.Diagnostics;
 using Eventuous.SqlServer.Extensions;
-using Eventuous.Tools;
-using Microsoft.Data.SqlClient;
 
 // ReSharper disable ConvertClosureToMethodGroup
 

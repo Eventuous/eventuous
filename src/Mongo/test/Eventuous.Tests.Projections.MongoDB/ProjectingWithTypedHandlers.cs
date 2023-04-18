@@ -1,4 +1,3 @@
-using Bogus;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Sut.Domain;

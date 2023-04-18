@@ -35,7 +35,7 @@ public static class ConfigureElastic {
                 }
             },
             Template = new DataStreamTemplateConfig {
-                TemplateName = "eventuous",
+                TemplateName = "eventuous"
             }
         };
 

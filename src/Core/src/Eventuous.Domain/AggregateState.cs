@@ -4,7 +4,7 @@
 namespace Eventuous;
 
 [Obsolete("Use State<T> instead")]
-public abstract record AggregateState<T> : State<T> where T : AggregateState<T> { }
+public abstract record AggregateState<T> : State<T> where T : AggregateState<T>;
 
 [PublicAPI]
 public abstract record State<T> where T : State<T> {

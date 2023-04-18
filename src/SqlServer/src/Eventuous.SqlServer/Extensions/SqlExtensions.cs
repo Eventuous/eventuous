@@ -29,7 +29,7 @@ static class SqlExtensions {
             new SqlParameter {
                 ParameterName = parameterName,
                 SqlDbType     = sqlDbType,
-                Direction     = ParameterDirection.Output,
+                Direction     = ParameterDirection.Output
             }
         );
 
@@ -38,7 +38,7 @@ static class SqlExtensions {
             new SqlParameter {
                 ParameterName = parameterName,
                 SqlDbType     = sqlDbType,
-                Direction     = ParameterDirection.Output,
+                Direction     = ParameterDirection.Output
             }
         );
 

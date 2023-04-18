@@ -11,6 +11,9 @@ using Eventuous.Tools;
 
 namespace Eventuous.EventStore.Subscriptions;
 
+/// <summary>
+/// Function type for handling event processing failures
+/// </summary>
 public delegate Task HandleEventProcessingFailure(
     EventStoreClient       client,
     PersistentSubscription subscription,
@@ -18,20 +21,23 @@ public delegate Task HandleEventProcessingFailure(
     Exception              exception
 );
 
+/// <summary>
+/// Base class for EventStoreDB persistent subscriptions
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
     where T : PersistentSubscriptionOptions {
+    /// <summary>
+    /// EventStoreDB persistent subscription client instance
+    /// </summary>
     protected EventStorePersistentSubscriptionsClient SubscriptionClient { get; }
 
     readonly HandleEventProcessingFailure _handleEventProcessingFailure;
 
     PersistentSubscription? _subscription;
 
-    protected PersistentSubscriptionBase(
-        EventStoreClient eventStoreClient,
-        T                options,
-        ConsumePipe      consumePipe,
-        ILoggerFactory?  loggerFactory
-    ) : base(options, consumePipe, loggerFactory) {
+    protected PersistentSubscriptionBase(EventStoreClient eventStoreClient, T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
+        : base(options, consumePipe, loggerFactory) {
         EventStoreClient = eventStoreClient;
         var settings   = eventStoreClient.GetSettings().Copy();
         var opSettings = settings.OperationOptions.Clone();
@@ -41,19 +47,29 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
 
         _handleEventProcessingFailure = options.FailureHandler ?? DefaultEventProcessingFailureHandler;
 
-        if (options.FailureHandler != null && !options.ThrowOnError) Log.ThrowOnErrorIncompatible();
+        if (options is { FailureHandler: not null, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
     }
 
+    /// <summary>
+    /// EventStoreDB client instance
+    /// </summary>
     protected EventStoreClient EventStoreClient { get; }
 
     const string ResolvedEventKey = "resolvedEvent";
     const string SubscriptionKey  = "subscription";
 
-    protected abstract Task CreatePersistentSubscription(
-        PersistentSubscriptionSettings settings,
-        CancellationToken              cancellationToken
-    );
+    /// <summary>
+    /// Execute an operation to set up a persistent subscription
+    /// </summary>
+    /// <param name="settings"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    protected abstract Task CreatePersistentSubscription(PersistentSubscriptionSettings settings, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Subscribe to a persistent subscription
+    /// </summary>
+    /// <param name="cancellationToken"></param>
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var settings = Options.SubscriptionSettings ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
 
@@ -69,6 +85,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
             await CreatePersistentSubscription(settings, cancellationToken);
 
             _subscription = await LocalSubscribe(
+                    // ReSharper disable once ConvertClosureToMethodGroup
                     (subscription, @event, retryCount, ct) => HandleEvent(subscription, @event, retryCount, ct),
                     HandleDrop,
                     cancellationToken
@@ -76,19 +93,10 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
                 .NoContext();
         }
 
-        void HandleDrop(
-            PersistentSubscription    __,
-            SubscriptionDroppedReason reason,
-            Exception?                exception
-        )
+        void HandleDrop(PersistentSubscription __, SubscriptionDroppedReason reason, Exception? exception)
             => Dropped(EsdbMappings.AsDropReason(reason), exception);
 
-        async Task HandleEvent(
-            PersistentSubscription subscription,
-            ResolvedEvent          re,
-            int?                   retryCount,
-            CancellationToken      ct
-        ) {
+        async Task HandleEvent(PersistentSubscription subscription, ResolvedEvent re, int? retryCount, CancellationToken ct) {
             Logger.Configure(Options.SubscriptionId, LoggerFactory);
 
             var context = CreateContext(re, ct)
@@ -106,8 +114,18 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
         }
     }
 
+    /// <summary>
+    /// Last processed event position
+    /// </summary>
     protected EventPosition? LastProcessed { get; set; }
 
+    /// <summary>
+    /// Internal method to subscribe to a persistent subscription
+    /// </summary>
+    /// <param name="eventAppeared"></param>
+    /// <param name="subscriptionDropped"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     protected abstract Task<PersistentSubscription> LocalSubscribe(
         Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
         Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>?     subscriptionDropped,
@@ -162,19 +180,23 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
             re.OriginalEventNumber,
             re.Event.Created,
             evt,
-            Options.MetadataSerializer.DeserializeMeta(
-                Options,
-                re.Event.Metadata,
-                re.OriginalStreamId,
-                re.Event.EventNumber
-            ),
+            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
             SubscriptionId,
             cancellationToken
         );
     }
 
+    /// <summary>
+    /// Get a stream position from the resolved event
+    /// </summary>
+    /// <param name="re"></param>
+    /// <returns></returns>
     protected abstract ulong GetContextStreamPosition(ResolvedEvent re);
 
+    /// <summary>
+    /// Unsubscribe from a persistent subscription
+    /// </summary>
+    /// <param name="cancellationToken"></param>
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         try {
             Stopping.Cancel(false);
@@ -186,15 +208,6 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
         }
     }
 
-    static Task DefaultEventProcessingFailureHandler(
-        EventStoreClient       client,
-        PersistentSubscription subscription,
-        ResolvedEvent          resolvedEvent,
-        Exception              exception
-    )
-        => subscription.Nack(
-            PersistentSubscriptionNakEventAction.Retry,
-            exception.Message,
-            resolvedEvent
-        );
+    static Task DefaultEventProcessingFailureHandler(EventStoreClient client, PersistentSubscription subscription, ResolvedEvent resolvedEvent, Exception exception)
+        => subscription.Nack(PersistentSubscriptionNakEventAction.Retry, exception.Message, resolvedEvent);
 }

@@ -35,7 +35,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
 
         var checkpoint = await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
         Logger.ConfigureIfNull(SubscriptionId, LoggerFactory);
-        await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, (ulong)result.GlobalPosition), true, default);
+        await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, result.GlobalPosition), true, default);
 
         await Start();
         await Task.Delay(TimeSpan.FromSeconds(1));

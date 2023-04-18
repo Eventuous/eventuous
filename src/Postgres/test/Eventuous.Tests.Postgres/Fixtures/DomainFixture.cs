@@ -1,7 +1,6 @@
 using Eventuous.Sut.App;
 using MicroElements.AutoFixture.NodaTime;
 using NodaTime;
-using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Postgres.Fixtures;
 

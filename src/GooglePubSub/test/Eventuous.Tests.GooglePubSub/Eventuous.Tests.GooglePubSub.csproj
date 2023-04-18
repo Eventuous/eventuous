@@ -2,11 +2,16 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IncludeSutSubs>true</IncludeSutSubs>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="Google.Cloud.PubSub.V1" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Configuration" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     </ItemGroup>
 </Project>

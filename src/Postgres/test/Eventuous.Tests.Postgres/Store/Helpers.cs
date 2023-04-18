@@ -1,7 +1,6 @@
 using Eventuous.Tests.Postgres.Fixtures;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
-using static Eventuous.Tests.Postgres.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Postgres.Store;
 

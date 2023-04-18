@@ -61,7 +61,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
 
         _channel.BasicQos(0, (ushort)prefetch, false);
 
-        if (options.FailureHandler != null && !options.ThrowOnError) Log.ThrowOnErrorIncompatible();
+        if (options is { FailureHandler: not null, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     protected override ValueTask Subscribe(CancellationToken cancellationToken) {
         var exchange = Ensure.NotEmptyString(Options.Exchange);
 
-        Log.InfoLog?.Log("Ensuring exchange", exchange);
+        Log.InfoLog?.Log("Ensuring exchange {Exchange}", exchange);
 
         _channel.ExchangeDeclare(
             exchange,
@@ -101,7 +101,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.ExchangeOptions.Arguments
         );
 
-        Log.InfoLog?.Log("Ensuring queue", Options.SubscriptionId);
+        Log.InfoLog?.Log("Ensuring queue {Queue}", Options.SubscriptionId);
 
         _channel.QueueDeclare(
             Options.SubscriptionId,
@@ -111,7 +111,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.QueueOptions.Arguments
         );
 
-        Log.InfoLog?.Log("Binding exchange to queue:", exchange, Options.SubscriptionId);
+        Log.InfoLog?.Log("Binding exchange {Exchange} to queue {Queue}", exchange, Options.SubscriptionId);
 
         _channel.QueueBind(
             Options.SubscriptionId,

@@ -7,13 +7,12 @@ using Eventuous.Diagnostics;
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
-using Checkpoints;
 using static Checkpoints.CheckpointCommitHandler;
 
 sealed class CheckpointCommitMetrics : GenericListener, IDisposable {
     readonly ConcurrentDictionary<string, CommitEvent> _commitEvents = new();
 
-    public CheckpointCommitMetrics() : base(CheckpointCommitHandler.DiagnosticName) { }
+    public CheckpointCommitMetrics() : base(DiagnosticName) { }
 
     protected override void OnEvent(KeyValuePair<string, object?> evt) {
         var (key, value) = evt;

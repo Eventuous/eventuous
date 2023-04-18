@@ -12,7 +12,7 @@ public abstract class GenericListener {
     IDisposable? _networkSubscription;
 
     protected GenericListener(string name) {
-        var observer = new GenericObserver<KeyValuePair<string, object?>>(OnEvent, null);
+        var observer = new GenericObserver<KeyValuePair<string, object?>>(OnEvent);
 
         void OnNewListener(DiagnosticListener listener) {
             if (listener.Name != name) return;

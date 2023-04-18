@@ -112,9 +112,9 @@ public static class SetupIndex {
                     if (definition.Rollover is var (maxAge, maxDocs, maxSize)) {
                         lifecycle.Rollover(
                             x => {
-                                if (maxAge is { }) x.MaximumAge(maxAge);
-                                if (maxDocs is { }) x.MaximumDocuments(maxDocs);
-                                if (maxSize is { }) x.MaximumSize(maxSize);
+                                if (maxAge is not null) x.MaximumAge(maxAge);
+                                if (maxDocs is not null) x.MaximumDocuments(maxDocs);
+                                if (maxSize is not null) x.MaximumSize(maxSize);
                                 return x;
                             }
                         );

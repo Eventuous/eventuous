@@ -23,7 +23,8 @@ public abstract class Aggregate {
     /// <summary>
     /// Clears all the pending changes. Normally not used. Can be used for testing purposes.
     /// </summary>
-    public void ClearChanges() => _changes.Clear();
+    public void ClearChanges()
+        => _changes.Clear();
 
     /// <summary>
     /// The original version is the aggregate version we got from the store.
@@ -50,7 +51,8 @@ public abstract class Aggregate {
     /// Adds an event to the list of pending changes.
     /// </summary>
     /// <param name="evt">New domain event</param>
-    protected void AddChange(object evt) => _changes.Add(evt);
+    protected void AddChange(object evt)
+        => _changes.Add(evt);
 
     /// <summary>
     /// Use this method to ensure you are operating on a new aggregate.
@@ -74,7 +76,8 @@ public abstract class Aggregate {
 }
 
 public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
-    protected Aggregate() => State = new T();
+    protected Aggregate()
+        => State = new T();
 
     /// <summary>
     /// Applies a new event to the state, adds the event to the list of pending changes,
@@ -92,10 +95,12 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
     /// <inheritdoc />
     public override void Load(IEnumerable<object?> events) {
         Original = events.Where(x => x != null).ToArray()!;
-        State    = Original.Aggregate(new T(), (state, o) => Fold(state, o));
+        // ReSharper disable once ConvertClosureToMethodGroup
+        State = Original.Aggregate(new T(), (state, o) => Fold(state, o));
     }
 
-    static T Fold(T state, object evt) => state.When(evt);
+    static T Fold(T state, object evt)
+        => state.When(evt);
 
     /// <summary>
     /// Returns the current aggregate state. Cannot be mutated from the outside.

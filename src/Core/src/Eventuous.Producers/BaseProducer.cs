@@ -9,25 +9,13 @@ namespace Eventuous.Producers;
 
 using Diagnostics;
 
-public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProducer<TProduceOptions>
-    where TProduceOptions : class {
-    protected BaseProducer(ProducerTracingOptions? tracingOptions = null)
-        : base(tracingOptions) { }
+public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProducer<TProduceOptions> where TProduceOptions : class {
+    protected BaseProducer(ProducerTracingOptions? tracingOptions = null) : base(tracingOptions) { }
 
-    protected abstract Task ProduceMessages(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        TProduceOptions?             options,
-        CancellationToken            cancellationToken = default
-    );
+    protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
 
     /// <inheritdoc />
-    public async Task Produce(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        TProduceOptions?             options,
-        CancellationToken            cancellationToken = default
-    ) {
+    public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default) {
         var (activity, msgs) = ProducerActivity.Start(messages, DefaultTags);
 
         if (activity is { IsAllDataRequested: true }) {
@@ -52,17 +40,9 @@ public abstract class BaseProducer : IEventProducer {
         DefaultTags = options.AllTags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
-    protected abstract Task ProduceMessages(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        CancellationToken            cancellationToken = default
-    );
+    protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default);
 
-    public async Task Produce(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        CancellationToken            cancellationToken = default
-    ) {
+    public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default) {
         var messagesArray = messages.ToArray();
         if (messagesArray.Length == 0) return;
 
