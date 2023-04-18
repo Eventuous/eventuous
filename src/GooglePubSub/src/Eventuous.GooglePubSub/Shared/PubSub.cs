@@ -14,26 +14,28 @@ public static class PubSub {
     public static EmulatorDetection DetectEmulator(this PublisherClient.ClientCreationSettings? value)
         => value?.EmulatorDetection ?? EmulatorDetection.None;
 
-    public static async Task CreateTopic(TopicName topicName, EmulatorDetection emulatorDetection, CancellationToken cancellationToken) {
+    public static async Task CreateTopic(TopicName topicName, EmulatorDetection emulatorDetection, Action<string, string> log, CancellationToken cancellationToken) {
         var topicString = topicName.ToString();
-        var log         = Logger.Current.InfoLog;
 
         var publisherServiceApiClient =
             await new PublisherServiceApiClientBuilder { EmulatorDetection = emulatorDetection }
                 .BuildAsync(cancellationToken)
                 .NoContext();
 
-        log?.Log("Checking topic", topicString);
+        Log("Checking topic");
 
         try {
             await publisherServiceApiClient.GetTopicAsync(topicName).NoContext();
-            log?.Log("Topic exists", topicString);
+            Log("Topic exists");
         }
         catch (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
-            log?.Log("Topic doesn't exist", topicString);
+            Log("Topic doesn't exist");
             await publisherServiceApiClient.CreateTopicAsync(topicName).NoContext();
-            log?.Log("Created topic", topicString);
+            Log("Created topic");
         }
+
+        void Log(string message)
+            => log(message + ": {Topic}", topicString);
     }
 
     public static async Task CreateSubscription(
