@@ -23,48 +23,68 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     /// Create a new instance of a Google PubSub producer
     /// </summary>
     /// <param name="projectId">GCP project ID</param>
-    /// <param name="serializer">Event serializer instance</param>
+    /// <param name="serializer">Optional event serializer. Will use the default instance if missing.</param>
     /// <param name="settings"></param>
     /// <param name="clientCreationSettings"></param>
-    public GooglePubSubProducer(string projectId, IEventSerializer? serializer = null, ClientCreationSettings? clientCreationSettings = null, Settings? settings = null)
+    /// <param name="log">Optional logger instance</param>
+    public GooglePubSubProducer(
+        string                         projectId,
+        IEventSerializer?              serializer             = null,
+        ILogger<GooglePubSubProducer>? log                    = null,
+        ClientCreationSettings?        clientCreationSettings = null,
+        Settings?                      settings               = null
+    )
         : this(
-            new PubSubProducerOptions { ProjectId = Ensure.NotEmptyString(projectId), Settings = settings, ClientCreationSettings = clientCreationSettings },
-            serializer
+            new PubSubProducerOptions {
+                ProjectId              = Ensure.NotEmptyString(projectId),
+                Settings               = settings,
+                ClientCreationSettings = clientCreationSettings
+            },
+            serializer,
+            log
         ) { }
 
     /// <summary>
     /// Create a new instance of a Google PubSub producer
     /// </summary>
     /// <param name="options">Producer options</param>
-    /// <param name="serializer">Optional: event serializer. Will use the default instance if missing.</param>
-    public GooglePubSubProducer(PubSubProducerOptions options, IEventSerializer? serializer = null) : base(TracingOptions) {
+    /// <param name="serializer">Optional event serializer. Will use the default instance if missing.</param>
+    /// <param name="log">Optional logger instance</param>
+    public GooglePubSubProducer(PubSubProducerOptions options, IEventSerializer? serializer = null, ILogger<GooglePubSubProducer>? log = null) : base(TracingOptions) {
         Ensure.NotNull(options);
 
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
-        _clientCache = new ClientCache(options);
+        _clientCache = new ClientCache(options, log);
         _attributes  = options.Attributes;
+        _log         = log;
     }
 
     /// <summary>
     /// Create a new instance of a Google PubSub producer
     /// </summary>
     /// <param name="options">Producer options</param>
-    /// <param name="serializer">Optional: event serializer. Will use the default instance if missing.</param>
-    public GooglePubSubProducer(IOptions<PubSubProducerOptions> options, IEventSerializer? serializer = null) : this(options.Value, serializer) { }
+    /// <param name="serializer">Optional event serializer. Will use the default instance if missing.</param>
+    /// <param name="log">Optional logger instance</param>
+    public GooglePubSubProducer(IOptions<PubSubProducerOptions> options, IEventSerializer? serializer = null, ILogger<GooglePubSubProducer>? log = null)
+        : this(options.Value, serializer, log) { }
 
     public Task StartAsync(CancellationToken cancellationToken = default) {
         Ready = true;
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken = default)
-        => Task.WhenAll(_clientCache.GetAllClients().Select(x => x.ShutdownAsync(cancellationToken)));
+    public async Task StopAsync(CancellationToken cancellationToken = default) {
+        _log?.LogInformation("Stopping Google PubSub clients...");
+        await Task.WhenAll(_clientCache.GetAllClients().Select(x => x.ShutdownAsync(cancellationToken))).NoContext();
+    }
 
     static readonly ProducerTracingOptions TracingOptions = new() {
         MessagingSystem  = "google-pubsub",
         DestinationKind  = "topc",
         ProduceOperation = "publish"
     };
+
+    readonly ILogger<GooglePubSubProducer>? _log;
 
     protected override async Task ProduceMessages(
         StreamName                   stream,
@@ -80,6 +100,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
                 await x.Ack<GooglePubSubProducer>().NoContext();
             }
             catch (Exception e) {
+                _log?.LogError(e, "Failed to produce to Google PubSub");
                 await x.Nack<GooglePubSubProducer>("Failed to produce to Google PubSub", e).NoContext();
             }
         }

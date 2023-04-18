@@ -69,7 +69,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
         _topicName = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
 
-        if (options is { FailureHandler: { }, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
+        if (options is { FailureHandler: not null, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
     }
 
     Task _subscriberTask = null!;
@@ -127,7 +127,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     public async Task CreateSubscription(SubscriptionName subscriptionName, TopicName topicName, Action<Subscription>? configureSubscription, CancellationToken cancellationToken) {
         var emulator = Options.ClientCreationSettings.DetectEmulator();
         Logger.Current = Log;
-        await PubSub.CreateTopic(topicName, emulator, cancellationToken).NoContext();
+        await PubSub.CreateTopic(topicName, emulator, (msg, s) => Log.InfoLog?.Log(msg, s), cancellationToken).NoContext();
         await PubSub.CreateSubscription(subscriptionName, topicName, configureSubscription, emulator, cancellationToken).NoContext();
     }
 
