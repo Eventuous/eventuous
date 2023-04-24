@@ -152,7 +152,7 @@ public static partial class RouteBuilderExtensions {
                 }
             )
             .Accepts<TContract>(false, "application/json")
-            .Produces<Result>()
+            .Produces<Eventuous.OkResult>()
             .Produces<ErrorResult>(StatusCodes.Status404NotFound)
             .Produces<ErrorResult>(StatusCodes.Status409Conflict)
             .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
@@ -224,7 +224,7 @@ public static partial class RouteBuilderExtensions {
                     }
                 )
                 .Accepts(type, false, "application/json")
-                .Produces<Result>()
+                .Produces<Eventuous.OkResult>()
                 .Produces<ErrorResult>(StatusCodes.Status404NotFound)
                 .Produces<ErrorResult>(StatusCodes.Status409Conflict)
                 .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
