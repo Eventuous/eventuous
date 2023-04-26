@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Diagnostics.Tracing;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Metrics;
 
@@ -35,7 +36,10 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 
     public SubscriptionMetrics(IEnumerable<GetSubscriptionEndOfStream> measures) {
-        var                             getGaps = measures.ToArray();
+        var xxx = new PollingCounter("dssdf", new SubscriptionsEventSource(), () => 12D);
+
+        var getGaps = measures.ToArray();
+
         Dictionary<string, EndOfStream> streams = new();
 
         ObserveMetric<long> observeGapValues = () => ObserveGapValues(getGaps);

@@ -42,32 +42,20 @@ public class AggregateStore : IAggregateStore {
         AggregateFactoryRegistry?       factoryRegistry = null
     ) : this(eventStore, eventStore, amendEvent, factoryRegistry) { }
 
-    public Task<AppendEventsResult> Store<T>(
-        StreamName        streamName,
-        T                 aggregate,
-        CancellationToken cancellationToken
-    ) where T : Aggregate
+    public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate
         => _eventWriter.Store(streamName, aggregate, _amendEvent, cancellationToken);
 
     public Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
         => LoadInternal<T>(streamName, true, cancellationToken);
 
-    public Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken)
-        where T : Aggregate
+    public Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
         => LoadInternal<T>(streamName, false, cancellationToken);
 
-    async Task<T> LoadInternal<T>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken)
-        where T : Aggregate {
+    async Task<T> LoadInternal<T>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken) where T : Aggregate {
         var aggregate = _factoryRegistry.CreateInstance<T>();
 
         try {
-            var events = await _eventReader.ReadStream(
-                streamName,
-                StreamReadPosition.Start,
-                failIfNotFound,
-                cancellationToken
-            );
-
+            var events = await _eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken);
             aggregate.Load(events.Select(x => x.Payload));
         }
         catch (StreamNotFound) when (!failIfNotFound) {

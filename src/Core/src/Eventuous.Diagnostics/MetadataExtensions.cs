@@ -11,9 +11,7 @@ public static class MetadataExtensions {
         if (activity == null) return metadata;
 
         var tags = activity.Tags
-            .Where(
-                x => x.Value != null && MetaMappings.TelemetryToInternalTagsMap.ContainsKey(x.Key)
-            );
+            .Where(x => x.Value != null && MetaMappings.TelemetryToInternalTagsMap.ContainsKey(x.Key));
 
         foreach (var (key, value) in tags) {
             metadata.With(MetaMappings.TelemetryToInternalTagsMap[key], value!);
@@ -23,7 +21,7 @@ public static class MetadataExtensions {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Metadata AddTracingMeta(this Metadata metadata, TracingMeta tracingMeta)
+    static Metadata AddTracingMeta(this Metadata metadata, TracingMeta tracingMeta)
         => metadata
             .AddNotNull(TraceId, tracingMeta.TraceId)
             .AddNotNull(SpanId, tracingMeta.SpanId)
@@ -31,9 +29,5 @@ public static class MetadataExtensions {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TracingMeta GetTracingMeta(this Metadata metadata)
-        => new(
-            metadata.GetString(TraceId),
-            metadata.GetString(SpanId),
-            metadata.GetString(ParentSpanId)
-        );
+        => new(metadata.GetString(TraceId), metadata.GetString(SpanId), metadata.GetString(ParentSpanId));
 }

@@ -1,5 +1,8 @@
 namespace Eventuous.EventStore.Producers; 
 
+/// <summary>
+/// Event producing options
+/// </summary>
 [PublicAPI]
 public record EventStoreProduceOptions {
     /// <summary>
@@ -16,8 +19,14 @@ public record EventStoreProduceOptions {
     /// Maximum number of events appended to a single stream in one batch
     /// </summary>
     public int MaxAppendEventsCount { get; init; } = 500;
-    
+
+    /// <summary>
+    /// Timeout for the produce operation
+    /// </summary>
     public TimeSpan? Deadline { get; init; }
 
+    /// <summary>
+    /// Default set of options
+    /// </summary>
     public static EventStoreProduceOptions Default { get; } = new();
 }

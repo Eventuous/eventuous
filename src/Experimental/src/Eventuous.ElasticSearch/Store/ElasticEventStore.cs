@@ -89,6 +89,9 @@ public class ElasticEventStore : IEventReader, IEventWriter {
                 )
                 .ToArray();
     }
+
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
+        => throw new NotImplementedException();
 }
 
 public record ElasticEventStoreOptions {

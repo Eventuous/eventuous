@@ -10,8 +10,7 @@ public sealed class MetricsListener<T> : GenericListener, IDisposable {
     readonly Counter<long>     _errors;
     readonly Func<T, TagList>  _getTags;
 
-    public MetricsListener(string name, Histogram<double> duration, Counter<long> errors, Func<T, TagList> getTags)
-        : base(name) {
+    public MetricsListener(string name, Histogram<double> duration, Counter<long> errors, Func<T, TagList> getTags) : base(name) {
         _duration = duration;
         _errors   = errors;
         _getTags  = getTags;

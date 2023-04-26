@@ -3,11 +3,7 @@
 
 namespace Eventuous.Diagnostics;
 
-public record ActivityStatus(
-    ActivityStatusCode StatusCode,
-    string?            Description,
-    Exception?         Exception
-) {
+public record ActivityStatus(ActivityStatusCode StatusCode, string? Description, Exception? Exception) {
     public static ActivityStatus Ok(string? description = null)
         => new(ActivityStatusCode.Ok, description, null);
 

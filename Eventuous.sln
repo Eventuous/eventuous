@@ -177,6 +177,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.Redis", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Extensions.DependencyInjection", "src\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj", "{EE33E975-8957-436A-9E72-390608995D4C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.GooglePubSub.CloudRun", "src\GooglePubSub\src\Eventuous.GooglePubSub.CloudRun\Eventuous.GooglePubSub.CloudRun.csproj", "{1FCCE816-36FB-4B19-AB6B-72CA46AC2FBE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -379,6 +381,10 @@ Global
 		{EE33E975-8957-436A-9E72-390608995D4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE33E975-8957-436A-9E72-390608995D4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE33E975-8957-436A-9E72-390608995D4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FCCE816-36FB-4B19-AB6B-72CA46AC2FBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FCCE816-36FB-4B19-AB6B-72CA46AC2FBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FCCE816-36FB-4B19-AB6B-72CA46AC2FBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FCCE816-36FB-4B19-AB6B-72CA46AC2FBE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -457,6 +463,7 @@ Global
 		{179C730A-CD2E-4B4D-935B-38F7E9CFE33B} = {0E2520E7-B4A6-47E7-AED8-662C88441A84}
 		{5DACCAF8-9CD4-4B0B-96B7-15EF049EB199} = {B1AAD6CA-2710-41E0-9495-B43C313D6BCA}
 		{EE33E975-8957-436A-9E72-390608995D4C} = {2B7F84B7-C0E5-408F-ABAF-BF23C8305486}
+		{1FCCE816-36FB-4B19-AB6B-72CA46AC2FBE} = {A6762149-8450-468B-A28F-1D3F6E586247}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0691467B-C257-46DB-BC4F-88EB7CD615B8}

@@ -1,13 +1,10 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-namespace Eventuous.Producers; 
+namespace Eventuous.Producers;
 
 public static class Chunk {
-    public static IEnumerable<IEnumerable<T>> Chunks<T>(
-        this IEnumerable<T> enumerable,
-        int                 chunkSize
-    ) {
+    public static IEnumerable<IEnumerable<T>> Chunks<T>(this IEnumerable<T> enumerable, int chunkSize) {
         if (chunkSize < 1) throw new ArgumentException("chunkSize must be positive");
 
         using var e = enumerable.GetEnumerator();

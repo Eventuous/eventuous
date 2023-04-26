@@ -21,14 +21,12 @@ public class AggregateFactoryRegistry {
     /// <param name="factory">Function to create a given aggregate type instance</param>
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <returns></returns>
-    public AggregateFactoryRegistry CreateAggregateUsing<T>(AggregateFactory<T> factory)
-        where T : Aggregate {
+    public AggregateFactoryRegistry CreateAggregateUsing<T>(AggregateFactory<T> factory) where T : Aggregate {
         _registry.TryAdd(typeof(T), () => factory());
         return this;
     }
 
-    public void UnsafeCreateAggregateUsing<T>(Type type, Func<T> factory)
-        where T : Aggregate
+    public void UnsafeCreateAggregateUsing<T>(Type type, Func<T> factory) where T : Aggregate
         => _registry.TryAdd(type, factory);
 
     public T CreateInstance<T, TState>()

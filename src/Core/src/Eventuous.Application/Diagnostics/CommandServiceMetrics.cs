@@ -27,9 +27,7 @@ public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
     public CommandServiceMetrics() {
         _meter = EventuousDiagnostics.GetMeter(MeterName);
 
-        var duration =
-            _meter.CreateHistogram<double>(CommandService, "ms", "Command execution duration, milliseconds");
-
+        var duration   = _meter.CreateHistogram<double>(CommandService, "ms", "Command execution duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>($"{CommandService}.errors", "errors", "Number of failed commands");
         _listener = new MetricsListener<CommandServiceMetricsContext>(ListenerName, duration, errorCount, GetTags);
 

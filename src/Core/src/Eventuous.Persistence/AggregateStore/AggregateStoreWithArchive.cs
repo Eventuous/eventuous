@@ -23,11 +23,7 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
         _archiveReader   = Ensure.NotNull(archiveReader);
     }
 
-    public Task<AppendEventsResult> Store<T>(
-        StreamName        streamName,
-        T                 aggregate,
-        CancellationToken cancellationToken
-    ) where T : Aggregate
+    public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate
         => _eventStore.Store(streamName, aggregate, _amendEvent, cancellationToken);
 
     public Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
@@ -36,8 +32,7 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
     public Task<T> LoadOrNew<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
         => LoadInternal<T>(streamName, false, cancellationToken);
 
-    async Task<T> LoadInternal<T>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken)
-        where T : Aggregate {
+    async Task<T> LoadInternal<T>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken) where T : Aggregate {
         var aggregate = _factoryRegistry.CreateInstance<T>();
 
         var hotEvents = await LoadStreamEvents(_eventStore, StreamReadPosition.Start).NoContext();
@@ -59,13 +54,7 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
 
         async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition start) {
             try {
-                return await reader.ReadStream(
-                        streamName,
-                        start,
-                        failIfNotFound,
-                        cancellationToken
-                    )
-                    .NoContext();
+                return await reader.ReadStream(streamName, start, failIfNotFound, cancellationToken).NoContext();
             }
             catch (StreamNotFound) {
                 return Array.Empty<StreamEvent>();
@@ -80,8 +69,8 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
     static readonly StreamEventPositionComparer Comparer = new();
 
     class StreamEventPositionComparer : IEqualityComparer<StreamEvent> {
-        public bool Equals(StreamEvent? x, StreamEvent? y)
-            => x?.Position == y?.Position;
+        public bool Equals(StreamEvent x, StreamEvent y)
+            => x.Position == y.Position;
 
         public int GetHashCode(StreamEvent obj)
             => obj.Position.GetHashCode();

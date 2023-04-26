@@ -1,19 +1,12 @@
-// Copyright (C) Ubiquitous AS. All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
-using System.Net;
-using Eventuous.Sut.App;
-using Eventuous.Sut.AspNetCore;
-using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers;
-using Eventuous.Tests.AspNetCore.Web.Fixture;
-using RestSharp;
-
 namespace Eventuous.Tests.AspNetCore.Web;
 
+using Sut.App;
+using TestHelpers;
+using Fixture;
+
 public class ControllerTests : IDisposable {
-    readonly ServerFixture       _fixture;
-    readonly TestEventListener   _listener;
+    readonly ServerFixture     _fixture;
+    readonly TestEventListener _listener;
 
     public ControllerTests(ITestOutputHelper output) {
         var commandMap = new MessageMap()
@@ -60,7 +53,7 @@ public class ControllerTests : IDisposable {
 
         var events = await _fixture.ReadStream<Booking>(bookRoom.BookingId);
         var last   = events.LastOrDefault();
-        last?.Payload.Should().BeEquivalentTo(expected);
+        last.Payload.Should().BeEquivalentTo(expected);
     }
 
     public void Dispose() {

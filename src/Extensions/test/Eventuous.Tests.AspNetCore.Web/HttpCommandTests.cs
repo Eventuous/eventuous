@@ -1,19 +1,13 @@
-using System.Net;
-using Eventuous.AspNetCore.Web;
-using Eventuous.Sut.AspNetCore;
-using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers;
-using Eventuous.Tests.AspNetCore.Web.Fixture;
-using NodaTime;
-using RestSharp;
-using BookRoom = Eventuous.Tests.AspNetCore.Web.Fixture.BookRoom;
-
 namespace Eventuous.Tests.AspNetCore.Web;
+
+using TestHelpers;
+using Fixture;
 
 public class HttpCommandTests : IDisposable {
     readonly TestEventListener _listener;
 
-    public HttpCommandTests(ITestOutputHelper output) => _listener = new TestEventListener(output);
+    public HttpCommandTests(ITestOutputHelper output)
+        => _listener = new TestEventListener(output);
 
     [Fact]
     public void RegisterAggregateCommands() {
@@ -40,21 +34,14 @@ public class HttpCommandTests : IDisposable {
         var storedEvents = await fixture.ReadStream<Booking>(cmd.BookingId);
 
         var actual = storedEvents.FirstOrDefault();
-        actual.Should().NotBeNull();
 
-        actual!.Payload.Should()
-            .BeEquivalentTo(
-                new BookingEvents.RoomBooked(
-                    cmd.RoomId,
-                    cmd.CheckIn,
-                    cmd.CheckOut,
-                    cmd.Price,
-                    TestData.GuestId
-                )
-            );
+        actual.Payload
+            .Should()
+            .BeEquivalentTo(new BookingEvents.RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price, TestData.GuestId));
     }
 
-    public void Dispose() => _listener.Dispose();
+    public void Dispose()
+        => _listener.Dispose();
 }
 
 [HttpCommand(Route = "book")]

@@ -1,17 +1,9 @@
-// Copyright (C) Ubiquitous AS. All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
-using System.Net;
-using Eventuous.AspNetCore.Web;
-using Eventuous.Sut.AspNetCore;
-using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers;
-using Eventuous.Tests.AspNetCore.Web.Fixture;
-using NodaTime;
-using RestSharp;
 // ReSharper disable AccessToDisposedClosure
 
 namespace Eventuous.Tests.AspNetCore.Web;
+
+using TestHelpers;
+using Fixture;
 
 public class MappedCommandTests : IDisposable {
     readonly TestEventListener _listener;
@@ -70,6 +62,7 @@ public class MappedCommandTests : IDisposable {
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp3, ImportBooking>(EnrichCommand)
         );
+
         Func<Task> act = () => Execute(fixture, "import3");
 
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -104,7 +97,7 @@ public class MappedCommandTests : IDisposable {
 
         var events = await fixture.ReadStream<Booking>(bookRoom.BookingId);
         var last   = events.LastOrDefault();
-        last?.Payload.Should().BeEquivalentTo(expected);
+        last.Payload.Should().BeEquivalentTo(expected);
     }
 
     public void Dispose()

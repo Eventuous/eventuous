@@ -10,12 +10,22 @@ using static Eventuous.Diagnostics.PersistenceEventSource;
 
 namespace Eventuous.EventStore;
 
+/// <summary>
+/// EventStoreDB implementation of <see cref="IEventStore"/>
+/// </summary>
 public class EsdbEventStore : IEventStore {
     readonly ILogger<EsdbEventStore>? _logger;
     readonly EventStoreClient         _client;
     readonly IEventSerializer         _serializer;
     readonly IMetadataSerializer      _metaSerializer;
 
+    /// <summary>
+    /// Initialize the event store with the given client
+    /// </summary>
+    /// <param name="client">EventStoreDB client instance</param>
+    /// <param name="serializer">Optional event serializer. When not provided, the default serializer will be used.</param>
+    /// <param name="metaSerializer">Optional metadata serializer. When not provided, the default serializer will be used.</param>
+    /// <param name="logger">Optional logger</param>
     public EsdbEventStore(
         EventStoreClient         client,
         IEventSerializer?        serializer     = null,
@@ -28,33 +38,31 @@ public class EsdbEventStore : IEventStore {
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
+    /// <summary>
+    /// Initialize the event store with the given client settings. Will create the client instance.
+    /// </summary>
+    /// <param name="clientSettings">Client settings to be used to create a new client instance</param>
+    /// <param name="serializer">Optional event serializer. When not provided, the default serializer will be used.</param>
+    /// <param name="metaSerializer">Optional metadata serializer. When not provided, the default serializer will be used.</param>
+    /// <param name="logger">Optional logger</param>
     public EsdbEventStore(
         EventStoreClientSettings clientSettings,
         IEventSerializer?        serializer     = null,
         IMetadataSerializer?     metaSerializer = null,
         ILogger<EsdbEventStore>? logger         = null
-    )
-        : this(
-            new EventStoreClient(Ensure.NotNull(clientSettings)),
-            serializer,
-            metaSerializer,
-            logger
-        ) { }
+    ) : this(new EventStoreClient(Ensure.NotNull(clientSettings)), serializer, metaSerializer, logger) { }
 
+    /// <inheritdoc/>
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
-        var read = _client.ReadStreamAsync(
-            Direction.Backwards,
-            stream,
-            StreamPosition.End,
-            1,
-            cancellationToken: cancellationToken
-        );
+        var read = _client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 1, cancellationToken: cancellationToken);
 
         using var readState = read.ReadState;
+
         var state = await readState.NoContext();
         return state == ReadState.Ok;
     }
 
+    /// <inheritdoc/>
     public Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
         ExpectedStreamVersion            expectedVersion,
@@ -64,25 +72,11 @@ public class EsdbEventStore : IEventStore {
         var proposedEvents = events.Select(ToEventData);
 
         var resultTask = expectedVersion == ExpectedStreamVersion.NoStream
-            ? _client.AppendToStreamAsync(
-                stream,
-                StreamState.NoStream,
-                proposedEvents,
-                cancellationToken: cancellationToken
-            ) : AnyOrNot(
+            ? _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents, cancellationToken: cancellationToken)
+            : AnyOrNot(
                 expectedVersion,
-                () => _client.AppendToStreamAsync(
-                    stream,
-                    StreamState.Any,
-                    proposedEvents,
-                    cancellationToken: cancellationToken
-                ),
-                () => _client.AppendToStreamAsync(
-                    stream,
-                    expectedVersion.AsStreamRevision(),
-                    proposedEvents,
-                    cancellationToken: cancellationToken
-                )
+                () => _client.AppendToStreamAsync(stream, StreamState.Any, proposedEvents, cancellationToken: cancellationToken),
+                () => _client.AppendToStreamAsync(stream, expectedVersion.AsStreamRevision(), proposedEvents, cancellationToken: cancellationToken)
             );
 
         return TryExecute(
@@ -115,19 +109,9 @@ public class EsdbEventStore : IEventStore {
         }
     }
 
-    public Task<StreamEvent[]> ReadEvents(
-        StreamName         stream,
-        StreamReadPosition start,
-        int                count,
-        CancellationToken  cancellationToken
-    ) {
-        var read = _client.ReadStreamAsync(
-            Direction.Forwards,
-            stream,
-            start.AsStreamPosition(),
-            count,
-            cancellationToken: cancellationToken
-        );
+    /// <inheritdoc/>
+    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+        var read = _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken);
 
         return TryExecute(
             async () => {
@@ -135,21 +119,13 @@ public class EsdbEventStore : IEventStore {
                 return ToStreamEvents(resolvedEvents);
             },
             stream,
-            () => new ErrorInfo(
-                "Unable to read {Count} starting at {Start} events from {Stream}",
-                count,
-                start,
-                stream
-            ),
+            () => new ErrorInfo("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream),
             (s, ex) => new ReadFromStreamException(s, ex)
         );
     }
 
-    public Task<StreamEvent[]> ReadEventsBackwards(
-        StreamName        stream,
-        int               count,
-        CancellationToken cancellationToken
-    ) {
+    /// <inheritdoc/>
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
             stream,
@@ -165,15 +141,12 @@ public class EsdbEventStore : IEventStore {
                 return ToStreamEvents(resolvedEvents);
             },
             stream,
-            () => new ErrorInfo(
-                "Unable to read {Count} events backwards from {Stream}",
-                count,
-                stream
-            ),
+            () => new ErrorInfo("Unable to read {Count} events backwards from {Stream}", count, stream),
             (s, ex) => new ReadFromStreamException(s, ex)
         );
     }
 
+    /// <inheritdoc/>
     public Task TruncateStream(
         StreamName             stream,
         StreamTruncatePosition truncatePosition,
@@ -185,34 +158,17 @@ public class EsdbEventStore : IEventStore {
         return TryExecute(
             () => AnyOrNot(
                 expectedVersion,
-                () => _client.SetStreamMetadataAsync(
-                    stream,
-                    StreamState.Any,
-                    meta,
-                    cancellationToken: cancellationToken
-                ),
-                () => _client.SetStreamMetadataAsync(
-                    stream,
-                    expectedVersion.AsStreamRevision(),
-                    meta,
-                    cancellationToken: cancellationToken
-                )
+                () => _client.SetStreamMetadataAsync(stream, StreamState.Any, meta, cancellationToken: cancellationToken),
+                () => _client.SetStreamMetadataAsync(stream, expectedVersion.AsStreamRevision(), meta, cancellationToken: cancellationToken)
             ),
             stream,
-            () => new ErrorInfo(
-                "Unable to truncate stream {Stream} at {Position}",
-                stream,
-                truncatePosition
-            ),
+            () => new ErrorInfo("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition),
             (s, ex) => new TruncateStreamException(s, ex)
         );
     }
 
-    public Task DeleteStream(
-        StreamName            stream,
-        ExpectedStreamVersion expectedVersion,
-        CancellationToken     cancellationToken
-    )
+    /// <inheritdoc/>
+    public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken)
         => TryExecute(
             () => AnyOrNot(
                 expectedVersion,
@@ -254,11 +210,7 @@ public class EsdbEventStore : IEventStore {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static Task<T> AnyOrNot<T>(
-        ExpectedStreamVersion version,
-        Func<Task<T>>         whenAny,
-        Func<Task<T>>         otherwise
-    )
+    static Task<T> AnyOrNot<T>(ExpectedStreamVersion version, Func<Task<T>> whenAny, Func<Task<T>> otherwise)
         => version == ExpectedStreamVersion.Any ? whenAny() : otherwise();
 
     StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent) {

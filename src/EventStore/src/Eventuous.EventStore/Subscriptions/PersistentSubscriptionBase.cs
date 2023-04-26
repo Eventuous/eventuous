@@ -25,8 +25,7 @@ public delegate Task HandleEventProcessingFailure(
 /// Base class for EventStoreDB persistent subscriptions
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
-    where T : PersistentSubscriptionOptions {
+public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where T : PersistentSubscriptionOptions {
     /// <summary>
     /// EventStoreDB persistent subscription client instance
     /// </summary>
@@ -36,6 +35,13 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T>
 
     PersistentSubscription? _subscription;
 
+    /// <summary>
+    /// EventStoreDB persistent subscription base class constructor
+    /// </summary>
+    /// <param name="eventStoreClient">EventStoreDB client instance</param>
+    /// <param name="options">Subscription options</param>
+    /// <param name="consumePipe">Consume pipe instance, provided automatically</param>
+    /// <param name="loggerFactory">Optional logger factory</param>
     protected PersistentSubscriptionBase(EventStoreClient eventStoreClient, T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
         : base(options, consumePipe, loggerFactory) {
         EventStoreClient = eventStoreClient;

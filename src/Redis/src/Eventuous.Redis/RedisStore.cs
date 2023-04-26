@@ -39,6 +39,9 @@ public class RedisStore : IEventReader, IEventWriter {
         return result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer)).ToArray();
     }
 
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
+        => throw new NotImplementedException();
+
     public async Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
         ExpectedStreamVersion            expectedVersion,

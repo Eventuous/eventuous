@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="NEST"/>
-        <PackageReference Include="Polly"/>
-        <Using Include="Nest"/>
-        <Using Include="Elasticsearch.Net"/>
+        <PackageReference Include="NEST" />
+        <PackageReference Include="Polly" />
+        <Using Include="Nest" />
+        <Using Include="Elasticsearch.Net" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj"/>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
@@ -17,6 +17,6 @@
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
         </Compile>
-        <Using Include="Eventuous.Tools"/>
+        <Using Include="Eventuous.Tools" />
     </ItemGroup>
 </Project>

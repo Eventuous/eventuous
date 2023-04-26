@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Hypothesist"/>
+        <PackageReference Include="Hypothesist" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
-        <ProjectReference Include="..\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="..\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
     </ItemGroup>
 </Project>

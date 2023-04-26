@@ -15,4 +15,12 @@
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
         <PackageReference Include="RestSharp" />
     </ItemGroup>
+    <ItemGroup>
+        <Using Include="Eventuous.Sut.AspNetCore" />
+        <Using Include="Eventuous.AspNetCore.Web" />
+        <Using Include="Eventuous.Sut.Domain" />
+        <Using Include="System.Net" />
+        <Using Include="RestSharp" />
+        <Using Include="NodaTime" />
+    </ItemGroup>
 </Project>
