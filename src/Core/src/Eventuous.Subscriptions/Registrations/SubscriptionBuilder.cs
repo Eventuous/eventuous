@@ -15,7 +15,7 @@ using Filters;
 
 public abstract class SubscriptionBuilder {
     public string             SubscriptionId { get; }
-    public IServiceCollection Services { get; }
+    public IServiceCollection Services       { get; }
 
     protected SubscriptionBuilder(IServiceCollection services, string subscriptionId) {
         SubscriptionId = subscriptionId;
@@ -253,18 +253,19 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 static class TypeExtensionsForRegistrations {
     public static (ConstructorInfo Ctor, ParameterInfo[] parameters, ParameterInfo? Options)[] GetConstructors<T>(
         this Type type,
-        string? name = null
+        string?   name = null
     )
         => type
             .GetConstructors()
             .Select(
                 x => (
                     Ctor: x,
-                Parameters: x.GetParameters()
+                    Parameters: x.GetParameters()
                 ))
-            .Select(x => (
-                x.Ctor,
-                x.Parameters,
+            .Select(
+                x => (
+                    x.Ctor,
+                    x.Parameters,
                     Options: x.Parameters
                         .SingleOrDefault(
                             y => y.ParameterType == typeof(T) && (name == null || y.Name == name)
