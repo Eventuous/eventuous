@@ -27,14 +27,14 @@ public class CloudRunPubSubSubscription : EventSubscription<CloudRunPubSubSubscr
     /// Maps the subscription endpoint to the specified <see cref="WebApplication"/>.
     /// The PubSub trigger for CLoud Run will make POST calls to the endpoint with the message payload.
     /// </summary>
-    /// <param name="builder"></param>
+    /// <param name="app"></param>
     /// <param name="path">Optional endpoint path. Default is root path. It must match with the endpoint configuration of the push trigger/</param>
     [PublicAPI]
-    public static void MapSubscription(WebApplication builder, string path = "/") {
-        var subscription = builder.Services.GetRequiredService<CloudRunPubSubSubscription>();
+    public static void MapSubscription(WebApplication app, string path = "/") {
+        var subscription = app.Services.GetRequiredService<CloudRunPubSubSubscription>();
         var sequence     = 0UL;
 
-        builder.MapPost(
+        app.MapPost(
             "/",
             async (Envelope envelope, CancellationToken cancellationToken) => {
                 if (envelope.Message?.Data == null) {

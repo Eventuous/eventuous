@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Grpc.Core;
 using static Google.Cloud.PubSub.V1.PublisherClient;
 
 namespace Eventuous.GooglePubSub.Producers; 
@@ -11,16 +12,11 @@ public class PubSubProducerOptions {
     /// Google Cloud project id
     /// </summary>
     public string ProjectId { get; init; } = null!;
-        
-    /// <summary>
-    /// <see cref="ClientCreationSettings"/> for the <seealso cref="Publisher.PublisherClient"/> creation
-    /// </summary>
-    public ClientCreationSettings? ClientCreationSettings { get; init; }
 
     /// <summary>
-    /// <see cref="PublisherClient.Settings"/> of the <seealso cref="PublisherClient"/>
+    /// Additional configuration for the client builder. Don't set the <code>TopicName</code> property.
     /// </summary>
-    public Settings? Settings { get; init; }
+    public Action<PublisherClientBuilder>? ConfigureClientBuilder { get; init; }
 
     /// <summary>
     /// Message attributes for system values like content type and event type

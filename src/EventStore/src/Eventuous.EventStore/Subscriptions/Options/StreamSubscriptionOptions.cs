@@ -1,5 +1,8 @@
 namespace Eventuous.EventStore.Subscriptions;
 
+/// <summary>
+/// Options for <see cref="StreamSubscription"/>
+/// </summary>
 public record StreamSubscriptionOptions : CatchUpSubscriptionOptions {
     /// <summary>
     /// WHen set to true, all events of type that starts with '$' will be ignored. Default is true.

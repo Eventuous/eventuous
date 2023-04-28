@@ -1,5 +1,8 @@
 namespace Eventuous.EventStore.Subscriptions;
 
+/// <summary>
+/// Base class for EventStoreDB subscription options
+/// </summary>
 public abstract record EventStoreSubscriptionOptions : SubscriptionOptions {
     /// <summary>
     /// User credentials
