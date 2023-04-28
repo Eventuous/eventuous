@@ -1,5 +1,8 @@
 namespace Eventuous.EventStore.Subscriptions;
 
+/// <summary>
+/// Base class for persistent subscription options
+/// </summary>
 [PublicAPI]
 public abstract record PersistentSubscriptionOptions : EventStoreSubscriptionOptions {
     /// <summary>
@@ -12,6 +15,9 @@ public abstract record PersistentSubscriptionOptions : EventStoreSubscriptionOpt
     /// </summary>
     public int BufferSize { get; set; } = 10;
 
+    /// <summary>
+    /// Deadline for gRPC calls. Default is set by EventStoreDB client (10 sec).
+    /// </summary>
     public TimeSpan? Deadline { get; set; }
 
     // public uint ConcurrencyLevel { get; set; } = 1;

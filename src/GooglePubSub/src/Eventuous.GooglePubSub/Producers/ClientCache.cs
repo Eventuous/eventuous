@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Concurrent;
+using Google.Api.Gax;
 
 namespace Eventuous.GooglePubSub.Producers;
 
@@ -31,17 +32,21 @@ class ClientCache {
     async Task<PublisherClient> CreateTopicAndClient(string topicId, CancellationToken cancellationToken) {
         var topicName = TopicName.FromProjectTopic(_projectId, topicId);
 
+        var builder = new PublisherClientBuilder() { Logger = _log };
+        _options.ConfigureClientBuilder?.Invoke(builder);
+        builder.TopicName = topicName;
+
         if (_options.CreateTopic) {
             await PubSub.CreateTopic(
                     topicName,
-                    _options.ClientCreationSettings.DetectEmulator(),
+                    builder.EmulatorDetection,
                     (msg, t) => _log?.LogInformation("{Message}: {Topic}", msg, t),
                     cancellationToken
                 )
                 .NoContext();
         }
 
-        return await PublisherClient.CreateAsync(topicName, _options.ClientCreationSettings, _options.Settings).NoContext();
+        return await builder.BuildAsync(cancellationToken).NoContext();
     }
 
     public IEnumerable<PublisherClient> GetAllClients()

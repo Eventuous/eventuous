@@ -33,18 +33,17 @@ public static class Logger {
 
 [SuppressMessage("Usage", "CA2254:Template should be a static expression")]
 public class LogContext {
-    internal string  SubscriptionId { get; }
-    readonly ILogger _logger;
-
-    public InternalLogger? TraceLog { get; }
-    public InternalLogger? DebugLog { get; }
-    public InternalLogger? InfoLog  { get; }
-    public InternalLogger? WarnLog  { get; }
-    public InternalLogger? ErrorLog { get; }
+    internal string          SubscriptionId { get; }
+    public   ILogger         Logger         { get; }
+    public   InternalLogger? TraceLog       { get; }
+    public   InternalLogger? DebugLog       { get; }
+    public   InternalLogger? InfoLog        { get; }
+    public   InternalLogger? WarnLog        { get; }
+    public   InternalLogger? ErrorLog       { get; }
 
     public LogContext(string subscriptionId, ILoggerFactory loggerFactory) {
         SubscriptionId = subscriptionId;
-        _logger        = loggerFactory.CreateLogger("Eventuous.Subscription");
+        Logger         = loggerFactory.CreateLogger("Eventuous.Subscription");
         TraceLog       = GetLogger(LogLevel.Trace);
         DebugLog       = GetLogger(LogLevel.Debug);
         InfoLog        = GetLogger(LogLevel.Information);
@@ -52,6 +51,6 @@ public class LogContext {
         ErrorLog       = GetLogger(LogLevel.Error);
 
         InternalLogger? GetLogger(LogLevel logLevel)
-            => _logger.IsEnabled(logLevel) ? new InternalLogger(_logger, logLevel, SubscriptionId) : null;
+            => Logger.IsEnabled(logLevel) ? new InternalLogger(Logger, logLevel, SubscriptionId) : null;
     }
 }

@@ -24,21 +24,18 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     /// </summary>
     /// <param name="projectId">GCP project ID</param>
     /// <param name="serializer">Optional event serializer. Will use the default instance if missing.</param>
-    /// <param name="settings"></param>
-    /// <param name="clientCreationSettings"></param>
     /// <param name="log">Optional logger instance</param>
+    /// <param name="configureClient">Publisher client configuration action</param>
     public GooglePubSubProducer(
-        string                         projectId,
-        IEventSerializer?              serializer             = null,
-        ILogger<GooglePubSubProducer>? log                    = null,
-        ClientCreationSettings?        clientCreationSettings = null,
-        Settings?                      settings               = null
+        string                          projectId,
+        IEventSerializer?               serializer      = null,
+        ILogger<GooglePubSubProducer>?  log             = null,
+        Action<PublisherClientBuilder>? configureClient = null
     )
         : this(
             new PubSubProducerOptions {
                 ProjectId              = Ensure.NotEmptyString(projectId),
-                Settings               = settings,
-                ClientCreationSettings = clientCreationSettings
+                ConfigureClientBuilder = configureClient
             },
             serializer,
             log

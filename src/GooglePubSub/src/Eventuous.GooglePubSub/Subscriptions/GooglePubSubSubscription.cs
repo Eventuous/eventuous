@@ -5,6 +5,7 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
+using Google.Api.Gax;
 using Google.Protobuf.Collections;
 using static Google.Cloud.PubSub.V1.SubscriberClient;
 
@@ -75,11 +76,15 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     Task _subscriberTask = null!;
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
+        var builder = new SubscriberClientBuilder { Logger = Log.Logger };
+        Options.ConfigureClientBuilder?.Invoke(builder);
+        builder.SubscriptionName = _subscriptionName;
+
         if (Options.CreateSubscription) {
-            await CreateSubscription(_subscriptionName, _topicName, Options.ConfigureSubscription, cancellationToken).NoContext();
+            await CreateSubscription(_subscriptionName, _topicName, builder.EmulatorDetection, Options.ConfigureSubscription, cancellationToken).NoContext();
         }
 
-        _client = await CreateAsync(_subscriptionName, Options.ClientCreationSettings, Options.Settings).NoContext();
+        _client = await builder.BuildAsync(cancellationToken).NoContext();
 
         _subscriberTask = _client.StartAsync(Handle);
 
@@ -124,11 +129,16 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
         await _subscriberTask.NoContext();
     }
 
-    public async Task CreateSubscription(SubscriptionName subscriptionName, TopicName topicName, Action<Subscription>? configureSubscription, CancellationToken cancellationToken) {
-        var emulator = Options.ClientCreationSettings.DetectEmulator();
+    public async Task CreateSubscription(
+        SubscriptionName      subscriptionName,
+        TopicName             topicName,
+        EmulatorDetection     emulatorDetection,
+        Action<Subscription>? configureSubscription,
+        CancellationToken     cancellationToken
+    ) {
         Logger.Current = Log;
-        await PubSub.CreateTopic(topicName, emulator, (msg, s) => Log.InfoLog?.Log(msg, s), cancellationToken).NoContext();
-        await PubSub.CreateSubscription(subscriptionName, topicName, configureSubscription, emulator, cancellationToken).NoContext();
+        await PubSub.CreateTopic(topicName, emulatorDetection, (msg, s) => Log.InfoLog?.Log(msg, s), cancellationToken).NoContext();
+        await PubSub.CreateSubscription(subscriptionName, topicName, configureSubscription, emulatorDetection, cancellationToken).NoContext();
     }
 
     static ValueTask<Reply> DefaultEventProcessingErrorHandler(SubscriberClient client, PubsubMessage message, Exception exception)
