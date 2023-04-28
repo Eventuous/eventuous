@@ -28,14 +28,9 @@ public record PubSubSubscriptionOptions : SubscriptionOptions {
     public bool CreateSubscription { get; set; } = true;
 
     /// <summary>
-    /// <see cref="ClientCreationSettings"/> for the <seealso cref="SubscriberClient"/> creation
+    /// Configure the <seealso cref="SubscriberClientBuilder"/> before the <seealso cref="SubscriberClient"/> is created
     /// </summary>
-    public ClientCreationSettings? ClientCreationSettings { get; set; }
-
-    /// <summary>
-    /// <see cref="Settings"/> of the <seealso cref="SubscriberClient"/>
-    /// </summary>
-    public Settings? Settings { get; set; }
+    public Action<SubscriberClientBuilder>? ConfigureClientBuilder { get; set; }
 
     /// <summary>
     /// Custom failure handler, which allows overriding the default behaviour (NACK)
