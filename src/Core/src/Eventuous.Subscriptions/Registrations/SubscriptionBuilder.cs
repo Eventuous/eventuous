@@ -14,17 +14,17 @@ using Context;
 using Filters;
 
 public abstract class SubscriptionBuilder {
-    public string SubscriptionId { get; }
+    public string             SubscriptionId { get; }
     public IServiceCollection Services { get; }
 
     protected SubscriptionBuilder(IServiceCollection services, string subscriptionId) {
         SubscriptionId = subscriptionId;
-        Services = services;
+        Services       = services;
     }
 
     readonly List<ResolveHandler> _handlers = new();
 
-    protected ConsumePipe Pipe { get; } = new();
+    protected ConsumePipe     Pipe            { get; }      = new();
     protected ResolveConsumer ResolveConsumer { get; set; } = null!;
 
     protected IEventHandler[] ResolveHandlers(IServiceProvider sp)
@@ -127,11 +127,11 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
     public SubscriptionBuilder(IServiceCollection services, string subscriptionId) : base(services, subscriptionId) {
-        ResolveConsumer = ResolveDefaultConsumer;
+        ResolveConsumer  = ResolveDefaultConsumer;
         ConfigureOptions = options => options.SubscriptionId = subscriptionId;
     }
 
-    T? _resolvedSubscription;
+    T?                _resolvedSubscription;
     IMessageConsumer? _resolvedConsumer;
 
     public Action<TOptions> ConfigureOptions { get; private set; }
@@ -185,8 +185,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
         var consumer = GetConsumer(sp);
 
-        if (EventuousDiagnostics.Enabled)
-        {
+        if (EventuousDiagnostics.Enabled) {
             Pipe.AddFilterLast(new TracingFilter(consumer.GetType().Name));
         }
 
@@ -194,8 +193,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
         var constructors = typeof(T).GetConstructors<TOptions>();
 
-        switch (constructors.Length)
-        {
+        switch (constructors.Length) {
             case > 1:
                 throw new ArgumentOutOfRangeException(
                     typeof(T).Name,
@@ -206,8 +204,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
                 break;
         }
 
-        if (constructors.Length == 0)
-        {
+        if (constructors.Length == 0) {
             throw new ArgumentOutOfRangeException(
                 typeof(T).Name,
                 "Subscription type must have at least one constructor with options or subscription id argument"
@@ -224,10 +221,8 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         return instance;
 
         object? CreateArg(ParameterInfo parameterInfo) {
-            if (parameterInfo == parameter)
-            {
-                if (parameter.Name == subscriptionIdParameterName)
-                {
+            if (parameterInfo == parameter) {
+                if (parameter.Name == subscriptionIdParameterName) {
                     return SubscriptionId;
                 }
 
@@ -241,14 +236,12 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
             // ReSharper disable once InvertIf
-            if (parameterInfo.ParameterType == typeof(ConsumePipe))
-            {
+            if (parameterInfo.ParameterType == typeof(ConsumePipe)) {
                 return Pipe;
             }
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
-            if (ParametersMap.TryGetResolver(parameterInfo.ParameterType, out var resolver))
-            {
+            if (ParametersMap.TryGetResolver(parameterInfo.ParameterType, out var resolver)) {
                 return resolver!(sp);
             }
 
