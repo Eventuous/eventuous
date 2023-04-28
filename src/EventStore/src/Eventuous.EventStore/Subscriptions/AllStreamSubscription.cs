@@ -7,6 +7,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Tools;
+
 // ReSharper disable ConvertClosureToMethodGroup
 
 namespace Eventuous.EventStore.Subscriptions;
@@ -66,6 +67,10 @@ public class AllStreamSubscription
         ILoggerFactory?              loggerFactory
     ) : base(eventStoreClient, options, checkpointStore, consumePipe, loggerFactory) { }
 
+    /// <summary>
+    /// Starts the subscription
+    /// </summary>
+    /// <param name="cancellationToken"></param>
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var filterOptions = new SubscriptionFilterOptions(
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
@@ -95,18 +100,10 @@ public class AllStreamSubscription
             )
             .NoContext();
 
-        async Task HandleEvent(
-            global::EventStore.Client.StreamSubscription _,
-            ResolvedEvent                                re,
-            CancellationToken                            ct
-        )
+        async Task HandleEvent(global::EventStore.Client.StreamSubscription _, ResolvedEvent re, CancellationToken ct)
             => await HandleInternal(CreateContext(re, ct)).NoContext();
 
-        void HandleDrop(
-            global::EventStore.Client.StreamSubscription _,
-            SubscriptionDroppedReason                    reason,
-            Exception?                                   ex
-        )
+        void HandleDrop(global::EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
@@ -137,9 +134,18 @@ public class AllStreamSubscription
 
     ulong _sequence;
 
+    /// <summary>
+    /// Returns a measure delegate for the subscription
+    /// </summary>
+    /// <returns></returns>
     public GetSubscriptionEndOfStream GetMeasure()
         => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient).GetEndOfStream;
 
+    /// <summary>
+    /// Gets the position from the context
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
     protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromAllContext(context);
 }

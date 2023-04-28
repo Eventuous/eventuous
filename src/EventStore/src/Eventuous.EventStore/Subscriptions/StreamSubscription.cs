@@ -69,6 +69,10 @@ public class StreamSubscription
     ) : base(client, options, checkpointStore, consumePipe, loggerFactory)
         => Ensure.NotEmptyString(options.StreamName);
 
+    /// <summary>
+    /// Starts a catch-up subscription
+    /// </summary>
+    /// <param name="cancellationToken"></param>
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
@@ -140,10 +144,19 @@ public class StreamSubscription
 
     ulong _sequence;
 
+    /// <summary>
+    /// Returns a measure delegate for this subscription
+    /// </summary>
+    /// <returns></returns>
     public GetSubscriptionEndOfStream GetMeasure()
         => new StreamSubscriptionMeasure(Options.SubscriptionId, Options.StreamName, EventStoreClient)
             .GetEndOfStream;
 
+    /// <summary>
+    /// Gets position from the context
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns>Message position converted to <see cref="EventPosition"/></returns>
     protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromContext(context);
 }

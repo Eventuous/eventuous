@@ -1,5 +1,8 @@
 namespace Eventuous.EventStore.Subscriptions;
 
+/// <summary>
+/// Options for <see cref="AllStreamSubscription"/>
+/// </summary>
 [PublicAPI]
 public record AllStreamSubscriptionOptions : CatchUpSubscriptionOptions {
     /// <summary>

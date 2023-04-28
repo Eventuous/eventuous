@@ -47,6 +47,13 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         ProduceOperation = "append"
     };
 
+    /// <summary>
+    /// Appends a batch of messages to a stream
+    /// </summary>
+    /// <param name="stream">Stream name</param>
+    /// <param name="messages">Batch of messages</param>
+    /// <param name="produceOptions">Options for the produce operation</param>
+    /// <param name="cancellationToken"></param>
     protected override async Task ProduceMessages(
         StreamName                   stream,
         IEnumerable<ProducedMessage> messages,
