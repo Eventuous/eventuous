@@ -90,10 +90,8 @@ public static class SubscriptionRegistrationExtensions {
             : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
     }
 
-    public static IServiceCollection AddCheckpointStore<T>(
-        this IServiceCollection   services,
-        Func<IServiceProvider, T> getStore
-    ) where T : class, ICheckpointStore {
+    public static IServiceCollection AddCheckpointStore<T>(this IServiceCollection services, Func<IServiceProvider, T> getStore)
+        where T : class, ICheckpointStore {
         services.AddSingleton(getStore);
 
         return EventuousDiagnostics.Enabled
