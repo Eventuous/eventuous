@@ -29,6 +29,6 @@ public abstract record State<T> where T : State<T> {
 }
 
 [PublicAPI]
-public abstract record State<T, TId> : State<T> where T : State<T> where TId : AggregateId {
+public abstract record State<T, TId> : State<T> where T : State<T> where TId : Id {
     public TId Id { get; internal set; } = null!;
 }

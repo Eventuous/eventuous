@@ -154,14 +154,12 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         }
     }
 
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>()
-        where TImplementation : class, TService {
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>() where TImplementation : class, TService {
         ParametersMap.Add<TService, TImplementation>();
         return this;
     }
 
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>(Func<IServiceProvider, TImplementation> resolver)
-        where TImplementation : class, TService {
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>(Func<IServiceProvider, TImplementation> resolver) where TImplementation : class, TService {
         ParametersMap.Add<TService, TImplementation>(resolver);
         return this;
     }
@@ -178,10 +176,13 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         return _resolvedConsumer;
     }
 
+    // ReSharper disable once CognitiveComplexity
     public T ResolveSubscription(IServiceProvider sp) {
         const string subscriptionIdParameterName = "subscriptionId";
 
-        if (_resolvedSubscription != null) return _resolvedSubscription;
+        if (_resolvedSubscription != null) {
+            return _resolvedSubscription;
+        }
 
         var consumer = GetConsumer(sp);
 
@@ -194,28 +195,23 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         var constructors = typeof(T).GetConstructors<TOptions>();
 
         switch (constructors.Length) {
-            case > 1:
-                throw new ArgumentOutOfRangeException(
-                    typeof(T).Name,
-                    "Subscription type must have only one constructor with options argument"
-                );
+            case > 1: throw new ArgumentOutOfRangeException(typeof(T).Name, "Subscription type must have only one constructor with options argument");
             case 0:
                 constructors = typeof(T).GetConstructors<string>(subscriptionIdParameterName);
                 break;
         }
 
         if (constructors.Length == 0) {
-            throw new ArgumentOutOfRangeException(
-                typeof(T).Name,
-                "Subscription type must have at least one constructor with options or subscription id argument"
-            );
+            throw new ArgumentOutOfRangeException(typeof(T).Name, "Subscription type must have at least one constructor with options or subscription id argument");
         }
 
         var (ctor, parameter) = constructors[0];
 
         var args = ctor.GetParameters().Select(CreateArg).ToArray();
 
-        if (ctor.Invoke(args) is not T instance) throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
+        if (ctor.Invoke(args) is not T instance) {
+            throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
+        }
 
         _resolvedSubscription = instance;
         return instance;
@@ -226,11 +222,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
                     return SubscriptionId;
                 }
 
-                var options = Ensure.NotNull(
-                    sp.GetService<IOptionsMonitor<TOptions>>(),
-                    typeof(TOptions).Name
-                );
-
+                var options = Ensure.NotNull(sp.GetService<IOptionsMonitor<TOptions>>(), typeof(TOptions).Name);
                 return options.Get(SubscriptionId);
             }
 

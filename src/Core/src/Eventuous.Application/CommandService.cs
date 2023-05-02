@@ -16,7 +16,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     : ICommandService<TAggregate, TState, TId>, ICommandService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
-    where TId : AggregateId {
+    where TId : Id {
     [PublicAPI]
     protected IAggregateStore Store { get; }
 

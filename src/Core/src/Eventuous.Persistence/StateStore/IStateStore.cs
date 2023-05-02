@@ -8,6 +8,7 @@ namespace Eventuous;
 /// version of the state than used in the aggregate itself, like an in-memory projection.
 /// </summary>
 [PublicAPI]
+[Obsolete("Use IEventReader extension functions to load state")]
 public interface IStateStore {
     /// <summary>
     /// Load the aggregate state from the store, without initialising the aggregate itself
@@ -16,5 +17,6 @@ public interface IStateStore {
     /// <param name="cancellationToken"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete("Use IEventReader.LoadState<T> instead")]
     Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken) where T : State<T>, new();
 }

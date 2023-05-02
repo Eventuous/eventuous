@@ -23,14 +23,8 @@ public static class SubscriptionRegistrationExtensions {
         Action<SubscriptionBuilder<T, TOptions>> configureSubscription
     ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
         Ensure.NotNull(configureSubscription);
-
-        var builder = new SubscriptionBuilder<T, TOptions>(
-            Ensure.NotNull(services),
-            Ensure.NotEmptyString(subscriptionId)
-        );
-
+        var builder = new SubscriptionBuilder<T, TOptions>(Ensure.NotNull(services), Ensure.NotEmptyString(subscriptionId));
         configureSubscription(builder);
-
         services.TryAddSingleton<ISubscriptionHealth, SubscriptionHealthCheck>();
 
         if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T))) services.AddSingleton(GetEndOfStream);

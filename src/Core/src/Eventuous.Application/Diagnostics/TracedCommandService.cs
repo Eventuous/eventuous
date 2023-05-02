@@ -46,7 +46,7 @@ public class TracedCommandService<T> : ICommandService<T> where T : Aggregate {
 
 public class TracedCommandService<T, TState, TId> : ICommandService<T, TState, TId>
     where TState : State<TState>, new()
-    where TId : AggregateId
+    where TId : Id
     where T : Aggregate<TState> {
     public static ICommandService<T, TState, TId> Trace(ICommandService<T, TState, TId> appService)
         => new TracedCommandService<T, TState, TId>(appService);
