@@ -211,9 +211,9 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
             );
         }
 
-        var (ctor, parameter) = constructors[0];
+        var (ctor, parameters, parameter) = constructors[0];
 
-        var args = ctor.GetParameters().Select(CreateArg).ToArray();
+        var args = parameters.Select(CreateArg).ToArray();
 
         if (ctor.Invoke(args) is not T instance) throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
 
@@ -251,7 +251,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 }
 
 static class TypeExtensionsForRegistrations {
-    public static (ConstructorInfo Ctor, ParameterInfo? Options)[] GetConstructors<T>(
+    public static (ConstructorInfo Ctor, ParameterInfo[] parameters, ParameterInfo? Options)[] GetConstructors<T>(
         this Type type,
         string?   name = null
     )
@@ -260,7 +260,13 @@ static class TypeExtensionsForRegistrations {
             .Select(
                 x => (
                     Ctor: x,
-                    Options: x.GetParameters()
+                    Parameters: x.GetParameters()
+                ))
+            .Select(
+                x => (
+                    x.Ctor,
+                    x.Parameters,
+                    Options: x.Parameters
                         .SingleOrDefault(
                             y => y.ParameterType == typeof(T) && (name == null || y.Name == name)
                         )
