@@ -13,9 +13,9 @@
         </Compile>
     </ItemGroup>
     <ItemGroup>
-        <None Remove="Eventuous.Domain.csproj.DotSettings"/>
+        <None Remove="Eventuous.Domain.csproj.DotSettings" />
     </ItemGroup>
     <ItemGroup>
-        <InternalsVisibleTo Include="Eventuous.Persistence"/>
+        <InternalsVisibleTo Include="Eventuous.Persistence" />
     </ItemGroup>
 </Project>

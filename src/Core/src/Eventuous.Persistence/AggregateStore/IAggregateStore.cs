@@ -17,7 +17,7 @@ public interface IAggregateStore {
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns></returns>
-    public Task<AppendEventsResult> Store<T, TId>(T aggregate, TId id, CancellationToken cancellationToken) where T : Aggregate where TId : AggregateId
+    public Task<AppendEventsResult> Store<T, TId>(T aggregate, TId id, CancellationToken cancellationToken) where T : Aggregate where TId : Id
         => Store(StreamNameFactory.For<T, TId>(id), aggregate, cancellationToken);
 
     /// <summary>
@@ -38,7 +38,7 @@ public interface IAggregateStore {
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns></returns>
-    public Task<T> Load<T, TId>(TId id, CancellationToken cancellationToken) where T : Aggregate where TId : AggregateId
+    public Task<T> Load<T, TId>(TId id, CancellationToken cancellationToken) where T : Aggregate where TId : Id
         => Load<T>(StreamNameFactory.For<T, TId>(id), cancellationToken);
 
     /// <summary>
@@ -59,7 +59,7 @@ public interface IAggregateStore {
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns></returns>
-    public Task<T> LoadOrNew<T, TId>(TId id, CancellationToken cancellationToken) where T : Aggregate where TId : AggregateId
+    public Task<T> LoadOrNew<T, TId>(TId id, CancellationToken cancellationToken) where T : Aggregate where TId : Id
         => LoadOrNew<T>(StreamNameFactory.For<T, TId>(id), cancellationToken);
 
     /// <summary>

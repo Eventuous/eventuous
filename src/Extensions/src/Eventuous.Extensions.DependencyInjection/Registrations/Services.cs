@@ -42,7 +42,7 @@ public static partial class ServiceCollectionExtensions {
     public static IServiceCollection AddCommandService<T, TAggregate, TState, TId>(this IServiceCollection services, bool throwOnError = false)
         where T : class, ICommandService<TAggregate, TState, TId>
         where TState : State<TState>, new()
-        where TId : AggregateId
+        where TId : Id
         where TAggregate : Aggregate<TState> {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();

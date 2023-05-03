@@ -16,7 +16,7 @@ public static class AggregateStoreExtensions {
     /// <typeparam name="TId">Aggregate id type</typeparam>
     /// <returns></returns>
     public static async Task<T> Load<T, TState, TId>(this IAggregateStore store, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TId : AggregateId where TState : State<TState>, new() {
+        where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
         var aggregate = await store.Load<T>(streamNameMap.GetStreamName<T, TId>(id), cancellationToken).NoContext();
         return aggregate.WithId<T, TState, TId>(id);
     }
@@ -34,7 +34,7 @@ public static class AggregateStoreExtensions {
     /// <typeparam name="TId">Aggregate id type</typeparam>
     /// <returns></returns>
     public static async Task<T> LoadOrNew<T, TState, TId>(this IAggregateStore store, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TId : AggregateId where TState : State<TState>, new() {
+        where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
         var aggregate = await store.LoadOrNew<T>(streamNameMap.GetStreamName<T, TId>(id), cancellationToken).NoContext();
         return aggregate.WithId<T, TState, TId>(id);
     }
@@ -42,7 +42,7 @@ public static class AggregateStoreExtensions {
     internal static T WithId<T, TState, TId>(this T aggregate, TId id)
         where T : Aggregate<TState>
         where TState : State<TState>, new()
-        where TId : AggregateId {
+        where TId : Id {
         if (aggregate.State is State<TState, TId> stateWithId) {
             stateWithId.Id = id;
         }

@@ -6,7 +6,7 @@ namespace Eventuous;
 public class ThrowingCommandService<T, TState, TId> : ICommandService<T, TState, TId>, ICommandService<T>
     where T : Aggregate<TState>
     where TState : State<TState>, new()
-    where TId : AggregateId {
+    where TId : Id {
     readonly ICommandService<T, TState, TId> _inner;
 
     public ThrowingCommandService(ICommandService<T, TState, TId> inner) => _inner = inner;

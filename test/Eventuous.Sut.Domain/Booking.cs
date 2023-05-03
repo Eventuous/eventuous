@@ -36,4 +36,4 @@ public class Booking : Aggregate<BookingState> {
         => Current.OfType<BookingPaymentRegistered>().Any(x => x.PaymentId == paymentId);
 }
 
-public record BookingId(string Value) : AggregateId(Value);
+public record BookingId(string Value) : Id(Value);

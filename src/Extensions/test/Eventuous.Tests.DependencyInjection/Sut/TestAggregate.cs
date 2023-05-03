@@ -14,4 +14,4 @@ public class AnotherTestAggregate : Aggregate<TestState> {
 
 public record TestState : State<TestState>;
 
-public record TestId(string Value) : AggregateId(Value);
+public record TestId(string Value) : Id(Value);
