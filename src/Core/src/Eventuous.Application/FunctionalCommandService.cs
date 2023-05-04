@@ -12,8 +12,7 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
     protected IEventWriter Writer { get; }
 
     readonly TypeMapper               _typeMap;
-    readonly FunctionalHandlersMap<T> _handlers  = new();
-    readonly CommandToStreamMap       _streamMap = new();
+    readonly FunctionalHandlersMap<T> _handlers = new();
 
     protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null) : this(store, store, typeMap) { }
 
@@ -23,29 +22,14 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
         _typeMap = typeMap ?? TypeMap.Instance;
     }
 
-    protected void OnNew<TCommand>(
-        GetStreamNameFromCommand<TCommand>  getStreamName,
-        Func<TCommand, IEnumerable<object>> action
-    ) where TCommand : class {
-        _handlers.AddHandler<TCommand>(ExpectedState.New, (_, _, cmd) => action(cmd));
-        _streamMap.AddCommand(getStreamName);
-    }
+    protected void OnNew<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, Func<TCommand, IEnumerable<object>> action) where TCommand : class
+        => _handlers.AddHandler<TCommand>(ExpectedState.New, getStreamName, (_, _, cmd) => action(cmd));
 
-    protected void OnExisting<TCommand>(
-        GetStreamNameFromCommand<TCommand> getStreamName,
-        ExecuteCommand<T, TCommand>        action
-    ) where TCommand : class {
-        _handlers.AddHandler(ExpectedState.Existing, action);
-        _streamMap.AddCommand(getStreamName);
-    }
+    protected void OnExisting<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, ExecuteCommand<T, TCommand> action) where TCommand : class
+        => _handlers.AddHandler(ExpectedState.Existing, getStreamName, action);
 
-    protected void OnAny<TCommand>(
-        GetStreamNameFromCommand<TCommand> getStreamName,
-        ExecuteCommand<T, TCommand>        action
-    ) where TCommand : class {
-        _handlers.AddHandler(ExpectedState.Any, action);
-        _streamMap.AddCommand(getStreamName);
-    }
+    protected void OnAny<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, ExecuteCommand<T, TCommand> action) where TCommand : class
+        => _handlers.AddHandler(ExpectedState.Any, getStreamName, action);
 
     public async Task<Result<T>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
@@ -54,15 +38,7 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
             return new ErrorResult<T>(exception);
         }
 
-        var hasGetStreamFunction = _streamMap.TryGet<TCommand>(out var getStreamName);
-
-        if (!hasGetStreamFunction || getStreamName == null) {
-            Log.CannotCalculateAggregateId<TCommand>();
-            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
-            return new ErrorResult<T>(exception);
-        }
-
-        var streamName = await getStreamName(command, cancellationToken).NoContext();
+        var streamName = await registeredHandler.GetStream(command, cancellationToken).NoContext();
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
@@ -77,23 +53,13 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
                 .NoContext();
 
             var newEvents = result.ToArray();
-
-            var newState = newEvents.Aggregate(loadedState.State, (current, evt) => current.When(evt));
+            var newState  = newEvents.Aggregate(loadedState.State, (current, evt) => current.When(evt));
 
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<T>(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await Writer.Store(
-                    streamName,
-                    (int)loadedState.StreamVersion.Value,
-                    newEvents,
-                    static e => e,
-                    cancellationToken
-                )
-                .NoContext();
-
-            var changes = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
-
+            var storeResult = await Writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, static e => e, cancellationToken).NoContext();
+            var changes     = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
             return new OkResult<T>(newState, changes, storeResult.GlobalPosition);

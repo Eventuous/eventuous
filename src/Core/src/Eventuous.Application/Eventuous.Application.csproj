@@ -3,14 +3,26 @@
         <RootNamespace>Eventuous</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Eventuous.Domain\Eventuous.Domain.csproj"/>
-        <ProjectReference Include="..\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
+        <ProjectReference Include="..\Eventuous.Domain\Eventuous.Domain.csproj" />
+        <ProjectReference Include="..\Eventuous.Persistence\Eventuous.Persistence.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="..\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
         </Compile>
-        <Using Include="Eventuous.Tools"/>
+        <Using Include="Eventuous.Tools" />
+        <Compile Update="CommandService.Async.cs">
+          <DependentUpon>CommandService.cs</DependentUpon>
+        </Compile>
+        <Compile Update="CommandService.Sync.cs">
+          <DependentUpon>CommandService.cs</DependentUpon>
+        </Compile>
+        <Compile Update="CommandHandlersMap.cs">
+          <DependentUpon>CommandService.cs</DependentUpon>
+        </Compile>
+        <Compile Update="FunctionalHandlersMap.cs">
+          <DependentUpon>FunctionalCommandService.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">
@@ -18,6 +30,6 @@
         </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
-        <None Remove="Eventuous.Application.csproj.DotSettings"/>
+        <None Remove="Eventuous.Application.csproj.DotSettings" />
     </ItemGroup>
 </Project>
