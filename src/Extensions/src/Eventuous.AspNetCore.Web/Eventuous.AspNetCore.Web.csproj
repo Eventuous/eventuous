@@ -1,16 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
-        <ProjectReference Include="..\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj" />
-        <Using Include="Eventuous" />
-        <Using Include="Microsoft.Extensions.DependencyInjection" />
-        <Using Include="Microsoft.AspNetCore.Mvc" />
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
+        <ProjectReference Include="..\Eventuous.AspNetCore\Eventuous.AspNetCore.csproj"/>
+        <Using Include="Eventuous"/>
+        <Using Include="Microsoft.Extensions.DependencyInjection"/>
+        <Using Include="Microsoft.AspNetCore.Mvc"/>
     </ItemGroup>
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
     <ItemGroup>
-        <None Remove="Eventuous.AspNetCore.Web.csproj.DotSettings" />
+        <None Remove="Eventuous.AspNetCore.Web.csproj.DotSettings"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(DiagRoot)\Eventuous.Diagnostics\DiagnosticName.cs">

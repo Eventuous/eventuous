@@ -1,21 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.Data.SqlClient" />
-        <PackageReference Include="System.Linq.Async" />
-        <Using Include="Microsoft.Data.SqlClient" />
-        <Using Include="System.Data" />
+        <PackageReference Include="Microsoft.Data.SqlClient"/>
+        <PackageReference Include="System.Linq.Async"/>
+        <Using Include="Microsoft.Data.SqlClient"/>
+        <Using Include="System.Data"/>
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="Scripts\AppendEvents.sql" />
-        <EmbeddedResource Include="Scripts\CheckStream.sql" />
-        <EmbeddedResource Include="Scripts\ReadAllForwards.sql" />
-        <EmbeddedResource Include="Scripts\ReadStreamForwards.sql" />
-        <EmbeddedResource Include="Scripts\ReadStreamSub.sql" />
-        <EmbeddedResource Include="Scripts\_Schema.sql" />
+        <EmbeddedResource Include="Scripts\AppendEvents.sql"/>
+        <EmbeddedResource Include="Scripts\CheckStream.sql"/>
+        <EmbeddedResource Include="Scripts\ReadAllForwards.sql"/>
+        <EmbeddedResource Include="Scripts\ReadStreamForwards.sql"/>
+        <EmbeddedResource Include="Scripts\ReadStreamSub.sql"/>
+        <EmbeddedResource Include="Scripts\_Schema.sql"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
@@ -24,6 +27,6 @@
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
             <Link>Tools\Ensure.cs</Link>
         </Compile>
-        <Using Include="Eventuous.Tools" />
+        <Using Include="Eventuous.Tools"/>
     </ItemGroup>
 </Project>
