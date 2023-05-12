@@ -6,8 +6,6 @@ namespace Eventuous;
 [PublicAPI]
 public abstract class Aggregate {
 
-    public record Snapshot(int Version);
-
     /// <summary>
     /// Get the list of pending changes (new events) within the scope of the current operation.
     /// </summary>
@@ -24,13 +22,13 @@ public abstract class Aggregate {
     /// It is used for optimistic concurrency, to check if there were no changes made to the
     /// aggregate state between load and save for the current operation.
     /// </summary>
-    public int OriginalVersion { get; protected set; } = -1;
+    public long OriginalVersion { get; protected set; } = -1;
 
     /// <summary>
     /// The current version is set to the original version when the aggregate is loaded from the store.
     /// It should increase for each state transition performed within the scope of the current operation.
     /// </summary>
-    public int CurrentVersion => OriginalVersion + _changes.Count;
+    public long CurrentVersion => OriginalVersion + _changes.Count;
 
     readonly List<object> _changes = new();
 
@@ -82,13 +80,6 @@ public abstract class Aggregate {
 
 public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
 
-    public new record Snapshot : Aggregate.Snapshot {
-        public T State { get; init; }
-        public Snapshot(T state, int version) : base(version) {
-            State = state;
-        }
-    }
-
     protected Aggregate()
         => State = new T();
 
@@ -112,12 +103,12 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
         State = originalEvents.Aggregate(State, (state, evt) => Fold(state, evt));
     }
 
-    public override void Load(Aggregate.Snapshot snapshot) {
+    public override void Load(Snapshot snapshot) {
         OriginalVersion = snapshot.Version;
-        State = ((Snapshot)snapshot).State;
+        State = ((Snapshot<T>)snapshot).State;
     }
 
-    public override Snapshot CreateSnapshot() => new(State, CurrentVersion);
+    public override Snapshot<T> CreateSnapshot() => new(State, CurrentVersion);
 
     static T Fold(T state, object evt)
         => state.When(evt);

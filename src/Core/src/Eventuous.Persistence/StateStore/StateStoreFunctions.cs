@@ -3,14 +3,15 @@
 
 namespace Eventuous;
 
+using Microsoft.Extensions.Caching.Memory;
 using static Diagnostics.PersistenceEventSource;
 
 public record FoldedEventStream<T> where T : State<T>, new() {
-    public FoldedEventStream(StreamName streamName, ExpectedStreamVersion streamVersion, object[] events) {
+    public FoldedEventStream(StreamName streamName, ExpectedStreamVersion streamVersion, object[] events, T? initialState = null) {
         StreamName    = streamName;
         StreamVersion = streamVersion;
         Events        = events;
-        State         = events.Aggregate(new T(), (state, o) => state.When(o));
+        State         = events.Aggregate(initialState ?? new T(), (state, o) => state.When(o));
     }
 
     public StreamName            StreamName    { get; }
@@ -26,24 +27,24 @@ public record FoldedEventStream<T> where T : State<T>, new() {
 }
 
 public static class StateStoreFunctions {
-    public static Task<FoldedEventStream<T>> LoadState<T>(this IEventReader reader, StreamName streamName, CancellationToken cancellationToken)
+    public static Task<FoldedEventStream<T>> LoadState<T>(this IEventReader reader, StreamName streamName, IMemoryCache? memoryCache, CancellationToken cancellationToken)
         where T : State<T>, new()
-        => reader.LoadEventsInternal<T>(streamName, true, cancellationToken);
+        => reader.LoadEventsInternal<T>(streamName, true, memoryCache, cancellationToken);
 
-    public static async Task<FoldedEventStream<T>> LoadState<T, TId>(this IEventReader reader, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
+    public static async Task<FoldedEventStream<T>> LoadState<T, TId>(this IEventReader reader, StreamNameMap streamNameMap, TId id, IMemoryCache? memoryCache, CancellationToken cancellationToken)
         where T : State<T>, new() where TId : Id {
-        var foldedStream = await reader.LoadEventsInternal<T>(streamNameMap.GetStreamName(id), true, cancellationToken);
+        var foldedStream = await reader.LoadEventsInternal<T>(streamNameMap.GetStreamName(id), true, memoryCache, cancellationToken);
         return foldedStream with { State = foldedStream.State.WithId(id) };
     }
 
-    public static Task<FoldedEventStream<T>> LoadStateOrNew<T>(this IEventReader reader, StreamName streamName, CancellationToken cancellationToken)
+    public static Task<FoldedEventStream<T>> LoadStateOrNew<T>(this IEventReader reader, StreamName streamName, IMemoryCache? memoryCache, CancellationToken cancellationToken)
         where T : State<T>, new()
-        => reader.LoadEventsInternal<T>(streamName, false, cancellationToken);
+        => reader.LoadEventsInternal<T>(streamName, false, memoryCache, cancellationToken);
 
-    public static async Task<FoldedEventStream<T>> LoadStateOrNew<T, TId>(this IEventReader reader, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
+    public static async Task<FoldedEventStream<T>> LoadStateOrNew<T, TId>(this IEventReader reader, StreamNameMap streamNameMap, TId id, IMemoryCache? memoryCache, CancellationToken cancellationToken)
         where T : State<T>, new()
         where TId : Id {
-        var foldedStream = await reader.LoadEventsInternal<T>(streamNameMap.GetStreamName(id), false, cancellationToken);
+        var foldedStream = await reader.LoadEventsInternal<T>(streamNameMap.GetStreamName(id), false, memoryCache, cancellationToken);
         return foldedStream with { State = foldedStream.State.WithId(id) };
     }
 
@@ -51,12 +52,26 @@ public static class StateStoreFunctions {
         this IEventReader reader,
         StreamName        streamName,
         bool              failIfNotFound,
+        IMemoryCache?     memoryCache,
         CancellationToken cancellationToken
     ) where T : State<T>, new() {
+        StreamReadPosition streamReadPosition;
+        T? initialState;
+        if (memoryCache?.TryGetValue(streamName, out Snapshot? snapshot) ?? false)
+        {
+            streamReadPosition = new StreamReadPosition(snapshot!.Version);
+            initialState = ((Snapshot<T>)snapshot).State;
+        }
+        else
+        {
+            streamReadPosition = StreamReadPosition.Start;
+            initialState = null;
+        }
+
         try {
-            var streamEvents = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+            var streamEvents = await reader.ReadStream(streamName, streamReadPosition, failIfNotFound, cancellationToken).NoContext();
             var events       = streamEvents.Select(x => x.Payload!).ToArray();
-            return (new FoldedEventStream<T>(streamName, new ExpectedStreamVersion(streamEvents.Last().Position), events));
+            return new FoldedEventStream<T>(streamName, new ExpectedStreamVersion(streamEvents.Last().Position), events, initialState);
         }
         catch (StreamNotFound) when (!failIfNotFound) {
             return new FoldedEventStream<T>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>());

@@ -3,6 +3,7 @@
 
 namespace Eventuous;
 
+using Microsoft.Extensions.Caching.Memory;
 using static Diagnostics.ApplicationEventSource;
 
 public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, IStateCommandService<T> where T : State<T>, new() {
@@ -12,15 +13,17 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
     protected IEventWriter Writer { get; }
 
     readonly TypeMapper               _typeMap;
+    readonly IMemoryCache?            _memoryCache;
     readonly FunctionalHandlersMap<T> _handlers  = new();
     readonly CommandToStreamMap       _streamMap = new();
 
-    protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null) : this(store, store, typeMap) { }
+    protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null, IMemoryCache? memoryCache = null) : this(store, store, typeMap, memoryCache) { }
 
-    protected FunctionalCommandService(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null) {
+    protected FunctionalCommandService(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null, IMemoryCache? memoryCache = null) {
         Reader   = reader;
         Writer   = writer;
         _typeMap = typeMap ?? TypeMap.Instance;
+        _memoryCache = memoryCache;
     }
 
     protected void OnNew<TCommand>(
@@ -66,8 +69,8 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await Reader.LoadStateOrNew<T>(streamName, cancellationToken).NoContext(),
-                ExpectedState.Existing => await Reader.LoadState<T>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Any      => await Reader.LoadStateOrNew<T>(streamName, _memoryCache, cancellationToken).NoContext(),
+                ExpectedState.Existing => await Reader.LoadState<T>(streamName, _memoryCache, cancellationToken).NoContext(),
                 ExpectedState.New      => new FoldedEventStream<T>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>()),
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
@@ -92,6 +95,7 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
                 )
                 .NoContext();
 
+            _memoryCache?.Set(streamName, new Snapshot<T>(newState, storeResult.NextExpectedVersion));
             var changes = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
 
             Log.CommandHandled<TCommand>();

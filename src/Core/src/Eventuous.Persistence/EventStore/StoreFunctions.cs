@@ -53,7 +53,7 @@ public static class StoreFunctions {
         Ensure.NotNull(aggregate);
 
         try {
-            return await eventWriter.Store(streamName, aggregate.OriginalVersion, aggregate.Changes, amendEvent, cancellationToken).NoContext();
+            return await eventWriter.Store(streamName, (int)aggregate.OriginalVersion, aggregate.Changes, amendEvent, cancellationToken).NoContext();
         }
         catch (OptimisticConcurrencyException e) {
             Log.UnableToStoreAggregate<T>(streamName, e);

@@ -65,7 +65,7 @@ public class AggregateStore : IAggregateStore {
 
         var aggregate = _factoryRegistry.CreateInstance<T>();
 
-        if (_memoryCache != null && _memoryCache.TryGetValue(streamName, out Aggregate.Snapshot? snapshot))
+        if (_memoryCache != null && _memoryCache.TryGetValue(streamName, out Snapshot? snapshot))
             aggregate.Load(snapshot!);
 
         try {

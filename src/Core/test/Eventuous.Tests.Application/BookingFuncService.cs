@@ -3,12 +3,13 @@
 
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
+using Microsoft.Extensions.Caching.Memory;
 using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Application;
 
 public class BookingFuncService : FunctionalCommandService<BookingState> {
-    public BookingFuncService(IEventStore store, TypeMapper? typeMap = null) : base(store, typeMap) {
+    public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, IMemoryCache? memoryCache = null) : base(store, typeMap, memoryCache) {
         OnNew<Commands.BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);
         OnExisting<Commands.RecordPayment>(cmd => GetStream(cmd.BookingId), RecordPayment);
 
