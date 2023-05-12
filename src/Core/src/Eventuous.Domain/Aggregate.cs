@@ -5,6 +5,9 @@ namespace Eventuous;
 
 [PublicAPI]
 public abstract class Aggregate {
+
+    public record Snapshot(int Version);
+
     /// <summary>
     /// Get the list of pending changes (new events) within the scope of the current operation.
     /// </summary>
@@ -32,10 +35,16 @@ public abstract class Aggregate {
     readonly List<object> _changes = new();
 
     /// <summary>
-    /// Restores the aggregate state from a collection of events, previously stored in the AggregateStore/>
+    /// Restores the aggregate state from a collection of events, previously stored in the AggregateStore.
     /// </summary>
     /// <param name="events">Domain events from the aggregate stream</param>
     public abstract void Load(IEnumerable<object?> events);
+
+    /// <summary>
+    /// Restores the aggregate state from a snapshot, e.g. from cache.
+    /// </summary>
+    /// <param name="snapshot">The snapshot</param>
+    public abstract void Load(Snapshot snapshot);
 
     /// <summary>
     /// Adds an event to the list of pending changes.
@@ -63,9 +72,23 @@ public abstract class Aggregate {
             throw getException?.Invoke()
                ?? new DomainException($"{GetType().Name} doesn't exist");
     }
+
+    /// <summary>
+    /// Creates a snapshot of the current state and version
+    /// </summary>
+    /// <returns>The snapshot</returns>
+    public virtual Snapshot CreateSnapshot() => throw new NotImplementedException();
 }
 
 public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
+
+    public new record Snapshot : Aggregate.Snapshot {
+        public T State { get; init; }
+        public Snapshot(T state, int version) : base(version) {
+            State = state;
+        }
+    }
+
     protected Aggregate()
         => State = new T();
 
@@ -82,13 +105,19 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
         return (previous, State);
     }
 
-    /// <inheritdoc />
     public override void Load(IEnumerable<object?> events) {
         var originalEvents = events.Where(x => x != null)!.ToArray<object>();
         OriginalVersion += originalEvents.Length;
         // ReSharper disable once ConvertClosureToMethodGroup
         State = originalEvents.Aggregate(State, (state, evt) => Fold(state, evt));
     }
+
+    public override void Load(Aggregate.Snapshot snapshot) {
+        OriginalVersion = snapshot.Version;
+        State = ((Snapshot)snapshot).State;
+    }
+
+    public override Snapshot CreateSnapshot() => new(State, CurrentVersion);
 
     static T Fold(T state, object evt)
         => state.When(evt);

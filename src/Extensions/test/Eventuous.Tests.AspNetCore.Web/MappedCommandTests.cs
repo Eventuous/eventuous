@@ -120,4 +120,5 @@ record ImportBookingHttp3(string BookingId, string RoomId, LocalDate CheckIn, Lo
 
 class Brooking : Aggregate {
     public override void Load(IEnumerable<object?> events) { }
+    public override void Load(Snapshot snapshot) => throw new NotImplementedException();
 }
