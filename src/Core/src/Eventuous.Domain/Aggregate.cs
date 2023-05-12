@@ -6,19 +6,9 @@ namespace Eventuous;
 [PublicAPI]
 public abstract class Aggregate {
     /// <summary>
-    /// The collection of previously persisted events
-    /// </summary>
-    public object[] Original { get; protected set; } = Array.Empty<object>();
-
-    /// <summary>
     /// Get the list of pending changes (new events) within the scope of the current operation.
     /// </summary>
     public IReadOnlyCollection<object> Changes => _changes.AsReadOnly();
-
-    /// <summary>
-    /// A collection with all the aggregate events, previously persisted and new
-    /// </summary>
-    public IEnumerable<object> Current => Original.Concat(_changes);
 
     /// <summary>
     /// Clears all the pending changes. Normally not used. Can be used for testing purposes.
@@ -31,13 +21,13 @@ public abstract class Aggregate {
     /// It is used for optimistic concurrency, to check if there were no changes made to the
     /// aggregate state between load and save for the current operation.
     /// </summary>
-    public int OriginalVersion => Original.Length - 1;
+    public int OriginalVersion { get; protected set; } = -1;
 
     /// <summary>
     /// The current version is set to the original version when the aggregate is loaded from the store.
     /// It should increase for each state transition performed within the scope of the current operation.
     /// </summary>
-    public int CurrentVersion => OriginalVersion + Changes.Count;
+    public int CurrentVersion => OriginalVersion + _changes.Count;
 
     readonly List<object> _changes = new();
 
@@ -94,9 +84,10 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
 
     /// <inheritdoc />
     public override void Load(IEnumerable<object?> events) {
-        Original = events.Where(x => x != null).ToArray()!;
+        var originalEvents = events.Where(x => x != null)!.ToArray<object>();
+        OriginalVersion += originalEvents.Length;
         // ReSharper disable once ConvertClosureToMethodGroup
-        State = Original.Aggregate(new T(), (state, o) => Fold(state, o));
+        State = originalEvents.Aggregate(State, (state, evt) => Fold(state, evt));
     }
 
     static T Fold(T state, object evt)

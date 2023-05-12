@@ -1,3 +1,6 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Sut.Domain;
@@ -33,7 +36,7 @@ public class Booking : Aggregate<BookingState> {
     }
 
     public bool HasPaymentRecord(string paymentId)
-        => Current.OfType<BookingPaymentRegistered>().Any(x => x.PaymentId == paymentId);
+        => State.HasPayment(paymentId);
 }
 
 public record BookingId(string Value) : Id(Value);
