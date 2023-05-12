@@ -13,6 +13,9 @@
         <Using Include="Eventuous.Tools" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+    </ItemGroup>
+    <ItemGroup>
         <ProjectReference Include="..\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
         <ProjectReference Include="..\Eventuous.Domain\Eventuous.Domain.csproj" />
         <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj" />

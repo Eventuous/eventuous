@@ -1,6 +1,8 @@
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers.Fakes;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using NodaTime;
 
 namespace Eventuous.Tests.Application;
@@ -11,7 +13,7 @@ public class StateWithIdTests {
 
     public StateWithIdTests() {
         var store = new InMemoryEventStore();
-        _aggregateStore = new AggregateStore(store);
+        _aggregateStore = new AggregateStore(store, memoryCache: new MemoryCache(Options.Create<MemoryCacheOptions>(new())));
         _service        = new BookingService(_aggregateStore);
     }
 
