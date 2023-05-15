@@ -71,6 +71,7 @@ public class AggregateStore : IAggregateStore {
         try {
             var events = await _eventReader.ReadStream(streamName, new(aggregate.CurrentVersion + 1), failIfNotFound, cancellationToken);
             aggregate.Load(events.Select(x => x.Payload));
+            _memoryCache?.Set(streamName, aggregate.CreateSnapshot());
         }
         catch (StreamNotFound) when (!failIfNotFound) {
             return aggregate;

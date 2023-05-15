@@ -1,7 +1,6 @@
 using Eventuous.Sut.App;
+using Eventuous.TestHelpers;
 using Eventuous.TestHelpers.Fakes;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 
 namespace Eventuous.Tests.Fixtures;
 
@@ -12,7 +11,7 @@ public class NaiveFixture {
 
     protected NaiveFixture() {
         EventStore     = new InMemoryEventStore();
-        AggregateStore = new AggregateStore(EventStore, memoryCache: new MemoryCache(Options.Create<MemoryCacheOptions>(new())));
+        AggregateStore = new AggregateStore(EventStore, memoryCache: Caching.CreateMemoryCache());
     }
 
     protected Commands.BookRoom CreateBookRoomCommand() => new(

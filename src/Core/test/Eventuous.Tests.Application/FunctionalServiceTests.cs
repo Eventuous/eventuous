@@ -5,8 +5,6 @@ using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers;
 using Eventuous.TestHelpers.Fakes;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 using NodaTime;
 
 namespace Eventuous.Tests.Application;
@@ -22,7 +20,7 @@ public class FunctionalServiceTests : IDisposable {
 
     public FunctionalServiceTests(ITestOutputHelper output) {
         _store    = new InMemoryEventStore();
-        _service  = new BookingFuncService(_store, memoryCache: new MemoryCache(Options.Create<MemoryCacheOptions>(new())));
+        _service  = new BookingFuncService(_store, memoryCache: Caching.CreateMemoryCache());
         _listener = new TestEventListener(output);
     }
 
