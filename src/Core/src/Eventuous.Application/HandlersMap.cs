@@ -51,5 +51,5 @@ class HandlersMap<TAggregate> where TAggregate : Aggregate {
         => _typeMap.TryGetValue<TCommand>(out handler);
 }
 
-public delegate IEnumerable<object> ExecuteCommand<in T, in TCommand>(T state, object[] originalEvents, TCommand command)
+public delegate IEnumerable<object> ExecuteCommand<in T, in TCommand>(T state, TCommand command)
     where T : State<T> where TCommand : class;

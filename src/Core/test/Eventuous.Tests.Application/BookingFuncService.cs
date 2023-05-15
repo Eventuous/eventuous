@@ -19,7 +19,7 @@ public class BookingFuncService : FunctionalCommandService<BookingState> {
             yield return new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price);
         }
 
-        static IEnumerable<object> RecordPayment(BookingState state, object[] originalEvents, Commands.RecordPayment cmd) {
+        static IEnumerable<object> RecordPayment(BookingState state, Commands.RecordPayment cmd) {
             if (state.HasPayment(cmd.PaymentId)) yield break;
 
             var registered = new BookingPaymentRegistered(cmd.PaymentId, cmd.Amount.Amount);

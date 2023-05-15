@@ -5,7 +5,7 @@ namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
 
-delegate ValueTask<IEnumerable<object>> ExecuteUntypedCommand<in T>(T state, object[] events, object command, CancellationToken cancellationToken) where T : State<T>;
+delegate ValueTask<IEnumerable<object>> ExecuteUntypedCommand<in T>(T state, object command, CancellationToken cancellationToken) where T : State<T>;
 
 record RegisteredFuncHandler<T>(ExpectedState ExpectedState, ExecuteUntypedCommand<T> Handler) where T : State<T>;
 
@@ -24,8 +24,8 @@ class FunctionalHandlersMap<T> where T : State<T> {
     }
 
     public void AddHandler<TCommand>(ExpectedState expectedState, ExecuteCommand<T, TCommand> action) where TCommand : class {
-        ValueTask<IEnumerable<object>> Handler(T state, object[] events, object command, CancellationToken token) {
-            var newEvents = action(state, events, (TCommand)command);
+        ValueTask<IEnumerable<object>> Handler(T state, object command, CancellationToken token) {
+            var newEvents = action(state, (TCommand)command);
             return new ValueTask<IEnumerable<object>>(newEvents);
         }
 

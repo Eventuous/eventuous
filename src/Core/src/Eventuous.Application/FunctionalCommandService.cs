@@ -27,7 +27,7 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
         GetStreamNameFromCommand<TCommand>  getStreamName,
         Func<TCommand, IEnumerable<object>> action
     ) where TCommand : class {
-        _handlers.AddHandler<TCommand>(ExpectedState.New, (_, _, cmd) => action(cmd));
+        _handlers.AddHandler<TCommand>(ExpectedState.New, (_, cmd) => action(cmd));
         _streamMap.AddCommand(getStreamName);
     }
 
@@ -73,7 +73,7 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
             };
 
             var result = await registeredHandler
-                .Handler(loadedState.State, loadedState.Events, command, cancellationToken)
+                .Handler(loadedState.State, command, cancellationToken)
                 .NoContext();
 
             var newEvents = result.ToArray();
