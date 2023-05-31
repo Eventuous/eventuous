@@ -154,12 +154,51 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         }
     }
 
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>() where TImplementation : class, TService {
+    /// <summary>
+    /// Add custom dependency resolver for the subscription. The service be resolved from the service provider.
+    /// </summary>
+    /// <typeparam name="TService">Dependency type</typeparam>
+    /// <returns></returns>
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService>() where TService : class {
+        ParametersMap.Add<TService, TService>();
+        return this;
+    }
+
+    /// <summary>
+    /// Add custom dependency resolver for the subscription. The service be resolved from the service provider.
+    /// </summary>
+    /// <typeparam name="TService">Dependency type</typeparam>
+    /// <typeparam name="TImplementation">Service type that implements <code>TService</code></typeparam>
+    /// <returns></returns>
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>()
+        where TImplementation : class, TService {
         ParametersMap.Add<TService, TImplementation>();
         return this;
     }
 
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>(Func<IServiceProvider, TImplementation> resolver) where TImplementation : class, TService {
+    /// <summary>
+    /// Add custom dependency resolver for the subscription.
+    /// The service be resolved from the service provider by using the factory function..
+    /// </summary>
+    /// <param name="resolver">Function to resolve the service from the service provider</param>
+    /// <typeparam name="TService">Dependency type</typeparam>
+    /// <returns></returns>
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService>(Func<IServiceProvider, TService> resolver)
+        where TService : class {
+        ParametersMap.Add<TService, TService>(resolver);
+        return this;
+    }
+
+    /// <summary>
+    /// Add custom dependency resolver for the subscription.
+    /// The service be resolved from the service provider by using the factory function..
+    /// </summary>
+    /// <param name="resolver">Function to resolve the service from the service provider</param>
+    /// <typeparam name="TService">Dependency type</typeparam>
+    /// <typeparam name="TImplementation">Service type that implements <code>TService</code></typeparam>
+    /// <returns></returns>
+    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>(Func<IServiceProvider, TImplementation> resolver)
+        where TImplementation : class, TService {
         ParametersMap.Add<TService, TImplementation>(resolver);
         return this;
     }
@@ -243,25 +282,15 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 }
 
 static class TypeExtensionsForRegistrations {
-    public static (ConstructorInfo Ctor, ParameterInfo[] parameters, ParameterInfo? Options)[] GetConstructors<T>(
-        this Type type,
-        string?   name = null
-    )
+    public static (ConstructorInfo Ctor, ParameterInfo[] parameters, ParameterInfo? Options)[] GetConstructors<T>(this Type type, string? name = null)
         => type
             .GetConstructors()
-            .Select(
-                x => (
-                    Ctor: x,
-                    Parameters: x.GetParameters()
-                ))
+            .Select(x => (Ctor: x, Parameters: x.GetParameters()))
             .Select(
                 x => (
                     x.Ctor,
                     x.Parameters,
-                    Options: x.Parameters
-                        .SingleOrDefault(
-                            y => y.ParameterType == typeof(T) && (name == null || y.Name == name)
-                        )
+                    Options: x.Parameters.SingleOrDefault(y => y.ParameterType == typeof(T) && (name == null || y.Name == name))
                 )
             )
             .Where(x => x.Options != null)
