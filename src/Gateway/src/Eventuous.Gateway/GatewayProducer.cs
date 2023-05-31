@@ -3,7 +3,7 @@
 
 namespace Eventuous.Gateway;
 
-public class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : class {
+class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : class {
     readonly IEventProducer<T> _inner;
 
     public GatewayProducer(IEventProducer<T> inner) : base(inner)
@@ -18,7 +18,7 @@ public class GatewayProducer<T> : GatewayProducer, IEventProducer<T> where T : c
     }
 }
 
-public class GatewayProducer : IEventProducer {
+class GatewayProducer : IEventProducer {
     readonly IEventProducer _inner;
 
     protected readonly bool _isHostedService;

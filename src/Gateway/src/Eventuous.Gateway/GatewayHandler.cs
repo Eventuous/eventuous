@@ -5,6 +5,9 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Gateway;
 
+/// <summary>
+/// Function that transforms one incoming message to zero or more outgoing messages.
+/// </summary>
 public delegate ValueTask<GatewayMessage[]> RouteAndTransform(IMessageConsumeContext context);
 
 class GatewayHandler : BaseEventHandler {

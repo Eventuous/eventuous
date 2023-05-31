@@ -11,6 +11,9 @@ namespace Eventuous.Postgresql.Subscriptions;
 
 using Extensions;
 
+/// <summary>
+/// Subscription for events in a single stream in PostgreSQL event store.
+/// </summary>
 public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStreamSubscriptionOptions> {
     public PostgresStreamSubscription(
         NpgsqlDataSource                  dataSource,

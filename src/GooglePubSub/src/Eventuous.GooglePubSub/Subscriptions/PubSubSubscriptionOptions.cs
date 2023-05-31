@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions;
-using static Google.Cloud.PubSub.V1.SubscriberClient;
 
 namespace Eventuous.GooglePubSub.Subscriptions;
 

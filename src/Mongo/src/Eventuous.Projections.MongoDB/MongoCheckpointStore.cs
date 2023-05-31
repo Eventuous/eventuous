@@ -14,6 +14,10 @@ namespace Eventuous.Projections.MongoDB;
 
 using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 
+/// <summary>
+/// Checkpoint store for MongoDB, which stores checkpoints in a collection.
+/// Use it when you create read models in MongoDB too.
+/// </summary>
 public class MongoCheckpointStore : ICheckpointStore {
     MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options, ILoggerFactory loggerFactory) {
         _loggerFactory = loggerFactory;
@@ -108,9 +112,23 @@ public class MongoCheckpointStore : ICheckpointStore {
     }
 }
 
+/// <summary>
+/// MongoDB checkpoint store options.
+/// </summary>
 [PublicAPI]
 public record MongoCheckpointStoreOptions {
+    /// <summary>
+    /// Collection for checkpoint documents (one per subscription). Default is "checkpoint".
+    /// </summary>
     public string CollectionName   { get; init; } = "checkpoint";
+
+    /// <summary>
+    /// Commit batch size, default is 1. Increase it to improve performance.
+    /// </summary>
     public int    BatchSize        { get; init; } = 1;
+
+    /// <summary>
+    /// Commit batch interval in seconds, default is 5. Increase it to improve performance.
+    /// </summary>
     public int    BatchIntervalSec { get; init; } = 5;
 }

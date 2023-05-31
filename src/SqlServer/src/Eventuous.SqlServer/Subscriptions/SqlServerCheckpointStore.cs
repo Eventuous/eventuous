@@ -8,6 +8,10 @@ namespace Eventuous.SqlServer.Subscriptions;
 
 using Extensions;
 
+/// <summary>
+/// Checkpoint store for SQL Server, which stores checkpoints in a table.
+/// Use it when you create read models in SQL Server too.
+/// </summary>
 public class SqlServerCheckpointStore : ICheckpointStore {
     readonly GetSqlServerConnection _getConnection;
     readonly string                 _getCheckpointSql;
@@ -49,11 +53,7 @@ public class SqlServerCheckpointStore : ICheckpointStore {
         return checkpoint;
     }
 
-    public async ValueTask<Checkpoint> StoreCheckpoint(
-        Checkpoint        checkpoint,
-        bool              force,
-        CancellationToken cancellationToken
-    ) {
+    public async ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
         if (checkpoint.Position == null) return checkpoint;
 
         await using var connection = _getConnection();
