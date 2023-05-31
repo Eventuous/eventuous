@@ -15,6 +15,10 @@ public abstract class MongoProjection<T> : MongoProjector<T> where T : Projected
     protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) : base(database, typeMap) { }
 }
 
+/// <summary>
+/// Base class for MongoDB projectors. Specify your event handlers in the constructor using <code>On</code> methods family.
+/// </summary>
+/// <typeparam name="T"></typeparam>
 [UsedImplicitly]
 public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDocument {
     [PublicAPI]

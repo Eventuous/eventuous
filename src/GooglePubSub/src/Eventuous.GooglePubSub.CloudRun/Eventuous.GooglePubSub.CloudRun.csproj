@@ -1,13 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
     </ItemGroup>
     <ItemGroup>
-      <Compile Include="..\Eventuous.GooglePubSub\PubSubAttributes.cs">
-        <Link>PubSubAttributes.cs</Link>
-      </Compile>
+        <Compile Include="..\Eventuous.GooglePubSub\PubSubAttributes.cs">
+            <Link>PubSubAttributes.cs</Link>
+        </Compile>
     </ItemGroup>
 </Project>
