@@ -8,9 +8,11 @@ using Grpc.Core;
 namespace Eventuous.GooglePubSub.Shared;
 
 public static class PubSub {
+    [PublicAPI]
     public static EmulatorDetection DetectEmulator(this SubscriberClient.ClientCreationSettings? value)
         => value?.EmulatorDetection ?? EmulatorDetection.None;
 
+    [PublicAPI]
     public static EmulatorDetection DetectEmulator(this PublisherClient.ClientCreationSettings? value)
         => value?.EmulatorDetection ?? EmulatorDetection.None;
 

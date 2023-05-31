@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
+using Eventuous.RabbitMq.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.RabbitMq.Producers;

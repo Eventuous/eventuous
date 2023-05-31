@@ -5,12 +5,12 @@ namespace Eventuous;
 
 static class Exceptions {
     public class InvalidIdException : Exception {
-        public InvalidIdException(AggregateId id) : this(id.GetType()) { }
+        public InvalidIdException(Id id) : this(id.GetType()) { }
 
         public InvalidIdException(Type idType) : base(ExceptionMessages.AggregateIdEmpty(idType)) { }
     }
 
-    public class InvalidIdException<T> : InvalidIdException where T : AggregateId {
+    public class InvalidIdException<T> : InvalidIdException where T : Id {
         public InvalidIdException() : base(typeof(T)) { }
     }
 

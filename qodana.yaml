@@ -1,0 +1,4 @@
+version: "1.0"
+linter: jetbrains/qodana-dotnet:2023.1-eap
+dotnet:
+  solution: Eventuous.sln

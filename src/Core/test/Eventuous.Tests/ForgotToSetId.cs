@@ -30,7 +30,7 @@ public class ForgotToSetId : NaiveFixture {
 
     record TestState : State<TestState>;
 
-    record TestId : AggregateId {
+    record TestId : Id {
         public TestId(string value) : base(value) { }
     }
 

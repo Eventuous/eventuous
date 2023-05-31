@@ -4,14 +4,14 @@
 namespace Eventuous;
 
 public delegate Task<TId> GetIdFromCommandAsync<TId, in TCommand>(TCommand command, CancellationToken cancellationToken)
-    where TId : AggregateId where TCommand : class;
+    where TId : Id where TCommand : class;
 
-public delegate TId GetIdFromCommand<out TId, in TCommand>(TCommand command) where TId : AggregateId where TCommand : class;
+public delegate TId GetIdFromCommand<out TId, in TCommand>(TCommand command) where TId : Id where TCommand : class;
 
 delegate ValueTask<TId> GetIdFromUntypedCommand<TId>(object command, CancellationToken cancellationToken)
-    where TId : AggregateId;
+    where TId : Id;
 
-class IdMap<TId> where TId : AggregateId {
+class IdMap<TId> where TId : Id {
     readonly TypeMap<GetIdFromUntypedCommand<TId>> _typeMap = new();
 
     public void AddCommand<TCommand>(GetIdFromCommand<TId, TCommand> getId) where TCommand : class

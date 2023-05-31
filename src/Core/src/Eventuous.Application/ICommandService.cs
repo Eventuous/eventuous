@@ -20,5 +20,5 @@ public interface IStateCommandService<TState>
 public interface ICommandService<T, TState, TId> : IStateCommandService<TState>
     where T : Aggregate<TState>
     where TState : State<TState>, new()
-    where TId : AggregateId {
+    where TId : Id {
 }

@@ -77,7 +77,7 @@ public class AggregateStoreTests {
 
     IAggregateStore Store { get; }
 
-    record TestId : AggregateId {
+    record TestId : Id {
         public TestId(string value) : base(value) { }
     }
 

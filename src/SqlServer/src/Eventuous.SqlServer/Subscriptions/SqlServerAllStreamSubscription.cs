@@ -11,6 +11,9 @@ namespace Eventuous.SqlServer.Subscriptions;
 
 using Extensions;
 
+/// <summary>
+/// Subscription for all events in the system using SQL Server event store.
+/// </summary>
 public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions> {
     public SqlServerAllStreamSubscription(
         GetSqlServerConnection                getConnection,

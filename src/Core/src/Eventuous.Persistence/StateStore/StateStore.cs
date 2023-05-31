@@ -4,6 +4,7 @@
 namespace Eventuous;
 
 [PublicAPI]
+[Obsolete("Use IEventReader extension functions to load state")]
 public class StateStore : IStateStore {
     readonly IEventReader     _eventReader;
     readonly IEventSerializer _serializer;
@@ -15,6 +16,7 @@ public class StateStore : IStateStore {
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
     }
 
+    [Obsolete("Use IEventReader.LoadState<T> instead")]
     public async Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken)
         where T : State<T>, new() {
         var state = new T();

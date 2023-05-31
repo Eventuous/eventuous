@@ -17,6 +17,16 @@ public static class SubscriptionBuilderExtensions {
         this SubscriptionBuilder<StreamSubscription, StreamSubscriptionOptions> builder
     ) where T : class, ICheckpointStore
         => builder.UseCheckpointStore<StreamSubscription, StreamSubscriptionOptions, T>();
+    public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore<TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
+        where T : class, ICheckpointStore
+        where TSubscription : EventStoreCatchUpSubscriptionBase<TOptions>
+        where TOptions : CatchUpSubscriptionOptions {
+        builder.Services.TryAddSingleton<T>();
+
+        return EventuousDiagnostics.Enabled
+            ? builder.AddParameterMap<ICheckpointStore, MeasuredCheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()))
+            : builder.AddParameterMap<ICheckpointStore, T>();
+    }
 
     /// <summary>
     /// Use non-default checkpoint store
