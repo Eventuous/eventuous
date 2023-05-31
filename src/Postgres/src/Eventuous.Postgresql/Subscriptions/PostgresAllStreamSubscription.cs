@@ -11,6 +11,9 @@ namespace Eventuous.Postgresql.Subscriptions;
 
 using Extensions;
 
+/// <summary>
+/// Subscription for all events in the system using PostgreSQL event store.
+/// </summary>
 public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions> {
     public PostgresAllStreamSubscription(
         NpgsqlDataSource                     dataSource,

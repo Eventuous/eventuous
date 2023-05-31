@@ -5,9 +5,12 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Gateway;
 
+/// <summary>
+/// Function that transforms one incoming message to zero or more outgoing messages.
+/// </summary>
 public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<TProduceOptions>(IMessageConsumeContext message);
 
-public class GatewayHandler<TProduceOptions> : BaseEventHandler where TProduceOptions : class {
+class GatewayHandler<TProduceOptions> : BaseEventHandler where TProduceOptions : class {
     readonly IEventProducer<TProduceOptions>    _eventProducer;
     readonly RouteAndTransform<TProduceOptions> _transform;
     readonly bool                               _awaitProduce;

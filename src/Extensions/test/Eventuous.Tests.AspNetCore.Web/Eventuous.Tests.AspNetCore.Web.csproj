@@ -3,7 +3,6 @@
         <IsTestProject>true</IsTestProject>
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeTestHelpers>true</IncludeTestHelpers>
-        <IsPackable>false</IsPackable>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>

@@ -1,20 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Npgsql" />
-        <PackageReference Include="Npgsql.DependencyInjection" />
-        <PackageReference Include="System.Linq.Async" />
+        <PackageReference Include="Npgsql"/>
+        <PackageReference Include="Npgsql.DependencyInjection"/>
+        <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="Scripts\AppendEvents.sql" />
-        <EmbeddedResource Include="Scripts\CheckStream.sql" />
-        <EmbeddedResource Include="Scripts\ReadAllForwards.sql" />
-        <EmbeddedResource Include="Scripts\ReadStreamForwards.sql" />
-        <EmbeddedResource Include="Scripts\ReadStreamSub.sql" />
-        <EmbeddedResource Include="Scripts\_Schema.sql" />
+        <EmbeddedResource Include="Scripts\AppendEvents.sql"/>
+        <EmbeddedResource Include="Scripts\CheckStream.sql"/>
+        <EmbeddedResource Include="Scripts\ReadAllForwards.sql"/>
+        <EmbeddedResource Include="Scripts\ReadStreamForwards.sql"/>
+        <EmbeddedResource Include="Scripts\ReadStreamSub.sql"/>
+        <EmbeddedResource Include="Scripts\_Schema.sql"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
@@ -25,11 +28,11 @@
         </Compile>
     </ItemGroup>
     <ItemGroup>
-        <InternalsVisibleTo Include="Eventuous.Tests.Postgres" />
+        <InternalsVisibleTo Include="Eventuous.Tests.Postgres"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="Npgsql" />
-        <Using Include="NpgsqlTypes" />
-        <Using Include="Eventuous.Tools" />
+        <Using Include="Npgsql"/>
+        <Using Include="NpgsqlTypes"/>
+        <Using Include="Eventuous.Tools"/>
     </ItemGroup>
 </Project>

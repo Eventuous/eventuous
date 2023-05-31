@@ -22,6 +22,10 @@ public class PostgresCheckpointStoreOptions {
     public string Schema { get; set; }
 }
 
+/// <summary>
+/// Checkpoint store for PostgreSQL, which stores checkpoints in a table.
+/// Use it when you create read models in Postgres too.
+/// </summary>
 public class PostgresCheckpointStore : ICheckpointStore {
     readonly NpgsqlDataSource _dataSource;
     readonly ILoggerFactory?  _loggerFactory;
