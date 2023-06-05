@@ -27,12 +27,12 @@ public record ProducedMessage {
     public AcknowledgeProduce?  OnAck             { get; init; }
     public ReportFailedProduce? OnNack            { get; init; }
 
-    public ValueTask Ack<T>() where T : IEventProducer {
+    public ValueTask Ack<T>() where T : class {
         ProducerEventSource<T>.Log.ProduceAcknowledged(this);
         return OnAck?.Invoke(this) ?? default;
     }
 
-    public ValueTask Nack<T>(string message, Exception? exception) where T : IEventProducer {
+    public ValueTask Nack<T>(string message, Exception? exception) where T : class {
         ProducerEventSource<T>.Log.ProduceNotAcknowledged(this, message, exception);
         if (OnNack != null) return OnNack(this, message, exception);
 

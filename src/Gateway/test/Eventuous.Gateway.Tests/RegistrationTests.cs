@@ -10,10 +10,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Eventuous.Gateway.Tests;
 
-public class RegistrationTests {
+public class RegistrationTestsWithOptions {
     readonly IServiceProvider _provider;
 
-    public RegistrationTests() {
+    public RegistrationTestsWithOptions() {
         var host = new TestServer(BuildHost());
         _provider = host.Services;
     }
@@ -25,17 +25,18 @@ public class RegistrationTests {
 
     class Startup {
         public static void ConfigureServices(IServiceCollection services) {
-            services.AddGateway<TestSub, TestOptions, TestProducer>("shovel1", RouteAndTransform);
-            services.AddGateway<TestSub, TestOptions, TestProducer, TestTransform>("shovel2");
+            services.AddGateway<TestSub, TestOptions, TestProducer, TestProduceOptions>("shovel1", RouteAndTransform);
+            services.AddGateway<TestSub, TestOptions, TestProducer, TestProduceOptions, TestTransform>("shovel2");
         }
 
-        static ValueTask<GatewayMessage[]> RouteAndTransform(object message) => new();
+        static ValueTask<GatewayMessage<TestProduceOptions>[]> RouteAndTransform(object message) => new();
 
         public void Configure(IApplicationBuilder app) { }
     }
 
-    class TestTransform : IGatewayTransform {
-        public ValueTask<GatewayMessage[]> RouteAndTransform(IMessageConsumeContext context) => new();
+    class TestTransform : IGatewayTransform<TestProduceOptions> {
+        public ValueTask<GatewayMessage<TestProduceOptions>[]> RouteAndTransform(IMessageConsumeContext context)
+            => new();
     }
 
     record TestOptions : SubscriptionOptions;
@@ -56,18 +57,19 @@ public class RegistrationTests {
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) => default;
     }
 
-    class TestProducer : BaseProducer {
+    class TestProducer : BaseProducer<TestProduceOptions> {
         public List<ProducedMessage> ProducedMessages { get; } = new();
 
         protected override Task ProduceMessages(
             StreamName                   stream,
             IEnumerable<ProducedMessage> messages,
+            TestProduceOptions?          options,
             CancellationToken            cancellationToken = default
         ) {
             ProducedMessages.AddRange(messages);
             return Task.CompletedTask;
         }
-
-        public TestProducer() : base() { }
     }
+
+    record TestProduceOptions;
 }

@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Producers;
 
-[PublicAPI]
 public interface IEventProducer {
     /// <summary>
     /// Produce a message wrapped in the <see cref="ProducedMessage"/>.
