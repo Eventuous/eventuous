@@ -26,10 +26,16 @@ class GatewayHandler : BaseEventHandler {
 
         if (shovelMessages.Length == 0) return EventHandlingStatus.Ignored;
 
-        AcknowledgeProduce? onAck = null;
+        AcknowledgeProduce?  onAck  = null;
+        ReportFailedProduce? onFail = null;
 
-        if (context is AsyncConsumeContext asyncContext) {
-            onAck = _ => asyncContext.Acknowledge();
+        if (_awaitProduce) {
+            var asyncContext = context.GetContext<AsyncConsumeContext>();
+
+            if (asyncContext != null) {
+                onAck  = _ => asyncContext.Acknowledge();
+                onFail = (_, error, ex) => asyncContext.Fail(ex ?? new ApplicationException(error));
+            }
         }
 
         var grouped = shovelMessages.GroupBy(x => x.TargetStream);
@@ -47,7 +53,7 @@ class GatewayHandler : BaseEventHandler {
             var messages = toProduce
                 .Select(
                     x => new ProducedMessage(x.Message, x.GetMeta(context), GatewayMetaHelper.GetContextMeta(context))
-                        { OnAck = onAck }
+                        { OnAck = onAck, OnNack = onFail }
                 );
 
             return _eventProducer.Produce(streamName, messages, context.CancellationToken);

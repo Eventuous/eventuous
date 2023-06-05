@@ -28,9 +28,15 @@ class GatewayHandler<TProduceOptions> : BaseEventHandler where TProduceOptions :
         if (shovelMessages.Length == 0) return EventHandlingStatus.Ignored;
 
         AcknowledgeProduce? onAck = null;
+        ReportFailedProduce? onFail = null;
 
-        if (context is AsyncConsumeContext asyncContext) {
-            onAck = _ => asyncContext.Acknowledge();
+        if (!_awaitProduce) {
+            var asyncContext = context.GetContext<AsyncConsumeContext>();
+
+            if (asyncContext != null) {
+                onAck  = _ => asyncContext.Acknowledge();
+                onFail = (_, error, ex) => asyncContext.Fail(ex ?? new ApplicationException(error));
+            }
         }
 
         try {
@@ -57,6 +63,7 @@ class GatewayHandler<TProduceOptions> : BaseEventHandler where TProduceOptions :
                             x.ProduceOptions,
                             GatewayMetaHelper.GetContextMeta(context),
                             onAck,
+                            onFail,
                             context.CancellationToken
                         )
                 )
