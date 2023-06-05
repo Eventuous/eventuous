@@ -1,0 +1,13 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
+namespace Eventuous.Gateway;
+
+[PublicAPI]
+public static class GatewayHandlerFactory {
+    public static IEventHandler Create(IEventProducer producer, RouteAndTransform routeAndTransform, bool awaitProduce)
+        => new GatewayHandler(new GatewayProducer(producer), routeAndTransform, awaitProduce);
+
+    public static IEventHandler Create<T>(IEventProducer<T> producer, RouteAndTransform<T> routeAndTransform, bool awaitProduce) where T : class
+        => new GatewayHandler<T>(new GatewayProducer<T>(producer), routeAndTransform, awaitProduce);
+}
