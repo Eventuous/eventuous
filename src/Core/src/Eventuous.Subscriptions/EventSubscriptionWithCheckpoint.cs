@@ -62,6 +62,8 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         var eventPosition = GetPositionFromContext(context);
         LastProcessed = eventPosition;
 
+        context.LogContext.TraceLog?.Log("Message {Type} acknowledged at {Position}", context.MessageType, context.GlobalPosition);
+
         return CheckpointCommitHandler.Commit(
             new CommitPosition(eventPosition.Position!.Value, context.Sequence, eventPosition.Created)
                 { LogContext = context.LogContext },
@@ -69,8 +71,10 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         );
     }
 
-    ValueTask Nack(IMessageConsumeContext context, Exception exception)
-        => Options.ThrowOnError ? throw exception : Ack(context);
+    ValueTask Nack(IMessageConsumeContext context, Exception exception) {
+        context.LogContext.WarnLog?.Log(exception, "Message {Type} not acknowledged at {Position}", context.MessageType, context.GlobalPosition);
+        return Options.ThrowOnError ? throw exception : Ack(context);
+    }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
         if (IsRunning && LastProcessed != null) {
@@ -94,10 +98,11 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         Logger.Current = Log;
 
         await CheckpointStore.StoreCheckpoint(
-            new Checkpoint(SubscriptionId, eventPosition.Position),
-            true,
-            cancellationToken
-        ).NoContext();
+                new Checkpoint(SubscriptionId, eventPosition.Position),
+                true,
+                cancellationToken
+            )
+            .NoContext();
     }
 
     protected override ValueTask Finalize(CancellationToken cancellationToken)
