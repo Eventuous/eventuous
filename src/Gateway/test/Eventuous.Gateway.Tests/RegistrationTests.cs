@@ -52,10 +52,6 @@ public class RegistrationTests {
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
     }
 
-    class Handler : BaseEventHandler {
-        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) => default;
-    }
-
     class TestProducer : BaseProducer {
         public List<ProducedMessage> ProducedMessages { get; } = new();
 
@@ -67,7 +63,5 @@ public class RegistrationTests {
             ProducedMessages.AddRange(messages);
             return Task.CompletedTask;
         }
-
-        public TestProducer() : base() { }
     }
 }

@@ -51,11 +51,12 @@ public abstract partial class CommandService<TAggregate, TState, TId> : ICommand
         }
 
         var aggregateId = await registeredHandler.GetId(command, cancellationToken).NoContext();
+        var store       = registeredHandler.ResolveStore(command);
 
         try {
             var aggregate = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await Store.LoadOrNew<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
-                ExpectedState.Existing => await Store.Load<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
+                ExpectedState.Any      => await store.LoadOrNew<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
+                ExpectedState.Existing => await store.Load<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
                 ExpectedState.New      => Create(aggregateId),
                 ExpectedState.Unknown  => default,
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
@@ -68,7 +69,7 @@ public abstract partial class CommandService<TAggregate, TState, TId> : ICommand
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
-            var storeResult = await Store.Store(GetAggregateStreamName(), result, cancellationToken).NoContext();
+            var storeResult = await store.Store(GetAggregateStreamName(), result, cancellationToken).NoContext();
             var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
             return new OkResult<TState>(result.State, changes, storeResult.GlobalPosition);
