@@ -10,10 +10,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Eventuous.Gateway.Tests;
 
-public class RegistrationTestsWithOptions {
+public class RegistrationTests {
     readonly IServiceProvider _provider;
 
-    public RegistrationTestsWithOptions() {
+    public RegistrationTests() {
         var host = new TestServer(BuildHost());
         _provider = host.Services;
     }
