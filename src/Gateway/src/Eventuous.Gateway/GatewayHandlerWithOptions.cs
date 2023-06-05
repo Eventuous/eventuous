@@ -10,6 +10,7 @@ namespace Eventuous.Gateway;
 /// </summary>
 public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<TProduceOptions>(IMessageConsumeContext message);
 
+/// <inheritdoc />
 class GatewayHandler<TProduceOptions> : BaseEventHandler where TProduceOptions : class {
     readonly IEventProducer<TProduceOptions>    _eventProducer;
     readonly RouteAndTransform<TProduceOptions> _transform;

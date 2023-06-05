@@ -22,10 +22,12 @@ public static class MetadataExtensions {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static Metadata AddTracingMeta(this Metadata metadata, TracingMeta tracingMeta)
-        => metadata
-            .AddNotNull(TraceId, tracingMeta.TraceId)
-            .AddNotNull(SpanId, tracingMeta.SpanId)
-            .AddNotNull(ParentSpanId, tracingMeta.ParentSpanId);
+        => metadata.ContainsKey(TraceId)
+            ? metadata // don't override existing tracing data
+            : metadata
+                .AddNotNull(TraceId, tracingMeta.TraceId)
+                .AddNotNull(SpanId, tracingMeta.SpanId)
+                .AddNotNull(ParentSpanId, tracingMeta.ParentSpanId);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TracingMeta GetTracingMeta(this Metadata metadata)
