@@ -42,16 +42,12 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
         ConsumePipe       consumePipe,
         ILoggerFactory?   loggerFactory,
         IEventSerializer? eventSerializer = null
-    ) : this(
-        new PubSubSubscriptionOptions {
-            SubscriptionId  = subscriptionId,
-            ProjectId       = projectId,
-            TopicId         = topicId,
-            EventSerializer = eventSerializer
-        },
-        consumePipe,
-        loggerFactory
-    ) { }
+    )
+        : this(
+            new PubSubSubscriptionOptions { SubscriptionId = subscriptionId, ProjectId = projectId, TopicId = topicId, EventSerializer = eventSerializer },
+            consumePipe,
+            loggerFactory
+        ) { }
 
     /// <summary>
     /// Creates a Google PubSub subscription service
@@ -61,14 +57,9 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// <param name="loggerFactory">Logger factory instance</param>
     public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
         : base(options, consumePipe, loggerFactory) {
-        _failureHandler = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
-
-        _subscriptionName = SubscriptionName.FromProjectSubscription(
-            Ensure.NotEmptyString(options.ProjectId),
-            Ensure.NotEmptyString(options.SubscriptionId)
-        );
-
-        _topicName = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
+        _failureHandler   = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
+        _subscriptionName = SubscriptionName.FromProjectSubscription(Ensure.NotEmptyString(options.ProjectId), Ensure.NotEmptyString(options.SubscriptionId));
+        _topicName        = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
 
         if (options is { FailureHandler: not null, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
     }
@@ -113,15 +104,12 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
             try {
                 await Handler(ctx).NoContext();
+
                 return Reply.Ack;
-            }
-            catch (Exception ex) {
-                return await _failureHandler(_client, msg, ex).NoContext();
-            }
+            } catch (Exception ex) { return await _failureHandler(_client, msg, ex).NoContext(); }
         }
 
-        Metadata AsMeta(MapField<string, string> attributes)
-            => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
+        Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
@@ -141,6 +129,5 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
         await PubSub.CreateSubscription(subscriptionName, topicName, configureSubscription, emulatorDetection, cancellationToken).NoContext();
     }
 
-    static ValueTask<Reply> DefaultEventProcessingErrorHandler(SubscriberClient client, PubsubMessage message, Exception exception)
-        => new(Reply.Nack);
+    static ValueTask<Reply> DefaultEventProcessingErrorHandler(SubscriberClient client, PubsubMessage message, Exception exception) => new(Reply.Nack);
 }

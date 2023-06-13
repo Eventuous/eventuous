@@ -30,7 +30,7 @@ public static class ProducerExtensions {
         CancellationToken    cancellationToken = default
     ) where TMessage : class {
         var producedMessages =
-            message is IEnumerable<object> collection
+            Ensure.NotNull(message) is IEnumerable<object> collection
                 ? ConvertMany(collection, metadata, additionalHeaders, onAck, onNack)
                 : ConvertOne(message, metadata, additionalHeaders, onAck, onNack);
 
@@ -58,7 +58,7 @@ public static class ProducerExtensions {
         StreamName                           stream,
         TMessage                             message,
         Metadata?                            metadata,
-        TProduceOptions                      options,
+        TProduceOptions?                     options           = null,
         Metadata?                            additionalHeaders = null,
         AcknowledgeProduce?                  onAck             = null,
         ReportFailedProduce?                 onNack            = null,

@@ -4,7 +4,6 @@
 using Eventuous.Producers;
 using Eventuous.Producers.Diagnostics;
 using Microsoft.Extensions.Options;
-using static Google.Cloud.PubSub.V1.PublisherClient;
 
 // ReSharper disable InvertIf
 
@@ -32,14 +31,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
         ILogger<GooglePubSubProducer>?  log             = null,
         Action<PublisherClientBuilder>? configureClient = null
     )
-        : this(
-            new PubSubProducerOptions {
-                ProjectId              = Ensure.NotEmptyString(projectId),
-                ConfigureClientBuilder = configureClient
-            },
-            serializer,
-            log
-        ) { }
+        : this(new PubSubProducerOptions { ProjectId = Ensure.NotEmptyString(projectId), ConfigureClientBuilder = configureClient }, serializer, log) { }
 
     /// <summary>
     /// Create a new instance of a Google PubSub producer
@@ -47,7 +39,8 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     /// <param name="options">Producer options</param>
     /// <param name="serializer">Optional event serializer. Will use the default instance if missing.</param>
     /// <param name="log">Optional logger instance</param>
-    public GooglePubSubProducer(PubSubProducerOptions options, IEventSerializer? serializer = null, ILogger<GooglePubSubProducer>? log = null) : base(TracingOptions) {
+    public GooglePubSubProducer(PubSubProducerOptions options, IEventSerializer? serializer = null, ILogger<GooglePubSubProducer>? log = null)
+        : base(TracingOptions) {
         Ensure.NotNull(options);
 
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
@@ -67,6 +60,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
 
     public Task StartAsync(CancellationToken cancellationToken = default) {
         Ready = true;
+
         return Task.CompletedTask;
     }
 
@@ -75,11 +69,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
         await Task.WhenAll(_clientCache.GetAllClients().Select(x => x.ShutdownAsync(cancellationToken))).NoContext();
     }
 
-    static readonly ProducerTracingOptions TracingOptions = new() {
-        MessagingSystem  = "google-pubsub",
-        DestinationKind  = "topc",
-        ProduceOperation = "publish"
-    };
+    readonly static ProducerTracingOptions TracingOptions = new() { MessagingSystem = "google-pubsub", DestinationKind = "topc", ProduceOperation = "publish" };
 
     readonly ILogger<GooglePubSubProducer>? _log;
 
@@ -95,8 +85,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
             try {
                 await client.PublishAsync(CreateMessage(x, options)).NoContext();
                 await x.Ack<GooglePubSubProducer>().NoContext();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _log?.LogError(e, "Failed to produce to Google PubSub");
                 await x.Nack<GooglePubSubProducer>("Failed to produce to Google PubSub", e).NoContext();
             }
@@ -112,9 +101,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
             Data        = ByteString.CopyFrom(payload),
             OrderingKey = options?.OrderingKey ?? "",
             Attributes = {
-                { _attributes.ContentType, contentType },
-                { _attributes.EventType, eventType },
-                { _attributes.MessageId, message.MessageId.ToString() }
+                { _attributes.ContentType, contentType }, { _attributes.EventType, eventType }, { _attributes.MessageId, message.MessageId.ToString() }
             },
         };
 
@@ -129,9 +116,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
         var attrs = options?.AddAttributes?.Invoke(message);
 
         if (attrs != null) {
-            foreach (var (key, value) in attrs) {
-                psm.Attributes.Add(key, value);
-            }
+            foreach (var (key, value) in attrs) { psm.Attributes.Add(key, value); }
         }
 
         return psm;

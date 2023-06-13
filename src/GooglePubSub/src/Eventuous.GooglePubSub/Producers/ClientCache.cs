@@ -26,6 +26,7 @@ class ClientCache {
 
         client = await CreateTopicAndClient(topic, cancellationToken).NoContext();
         _clients.TryAdd(topic, client);
+
         return client;
     }
 
@@ -37,18 +38,12 @@ class ClientCache {
         builder.TopicName = topicName;
 
         if (_options.CreateTopic) {
-            await PubSub.CreateTopic(
-                    topicName,
-                    builder.EmulatorDetection,
-                    (msg, t) => _log?.LogInformation("{Message}: {Topic}", msg, t),
-                    cancellationToken
-                )
+            await PubSub.CreateTopic(topicName, builder.EmulatorDetection, (msg, t) => _log?.LogInformation("{Message}: {Topic}", msg, t), cancellationToken)
                 .NoContext();
         }
 
         return await builder.BuildAsync(cancellationToken).NoContext();
     }
 
-    public IEnumerable<PublisherClient> GetAllClients()
-        => _clients.Values;
+    public IEnumerable<PublisherClient> GetAllClients() => _clients.Values;
 }
