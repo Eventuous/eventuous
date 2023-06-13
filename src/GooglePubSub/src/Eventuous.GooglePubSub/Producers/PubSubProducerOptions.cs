@@ -1,10 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Grpc.Core;
-using static Google.Cloud.PubSub.V1.PublisherClient;
-
-namespace Eventuous.GooglePubSub.Producers; 
+namespace Eventuous.GooglePubSub.Producers;
 
 [PublicAPI]
 public class PubSubProducerOptions {

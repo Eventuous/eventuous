@@ -10,6 +10,7 @@ namespace Microsoft.AspNetCore.Builder;
 public static class EndpointMappingExtensions {
     public static WebApplication MapCloudRunPubSubSubscription(this WebApplication app, string path = "/") {
         CloudRunPubSubSubscription.MapSubscription(app, path);
+
         return app;
     }
 }
