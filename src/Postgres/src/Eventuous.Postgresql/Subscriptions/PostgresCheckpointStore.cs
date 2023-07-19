@@ -12,14 +12,17 @@ using Extensions;
 
 public class PostgresCheckpointStoreOptions {
     // ReSharper disable once ConvertToPrimaryConstructor
-    public PostgresCheckpointStoreOptions(string schema = Postgresql.Schema.DefaultSchema)
+    public PostgresCheckpointStoreOptions(string schema)
         => Schema = schema;
+
+    public PostgresCheckpointStoreOptions() {
+    }
 
     /// <summary>
     /// Override the default schema name.
     /// The property is mutable to allow using ASP.NET Core configuration.
     /// </summary>
-    public string Schema { get; set; }
+    public string Schema { get; set; } = Postgresql.Schema.DefaultSchema;
 }
 
 /// <summary>
