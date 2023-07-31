@@ -76,6 +76,8 @@ csharp_empty_block_style = together
 csharp_wrap_parameters_style = chop_if_long
 csharp_max_formal_parameters_on_line = 5
 csharp_place_constructor_initializer_on_same_line = false
+csharp_place_simple_initializer_on_single_line = true
+csharp_max_initializer_elements_on_line = 0
 
 resharper_max_attribute_length_for_same_line = 80
 resharper_nested_ternary_style = expanded
