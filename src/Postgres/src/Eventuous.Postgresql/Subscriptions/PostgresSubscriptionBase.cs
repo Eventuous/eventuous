@@ -83,9 +83,8 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
                 retryDelay *= 2;
             }
             catch (Exception e) {
-                IsDropped = true;
-                Log.WarnLog?.Log(e, "Dropped");
-                throw;
+                Dropped(DropReason.ServerError, e);
+                break;
             }
         }
     }

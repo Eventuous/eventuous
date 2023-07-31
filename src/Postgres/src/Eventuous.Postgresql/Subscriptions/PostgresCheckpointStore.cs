@@ -11,8 +11,13 @@ namespace Eventuous.Postgresql.Subscriptions;
 using Extensions;
 
 public class PostgresCheckpointStoreOptions {
+    public PostgresCheckpointStoreOptions() 
+        : this(Postgresql.Schema.DefaultSchema)
+    {
+    }
+
     // ReSharper disable once ConvertToPrimaryConstructor
-    public PostgresCheckpointStoreOptions(string schema = Postgresql.Schema.DefaultSchema)
+    public PostgresCheckpointStoreOptions(string schema)
         => Schema = schema;
 
     /// <summary>
