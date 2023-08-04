@@ -33,7 +33,7 @@ public class InsidePeek {
 
         var cl = assembly
             .ExportedTypes
-            .Where(x => DeepBaseType(x, aggregateType))
+            .Where(x => DeepBaseType(x, aggregateType) && !x.IsAbstract)
             .ToList();
 
         var reg = _registry._registry;
