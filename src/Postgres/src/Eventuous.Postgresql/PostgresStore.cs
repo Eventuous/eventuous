@@ -11,19 +11,16 @@ using Microsoft.Extensions.Options;
 
 namespace Eventuous.Postgresql;
 
-public class PostgresStoreOptions {
+public class PostgresStoreOptions(string schema) {
     // ReSharper disable once ConvertToPrimaryConstructor
     public PostgresStoreOptions()
-        => Schema = Postgresql.Schema.DefaultSchema;
-
-    public PostgresStoreOptions(string schema)
-        => Schema = schema;
+        : this(Postgresql.Schema.DefaultSchema) { }
 
     /// <summary>
     /// Override the default schema name.
     /// The property is mutable to allow using ASP.NET Core configuration.
     /// </summary>
-    public string Schema { get; set; }
+    public string Schema { get; set; } = schema;
 }
 
 public class PostgresStore : IEventStore {
@@ -40,13 +37,6 @@ public class PostgresStore : IEventStore {
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         _dataSource     = Ensure.NotNull(dataSource, "Data Source");
     }
-
-    public PostgresStore(
-        NpgsqlDataSource               dataSource,
-        IOptions<PostgresStoreOptions> options,
-        IEventSerializer?              serializer     = null,
-        IMetadataSerializer?           metaSerializer = null
-    ) : this(dataSource, options.Value, serializer, metaSerializer) { }
 
     const string ContentType = "application/json";
 
