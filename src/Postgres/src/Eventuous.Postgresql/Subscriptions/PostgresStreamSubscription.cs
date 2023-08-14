@@ -69,4 +69,9 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
         => EventPosition.FromContext(context);
 }
 
-public record PostgresStreamSubscriptionOptions(StreamName Stream) : PostgresSubscriptionBaseOptions;
+public record PostgresStreamSubscriptionOptions : PostgresSubscriptionBaseOptions {
+    /// <summary>
+    /// Stream name to subscribe for
+    /// </summary>
+    public StreamName Stream { get; set; }
+}
