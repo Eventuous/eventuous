@@ -108,7 +108,7 @@ public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDo
 
         var update = updateTask == NoOp
             ? null
-            : updateTask.IsCompleted
+            : updateTask.IsCompletedSuccessfully
                 ? updateTask.Result
                 : await updateTask.NoContext();
 
@@ -118,7 +118,7 @@ public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDo
 
         var task = update.Execute(Collection, context.CancellationToken);
 
-        if (!task.IsCompleted) await task.NoContext();
+        if (!task.IsCompletedSuccessfully) await task.NoContext();
         return EventHandlingStatus.Success;
     }
 

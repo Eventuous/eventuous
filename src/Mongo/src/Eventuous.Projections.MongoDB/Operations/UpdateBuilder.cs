@@ -9,6 +9,7 @@ using Tools;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class UpdateOneBuilder : UpdateBuilder<UpdateOneBuilder>, IMongoProjectorBuilder {
+        [PublicAPI]
         public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId)
             => Id(x => getId(x.Stream));
 
@@ -74,6 +75,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return Self;
         }
 
+        [PublicAPI]
         public TBuilder Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter) {
             _filter.Filter(filter);
             return Self;
@@ -84,6 +86,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return Self;
         }
 
+        [PublicAPI]
         public TBuilder Update(BuildUpdateFromEventAsync<TEvent, T> buildUpdate) {
             _buildUpdate = (ctx, update) => buildUpdate(ctx.Message, update);
             return Self;
@@ -99,6 +102,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return Self;
         }
 
+        [PublicAPI]
         public TBuilder Configure(Action<UpdateOptions> configure) {
             _configureOptions = configure;
             return Self;

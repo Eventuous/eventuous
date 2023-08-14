@@ -115,7 +115,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             try {
                 var t = getEndOfStream(cts.Token);
 
-                var endOfStream = t.IsCompleted ? t.Result : t.NoContext().GetAwaiter().GetResult();
+                var endOfStream = t.IsCompletedSuccessfully ? t.Result : t.NoContext().GetAwaiter().GetResult();
                 streams[endOfStream.SubscriptionId] = endOfStream;
                 var lastProcessed = _checkpointMetrics.GetLastCommitPosition(endOfStream.SubscriptionId);
                 return (endOfStream, lastProcessed);

@@ -12,10 +12,11 @@ using static Tracing.Constants.Components;
 public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
     const string Category = "persistence";
 
-    public static readonly string MeterName = EventuousDiagnostics.GetMeterName(Category);
+    readonly static string MeterName = EventuousDiagnostics.GetMeterName(Category);
 
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
-    public const string OperationTag = "operation";
+
+    const string OperationTag = "operation";
 
     readonly Meter                                     _meter;
     readonly MetricsListener<EventStoreMetricsContext> _listener;
@@ -25,17 +26,9 @@ public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
     public PersistenceMetrics() {
         _meter = EventuousDiagnostics.GetMeter(MeterName);
 
-        var duration = _meter.CreateHistogram<double>(
-            EventStore,
-            "ms",
-            "Event store operation duration, milliseconds"
-        );
+        var duration = _meter.CreateHistogram<double>(EventStore, "ms", "Event store operation duration, milliseconds");
 
-        var errorCount = _meter.CreateCounter<long>(
-            $"{EventStore}.errors",
-            "errors",
-            "Number of failed event store operations"
-        );
+        var errorCount = _meter.CreateCounter<long>($"{EventStore}.errors", "errors", "Number of failed event store operations");
 
         _listener = new MetricsListener<EventStoreMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
@@ -49,8 +42,7 @@ public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
         _meter.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags)
-        => _customTags = customTags.ToArray();
+    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
 }
 
 record EventStoreMetricsContext(string Operation);
