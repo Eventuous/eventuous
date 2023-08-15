@@ -18,16 +18,13 @@ public static partial class ServiceCollectionExtensions {
     /// <returns></returns>
     public static IServiceCollection AddAggregateStore<T>(this IServiceCollection services) where T : class, IEventStore {
         services.TryAddSingleton<AggregateFactoryRegistry>();
+        services.TryAddSingleton<T>();
 
-        if (EventuousDiagnostics.Enabled) {
-            services.TryAddSingleton<T>();
-            services.TryAddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>()));
-        }
-        else {
-            services.TryAddSingleton<IEventStore, T>();
-        }
+        if (EventuousDiagnostics.Enabled) { services.TryAddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>())); }
+        else { services.TryAddSingleton<IEventStore>(sp => sp.GetRequiredService<T>()); }
 
         services.AddSingleton<IAggregateStore, AggregateStore>();
+
         return services;
     }
 
@@ -45,24 +42,22 @@ public static partial class ServiceCollectionExtensions {
             services.TryAddSingleton(getService);
             services.TryAddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>()));
         }
-        else {
-            services.TryAddSingleton<IEventStore>(getService);
-        }
+        else { services.TryAddSingleton<IEventStore>(getService); }
 
         services.AddSingleton<IAggregateStore, AggregateStore>();
+
         return services;
     }
 
-    public static IServiceCollection AddAggregateStore<T, TArchive>(this IServiceCollection services) where T : class, IEventStore where TArchive : class, IEventReader {
+    public static IServiceCollection AddAggregateStore<T, TArchive>(this IServiceCollection services)
+        where T : class, IEventStore where TArchive : class, IEventReader {
         services.TryAddSingleton<AggregateFactoryRegistry>();
 
         if (EventuousDiagnostics.Enabled) {
             services.TryAddSingleton<T>();
             services.TryAddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>()));
         }
-        else {
-            services.TryAddSingleton<IEventStore, T>();
-        }
+        else { services.TryAddSingleton<IEventStore, T>(); }
 
         services.TryAddSingleton<TArchive>();
         services.AddSingleton<IAggregateStore, AggregateStore<TArchive>>();
@@ -81,9 +76,7 @@ public static partial class ServiceCollectionExtensions {
             services.TryAddSingleton<T>();
             services.TryAddSingleton(sp => TracedEventReader.Trace(sp.GetRequiredService<T>()));
         }
-        else {
-            services.TryAddSingleton<IEventReader, T>();
-        }
+        else { services.TryAddSingleton<IEventReader, T>(); }
 
         return services;
     }
@@ -100,9 +93,7 @@ public static partial class ServiceCollectionExtensions {
             services.TryAddSingleton(getService);
             services.TryAddSingleton(sp => TracedEventReader.Trace(sp.GetRequiredService<T>()));
         }
-        else {
-            services.TryAddSingleton<IEventReader>(getService);
-        }
+        else { services.TryAddSingleton<IEventReader>(getService); }
 
         return services;
     }
@@ -118,9 +109,7 @@ public static partial class ServiceCollectionExtensions {
             services.TryAddSingleton<T>();
             services.TryAddSingleton(sp => TracedEventWriter.Trace(sp.GetRequiredService<T>()));
         }
-        else {
-            services.TryAddSingleton<IEventWriter, T>();
-        }
+        else { services.TryAddSingleton<IEventWriter, T>(); }
 
         return services;
     }
@@ -137,9 +126,7 @@ public static partial class ServiceCollectionExtensions {
             services.TryAddSingleton(getService);
             services.TryAddSingleton(sp => TracedEventWriter.Trace(sp.GetRequiredService<T>()));
         }
-        else {
-            services.TryAddSingleton<IEventWriter>(getService);
-        }
+        else { services.TryAddSingleton<IEventWriter>(getService); }
 
         return services;
     }
@@ -172,7 +159,8 @@ public static partial class ServiceCollectionExtensions {
     /// which implements both <see cref="IEventReader"/> and <see cref="IEventWriter"/></param>
     /// <typeparam name="T">Implementation of <see cref="IEventWriter"/></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddEventReaderWriter<T>(this IServiceCollection services, Func<IServiceProvider, T> getService) where T : class, IEventWriter, IEventReader {
+    public static IServiceCollection AddEventReaderWriter<T>(this IServiceCollection services, Func<IServiceProvider, T> getService)
+        where T : class, IEventWriter, IEventReader {
         if (EventuousDiagnostics.Enabled) {
             services.TryAddSingleton(getService);
             services.TryAddSingleton(sp => TracedEventReader.Trace(sp.GetRequiredService<T>()));

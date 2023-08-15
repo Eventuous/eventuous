@@ -7,8 +7,8 @@ using System.Reflection;
 namespace Eventuous.Diagnostics;
 
 public static class EventuousDiagnostics {
-    static readonly AssemblyName AssemblyName = typeof(EventuousDiagnostics).Assembly.GetName();
-    static readonly Version?     Version      = AssemblyName.Version;
+    readonly static AssemblyName AssemblyName = typeof(EventuousDiagnostics).Assembly.GetName();
+    readonly static Version?     Version      = AssemblyName.Version;
 
     static EventuousDiagnostics() => Enabled = Environment.GetEnvironmentVariable("EVENTUOUS_DISABLE_DIAGS") != "1";
 
@@ -36,7 +36,12 @@ public static class EventuousDiagnostics {
         return combinedTags;
     }
 
-    public static bool Enabled { get; }
+    public static bool Enabled { get; private set; }
+
+    /// <summary>
+    /// Allows disabling the diagnostics from code. Normally, you disable it by setting the environment variable EVENTUOUS_DISABLE_DIAGS=1
+    /// </summary>
+    public static void Disable() => Enabled = false;
 
     public static ActivitySource ActivitySource {
         get {
