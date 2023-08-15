@@ -7,15 +7,15 @@ using Eventuous.Diagnostics.Metrics;
 namespace Eventuous.Diagnostics.Tracing;
 
 public abstract class BaseTracer {
-    protected readonly DiagnosticSource _metricsSource = new DiagnosticListener(PersistenceMetrics.ListenerName);
+    protected readonly DiagnosticSource MetricsSource = new DiagnosticListener(PersistenceMetrics.ListenerName);
 
-    protected static readonly KeyValuePair<string, object?>[] DefaultTags = EventuousDiagnostics.Tags
+    static readonly KeyValuePair<string, object?>[] DefaultTags = EventuousDiagnostics.Tags
         .Concat(new KeyValuePair<string, object?>[] { new(TelemetryTags.Db.System, "eventstore") })
         .ToArray();
 
     protected async Task<T> Trace<T>(StreamName stream, string operation, Func<Task<T>> task) {
         using var activity = StartActivity(stream, operation);
-        using var measure  = Measure.Start(_metricsSource, new EventStoreMetricsContext(operation));
+        using var measure  = Measure.Start(MetricsSource, new EventStoreMetricsContext(operation));
 
         try {
             var result = await task().NoContext();
@@ -31,7 +31,7 @@ public abstract class BaseTracer {
 
     protected async Task Trace(StreamName stream, string operation, Func<Task> task) {
         using var activity = StartActivity(stream, operation);
-        using var measure  = Measure.Start(_metricsSource, new EventStoreMetricsContext(operation));
+        using var measure  = Measure.Start(MetricsSource, new EventStoreMetricsContext(operation));
 
         try {
             await task().NoContext();

@@ -3,6 +3,4 @@
 
 namespace Eventuous;
 
-public class MetadataDeserializationException : Exception {
-    public MetadataDeserializationException(Exception inner) : base("Failed to deserialize metadata", inner) { }
-}
+public class MetadataDeserializationException(Exception inner) : Exception("Failed to deserialize metadata", inner);

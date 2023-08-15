@@ -20,17 +20,12 @@ public abstract class MongoProjection<T> : MongoProjector<T> where T : Projected
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [UsedImplicitly]
-public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDocument {
+public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typeMap = null) : BaseEventHandler where T : ProjectedDocument {
     [PublicAPI]
-    protected IMongoCollection<T> Collection { get; }
+    protected IMongoCollection<T> Collection { get; } = Ensure.NotNull<IMongoDatabase>(database).GetDocumentCollection<T>();
 
     readonly Dictionary<Type, ProjectUntypedEvent> _handlers = new();
-    readonly TypeMapper                            _map;
-
-    protected MongoProjector(IMongoDatabase database, TypeMapper? typeMap = null) {
-        Collection = Ensure.NotNull(database).GetDocumentCollection<T>();
-        _map       = typeMap ?? TypeMap.Instance;
-    }
+    readonly TypeMapper                            _map      = typeMap ?? TypeMap.Instance;
 
     /// <summary>
     /// Register a handler for a particular event type
@@ -130,7 +125,7 @@ public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDo
         => GetUpdate(context.Message!, context.StreamPosition);
 
     [PublicAPI]
-    protected static readonly ValueTask<MongoProjectOperation<T>> NoOp = new((MongoProjectOperation<T>)null!);
+    protected readonly static ValueTask<MongoProjectOperation<T>> NoOp = new((MongoProjectOperation<T>)null!);
 
     delegate ValueTask<MongoProjectOperation<T>> ProjectUntypedEvent(IMessageConsumeContext evt);
 }

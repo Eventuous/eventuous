@@ -12,28 +12,25 @@ namespace Eventuous.SqlServer.Subscriptions;
 
 using Extensions;
 
-public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T> where T : SqlServerSubscriptionBaseOptions {
-    readonly IMetadataSerializer     _metaSerializer;
-    readonly CancellationTokenSource _cts = new();
-
-    protected Schema                 Schema        { get; }
-    protected GetSqlServerConnection GetConnection { get; }
-
-    protected SqlServerSubscriptionBase(
+public abstract class SqlServerSubscriptionBase<T>(
         GetSqlServerConnection getConnection,
         T                      options,
         ICheckpointStore       checkpointStore,
         ConsumePipe            consumePipe,
         ILoggerFactory?        loggerFactory
-    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
-        Schema          = new Schema(options.Schema);
-        GetConnection   = Ensure.NotNull(getConnection, "Connection factory");
-        _metaSerializer = DefaultMetadataSerializer.Instance;
-    }
+    )
+    : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
+    where T : SqlServerSubscriptionBaseOptions {
+    readonly IMetadataSerializer     _metaSerializer = DefaultMetadataSerializer.Instance;
+    readonly CancellationTokenSource _cts            = new();
+
+    protected Schema                 Schema        { get; } = new(options.Schema);
+    protected GetSqlServerConnection GetConnection { get; } = Ensure.NotNull<GetSqlServerConnection>(getConnection, "Connection factory");
 
     async Task<SqlConnection> OpenConnection(CancellationToken cancellationToken) {
         var connection = GetConnection();
         await connection.OpenAsync(cancellationToken).NoContext();
+
         return connection;
     }
 
@@ -49,8 +46,7 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
         try {
             _cts.Cancel();
             if (_runner != null) await _runner.NoContext();
-        }
-        catch (OperationCanceledException) {
+        } catch (OperationCanceledException) {
             // Nothing to do
         }
     }
@@ -77,16 +73,14 @@ public abstract class SqlServerSubscriptionBase<T> : EventSubscriptionWithCheckp
                     await HandleInternal(ToConsumeContext(persistedEvent, cancellationToken)).NoContext();
                     start = MoveStart(persistedEvent);
                 }
-            }
-            catch (OperationCanceledException) {
+            } catch (OperationCanceledException) {
                 // Nothing to do
-            }
-            catch (SqlException e) when (TransientErrorNumbers.Contains(e.Number)) {
+            } catch (SqlException e) when (TransientErrorNumbers.Contains(e.Number)) {
                 // Try again
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 IsDropped = true;
                 Log.WarnLog?.Log(e, "Dropped");
+
                 throw;
             }
         }

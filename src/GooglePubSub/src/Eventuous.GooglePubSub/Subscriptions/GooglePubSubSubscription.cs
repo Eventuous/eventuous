@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -79,6 +80,9 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
         _subscriberTask = _client.StartAsync(Handle);
 
+        return;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
             var eventType   = msg.Attributes[Options.Attributes.EventType];
             var contentType = msg.Attributes[Options.Attributes.ContentType];

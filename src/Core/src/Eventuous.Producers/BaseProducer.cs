@@ -40,6 +40,8 @@ public abstract class BaseProducer<TProduceOptions> : IEventProducer<TProduceOpt
 
         await ProduceMessages(stream, traced.msgs, options, cancellationToken).NoContext();
 
+        return;
+
         (Activity? act, ProducedMessage[] msgs) ForOne() {
             var (act, producedMessage) = ProducerActivity.Start(messagesArray[0], DefaultTags);
             return (act?.Start(), new[] { producedMessage });

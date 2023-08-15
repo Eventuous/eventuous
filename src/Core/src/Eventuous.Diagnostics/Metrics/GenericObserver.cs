@@ -3,18 +3,13 @@
 
 namespace Eventuous.Diagnostics.Metrics;
 
-public class GenericObserver<T> : IObserver<T> {
-    public GenericObserver(Action<T>? onNext, Action? onCompleted = null) {
-        _onNext      = onNext ?? new Action<T>(_ => { });
-        _onCompleted = onCompleted ?? new Action(() => { });
-    }
-
+class GenericObserver<T>(Action<T>? onNext, Action? onCompleted = null) : IObserver<T> {
     public void OnCompleted() => _onCompleted();
 
     public void OnError(Exception error) { }
 
     public void OnNext(T value) => _onNext(value);
 
-    readonly Action<T> _onNext;
-    readonly Action    _onCompleted;
+    readonly Action<T> _onNext      = onNext      ?? new Action<T>(_ => { });
+    readonly Action    _onCompleted = onCompleted ?? new Action(() => { });
 }

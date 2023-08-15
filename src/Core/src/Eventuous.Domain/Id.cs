@@ -5,7 +5,8 @@ namespace Eventuous;
 
 [Obsolete("Use Id instead")]
 public abstract record AggregateId : Id {
-    protected AggregateId(string value) : base(value) { }
+    protected AggregateId(string value)
+        : base(value) { }
 }
 
 [PublicAPI]
@@ -22,8 +23,7 @@ public abstract record Id {
 
     public sealed override string ToString() => Value;
 
-    public static implicit operator string(Id? id)
-        => id?.ToString() ?? throw new Exceptions.InvalidIdException(typeof(Id));
+    public static implicit operator string(Id? id) => id?.ToString() ?? throw new Exceptions.InvalidIdException(typeof(Id));
 
     public void Deconstruct(out string value) => value = Value;
 }

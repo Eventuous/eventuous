@@ -10,7 +10,7 @@ namespace Eventuous.Diagnostics;
 using static Tracing.Constants.Components;
 
 public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
-    public readonly static string MeterName = EventuousDiagnostics.GetMeterName(Category);
+    public static readonly string MeterName = EventuousDiagnostics.GetMeterName(Category);
 
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 

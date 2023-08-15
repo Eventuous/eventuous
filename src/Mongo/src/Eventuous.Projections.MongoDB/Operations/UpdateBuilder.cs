@@ -14,7 +14,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => Id(x => getId(x.Stream));
 
         public UpdateOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
-            _filter.Id(getId);
+            FilterBuilder.Id(getId);
             return this;
         }
 
@@ -25,12 +25,12 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => GetHandler(
                 async (ctx, collection, token) => {
                     var options = new UpdateOptions { IsUpsert = true };
-                    _configureOptions?.Invoke(options);
+                    ConfigureOptions?.Invoke(options);
                     var update = await GetUpdate(ctx, Builders<T>.Update);
 
                     await collection
                         .UpdateOneAsync(
-                            _filter.GetFilter(ctx),
+                            FilterBuilder.GetFilter(ctx),
                             update
                                 .Set(x => x.StreamPosition, ctx.StreamPosition)
                                 .Set(x => x.Position, ctx.GlobalPosition),
@@ -46,11 +46,11 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => GetHandler(
                 async (ctx, collection, token) => {
                     var options = new UpdateOptions { IsUpsert = true };
-                    _configureOptions?.Invoke(options);
+                    ConfigureOptions?.Invoke(options);
                     var update = await GetUpdate(ctx, Builders<T>.Update).NoContext();
 
                     await collection.UpdateManyAsync(
-                            _filter.GetFilter(ctx),
+                            FilterBuilder.GetFilter(ctx),
                             update
                                 .Set(x => x.Position, ctx.GlobalPosition)
                                 .Set(x => x.StreamPosition, ctx.StreamPosition),
@@ -63,21 +63,21 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
     }
 
     public abstract class UpdateBuilder<TBuilder> where TBuilder : UpdateBuilder<TBuilder> {
-        protected readonly FilterBuilder          _filter = new();
-        protected          Action<UpdateOptions>? _configureOptions;
+        protected readonly FilterBuilder          FilterBuilder = new();
+        protected          Action<UpdateOptions>? ConfigureOptions;
 
         BuildUpdateAsync<TEvent, T>? _buildUpdate;
 
         protected BuildUpdateAsync<TEvent, T> GetUpdate => Ensure.NotNull(_buildUpdate, "Update function");
 
         public TBuilder Filter(BuildFilter<TEvent, T> buildFilter) {
-            _filter.Filter(buildFilter);
+            FilterBuilder.Filter(buildFilter);
             return Self;
         }
 
         [PublicAPI]
         public TBuilder Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter) {
-            _filter.Filter(filter);
+            FilterBuilder.Filter(filter);
             return Self;
         }
 
@@ -104,7 +104,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         [PublicAPI]
         public TBuilder Configure(Action<UpdateOptions> configure) {
-            _configureOptions = configure;
+            ConfigureOptions = configure;
             return Self;
         }
 

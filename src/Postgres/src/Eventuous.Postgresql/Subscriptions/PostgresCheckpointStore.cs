@@ -11,14 +11,11 @@ namespace Eventuous.Postgresql.Subscriptions;
 using Extensions;
 
 public class PostgresCheckpointStoreOptions {
-    public PostgresCheckpointStoreOptions() 
-        : this(Postgresql.Schema.DefaultSchema)
-    {
-    }
+    public PostgresCheckpointStoreOptions()
+        : this(Postgresql.Schema.DefaultSchema) { }
 
     // ReSharper disable once ConvertToPrimaryConstructor
-    public PostgresCheckpointStoreOptions(string schema)
-        => Schema = schema;
+    public PostgresCheckpointStoreOptions(string schema) => Schema = schema;
 
     /// <summary>
     /// Override the default schema name.
@@ -48,40 +45,38 @@ public class PostgresCheckpointStore : ICheckpointStore {
     }
 
     [PublicAPI]
-    public PostgresCheckpointStore(
-        NpgsqlDataSource                          dataSource,
-        IOptions<PostgresCheckpointStoreOptions>? options,
-        ILoggerFactory?                           loggerFactory
-    ) : this(dataSource, options?.Value?.Schema ?? Schema.DefaultSchema, loggerFactory) { }
+    public PostgresCheckpointStore(NpgsqlDataSource dataSource, IOptions<PostgresCheckpointStoreOptions>? options, ILoggerFactory? loggerFactory)
+        : this(dataSource, options?.Value?.Schema ?? Schema.DefaultSchema, loggerFactory) { }
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, _loggerFactory);
 
-        var checkpoint = await GetCheckpoint().NoContext();
-        if (!checkpoint.IsEmpty) return checkpoint;
+        var (checkpoint, loaded) = await GetCheckpoint().NoContext();
+
+        if (loaded) return checkpoint;
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
         await using var add        = GetCheckpointCommand(connection, _addCheckpointSql, checkpointId);
         await add.ExecuteNonQueryAsync(cancellationToken).NoContext();
         Logger.Current.CheckpointLoaded(this, checkpoint);
+
         return checkpoint;
 
-        async Task<Checkpoint> GetCheckpoint() {
+        async Task<(Checkpoint Checkpoint, bool Loaded)> GetCheckpoint() {
             await using var c   = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
             await using var cmd = GetCheckpointCommand(c, _getCheckpointSql, checkpointId);
 
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
-            if (!await reader.ReadAsync(cancellationToken).NoContext()) return Checkpoint.Empty(checkpointId);
+            if (!await reader.ReadAsync(cancellationToken).NoContext()) return (Checkpoint.Empty(checkpointId), false);
 
             var hasPosition = !reader.IsDBNull(0);
 
-            checkpoint = hasPosition
-                ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0))
-                : Checkpoint.Empty(checkpointId);
+            checkpoint = hasPosition ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0)) : Checkpoint.Empty(checkpointId);
 
             Logger.Current.CheckpointLoaded(this, checkpoint);
-            return checkpoint;
+
+            return (checkpoint, true);
         }
     }
 
@@ -95,6 +90,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
 
         await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
         Logger.Current.CheckpointStored(this, checkpoint, force);
+
         return checkpoint;
     }
 

@@ -11,21 +11,30 @@ using Eventuous.Postgresql.Extensions;
 namespace Eventuous.Postgresql;
 
 public class PostgresStoreOptions(string schema) {
-    // ReSharper disable once ConvertToPrimaryConstructor
     public PostgresStoreOptions()
         : this(Postgresql.Schema.DefaultSchema) { }
 
     /// <summary>
     /// Override the default schema name.
-    /// The property is mutable to allow using ASP.NET Core configuration.
     /// </summary>
     public string Schema { get; set; } = schema;
+
+    /// <summary>
+    /// PostgreSQL connection string.
+    /// </summary>
+    public string ConnectionString { get; set; } = null!;
+
+    /// <summary>
+    /// Set to true to initialize the database schema on startup. Default is false.
+    /// </summary>
+    public bool InitializeDatabase { get; set; }
 }
 
 public class PostgresStore : IEventStore {
     readonly NpgsqlDataSource    _dataSource;
     readonly IEventSerializer    _serializer;
     readonly IMetadataSerializer _metaSerializer;
+    readonly string              _schemaNema;
 
     public Schema Schema { get; }
 
@@ -36,7 +45,8 @@ public class PostgresStore : IEventStore {
         IMetadataSerializer?  metaSerializer = null
     ) {
         var pgOptions = options ?? new PostgresStoreOptions();
-        Schema = new Schema(pgOptions.Schema);
+        _schemaNema = pgOptions.Schema;
+        Schema      = new Schema(pgOptions.Schema);
 
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
@@ -76,10 +86,17 @@ public class PostgresStore : IEventStore {
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken).NoContext();
 
         await using var cmd = connection.GetCommand(Schema.AppendEvents, transaction)
-            .Add("_stream_name", NpgsqlDbType.Varchar, stream.ToString())
-            .Add("_expected_version", NpgsqlDbType.Integer, expectedVersion.Value)
-            .Add("_created", DateTime.UtcNow)
+                .Add("_stream_name", NpgsqlDbType.Varchar, stream.ToString())
+                .Add("_expected_version", NpgsqlDbType.Integer, expectedVersion.Value)
+                .Add("_created", DateTime.UtcNow)
             .Add("_messages", persistedEvents);
+            // ;
+        // var msg = new NpgsqlParameter {
+        // ParameterName = "_messages",
+        // Value = persistedEvents,
+        // DataTypeName = $"stream_message"
+        // };
+        // cmd.Parameters.Add(msg);
 
         try {
             AppendEventsResult result;

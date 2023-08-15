@@ -14,6 +14,12 @@ public abstract class GenericListener {
     protected GenericListener(string name) {
         var observer = new GenericObserver<KeyValuePair<string, object?>>(OnEvent);
 
+        var newListenerObserver = new GenericObserver<DiagnosticListener>((Action<DiagnosticListener>)OnNewListener);
+
+        _listenerSubscription = DiagnosticListener.AllListeners.Subscribe(newListenerObserver);
+
+        return;
+
         void OnNewListener(DiagnosticListener listener) {
             if (listener.Name != name) return;
 
@@ -23,10 +29,6 @@ public abstract class GenericListener {
                 _networkSubscription = listener.Subscribe(observer);
             }
         }
-
-        var newListenerObserver = new GenericObserver<DiagnosticListener>((Action<DiagnosticListener>)OnNewListener);
-
-        _listenerSubscription = DiagnosticListener.AllListeners.Subscribe(newListenerObserver);
     }
 
     protected abstract void OnEvent(KeyValuePair<string, object?> obj);

@@ -3,17 +3,13 @@
 
 namespace Eventuous;
 
-public class ThrowingCommandService<T, TState, TId> : ICommandService<T, TState, TId>, ICommandService<T>
+public class ThrowingCommandService<T, TState, TId>(ICommandService<T, TState, TId> inner) : ICommandService<T, TState, TId>, ICommandService<T>
     where T : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id {
-    readonly ICommandService<T, TState, TId> _inner;
-
-    public ThrowingCommandService(ICommandService<T, TState, TId> inner) => _inner = inner;
-
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
-        var result = await _inner.Handle(command, cancellationToken);
+        var result = await inner.Handle(command, cancellationToken);
 
         if (result is ErrorResult<TState> error)
             throw error.Exception ?? new ApplicationException($"Error handling command {command}");
@@ -27,7 +23,7 @@ public class ThrowingCommandService<T, TState, TId> : ICommandService<T, TState,
         return result switch {
             OkResult<TState>(var aggregateState, var enumerable, _) => new OkResult(aggregateState, enumerable),
             ErrorResult<TState> error => throw error.Exception
-                                            ?? new ApplicationException($"Error handling command {command}"),
+             ?? new ApplicationException($"Error handling command {command}"),
             _ => throw new ApplicationException("Unknown result type")
         };
     }

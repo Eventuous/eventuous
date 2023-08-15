@@ -7,10 +7,7 @@ using System.Runtime.InteropServices;
 namespace Eventuous;
 
 public class TypeMap<TV> {
-    MapEntry[] _values;
-
-    public TypeMap()
-        => _values = new MapEntry[RecommendedCapacity];
+    MapEntry[] _values = new MapEntry[RecommendedCapacity];
 
     public TypeMap<TV> Add<TK>(TV value) {
         var index = GetIndex<TK>();

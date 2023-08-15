@@ -13,14 +13,9 @@ using Consumers;
 using Context;
 using Filters;
 
-public abstract class SubscriptionBuilder {
-    public string             SubscriptionId { get; }
-    public IServiceCollection Services       { get; }
-
-    protected SubscriptionBuilder(IServiceCollection services, string subscriptionId) {
-        SubscriptionId = subscriptionId;
-        Services       = services;
-    }
+public abstract class SubscriptionBuilder(IServiceCollection services, string subscriptionId) {
+    public string             SubscriptionId { get; } = subscriptionId;
+    public IServiceCollection Services       { get; } = services;
 
     readonly List<ResolveHandler> _handlers = new();
 
@@ -40,6 +35,7 @@ public abstract class SubscriptionBuilder {
         where THandler : class, IEventHandler {
         Services.TryAddSingleton<THandler>();
         AddHandlerResolve(sp => sp.GetRequiredService<THandler>());
+
         return this;
     }
 
@@ -54,6 +50,7 @@ public abstract class SubscriptionBuilder {
         where THandler : class, IEventHandler {
         Services.TryAddSingleton(getHandler);
         AddHandlerResolve(sp => sp.GetRequiredService<THandler>());
+
         return this;
     }
 
@@ -61,15 +58,17 @@ public abstract class SubscriptionBuilder {
         where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         Services.TryAddSingleton<THandler>();
         AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
+
         return this;
     }
 
     public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(
-        Func<IServiceProvider, THandler> getInnerHandler,
-        Func<THandler, TWrappingHandler> getWrappingHandler
-    ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
+            Func<IServiceProvider, THandler> getInnerHandler,
+            Func<THandler, TWrappingHandler> getWrappingHandler
+        ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         Services.TryAddSingleton(getInnerHandler);
         AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
+
         return this;
     }
 
@@ -83,6 +82,7 @@ public abstract class SubscriptionBuilder {
     public SubscriptionBuilder UseConsumer(Func<IServiceProvider, IEventHandler[], IMessageConsumer> getConsumer) {
         Ensure.NotNull(getConsumer);
         ResolveConsumer = sp => getConsumer(sp, ResolveHandlers(sp));
+
         return this;
     }
 
@@ -97,6 +97,7 @@ public abstract class SubscriptionBuilder {
     public SubscriptionBuilder AddConsumeFilterLast<TIn, TOut>(IConsumeFilter<TIn, TOut> filter)
         where TIn : class, IBaseConsumeContext where TOut : class, IBaseConsumeContext {
         Pipe.AddFilterLast(filter);
+
         return this;
     }
 
@@ -111,6 +112,7 @@ public abstract class SubscriptionBuilder {
     public SubscriptionBuilder AddConsumeFilterFirst<TIn, TOut>(IConsumeFilter<TIn, TOut> filter)
         where TIn : class, IBaseConsumeContext where TOut : class, IBaseConsumeContext {
         Pipe.AddFilterFirst(filter);
+
         return this;
     }
 
@@ -118,6 +120,7 @@ public abstract class SubscriptionBuilder {
         => _handlers.Add(
             sp => {
                 var handler = resolveHandler(sp);
+
                 return EventuousDiagnostics.Enabled ? new TracedEventHandler(handler) : handler;
             }
         );
@@ -126,7 +129,8 @@ public abstract class SubscriptionBuilder {
 public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
-    public SubscriptionBuilder(IServiceCollection services, string subscriptionId) : base(services, subscriptionId) {
+    public SubscriptionBuilder(IServiceCollection services, string subscriptionId)
+        : base(services, subscriptionId) {
         ResolveConsumer  = ResolveDefaultConsumer;
         ConfigureOptions = options => options.SubscriptionId = subscriptionId;
     }
@@ -146,6 +150,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     [PublicAPI]
     public SubscriptionBuilder<T, TOptions> Configure(Action<TOptions>? configureOptions) {
         ConfigureOptions = Cfg;
+
         return this;
 
         void Cfg(TOptions options) {
@@ -161,6 +166,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     /// <returns></returns>
     public SubscriptionBuilder<T, TOptions> AddParameterMap<TService>() where TService : class {
         ParametersMap.Add<TService, TService>();
+
         return this;
     }
 
@@ -173,6 +179,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>()
         where TImplementation : class, TService {
         ParametersMap.Add<TService, TImplementation>();
+
         return this;
     }
 
@@ -186,6 +193,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     public SubscriptionBuilder<T, TOptions> AddParameterMap<TService>(Func<IServiceProvider, TService> resolver)
         where TService : class {
         ParametersMap.Add<TService, TService>(resolver);
+
         return this;
     }
 
@@ -200,6 +208,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>(Func<IServiceProvider, TImplementation> resolver)
         where TImplementation : class, TService {
         ParametersMap.Add<TService, TImplementation>(resolver);
+
         return this;
     }
 
@@ -207,11 +216,13 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         if (_resolvedConsumer != null) return _resolvedConsumer;
 
         _resolvedConsumer = ResolveConsumer(sp);
+
         return _resolvedConsumer;
     }
 
     IMessageConsumer ResolveDefaultConsumer(IServiceProvider sp) {
         _resolvedConsumer = new DefaultConsumer(ResolveHandlers(sp));
+
         return _resolvedConsumer;
     }
 
@@ -237,11 +248,15 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
             case > 1: throw new ArgumentOutOfRangeException(typeof(T).Name, "Subscription type must have only one constructor with options argument");
             case 0:
                 constructors = typeof(T).GetConstructors<string>(subscriptionIdParameterName);
+
                 break;
         }
 
         if (constructors.Length == 0) {
-            throw new ArgumentOutOfRangeException(typeof(T).Name, "Subscription type must have at least one constructor with options or subscription id argument");
+            throw new ArgumentOutOfRangeException(
+                typeof(T).Name,
+                "Subscription type must have at least one constructor with options or subscription id argument"
+            );
         }
 
         var (ctor, parameters, parameter) = constructors[0];
@@ -253,6 +268,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         }
 
         _resolvedSubscription = instance;
+
         return instance;
 
         object? CreateArg(ParameterInfo parameterInfo) {
@@ -262,6 +278,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
                 }
 
                 var options = Ensure.NotNull(sp.GetService<IOptionsMonitor<TOptions>>(), typeof(TOptions).Name);
+
                 return options.Get(SubscriptionId);
             }
 

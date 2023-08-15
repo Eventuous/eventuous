@@ -25,7 +25,7 @@ public class TracedEventWriter : BaseTracer, IEventWriter {
     ) {
         using var activity = StartActivity(stream, Operations.AppendEvents);
 
-        using var measure = Measure.Start(_metricsSource, new EventStoreMetricsContext(Operations.AppendEvents));
+        using var measure = Measure.Start(MetricsSource, new EventStoreMetricsContext(Operations.AppendEvents));
 
         var tracedEvents = events
             .Select(x => x with { Metadata = x.Metadata.AddActivityTags(activity) })

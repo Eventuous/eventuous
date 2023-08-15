@@ -12,31 +12,24 @@ using static Diagnostics.ApplicationEventSource;
 /// <typeparam name="TState">The aggregate state type</typeparam>
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 // [PublicAPI]
-public abstract class CommandService<TAggregate, TState, TId>
+public abstract class CommandService<TAggregate, TState, TId>(
+        IAggregateStore           store,
+        AggregateFactoryRegistry? factoryRegistry = null,
+        StreamNameMap?            streamNameMap   = null,
+        TypeMapper?               typeMap         = null
+    )
     : ICommandService<TAggregate, TState, TId>, ICommandService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
     where TId : Id {
     [PublicAPI]
-    protected IAggregateStore Store { get; }
+    protected IAggregateStore Store { get; } = store;
 
-    readonly HandlersMap<TAggregate>  _handlers = new();
-    readonly IdMap<TId>               _idMap    = new();
-    readonly AggregateFactoryRegistry _factoryRegistry;
-    readonly StreamNameMap            _streamNameMap;
-    readonly TypeMapper               _typeMap;
-
-    protected CommandService(
-        IAggregateStore           store,
-        AggregateFactoryRegistry? factoryRegistry = null,
-        StreamNameMap?            streamNameMap   = null,
-        TypeMapper?               typeMap         = null
-    ) {
-        _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
-        _streamNameMap   = streamNameMap   ?? new StreamNameMap();
-        _typeMap         = typeMap         ?? TypeMap.Instance;
-        Store            = store;
-    }
+    readonly HandlersMap<TAggregate>  _handlers        = new();
+    readonly IdMap<TId>               _idMap           = new();
+    readonly AggregateFactoryRegistry _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
+    readonly StreamNameMap            _streamNameMap   = streamNameMap   ?? new StreamNameMap();
+    readonly TypeMapper               _typeMap         = typeMap         ?? TypeMap.Instance;
 
     /// <summary>
     /// Register a handler for a command, which is expected to create a new aggregate instance.
@@ -44,10 +37,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="getId">A function to get the aggregate id from the command</param>
     /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnNew<TCommand>(
-        GetIdFromCommand<TId, TCommand>      getId,
-        ActOnAggregate<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnNew<TCommand>(GetIdFromCommand<TId, TCommand> getId, ActOnAggregate<TAggregate, TCommand> action) where TCommand : class {
         _handlers.AddHandler(ExpectedState.New, action);
         _idMap.AddCommand(getId);
     }
@@ -59,10 +49,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="action">Asynchronous action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnNewAsync<TCommand>(
-        GetIdFromCommand<TId, TCommand>           getId,
-        ActOnAggregateAsync<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnNewAsync<TCommand>(GetIdFromCommand<TId, TCommand> getId, ActOnAggregateAsync<TAggregate, TCommand> action) where TCommand : class {
         _handlers.AddHandler(ExpectedState.New, action);
         _idMap.AddCommand(getId);
     }
@@ -73,10 +60,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="getId">A function to get the aggregate id from the command</param>
     /// <param name="action">Action to be performed on the aggregate, given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnExisting<TCommand>(
-        GetIdFromCommand<TId, TCommand>      getId,
-        ActOnAggregate<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnExisting<TCommand>(GetIdFromCommand<TId, TCommand> getId, ActOnAggregate<TAggregate, TCommand> action) where TCommand : class {
         _handlers.AddHandler(ExpectedState.Existing, action);
         _idMap.AddCommand(getId);
     }
@@ -89,10 +73,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     [PublicAPI]
-    protected void OnExistingAsync<TCommand>(
-        GetIdFromCommand<TId, TCommand>           getId,
-        ActOnAggregateAsync<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnExistingAsync<TCommand>(GetIdFromCommand<TId, TCommand> getId, ActOnAggregateAsync<TAggregate, TCommand> action) where TCommand : class {
         _handlers.AddHandler(ExpectedState.Existing, action);
         _idMap.AddCommand(getId);
     }
@@ -105,10 +86,8 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     [PublicAPI]
-    protected void OnExistingAsync<TCommand>(
-        GetIdFromCommandAsync<TId, TCommand>      getId,
-        ActOnAggregateAsync<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnExistingAsync<TCommand>(GetIdFromCommandAsync<TId, TCommand> getId, ActOnAggregateAsync<TAggregate, TCommand> action)
+        where TCommand : class {
         _handlers.AddHandler(ExpectedState.Existing, action);
         _idMap.AddCommand(getId);
     }
@@ -120,10 +99,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="action">Action to be performed on the aggregate,
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    protected void OnAny<TCommand>(
-        GetIdFromCommand<TId, TCommand>      getId,
-        ActOnAggregate<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnAny<TCommand>(GetIdFromCommand<TId, TCommand> getId, ActOnAggregate<TAggregate, TCommand> action) where TCommand : class {
         _handlers.AddHandler(ExpectedState.Any, action);
         _idMap.AddCommand(getId);
     }
@@ -136,10 +112,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     [PublicAPI]
-    protected void OnAny<TCommand>(
-        GetIdFromCommandAsync<TId, TCommand> getId,
-        ActOnAggregate<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnAny<TCommand>(GetIdFromCommandAsync<TId, TCommand> getId, ActOnAggregate<TAggregate, TCommand> action) where TCommand : class {
         _handlers.AddHandler(ExpectedState.Any, action);
         _idMap.AddCommand(getId);
     }
@@ -152,10 +125,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     [PublicAPI]
-    protected void OnAnyAsync<TCommand>(
-        GetIdFromCommand<TId, TCommand>           getId,
-        ActOnAggregateAsync<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnAnyAsync<TCommand>(GetIdFromCommand<TId, TCommand> getId, ActOnAggregateAsync<TAggregate, TCommand> action) where TCommand : class {
         _handlers.AddHandler(ExpectedState.Any, action);
         _idMap.AddCommand(getId);
     }
@@ -168,10 +138,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// given the aggregate instance and the command</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     [PublicAPI]
-    protected void OnAnyAsync<TCommand>(
-        GetIdFromCommandAsync<TId, TCommand>      getId,
-        ActOnAggregateAsync<TAggregate, TCommand> action
-    ) where TCommand : class {
+    protected void OnAnyAsync<TCommand>(GetIdFromCommandAsync<TId, TCommand> getId, ActOnAggregateAsync<TAggregate, TCommand> action) where TCommand : class {
         _handlers.AddHandler(ExpectedState.Any, action);
         _idMap.AddCommand(getId);
     }
@@ -182,8 +149,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     /// <param name="action">Function, which returns some aggregate instance to store</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     [PublicAPI]
-    protected void OnAsync<TCommand>(ArbitraryActAsync<TCommand> action)
-        where TCommand : class
+    protected void OnAsync<TCommand>(ArbitraryActAsync<TCommand> action) where TCommand : class
         => _handlers.AddHandler<TCommand>(
             new RegisteredHandler<TAggregate>(
                 ExpectedState.Unknown,
@@ -203,6 +169,7 @@ public abstract class CommandService<TAggregate, TState, TId>
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();
             var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
+
             return new ErrorResult<TState>(exception);
         }
 
@@ -211,6 +178,7 @@ public abstract class CommandService<TAggregate, TState, TId>
         if (!hasGetIdFunction || getId == null) {
             Log.CannotCalculateAggregateId<TCommand>();
             var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
+
             return new ErrorResult<TState>(exception);
         }
 
@@ -239,8 +207,7 @@ public abstract class CommandService<TAggregate, TState, TId>
             Log.CommandHandled<TCommand>();
 
             return new OkResult<TState>(result.State, changes, storeResult.GlobalPosition);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Log.ErrorHandlingCommand<TCommand>(e);
 
             return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
@@ -265,7 +232,7 @@ public abstract class CommandService<TAggregate, TState, TId>
     }
 
     public delegate Task<TAggregate> ArbitraryActAsync<in TCommand>(
-        TCommand          command,
-        CancellationToken cancellationToken
-    );
+            TCommand          command,
+            CancellationToken cancellationToken
+        );
 }

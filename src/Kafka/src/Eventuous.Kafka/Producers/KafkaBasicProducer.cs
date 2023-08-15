@@ -43,6 +43,8 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
 
             await ProduceLocal();
 
+            continue;
+
             Task ProduceLocal() => options?.PartitionKey != null ? ProducePartitioned() : ProduceNotPartitioned();
 
             async Task ProducePartitioned() {

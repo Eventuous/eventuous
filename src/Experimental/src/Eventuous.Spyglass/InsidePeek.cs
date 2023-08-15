@@ -36,7 +36,7 @@ public class InsidePeek {
             .Where(x => DeepBaseType(x, aggregateType))
             .ToList();
 
-        var reg = _registry._registry;
+        var reg = _registry.Registry;
 
         foreach (var type in cl) {
             var stateType = GetStateType(type);

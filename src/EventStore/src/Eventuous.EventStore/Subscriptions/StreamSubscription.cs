@@ -1,7 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
@@ -10,12 +9,13 @@ using Eventuous.Tools;
 
 namespace Eventuous.EventStore.Subscriptions;
 
+using Diagnostics;
+
 /// <summary>
 /// Catch-up subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamSubscription
-    : EventStoreCatchUpSubscriptionBase<StreamSubscriptionOptions>, IMeasuredSubscription {
+public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscriptionOptions>, IMeasuredSubscription {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
     /// </summary>
@@ -29,28 +29,29 @@ public class StreamSubscription
     /// <param name="throwOnError"></param>
     /// <param name="loggerFactory"></param>
     public StreamSubscription(
-        EventStoreClient     eventStoreClient,
-        StreamName           streamName,
-        string               subscriptionId,
-        ICheckpointStore     checkpointStore,
-        ConsumePipe          consumerPipe,
-        IEventSerializer?    eventSerializer = null,
-        IMetadataSerializer? metaSerializer  = null,
-        bool                 throwOnError    = false,
-        ILoggerFactory?      loggerFactory   = null
-    ) : this(
-        eventStoreClient,
-        new StreamSubscriptionOptions {
-            StreamName         = streamName,
-            SubscriptionId     = subscriptionId,
-            ThrowOnError       = throwOnError,
-            EventSerializer    = eventSerializer,
-            MetadataSerializer = metaSerializer
-        },
-        checkpointStore,
-        consumerPipe,
-        loggerFactory
-    ) { }
+            EventStoreClient     eventStoreClient,
+            StreamName           streamName,
+            string               subscriptionId,
+            ICheckpointStore     checkpointStore,
+            ConsumePipe          consumerPipe,
+            IEventSerializer?    eventSerializer = null,
+            IMetadataSerializer? metaSerializer  = null,
+            bool                 throwOnError    = false,
+            ILoggerFactory?      loggerFactory   = null
+        )
+        : this(
+            eventStoreClient,
+            new StreamSubscriptionOptions {
+                StreamName         = streamName,
+                SubscriptionId     = subscriptionId,
+                ThrowOnError       = throwOnError,
+                EventSerializer    = eventSerializer,
+                MetadataSerializer = metaSerializer
+            },
+            checkpointStore,
+            consumerPipe,
+            loggerFactory
+        ) { }
 
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
@@ -61,12 +62,13 @@ public class StreamSubscription
     /// <param name="consumePipe"></param>
     /// <param name="loggerFactory"></param>
     public StreamSubscription(
-        EventStoreClient          client,
-        StreamSubscriptionOptions options,
-        ICheckpointStore          checkpointStore,
-        ConsumePipe               consumePipe,
-        ILoggerFactory?           loggerFactory = null
-    ) : base(client, options, checkpointStore, consumePipe, loggerFactory)
+            EventStoreClient          client,
+            StreamSubscriptionOptions options,
+            ICheckpointStore          checkpointStore,
+            ConsumePipe               consumePipe,
+            ILoggerFactory?           loggerFactory = null
+        )
+        : base(client, options, checkpointStore, consumePipe, loggerFactory)
         => Ensure.NotEmptyString(options.StreamName);
 
     /// <summary>
@@ -76,7 +78,8 @@ public class StreamSubscription
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        var fromStream = position == null ? FromStream.Start
+        var fromStream = position == null
+            ? FromStream.Start
             : FromStream.After(StreamPosition.FromInt64((long)position));
 
         Subscription = await EventStoreClient.SubscribeToStreamAsync(
@@ -90,10 +93,9 @@ public class StreamSubscription
             )
             .NoContext();
 
-        async Task HandleEvent(
-            ResolvedEvent     re,
-            CancellationToken ct
-        ) {
+        return;
+
+        async Task HandleEvent(ResolvedEvent re, CancellationToken ct) {
             // Despite ResolvedEvent.Event being not marked as nullable, it returns null for deleted events
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
@@ -105,10 +107,10 @@ public class StreamSubscription
         }
 
         void HandleDrop(
-            global::EventStore.Client.StreamSubscription _,
-            SubscriptionDroppedReason                    reason,
-            Exception?                                   ex
-        )
+                global::EventStore.Client.StreamSubscription _,
+                SubscriptionDroppedReason                    reason,
+                Exception?                                   ex
+            )
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
@@ -149,8 +151,7 @@ public class StreamSubscription
     /// </summary>
     /// <returns></returns>
     public GetSubscriptionEndOfStream GetMeasure()
-        => new StreamSubscriptionMeasure(Options.SubscriptionId, Options.StreamName, EventStoreClient)
-            .GetEndOfStream;
+        => new StreamSubscriptionMeasure(Options.SubscriptionId, Options.StreamName, EventStoreClient).GetEndOfStream;
 
     /// <summary>
     /// Gets position from the context

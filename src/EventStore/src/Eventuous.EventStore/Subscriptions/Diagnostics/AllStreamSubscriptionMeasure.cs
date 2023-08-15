@@ -5,7 +5,7 @@ class AllStreamSubscriptionMeasure : BaseSubscriptionMeasure {
         : base(subscriptionId, "$all", eventStoreClient) { }
 
     protected override IAsyncEnumerable<ResolvedEvent> Read(CancellationToken cancellationToken)
-        => _eventStoreClient.ReadAllAsync(
+        => EventStoreClient.ReadAllAsync(
             Direction.Backwards,
             Position.End,
             1,

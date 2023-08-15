@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Postgresql;
 
@@ -14,8 +15,7 @@ public class Schema {
     /// Instantiate a new Schema object with the specified schema name. Default schema name is "eventuous"
     /// </summary>
     /// <param name="schema"></param>
-    public Schema(string schema = DefaultSchema)
-        => _schema = schema;
+    public Schema(string schema = DefaultSchema) => _schema = schema;
 
     public string StreamMessage       => $"{_schema}.stream_message";
     public string AppendEvents        => $"select * from {_schema}.append_events(@_stream_name, @_expected_version, @_created, @_messages)";
@@ -28,35 +28,35 @@ public class Schema {
     public string AddCheckpointSql    => $"insert into {_schema}.checkpoints (id) values (@checkpointId)";
     public string UpdateCheckpointSql => $"update {_schema}.checkpoints set position=(@position) where id=(@checkpointId)";
 
-    static readonly Assembly Assembly = typeof(Schema).Assembly;
+    readonly static Assembly Assembly = typeof(Schema).Assembly;
 
-    public async Task CreateSchema(NpgsqlDataSource dataSource) {
-        var names = Assembly.GetManifestResourceNames()
-            .Where(x => x.EndsWith(".sql"))
-            .OrderBy(x => x);
+    public async Task CreateSchema(NpgsqlDataSource dataSource, ILogger<Schema> log, CancellationToken cancellationToken = default) {
+        var names = Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".sql")).OrderBy(x => x);
 
-        await using var connection = await dataSource.OpenConnectionAsync().NoContext();
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken).NoContext();
 
-        var transaction = await connection.BeginTransactionAsync().NoContext();
+        var transaction = await connection.BeginTransactionAsync(cancellationToken).NoContext();
 
         foreach (var name in names) {
             await using var stream = Assembly.GetManifestResourceStream(name);
             using var       reader = new StreamReader(stream!);
 
-            var script    = await reader.ReadToEndAsync().NoContext();
+#if NET7_0_OR_GREATER
+            var script = await reader.ReadToEndAsync(cancellationToken).NoContext();
+#else
+            var script = await reader.ReadToEndAsync().NoContext();
+#endif
             var cmdScript = script.Replace("__schema__", _schema);
 
             await using var cmd = new NpgsqlCommand(cmdScript, connection, transaction);
 
-            try {
-                await cmd.ExecuteNonQueryAsync().NoContext();
-            }
-            catch (Exception e) {
-                Console.WriteLine(e);
+            try { await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext(); } catch (Exception e) {
+                log.LogCritical(e, "Unable to initialize the database schema");
+
                 throw;
             }
         }
 
-        await transaction.CommitAsync().NoContext();
+        await transaction.CommitAsync(cancellationToken).NoContext();
     }
 }

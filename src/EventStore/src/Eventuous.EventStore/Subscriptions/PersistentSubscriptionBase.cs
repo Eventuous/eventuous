@@ -99,6 +99,8 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
                 .NoContext();
         }
 
+        return;
+
         void HandleDrop(PersistentSubscription __, SubscriptionDroppedReason reason, Exception? exception)
             => Dropped(EsdbMappings.AsDropReason(reason), exception);
 

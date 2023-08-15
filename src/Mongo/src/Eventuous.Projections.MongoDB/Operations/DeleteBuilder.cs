@@ -13,7 +13,8 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => Id(x => getId(x.Stream));
 
         public DeleteOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
-            _filter.Id(getId);
+            FilterBuilder.Id(getId);
+
             return this;
         }
 
@@ -24,8 +25,9 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => GetHandler(
                 (ctx, collection, token) => {
                     var options = new DeleteOptions();
-                    _configureOptions?.Invoke(options);
-                    return collection.DeleteOneAsync(_filter.GetFilter(ctx), options, token);
+                    ConfigureOptions?.Invoke(options);
+
+                    return collection.DeleteOneAsync(FilterBuilder.GetFilter(ctx), options, token);
                 }
             );
     }
@@ -35,28 +37,32 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => GetHandler(
                 (ctx, collection, token) => {
                     var options = new DeleteOptions();
-                    _configureOptions?.Invoke(options);
-                    return collection.DeleteManyAsync(_filter.GetFilter(ctx), options, token);
+                    ConfigureOptions?.Invoke(options);
+
+                    return collection.DeleteManyAsync(FilterBuilder.GetFilter(ctx), options, token);
                 }
             );
     }
 
     public abstract class DeleteBuilder<TBuilder> where TBuilder : DeleteBuilder<TBuilder> {
-        protected readonly FilterBuilder          _filter = new();
-        protected          Action<DeleteOptions>? _configureOptions;
+        protected readonly FilterBuilder          FilterBuilder = new();
+        protected          Action<DeleteOptions>? ConfigureOptions;
 
         public TBuilder Filter(BuildFilter<TEvent, T> buildFilter) {
-            _filter.Filter(buildFilter);
+            FilterBuilder.Filter(buildFilter);
+
             return Self;
         }
 
         public TBuilder Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter) {
-            _filter.Filter(filter);
+            FilterBuilder.Filter(filter);
+
             return Self;
         }
 
         public TBuilder Configure(Action<DeleteOptions> configure) {
-            _configureOptions = configure;
+            ConfigureOptions = configure;
+
             return Self;
         }
 

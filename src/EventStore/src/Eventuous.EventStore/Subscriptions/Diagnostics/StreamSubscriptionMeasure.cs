@@ -14,7 +14,7 @@ class StreamSubscriptionMeasure : BaseSubscriptionMeasure {
     readonly StreamName _streamName;
 
     protected override IAsyncEnumerable<ResolvedEvent> Read(CancellationToken cancellationToken)
-        => _eventStoreClient.ReadStreamAsync(
+        => EventStoreClient.ReadStreamAsync(
             Direction.Backwards,
             _streamName,
             StreamPosition.End,
