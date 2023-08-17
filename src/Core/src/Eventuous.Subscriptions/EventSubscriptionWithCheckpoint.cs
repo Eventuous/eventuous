@@ -18,7 +18,7 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         int              concurrencyLimit,
         ILoggerFactory?  loggerFactory
     )
-    : EventSubscription<T>(Ensure.NotNull(options), ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) where T : SubscriptionOptions {
+    : EventSubscription<T>(Ensure.NotNull(options), ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) where T : SubscriptionWithCheckpointOptions {
     static bool PipelineIsAsync(ConsumePipe pipe) => pipe.RegisteredFilters.Any(x => x is AsyncHandlingFilter);
 
     // It's not ideal, but for now if there's any filter added on top of the default one,
@@ -26,9 +26,15 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     static ConsumePipe ConfigurePipe(ConsumePipe pipe, int concurrencyLimit)
         => PipelineIsAsync(pipe) ? pipe : pipe.AddFilterFirst(new AsyncHandlingFilter((uint)concurrencyLimit));
 
-    EventPosition?          LastProcessed           { get; set; }
-    CheckpointCommitHandler CheckpointCommitHandler { get; } = new(options.SubscriptionId, checkpointStore, 10, loggerFactory);
-    ICheckpointStore        CheckpointStore         { get; } = Ensure.NotNull<ICheckpointStore>(checkpointStore);
+    EventPosition? LastProcessed { get; set; }
+    CheckpointCommitHandler CheckpointCommitHandler { get; } = new(
+        options.SubscriptionId,
+        checkpointStore,
+        TimeSpan.FromMilliseconds(options.CommitDelayMs),
+        options.BatchSize,
+        loggerFactory
+    );
+    ICheckpointStore CheckpointStore { get; } = Ensure.NotNull<ICheckpointStore>(checkpointStore);
 
     protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
 
@@ -38,6 +44,9 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
             Logger.Current = Log;
             var ctx = new AsyncConsumeContext(context, Ack, Nack);
             await Handler(ctx).NoContext();
+        } catch (OperationCanceledException e) when (context.CancellationToken.IsCancellationRequested) {
+            context.LogContext.MessageHandlingFailed(Options.SubscriptionId, context, e);
+            Dropped(DropReason.Stopped, e);
         } catch (Exception e) {
             context.LogContext.MessageHandlingFailed(Options.SubscriptionId, context, e);
 

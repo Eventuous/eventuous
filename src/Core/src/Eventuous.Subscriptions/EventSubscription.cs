@@ -106,6 +106,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             }
 
             if (context.WasIgnored() && activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.None;
+        } catch (OperationCanceledException e) when (Stopping.IsCancellationRequested) {
+            Log.DebugLog?.Log("Message ignored because subscription is stopping: {Message}", e.Message);
         } catch (Exception e) { context.Nack(SubscriptionId, e); }
 
         if (context.HasFailed()) {

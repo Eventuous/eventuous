@@ -39,11 +39,11 @@ public class PostgresStore : IEventStore {
     public Schema Schema { get; }
 
     public PostgresStore(
-        NpgsqlDataSource      dataSource,
-        PostgresStoreOptions? options,
-        IEventSerializer?     serializer     = null,
-        IMetadataSerializer?  metaSerializer = null
-    ) {
+            NpgsqlDataSource      dataSource,
+            PostgresStoreOptions? options,
+            IEventSerializer?     serializer     = null,
+            IMetadataSerializer?  metaSerializer = null
+        ) {
         var pgOptions = options ?? new PostgresStoreOptions();
         _schemaNema = pgOptions.Schema;
         Schema      = new Schema(pgOptions.Schema);
@@ -75,28 +75,21 @@ public class PostgresStore : IEventStore {
     public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) => throw new NotImplementedException();
 
     public async Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    ) {
+            StreamName                       stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
+        ) {
         var persistedEvents = events.Where(x => x.Payload != null).Select(x => Convert(x)).ToArray();
 
         await using var connection  = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken).NoContext();
 
         await using var cmd = connection.GetCommand(Schema.AppendEvents, transaction)
-                .Add("_stream_name", NpgsqlDbType.Varchar, stream.ToString())
-                .Add("_expected_version", NpgsqlDbType.Integer, expectedVersion.Value)
-                .Add("_created", DateTime.UtcNow)
+            .Add("_stream_name", NpgsqlDbType.Varchar, stream.ToString())
+            .Add("_expected_version", NpgsqlDbType.Integer, expectedVersion.Value)
+            .Add("_created", DateTime.UtcNow)
             .Add("_messages", persistedEvents);
-            // ;
-        // var msg = new NpgsqlParameter {
-        // ParameterName = "_messages",
-        // Value = persistedEvents,
-        // DataTypeName = $"stream_message"
-        // };
-        // cmd.Parameters.Add(msg);
 
         try {
             AppendEventsResult result;
@@ -137,11 +130,11 @@ public class PostgresStore : IEventStore {
     }
 
     public Task TruncateStream(
-        StreamName             stream,
-        StreamTruncatePosition truncatePosition,
-        ExpectedStreamVersion  expectedVersion,
-        CancellationToken      cancellationToken
-    )
+            StreamName             stream,
+            StreamTruncatePosition truncatePosition,
+            ExpectedStreamVersion  expectedVersion,
+            CancellationToken      cancellationToken
+        )
         => throw new NotImplementedException();
 
     public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken)

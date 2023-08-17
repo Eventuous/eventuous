@@ -106,7 +106,7 @@ public abstract class SqlServerSubscriptionBase<T>(
     protected abstract IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken);
 }
 
-public abstract record SqlServerSubscriptionBaseOptions : SubscriptionOptions {
+public abstract record SqlServerSubscriptionBaseOptions : SubscriptionWithCheckpointOptions {
     public string Schema           { get; set; } = "eventuous";
     public int    ConcurrencyLimit { get; set; } = 1;
     public int    MaxPageSize      { get; set; } = 1024;

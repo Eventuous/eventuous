@@ -6,14 +6,14 @@ using Eventuous.TestHelpers;
 
 namespace Eventuous.Tests.EventStore;
 
-public class TracesTests : SubscriptionFixture<TracedHandler>, IDisposable {
+public class TracesTests : SubscriptionFixture<TracedHandler>, IClassFixture<IntegrationFixture>, IDisposable {
     readonly ActivityListener _listener;
 
-    public TracesTests(ITestOutputHelper outputHelper)
-        : base(outputHelper, new TracedHandler(), false) {
+    public TracesTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, new TracedHandler(), false) {
         _listener = new ActivityListener {
             ShouldListenTo = _ => true,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
             ActivityStarted = activity => Log.LogInformation(
                 "Started {Activity} with {Id}, parent {ParentId}",
                 activity.DisplayName,
@@ -34,14 +34,9 @@ public class TracesTests : SubscriptionFixture<TracedHandler>, IDisposable {
 
         await Start();
 
-        var writtenEvent = (await IntegrationFixture.Instance.EventStore.ReadEvents(
-            Stream,
-            StreamReadPosition.Start,
-            1,
-            default
-        ))[0];
+        var writtenEvent = (await IntegrationFixture.EventStore.ReadEvents(Stream, StreamReadPosition.Start, 1, default))[0];
 
-        var meta          = writtenEvent.Metadata;
+        var meta = writtenEvent.Metadata;
         var (traceId, spanId, _) = meta.GetTracingMeta();
 
         traceId.Should().NotBe(RecordedTrace.DefaultTraceId);

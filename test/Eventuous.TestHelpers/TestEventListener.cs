@@ -2,15 +2,9 @@ using System.Diagnostics.Tracing;
 
 namespace Eventuous.TestHelpers;
 
-public sealed class TestEventListener : EventListener {
-    readonly ITestOutputHelper _outputHelper;
-    readonly string[]          _prefixes;
+public sealed class TestEventListener (ITestOutputHelper outputHelper, Action<EventWrittenEventArgs>? act = null, params string[] prefixes): EventListener {
+    readonly string[]          _prefixes = prefixes.Length > 0 ? prefixes : new[] { "OpenTelemetry", "eventuous" };
     readonly List<EventSource> _eventSources = new();
-
-    public TestEventListener(ITestOutputHelper outputHelper, params string[] prefixes) {
-        _outputHelper = outputHelper;
-        _prefixes     = prefixes.Length > 0 ? prefixes : new[] { "OpenTelemetry", "eventuous" };
-    }
 
     protected override void OnEventSourceCreated(EventSource? eventSource) {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
@@ -37,9 +31,10 @@ public sealed class TestEventListener : EventListener {
             message = evt.Message;
         }
 
-        _outputHelper.WriteLine(
+        outputHelper.WriteLine(
             $"{evt.EventSource.Name} - EventId: [{evt.EventId}], EventName: [{evt.EventName}], Message: [{message}]"
         );
+        act?.Invoke(evt);
     }
     #nullable enable
 

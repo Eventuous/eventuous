@@ -3,7 +3,7 @@ version: '3.7'
 services:
   esdb:
     container_name: eventuous-esdb
-    image: ghcr.io/eventstore/eventstore:21.10.0-alpha-arm64v8
+    image: ghcr.io/eventstore/eventstore:22.10.2-alpha-arm64v8
     ports:
       - '2113:2113'
       - '1113:1113'

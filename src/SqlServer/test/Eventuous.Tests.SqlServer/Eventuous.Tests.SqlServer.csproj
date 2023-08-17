@@ -8,6 +8,7 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
         <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
+        <PackageReference Include="Testcontainers.MsSql" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />

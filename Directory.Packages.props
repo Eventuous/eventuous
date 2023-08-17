@@ -45,8 +45,12 @@
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageVersion Include="StackExchange.Redis" Version="2.6.90" />
+    <PackageVersion Include="Testcontainers.EventStoreDb" Version="3.4.0" />
     <PackageVersion Include="Testcontainers.Kafka" Version="3.4.0" />
+    <PackageVersion Include="Testcontainers.MsSql" Version="3.4.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="3.4.0" />
+    <PackageVersion Include="Testcontainers.RabbitMq" Version="3.4.0" />
+    <PackageVersion Include="Testcontainers.Redis" Version="3.4.0" />
   </ItemGroup>
   <ItemGroup Label="References for packable projects">
     <PackageVersion Include="MinVer" Version="4.3.0" PrivateAssets="All" />

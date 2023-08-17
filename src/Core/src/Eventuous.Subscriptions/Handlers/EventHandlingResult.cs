@@ -43,5 +43,5 @@ public class HandlingResults {
 
     public bool IsPending() => _handlingStatus == 0;
 
-    public Exception? GetException() => _results.First(x => x.Exception != null).Exception;
+    public Exception? GetException() => _results.FirstOrDefault(x => x.Exception != null).Exception;
 }

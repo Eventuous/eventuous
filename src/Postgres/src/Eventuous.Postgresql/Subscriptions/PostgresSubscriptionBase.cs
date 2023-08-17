@@ -98,7 +98,7 @@ public abstract class PostgresSubscriptionBase<T>(
     protected abstract IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken);
 }
 
-public abstract record PostgresSubscriptionBaseOptions : SubscriptionOptions {
+public abstract record PostgresSubscriptionBaseOptions : SubscriptionWithCheckpointOptions {
     public string Schema           { get; set; } = "eventuous";
     public int    ConcurrencyLimit { get; set; } = 1;
     public int    MaxPageSize      { get; set; } = 1024;

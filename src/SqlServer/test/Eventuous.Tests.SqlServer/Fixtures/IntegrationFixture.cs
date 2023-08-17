@@ -1,52 +1,62 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Bogus;
+using DotNet.Testcontainers.Builders;
 using Eventuous.Diagnostics;
 using Eventuous.SqlServer;
 using MicroElements.AutoFixture.NodaTime;
 using Microsoft.Data.SqlClient;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
-
+using Testcontainers.MsSql;
 
 namespace Eventuous.Tests.SqlServer.Fixtures;
 
-public sealed class IntegrationFixture : IAsyncDisposable {
-    public IEventStore           EventStore     { get; }
-    public IAggregateStore       AggregateStore { get; }
-    public IFixture               Auto           { get; } = new Fixture().Customize(new NodaTimeCustomization());
-    public GetSqlServerConnection GetConnection  { get; }
-    public Faker                 Faker          { get; } = new();
+public sealed class IntegrationFixture : IAsyncLifetime {
+    public IEventStore            EventStore     { get; private set; } = null!;
+    public IAggregateStore        AggregateStore { get; set; }         = null!;
+    public IFixture               Auto           { get; }              = new Fixture().Customize(new NodaTimeCustomization());
+    public GetSqlServerConnection GetConnection  { get; private set; } = null!;
+    public Faker                  Faker          { get; }              = new();
 
-    public string SchemaName => Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    public string SchemaName { get; }
+
+    public IntegrationFixture() => SchemaName = GetSchemaName();
+
+    public string GetSchemaName() => Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
+
+    MsSqlContainer _sqlServer = null!;
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
             .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
     );
 
-    public static IntegrationFixture Instance { get; } = new();
+    public async Task InitializeAsync() {
+        _sqlServer = new MsSqlBuilder()
+            .WithImage("mcr.microsoft.com/azure-sql-edge:latest")
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("EdgeTelemetry starting up"))
+            .Build();
+        await _sqlServer.StartAsync();
 
-    IntegrationFixture() {
-        const string connString = "Data Source=localhost;User Id=sa;Password=Secret_123;TrustServerCertificate=True;";
-        
-        var schemaName = SchemaName;
-        SqlConnection GetConn() => new(connString);
-
-        var schema = new Schema(schemaName);
-        schema.CreateSchema(GetConn).ConfigureAwait(false).GetAwaiter().GetResult();
-
-        GetConnection = GetConn;
+        var schema     = new Schema(SchemaName);
+        var connString = _sqlServer.GetConnectionString();
+        GetConnection = () => GetConn(connString);
+        await schema.CreateSchema(GetConnection);
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = new SqlServerStore(GetConn, new SqlServerStoreOptions(schemaName), Serializer);
+        EventStore     = new SqlServerStore(GetConnection, new SqlServerStoreOptions(SchemaName), Serializer);
         AggregateStore = new AggregateStore(EventStore);
         ActivitySource.AddActivityListener(_listener);
+
+        return;
+
+        SqlConnection GetConn(string connectionString) => new(connectionString);
     }
 
-    public ValueTask DisposeAsync() {
+    public async Task DisposeAsync() {
+        await _sqlServer.DisposeAsync();
         _listener.Dispose();
-        return default;
     }
 }

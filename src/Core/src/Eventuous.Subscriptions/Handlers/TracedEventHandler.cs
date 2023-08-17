@@ -20,11 +20,7 @@ public class TracedEventHandler(IEventHandler eventHandler) : IEventHandler {
 
     public async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         using var activity = SubscriptionActivity
-            .Create(
-                $"{Constants.Components.EventHandler}.{DiagnosticName}/{context.MessageType}",
-                ActivityKind.Internal,
-                tags: _defaultTags
-            )
+            .Create($"{Constants.Components.EventHandler}.{DiagnosticName}/{context.MessageType}", ActivityKind.Internal, tags: _defaultTags)
             ?.SetContextTags(context)
             ?.Start();
 
@@ -41,6 +37,8 @@ public class TracedEventHandler(IEventHandler eventHandler) : IEventHandler {
             activity?.SetActivityStatus(ActivityStatus.Ok());
 
             return status;
+        } catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested) {
+            return EventHandlingStatus.Pending;
         } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
             measure.SetError();

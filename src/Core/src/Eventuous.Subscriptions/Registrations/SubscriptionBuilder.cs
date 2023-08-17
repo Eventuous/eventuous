@@ -30,7 +30,6 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// </summary>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    [PublicAPI]
     public SubscriptionBuilder AddEventHandler<THandler>()
         where THandler : class, IEventHandler {
         Services.TryAddSingleton<THandler>();
@@ -45,7 +44,6 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// <param name="getHandler">A function to resolve event handler using the service provider</param>
     /// <typeparam name="THandler"></typeparam>
     /// <returns></returns>
-    [PublicAPI]
     public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler)
         where THandler : class, IEventHandler {
         Services.TryAddSingleton(getHandler);

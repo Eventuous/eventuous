@@ -2,11 +2,12 @@ using System.Collections.Immutable;
 
 namespace Eventuous.Tests.EventStore;
 
-public class AggregateStoreTests {
+public class AggregateStoreTests : IClassFixture<IntegrationFixture> {
+    readonly IntegrationFixture           _fixture;
     readonly ILogger<AggregateStoreTests> _log;
 
-    public AggregateStoreTests(ITestOutputHelper output) {
-        Store = IntegrationFixture.Instance.AggregateStore;
+    public AggregateStoreTests(IntegrationFixture fixture, ITestOutputHelper output) {
+        _fixture = fixture;
         TypeMap.Instance.AddType<TestEvent>("testEvent");
 
         var loggerFactory = LoggerFactory.Create(
@@ -21,7 +22,7 @@ public class AggregateStoreTests {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
         aggregate.DoIt("test");
-        await Store.Store(aggregate, id, CancellationToken.None);
+        await _fixture.AggregateStore.Store(aggregate, id, CancellationToken.None);
     }
 
     [Fact]
@@ -46,15 +47,15 @@ public class AggregateStoreTests {
             if (counter != 1000) continue;
 
             _log.LogInformation("Storing batch of events..");
-            await Store.Store(aggregate, id, CancellationToken.None);
-            aggregate = await Store.Load<TestAggregate, TestId>(id, CancellationToken.None);
+            await _fixture.AggregateStore.Store(aggregate, id, CancellationToken.None);
+            aggregate = await _fixture.AggregateStore.Load<TestAggregate, TestId>(id, CancellationToken.None);
             counter   = 0;
         }
 
-        await Store.Store(aggregate, id, CancellationToken.None);
+        await _fixture.AggregateStore.Store(aggregate, id, CancellationToken.None);
 
         _log.LogInformation("Loading large aggregate stream..");
-        var restored = await Store.Load<TestAggregate, TestId>(id, CancellationToken.None);
+        var restored = await _fixture.AggregateStore.Load<TestAggregate, TestId>(id, CancellationToken.None);
 
         restored.State.Values.Count.Should().Be(count);
         restored.State.Values.Should().BeEquivalentTo(aggregate.State.Values);
@@ -65,20 +66,19 @@ public class AggregateStoreTests {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
         aggregate.DoIt("test");
-        await Store.Store(aggregate,id, default);
+        await _fixture.AggregateStore.Store(aggregate, id, default);
 
         const int numberOfReads = 100;
 
         foreach (var unused in Enumerable.Range(0, numberOfReads)) {
-            var read = await Store.Load<TestAggregate, TestId>(id, default);
+            var read = await _fixture.AggregateStore.Load<TestAggregate, TestId>(id, default);
             read.State.Should().BeEquivalentTo(aggregate.State);
         }
     }
 
-    IAggregateStore Store { get; }
-
     record TestId : Id {
-        public TestId(string value) : base(value) { }
+        public TestId(string value)
+            : base(value) { }
     }
 
     record TestState : State<TestState> {

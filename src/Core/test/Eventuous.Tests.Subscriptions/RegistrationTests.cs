@@ -3,41 +3,39 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Subscriptions.Logging;
 using Eventuous.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Eventuous.Tests.Subscriptions;
 
-public class RegistrationTests {
-    readonly IServiceProvider _provider;
-
-    public RegistrationTests() {
-        var host = new TestServer(BuildHost());
-        _provider = host.Services;
-    }
+public class RegistrationTests(ITestOutputHelper outputHelper) {
+    readonly TestServer       _server   = new TestServer(BuildHost());
+    readonly Fixture          _auto     = new();
+    readonly ILoggerFactory   _logger   = Logging.GetLoggerFactory(outputHelper);
 
     [Fact]
     public void ShouldBeSingletons() {
-        var subs1 = _provider.GetServices<TestSub>().ToArray();
-        var subs2 = _provider.GetServices<TestSub>().ToArray();
+        var subs1 = _server.Services.GetServices<TestSub>().ToArray();
+        var subs2 = _server.Services.GetServices<TestSub>().ToArray();
         subs1[0].Should().BeSameAs(subs2[0]);
         subs1[1].Should().BeSameAs(subs2[1]);
     }
 
     [Fact]
     public void ShouldRegisterBothSubs() {
-        var subs = _provider.GetServices<TestSub>().ToArray();
+        var subs = _server.Services.GetServices<TestSub>().ToArray();
         subs.Length.Should().Be(2);
     }
 
     [Fact]
     public void SubsShouldHaveProperIds() {
-        var subs = _provider.GetServices<TestSub>().ToArray();
+        var subs = _server.Services.GetServices<TestSub>().ToArray();
         subs[0].Options.SubscriptionId.Should().Be("sub1");
         subs[1].Options.SubscriptionId.Should().Be("sub2");
     }
@@ -45,68 +43,67 @@ public class RegistrationTests {
     [Theory]
     [InlineData(0, typeof(Handler1))]
     [InlineData(1, typeof(Handler2))]
-    public void SubsShouldHaveHandlers(int position, Type handlerType) {
-        var subs = _provider.GetServices<TestSub>().ToArray();
-        var consumer = subs[position].Pipe;
-        var handlers = consumer.GetHandlers();
+    public async Task SubsShouldHaveHandlers(int position, Type handlerType) {
+        var subs    = _server.Services.GetServices<TestSub>().ToArray();
+        var logger  = _server.Services.GetRequiredService<TestHandlerLogger>();
+        var current = subs[position];
 
-        handlers.Should().NotBeNull();
-        handlers!.Length.Should().Be(1);
-        handlers[0].Should().BeOfType(typeof(TracedEventHandler));
-        var innerHandler = handlers[0].GetPrivateMember<IEventHandler>("_innerHandler");
-        innerHandler.Should().BeOfType(handlerType);
+        var ctx = new MessageConsumeContext(
+            _auto.Create<string>(),
+            _auto.Create<string>(),
+            _auto.Create<string>(),
+            _auto.Create<string>(),
+            0,
+            0,
+            0,
+            DateTime.UtcNow,
+            new TestEvent(),
+            new Metadata(),
+            current.SubscriptionId,
+            default
+        ) { LogContext = new LogContext(current.SubscriptionId, _logger) };
+        await current.Pipe.Send(ctx);
+
+        var handled = logger.Records.Where(x => x.Context.SubscriptionId == current.SubscriptionId).ToArray();
+        handled.Length.Should().Be(1);
+        handled[0].HandlerType.Should().Be(handlerType);
+        handled[0].Context.MessageId.Should().Be(ctx.MessageId);
+        handled[0].Context.MessageType.Should().Be(ctx.MessageType);
     }
 
     [Fact]
     public void ShouldRegisterBothAsHealthReporters() {
-        var services = _provider.GetServices<ISubscriptionHealth>().ToArray();
+        var services = _server.Services.GetServices<ISubscriptionHealth>().ToArray();
         services.Length.Should().Be(1);
     }
 
     [Fact]
-    public void ShouldRegisterBothAsHostedServices() {
-        var services = _provider.GetServices<IHostedService>()
-            .Where(x => x is SubscriptionHostedService)
-            .ToArray();
+    public async Task BothShouldBeRunningAndReportHealthy() {
+        var subs   = _server.Services.GetServices<TestSub>().ToArray();
+        var health = _server.Services.GetRequiredService<ISubscriptionHealth>() as SubscriptionHealthCheck;
 
-        var subs = _provider.GetServices<TestSub>().ToArray();
-        var health = _provider.GetRequiredService<ISubscriptionHealth>();
+        subs.Length.Should().Be(2);
+        subs.Should().AllSatisfy(x => x.IsRunning.Should().BeTrue());
 
-        services.Length.Should().Be(2);
-
-        // Should have one sub each
-        services[0]
-            .GetPrivateMember<IMessageSubscription>("_subscription")
-            .Should()
-            .BeSameAs(subs[0]);
-
-        services[1]
-            .GetPrivateMember<IMessageSubscription>("_subscription")
-            .Should()
-            .BeSameAs(subs[1]);
-
-        // Should have the same health check
-        services[0]
-            .GetPrivateMember<ISubscriptionHealth>("_subscriptionHealth")
-            .Should()
-            .BeSameAs(health);
-
-        services[1]
-            .GetPrivateMember<ISubscriptionHealth>("_subscriptionHealth")
-            .Should()
-            .BeSameAs(health);
+        health.Should().NotBeNull();
+        var check = await health!.CheckHealthAsync(new HealthCheckContext());
+        check.Data["sub1"].Should().Be("Healthy");
+        check.Data["sub2"].Should().Be("Healthy");
+        check.Status.Should().Be(HealthStatus.Healthy);
     }
 
     [Fact]
     public void ShouldRegisterTwoMeasures() {
-        var subs = _provider.GetServices<TestSub>().ToArray();
-        var measure = _provider.GetRequiredService<SubscriptionMetrics>();
+        var subs    = _server.Services.GetServices<TestSub>().ToArray();
+        var measure = _server.Services.GetRequiredService<SubscriptionMetrics>();
     }
 
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
 
     class Startup {
         public static void ConfigureServices(IServiceCollection services) {
+            services.AddSingleton(new TestHandlerLogger());
+
             services.AddSubscription<TestSub, TestOptions>(
                 "sub1",
                 builder => builder
@@ -130,13 +127,8 @@ public class RegistrationTests {
         public string? Field { get; set; }
     }
 
-    class TestSub : EventSubscription<TestOptions>, IMeasuredSubscription {
-        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(
-            options,
-            consumePipe,
-            NullLoggerFactory.Instance
-        ) { }
-
+    class TestSub(TestOptions options, ConsumePipe consumePipe)
+        : EventSubscription<TestOptions>(options, consumePipe, NullLoggerFactory.Instance), IMeasuredSubscription {
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
@@ -145,11 +137,25 @@ public class RegistrationTests {
             => _ => new ValueTask<EndOfStream>(new EndOfStream(SubscriptionId, 0, DateTime.UtcNow));
     }
 
-    class Handler1 : BaseEventHandler {
-        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext evt) => default;
+    abstract class BaseTestHandler(TestHandlerLogger logger) : BaseEventHandler {
+        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) => logger.EventReceived(GetType(), ctx);
     }
 
-    class Handler2 : BaseEventHandler {
-        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext evt) => default;
-    }
+    class Handler1(TestHandlerLogger logger) : BaseTestHandler(logger);
+
+    class Handler2(TestHandlerLogger logger) : BaseTestHandler(logger);
+
+    record TestEvent;
 }
+
+class TestHandlerLogger {
+    public ValueTask<EventHandlingStatus> EventReceived(Type handlerType, IMessageConsumeContext ctx) {
+        Records.Add(new TestHandlerLogRecord(handlerType, ctx));
+
+        return ValueTask.FromResult(EventHandlingStatus.Success);
+    }
+
+    public List<TestHandlerLogRecord> Records { get; } = new();
+}
+
+record TestHandlerLogRecord(Type HandlerType, IMessageConsumeContext Context);

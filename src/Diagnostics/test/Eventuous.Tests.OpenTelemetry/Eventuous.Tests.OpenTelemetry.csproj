@@ -13,6 +13,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="Testcontainers.EventStoreDb" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime" />

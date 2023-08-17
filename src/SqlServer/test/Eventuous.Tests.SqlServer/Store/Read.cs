@@ -1,24 +1,19 @@
 using System.Text.Json;
-using static Eventuous.Tests.SqlServer.Fixtures.IntegrationFixture;
+using Eventuous.Tests.SqlServer.Fixtures;
 using static Eventuous.Tests.SqlServer.Store.Helpers;
 
 // ReSharper disable CoVariantArrayConversion
 
 namespace Eventuous.Tests.SqlServer.Store;
 
-public class Read {
+public class Read(IntegrationFixture fixture) : IClassFixture<IntegrationFixture> {
     [Fact]
     public async Task ShouldReadOne() {
         var evt        = CreateEvent();
-        var streamName = GetStreamName();
-        await AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
+        var streamName = fixture.GetStreamName();
+        await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
-        var result = await Instance.EventStore.ReadEvents(
-            streamName,
-            StreamReadPosition.Start,
-            100,
-            default
-        );
+        var result = await fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, default);
 
         result.Length.Should().Be(1);
         result[0].Payload.Should().BeEquivalentTo(evt);
@@ -28,21 +23,11 @@ public class Read {
     [Fact]
     public async Task ShouldReadMetadata() {
         var evt        = CreateEvent();
-        var streamName = GetStreamName();
+        var streamName = fixture.GetStreamName();
 
-        await AppendEvent(
-            streamName,
-            evt,
-            ExpectedStreamVersion.NoStream,
-            new Metadata { { "Key1", "Value1" }, { "Key2", "Value2" } }
-        );
+        await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream, new Metadata { { "Key1", "Value1" }, { "Key2", "Value2" } });
 
-        var result = await Instance.EventStore.ReadEvents(
-            streamName,
-            StreamReadPosition.Start,
-            100,
-            default
-        );
+        var result = await fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, default);
 
         result.Length.Should().Be(1);
         result[0].Payload.Should().BeEquivalentTo(evt);
@@ -56,15 +41,10 @@ public class Read {
     [Fact]
     public async Task ShouldReadMany() {
         object[] events     = CreateEvents(20).ToArray();
-        var      streamName = GetStreamName();
-        await AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+        var      streamName = fixture.GetStreamName();
+        await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result = await Instance.EventStore.ReadEvents(
-            streamName,
-            StreamReadPosition.Start,
-            100,
-            default
-        );
+        var result = await fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, default);
 
         var actual = result.Select(x => x.Payload);
         actual.Should().BeEquivalentTo(events);
@@ -73,15 +53,10 @@ public class Read {
     [Fact]
     public async Task ShouldReadTail() {
         object[] events     = CreateEvents(20).ToArray();
-        var      streamName = GetStreamName();
-        await AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+        var      streamName = fixture.GetStreamName();
+        await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result = await Instance.EventStore.ReadEvents(
-            streamName,
-            new StreamReadPosition(10),
-            100,
-            default
-        );
+        var result = await fixture.EventStore.ReadEvents(streamName, new StreamReadPosition(10), 100, default);
 
         var expected = events.Skip(10);
         var actual   = result.Select(x => x.Payload);
@@ -91,15 +66,10 @@ public class Read {
     [Fact]
     public async Task ShouldReadHead() {
         object[] events     = CreateEvents(20).ToArray();
-        var      streamName = GetStreamName();
-        await AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+        var      streamName = fixture.GetStreamName();
+        await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result = await Instance.EventStore.ReadEvents(
-            streamName,
-            StreamReadPosition.Start,
-            10,
-            default
-        );
+        var result = await fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 10, default);
 
         var expected = events.Take(10);
         var actual   = result.Select(x => x.Payload);
