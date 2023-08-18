@@ -50,7 +50,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
                 ? new PostgresStreamSubscription(
                     IntegrationFixture.DataSource,
                     new PostgresStreamSubscriptionOptions {
-                        Stream = Stream,
+                        Stream         = Stream,
                         SubscriptionId = SubscriptionId,
                         Schema         = IntegrationFixture.SchemaName
                     },

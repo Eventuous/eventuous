@@ -17,6 +17,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
     protected StreamName              Stream          { get; }
     protected T                       Handler         { get; }
     protected ILogger                 Log             { get; }
+    protected SqlServerCheckpointStoreOptions CheckpointStoreOptions { get; }
     protected SqlServerCheckpointStore CheckpointStore { get; }
     IMessageSubscription              Subscription    { get; }
     protected string                  SchemaName      { get; }
@@ -39,9 +40,10 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
         var loggerFactory = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
         SubscriptionId = $"test-{Guid.NewGuid():N}";
 
-        Handler         = handler;
-        Log             = loggerFactory.CreateLogger(GetType());
-        CheckpointStore = new SqlServerCheckpointStore(Instance.GetConnection, SchemaName);
+        Handler                = handler;
+        Log                    = loggerFactory.CreateLogger(GetType());
+        CheckpointStoreOptions = new SqlServerCheckpointStoreOptions { Schema = SchemaName };
+        CheckpointStore        = new SqlServerCheckpointStore(Instance.GetConnection, CheckpointStoreOptions);
 
         _listener = new LoggingEventListener(loggerFactory);
         var pipe = new ConsumePipe();
