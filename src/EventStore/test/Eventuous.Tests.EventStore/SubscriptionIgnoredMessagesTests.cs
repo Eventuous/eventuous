@@ -44,8 +44,8 @@ public class SubscriptionIgnoredMessagesTests(IntegrationFixture fixture, ITestO
         );
 
         var log = _loggerFactory.CreateLogger("Subscription");
-        await subscription.SubscribeWithLog(log);
         TypeMap.Instance.RemoveType<UnknownEvent>();
+        await subscription.SubscribeWithLog(log);
         await handler.Validate(5.Seconds());
         await subscription.UnsubscribeWithLog(log);
 

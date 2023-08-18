@@ -13,20 +13,22 @@ public class ServerFixture : IDisposable {
     readonly WebApplicationFactory<Program> _app;
     readonly AutoFixture.Fixture            _fixture = new();
 
-    public ServerFixture(Action<IServiceCollection>? register = null, ConfigureWebApplication? configure = null) {
+    public ServerFixture(ITestOutputHelper output, Action<IServiceCollection>? register = null, ConfigureWebApplication? configure = null) {
         TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
 
         Store = new InMemoryEventStore();
 
         _app = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(
-                builder => builder.ConfigureServices(
-                    services => {
-                        register?.Invoke(services);
-                        services.AddAggregateStore(_ => Store);
-                        if (configure != null) services.AddSingleton(configure);
-                    }
-                )
+                builder => builder
+                    .ConfigureServices(
+                        services => {
+                            register?.Invoke(services);
+                            services.AddAggregateStore(_ => Store);
+                            if (configure != null) services.AddSingleton(configure);
+                        }
+                    )
+                    .ConfigureLogging(x => x.AddXunit(output).AddConsole().SetMinimumLevel(LogLevel.Debug))
             );
     }
 
@@ -49,11 +51,12 @@ public class ServerFixture : IDisposable {
 
     internal BookRoom GetBookRoom() {
         var date = LocalDate.FromDateTime(DateTime.Now);
-        return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100);
+
+        return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
     }
 
     public void Dispose()
         => _app.Dispose();
 }
 
-record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price);
+// record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price);

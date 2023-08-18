@@ -3,11 +3,8 @@ namespace Eventuous.Tests.AspNetCore.Web;
 using TestHelpers;
 using Fixture;
 
-public class HttpCommandTests : IDisposable {
-    readonly TestEventListener _listener;
-
-    public HttpCommandTests(ITestOutputHelper output)
-        => _listener = new TestEventListener(output);
+public class HttpCommandTests(ITestOutputHelper output) : IDisposable {
+    readonly TestEventListener _listener = new(output);
 
     [Fact]
     public void RegisterAggregateCommands() {
@@ -22,7 +19,11 @@ public class HttpCommandTests : IDisposable {
 
     [Fact]
     public async Task MapEnrichedCommand() {
-        using var fixture = new ServerFixture();
+        using var fixture = new ServerFixture(
+            output,
+            _ => { },
+            app => app.MapAggregateCommands<Booking>().MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
+        );
 
         using var client = fixture.GetClient();
 
@@ -45,4 +46,6 @@ public class HttpCommandTests : IDisposable {
 }
 
 [HttpCommand(Route = "book")]
-record BookAnotherRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price);
+record BookAnotherRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price) {
+    public string? GuestId { get; init; }
+}

@@ -21,7 +21,8 @@ public class CommandServiceRouteBuilder<T>(IEndpointRouteBuilder builder)
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
             Action<RouteHandlerBuilder>?            configure     = null
         ) where TCommand : class {
-        configure?.Invoke(builder.MapCommand<TCommand, T>(enrichCommand));
+        if (configure == null) { builder.MapCommand<TCommand, T>(enrichCommand); }
+        else { configure(builder.MapCommand<TCommand, T>(enrichCommand)); }
 
         return this;
     }
@@ -39,7 +40,8 @@ public class CommandServiceRouteBuilder<T>(IEndpointRouteBuilder builder)
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
             Action<RouteHandlerBuilder>?            configure     = null
         ) where TCommand : class {
-        configure?.Invoke(builder.MapCommand<TCommand, T>(route, enrichCommand));
+        if (configure == null) { builder.MapCommand<TCommand, T>(route, enrichCommand); }
+        else { configure(builder.MapCommand<TCommand, T>(route, enrichCommand)); }
 
         return this;
     }
@@ -59,7 +61,8 @@ public class CommandServiceRouteBuilder<T>(IEndpointRouteBuilder builder)
             ConvertAndEnrichCommand<TContract, TCommand> enrichCommand,
             Action<RouteHandlerBuilder>?                 configure = null
         ) where TCommand : class where TContract : class {
-        configure?.Invoke(builder.MapCommand<TContract, TCommand, T>(route, Ensure.NotNull(enrichCommand)));
+        if (configure == null) { builder.MapCommand<TContract, TCommand, T>(route, Ensure.NotNull(enrichCommand)); }
+        else { configure(builder.MapCommand<TContract, TCommand, T>(route, Ensure.NotNull(enrichCommand))); }
 
         return this;
     }
@@ -80,7 +83,9 @@ public class CommandServiceRouteBuilder<T>(IEndpointRouteBuilder builder)
         where TCommand : class where TContract : class {
         var attr = typeof(TContract).GetAttribute<HttpCommandAttribute>();
         AttributeCheck.EnsureCorrectAggregate<TContract, T>(attr);
-        configure?.Invoke(builder.MapCommand<TContract, TCommand, T>(attr?.Route, Ensure.NotNull(enrichCommand)));
+
+        if (configure == null) { builder.MapCommand<TContract, TCommand, T>(attr?.Route, Ensure.NotNull(enrichCommand)); }
+        else { configure(builder.MapCommand<TContract, TCommand, T>(attr?.Route, Ensure.NotNull(enrichCommand))); }
 
         return this;
     }

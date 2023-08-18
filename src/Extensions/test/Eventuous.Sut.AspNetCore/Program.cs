@@ -12,25 +12,14 @@ DefaultEventSerializer.SetDefaultSerializer(
     )
 );
 
-
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCommandService<BookingService, Booking>();
-// builder.Services.AddSingleton(commandMap);
-// builder.Services.AddControllers();
-
-builder.Services.Configure<JsonOptions>(
-    options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-);
+builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 
 var app = builder.Build();
 
 var config = app.Services.GetService<ConfigureWebApplication>();
 config?.Invoke(app);
 
-// app.MapControllers();
-
-app
-    .MapAggregateCommands<Booking>()
-    .MapCommand<BookRoom>((cmd, _) => cmd with { GuestId = TestData.GuestId });
 
 app.Run();

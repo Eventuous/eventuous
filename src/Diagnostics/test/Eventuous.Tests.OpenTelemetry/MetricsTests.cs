@@ -97,8 +97,8 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
     }
 
     class MessageCounter {
-        public int Count { get; private set; }
-        public void Increment() => Count++;
+        public int Count;
+        public void Increment() => Interlocked.Increment(ref Count);
     }
 
     [ExportModes(ExportModes.Pull)]
