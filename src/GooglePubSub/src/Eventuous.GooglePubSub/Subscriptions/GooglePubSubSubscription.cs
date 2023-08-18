@@ -36,16 +36,24 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// <param name="consumePipe">Consumer pipeline</param>
     /// <param name="loggerFactory">Logger factory instance</param>
     /// <param name="eventSerializer">Event serializer instance</param>
+    /// <param name="configureClient">Optional client configuration callback</param>
     public GooglePubSubSubscription(
-        string            projectId,
-        string            topicId,
-        string            subscriptionId,
-        ConsumePipe       consumePipe,
-        ILoggerFactory?   loggerFactory,
-        IEventSerializer? eventSerializer = null
-    )
+            string                           projectId,
+            string                           topicId,
+            string                           subscriptionId,
+            ConsumePipe                      consumePipe,
+            ILoggerFactory?                  loggerFactory   = null,
+            IEventSerializer?                eventSerializer = null,
+            Action<SubscriberClientBuilder>? configureClient = null
+        )
         : this(
-            new PubSubSubscriptionOptions { SubscriptionId = subscriptionId, ProjectId = projectId, TopicId = topicId, EventSerializer = eventSerializer },
+            new PubSubSubscriptionOptions {
+                SubscriptionId         = subscriptionId,
+                ProjectId              = projectId,
+                TopicId                = topicId,
+                EventSerializer        = eventSerializer,
+                ConfigureClientBuilder = configureClient
+            },
             consumePipe,
             loggerFactory
         ) { }
@@ -123,12 +131,12 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     }
 
     public async Task CreateSubscription(
-        SubscriptionName      subscriptionName,
-        TopicName             topicName,
-        EmulatorDetection     emulatorDetection,
-        Action<Subscription>? configureSubscription,
-        CancellationToken     cancellationToken
-    ) {
+            SubscriptionName      subscriptionName,
+            TopicName             topicName,
+            EmulatorDetection     emulatorDetection,
+            Action<Subscription>? configureSubscription,
+            CancellationToken     cancellationToken
+        ) {
         Logger.Current = Log;
         await PubSub.CreateTopic(topicName, emulatorDetection, (msg, s) => Log.InfoLog?.Log(msg, s), cancellationToken).NoContext();
         await PubSub.CreateSubscription(subscriptionName, topicName, configureSubscription, emulatorDetection, cancellationToken).NoContext();

@@ -1,14 +1,13 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Bogus;
-using DotNet.Testcontainers.Builders;
 using Eventuous.Diagnostics;
 using Eventuous.SqlServer;
 using MicroElements.AutoFixture.NodaTime;
 using Microsoft.Data.SqlClient;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
-using Testcontainers.MsSql;
+using Testcontainers.SqlEdge;
 
 namespace Eventuous.Tests.SqlServer.Fixtures;
 
@@ -27,7 +26,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
 
-    MsSqlContainer _sqlServer = null!;
+    SqlEdgeContainer _sqlServer = null!;
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -35,9 +34,8 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     );
 
     public async Task InitializeAsync() {
-        _sqlServer = new MsSqlBuilder()
+        _sqlServer = new SqlEdgeBuilder()
             .WithImage("mcr.microsoft.com/azure-sql-edge:latest")
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("EdgeTelemetry starting up"))
             .Build();
         await _sqlServer.StartAsync();
 

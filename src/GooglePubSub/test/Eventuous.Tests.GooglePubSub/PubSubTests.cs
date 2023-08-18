@@ -3,11 +3,12 @@ using Eventuous.GooglePubSub.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
+using Google.Api.Gax;
 using Hypothesist;
 
 namespace Eventuous.Tests.GooglePubSub;
 
-public class PubSubTests : IAsyncLifetime {
+public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
     static PubSubTests()
         => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
@@ -20,7 +21,7 @@ public class PubSubTests : IAsyncLifetime {
     readonly string                   _pubsubSubscription;
     readonly ILogger<PubSubTests>     _log;
 
-    public PubSubTests(ITestOutputHelper outputHelper) {
+    public PubSubTests(PubSubFixture fixture, ITestOutputHelper outputHelper) {
         var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
         _log                = loggerFactory.CreateLogger<PubSubTests>();
@@ -29,14 +30,19 @@ public class PubSubTests : IAsyncLifetime {
 
         _handler = new TestEventHandler();
 
-        _producer = new GooglePubSubProducer(PubSubFixture.PubsubProjectId, log: loggerFactory.CreateLogger<GooglePubSubProducer>());
+        _producer = new GooglePubSubProducer(
+            PubSubFixture.PubsubProjectId,
+            log: loggerFactory.CreateLogger<GooglePubSubProducer>(),
+            configureClient: b => b.EmulatorDetection = EmulatorDetection.EmulatorOnly
+        );
 
         _subscription = new GooglePubSubSubscription(
             PubSubFixture.PubsubProjectId,
             _pubsubTopic,
             _pubsubSubscription,
             new ConsumePipe().AddDefaultConsumer(_handler),
-            loggerFactory
+            loggerFactory,
+            configureClient: b => b.EmulatorDetection = EmulatorDetection.EmulatorOnly
         );
     }
 
