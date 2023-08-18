@@ -54,7 +54,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime
             !subscribeToAll
                 ? new SqlServerStreamSubscription(
                     Instance.GetConnection,
-                    new SqlServerStreamSubscriptionOptions(Stream) {
+                    new SqlServerStreamSubscriptionOptions {
+                        Stream = Stream,
                         SubscriptionId = SubscriptionId,
                         Schema         = SchemaName
                     },

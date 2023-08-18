@@ -71,5 +71,3 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
     protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromContext(context);
 }
-
-public record SqlServerStreamSubscriptionOptions(StreamName Stream) : SqlServerSubscriptionBaseOptions;
