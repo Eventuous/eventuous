@@ -71,7 +71,8 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
             !_subscribeToAll
                 ? new PostgresStreamSubscription(
                     IntegrationFixture.DataSource,
-                    new PostgresStreamSubscriptionOptions(Stream) {
+                    new PostgresStreamSubscriptionOptions {
+                        Stream = Stream,
                         SubscriptionId = SubscriptionId,
                         Schema         = IntegrationFixture.SchemaName
                     },
