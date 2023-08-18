@@ -15,6 +15,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         public UpdateOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
             FilterBuilder.Id(getId);
+
             return this;
         }
 
@@ -24,13 +25,26 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 async (ctx, collection, token) => {
-                    var options = new UpdateOptions { IsUpsert = true };
-                    ConfigureOptions?.Invoke(options);
+                    UpdateOptions options;
+
+                    if (ConfigureOptions != null) {
+                        options = new UpdateOptions { IsUpsert = true };
+                        ConfigureOptions(options);
+                    }
+                    else { options = DefaultOptions; }
+
                     var update = await GetUpdate(ctx, Builders<T>.Update);
+
+                    var filter = FilterBuilder.GetFilter(ctx);
+                    // TODO: Make this an option (idempotence based on commit position)
+                    // var filter = Builders<T>.Filter.And(
+                    //     Builders<T>.Filter.Lt(x => x.Position, ctx.GlobalPosition),
+                    //     FilterBuilder.GetFilter(ctx)
+                    // );
 
                     await collection
                         .UpdateOneAsync(
-                            FilterBuilder.GetFilter(ctx),
+                            filter,
                             update
                                 .Set(x => x.StreamPosition, ctx.StreamPosition)
                                 .Set(x => x.Position, ctx.GlobalPosition),
@@ -45,8 +59,14 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 async (ctx, collection, token) => {
-                    var options = new UpdateOptions { IsUpsert = true };
-                    ConfigureOptions?.Invoke(options);
+                    UpdateOptions options;
+
+                    if (ConfigureOptions != null) {
+                        options = new UpdateOptions { IsUpsert = true };
+                        ConfigureOptions(options);
+                    }
+                    else { options = DefaultOptions; }
+
                     var update = await GetUpdate(ctx, Builders<T>.Update).NoContext();
 
                     await collection.UpdateManyAsync(
@@ -70,41 +90,50 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         protected BuildUpdateAsync<TEvent, T> GetUpdate => Ensure.NotNull(_buildUpdate, "Update function");
 
+        protected static UpdateOptions DefaultOptions => new() { IsUpsert = true };
+
         public TBuilder Filter(BuildFilter<TEvent, T> buildFilter) {
             FilterBuilder.Filter(buildFilter);
+
             return Self;
         }
 
         [PublicAPI]
         public TBuilder Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter) {
             FilterBuilder.Filter(filter);
+
             return Self;
         }
 
         public TBuilder UpdateFromContext(BuildUpdateAsync<TEvent, T> buildUpdate) {
             _buildUpdate = buildUpdate;
+
             return Self;
         }
 
         [PublicAPI]
         public TBuilder Update(BuildUpdateFromEventAsync<TEvent, T> buildUpdate) {
             _buildUpdate = (ctx, update) => buildUpdate(ctx.Message, update);
+
             return Self;
         }
 
         public TBuilder UpdateFromContext(BuildUpdate<TEvent, T> buildUpdate) {
             _buildUpdate = (ctx, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(ctx, update));
+
             return Self;
         }
 
         public TBuilder Update(BuildUpdateFromEvent<TEvent, T> buildUpdate) {
             _buildUpdate = (ctx, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(ctx.Message, update));
+
             return Self;
         }
 
         [PublicAPI]
         public TBuilder Configure(Action<UpdateOptions> configure) {
             ConfigureOptions = configure;
+
             return Self;
         }
 

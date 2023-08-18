@@ -12,7 +12,8 @@ using Tools;
 
 [Obsolete("Use MongoProjector instead")]
 public abstract class MongoProjection<T> : MongoProjector<T> where T : ProjectedDocument {
-    protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) : base(database, typeMap) { }
+    protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null)
+        : base(database, typeMap) { }
 }
 
 /// <summary>
@@ -85,13 +86,17 @@ public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typ
         where TEvent : class {
         return context.Message is not TEvent ? NoHandler() : HandleTypedEvent();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask<MongoProjectOperation<T>> HandleTypedEvent() {
             var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
+
             return handler(typedContext);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask<MongoProjectOperation<T>> NoHandler() {
             Logger.Current.MessageHandlerNotFound(DiagnosticName, context.MessageType);
+
             return NoOp;
         }
     }
@@ -114,6 +119,7 @@ public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typ
         var task = update.Execute(Collection, context.CancellationToken);
 
         if (!task.IsCompletedSuccessfully) await task.NoContext();
+
         return EventHandlingStatus.Success;
     }
 
@@ -125,7 +131,7 @@ public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typ
         => GetUpdate(context.Message!, context.StreamPosition);
 
     [PublicAPI]
-    protected readonly static ValueTask<MongoProjectOperation<T>> NoOp = new((MongoProjectOperation<T>)null!);
+    protected static readonly ValueTask<MongoProjectOperation<T>> NoOp = new((MongoProjectOperation<T>)null!);
 
     delegate ValueTask<MongoProjectOperation<T>> ProjectUntypedEvent(IMessageConsumeContext evt);
 }

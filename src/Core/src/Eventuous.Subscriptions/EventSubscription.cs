@@ -67,7 +67,6 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     protected virtual ValueTask Finalize(CancellationToken cancellationToken) => default;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     // ReSharper disable once CognitiveComplexity
     protected async ValueTask Handler(IMessageConsumeContext context) {
         var activity = EventuousDiagnostics.Enabled
@@ -125,7 +124,6 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         if (!isAsync) activity?.Dispose();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected object? DeserializeData(string eventContentType, string eventType, ReadOnlyMemory<byte> data, string stream, ulong position = 0) {
         if (data.IsEmpty) return null;
 
@@ -206,7 +204,9 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 }
 
 public record struct EventPosition(ulong? Position, DateTime Created) {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static EventPosition FromContext(IMessageConsumeContext context) => new(context.StreamPosition, context.Created);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static EventPosition FromAllContext(IMessageConsumeContext context) => new(context.GlobalPosition, context.Created);
 }

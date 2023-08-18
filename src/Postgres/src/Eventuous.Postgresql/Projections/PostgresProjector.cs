@@ -14,6 +14,8 @@ public abstract class PostgresProjector(NpgsqlDataSource dataSource, TypeMapper?
     protected void On<T>(ProjectToPostgres<T> handler) where T : class {
         base.On<T>(async ctx => await Handle(ctx, GetCommand).NoContext());
 
+        return;
+
         ValueTask<NpgsqlCommand> GetCommand(NpgsqlConnection connection, MessageConsumeContext<T> context)
             => new(handler(connection, context));
     }

@@ -113,6 +113,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
             } catch (Exception ex) { return await _failureHandler(_client, msg, ex).NoContext(); }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
     }
 

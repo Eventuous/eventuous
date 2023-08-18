@@ -38,7 +38,6 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
 
     protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
         try {
             Logger.Current = Log;
