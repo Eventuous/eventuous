@@ -5,31 +5,25 @@ using System.Diagnostics;
 
 namespace Eventuous.Diagnostics;
 
-public class TracedCommandService<T> : ICommandService<T> where T : Aggregate {
+public class TracedCommandService<T>(ICommandService<T> appService) : ICommandService<T> where T : Aggregate {
     public static ICommandService<T> Trace(ICommandService<T> appService)
         => new TracedCommandService<T>(appService);
 
-    ICommandService<T> InnerService { get; }
+    ICommandService<T> InnerService { get; } = appService;
 
-    readonly string           _appServiceTypeName;
-    readonly GetError<Result> _getError;
-    readonly DiagnosticSource _metricsSource = new DiagnosticListener(CommandServiceMetrics.ListenerName);
+    readonly string           _appServiceTypeName = appService.GetType().Name;
+    readonly DiagnosticSource _metricsSource      = new DiagnosticListener(CommandServiceMetrics.ListenerName);
 
-    TracedCommandService(ICommandService<T> appService) {
-        _appServiceTypeName = appService.GetType().Name;
-        InnerService        = appService;
+    static bool GetError(Result result, out Exception? exception) {
+        if (result is ErrorResult err) {
+            exception = err.Exception;
 
-        bool GetError(Result result, out Exception? exception) {
-            if (result is ErrorResult err) {
-                exception = err.Exception;
-                return true;
-            }
-
-            exception = null;
-            return false;
+            return true;
         }
 
-        _getError = GetError;
+        exception = null;
+
+        return false;
     }
 
     public Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
@@ -39,39 +33,33 @@ public class TracedCommandService<T> : ICommandService<T> where T : Aggregate {
             command,
             _metricsSource,
             InnerService.Handle,
-            _getError,
+            GetError,
             cancellationToken
         );
 }
 
-public class TracedCommandService<T, TState, TId> : ICommandService<T, TState, TId>
+public class TracedCommandService<T, TState, TId>(ICommandService<T, TState, TId> appService) : ICommandService<T, TState, TId>
     where TState : State<TState>, new()
     where TId : Id
     where T : Aggregate<TState> {
     public static ICommandService<T, TState, TId> Trace(ICommandService<T, TState, TId> appService)
         => new TracedCommandService<T, TState, TId>(appService);
 
-    ICommandService<T, TState, TId> InnerService { get; }
+    ICommandService<T, TState, TId> InnerService { get; } = appService;
 
-    readonly DiagnosticSource         _metricsSource = new DiagnosticListener(CommandServiceMetrics.ListenerName);
-    readonly string                   _appServiceTypeName;
-    readonly GetError<Result<TState>> _getError;
+    readonly DiagnosticSource _metricsSource      = new DiagnosticListener(CommandServiceMetrics.ListenerName);
+    readonly string           _appServiceTypeName = appService.GetType().Name;
 
-    TracedCommandService(ICommandService<T, TState, TId> appService) {
-        _appServiceTypeName = appService.GetType().Name;
-        InnerService        = appService;
+    static bool GetError(Result<TState> result, out Exception? exception) {
+        if (result is ErrorResult<TState> err) {
+            exception = err.Exception;
 
-        bool GetError(Result<TState> result, out Exception? exception) {
-            if (result is ErrorResult<TState> err) {
-                exception = err.Exception;
-                return true;
-            }
-
-            exception = null;
-            return false;
+            return true;
         }
 
-        _getError = GetError;
+        exception = null;
+
+        return false;
     }
 
     public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
@@ -81,7 +69,7 @@ public class TracedCommandService<T, TState, TId> : ICommandService<T, TState, T
             command,
             _metricsSource,
             InnerService.Handle,
-            _getError,
+            GetError,
             cancellationToken
         );
 }

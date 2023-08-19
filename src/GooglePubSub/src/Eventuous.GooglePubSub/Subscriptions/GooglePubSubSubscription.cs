@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -35,16 +36,24 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// <param name="consumePipe">Consumer pipeline</param>
     /// <param name="loggerFactory">Logger factory instance</param>
     /// <param name="eventSerializer">Event serializer instance</param>
+    /// <param name="configureClient">Optional client configuration callback</param>
     public GooglePubSubSubscription(
-        string            projectId,
-        string            topicId,
-        string            subscriptionId,
-        ConsumePipe       consumePipe,
-        ILoggerFactory?   loggerFactory,
-        IEventSerializer? eventSerializer = null
-    )
+            string                           projectId,
+            string                           topicId,
+            string                           subscriptionId,
+            ConsumePipe                      consumePipe,
+            ILoggerFactory?                  loggerFactory   = null,
+            IEventSerializer?                eventSerializer = null,
+            Action<SubscriberClientBuilder>? configureClient = null
+        )
         : this(
-            new PubSubSubscriptionOptions { SubscriptionId = subscriptionId, ProjectId = projectId, TopicId = topicId, EventSerializer = eventSerializer },
+            new PubSubSubscriptionOptions {
+                SubscriptionId         = subscriptionId,
+                ProjectId              = projectId,
+                TopicId                = topicId,
+                EventSerializer        = eventSerializer,
+                ConfigureClientBuilder = configureClient
+            },
             consumePipe,
             loggerFactory
         ) { }
@@ -79,6 +88,9 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
         _subscriberTask = _client.StartAsync(Handle);
 
+        return;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
             var eventType   = msg.Attributes[Options.Attributes.EventType];
             var contentType = msg.Attributes[Options.Attributes.ContentType];
@@ -109,6 +121,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
             } catch (Exception ex) { return await _failureHandler(_client, msg, ex).NoContext(); }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
     }
 
@@ -118,12 +131,12 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     }
 
     public async Task CreateSubscription(
-        SubscriptionName      subscriptionName,
-        TopicName             topicName,
-        EmulatorDetection     emulatorDetection,
-        Action<Subscription>? configureSubscription,
-        CancellationToken     cancellationToken
-    ) {
+            SubscriptionName      subscriptionName,
+            TopicName             topicName,
+            EmulatorDetection     emulatorDetection,
+            Action<Subscription>? configureSubscription,
+            CancellationToken     cancellationToken
+        ) {
         Logger.Current = Log;
         await PubSub.CreateTopic(topicName, emulatorDetection, (msg, s) => Log.InfoLog?.Log(msg, s), cancellationToken).NoContext();
         await PubSub.CreateSubscription(subscriptionName, topicName, configureSubscription, emulatorDetection, cancellationToken).NoContext();

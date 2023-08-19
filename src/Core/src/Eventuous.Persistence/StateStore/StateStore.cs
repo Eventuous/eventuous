@@ -1,20 +1,17 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
+
 namespace Eventuous;
 
 [PublicAPI]
 [Obsolete("Use IEventReader extension functions to load state")]
-public class StateStore : IStateStore {
-    readonly IEventReader     _eventReader;
-    readonly IEventSerializer _serializer;
+public class StateStore(IEventReader eventReader, IEventSerializer? serializer = null) : IStateStore {
+    readonly IEventReader     _eventReader = Ensure.NotNull<IEventReader>(eventReader);
+    readonly IEventSerializer _serializer  = serializer ?? DefaultEventSerializer.Instance;
 
     const int PageSize = 500;
-
-    public StateStore(IEventReader eventReader, IEventSerializer? serializer = null) {
-        _eventReader = Ensure.NotNull(eventReader);
-        _serializer  = serializer ?? DefaultEventSerializer.Instance;
-    }
 
     [Obsolete("Use IEventReader.LoadState<T> instead")]
     public async Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken)
@@ -39,8 +36,10 @@ public class StateStore : IStateStore {
 
         return state;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void Fold(StreamEvent streamEvent) {
             var evt = streamEvent.Payload;
+
             if (evt == null) return;
 
             state = state.When(evt);

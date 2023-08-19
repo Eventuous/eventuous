@@ -25,20 +25,28 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         public InsertOneBuilder Document(Func<MessageConsumeContext<TEvent>, T> getDocument) {
             _getDocument = getDocument;
+
             return this;
         }
 
         public InsertOneBuilder Configure(Action<InsertOneOptions> configure) {
             _configureOptions = configure;
+
             return this;
         }
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 handler: (ctx, collection, token) => {
-                    var options = new InsertOneOptions();
-                    _configureOptions?.Invoke(options);
+                    InsertOneOptions? options = null;
+
+                    if (_configureOptions != null) {
+                        options = new InsertOneOptions();
+                        _configureOptions(options);
+                    }
+
                     var doc = GetDocument(ctx);
+
                     return collection.InsertOneAsync(doc, options, token);
                 }
             );
@@ -59,20 +67,28 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         public InsertManyBuilder Documents(Func<MessageConsumeContext<TEvent>, IEnumerable<T>> getDocuments) {
             _getDocuments = getDocuments;
+
             return this;
         }
 
         public InsertManyBuilder Configure(Action<InsertManyOptions> configure) {
             _configureOptions = configure;
+
             return this;
         }
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 (ctx, collection, token) => {
-                    var options = new InsertManyOptions();
-                    _configureOptions?.Invoke(options);
+                    InsertManyOptions? options = null;
+
+                    if (_configureOptions != null) {
+                        options = new InsertManyOptions();
+                        _configureOptions(options);
+                    }
+
                     var docs = GetDocuments(ctx);
+
                     return collection.InsertManyAsync(docs, options, token);
                 }
             );

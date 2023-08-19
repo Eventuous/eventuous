@@ -1,16 +1,13 @@
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers;
-using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.EventStore;
 
-public class AppServiceTests : IDisposable {
-    readonly TestEventListener _listener;
+public class AppServiceTests(IntegrationFixture fixture, ITestOutputHelper output) : IClassFixture<IntegrationFixture>, IDisposable {
+    readonly TestEventListener  _listener = new(output);
 
-    static BookingService Service { get; } = new(Instance.AggregateStore);
-
-    public AppServiceTests(ITestOutputHelper output) => _listener = new TestEventListener(output);
+    BookingService Service { get; } = new(fixture.AggregateStore);
 
     [Fact]
     public async Task ProcessAnyForNew() {
@@ -28,7 +25,7 @@ public class AppServiceTests : IDisposable {
         var handlingResult = await Service.Handle(cmd, default);
         handlingResult.Success.Should().BeTrue();
 
-        var events = await Instance.EventStore.ReadEvents(
+        var events = await fixture.EventStore.ReadEvents(
             StreamName.For<Booking>(cmd.BookingId),
             StreamReadPosition.Start,
             int.MaxValue,

@@ -9,6 +9,8 @@
     <ItemGroup>
         <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="Testcontainers" />
+        <PackageReference Include="Testcontainers.PostgreSql" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Postgresql\Eventuous.Postgresql.csproj" />

@@ -8,17 +8,8 @@ using Eventuous.Tools;
 
 namespace Eventuous.EventStore.Subscriptions.Diagnostics;
 
-abstract class BaseSubscriptionMeasure {
-    protected BaseSubscriptionMeasure(string subscriptionId, string streamName, EventStoreClient eventStoreClient) {
-        _subscriptionId   = subscriptionId;
-        _streamName       = streamName;
-        _eventStoreClient = eventStoreClient;
-    }
-
-    readonly string _subscriptionId;
-    readonly string _streamName;
-
-    protected readonly EventStoreClient _eventStoreClient;
+abstract class BaseSubscriptionMeasure(string subscriptionId, string streamName, EventStoreClient eventStoreClient) {
+    protected readonly EventStoreClient EventStoreClient = eventStoreClient;
 
     protected abstract IAsyncEnumerable<ResolvedEvent> Read(CancellationToken cancellationToken);
 
@@ -27,7 +18,7 @@ abstract class BaseSubscriptionMeasure {
     public async ValueTask<EndOfStream> GetEndOfStream(CancellationToken cancellationToken) {
         using var activity = EventuousDiagnostics.ActivitySource
             .StartActivity(ActivityKind.Internal)
-            ?.SetTag("stream", _streamName);
+            ?.SetTag("stream", streamName);
 
         try {
             var read = Read(cancellationToken);
@@ -36,14 +27,14 @@ abstract class BaseSubscriptionMeasure {
 
             activity?.SetActivityStatus(ActivityStatus.Ok());
 
-            return new EndOfStream(_subscriptionId, GetLastPosition(events[0]), events[0].Event.Created);
-        }
-        catch (StreamNotFoundException) {
+            return new EndOfStream(subscriptionId, GetLastPosition(events[0]), events[0].Event.Created);
+        } catch (StreamNotFoundException) {
             activity?.SetActivityStatus(ActivityStatus.Ok());
-            return new EndOfStream(_subscriptionId, 0, DateTime.MinValue);
-        }
-        catch (Exception e) {
+
+            return new EndOfStream(subscriptionId, 0, DateTime.MinValue);
+        } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
+
             throw;
         }
     }

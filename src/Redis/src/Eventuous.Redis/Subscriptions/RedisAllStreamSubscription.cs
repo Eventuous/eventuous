@@ -1,11 +1,13 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Globalization;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging;
+using static Eventuous.Redis.EventuousRedisKeys;
 
 namespace Eventuous.Redis.Subscriptions;
 
@@ -25,21 +27,21 @@ public class RedisAllStreamSubscription : RedisSubscriptionBase<RedisSubscriptio
         var persistentEvents = new List<ReceivedEvent>();
 
         foreach (var linkEvent in linkedEvents) {
-            var stream         = linkEvent["stream"];
-            var streamPosition = linkEvent["position"];
+            var stream         = linkEvent[EventuousRedisKeys.Stream];
+            var streamPosition = linkEvent[Position];
 
             var streamEvents = await database.StreamRangeAsync(new RedisKey(stream), streamPosition).NoContext();
             var entry        = streamEvents[0];
 
             persistentEvents.Add(
                 new ReceivedEvent(
-                    Guid.Parse(entry["message_id"]!),
-                    entry["message_type"]!,
+                    Guid.Parse(entry[MessageId]!),
+                    entry[MessageType]!,
                     entry.Id.ToLong(),
                     entry.Id.ToLong(),
-                    entry["json_data"]!,
-                    entry["json_metadata"],
-                    DateTime.Parse(entry["created"]!),
+                    entry[JsonData]!,
+                    entry[JsonMetadata],
+                    DateTime.Parse(entry[Created]!, CultureInfo.InvariantCulture),
                     stream!
                 )
             );
@@ -48,8 +50,7 @@ public class RedisAllStreamSubscription : RedisSubscriptionBase<RedisSubscriptio
         return persistentEvents.ToArray();
     }
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
-        => EventPosition.FromContext(context);
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) => EventPosition.FromContext(context);
 }
 
 public record RedisAllStreamSubscriptionOptions : RedisSubscriptionBaseOptions;

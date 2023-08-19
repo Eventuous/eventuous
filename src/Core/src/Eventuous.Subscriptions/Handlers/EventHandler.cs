@@ -14,15 +14,12 @@ using Logging;
 /// Base class for event handlers, which allows registering typed handlers for different event types
 /// </summary>
 [PublicAPI]
-public abstract class EventHandler : BaseEventHandler {
+public abstract class EventHandler(TypeMapper? mapper = null) : BaseEventHandler {
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
-
-    protected EventHandler(TypeMapper? mapper = null)
-        => _typeMapper = mapper ?? TypeMap.Instance;
 
     static readonly ValueTask<EventHandlingStatus> Ignored = new(EventHandlingStatus.Ignored);
 
-    readonly TypeMapper _typeMapper;
+    readonly TypeMapper _typeMapper = mapper ?? TypeMap.Instance;
 
     /// <summary>
     /// Register a handler for a particular event type
@@ -46,11 +43,13 @@ public abstract class EventHandler : BaseEventHandler {
             async ValueTask<EventHandlingStatus> HandleTypedEvent() {
                 var typedContext = context as MessageConsumeContext<T> ?? new MessageConsumeContext<T>(context);
                 await handler(typedContext).NoContext();
+
                 return EventHandlingStatus.Success;
             }
 
             ValueTask<EventHandlingStatus> NoHandler() {
                 context.LogContext.MessageHandlerNotFound(DiagnosticName, context.MessageType);
+
                 return Ignored;
             }
         }

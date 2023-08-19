@@ -32,15 +32,10 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
     internal record CommitEvent(string Id, CommitPosition CommitPosition, CommitPosition? FirstPending);
 
-    public CheckpointCommitHandler(
-        string           subscriptionId,
-        ICheckpointStore checkpointStore,
-        int              batchSize     = 1,
-        ILoggerFactory?  loggerFactory = null
-    )
-        : this(subscriptionId, checkpointStore.StoreCheckpoint, batchSize, loggerFactory) { }
+    public CheckpointCommitHandler(string subscriptionId, ICheckpointStore checkpointStore, TimeSpan delay, int batchSize = 1, ILoggerFactory? loggerFactory = null)
+        : this(subscriptionId, checkpointStore.StoreCheckpoint, delay, batchSize, loggerFactory) { }
 
-    public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, int batchSize = 1, ILoggerFactory? loggerFactory = null) {
+    public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, TimeSpan delay, int batchSize = 1, ILoggerFactory? loggerFactory = null) {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
         _loggerFactory    = loggerFactory;
@@ -48,13 +43,23 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         _subject = new Subject<CommitPosition>();
 
         _subject
-            .Buffer(TimeSpan.FromSeconds(5), batchSize)
+            .Buffer(delay, batchSize)
             .Where(x => x.Count > 0)
             .Select(AddBatchAndGetLast)
             .Where(x => x.Valid)
-            .Select(x => Observable.FromAsync(ct => CommitInternal(x, ct)))
+            .Select(x => Observable.FromAsync(ct => CommitInternal(x, false, ct)))
             .Concat()
-            .Subscribe();
+            .Subscribe(
+                static _ => { },
+                exception => {
+                    Logger.ConfigureIfNull(_subscriptionId, _loggerFactory);
+                    Logger.Current.ErrorLog?.Log(exception, "Commit handler error");
+                },
+                () => {
+                    if (_lastCommit.Valid)
+                        CommitInternal(_lastCommit, true, default).NoContext().GetAwaiter().GetResult();
+                }
+            );
 
         _worker = new ChannelWorker<CommitPosition>(channel, Process, true);
 
@@ -62,6 +67,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
             position.LogContext.PositionReceived(position);
             _subject.OnNext(position);
+
             return default;
         }
 
@@ -69,6 +75,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         CommitPosition AddBatchAndGetLast(IList<CommitPosition> list) {
             _positions.UnionWith(list);
             var next = GetCommitPosition(false);
+
             return next;
         }
     }
@@ -92,41 +99,38 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             // There's a gap between the last committed position and the list head
             case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force:
                 Log.CheckpointLastCommitGap(_lastCommit, _positions.Min);
+
                 return CommitPosition.None;
             // The list head is not at the very beginning
             case false when _positions.Min.Sequence != 0:
                 Log.CheckpointSequenceInvalidHead(_positions.Min);
+
                 return CommitPosition.None;
             case true when _lastCommit.Sequence == _positions.Min.Sequence:
                 Log.CheckpointLastCommitDuplicate(_positions.Min);
+
                 break;
         }
 
         return _positions.FirstBeforeGap();
     }
 
-    async Task CommitInternal(CommitPosition position, CancellationToken cancellationToken) {
+    async Task CommitInternal(CommitPosition position, bool force, CancellationToken cancellationToken) {
         try {
-            if (_lastCommit == position) {
+            if (_lastCommit == position && !force) {
                 Log.CheckpointAlreadyCommitted(_subscriptionId, position);
+
                 return;
             }
 
             position.LogContext.CommittingPosition(position);
-
-            await _commitCheckpoint(
-                    new Checkpoint(_subscriptionId, position.Position),
-                    false,
-                    cancellationToken
-                )
-                .NoContext();
-
+            await _commitCheckpoint(new Checkpoint(_subscriptionId, position.Position), force, cancellationToken).NoContext();
             _lastCommit = position;
-
-            // Removing positions before and including the committed one
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
-        }
-        catch (Exception e) {
+        } catch (OperationCanceledException) {
+            await _commitCheckpoint(new Checkpoint(_subscriptionId, position.Position), true, default).NoContext();
+            _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
+        } catch (Exception e) {
             position.LogContext.UnableToCommitPosition(position, e);
         }
     }
@@ -139,6 +143,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
                 _ => {
                     _subject.OnCompleted();
                     _subject.Dispose();
+
                     return default;
                 }
             )

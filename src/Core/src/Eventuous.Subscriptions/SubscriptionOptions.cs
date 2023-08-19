@@ -1,7 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-namespace Eventuous.Subscriptions; 
+namespace Eventuous.Subscriptions;
 
 [PublicAPI]
 public record SubscriptionOptions {
@@ -9,14 +9,19 @@ public record SubscriptionOptions {
     /// Subscription id is used to match event handlers with one subscription
     /// </summary>
     public string SubscriptionId { get; set; } = null!;
-        
+
     /// <summary>
     /// Set to true if you want the subscription to fail and stop if anything goes wrong.
     /// </summary>
     public bool ThrowOnError { get; set; }
-    
+
     /// <summary>
     /// Custom event serializer. If not assigned, the default serializer will be used.
     /// </summary>
     public IEventSerializer? EventSerializer { get; set; }
+}
+
+public record SubscriptionWithCheckpointOptions : SubscriptionOptions {
+    public int BatchSize     { get; set; } = 100;
+    public int CommitDelayMs { get; set; } = 5000;
 }

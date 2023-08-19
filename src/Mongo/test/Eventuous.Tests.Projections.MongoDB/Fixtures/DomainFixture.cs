@@ -1,22 +1,23 @@
 using Eventuous.Projections.MongoDB.Tools;
 using NodaTime;
 using static Eventuous.Sut.Domain.BookingEvents;
-using static Eventuous.Tests.Projections.MongoDB.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Projections.MongoDB.Fixtures;
 
 public static class DomainFixture {
+    static Fixture Auto { get; } = new();
+
     static DomainFixture()
         => TypeMap.RegisterKnownEventTypes();
 
     public static BookingImported CreateImportBooking() {
-        var from = Instance.Auto.Create<DateTime>();
+        var from = Auto.Create<DateTime>();
 
         return new BookingImported(
-            Instance.Auto.Create<string>(),
-            Instance.Auto.Create<float>(),
+            Auto.Create<string>(),
+            Auto.Create<float>(),
             LocalDate.FromDateTime(from),
-            LocalDate.FromDateTime(from.AddDays(Instance.Auto.Create<int>()))
+            LocalDate.FromDateTime(from.AddDays(Auto.Create<int>()))
         );
     }
 }

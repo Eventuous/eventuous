@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
 using Constants = Eventuous.Diagnostics.Tracing.Constants;
 
@@ -19,6 +20,7 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
         _defaultTags = tags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected override async ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         if (context.Message == null || next == null) return;
 

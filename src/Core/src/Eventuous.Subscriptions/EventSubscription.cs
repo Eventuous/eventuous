@@ -23,12 +23,11 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     protected internal T Options { get; }
 
-    IEventSerializer          EventSerializer { get; }
-    internal  ConsumePipe     Pipe            { get; }
-    protected ILoggerFactory? LoggerFactory   { get; }
-    protected LogContext      Log             { get; }
-
-    protected CancellationTokenSource Stopping { get; } = new();
+    IEventSerializer                  EventSerializer { get; }
+    internal  ConsumePipe             Pipe            { get; }
+    protected ILoggerFactory?         LoggerFactory   { get; }
+    protected LogContext              Log             { get; }
+    protected CancellationTokenSource Stopping        { get; } = new();
 
     protected EventSubscription(T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory) {
         Ensure.NotEmptyString(options.SubscriptionId);
@@ -45,11 +44,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     public string SubscriptionId => Options.SubscriptionId;
 
-    public async ValueTask Subscribe(
-        OnSubscribed      onSubscribed,
-        OnDropped         onDropped,
-        CancellationToken cancellationToken
-    ) {
+    public async ValueTask Subscribe(OnSubscribed onSubscribed, OnDropped onDropped, CancellationToken cancellationToken) {
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, Stopping.Token);
 
         _onSubscribed = onSubscribed;
@@ -70,10 +65,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         await Finalize(cancellationToken);
     }
 
-    protected virtual ValueTask Finalize(CancellationToken cancellationToken)
-        => default;
+    protected virtual ValueTask Finalize(CancellationToken cancellationToken) => default;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     // ReSharper disable once CognitiveComplexity
     protected async ValueTask Handler(IMessageConsumeContext context) {
         var activity = EventuousDiagnostics.Enabled
@@ -97,9 +90,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 if (activity != null) {
                     context.ParentContext = activity.Context;
 
-                    if (isAsync) {
-                        context.Items.AddItem(ContextItemKeys.Activity, activity);
-                    }
+                    if (isAsync) { context.Items.AddItem(ContextItemKeys.Activity, activity); }
                 }
 
                 await Pipe.Send(context).NoContext();
@@ -114,10 +105,9 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             }
 
             if (context.WasIgnored() && activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.None;
-        }
-        catch (Exception e) {
-            context.Nack(SubscriptionId, e);
-        }
+        } catch (OperationCanceledException e) when (Stopping.IsCancellationRequested) {
+            Log.DebugLog?.Log("Message ignored because subscription is stopping: {Message}", e.Message);
+        } catch (Exception e) { context.Nack(SubscriptionId, e); }
 
         if (context.HasFailed()) {
             if (activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.Recorded;
@@ -127,26 +117,14 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
             if (Options.ThrowOnError) {
                 activity?.Dispose();
 
-                throw new SubscriptionException(
-                    context.Stream,
-                    context.MessageType,
-                    context.Message,
-                    exception ?? new InvalidOperationException()
-                );
+                throw new SubscriptionException(context.Stream, context.MessageType, context.Message, exception ?? new InvalidOperationException());
             }
         }
 
         if (!isAsync) activity?.Dispose();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected object? DeserializeData(
-        string               eventContentType,
-        string               eventType,
-        ReadOnlyMemory<byte> data,
-        string               stream,
-        ulong                position = 0
-    ) {
+    protected object? DeserializeData(string eventContentType, string eventType, ReadOnlyMemory<byte> data, string stream, ulong position = 0) {
         if (data.IsEmpty) return null;
 
         var contentType = string.IsNullOrWhiteSpace(eventContentType) ? "application/json" : eventContentType;
@@ -159,8 +137,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 FailedToDeserialize failed       => LogAndReturnNull(failed.Error),
                 _                                => throw new ApplicationException($"Unknown result {result}")
             };
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             var exception = new DeserializationException(stream, eventType, position, e);
 
             Log.PayloadDeserializationFailed(stream, position, eventType, exception);
@@ -172,6 +149,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         object? LogAndReturnNull(DeserializationError error) {
             Log.MessagePayloadInconclusive(eventType, stream, error);
+
             return null;
         }
     }
@@ -194,9 +172,7 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 _onSubscribed?.Invoke(Options.SubscriptionId);
 
                 Log.InfoLog?.Log("Resubscribed");
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception e) {
+            } catch (OperationCanceledException) { } catch (Exception e) {
                 Log.ErrorLog?.Log(e, "Failed to resubscribe");
                 await Task.Delay(1000, cancellationToken).NoContext();
             }
@@ -213,17 +189,13 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
         Task.Run(
             async () => {
-                var delay = reason == DropReason.Stopped
-                    ? TimeSpan.FromSeconds(10)
-                    : TimeSpan.FromSeconds(2);
+                var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2);
 
                 Log.WarnLog?.Log($"Will resubscribe after {delay}");
 
-                try {
-                    await Resubscribe(delay, Stopping.Token);
-                }
-                catch (Exception e) {
+                try { await Resubscribe(delay, Stopping.Token); } catch (Exception e) {
                     Log.WarnLog?.Log(e.Message);
+
                     throw;
                 }
             }
@@ -231,10 +203,10 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     }
 }
 
-public record EventPosition(ulong? Position, DateTime Created) {
-    public static EventPosition FromContext(IMessageConsumeContext context)
-        => new(context.StreamPosition, context.Created);
+public record struct EventPosition(ulong? Position, DateTime Created) {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static EventPosition FromContext(IMessageConsumeContext context) => new(context.StreamPosition, context.Created);
 
-    public static EventPosition FromAllContext(IMessageConsumeContext context)
-        => new(context.GlobalPosition, context.Created);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static EventPosition FromAllContext(IMessageConsumeContext context) => new(context.GlobalPosition, context.Created);
 }

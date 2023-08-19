@@ -44,7 +44,7 @@ public static class LoggingExtensions {
         => log.WarnLog?.Log("No handler found in {Handler} for message type {MessageType}", handler, messageType);
 
     public static void MessageHandlingFailed(this LogContext log, string handlerType, IBaseConsumeContext context, Exception? exception)
-        => log.ErrorLog?.Log(exception, "Message handling failed at {HandlerType} with message {MessageId}", handlerType, context.MessageId);
+        => log.ErrorLog?.Log(exception, "Message handling failed at {HandlerType} for message {MessageId}", handlerType, context.MessageId);
 
     public static void PayloadDeserializationFailed(this LogContext log, string stream, ulong position, string messageType, Exception exception)
         => log.ErrorLog?.Log(exception, "Failed to deserialize event {MessageType} at {Stream}:{Position}", messageType, stream, position);

@@ -4,11 +4,11 @@ using Eventuous.Sut.Domain;
 using Eventuous.Tests.Projections.MongoDB.Fixtures;
 using MongoDB.Driver;
 using static Eventuous.Sut.Domain.BookingEvents;
-using static Eventuous.Tests.Projections.MongoDB.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Projections.MongoDB;
 
-public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProjection> {
+public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper output)
+    : ProjectionTestBase<ProjectWithBuilder.SutProjection>(nameof(ProjectWithBuilder), fixture, output) {
     [Fact]
     public async Task ShouldProjectImported() {
         var evt    = DomainFixture.CreateImportBooking();
@@ -29,7 +29,7 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
 
         first.Doc.Should().Be(expected);
 
-        var payment = new BookingPaymentRegistered(Instance.Auto.Create<string>(), evt.Price);
+        var payment = new BookingPaymentRegistered(fixture.Auto.Create<string>(), evt.Price);
 
         var second = await Act(stream, payment);
 
@@ -42,20 +42,20 @@ public class ProjectWithBuilder : ProjectionTestBase<ProjectWithBuilder.SutProje
         second.Doc.Should().Be(expected);
     }
 
-    static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)
+    async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)
         where T : class {
-        var append = await Instance.AppendEvent(stream, evt);
+        var append = await fixture.AppendEvent(stream, evt);
 
         await Task.Delay(500);
 
-        var actual = await Instance.Mongo.LoadDocument<BookingDocument>(stream.GetId());
+        var actual = await fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId());
+
         return (append, actual);
     }
 
-    public ProjectWithBuilder(ITestOutputHelper output) : base(nameof(ProjectWithBuilder), output) { }
-
-    public class SutProjection : MongoProjection<BookingDocument> {
-        public SutProjection(IMongoDatabase database) : base(database) {
+    public class SutProjection : MongoProjector<BookingDocument> {
+        public SutProjection(IMongoDatabase database)
+            : base(database) {
             On<BookingImported>(
                 b => b
                     .InsertOne

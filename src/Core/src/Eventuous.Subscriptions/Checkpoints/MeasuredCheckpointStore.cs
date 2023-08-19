@@ -19,9 +19,9 @@ public class MeasuredCheckpointStore : ICheckpointStore {
     public MeasuredCheckpointStore(ICheckpointStore checkpointStore) => _checkpointStore = checkpointStore;
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(
-        string            checkpointId,
-        CancellationToken cancellationToken
-    ) {
+            string            checkpointId,
+            CancellationToken cancellationToken
+        ) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
                 ReadOperationName,
                 ActivityKind.Internal,
@@ -34,15 +34,12 @@ public class MeasuredCheckpointStore : ICheckpointStore {
         var checkpoint = await _checkpointStore.GetLastCheckpoint(checkpointId, cancellationToken).NoContext();
 
         activity?.AddBaggage(CheckpointBaggage, checkpoint.Position?.ToString());
+
         return checkpoint;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public async ValueTask<Checkpoint> StoreCheckpoint(
-        Checkpoint        checkpoint,
-        bool              force,
-        CancellationToken cancellationToken
-    ) {
+    public async ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
                 WriteOperationName,
                 ActivityKind.Internal,

@@ -11,32 +11,42 @@ using Eventuous.Postgresql.Extensions;
 namespace Eventuous.Postgresql;
 
 public class PostgresStoreOptions(string schema) {
-    // ReSharper disable once ConvertToPrimaryConstructor
     public PostgresStoreOptions()
         : this(Postgresql.Schema.DefaultSchema) { }
 
     /// <summary>
     /// Override the default schema name.
-    /// The property is mutable to allow using ASP.NET Core configuration.
     /// </summary>
     public string Schema { get; set; } = schema;
+
+    /// <summary>
+    /// PostgreSQL connection string.
+    /// </summary>
+    public string ConnectionString { get; set; } = null!;
+
+    /// <summary>
+    /// Set to true to initialize the database schema on startup. Default is false.
+    /// </summary>
+    public bool InitializeDatabase { get; set; }
 }
 
 public class PostgresStore : IEventStore {
     readonly NpgsqlDataSource    _dataSource;
     readonly IEventSerializer    _serializer;
     readonly IMetadataSerializer _metaSerializer;
+    readonly string              _schemaNema;
 
     public Schema Schema { get; }
 
     public PostgresStore(
-        NpgsqlDataSource      dataSource,
-        PostgresStoreOptions? options,
-        IEventSerializer?     serializer     = null,
-        IMetadataSerializer?  metaSerializer = null
-    ) {
+            NpgsqlDataSource      dataSource,
+            PostgresStoreOptions? options,
+            IEventSerializer?     serializer     = null,
+            IMetadataSerializer?  metaSerializer = null
+        ) {
         var pgOptions = options ?? new PostgresStoreOptions();
-        Schema = new Schema(pgOptions.Schema);
+        _schemaNema = pgOptions.Schema;
+        Schema      = new Schema(pgOptions.Schema);
 
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
@@ -65,11 +75,11 @@ public class PostgresStore : IEventStore {
     public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) => throw new NotImplementedException();
 
     public async Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    ) {
+            StreamName                       stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
+        ) {
         var persistedEvents = events.Where(x => x.Payload != null).Select(x => Convert(x)).ToArray();
 
         await using var connection  = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
@@ -120,11 +130,11 @@ public class PostgresStore : IEventStore {
     }
 
     public Task TruncateStream(
-        StreamName             stream,
-        StreamTruncatePosition truncatePosition,
-        ExpectedStreamVersion  expectedVersion,
-        CancellationToken      cancellationToken
-    )
+            StreamName             stream,
+            StreamTruncatePosition truncatePosition,
+            ExpectedStreamVersion  expectedVersion,
+            CancellationToken      cancellationToken
+        )
         => throw new NotImplementedException();
 
     public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken)

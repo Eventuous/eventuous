@@ -7,23 +7,23 @@ using Eventuous.Sut.Subs;
 using Eventuous.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore;
 
-public class StreamSubscriptionWithLinksTests {
+public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture> {
     const string SubId = "Test";
 
-    public StreamSubscriptionWithLinksTests(ITestOutputHelper output) {
-        _output = output;
-        _prefix = $"{Faker.Commerce.ProductAdjective()}{Faker.Commerce.Product()}";
+    public StreamSubscriptionWithLinksTests(IntegrationFixture fixture, ITestOutputHelper output) {
+        _fixture = fixture;
+        _output  = output;
+        _prefix  = $"{Faker.Commerce.ProductAdjective()}{Faker.Commerce.Product()}";
         output.WriteLine($"Stream prefix: {_prefix}");
 
         var services = new ServiceCollection();
 
         services.AddLogging(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Information));
-        services.AddSingleton(Instance.Client);
+        services.AddSingleton(fixture.Client);
         services.AddEventProducer<EventStoreProducer>();
 
         services
@@ -43,11 +43,12 @@ public class StreamSubscriptionWithLinksTests {
         _services = services;
     }
 
-    readonly List<Checkpoint>  _checkpoints = new();
-    readonly ITestOutputHelper _output;
-    readonly string            _prefix;
-    readonly List<TestEvent>   _events = new();
-    readonly ServiceCollection _services;
+    readonly List<Checkpoint>   _checkpoints = new();
+    readonly IntegrationFixture _fixture;
+    readonly ITestOutputHelper  _output;
+    readonly string             _prefix;
+    readonly List<TestEvent>    _events = new();
+    readonly ServiceCollection  _services;
 
     Faker Faker { get; } = new();
 
@@ -57,8 +58,8 @@ public class StreamSubscriptionWithLinksTests {
         _output.WriteLine("Producing events...");
 
         for (var i = 0; i < count; i++) {
-            var evt    = Instance.Auto.Create<TestEvent>();
-            var stream = new StreamName($"{_prefix}-{Instance.Auto.Create<string>()}");
+            var evt    = _fixture.Auto.Create<TestEvent>();
+            var stream = new StreamName($"{_prefix}-{_fixture.Auto.Create<string>()}");
             await producer.Produce(stream, evt, null);
             _events.Add(evt);
         }
@@ -80,6 +81,7 @@ public class StreamSubscriptionWithLinksTests {
     IServiceProvider Build() {
         var provider = _services.BuildServiceProvider();
         provider.AddEventuousLogs();
+
         return provider;
     }
 
@@ -89,7 +91,7 @@ public class StreamSubscriptionWithLinksTests {
     [Fact]
     public async Task ShouldHandleAllEventsFromStart() {
         const int count = 5000;
-        
+
         AddCheckpointStore(null);
         var provider = Build();
         await Seed(provider, count);
@@ -119,7 +121,7 @@ public class StreamSubscriptionWithLinksTests {
     [Fact]
     public async Task ShouldHandleHalfOfTheEvents() {
         const int count = 1000;
-        
+
         AddCheckpointStore(count / 2);
         var provider = Build();
         await Seed(provider, count);
@@ -151,6 +153,7 @@ public class StreamSubscriptionWithLinksTests {
 
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) {
             Handled.Add(ctx.Message!);
+
             return ValueTask.FromResult(EventHandlingStatus.Success);
         }
     }

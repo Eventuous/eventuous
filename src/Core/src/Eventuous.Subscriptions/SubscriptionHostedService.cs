@@ -9,40 +9,32 @@ namespace Eventuous.Subscriptions;
 using Diagnostics;
 
 // ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
-public class SubscriptionHostedService : IHostedService {
-    readonly CancellationTokenSource _subscriptionCts = new();
-    readonly IMessageSubscription    _subscription;
-    readonly ISubscriptionHealth?    _subscriptionHealth;
-
-    public SubscriptionHostedService(
+public class SubscriptionHostedService(
         IMessageSubscription subscription,
         ISubscriptionHealth? subscriptionHealth = null,
         ILoggerFactory?      loggerFactory      = null
-    ) {
-        _subscription       = subscription;
-        _subscriptionHealth = subscriptionHealth;
+    )
+    : IHostedService {
+    readonly CancellationTokenSource _subscriptionCts = new();
 
-        Log = loggerFactory?.CreateLogger<SubscriptionHostedService>();
-    }
-
-    ILogger<SubscriptionHostedService>? Log { get; }
+    ILogger<SubscriptionHostedService>? Log { get; } = loggerFactory?.CreateLogger<SubscriptionHostedService>();
 
     public virtual async Task StartAsync(CancellationToken cancellationToken) {
-        Log?.LogDebug("Starting subscription {SubscriptionId}", _subscription.SubscriptionId);
+        Log?.LogDebug("Starting subscription {SubscriptionId}", subscription.SubscriptionId);
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
             _subscriptionCts.Token
         );
 
-        await _subscription.Subscribe(
-                id => _subscriptionHealth?.ReportHealthy(id),
-                (id, _, ex) => _subscriptionHealth?.ReportUnhealthy(id, ex),
+        await subscription.Subscribe(
+                id => subscriptionHealth?.ReportHealthy(id),
+                (id, _, ex) => subscriptionHealth?.ReportUnhealthy(id, ex),
                 cts.Token
             )
             .NoContext();
 
-        Log?.LogInformation("Started subscription {SubscriptionId}", _subscription.SubscriptionId);
+        Log?.LogInformation("Started subscription {SubscriptionId}", subscription.SubscriptionId);
     }
 
     public virtual async Task StopAsync(CancellationToken cancellationToken) {
@@ -51,7 +43,7 @@ public class SubscriptionHostedService : IHostedService {
             _subscriptionCts.Token
         );
 
-        await _subscription.Unsubscribe(_ => { }, cts.Token).NoContext();
-        Log?.LogInformation("Stopped subscription {SubscriptionId}", _subscription.SubscriptionId);
+        await subscription.Unsubscribe(_ => { }, cts.Token).NoContext();
+        Log?.LogInformation("Stopped subscription {SubscriptionId}", subscription.SubscriptionId);
     }
 }

@@ -1,14 +1,23 @@
-namespace Eventuous.Tests.RabbitMq; 
+using Testcontainers.RabbitMq;
 
-public static class RabbitMqFixture {
-    static RabbitMqFixture() {
-        const string connectionString = "amqp://guest:guest@localhost:5672/";
+namespace Eventuous.Tests.RabbitMq;
+
+public class RabbitMqFixture : IAsyncLifetime {
+    RabbitMqContainer _rabbitMq = null!;
+
+    public ConnectionFactory ConnectionFactory { get; private set; } = null!;
+
+    public async Task InitializeAsync() {
+        _rabbitMq = new RabbitMqBuilder().Build();
+        await _rabbitMq.StartAsync();
 
         ConnectionFactory = new ConnectionFactory {
-            Uri                    = new Uri(connectionString),
+            Uri                    = new Uri(_rabbitMq.GetConnectionString()),
             DispatchConsumersAsync = true
         };
     }
-        
-    public static ConnectionFactory ConnectionFactory { get; }
+
+    public async Task DisposeAsync() {
+        await _rabbitMq.DisposeAsync();
+    }
 }

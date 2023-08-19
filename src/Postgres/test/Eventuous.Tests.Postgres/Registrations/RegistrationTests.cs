@@ -1,6 +1,3 @@
-// Copyright (C) Ubiquitous AS.All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using Eventuous.Diagnostics;
 using Eventuous.Postgresql;
 using Microsoft.AspNetCore.Hosting;
@@ -17,7 +14,7 @@ public class RegistrationTests {
     public void Should_resolve_store_with_manual_registration() {
         var ds      = new NpgsqlDataSourceBuilder(ConnectionString).Build();
         var builder = new WebHostBuilder();
-        builder.Configure(b => { });
+        builder.Configure(_ => { });
 
         builder.ConfigureServices(
             services => {
@@ -35,15 +32,17 @@ public class RegistrationTests {
     public void Should_resolve_store_with_extensions() {
         EventuousDiagnostics.Disable();
         var builder = new WebHostBuilder();
-        var config  = new Dictionary<string, string?>() { ["postgres:schema"] = "test" };
+        var config  = new Dictionary<string, string?> {
+            ["postgres:schema"] = "test",
+            ["postgres:connectionString"] = ConnectionString
+        };
         builder.ConfigureAppConfiguration(cfg => cfg.AddInMemoryCollection(config));
         builder.Configure(_ => { });
 
         builder.ConfigureServices(
             (ctx, services) => {
-                services.Configure<PostgresStoreOptions>(ctx.Configuration.GetSection("postgres"));
                 services.AddAggregateStore<PostgresStore>();
-                services.AddEventuousPostgres(ConnectionString);
+                services.AddEventuousPostgres(ctx.Configuration.GetSection("postgres"));
             }
         );
         var app            = builder.Build();

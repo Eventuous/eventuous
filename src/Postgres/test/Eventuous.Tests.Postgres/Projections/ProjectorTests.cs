@@ -9,15 +9,14 @@ using Npgsql;
 
 namespace Eventuous.Tests.Postgres.Projections;
 
-public class ProjectorTests : SubscriptionFixture<TestProjector> {
-    const string Schema = @"
-create table if not exists __schema__.bookings (
-    booking_id varchar(1000) not null primary key,
-    checkin_date timestamp,
-    price numeric(10,2)
-);";
-
-    public ProjectorTests(ITestOutputHelper outputHelper) : base(outputHelper, true) { }
+public class ProjectorTests(ITestOutputHelper outputHelper) : SubscriptionFixture<TestProjector>(outputHelper, true) {
+    const string Schema = """
+                          create table if not exists __schema__.bookings (
+                              booking_id varchar(1000) not null primary key,
+                              checkin_date timestamp,
+                              price numeric(10,2)
+                          );
+                          """;
 
     [Fact]
     public async Task ProjectImportedBookingsToTable() {
@@ -58,7 +57,7 @@ create table if not exists __schema__.bookings (
             .ToList();
 
         foreach (var command in commands) {
-            var evt = ToEvent(command);
+            var evt         = ToEvent(command);
             var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
 
             await IntegrationFixture.EventStore.AppendEvents(
@@ -77,7 +76,8 @@ create table if not exists __schema__.bookings (
 }
 
 public class TestProjector : PostgresProjector {
-    public TestProjector(NpgsqlDataSource dataSource, string schema) : base(dataSource) {
+    public TestProjector(NpgsqlDataSource dataSource, string schema)
+        : base(dataSource) {
         var insert = $"insert into {schema}.bookings (booking_id, checkin_date, price) values (@booking_id, @checkin_date, @price)";
 
         On<BookingEvents.BookingImported>(

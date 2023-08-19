@@ -1,20 +1,15 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-namespace Eventuous; 
+namespace Eventuous;
 
 static class Exceptions {
-    public class InvalidIdException : Exception {
-        public InvalidIdException(Id id) : this(id.GetType()) { }
-
-        public InvalidIdException(Type idType) : base(ExceptionMessages.AggregateIdEmpty(idType)) { }
+    public class InvalidIdException(Type idType) : Exception(ExceptionMessages.AggregateIdEmpty(idType)) {
+        public InvalidIdException(Id id)
+            : this(id.GetType()) { }
     }
 
-    public class InvalidIdException<T> : InvalidIdException where T : Id {
-        public InvalidIdException() : base(typeof(T)) { }
-    }
+    public class InvalidIdException<T>() : InvalidIdException(typeof(T)) where T : Id;
 
-    internal class DuplicateTypeException<T> : ArgumentException {
-        public DuplicateTypeException() : base(ExceptionMessages.DuplicateTypeKey<T>(), typeof(T).FullName) { }
-    }
+    internal class DuplicateTypeException<T>() : ArgumentException(ExceptionMessages.DuplicateTypeKey<T>(), typeof(T).FullName);
 }

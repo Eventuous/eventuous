@@ -12,7 +12,7 @@ using static Tracing.Constants.Components;
 public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
     const string Category = "persistence";
 
-    readonly static string MeterName = EventuousDiagnostics.GetMeterName(Category);
+    static readonly string MeterName = EventuousDiagnostics.GetMeterName(Category);
 
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 

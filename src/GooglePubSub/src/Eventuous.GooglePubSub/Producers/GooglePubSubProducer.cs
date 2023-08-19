@@ -69,7 +69,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
         await Task.WhenAll(_clientCache.GetAllClients().Select(x => x.ShutdownAsync(cancellationToken))).NoContext();
     }
 
-    readonly static ProducerTracingOptions TracingOptions = new() { MessagingSystem = "google-pubsub", DestinationKind = "topc", ProduceOperation = "publish" };
+    static readonly ProducerTracingOptions TracingOptions = new() { MessagingSystem = "google-pubsub", DestinationKind = "topc", ProduceOperation = "publish" };
 
     readonly ILogger<GooglePubSubProducer>? _log;
 
@@ -81,6 +81,10 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     ) {
         var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
 
+        await Task.WhenAll(messages.Select(ProduceLocal)).NoContext();
+
+        return;
+
         async Task ProduceLocal(ProducedMessage x) {
             try {
                 await client.PublishAsync(CreateMessage(x, options)).NoContext();
@@ -90,8 +94,6 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
                 await x.Nack<GooglePubSubProducer>("Failed to produce to Google PubSub", e).NoContext();
             }
         }
-
-        await Task.WhenAll(messages.Select(ProduceLocal)).NoContext();
     }
 
     PubsubMessage CreateMessage(ProducedMessage message, PubSubProduceOptions? options) {

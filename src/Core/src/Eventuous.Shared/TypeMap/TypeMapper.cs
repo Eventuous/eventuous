@@ -161,11 +161,8 @@ public class TypeMapper {
 }
 
 [AttributeUsage(AttributeTargets.Class)]
-public class EventTypeAttribute : Attribute {
-    public string EventType { get; }
-
-    public EventTypeAttribute(string eventType)
-        => EventType = eventType;
+public class EventTypeAttribute(string eventType) : Attribute {
+    public string EventType { get; } = eventType;
 }
 
 public class UnregisteredTypeException : Exception {

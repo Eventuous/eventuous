@@ -7,11 +7,8 @@ namespace Eventuous.Subscriptions.Context;
 
 using Logging;
 
-public abstract class WrappedConsumeContext : IMessageConsumeContext {
-    public IMessageConsumeContext InnerContext { get; }
-
-    protected WrappedConsumeContext(IMessageConsumeContext innerContext)
-        => InnerContext = innerContext;
+public abstract class WrappedConsumeContext(IMessageConsumeContext innerContext) : IMessageConsumeContext {
+    public IMessageConsumeContext InnerContext { get; } = innerContext;
 
     public string          MessageId       => InnerContext.MessageId;
     public string          MessageType     => InnerContext.MessageType;

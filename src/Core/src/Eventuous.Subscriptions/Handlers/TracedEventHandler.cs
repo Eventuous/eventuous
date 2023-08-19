@@ -11,34 +11,16 @@ namespace Eventuous.Subscriptions;
 using Context;
 using Diagnostics;
 
-public class TracedEventHandler : IEventHandler {
+public class TracedEventHandler(IEventHandler eventHandler) : IEventHandler {
     readonly DiagnosticSource _metricsSource = new DiagnosticListener(SubscriptionMetrics.ListenerName);
 
-    public TracedEventHandler(IEventHandler eventHandler) {
-        _innerHandler = eventHandler;
+    readonly KeyValuePair<string, object?>[] _defaultTags = { new(TelemetryTags.Eventuous.EventHandler, eventHandler.GetType().Name) };
 
-        _defaultTags = new[] {
-            new KeyValuePair<string, object?>(
-                TelemetryTags.Eventuous.EventHandler,
-                eventHandler.GetType().Name
-            )
-        };
-
-        DiagnosticName = _innerHandler.DiagnosticName;
-    }
-
-    readonly IEventHandler                   _innerHandler;
-    readonly KeyValuePair<string, object?>[] _defaultTags;
-
-    public string DiagnosticName { get; }
+    public string DiagnosticName { get; } = eventHandler.DiagnosticName;
 
     public async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         using var activity = SubscriptionActivity
-            .Create(
-                $"{Constants.Components.EventHandler}.{DiagnosticName}/{context.MessageType}",
-                ActivityKind.Internal,
-                tags: _defaultTags
-            )
+            .Create($"{Constants.Components.EventHandler}.{DiagnosticName}/{context.MessageType}", ActivityKind.Internal, tags: _defaultTags)
             ?.SetContextTags(context)
             ?.Start();
 
@@ -48,17 +30,19 @@ public class TracedEventHandler : IEventHandler {
         );
 
         try {
-            var status = await _innerHandler.HandleEvent(context).NoContext();
+            var status = await eventHandler.HandleEvent(context).NoContext();
 
             if (activity != null && status == EventHandlingStatus.Ignored) activity.ActivityTraceFlags = ActivityTraceFlags.None;
 
             activity?.SetActivityStatus(ActivityStatus.Ok());
 
             return status;
-        }
-        catch (Exception e) {
+        } catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested) {
+            return EventHandlingStatus.Pending;
+        } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
             measure.SetError();
+
             throw;
         }
     }

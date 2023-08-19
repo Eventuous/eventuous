@@ -11,20 +11,14 @@ using Context;
 using Filters;
 using Logging;
 
-public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> where T : SubscriptionOptions {
-    protected EventSubscriptionWithCheckpoint(
+public abstract class EventSubscriptionWithCheckpoint<T>(
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
         int              concurrencyLimit,
         ILoggerFactory?  loggerFactory
     )
-        : base(Ensure.NotNull(options), ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) {
-        CheckpointStore = Ensure.NotNull(checkpointStore);
-
-        CheckpointCommitHandler = new CheckpointCommitHandler(options.SubscriptionId, checkpointStore, 10, loggerFactory);
-    }
-
+    : EventSubscription<T>(Ensure.NotNull(options), ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) where T : SubscriptionWithCheckpointOptions {
     static bool PipelineIsAsync(ConsumePipe pipe) => pipe.RegisteredFilters.Any(x => x is AsyncHandlingFilter);
 
     // It's not ideal, but for now if there's any filter added on top of the default one,
@@ -32,18 +26,26 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     static ConsumePipe ConfigurePipe(ConsumePipe pipe, int concurrencyLimit)
         => PipelineIsAsync(pipe) ? pipe : pipe.AddFilterFirst(new AsyncHandlingFilter((uint)concurrencyLimit));
 
-    EventPosition?          LastProcessed           { get; set; }
-    CheckpointCommitHandler CheckpointCommitHandler { get; }
-    ICheckpointStore        CheckpointStore         { get; }
+    EventPosition? LastProcessed { get; set; }
+    CheckpointCommitHandler CheckpointCommitHandler { get; } = new(
+        options.SubscriptionId,
+        checkpointStore,
+        TimeSpan.FromMilliseconds(options.CommitDelayMs),
+        options.BatchSize,
+        loggerFactory
+    );
+    ICheckpointStore CheckpointStore { get; } = Ensure.NotNull<ICheckpointStore>(checkpointStore);
 
     protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
         try {
             Logger.Current = Log;
             var ctx = new AsyncConsumeContext(context, Ack, Nack);
             await Handler(ctx).NoContext();
+        } catch (OperationCanceledException e) when (context.CancellationToken.IsCancellationRequested) {
+            context.LogContext.MessageHandlingFailed(Options.SubscriptionId, context, e);
+            Dropped(DropReason.Stopped, e);
         } catch (Exception e) {
             context.LogContext.MessageHandlingFailed(Options.SubscriptionId, context, e);
 
@@ -51,6 +53,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     ValueTask Ack(IMessageConsumeContext context) {
         var eventPosition = GetPositionFromContext(context);
         LastProcessed = eventPosition;
@@ -70,7 +73,7 @@ public abstract class EventSubscriptionWithCheckpoint<T> : EventSubscription<T> 
     }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
-        if (IsRunning && LastProcessed != null) { return new Checkpoint(Options.SubscriptionId, LastProcessed.Position); }
+        if (IsRunning && LastProcessed != null) { return new Checkpoint(Options.SubscriptionId, LastProcessed?.Position); }
 
         Logger.Current = Log;
 

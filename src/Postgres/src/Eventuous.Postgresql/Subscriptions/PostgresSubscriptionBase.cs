@@ -13,23 +13,18 @@ namespace Eventuous.Postgresql.Subscriptions;
 
 using Extensions;
 
-public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T> where T : PostgresSubscriptionBaseOptions {
-    readonly  IMetadataSerializer     _metaSerializer;
-    readonly  CancellationTokenSource _cts = new();
-    protected Schema                  Schema     { get; }
-    protected NpgsqlDataSource        DataSource { get; }
-
-    protected PostgresSubscriptionBase(
+public abstract class PostgresSubscriptionBase<T>(
         NpgsqlDataSource dataSource,
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
         ILoggerFactory?  loggerFactory
-    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
-        Schema          = new Schema(options.Schema);
-        DataSource      = dataSource;
-        _metaSerializer = DefaultMetadataSerializer.Instance;
-    }
+    ) : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
+    where T : PostgresSubscriptionBaseOptions {
+    readonly  IMetadataSerializer     _metaSerializer = DefaultMetadataSerializer.Instance;
+    readonly  CancellationTokenSource _cts            = new();
+    protected Schema                  Schema     { get; } = new(options.Schema);
+    protected NpgsqlDataSource        DataSource { get; } = dataSource;
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         await BeforeSubscribe(cancellationToken).NoContext();
@@ -43,8 +38,7 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
         try {
             _cts.Cancel();
             if (_runner != null) await _runner.NoContext();
-        }
-        catch (OperationCanceledException) {
+        } catch (OperationCanceledException) {
             // Nothing to do
         }
     }
@@ -54,9 +48,7 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
     Task? _runner;
 
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
-        var start = position.HasValue
-            ? (long)position
-            : -1;
+        var start = position.HasValue ? (long)position : -1;
 
         var retryDelay = 10;
 
@@ -74,16 +66,14 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
                 }
 
                 retryDelay = 10;
-            }
-            catch (OperationCanceledException) {
+            } catch (OperationCanceledException) {
                 // Nothing to do
-            }
-            catch (PostgresException e) when (e.IsTransient) {
+            } catch (PostgresException e) when (e.IsTransient) {
                 await Task.Delay(retryDelay, cancellationToken);
                 retryDelay *= 2;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Dropped(DropReason.ServerError, e);
+
                 break;
             }
         }
@@ -91,25 +81,16 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
 
     protected abstract NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start);
 
-    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken)
-        => Task.CompletedTask;
+    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
 
     protected abstract long MoveStart(PersistedEvent evt);
 
     IMessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
 
-        var data = DeserializeData(
-            ContentType,
-            evt.MessageType,
-            Encoding.UTF8.GetBytes(evt.JsonData),
-            evt.StreamName!,
-            (ulong)evt.StreamPosition
-        );
+        var data = DeserializeData(ContentType, evt.MessageType, Encoding.UTF8.GetBytes(evt.JsonData), evt.StreamName!, (ulong)evt.StreamPosition);
 
-        var meta = evt.JsonMetadata == null
-            ? new Metadata()
-            : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
+        var meta = evt.JsonMetadata == null ? new Metadata() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
 
         return AsContext(evt, data, meta, cancellationToken);
     }
@@ -117,7 +98,7 @@ public abstract class PostgresSubscriptionBase<T> : EventSubscriptionWithCheckpo
     protected abstract IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken);
 }
 
-public abstract record PostgresSubscriptionBaseOptions : SubscriptionOptions {
+public abstract record PostgresSubscriptionBaseOptions : SubscriptionWithCheckpointOptions {
     public string Schema           { get; set; } = "eventuous";
     public int    ConcurrencyLimit { get; set; } = 1;
     public int    MaxPageSize      { get; set; } = 1024;

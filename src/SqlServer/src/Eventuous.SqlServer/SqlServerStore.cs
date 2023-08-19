@@ -14,23 +14,17 @@ public delegate SqlConnection GetSqlServerConnection();
 
 public record SqlServerStoreOptions(string Schema = Schema.DefaultSchema);
 
-public class SqlServerStore : IEventStore {
-    readonly GetSqlServerConnection _getConnection;
-    readonly IEventSerializer       _serializer;
-    readonly IMetadataSerializer    _metaSerializer;
-    readonly Schema                 _schema;
-
-    public SqlServerStore(
+public class SqlServerStore(
         GetSqlServerConnection getConnection,
         SqlServerStoreOptions  options,
         IEventSerializer?      serializer     = null,
         IMetadataSerializer?   metaSerializer = null
-    ) {
-        _serializer     = serializer     ?? DefaultEventSerializer.Instance;
-        _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
-        _getConnection  = Ensure.NotNull(getConnection, "Connection factory");
-        _schema         = new Schema(options.Schema);
-    }
+    )
+    : IEventStore {
+    readonly GetSqlServerConnection _getConnection  = Ensure.NotNull(getConnection, "Connection factory");
+    readonly IEventSerializer       _serializer     = serializer     ?? DefaultEventSerializer.Instance;
+    readonly IMetadataSerializer    _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
+    readonly Schema                 _schema         = new(options.Schema);
 
     const string ContentType = "application/json";
 
@@ -42,11 +36,11 @@ public class SqlServerStore : IEventStore {
     }
 
     public async Task<StreamEvent[]> ReadEvents(
-        StreamName         stream,
-        StreamReadPosition start,
-        int                count,
-        CancellationToken  cancellationToken
-    ) {
+            StreamName         stream,
+            StreamReadPosition start,
+            int                count,
+            CancellationToken  cancellationToken
+        ) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
 
         await using var cmd = connection.GetStoredProcCommand(_schema.ReadStreamForwards)
@@ -58,9 +52,9 @@ public class SqlServerStore : IEventStore {
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
             var result = reader.ReadEvents(cancellationToken);
+
             return await result.Select(x => ToStreamEvent(x)).ToArrayAsync(cancellationToken).NoContext();
-        }
-        catch (SqlException e) when (e.Message.StartsWith("StreamNotFound")) {
+        } catch (SqlException e) when (e.Message.StartsWith("StreamNotFound")) {
             throw new StreamNotFound(stream);
         }
     }
@@ -69,11 +63,11 @@ public class SqlServerStore : IEventStore {
         => throw new NotImplementedException();
 
     public async Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    ) {
+            StreamName                       stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
+        ) {
         var persistedEvents = events
             .Where(x => x.Payload != null)
             .Select(x => Convert(x))
@@ -97,17 +91,19 @@ public class SqlServerStore : IEventStore {
             }
 
             await transaction.CommitAsync(cancellationToken).NoContext();
+
             return result;
-        }
-        catch (SqlException e) when (e.Number == 50000) {
+        } catch (SqlException e) when (e.Number == 50000) {
             await transaction.RollbackAsync(cancellationToken).NoContext();
             PersistenceEventSource.Log.UnableToAppendEvents(stream, e);
+
             throw new AppendToStreamException(stream, e);
         }
 
         NewPersistedEvent Convert(StreamEvent evt) {
             var data = _serializer.SerializeEvent(evt.Payload!);
             var meta = _metaSerializer.Serialize(evt.Metadata);
+
             return new NewPersistedEvent(evt.Id, data.EventType, AsString(data.Payload), AsString(meta));
         }
 
@@ -122,22 +118,23 @@ public class SqlServerStore : IEventStore {
             .Add("@name", SqlDbType.NVarChar, stream.ToString());
 
         var result = await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
+
         return (bool)result!;
     }
 
     public Task TruncateStream(
-        StreamName             stream,
-        StreamTruncatePosition truncatePosition,
-        ExpectedStreamVersion  expectedVersion,
-        CancellationToken      cancellationToken
-    )
+            StreamName             stream,
+            StreamTruncatePosition truncatePosition,
+            ExpectedStreamVersion  expectedVersion,
+            CancellationToken      cancellationToken
+        )
         => throw new NotImplementedException();
 
     public Task DeleteStream(
-        StreamName            stream,
-        ExpectedStreamVersion expectedVersion,
-        CancellationToken     cancellationToken
-    )
+            StreamName            stream,
+            ExpectedStreamVersion expectedVersion,
+            CancellationToken     cancellationToken
+        )
         => throw new NotImplementedException();
 
     StreamEvent ToStreamEvent(PersistedEvent evt) {

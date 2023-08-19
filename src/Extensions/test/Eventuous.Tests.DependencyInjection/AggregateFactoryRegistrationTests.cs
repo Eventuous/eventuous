@@ -1,7 +1,5 @@
 ﻿using Eventuous.Tests.AspNetCore.Sut;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -11,8 +9,10 @@ public class AggregateFactoryRegistrationTests {
     readonly AggregateFactoryRegistry _registry;
 
     public AggregateFactoryRegistrationTests() {
-        var host = new TestServer(BuildHost());
-        _registry = host.Host.Services.GetRequiredService<AggregateFactoryRegistry>();
+        var host = BuildHost();
+        var app  = host.Build();
+        app.UseAggregateFactory();
+        _registry = app.Services.GetRequiredService<AggregateFactoryRegistry>();
     }
 
     [Fact]
@@ -38,20 +38,13 @@ public class AggregateFactoryRegistrationTests {
         instance1.Should().NotBeSameAs(instance2);
     }
 
-    static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
+    static WebApplicationBuilder BuildHost() {
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddAggregateStore<FakeStore>();
+        builder.Services.AddSingleton<TestDependency>();
+        builder.Services.AddAggregate(sp => new TestAggregate(sp.GetRequiredService<TestDependency>()));
+        builder.Services.AddAggregate<AnotherTestAggregate>();
 
-    public class Startup {
-        public void ConfigureServices(IServiceCollection services) {
-            services.AddAggregateStore<FakeStore>();
-            services.AddSingleton<TestDependency>();
-
-            services.AddAggregate(
-                sp => new TestAggregate(sp.GetRequiredService<TestDependency>())
-            );
-
-            services.AddAggregate<AnotherTestAggregate>();
-        }
-
-        public void Configure(WebApplication app) => app.UseAggregateFactory();
+        return builder;
     }
 }

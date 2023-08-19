@@ -1,15 +1,17 @@
 using Eventuous.Sut.App;
-using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
+using MicroElements.AutoFixture.NodaTime;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
 
 public static class DomainFixture {
     static DomainFixture() => TypeMap.RegisterKnownEventTypes();
 
-    public static Commands.ImportBooking CreateImportBooking() {
-        var from = Instance.Auto.Create<LocalDate>();
+    static IFixture Auto { get; } = new Fixture().Customize(new NodaTimeCustomization());
 
-        return Instance.Auto.Build<Commands.ImportBooking>()
+    public static Commands.ImportBooking CreateImportBooking() {
+        var from = Auto.Create<LocalDate>();
+
+        return Auto.Build<Commands.ImportBooking>()
             .With(x => x.CheckIn, from)
             .With(x => x.CheckOut, from.PlusDays(2))
             .Create();

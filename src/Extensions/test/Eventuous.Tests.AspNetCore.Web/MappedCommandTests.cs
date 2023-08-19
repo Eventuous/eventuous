@@ -5,18 +5,14 @@ namespace Eventuous.Tests.AspNetCore.Web;
 using TestHelpers;
 using Fixture;
 
-public class MappedCommandTests : IDisposable {
-    readonly TestEventListener _listener;
-
-    public MappedCommandTests(ITestOutputHelper output) {
-        _listener = new TestEventListener(output);
-    }
+public class MappedCommandTests(ITestOutputHelper output) : IDisposable {
+    readonly TestEventListener _listener = new(output);
 
     [Fact]
     public async Task MapContractToCommandExplicitly() {
         using var fixture = new ServerFixture(
-            configure: app => app
-                .MapCommand<ImportBookingHttp, ImportBooking, Booking>("import", EnrichCommand)
+            output,
+            configure: app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking>("import", EnrichCommand)
         );
 
         await Execute(fixture, "import");
@@ -25,6 +21,7 @@ public class MappedCommandTests : IDisposable {
     [Fact]
     public async Task MapAggregateContractToCommandExplicitly() {
         using var fixture = new ServerFixture(
+            output,
             configure: app => app
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp, ImportBooking>("import", EnrichCommand)
@@ -36,6 +33,7 @@ public class MappedCommandTests : IDisposable {
     [Fact]
     public async Task MapAggregateContractToCommandExplicitlyWithoutRoute() {
         using var fixture = new ServerFixture(
+            output,
             configure: app => app
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp1, ImportBooking>(EnrichCommand)
@@ -47,6 +45,7 @@ public class MappedCommandTests : IDisposable {
     [Fact]
     public async Task MapAggregateContractToCommandExplicitlyWithoutRouteWithGenericAttr() {
         using var fixture = new ServerFixture(
+            output,
             configure: app => app
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp2, ImportBooking>(EnrichCommand)
@@ -58,6 +57,7 @@ public class MappedCommandTests : IDisposable {
     [Fact]
     public async Task MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
         using var fixture = new ServerFixture(
+            output,
             configure: app => app
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp3, ImportBooking>(EnrichCommand)

@@ -7,14 +7,11 @@ namespace Eventuous.Diagnostics.Tracing;
 
 using static Constants;
 
-public class TracedEventReader : BaseTracer, IEventReader {
+public class TracedEventReader(IEventReader reader) : BaseTracer, IEventReader {
     public static IEventReader Trace(IEventReader reader)
         => new TracedEventReader(reader);
 
-    public TracedEventReader(IEventReader reader)
-        => Inner = reader;
-
-    IEventReader Inner { get; }
+    IEventReader Inner { get; } = reader;
 
     public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => Trace(stream, Operations.ReadEvents, () => Inner.ReadEvents(stream, start, count, cancellationToken));
