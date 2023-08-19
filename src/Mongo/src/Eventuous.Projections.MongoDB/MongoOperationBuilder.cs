@@ -7,16 +7,30 @@ namespace Eventuous.Projections.MongoDB;
 
 using Tools;
 
-public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
+public partial class MongoOperationBuilder<TEvent, T>
+    where T : ProjectedDocument where TEvent : class {
     public UpdateOneBuilder  UpdateOne  => new();
     public UpdateManyBuilder UpdateMany => new();
-    public InsertOneBuilder  InsertOne  => new();
+    public InsertOneBuilder InsertOne  => new();
     public InsertManyBuilder InsertMany => new();
     public DeleteOneBuilder  DeleteOne  => new();
     public DeleteManyBuilder DeleteMany => new();
-
+    public BulkWriteBuilder Bulk => new();
+    
+    public class MongoBulkOperationBuilders {
+        public UpdateOneBuilder  UpdateOne  => new();
+        public UpdateManyBuilder UpdateMany => new();
+        public InsertOneBuilder  InsertOne  => new();
+        public DeleteOneBuilder  DeleteOne  => new();
+        public DeleteManyBuilder DeleteMany => new();
+    }
+    
     public interface IMongoProjectorBuilder {
         ProjectTypedEvent<T, TEvent> Build();
+    }
+    
+    public interface IMongoBulkBuilderFactory {
+        BuildWriteModel GetBuilder();
     }
 
     public class FilterBuilder {
@@ -40,4 +54,6 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         ValueTask<MongoProjectOperation<T>> Handle(MessageConsumeContext<TEvent> ctx)
             => new(new MongoProjectOperation<T>((collection, token) => handler(ctx, collection, token)));
     }
+    
+    public delegate ValueTask<WriteModel<T>> BuildWriteModel(MessageConsumeContext<TEvent> context);
 }

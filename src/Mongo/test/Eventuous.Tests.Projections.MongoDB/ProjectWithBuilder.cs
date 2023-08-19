@@ -27,7 +27,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
             StreamPosition = (ulong)first.Append.NextExpectedVersion
         };
 
-        first.Doc.Should().Be(expected);
+        first.Doc.Should().BeEquivalentTo(expected);
 
         var payment = new BookingPaymentRegistered(Fixture.Auto.Create<string>(), evt.Price);
 
@@ -39,7 +39,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
             StreamPosition = (ulong)second.Append.NextExpectedVersion
         };
 
-        second.Doc.Should().Be(expected);
+        second.Doc.Should().BeEquivalentTo(expected);
     }
 
     async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)
@@ -58,18 +58,18 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
             : base(database) {
             On<BookingImported>(
                 b => b
-                    .InsertOne
-                    .Document(
-                        (stream, e) => new BookingDocument(stream.GetId()) {
-                            RoomId       = e.RoomId,
-                            CheckInDate  = e.CheckIn,
-                            CheckOutDate = e.CheckOut,
-                            BookingPrice = e.Price,
-                            Outstanding  = e.Price
-                        }
-                    )
-            );
-
+                    .Bulk
+                    .Operation(x => x.InsertOne
+                        .Document(
+                            ctx => new BookingDocument(ctx.Stream.GetId()) {
+                                RoomId       = ctx.Message.RoomId,
+                                CheckInDate  = ctx.Message.CheckIn,
+                                CheckOutDate = ctx.Message.CheckOut,
+                                BookingPrice = ctx.Message.Price,
+                                Outstanding  = ctx.Message.Price
+                            }
+                        )));
+          
             On<RoomBooked>(
                 b => b
                     .InsertOne
@@ -80,7 +80,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
                         }
                     )
             );
-
+            
             On<BookingPaymentRegistered>(
                 b => b
                     .UpdateOne

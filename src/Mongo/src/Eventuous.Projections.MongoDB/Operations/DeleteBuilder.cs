@@ -24,27 +24,22 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 (ctx, collection, token) => {
-                    var options = new DeleteOptions();
-                    ConfigureOptions?.Invoke(options);
-
+                    var options = Options<DeleteOptions>.New(ConfigureOptions);
                     return collection.DeleteOneAsync(FilterBuilder.GetFilter(ctx), options, token);
-                }
-            );
+                });
     }
 
     public class DeleteManyBuilder : DeleteBuilder<DeleteManyBuilder>, IMongoProjectorBuilder {
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 (ctx, collection, token) => {
-                    var options = new DeleteOptions();
-                    ConfigureOptions?.Invoke(options);
+                    var options = Options<DeleteOptions>.New(ConfigureOptions);
 
                     return collection.DeleteManyAsync(FilterBuilder.GetFilter(ctx), options, token);
-                }
-            );
+                });
     }
 
-    public abstract class DeleteBuilder<TBuilder> where TBuilder : DeleteBuilder<TBuilder> {
+    public abstract class DeleteBuilder<TBuilder> : IMongoBulkBuilderFactory where TBuilder : DeleteBuilder<TBuilder> {
         protected readonly FilterBuilder          FilterBuilder = new();
         protected          Action<DeleteOptions>? ConfigureOptions;
 
@@ -67,5 +62,15 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         }
 
         TBuilder Self => (TBuilder)this;
+
+        BuildWriteModel IMongoBulkBuilderFactory.GetBuilder() => ctx=> {
+                var options = Options<DeleteOptions>.New(ConfigureOptions);
+                return new ValueTask<WriteModel<T>>(
+                new DeleteOneModel<T>(FilterBuilder.GetFilter(ctx)) {
+                    Collation = options.Collation,
+                    Hint = options.Hint
+                }
+            );
+        };
     }
 }

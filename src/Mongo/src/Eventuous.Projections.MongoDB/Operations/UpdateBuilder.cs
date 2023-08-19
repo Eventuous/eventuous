@@ -8,7 +8,7 @@ namespace Eventuous.Projections.MongoDB;
 using Tools;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
-    public class UpdateOneBuilder : UpdateBuilder<UpdateOneBuilder>, IMongoProjectorBuilder {
+    public class UpdateOneBuilder : UpdateBuilder<UpdateOneBuilder>, IMongoProjectorBuilder, IMongoBulkBuilderFactory {
         [PublicAPI]
         public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId)
             => Id(x => getId(x.Stream));
@@ -25,16 +25,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 async (ctx, collection, token) => {
-                    UpdateOptions options;
-
-                    if (ConfigureOptions != null) {
-                        options = new UpdateOptions { IsUpsert = true };
-                        ConfigureOptions(options);
-                    }
-                    else { options = DefaultOptions; }
-
-                    var update = await GetUpdate(ctx, Builders<T>.Update);
-
+                    var (update, options) = await GetUpdateWithOptions(ctx);
                     var filter = FilterBuilder.GetFilter(ctx);
                     // TODO: Make this an option (idempotence based on commit position)
                     // var filter = Builders<T>.Filter.And(
@@ -45,52 +36,59 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                     await collection
                         .UpdateOneAsync(
                             filter,
-                            update
-                                .Set(x => x.StreamPosition, ctx.StreamPosition)
-                                .Set(x => x.Position, ctx.GlobalPosition),
+                            update,
                             options,
                             token
                         );
                 }
             );
+        
+        BuildWriteModel IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
+            var (update, options) = await GetUpdateWithOptions(ctx);
+            return new UpdateOneModel<T>(FilterBuilder.GetFilter(ctx), update) {
+                Collation    = options.Collation,
+                Hint         = options.Hint,
+                IsUpsert     = options.IsUpsert,
+                ArrayFilters = options.ArrayFilters
+            };
+        };
     }
 
-    public class UpdateManyBuilder : UpdateBuilder<UpdateManyBuilder>, IMongoProjectorBuilder {
+    public class UpdateManyBuilder : UpdateBuilder<UpdateManyBuilder>, IMongoProjectorBuilder, IMongoBulkBuilderFactory {
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 async (ctx, collection, token) => {
-                    UpdateOptions options;
-
-                    if (ConfigureOptions != null) {
-                        options = new UpdateOptions { IsUpsert = true };
-                        ConfigureOptions(options);
-                    }
-                    else { options = DefaultOptions; }
-
-                    var update = await GetUpdate(ctx, Builders<T>.Update).NoContext();
-
+                    var (update, options) = await GetUpdateWithOptions(ctx);
                     await collection.UpdateManyAsync(
                             FilterBuilder.GetFilter(ctx),
-                            update
-                                .Set(x => x.Position, ctx.GlobalPosition)
-                                .Set(x => x.StreamPosition, ctx.StreamPosition),
+                            update,
                             options,
                             token
                         )
                         .NoContext();
                 }
             );
+
+        BuildWriteModel IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
+            var (update, options) = await GetUpdateWithOptions(ctx);
+            return new UpdateManyModel<T>(FilterBuilder.GetFilter(ctx), update) {
+                Collation = options.Collation,
+                Hint = options.Hint,
+                IsUpsert = options.IsUpsert,
+                ArrayFilters = options.ArrayFilters
+            };
+        };
     }
 
     public abstract class UpdateBuilder<TBuilder> where TBuilder : UpdateBuilder<TBuilder> {
-        protected readonly FilterBuilder          FilterBuilder = new();
-        protected          Action<UpdateOptions>? ConfigureOptions;
+        protected readonly FilterBuilder FilterBuilder = new();
+        Action<UpdateOptions>?           _configureOptions;
 
         BuildUpdateAsync<TEvent, T>? _buildUpdate;
 
-        protected BuildUpdateAsync<TEvent, T> GetUpdate => Ensure.NotNull(_buildUpdate, "Update function");
+        BuildUpdateAsync<TEvent, T> GetUpdate => Ensure.NotNull(_buildUpdate, "Update function");
 
-        protected static UpdateOptions DefaultOptions => new() { IsUpsert = true };
+        static UpdateOptions DefaultOptions => new() { IsUpsert = true };
 
         public TBuilder Filter(BuildFilter<TEvent, T> buildFilter) {
             FilterBuilder.Filter(buildFilter);
@@ -132,11 +130,23 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         [PublicAPI]
         public TBuilder Configure(Action<UpdateOptions> configure) {
-            ConfigureOptions = configure;
+            _configureOptions = configure;
 
             return Self;
         }
 
         TBuilder Self => (TBuilder)this;
+        
+
+        protected async Task<(UpdateDefinition<T> Update, UpdateOptions Options)> GetUpdateWithOptions(IMessageConsumeContext<TEvent> ctx) {
+            var options = Options<UpdateOptions>.DefaultIfNotConfigured(_configureOptions, () => DefaultOptions);
+            var update  = await GetUpdate(ctx, Builders<T>.Update).NoContext();
+
+            return (
+                update
+                    .Set(x => x.StreamPosition, ctx.StreamPosition)
+                    .Set(x => x.Position, ctx.GlobalPosition), 
+                options);
+        }
     }
 }
