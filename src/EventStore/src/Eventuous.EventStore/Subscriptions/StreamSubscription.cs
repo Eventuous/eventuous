@@ -128,7 +128,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             re.Event.EventType,
             re.Event.ContentType,
             re.Event.EventStreamId,
-            re.OriginalEventNumber,
+            re.Event.EventNumber,
             re.Event.Position.CommitPosition,
             _sequence++,
             re.Event.Created,
@@ -136,7 +136,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             Options.MetadataSerializer.DeserializeMeta(
                 Options,
                 re.Event.Metadata,
-                re.OriginalStreamId,
+                re.Event.EventStreamId,
                 re.Event.EventNumber
             ),
             SubscriptionId,

@@ -112,13 +112,13 @@ public class AllStreamSubscription
             re.Event.EventId.ToString(),
             re.Event.EventType,
             re.Event.ContentType,
-            re.OriginalStreamId,
+            re.Event.EventStreamId,
             re.Event.EventNumber,
             re.Event.Position.CommitPosition,
             _sequence++,
             re.Event.Created,
             evt,
-            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.OriginalStreamId),
+            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId),
             SubscriptionId,
             cancellationToken
         );
