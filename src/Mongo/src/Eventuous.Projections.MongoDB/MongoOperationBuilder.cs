@@ -11,11 +11,11 @@ public partial class MongoOperationBuilder<TEvent, T>
     where T : ProjectedDocument where TEvent : class {
     public UpdateOneBuilder  UpdateOne  => new();
     public UpdateManyBuilder UpdateMany => new();
-    public InsertOneBuilder InsertOne  => new();
+    public InsertOneBuilder  InsertOne  => new();
     public InsertManyBuilder InsertMany => new();
     public DeleteOneBuilder  DeleteOne  => new();
     public DeleteManyBuilder DeleteMany => new();
-    public BulkWriteBuilder Bulk => new();
+    public BulkWriteBuilder  Bulk => new();
     
     public class MongoBulkOperationBuilders {
         public UpdateOneBuilder  UpdateOne  => new();
