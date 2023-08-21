@@ -13,12 +13,13 @@ jobs:
         with:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
-      -  
-        name: Run tests
-        run: |
-          dotnet test --logger "trx;LogFileName=test-results.trx"
-      -  
-        name: Upload test results
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Debug --no-restore
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      - name: Upload test results
         uses: actions/upload-artifact@v2
         with:
           name: test-results

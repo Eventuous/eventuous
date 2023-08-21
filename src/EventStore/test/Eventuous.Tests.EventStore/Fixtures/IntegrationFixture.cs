@@ -42,7 +42,12 @@ public sealed class IntegrationFixture : IAsyncLifetime {
 
     public async Task DisposeAsync() {
         _listener.Dispose();
-        await Client.DisposeAsync();
-        await _esdbContainer.DisposeAsync();
+
+        try {
+            await Client.DisposeAsync();
+            await _esdbContainer.DisposeAsync();
+        } catch (Exception e) {
+            Console.WriteLine(e);
+        }
     }
 }

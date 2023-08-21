@@ -4,7 +4,7 @@ using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
-public class PersistentPublishAndSubscribeManyTests : PersistentSubscriptionFixture<TestEventHandler>, IClassFixture<IntegrationFixture> {
+public class PersistentPublishAndSubscribeManyTests : PersistentSubscriptionFixture<TestEventHandler> {
     public PersistentPublishAndSubscribeManyTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, new TestEventHandler(), false) { }
 
