@@ -10,13 +10,13 @@ using Testcontainers.Redis;
 namespace Eventuous.Tests.Redis.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncLifetime {
-    public IEventWriter     EventWriter    { get; set; }
-    public IEventReader     EventReader    { get; set; }
-    public IAggregateStore  AggregateStore { get; set; }
-    public GetRedisDatabase GetDatabase    { get; set; }
+    public IEventWriter     EventWriter    { get; private set; } = null!;
+    public IEventReader     EventReader    { get; private set; } = null!;
+    public IAggregateStore  AggregateStore { get; private set; } = null!;
+    public GetRedisDatabase GetDatabase    { get; private set; } = null!;
 
-    readonly ActivityListener _listener = DummyActivityListener.Create();
-    RedisContainer            _redisContainer;
+    readonly ActivityListener _listener       = DummyActivityListener.Create();
+    RedisContainer            _redisContainer = null!;
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -25,8 +25,6 @@ public sealed class IntegrationFixture : IAsyncLifetime {
 
     public IntegrationFixture() {
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-
-        return;
     }
 
     public async Task InitializeAsync() {

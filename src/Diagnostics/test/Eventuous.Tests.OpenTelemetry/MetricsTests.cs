@@ -71,6 +71,8 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
         while (counter.Count < SubscriptionFixture.Count / 3) {
             await Task.Delay(10);
         }
+
+        await Task.Delay(100);
     }
 
     public Task DisposeAsync() {

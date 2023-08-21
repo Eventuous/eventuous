@@ -12,7 +12,7 @@ namespace Eventuous.Tests.SqlServer.Subscriptions;
 
 public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     readonly BookingService _service;
-    List<ImportBooking>     _commands;
+    List<ImportBooking>     _commands = null!;
 
     public SubscribeToAll(IntegrationFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, new TestEventHandler(), true, false) {
@@ -20,12 +20,13 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
         var store      = new AggregateStore(eventStore);
         _service = new BookingService(store);
     }
-        const int count = 10;
+
+    const int Count = 10;
 
     [Fact]
     public async Task ShouldConsumeProducedEvents() {
         var testEvents = _commands.Select(ToEvent).ToList();
-        Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        Handler.AssertThat().Exactly(Count, x => testEvents.Contains(x));
 
         await Start();
         await Handler.Validate(2.Seconds());
@@ -49,7 +50,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     public override async Task InitializeAsync() {
         await base.InitializeAsync();
 
-        _commands = await GenerateAndHandleCommands(count);
+        _commands = await GenerateAndHandleCommands(Count);
     }
 
     static BookingImported ToEvent(ImportBooking cmd)
