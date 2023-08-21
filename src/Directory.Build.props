@@ -14,6 +14,32 @@
         <LocalRoot>..\..\src</LocalRoot>
     </PropertyGroup>
 
+    <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Eventuous.Tests'))">
+        <VSTestLogger>trx%3bLogFileName=$(MSBuildProjectName).trx</VSTestLogger>
+        <VSTestResultsDirectory>$(RepoRoot)/test-results/$(TargetFramework)</VSTestResultsDirectory>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="!($(MSBuildProjectName.StartsWith('Eventuous.Tests')))">
+        <IsPackable>true</IsPackable>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <UpdateVersionProperties>true</UpdateVersionProperties>
+        <PackageIcon>e-logo.png</PackageIcon>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/eventuous/Eventuous.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <Description>Production-grade Event Sourcing library</Description>
+        <Authors>Alexey Zimarev and Eventuous community</Authors>
+        <Copyright>Ubiquitous AS</Copyright>
+        <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
     <ItemGroup Condition="'$(IsPackable)' == 'true'">
         <PackageReference Include="MinVer" PrivateAssets="All"/>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="All"/>
@@ -40,28 +66,6 @@
         <Using Include="AutoFixture"/>
         <Using Include="Microsoft.Extensions.Logging"/>
     </ItemGroup>
-
-    <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
-        <IsPackable>false</IsPackable>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
-        <IsPackable>true</IsPackable>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <UpdateVersionProperties>true</UpdateVersionProperties>
-        <PackageIcon>e-logo.png</PackageIcon>
-        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <RepositoryUrl>https://github.com/eventuous/Eventuous.git</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <Description>Production-grade Event Sourcing library</Description>
-        <Authors>Alexey Zimarev and Eventuous community</Authors>
-        <Copyright>Ubiquitous AS</Copyright>
-        <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
-        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
-    </PropertyGroup>
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
         <PackageReference Include="Microsoft.AspNetCore.TestHost"/>

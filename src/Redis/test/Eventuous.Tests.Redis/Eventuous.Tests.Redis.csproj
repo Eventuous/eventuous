@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <IsTestProject>true</IsTestProject>
         <IncludeSutSubs>true</IncludeSutSubs>
         <IncludeSutApp>true</IncludeSutApp>
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
         <ItemGroup>
             <PackageReference Include="MicroElements.AutoFixture.NodaTime" />

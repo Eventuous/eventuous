@@ -1,7 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj"/>
     </ItemGroup>
