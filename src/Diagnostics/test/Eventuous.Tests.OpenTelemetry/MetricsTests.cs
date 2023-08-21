@@ -10,6 +10,7 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
 
     [Fact]
     public void Debug() {
+        _exporter.Collect(Timeout.Infinite);
         var values = _exporter.CollectValues();
 
         foreach (var value in values) {
@@ -18,29 +19,25 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
     }
 
     [Fact]
-    public void ShouldMeasureSubscriptionGapDuration() {
+    public void ShouldMeasureSubscriptionGapCount() {
+        _exporter.Collect(Timeout.Infinite);
         var values = _exporter.CollectValues();
 
+        var counter  = _host.Services.GetRequiredService<MessageCounter>();
+        var gapCount = GetValue(values, SubscriptionMetrics.GapCountMetricName)!;
         var duration = GetValue(values, SubscriptionMetrics.ProcessingRateName)!;
+
+        var expectedGap = SubscriptionFixture.Count - counter.Count + 1;
+
+        gapCount.Should().NotBeNull();
+        gapCount.Value.Should().BeInRange(expectedGap, expectedGap + 5);
+        GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
+        GetTag(gapCount, "test").Should().Be("foo");
 
         duration.Should().NotBeNull();
         GetTag(duration, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
         GetTag(duration, SubscriptionMetrics.MessageTypeTag).Should().Be(TestEvent.TypeName);
         GetTag(duration, "test").Should().Be("foo");
-    }
-
-    [Fact]
-    public void ShouldMeasureSubscriptionGapCount() {
-        var values = _exporter.CollectValues();
-
-        var counter  = _host.Services.GetRequiredService<MessageCounter>();
-        var gapCount = GetValue(values, SubscriptionMetrics.GapCountMetricName)!;
-        var expected = SubscriptionFixture.Count - counter.Count + 1;
-
-        gapCount.Should().NotBeNull();
-        gapCount.Value.Should().BeInRange(expected, expected + 5);
-        GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
-        GetTag(gapCount, "test").Should().Be("foo");
     }
 
     static MetricValue? GetValue(MetricValue[] values, string metric)
@@ -85,8 +82,7 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
             await Task.Delay(10);
         }
 
-        await Task.Delay(200);
-        _exporter.Collect(Timeout.Infinite);
+        await Task.Delay(500);
     }
 
     public Task DisposeAsync() {
