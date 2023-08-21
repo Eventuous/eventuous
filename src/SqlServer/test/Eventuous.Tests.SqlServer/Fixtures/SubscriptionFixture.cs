@@ -10,12 +10,13 @@ namespace Eventuous.Tests.SqlServer.Fixtures;
 public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>, IAsyncLifetime where T : class, IEventHandler {
     static SubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    protected StreamName               Stream          { get; }
-    protected T                        Handler         { get; }
-    protected ILogger                  Log             { get; }
-    protected SqlServerCheckpointStore CheckpointStore { get; private set; } = null!;
-    IMessageSubscription               Subscription    { get; set; }         = null!;
-    protected string                   SchemaName      { get; }
+    protected StreamName               Stream                 { get; }
+    protected T                        Handler                { get; }
+    protected ILogger                  Log                    { get; }
+    protected SqlServerCheckpointStore CheckpointStore        { get; private set; } = null!;
+    SqlServerCheckpointStoreOptions    CheckpointStoreOptions { get; set; }         = null!;
+    IMessageSubscription               Subscription           { get; set; }         = null!;
+    protected string                   SchemaName             { get; }
 
     protected SubscriptionFixture(
             IntegrationFixture fixture,
@@ -37,7 +38,7 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
         Log             = _loggerFactory.CreateLogger(GetType());
     }
 
-    public string SubscriptionId { get; }
+    protected string SubscriptionId { get; }
 
     protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
 
@@ -53,7 +54,8 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
         var schema = new Schema(SchemaName);
         await schema.CreateSchema(_fixture.GetConnection);
 
-        CheckpointStore = new SqlServerCheckpointStore(_fixture.GetConnection, _fixture.SchemaName);
+        CheckpointStoreOptions = new SqlServerCheckpointStoreOptions { Schema = SchemaName };
+        CheckpointStore        = new SqlServerCheckpointStore(_fixture.GetConnection, CheckpointStoreOptions);
 
         var pipe = new ConsumePipe();
         pipe.AddDefaultConsumer(Handler);
@@ -62,7 +64,8 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
             !_subscribeToAll
                 ? new SqlServerStreamSubscription(
                     _fixture.GetConnection,
-                    new SqlServerStreamSubscriptionOptions(Stream) {
+                    new SqlServerStreamSubscriptionOptions {
+                        Stream         = Stream,
                         SubscriptionId = SubscriptionId,
                         Schema         = SchemaName
                     },
