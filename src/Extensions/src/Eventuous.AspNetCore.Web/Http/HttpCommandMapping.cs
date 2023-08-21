@@ -27,10 +27,11 @@ public static partial class RouteBuilderExtensions {
     /// <returns></returns>
     [PublicAPI]
     public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
-        this IEndpointRouteBuilder              builder,
-        EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
-    ) where TAggregate : Aggregate where TCommand : class {
+            this IEndpointRouteBuilder              builder,
+            EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
+        ) where TAggregate : Aggregate where TCommand : class {
         var attr = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
+
         return builder.MapCommand<TCommand, TAggregate>(attr?.Route, enrichCommand, attr?.PolicyName);
     }
 
@@ -46,11 +47,11 @@ public static partial class RouteBuilderExtensions {
     /// <returns></returns>
     [PublicAPI]
     public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
-        this IEndpointRouteBuilder              builder,
-        string?                                 route,
-        EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
-        string?                                 policyName    = null
-    ) where TAggregate : Aggregate where TCommand : class
+            this IEndpointRouteBuilder              builder,
+            string?                                 route,
+            EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
+            string?                                 policyName    = null
+        ) where TAggregate : Aggregate where TCommand : class
         => Map<TAggregate, TCommand, TCommand>(
             builder,
             route,
@@ -83,10 +84,8 @@ public static partial class RouteBuilderExtensions {
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     [PublicAPI]
-    public static IEndpointRouteBuilder MapDiscoveredCommands<TAggregate>(
-        this   IEndpointRouteBuilder builder,
-        params Assembly[]            assemblies
-    ) where TAggregate : Aggregate {
+    public static IEndpointRouteBuilder MapDiscoveredCommands<TAggregate>(this IEndpointRouteBuilder builder, params Assembly[] assemblies)
+        where TAggregate : Aggregate {
         var assembliesToScan = assemblies.Length == 0
             ? AppDomain.CurrentDomain.GetAssemblies()
             : assemblies;
@@ -97,15 +96,14 @@ public static partial class RouteBuilderExtensions {
             MapAssemblyCommands(assembly);
         }
 
+        return builder;
+
         void MapAssemblyCommands(Assembly assembly) {
             var decoratedTypes = assembly.DefinedTypes.Where(
                 x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == attributeType)
             );
 
-            var method = typeof(RouteBuilderExtensions).GetMethod(
-                nameof(Map),
-                BindingFlags.Static | BindingFlags.NonPublic
-            )!;
+            var method = typeof(RouteBuilderExtensions).GetMethod(nameof(Map), BindingFlags.Static | BindingFlags.NonPublic)!;
 
             foreach (var type in decoratedTypes) {
                 var attr = type.GetAttribute<HttpCommandAttribute>()!;
@@ -119,16 +117,14 @@ public static partial class RouteBuilderExtensions {
                 genericMethod.Invoke(null, new object?[] { builder, attr.Route, null, attr.PolicyName });
             }
         }
-
-        return builder;
     }
 
     static RouteHandlerBuilder Map<TAggregate, TContract, TCommand>(
-        IEndpointRouteBuilder                         builder,
-        string?                                       route,
-        ConvertAndEnrichCommand<TContract, TCommand>? convert    = null,
-        string?                                       policyName = null
-    ) where TAggregate : Aggregate where TCommand : class where TContract : class {
+            IEndpointRouteBuilder                         builder,
+            string?                                       route,
+            ConvertAndEnrichCommand<TContract, TCommand>? convert    = null,
+            string?                                       policyName = null
+        ) where TAggregate : Aggregate where TCommand : class where TContract : class {
         if (convert == null && typeof(TCommand) != typeof(TContract))
             throw new InvalidOperationException($"Command type {typeof(TCommand).Name} is not assignable from {typeof(TContract).Name}");
 
@@ -148,6 +144,7 @@ public static partial class RouteBuilderExtensions {
                         : (cmd as TCommand)!;
 
                     var result = await service.Handle(command, context.RequestAborted);
+
                     return result.AsResult();
                 }
             )
@@ -173,10 +170,7 @@ public static partial class RouteBuilderExtensions {
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     [PublicAPI]
-    public static IEndpointRouteBuilder MapDiscoveredCommands(
-        this   IEndpointRouteBuilder builder,
-        params Assembly[]            assemblies
-    ) {
+    public static IEndpointRouteBuilder MapDiscoveredCommands(this IEndpointRouteBuilder builder, params Assembly[] assemblies) {
         var assembliesToScan = assemblies.Length == 0
             ? AppDomain.CurrentDomain.GetAssemblies()
             : assemblies;
@@ -197,6 +191,7 @@ public static partial class RouteBuilderExtensions {
             foreach (var type in decoratedTypes) {
                 var attr            = type.GetAttribute<HttpCommandAttribute>()!;
                 var parentAttribute = type.DeclaringType?.GetAttribute<AggregateCommandsAttribute>();
+
                 if (parentAttribute == null) continue;
 
                 LocalMap(parentAttribute.AggregateType, type, attr.Route, attr.PolicyName);
@@ -242,6 +237,7 @@ public static partial class RouteBuilderExtensions {
 
         string Generate() {
             var gen = type.Name;
+
             return char.ToLowerInvariant(gen[0]) + gen[1..];
         }
     }

@@ -6,16 +6,18 @@ using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Sut.Subs;
-using static Eventuous.Tests.EventStore.Fixtures.IntegrationFixture;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore;
 
-public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
+public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<IntegrationFixture>, IDisposable {
+    readonly IntegrationFixture   _fixture;
     readonly ILoggerFactory       _loggerFactory;
     readonly LoggingEventListener _listener;
 
-    public StreamSubscriptionDeletedEventsTests(ITestOutputHelper output) {
+    public StreamSubscriptionDeletedEventsTests(IntegrationFixture fixture, ITestOutputHelper output) {
+        _fixture = fixture;
+
         _loggerFactory = LoggerFactory.Create(
             cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug)
         );
@@ -25,14 +27,14 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
 
     [Fact]
     public async Task StreamSubscriptionGetsDeletedEvents() {
-        var service = new BookingService(Instance.AggregateStore);
+        var service = new BookingService(_fixture.AggregateStore);
 
         var categoryStream = new StreamName("$ce-Booking");
 
         ulong? startPosition = null;
 
         try {
-            var last = await Instance.Client.ReadStreamAsync(
+            var last = await _fixture.Client.ReadStreamAsync(
                     Direction.Backwards,
                     categoryStream,
                     StreamPosition.End,
@@ -41,8 +43,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
                 .ToArrayAsync();
 
             startPosition = last[0].OriginalEventNumber;
-        }
-        catch (StreamNotFoundException) { }
+        } catch (StreamNotFoundException) { }
 
         const int produceCount = 20;
         const int deleteCount  = 5;
@@ -60,7 +61,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
         await Task.WhenAll(
             delete
                 .Select(
-                    x => Instance.EventStore.DeleteStream(
+                    x => _fixture.EventStore.DeleteStream(
                         StreamName.For<Booking>(x.BookingId),
                         ExpectedStreamVersion.Any,
                         CancellationToken.None
@@ -73,7 +74,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
         const string subscriptionId = "TestSub";
 
         var subscription = new StreamSubscription(
-            Instance.Client,
+            _fixture.Client,
             new StreamSubscriptionOptions {
                 StreamName     = categoryStream,
                 SubscriptionId = subscriptionId,
@@ -116,6 +117,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IDisposable {
 
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) {
             Count++;
+
             if (ctx == null) throw new InvalidOperationException();
 
             Processed.Add(ctx);

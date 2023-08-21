@@ -3,23 +3,15 @@
 
 namespace Eventuous.Diagnostics.Metrics;
 
-public sealed class Measure : IDisposable {
-    readonly DiagnosticSource _diagnosticSource;
-    readonly object           _context;
-
+public sealed class Measure(DiagnosticSource diagnosticSource, object context) : IDisposable {
     public static Measure Start(DiagnosticSource source, object context) => new(source, context);
-
-    Measure(DiagnosticSource diagnosticSource, object context) {
-        _diagnosticSource = diagnosticSource;
-        _context          = context;
-    }
 
     public void SetError() => _error = true;
 
     void Record() {
         var stoppedAt = DateTime.UtcNow;
-        var duration = stoppedAt - _startedAt;
-        _diagnosticSource.Write("Stopped", new MeasureContext(duration, _error, _context));
+        var duration  = stoppedAt - _startedAt;
+        diagnosticSource.Write("Stopped", new MeasureContext(duration, _error, context));
     }
 
     readonly DateTime _startedAt = DateTime.UtcNow;

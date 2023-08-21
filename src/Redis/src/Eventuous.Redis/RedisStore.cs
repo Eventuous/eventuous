@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Runtime.Serialization;
 using System.Text;
 using static Eventuous.Diagnostics.PersistenceEventSource;
+using static Eventuous.Redis.EventuousRedisKeys;
 
 namespace Eventuous.Redis;
 
@@ -68,9 +69,10 @@ public class RedisStore : IEventReader, IEventWriter {
         var database = _getDatabase();
 
         try {
-            var response       = (RedisValue[]?)await database.ExecuteAsync("FCALL", fCallParams).NoContext();
-            var streamPosition = (long)Ensure.NotNull(response?[0]);
-            var globalPosition = Ensure.NotNull(response?[1]).ToString().AsSpan().ToULong();
+            var response             = (RedisValue[]?)await database.ExecuteAsync("FCALL", fCallParams).NoContext();
+            var streamPosition       = (long)Ensure.NotNull(response?[0]);
+            var globalPositionString = Ensure.NotNull(response?[1]).ToString();
+            var globalPosition       = globalPositionString.AsSpan().ToULong();
             return new AppendEventsResult(globalPosition, streamPosition);
         }
         catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
@@ -97,24 +99,24 @@ public class RedisStore : IEventReader, IEventWriter {
 
     static StreamEvent ToStreamEvent(StreamEntry evt, IEventSerializer serializer, IMetadataSerializer metaSerializer) {
         var deserialized = serializer.DeserializeEvent(
-            Encoding.UTF8.GetBytes(evt["json_data"].ToString()),
+            Encoding.UTF8.GetBytes(evt[JsonData].ToString()),
             evt["message_type"].ToString(),
             ContentType
         );
 
-        var meta = (string?)evt["json_metadata"] == null
+        var meta = (string?)evt[JsonMetadata] == null
             ? new Metadata()
-            : metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt["json_metadata"]!));
+            : metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt[JsonMetadata]!));
 
         return deserialized switch {
             SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
             FailedToDeserialize failed => throw new SerializationException(
-                $"Can't deserialize {evt["message_type"]}: {failed.Error}"
+                $"Can't deserialize {evt[MessageType]}: {failed.Error}"
             ),
             _ => throw new Exception("Unknown deserialization result")
         };
 
         StreamEvent AsStreamEvent(object payload)
-            => new(Guid.Parse(evt["message_id"].ToString()), payload, meta ?? new Metadata(), ContentType, evt.Id.ToLong());
+            => new(Guid.Parse(evt[MessageId].ToString()), payload, meta ?? new Metadata(), ContentType, evt.Id.ToLong());
     }
 }

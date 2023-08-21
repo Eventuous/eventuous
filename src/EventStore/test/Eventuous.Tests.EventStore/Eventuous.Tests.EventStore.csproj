@@ -15,6 +15,7 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
         <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
+        <PackageReference Include="Testcontainers.EventStoreDb" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime" />

@@ -7,8 +7,8 @@ using System.Reflection;
 namespace Eventuous.Diagnostics;
 
 public static class EventuousDiagnostics {
-    readonly static AssemblyName AssemblyName = typeof(EventuousDiagnostics).Assembly.GetName();
-    readonly static Version?     Version      = AssemblyName.Version;
+    static readonly AssemblyName AssemblyName = typeof(EventuousDiagnostics).Assembly.GetName();
+    static readonly Version?     Version      = AssemblyName.Version;
 
     static EventuousDiagnostics() => Enabled = Environment.GetEnvironmentVariable("EVENTUOUS_DISABLE_DIAGS") != "1";
 

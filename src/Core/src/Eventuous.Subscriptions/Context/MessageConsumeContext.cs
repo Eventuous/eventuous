@@ -7,8 +7,7 @@ namespace Eventuous.Subscriptions.Context;
 
 using Logging;
 
-public class MessageConsumeContext : IMessageConsumeContext {
-    public MessageConsumeContext(
+public class MessageConsumeContext(
         string            eventId,
         string            eventType,
         string            contentType,
@@ -21,44 +20,28 @@ public class MessageConsumeContext : IMessageConsumeContext {
         Metadata?         metadata,
         string            subscriptionId,
         CancellationToken cancellationToken
-    ) {
-        MessageId         = eventId;
-        MessageType       = eventType;
-        ContentType       = contentType;
-        Stream            = new StreamName(stream);
-        StreamPosition    = streamPosition;
-        GlobalPosition    = globalPosition;
-        Created           = created;
-        Metadata          = metadata;
-        Sequence          = sequence;
-        Message           = message;
-        CancellationToken = cancellationToken;
-        SubscriptionId    = subscriptionId;
-        LogContext        = Logger.Current;
-    }
-
-    public string            MessageId         { get; }
-    public string            MessageType       { get; }
-    public string            ContentType       { get; }
-    public StreamName        Stream            { get; }
-    public ulong             StreamPosition    { get; }
-    public ulong             GlobalPosition    { get; }
-    public DateTime          Created           { get; }
-    public Metadata?         Metadata          { get; }
-    public object?           Message           { get; }
+    )
+    : IMessageConsumeContext {
+    public string            MessageId         { get; } = eventId;
+    public string            MessageType       { get; } = eventType;
+    public string            ContentType       { get; } = contentType;
+    public StreamName        Stream            { get; } = new(stream);
+    public ulong             StreamPosition    { get; } = streamPosition;
+    public ulong             GlobalPosition    { get; } = globalPosition;
+    public DateTime          Created           { get; } = created;
+    public Metadata?         Metadata          { get; } = metadata;
+    public object?           Message           { get; } = message;
     public ContextItems      Items             { get; } = new();
     public ActivityContext?  ParentContext     { get; set; }
-    public HandlingResults   HandlingResults   { get; } = new();
-    public CancellationToken CancellationToken { get; set; }
-    public ulong             Sequence          { get; }
-    public string            SubscriptionId    { get; }
-    public LogContext        LogContext        { get; set; }
+    public HandlingResults   HandlingResults   { get; }      = new();
+    public CancellationToken CancellationToken { get; set; } = cancellationToken;
+    public ulong             Sequence          { get; }      = sequence;
+    public string            SubscriptionId    { get; }      = subscriptionId;
+    public LogContext        LogContext        { get; set; } = Logger.Current;
 }
 
-public class MessageConsumeContext<T> : WrappedConsumeContext, IMessageConsumeContext<T>
+public class MessageConsumeContext<T>(IMessageConsumeContext innerContext) : WrappedConsumeContext(innerContext), IMessageConsumeContext<T>
     where T : class {
-    public MessageConsumeContext(IMessageConsumeContext innerContext) : base(innerContext) { }
-
     [PublicAPI]
     public new T Message => (T)InnerContext.Message!;
 }

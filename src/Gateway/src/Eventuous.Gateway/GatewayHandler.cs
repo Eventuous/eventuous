@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Gateway;
@@ -11,26 +12,21 @@ namespace Eventuous.Gateway;
 public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<TProduceOptions>(IMessageConsumeContext message);
 
 /// <inheritdoc />
-class GatewayHandler<TProduceOptions> : BaseEventHandler where TProduceOptions : class {
-    readonly IEventProducer<TProduceOptions>    _eventProducer;
-    readonly RouteAndTransform<TProduceOptions> _transform;
-    readonly bool                               _awaitProduce;
-
-    public GatewayHandler(IEventProducer<TProduceOptions> eventProducer, RouteAndTransform<TProduceOptions> transform, bool awaitProduce) {
-        _eventProducer = eventProducer;
-        _transform     = transform;
-        _awaitProduce  = awaitProduce;
-    }
-
+class GatewayHandler<TProduceOptions>(
+        IEventProducer<TProduceOptions>    eventProducer,
+        RouteAndTransform<TProduceOptions> transform,
+        bool                               awaitProduce
+    ) : BaseEventHandler
+    where TProduceOptions : class {
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        var shovelMessages = await _transform(context).NoContext();
+        var shovelMessages = await transform(context).NoContext();
 
         if (shovelMessages.Length == 0) return EventHandlingStatus.Ignored;
 
-        AcknowledgeProduce? onAck = null;
+        AcknowledgeProduce?  onAck  = null;
         ReportFailedProduce? onFail = null;
 
-        if (!_awaitProduce) {
+        if (!awaitProduce) {
             var asyncContext = context.GetContext<AsyncConsumeContext>();
 
             if (asyncContext != null) {
@@ -42,30 +38,24 @@ class GatewayHandler<TProduceOptions> : BaseEventHandler where TProduceOptions :
         try {
             var grouped = shovelMessages.GroupBy(x => x.TargetStream);
 
-            await grouped
-                .Select(x => ProduceToStream(x.Key, x))
-                .WhenAll()
-                .NoContext();
-        }
-        catch (OperationCanceledException e) {
-            context.Nack<GatewayHandler<TProduceOptions>>(e);
-        }
+            await grouped.Select(x => ProduceToStream(x.Key, x)).WhenAll().NoContext();
+        } catch (OperationCanceledException e) { context.Nack<GatewayHandler<TProduceOptions>>(e); }
 
-        return _awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
+        return awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage<TProduceOptions>> toProduce)
             => toProduce.Select(
-                    x =>
-                        _eventProducer.Produce(
-                            streamName,
-                            x.Message,
-                            x.GetMeta(context),
-                            x.ProduceOptions,
-                            GatewayMetaHelper.GetContextMeta(context),
-                            onAck,
-                            onFail,
-                            context.CancellationToken
-                        )
+                    x => eventProducer.Produce(
+                        streamName,
+                        x.Message,
+                        x.GetMeta(context),
+                        x.ProduceOptions,
+                        GatewayMetaHelper.GetContextMeta(context),
+                        onAck,
+                        onFail,
+                        context.CancellationToken
+                    )
                 )
                 .WhenAll();
     }

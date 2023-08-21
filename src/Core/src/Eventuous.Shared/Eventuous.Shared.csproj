@@ -2,6 +2,7 @@
     <PropertyGroup>
         <RootNamespace>Eventuous</RootNamespace>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="System.Diagnostics.DiagnosticSource"/>

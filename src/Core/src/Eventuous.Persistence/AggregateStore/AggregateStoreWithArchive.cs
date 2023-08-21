@@ -5,26 +5,17 @@ namespace Eventuous;
 
 using static Diagnostics.PersistenceEventSource;
 
-public class AggregateStore<TReader> : IAggregateStore where TReader : class, IEventReader {
-    readonly Func<StreamEvent, StreamEvent> _amendEvent;
-    readonly AggregateFactoryRegistry       _factoryRegistry;
-    readonly IEventReader                   _archiveReader;
-    readonly IEventStore                    _eventStore;
-
-    public AggregateStore(
+public class AggregateStore<TReader>(
         IEventStore                     eventStore,
         TReader                         archiveReader,
         Func<StreamEvent, StreamEvent>? amendEvent      = null,
         AggregateFactoryRegistry?       factoryRegistry = null
-    ) {
-        _amendEvent      = amendEvent      ?? (x => x);
-        _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
-        _eventStore      = Ensure.NotNull(eventStore);
-        _archiveReader   = Ensure.NotNull(archiveReader);
-    }
+    ) : IAggregateStore where TReader : class, IEventReader {
+    readonly Func<StreamEvent, StreamEvent> _amendEvent      = amendEvent      ?? (x => x);
+    readonly AggregateFactoryRegistry       _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
 
     public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate
-        => _eventStore.Store(streamName, aggregate, _amendEvent, cancellationToken);
+        => eventStore.Store(streamName, aggregate, _amendEvent, cancellationToken);
 
     public Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
         => LoadInternal<T>(streamName, true, cancellationToken);
@@ -35,11 +26,11 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
     async Task<T> LoadInternal<T>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken) where T : Aggregate {
         var aggregate = _factoryRegistry.CreateInstance<T>();
 
-        var hotEvents = await LoadStreamEvents(_eventStore, StreamReadPosition.Start).NoContext();
+        var hotEvents = await LoadStreamEvents(eventStore, StreamReadPosition.Start).NoContext();
 
         var archivedEvents =
             hotEvents.Length == 0 || hotEvents[0].Position > 0
-                ? await LoadStreamEvents(_archiveReader, StreamReadPosition.Start).NoContext()
+                ? await LoadStreamEvents(archiveReader, StreamReadPosition.Start).NoContext()
                 : Enumerable.Empty<StreamEvent>();
 
         var streamEvents = hotEvents.Concat(archivedEvents).Distinct(Comparer).ToArray();
@@ -55,12 +46,11 @@ public class AggregateStore<TReader> : IAggregateStore where TReader : class, IE
         async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition start) {
             try {
                 return await reader.ReadStream(streamName, start, failIfNotFound, cancellationToken).NoContext();
-            }
-            catch (StreamNotFound) {
+            } catch (StreamNotFound) {
                 return Array.Empty<StreamEvent>();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.UnableToLoadAggregate<T>(streamName, e);
+
                 throw;
             }
         }

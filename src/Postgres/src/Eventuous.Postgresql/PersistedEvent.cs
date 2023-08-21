@@ -6,7 +6,7 @@ using System.ComponentModel;
 namespace Eventuous.Postgresql;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
-public record PersistedEvent(
+public record struct PersistedEvent(
     Guid     MessageId,
     string   MessageType,
     int      StreamPosition,

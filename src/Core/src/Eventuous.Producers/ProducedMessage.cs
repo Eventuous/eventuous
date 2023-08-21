@@ -5,7 +5,7 @@ namespace Eventuous.Producers;
 
 using Diagnostics;
 
-public record ProducedMessage {
+public readonly record struct ProducedMessage {
     public ProducedMessage(
         object    message,
         Metadata? metadata,

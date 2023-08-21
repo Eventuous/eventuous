@@ -7,9 +7,11 @@ class ParameterMap {
     readonly Dictionary<Type, Func<IServiceProvider, dynamic?>> _resolvers = new();
 
     public void Add<TService, TImplementation>() where TImplementation : class {
-        dynamic? Resolver(IServiceProvider provider) => provider.GetService(typeof(TImplementation));
-
         _resolvers.Add(typeof(TService), Resolver);
+
+        return;
+
+        dynamic? Resolver(IServiceProvider provider) => provider.GetService(typeof(TImplementation));
     }
 
     public void Add<TService, TImplementation>(Func<IServiceProvider, TImplementation> resolver)

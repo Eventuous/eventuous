@@ -15,7 +15,8 @@ public static partial class ServiceCollectionExtensions {
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TAggregate"></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddCommandService<T, TAggregate>(this IServiceCollection services) where T : class, ICommandService<TAggregate> where TAggregate : Aggregate {
+    public static IServiceCollection AddCommandService<T, TAggregate>(this IServiceCollection services)
+        where T : class, ICommandService<TAggregate> where TAggregate : Aggregate {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();
 
@@ -47,6 +48,7 @@ public static partial class ServiceCollectionExtensions {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton<T>();
         services.AddSingleton(sp => GetThrowingService(GetTracedService(sp)));
+
         return services;
 
         ICommandService<TAggregate, TState, TId> GetThrowingService(ICommandService<TAggregate, TState, TId> inner)

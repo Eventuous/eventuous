@@ -9,11 +9,8 @@ using Context;
 
 public delegate bool FilterMessage(IMessageConsumeContext receivedEvent);
 
-public class MessageFilter : ConsumeFilter<IMessageConsumeContext> {
-    readonly FilterMessage _filter;
-
-    public MessageFilter(FilterMessage filter)
-        => _filter = Ensure.NotNull(filter);
+public class MessageFilter(FilterMessage filter) : ConsumeFilter<IMessageConsumeContext> {
+    readonly FilterMessage _filter = Ensure.NotNull(filter);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected override ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) {

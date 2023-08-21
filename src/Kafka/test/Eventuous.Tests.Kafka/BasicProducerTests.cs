@@ -3,18 +3,19 @@ using Eventuous.Kafka;
 using Eventuous.Kafka.Producers;
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
+using static System.String;
 
 namespace Eventuous.Tests.Kafka;
 
-public class BasicProducerTests {
+public class BasicProducerTests : IClassFixture<KafkaFixture> {
+    readonly KafkaFixture      _fixture;
     readonly ITestOutputHelper _output;
 
-    public BasicProducerTests(ITestOutputHelper output) {
-        _output = output;
+    public BasicProducerTests(KafkaFixture fixture, ITestOutputHelper output) {
+        _fixture = fixture;
+        _output  = output;
         TypeMap.Instance.AddType<TestEvent>("testEvent");
     }
-
-    const string BrokerList = "localhost:9092";
 
     static readonly Fixture Auto = new();
 
@@ -24,7 +25,11 @@ public class BasicProducerTests {
         _output.WriteLine($"Topic: {topicName}");
 
         var producer = new KafkaBasicProducer(
-            new KafkaProducerOptions(new ProducerConfig { BootstrapServers = BrokerList })
+            new KafkaProducerOptions(
+                new ProducerConfig {
+                    BootstrapServers = _fixture.BootstrapServers,
+                }
+            )
         );
 
         var produced = new List<TestEvent>();
@@ -35,16 +40,11 @@ public class BasicProducerTests {
         ValueTask OnAck(ProducedMessage msg) {
             _output.WriteLine("Produced message: {0}", msg.Message);
             produced.Add((TestEvent)msg.Message);
+
             return ValueTask.CompletedTask;
         }
 
-        await producer.Produce(
-            new StreamName(topicName),
-            events,
-            new Metadata(),
-            new KafkaProduceOptions("test"),
-            onAck: OnAck
-        );
+        await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"), onAck: OnAck);
 
         await producer.StopAsync(default);
 
@@ -60,6 +60,7 @@ public class BasicProducerTests {
         try {
             while (!cts.IsCancellationRequested) {
                 var msg = consumer.Consume(cts.Token);
+
                 if (msg == null) return;
 
                 var meta = msg.Message.Headers.AsMetadata();
@@ -67,17 +68,15 @@ public class BasicProducerTests {
                 var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
                 var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
 
-                var result =
-                    DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as
-                        SuccessfullyDeserialized;
+                var result = DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as SuccessfullyDeserialized;
 
                 var evt = (result!.Payload as TestEvent)!;
                 _output.WriteLine($"Consumed {evt}");
                 consumed.Add(evt);
+
                 if (consumed.Count == events.Length) break;
             }
-        }
-        catch (OperationCanceledException) {
+        } catch (OperationCanceledException) {
             // ignore
         }
 
@@ -87,7 +86,7 @@ public class BasicProducerTests {
 
     IConsumer<string, byte[]> GetConsumer(string groupId) {
         var config = new ConsumerConfig {
-            BootstrapServers            = BrokerList,
+            BootstrapServers            = _fixture.BootstrapServers,
             GroupId                     = groupId,
             EnableAutoCommit            = false,
             StatisticsIntervalMs        = 5000,
@@ -103,11 +102,7 @@ public class BasicProducerTests {
             .SetPartitionsAssignedHandler(
                 (c, partitions) => {
                     _output.WriteLine(
-                        "Partitions incrementally assigned: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "], all: [" +
-                        string.Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value)) +
-                        "]"
+                        $"Partitions incrementally assigned: [{Join(',', partitions.Select(p => p.Partition.Value))}], all: [{Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value))}]"
                     );
                 }
             )
@@ -118,16 +113,12 @@ public class BasicProducerTests {
                     );
 
                     _output.WriteLine(
-                        "Partitions incrementally revoked: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "], remaining: [" +
-                        string.Join(',', remaining.Select(p => p.Partition.Value)) +
-                        "]"
+                        $"Partitions incrementally revoked: [{Join(',', partitions.Select(p => p.Partition.Value))}], remaining: [{Join(',', remaining.Select(p => p.Partition.Value))}]"
                     );
                 }
             )
             .SetPartitionsLostHandler(
-                (_, partitions) => _output.WriteLine($"Partitions were lost: [{string.Join(", ", partitions)}]")
+                (_, partitions) => _output.WriteLine($"Partitions were lost: [{Join(", ", partitions)}]")
             )
             .Build();
     }

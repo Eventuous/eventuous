@@ -7,15 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.ElasticSearch.Producers;
 
-public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
-    readonly IElasticClient           _elasticClient;
-    readonly ILogger<ElasticProducer> _log;
-
-    public ElasticProducer(IElasticClient elasticClient, ILogger<ElasticProducer> log) : base(TracingOptions) {
-        _elasticClient = elasticClient;
-        _log           = log;
-    }
-
+public class ElasticProducer(IElasticClient elasticClient, ILogger<ElasticProducer> log) : BaseProducer<ElasticProduceOptions>(TracingOptions) {
     static readonly ProducerTracingOptions TracingOptions = new() {
         MessagingSystem  = "elasticsearch",
         DestinationKind  = "datastream",
@@ -23,21 +15,21 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
     };
 
     protected override async Task ProduceMessages(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        ElasticProduceOptions?       options,
-        CancellationToken            cancellationToken = default
-    ) {
+            StreamName                   stream,
+            IEnumerable<ProducedMessage> messages,
+            ElasticProduceOptions?       options,
+            CancellationToken            cancellationToken = default
+        ) {
         var messagesList = messages.ToList();
-        var documents = messagesList.Select(x => x.Message);
-        var mode = options?.ProduceMode ?? ProduceMode.Create;
+        var documents    = messagesList.Select(x => x.Message);
+        var mode         = options?.ProduceMode ?? ProduceMode.Create;
 
-        var bulk = GetOp(new BulkDescriptor(stream.ToString()));
-        var result = await _elasticClient.BulkAsync(bulk, cancellationToken);
+        var bulk   = GetOp(new BulkDescriptor(stream.ToString()));
+        var result = await elasticClient.BulkAsync(bulk, cancellationToken);
 
         if (!result.IsValid) {
             if (result.DebugInformation.Contains("version conflict")) {
-                _log.LogWarning("ElasticProducer: version conflict");
+                log.LogWarning("ElasticProducer: version conflict");
             }
             else {
                 var errors = messagesList
@@ -58,18 +50,23 @@ public class ElasticProducer : BaseProducer<ElasticProduceOptions> {
 
         BulkDescriptor GetOp(BulkDescriptor descriptor)
             => mode switch {
-                ProduceMode.Create => descriptor.CreateMany<object>(
-                    messagesList,
-                    (createDescriptor, o) => {
-                        var pm = o as ProducedMessage;
-                        return createDescriptor.Document(pm!.Message).Id(pm.MessageId);
-                    }
-                ),
-                ProduceMode.Index => descriptor.IndexMany(documents),
-                _ => throw new ArgumentOutOfRangeException(nameof(mode))
+                ProduceMode.Create => GetCreateDescriptor(descriptor),
+                ProduceMode.Index  => descriptor.IndexMany(documents),
+                _                  => throw new ArgumentOutOfRangeException(nameof(mode))
             };
+
+        BulkDescriptor GetCreateDescriptor(BulkDescriptor descriptor) => descriptor.CreateMany<object>(
+            messagesList.Select(x => new ElasticDocument(x.MessageId, x.Message)),
+            (createDescriptor, o) => {
+                var pm = o as ElasticDocument;
+
+                return createDescriptor.Document(pm!.Message).Id(pm.MessageId);
+            }
+        );
     }
 }
+
+record ElasticDocument(Guid MessageId, object Message);
 
 public record ElasticProduceOptions {
     public ProduceMode ProduceMode { get; init; } = ProduceMode.Create;

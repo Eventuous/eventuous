@@ -15,7 +15,7 @@ sealed class CheckpointCommitMetrics : GenericListener, IDisposable {
     public CheckpointCommitMetrics() : base(DiagnosticName) { }
 
     protected override void OnEvent(KeyValuePair<string, object?> evt) {
-        var (key, value) = evt;
+        var (_, value) = evt;
 
         if (value is not CommitEvent commitEvent) return;
 

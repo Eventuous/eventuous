@@ -23,7 +23,7 @@ static class Conversions {
 
         public Split(ReadOnlySpan<char> valueString) {
             var index = valueString.IndexOf('-');
-            First  = valueString[index..];
+            First  = valueString[..index];
             Second = valueString[(index + 1)..];
         }
 

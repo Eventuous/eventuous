@@ -24,6 +24,8 @@ public class MongoCheckpointStore : ICheckpointStore {
         Checkpoints    = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
         _getSubject    = GetSubject;
 
+        return;
+
         Subject<EventuousCheckpoint> GetSubject() {
             var subject = new Subject<EventuousCheckpoint>();
 

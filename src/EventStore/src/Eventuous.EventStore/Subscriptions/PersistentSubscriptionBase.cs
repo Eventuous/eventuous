@@ -99,6 +99,8 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
                 .NoContext();
         }
 
+        return;
+
         void HandleDrop(PersistentSubscription __, SubscriptionDroppedReason reason, Exception? exception)
             => Dropped(EsdbMappings.AsDropReason(reason), exception);
 
@@ -113,6 +115,9 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
                 await Handler(context).NoContext();
                 LastProcessed = EventPosition.FromContext(context);
                 await Ack(context).NoContext();
+            }
+            catch (OperationCanceledException e) when (ct.IsCancellationRequested) {
+                Dropped(DropReason.Stopped, e);
             }
             catch (Exception e) {
                 await Nack(context, e).NoContext();
@@ -158,6 +163,10 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     }
 
     async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
+        if (exception is OperationCanceledException && ctx.CancellationToken.IsCancellationRequested) {
+            return;
+        }
+
         ctx.LogContext.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
 
         if (Options.ThrowOnError) throw exception;

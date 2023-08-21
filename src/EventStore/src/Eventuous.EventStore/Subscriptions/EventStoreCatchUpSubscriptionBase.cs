@@ -11,9 +11,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [PublicAPI]
-public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T>
-    where T : CatchUpSubscriptionOptions {
-
+public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T> where T : CatchUpSubscriptionOptions {
     /// <summary>
     /// Catch-up subscription base class constructor
     /// </summary>
@@ -23,12 +21,13 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWi
     /// <param name="consumePipe">Consume pipe, usually provided by the subscription builder</param>
     /// <param name="loggerFactory">Optional logger factory</param>
     protected EventStoreCatchUpSubscriptionBase(
-        EventStoreClient eventStoreClient,
-        T                options,
-        ICheckpointStore checkpointStore,
-        ConsumePipe      consumePipe,
-        ILoggerFactory?  loggerFactory
-    ) : base(Ensure.NotNull(options), checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
+            EventStoreClient eventStoreClient,
+            T                options,
+            ICheckpointStore checkpointStore,
+            ConsumePipe      consumePipe,
+            ILoggerFactory?  loggerFactory
+        )
+        : base(Ensure.NotNull(options), checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
         => EventStoreClient = eventStoreClient;
 
     /// <summary>
@@ -45,8 +44,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWi
             Stopping.Cancel(false);
             await Task.Delay(100, cancellationToken);
             Subscription?.Dispose();
-        }
-        catch (Exception) {
+        } catch (Exception) {
             // Nothing to see here
         }
     }

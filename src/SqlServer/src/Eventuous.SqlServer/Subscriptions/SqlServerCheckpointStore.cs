@@ -20,7 +20,7 @@ public class SqlServerCheckpointStore : ICheckpointStore {
 
     public SqlServerCheckpointStore(GetSqlServerConnection getConnection, SqlServerCheckpointStoreOptions? options) {
         _getConnection = getConnection;
-        var schema = options is { Schema: { } } ? new Schema(options.Schema) : new Schema();
+        var schema = options is { Schema: not null } ? new Schema(options.Schema) : new Schema();
         _getCheckpointSql   = schema.GetCheckpointSql;
         _addCheckpointSql   = schema.AddCheckpointSql;
         _storeCheckpointSql = schema.UpdateCheckpointSql;

@@ -36,7 +36,9 @@ public static class PubSub {
             Log("Created topic");
         }
 
-        void Log(string message) => log(message + ": {Topic}", topicString);
+        return;
+
+        void Log(string message) => log($"{message}: {{Topic}}", topicString!);
     }
 
     public static async Task CreateSubscription(

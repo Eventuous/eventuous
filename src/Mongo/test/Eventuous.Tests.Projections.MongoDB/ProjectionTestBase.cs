@@ -1,16 +1,19 @@
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Subscriptions;
+using Eventuous.Tests.Projections.MongoDB.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using static Eventuous.Tests.Projections.MongoDB.Fixtures.IntegrationFixture;
 
-namespace Eventuous.Tests.Projections.MongoDB; 
+namespace Eventuous.Tests.Projections.MongoDB;
 
-public class ProjectionTestBase<TProjection> : IAsyncLifetime where TProjection : class, IEventHandler {
-    readonly IHost _host;
+public class ProjectionTestBase<TProjection> : IClassFixture<IntegrationFixture>, IAsyncLifetime where TProjection : class, IEventHandler {
+    readonly IHost              _host;
+    readonly IntegrationFixture _fixture;
 
-    protected ProjectionTestBase(string id,  ITestOutputHelper output) {
+    protected ProjectionTestBase(string id, IntegrationFixture fixture, ITestOutputHelper output) {
+        _fixture = fixture;
+
         var builder = Host.CreateDefaultBuilder()
             .ConfigureLogging(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Trace))
             .ConfigureServices(collection => ConfigureServices(collection, id));
@@ -19,10 +22,10 @@ public class ProjectionTestBase<TProjection> : IAsyncLifetime where TProjection 
         _host.UseEventuousLogs();
     }
 
-    static void ConfigureServices(IServiceCollection services, string id)
+    void ConfigureServices(IServiceCollection services, string id)
         => services
-            .AddSingleton(Instance.Client)
-            .AddSingleton(Instance.Mongo)
+            .AddSingleton(_fixture.Client)
+            .AddSingleton(_fixture.Mongo)
             .AddCheckpointStore<MongoCheckpointStore>()
             .AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
                 id,

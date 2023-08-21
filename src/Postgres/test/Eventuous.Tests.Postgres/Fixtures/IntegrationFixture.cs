@@ -3,49 +3,57 @@ using System.Text.Json;
 using Bogus;
 using Eventuous.Diagnostics;
 using Eventuous.Postgresql;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Npgsql;
+using Testcontainers.PostgreSql;
 
 namespace Eventuous.Tests.Postgres.Fixtures;
 
-public sealed class IntegrationFixture : IAsyncDisposable {
-    public IEventStore      EventStore     { get; }
-    public IAggregateStore  AggregateStore { get; }
-    public NpgsqlDataSource DataSource     { get; }
+public sealed class IntegrationFixture : IAsyncLifetime {
+    public IEventStore      EventStore     { get; private set; } = null!;
+    public IAggregateStore  AggregateStore { get; private set; } = null!;
+    public NpgsqlDataSource DataSource     { get; private set; } = null!;
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
+    ServiceProvider           _provider = null!;
 
-    public string SchemaName { get; }
+    public string SchemaName { get; } = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
-    IEventSerializer Serializer { get; } = new DefaultEventSerializer(
-        new JsonSerializerOptions(JsonSerializerDefaults.Web)
-            .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-    );
+    IEventSerializer Serializer { get; } =
+        new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 
-    public IntegrationFixture() {
-        SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
-        const string connString =
-            "Host=localhost;Username=postgres;Password=secret;Database=eventuous;Include Error Detail=true;";
+    readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
+        .WithUsername("postgres")
+        .WithPassword("secret")
+        .WithDatabase("eventuous")
+        .Build();
 
-        var schema = new Schema(SchemaName);
+    public async Task InitializeAsync() {
+        await _container.StartAsync();
 
-        var builder = new NpgsqlDataSourceBuilder(connString);
-        builder.MapComposite<NewPersistedEvent>(schema.StreamMessage);
+        var connString = _container.GetConnectionString();
 
-        NpgsqlDataSource GetDataSource() => builder.Build();
+        var services = new ServiceCollection();
+        services.AddSingleton<ILoggerFactory>(new NullLoggerFactory());
+        services.AddEventuousPostgres(connString, SchemaName, true);
+        services.AddAggregateStore<PostgresStore>();
+        _provider = services.BuildServiceProvider();
 
-        schema.CreateSchema(GetDataSource()).ConfigureAwait(false).GetAwaiter().GetResult();
-
-        DataSource = GetDataSource();
+        DataSource = _provider.GetRequiredService<NpgsqlDataSource>();
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = new PostgresStore(GetDataSource(), new PostgresStoreOptions(SchemaName), Serializer);
-        AggregateStore = new AggregateStore(EventStore);
+        EventStore     = _provider.GetRequiredService<IEventStore>();
+        AggregateStore = _provider.GetRequiredService<IAggregateStore>();
         ActivitySource.AddActivityListener(_listener);
+        var initializer = _provider.GetRequiredService<IHostedService>();
+        await initializer.StartAsync(default);
     }
 
-    public ValueTask DisposeAsync() {
+    public async Task DisposeAsync() {
+        await _container.DisposeAsync();
         _listener.Dispose();
-        return default;
     }
 }

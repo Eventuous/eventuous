@@ -5,13 +5,7 @@ using System.Collections.Concurrent;
 
 namespace Eventuous.Subscriptions;
 
-public record struct EventHandlingResult {
-    EventHandlingResult(EventHandlingStatus status, string handlerType, Exception? exception = null) {
-        Status      = status;
-        Exception   = exception;
-        HandlerType = handlerType;
-    }
-
+public readonly record struct EventHandlingResult(EventHandlingStatus Status, string HandlerType, Exception? Exception = null) {
     public static EventHandlingResult Succeeded(string handlerType)
         => new(EventHandlingStatus.Success, handlerType);
 
@@ -21,9 +15,9 @@ public record struct EventHandlingResult {
     public static EventHandlingResult Failed(string handlerType, Exception? e)
         => new(EventHandlingStatus.Failure, handlerType, e);
 
-    public EventHandlingStatus Status      { get; }
-    public Exception?          Exception   { get; }
-    public string              HandlerType { get; }
+    public EventHandlingStatus Status      { get; } = Status;
+    public Exception?          Exception   { get; } = Exception;
+    public string              HandlerType { get; } = HandlerType;
 }
 
 public class HandlingResults {
@@ -46,8 +40,8 @@ public class HandlingResults {
     public EventHandlingStatus GetFailureStatus() => _handlingStatus & EventHandlingStatus.Handled;
 
     public EventHandlingStatus GetIgnoreStatus() => _handlingStatus & EventHandlingStatus.Ignored;
-    
+
     public bool IsPending() => _handlingStatus == 0;
 
-    public Exception? GetException() => _results.First(x => x.Exception != null).Exception;
+    public Exception? GetException() => _results.FirstOrDefault(x => x.Exception != null).Exception;
 }

@@ -10,4 +10,7 @@
     <ItemGroup>
         <Using Include="RabbitMQ.Client" />
     </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Testcontainers.RabbitMq" />
+    </ItemGroup>
 </Project>
