@@ -72,7 +72,7 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
             await Task.Delay(10);
         }
 
-        await Task.Delay(100);
+        await Task.Delay(500);
     }
 
     public Task DisposeAsync() {
