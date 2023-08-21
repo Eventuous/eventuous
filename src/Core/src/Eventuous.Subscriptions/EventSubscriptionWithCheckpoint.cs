@@ -34,7 +34,7 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         options.BatchSize,
         loggerFactory
     );
-    ICheckpointStore CheckpointStore { get; } = Ensure.NotNull<ICheckpointStore>(checkpointStore);
+    ICheckpointStore CheckpointStore { get; } = Ensure.NotNull(checkpointStore);
 
     protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
 

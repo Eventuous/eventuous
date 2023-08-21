@@ -107,6 +107,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
                 0,
                 0,
                 0,
+                0,
                 msg.PublishTime.ToDateTime(),
                 evt,
                 AsMeta(msg.Attributes),

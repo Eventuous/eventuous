@@ -6,7 +6,7 @@ using Eventuous.Sut.Subs;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
 
-public abstract class PersistentSubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
+public abstract class PersistentSubscriptionFixture<T> : IClassFixture<IntegrationFixture>, IAsyncLifetime where T : class, IEventHandler {
     static PersistentSubscriptionFixture()
         => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 

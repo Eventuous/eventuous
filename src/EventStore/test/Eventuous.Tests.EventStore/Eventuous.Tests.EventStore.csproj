@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <IsTestProject>true</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
+        <IncludeTestHelpers>true</IncludeTestHelpers>
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeSutSubs>true</IncludeSutSubs>
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+<!--        <VSTestLogger>trx%3bLogFileName=$(MSBuildProjectName).trx</VSTestLogger>-->
+<!--        <VSTestResultsDirectory>$(MSBuildThisFileDirectory)/TestResults/$(TargetFramework)</VSTestResultsDirectory>-->
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
@@ -15,7 +16,6 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
         <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
-        <PackageReference Include="Testcontainers.EventStoreDb" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime" />

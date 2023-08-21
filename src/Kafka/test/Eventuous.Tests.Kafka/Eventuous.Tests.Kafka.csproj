@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
         <IncludeSutSubs>true</IncludeSutSubs>
         <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx.13-arm64</RuntimeIdentifier>
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <SelfContained>false</SelfContained>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Kafka\Eventuous.Kafka.csproj"/>

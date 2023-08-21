@@ -5,21 +5,18 @@ on:
     tags:
       - '*'
     paths-ignore:
-      - 'docs/**/*'
       - '**.md'
-      - '**.scss'
-      - '**.toml'
-      - '**.html'
 
 jobs:
   nuget:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '7.0.x'
+          dotnet-version: '8.0.x'
+          dotnet-quality: 'preview'
       - name: Create and push NuGet package
         run: |
           dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg

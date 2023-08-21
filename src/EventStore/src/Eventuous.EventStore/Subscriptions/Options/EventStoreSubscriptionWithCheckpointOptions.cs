@@ -3,11 +3,14 @@
 
 namespace Eventuous.EventStore.Subscriptions;
 
-public record EventStoreSubscriptionWithCheckpointOptions : SubscriptionWithCheckpointOptions {
+/// <summary>
+/// Options base record for EventStoreDB checkpoint-based subscriptions
+/// </summary>
+public abstract record EventStoreSubscriptionWithCheckpointOptions : SubscriptionWithCheckpointOptions {
     /// <summary>
     /// User credentials
     /// </summary>
-    public UserCredentials? Credentials { get; set; }
+    public UserCredentials? Credentials { get; [PublicAPI] set; }
 
     /// <summary>
     /// Resolve link events

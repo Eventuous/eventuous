@@ -4,6 +4,7 @@ using EventStore.Client;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Tracing;
 using Eventuous.EventStore;
+using Eventuous.TestHelpers;
 using MicroElements.AutoFixture.NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Testcontainers.EventStoreDb;
@@ -31,9 +32,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     }
 
     public async Task InitializeAsync() {
-        _esdbContainer = new EventStoreDbBuilder()
-            .WithImage("eventstore/eventstore:22.10.2-alpha-arm64v8")
-            .Build();
+        _esdbContainer = new EventStoreDbContainerBuilder().Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
         Client         = new EventStoreClient(settings);
@@ -43,7 +42,12 @@ public sealed class IntegrationFixture : IAsyncLifetime {
 
     public async Task DisposeAsync() {
         _listener.Dispose();
-        await Client.DisposeAsync();
-        await _esdbContainer.DisposeAsync();
+
+        try {
+            await Client.DisposeAsync();
+            await _esdbContainer.DisposeAsync();
+        } catch (Exception e) {
+            Console.WriteLine(e);
+        }
     }
 }

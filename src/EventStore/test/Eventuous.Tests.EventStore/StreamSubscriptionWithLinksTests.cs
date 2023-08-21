@@ -53,6 +53,7 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture
     Faker Faker { get; } = new();
 
     async Task Seed(IServiceProvider provider, int count) {
+        TypeMap.Instance.AddType<TestEvent>(TestEvent.TypeName);
         var producer = provider.GetRequiredService<IEventProducer>();
 
         _output.WriteLine("Producing events...");
@@ -72,8 +73,10 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture
         checkpointStore.CheckpointStored += CheckpointStoreOnCheckpointStored;
         _services.AddSingleton<ICheckpointStore>(checkpointStore);
 
+        return;
+
         void CheckpointStoreOnCheckpointStored(object? sender, Checkpoint e) {
-            _output.WriteLine($"Stored checkpoint: {e.Position}");
+            _output.WriteLine($"Stored checkpoint {e.Id}: {e.Position}");
             _checkpoints.Add(e);
         }
     }
@@ -148,11 +151,14 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture
         _checkpoints.Last().Position.Should().Be(count - 1);
     }
 
-    class TestHandler : BaseEventHandler {
+    // ReSharper disable once ClassNeverInstantiated.Local
+    class TestHandler(ILogger<TestHandler> logger) : BaseEventHandler {
         public List<object> Handled { get; } = new();
 
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) {
             Handled.Add(ctx.Message!);
+
+            logger.LogDebug("Handled event from {Stream} at {Position}", ctx.Stream, ctx.StreamPosition);
 
             return ValueTask.FromResult(EventHandlingStatus.Success);
         }

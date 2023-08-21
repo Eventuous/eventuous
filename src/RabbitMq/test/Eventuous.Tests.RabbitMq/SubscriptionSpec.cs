@@ -13,9 +13,9 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
 
     static readonly Fixture Auto = new();
 
-    RabbitMqSubscription               _subscription;
-    RabbitMqProducer                   _producer;
-    TestEventHandler                   _handler;
+    RabbitMqSubscription               _subscription = null!;
+    RabbitMqProducer                   _producer     = null!;
+    TestEventHandler                   _handler      = null!;
     readonly StreamName                _exchange;
     readonly ILogger<SubscriptionSpec> _log;
     readonly TestEventListener         _es;
@@ -23,9 +23,8 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
     readonly RabbitMqFixture           _fixture;
 
     public SubscriptionSpec(RabbitMqFixture fixture, ITestOutputHelper outputHelper) {
-        _fixture = fixture;
-        _es      = new TestEventListener(outputHelper);
-
+        _fixture  = fixture;
+        _es       = new TestEventListener(outputHelper);
         _exchange = new StreamName(Auto.Create<string>());
 
         _loggerFactory = LoggerFactory.Create(

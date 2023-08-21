@@ -190,6 +190,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             re.Event.EventType,
             re.Event.ContentType,
             re.Event.EventStreamId,
+            re.Event.EventNumber,
             GetContextStreamPosition(re),
             re.Event.Position.CommitPosition,
             re.OriginalEventNumber,
@@ -202,9 +203,9 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     }
 
     /// <summary>
-    /// Get a stream position from the resolved event
+    /// Get stream position from the resolved event
     /// </summary>
-    /// <param name="re"></param>
+    /// <param name="re">Resolved event received from the database</param>
     /// <returns></returns>
     protected abstract ulong GetContextStreamPosition(ResolvedEvent re);
 

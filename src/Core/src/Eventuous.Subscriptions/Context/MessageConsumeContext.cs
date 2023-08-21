@@ -12,6 +12,7 @@ public class MessageConsumeContext(
         string            eventType,
         string            contentType,
         string            stream,
+        ulong             eventNumber,
         ulong             streamPosition,
         ulong             globalPosition,
         ulong             sequence,
@@ -22,21 +23,39 @@ public class MessageConsumeContext(
         CancellationToken cancellationToken
     )
     : IMessageConsumeContext {
+    /// <inheritdoc />
     public string            MessageId         { get; } = eventId;
+    /// <inheritdoc />
     public string            MessageType       { get; } = eventType;
+    /// <inheritdoc />
     public string            ContentType       { get; } = contentType;
+    /// <inheritdoc />
     public StreamName        Stream            { get; } = new(stream);
+    /// <inheritdoc />
+    public ulong             EventNumber       { get; } = eventNumber;
+    /// <inheritdoc />
     public ulong             StreamPosition    { get; } = streamPosition;
+    /// <inheritdoc />
     public ulong             GlobalPosition    { get; } = globalPosition;
+    /// <inheritdoc />
     public DateTime          Created           { get; } = created;
+    /// <inheritdoc />
     public Metadata?         Metadata          { get; } = metadata;
+    /// <inheritdoc />
     public object?           Message           { get; } = message;
+    /// <inheritdoc />
     public ContextItems      Items             { get; } = new();
+    /// <inheritdoc />
     public ActivityContext?  ParentContext     { get; set; }
+    /// <inheritdoc />
     public HandlingResults   HandlingResults   { get; }      = new();
+    /// <inheritdoc />
     public CancellationToken CancellationToken { get; set; } = cancellationToken;
+    /// <inheritdoc />
     public ulong             Sequence          { get; }      = sequence;
+    /// <inheritdoc />
     public string            SubscriptionId    { get; }      = subscriptionId;
+    /// <inheritdoc />
     public LogContext        LogContext        { get; set; } = Logger.Current;
 }
 

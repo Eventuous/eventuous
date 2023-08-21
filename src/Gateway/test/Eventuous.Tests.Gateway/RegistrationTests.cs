@@ -1,4 +1,5 @@
-﻿using Eventuous.Producers;
+﻿using Eventuous.Gateway;
+using Eventuous.Producers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable ClassNeverInstantiated.Local
 
-namespace Eventuous.Gateway.Tests;
+namespace Eventuous.Tests.Gateway;
 
 public class RegistrationTests {
     readonly IServiceProvider _provider;

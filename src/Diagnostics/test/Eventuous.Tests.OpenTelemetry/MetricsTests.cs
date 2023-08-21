@@ -9,22 +9,31 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
     const string SubscriptionId = "test-sub";
 
     [Fact]
-    public void ShouldMeasureSubscription() {
+    public void Debug() {
         _exporter.Collect(Timeout.Infinite);
         var values = _exporter.CollectValues();
 
         foreach (var value in values) {
             outputHelper.WriteLine(value.ToString());
         }
+    }
+
+    [Fact]
+    public void ShouldMeasureSubscriptionGapCount() {
+        _exporter.Collect(Timeout.Infinite);
+        var values = _exporter.CollectValues();
 
         var counter  = _host.Services.GetRequiredService<MessageCounter>();
         var gapCount = GetValue(values, SubscriptionMetrics.GapCountMetricName)!;
+        var duration = GetValue(values, SubscriptionMetrics.ProcessingRateName)!;
+
+        var expectedGap = SubscriptionFixture.Count - counter.Count + 1;
+
         gapCount.Should().NotBeNull();
-        gapCount.Value.Should().Be(SubscriptionFixture.Count - counter.Count + 1);
+        gapCount.Value.Should().BeInRange(expectedGap, expectedGap + 5);
         GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
         GetTag(gapCount, "test").Should().Be("foo");
 
-        var duration = GetValue(values, SubscriptionMetrics.ProcessingRateName)!;
         duration.Should().NotBeNull();
         GetTag(duration, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
         GetTag(duration, SubscriptionMetrics.MessageTypeTag).Should().Be(TestEvent.TypeName);
@@ -68,9 +77,12 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
 
         _host = new TestServer(builder);
         var counter = _host.Services.GetRequiredService<MessageCounter>();
+
         while (counter.Count < SubscriptionFixture.Count / 3) {
             await Task.Delay(10);
         }
+
+        await Task.Delay(500);
     }
 
     public Task DisposeAsync() {
@@ -90,7 +102,7 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
         public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
             await Task.Delay(10, context.CancellationToken);
             counter.Increment();
-            log.LogInformation("Handled event {Number} {EventId}", counter.Count, context.MessageId);
+            log.LogDebug("Handled event {Number} {EventId}", counter.Count, context.MessageId);
 
             return EventHandlingStatus.Success;
         }

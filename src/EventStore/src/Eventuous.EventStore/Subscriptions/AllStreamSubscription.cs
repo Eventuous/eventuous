@@ -114,6 +114,7 @@ public class AllStreamSubscription
             re.Event.ContentType,
             re.Event.EventStreamId,
             re.Event.EventNumber,
+            re.OriginalEventNumber,
             re.Event.Position.CommitPosition,
             _sequence++,
             re.Event.Created,

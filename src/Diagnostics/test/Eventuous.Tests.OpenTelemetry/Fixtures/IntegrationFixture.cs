@@ -27,9 +27,7 @@ public class IntegrationFixture : IAsyncLifetime {
     }
 
     public virtual async Task InitializeAsync() {
-        _esdbContainer = new EventStoreDbBuilder()
-            .WithImage("eventstore/eventstore:22.10.2-alpha-arm64v8")
-            .Build();
+        _esdbContainer = new EventStoreDbContainerBuilder().Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
         Client         = new EventStoreClient(settings);

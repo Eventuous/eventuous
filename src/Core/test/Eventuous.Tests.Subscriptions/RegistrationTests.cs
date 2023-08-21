@@ -56,6 +56,7 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
             0,
             0,
             0,
+            0,
             DateTime.UtcNow,
             new TestEvent(),
             new Metadata(),

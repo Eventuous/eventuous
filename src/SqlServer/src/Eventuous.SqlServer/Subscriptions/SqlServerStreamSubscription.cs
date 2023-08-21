@@ -59,6 +59,7 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
             ContentType,
             _streamName,
             (ulong)evt.StreamPosition,
+            (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
             _sequence++,
             evt.Created,

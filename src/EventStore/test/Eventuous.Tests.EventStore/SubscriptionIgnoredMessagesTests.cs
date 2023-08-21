@@ -25,6 +25,7 @@ public class SubscriptionIgnoredMessagesTests(IntegrationFixture fixture, ITestO
 
         handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
+        TypeMap.Instance.AddType<TestEvent>(TestEvent.TypeName);
         TypeMap.Instance.AddType<UnknownEvent>("ignored");
         await producer.Produce(stream, testEvents, new Metadata());
 

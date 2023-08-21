@@ -15,7 +15,7 @@ public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture, ITes
         var id     = new BookingId(CreateId());
         var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
 
-        var append = await fixture.AppendEvent(stream, evt);
+        var append = await Fixture.AppendEvent(stream, evt);
 
         await Task.Delay(500);
 
@@ -29,7 +29,7 @@ public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture, ITes
             StreamPosition = (ulong)append.NextExpectedVersion
         };
 
-        var actual = await fixture.Mongo.LoadDocument<BookingDocument>(id.ToString());
+        var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(id.ToString());
         actual.Should().Be(expected);
     }
 

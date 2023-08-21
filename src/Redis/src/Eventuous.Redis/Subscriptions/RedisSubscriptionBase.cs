@@ -95,6 +95,7 @@ public abstract class RedisSubscriptionBase<T>(
             ContentType,
             evt.StreamName,
             (ulong)evt.StreamPosition,
+            (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
             _sequence++,
             evt.Created,
