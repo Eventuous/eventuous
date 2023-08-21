@@ -6,7 +6,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
+#    env:
 #      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
     steps:
       - uses: actions/checkout@v3
