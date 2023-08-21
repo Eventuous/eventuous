@@ -11,9 +11,10 @@ using Diagnostics;
 class TypeMapEventSource : EventSource {
     public static readonly TypeMapEventSource Log = new();
 
-    const int TypeNotMappedToNameId     = 8;
-    const int TypeNameNotMappedToTypeId = 9;
-    const int TypeMapRegisteredId       = 10;
+    const int TypeNotMappedToNameId      = 8;
+    const int TypeNameNotMappedToTypeId  = 9;
+    const int TypeMapRegisteredId        = 10;
+    const int TypeMapAlreadyRegisteredId = 11;
 
     [NonEvent]
     public void TypeNotMappedToName(Type type)
@@ -30,5 +31,10 @@ class TypeMapEventSource : EventSource {
     [Event(TypeMapRegisteredId, Message = "Type {0} registered as {1}", Level = EventLevel.Verbose)]
     public void TypeMapRegistered(string type, string typeName) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) WriteEvent(TypeMapRegisteredId, type, typeName);
+    }
+
+    [Event(TypeMapAlreadyRegisteredId, Message = "Type already {0} registered as {1}", Level = EventLevel.Verbose)]
+    public void TypeAlreadyRegistered(string type, string typeName) {
+        if (IsEnabled(EventLevel.Warning, EventKeywords.All)) WriteEvent(TypeMapAlreadyRegisteredId, type, typeName);
     }
 }

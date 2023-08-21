@@ -4,6 +4,7 @@
         <IsPackable>false</IsPackable>
         <IncludeSutSubs>true</IncludeSutSubs>
         <RuntimeIdentifier Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx.13-arm64</RuntimeIdentifier>
+        <SelfContained>false</SelfContained>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>

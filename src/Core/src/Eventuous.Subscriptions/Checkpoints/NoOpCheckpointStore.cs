@@ -9,9 +9,10 @@ public class NoOpCheckpointStore(ulong? start = null) : ICheckpointStore {
     Checkpoint _start = new("", start);
 
     public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
-        Logger.Current.CheckpointLoaded(this, _start);
+        var checkpoint = _start with { Id = checkpointId };
+        Logger.Current.CheckpointLoaded(this, checkpoint);
 
-        return new ValueTask<Checkpoint>(_start);
+        return new ValueTask<Checkpoint>(checkpoint);
     }
 
     public ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {

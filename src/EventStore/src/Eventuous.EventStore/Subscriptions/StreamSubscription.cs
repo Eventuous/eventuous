@@ -123,22 +123,25 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             re.Event.EventNumber
         );
 
+        var meta = Options.MetadataSerializer.DeserializeMeta(
+            Options,
+            re.Event.Metadata,
+            re.Event.EventStreamId,
+            re.Event.EventNumber
+        );
+
         return new MessageConsumeContext(
             re.Event.EventId.ToString(),
             re.Event.EventType,
             re.Event.ContentType,
             re.Event.EventStreamId,
             re.Event.EventNumber,
+            re.OriginalEventNumber.ToUInt64(),
             re.Event.Position.CommitPosition,
             _sequence++,
             re.Event.Created,
             evt,
-            Options.MetadataSerializer.DeserializeMeta(
-                Options,
-                re.Event.Metadata,
-                re.Event.EventStreamId,
-                re.Event.EventNumber
-            ),
+            meta,
             SubscriptionId,
             cancellationToken
         );

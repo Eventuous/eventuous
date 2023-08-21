@@ -16,11 +16,12 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
     /// <param name="consumePipe">Consume pipe, usually provided by the builder</param>
     /// <param name="loggerFactory">Optional logger factory</param>
     public AllPersistentSubscription(
-        EventStoreClient                 eventStoreClient,
-        AllPersistentSubscriptionOptions options,
-        ConsumePipe                      consumePipe,
-        ILoggerFactory?                  loggerFactory
-    ) : base(eventStoreClient, options, consumePipe, loggerFactory) { }
+            EventStoreClient                 eventStoreClient,
+            AllPersistentSubscriptionOptions options,
+            ConsumePipe                      consumePipe,
+            ILoggerFactory?                  loggerFactory
+        )
+        : base(eventStoreClient, options, consumePipe, loggerFactory) { }
 
     /// <summary>
     /// Creates EventStoreDB persistent subscription service for a given stream
@@ -32,22 +33,23 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
     /// <param name="metaSerializer"></param>
     /// <param name="loggerFactory"></param>
     public AllPersistentSubscription(
-        EventStoreClient     eventStoreClient,
-        string               subscriptionId,
-        ConsumePipe          consumerPipe,
-        IEventSerializer?    eventSerializer = null,
-        IMetadataSerializer? metaSerializer  = null,
-        ILoggerFactory?      loggerFactory   = null
-    ) : this(
-        eventStoreClient,
-        new AllPersistentSubscriptionOptions {
-            SubscriptionId     = subscriptionId,
-            EventSerializer    = eventSerializer,
-            MetadataSerializer = metaSerializer
-        },
-        consumerPipe,
-        loggerFactory
-    ) { }
+            EventStoreClient     eventStoreClient,
+            string               subscriptionId,
+            ConsumePipe          consumerPipe,
+            IEventSerializer?    eventSerializer = null,
+            IMetadataSerializer? metaSerializer  = null,
+            ILoggerFactory?      loggerFactory   = null
+        )
+        : this(
+            eventStoreClient,
+            new AllPersistentSubscriptionOptions {
+                SubscriptionId     = subscriptionId,
+                EventSerializer    = eventSerializer,
+                MetadataSerializer = metaSerializer
+            },
+            consumerPipe,
+            loggerFactory
+        ) { }
 
     /// <summary>
     /// Creates EventStoreDB persistent subscription consumer group for $all
@@ -72,10 +74,10 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     protected override Task<PersistentSubscription> LocalSubscribe(
-        Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-        Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>?     subscriptionDropped,
-        CancellationToken                                                          cancellationToken
-    )
+            Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+            Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>?     subscriptionDropped,
+            CancellationToken                                                          cancellationToken
+        )
         => SubscriptionClient.SubscribeToAllAsync(
             Options.SubscriptionId,
             eventAppeared,
@@ -85,11 +87,7 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
             cancellationToken
         );
 
-    /// <summary>
-    /// Gets the position of the event in the stream
-    /// </summary>
-    /// <param name="re"></param>
-    /// <returns></returns>
+    /// <inheritdoc />
     protected override ulong GetContextStreamPosition(ResolvedEvent re)
         => re.Event.Position.CommitPosition;
 

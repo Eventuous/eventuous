@@ -14,6 +14,7 @@ public abstract class WrappedConsumeContext(IMessageConsumeContext innerContext)
     public string          MessageType     => InnerContext.MessageType;
     public string          ContentType     => InnerContext.ContentType;
     public StreamName      Stream          => InnerContext.Stream;
+    public ulong           EventNumber     => InnerContext.EventNumber;
     public ulong           StreamPosition  => InnerContext.StreamPosition;
     public ulong           GlobalPosition  => InnerContext.GlobalPosition;
     public DateTime        Created         => InnerContext.Created;
