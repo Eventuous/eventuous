@@ -43,7 +43,7 @@
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.1" />
     <PackageVersion Include="NEST" Version="7.17.5" />
     <PackageVersion Include="Polly" Version="7.2.3" />
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="StackExchange.Redis" Version="2.6.90" />
     <PackageVersion Include="Testcontainers.EventStoreDb" Version="3.4.0" />
     <PackageVersion Include="Testcontainers.Kafka" Version="3.4.0" />
