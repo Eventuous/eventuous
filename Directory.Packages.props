@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net6.0'">
-    <MicrosoftExtensionsVer>6.0</MicrosoftExtensionsVer>
+    <MicrosoftExtensionsVer>7.0.0</MicrosoftExtensionsVer>
     <MicrosoftTestHostVer>[6.0.5,7)</MicrosoftTestHostVer>
     <MicrosoftHealthCheckVer>[6.0.21, 7)</MicrosoftHealthCheckVer>
     <MicrosoftWebVer>[6.0.16, 7)</MicrosoftWebVer>
