@@ -73,7 +73,7 @@
     <PackageVersion Include="RestSharp" Version="110.2.0" />
     <PackageVersion Include="Hypothesist" Version="2.1.55" />
     <PackageVersion Include="NodaTime" Version="3.1.9" />
-    <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
+    <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.1.0" />
     <PackageVersion Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0" />
     <PackageVersion Include="MongoDb.Bson.NodaTime" Version="3.0.0" />
     <PackageVersion Include="Testcontainers" Version="3.4.0" />
