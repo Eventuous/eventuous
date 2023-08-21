@@ -158,7 +158,7 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) {
             Handled.Add(ctx.Message!);
 
-            logger.LogInformation("Handled event from {Stream} at {Position}", ctx.Stream, ctx.StreamPosition);
+            logger.LogDebug("Handled event from {Stream} at {Position}", ctx.Stream, ctx.StreamPosition);
 
             return ValueTask.FromResult(EventHandlingStatus.Success);
         }
