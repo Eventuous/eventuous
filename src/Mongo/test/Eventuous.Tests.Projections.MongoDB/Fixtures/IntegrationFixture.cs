@@ -1,7 +1,7 @@
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using EventStore.Client;
 using Eventuous.EventStore;
+using Eventuous.TestHelpers;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Driver;
 using NodaTime;
@@ -40,13 +40,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     MongoDbContainer      _mongoContainer = null!;
 
     public async Task InitializeAsync() {
-        var containerTag = RuntimeInformation.ProcessArchitecture switch {
-            Architecture.Arm64 => "22.10.2-alpha-arm64v8",
-            _                  => "22.10.2-buster-slim"
-        };
-        _esdbContainer = new EventStoreDbBuilder()
-            .WithImage($"eventstore/eventstore:{containerTag}")
-            .Build();
+        _esdbContainer = new EventStoreDbContainerBuilder().Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
         Client         = new EventStoreClient(settings);

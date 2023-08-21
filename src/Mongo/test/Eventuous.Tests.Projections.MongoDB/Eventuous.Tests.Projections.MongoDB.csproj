@@ -2,6 +2,7 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
+        <IncludeTestHelpers>true</IncludeTestHelpers>
         <IncludeSutApp>true</IncludeSutApp>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
@@ -13,7 +14,6 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
         <PackageReference Include="MongoDb.Bson.NodaTime" />
-        <PackageReference Include="Testcontainers.EventStoreDb" />
         <PackageReference Include="Testcontainers.MongoDb" />
     </ItemGroup>
 </Project>
