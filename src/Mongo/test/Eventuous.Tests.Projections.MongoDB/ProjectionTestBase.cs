@@ -9,10 +9,10 @@ namespace Eventuous.Tests.Projections.MongoDB;
 
 public class ProjectionTestBase<TProjection> : IClassFixture<IntegrationFixture>, IAsyncLifetime where TProjection : class, IEventHandler {
     readonly IHost              _host;
-    readonly IntegrationFixture _fixture;
+    protected IntegrationFixture Fixture;
 
     protected ProjectionTestBase(string id, IntegrationFixture fixture, ITestOutputHelper output) {
-        _fixture = fixture;
+        Fixture = fixture;
 
         var builder = Host.CreateDefaultBuilder()
             .ConfigureLogging(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Trace))
@@ -24,8 +24,8 @@ public class ProjectionTestBase<TProjection> : IClassFixture<IntegrationFixture>
 
     void ConfigureServices(IServiceCollection services, string id)
         => services
-            .AddSingleton(_fixture.Client)
-            .AddSingleton(_fixture.Mongo)
+            .AddSingleton(Fixture.Client)
+            .AddSingleton(Fixture.Mongo)
             .AddCheckpointStore<MongoCheckpointStore>()
             .AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
                 id,

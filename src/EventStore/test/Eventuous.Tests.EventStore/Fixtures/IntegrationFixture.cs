@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using EventStore.Client;
 using Eventuous.Diagnostics;
@@ -31,8 +32,13 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     }
 
     public async Task InitializeAsync() {
+        var containerTag = RuntimeInformation.ProcessArchitecture switch {
+            Architecture.Arm64 => "22.10.2-alpha-arm64v8",
+            _                  => "22.10.2-buster-slim"
+        };
+
         _esdbContainer = new EventStoreDbBuilder()
-            .WithImage("eventstore/eventstore:22.10.2-alpha-arm64v8")
+            .WithImage($"eventstore/eventstore:{containerTag}")
             .Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());

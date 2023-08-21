@@ -29,7 +29,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
 
         first.Doc.Should().Be(expected);
 
-        var payment = new BookingPaymentRegistered(fixture.Auto.Create<string>(), evt.Price);
+        var payment = new BookingPaymentRegistered(Fixture.Auto.Create<string>(), evt.Price);
 
         var second = await Act(stream, payment);
 
@@ -44,11 +44,11 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
 
     async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)
         where T : class {
-        var append = await fixture.AppendEvent(stream, evt);
+        var append = await Fixture.AppendEvent(stream, evt);
 
         await Task.Delay(500);
 
-        var actual = await fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId());
+        var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId());
 
         return (append, actual);
     }

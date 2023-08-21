@@ -4,7 +4,7 @@
 namespace Eventuous.Subscriptions;
 
 [PublicAPI]
-public record SubscriptionOptions {
+public abstract record SubscriptionOptions {
     /// <summary>
     /// Subscription id is used to match event handlers with one subscription
     /// </summary>
@@ -21,7 +21,7 @@ public record SubscriptionOptions {
     public IEventSerializer? EventSerializer { get; set; }
 }
 
-public record SubscriptionWithCheckpointOptions : SubscriptionOptions {
+public abstract record SubscriptionWithCheckpointOptions : SubscriptionOptions {
     public int BatchSize     { get; set; } = 100;
     public int CommitDelayMs { get; set; } = 5000;
 }
