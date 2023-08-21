@@ -255,7 +255,7 @@ public class EsdbEventStore : IEventStore {
                 payload,
                 DeserializeMetadata() ?? new Metadata(),
                 resolvedEvent.Event.ContentType,
-                resolvedEvent.OriginalEventNumber.ToInt64()
+                resolvedEvent.Event.EventNumber.ToInt64()
             );
     }
 
