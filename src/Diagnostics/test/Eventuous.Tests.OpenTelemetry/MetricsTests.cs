@@ -92,7 +92,7 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
         public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
             await Task.Delay(10, context.CancellationToken);
             counter.Increment();
-            log.LogInformation("Handled event {Number} {EventId}", counter.Count, context.MessageId);
+            log.LogDebug("Handled event {Number} {EventId}", counter.Count, context.MessageId);
 
             return EventHandlingStatus.Success;
         }
