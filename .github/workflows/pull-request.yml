@@ -9,21 +9,30 @@ jobs:
 #    env:
 #      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v3
+      -  
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup .NET
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
-      - name: Install dependencies
+      -  
+        name: Install dependencies
         run: dotnet restore
-      - name: Build
+      -  
+        name: Build
         run: dotnet build --configuration Debug --no-restore
-      - name: Prepare Testcontainers Cloud agent
+      -  
+        name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
         uses: atomicjar/testcontainers-cloud-setup-action@main
-      - name: Test
+      -  
+        name: Run tests
         run: dotnet test --no-build
-      - name: Publish Test Results
+      -  
+        name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
