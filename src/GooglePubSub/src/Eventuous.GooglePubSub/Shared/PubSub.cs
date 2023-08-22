@@ -15,11 +15,11 @@ public static class PubSub {
     public static EmulatorDetection DetectEmulator(this PublisherClient.ClientCreationSettings? value) => value?.EmulatorDetection ?? EmulatorDetection.None;
 
     public static async Task CreateTopic(
-        TopicName              topicName,
-        EmulatorDetection      emulatorDetection,
-        Action<string, string> log,
-        CancellationToken      cancellationToken
-    ) {
+            TopicName              topicName,
+            EmulatorDetection      emulatorDetection,
+            Action<string, string> log,
+            CancellationToken      cancellationToken
+        ) {
         var topicString = topicName.ToString();
 
         var publisherServiceApiClient =
@@ -42,17 +42,18 @@ public static class PubSub {
     }
 
     public static async Task CreateSubscription(
-        SubscriptionName      subscriptionName,
-        TopicName             topicName,
-        Action<Subscription>? configureSubscription,
-        EmulatorDetection     emulatorDetection,
-        CancellationToken     cancellationToken
-    ) {
-        var subName = subscriptionName.ToString();
+            SubscriptionName      subscriptionName,
+            TopicName             topicName,
+            Action<Subscription>? configureSubscription,
+            EmulatorDetection     emulatorDetection,
+            CancellationToken     cancellationToken
+        ) {
+        var subName = subscriptionName.ToString()!;
         var log     = Logger.Current.InfoLog;
 
-        var subscriberServiceApiClient =
-            await new SubscriberServiceApiClientBuilder { EmulatorDetection = emulatorDetection }.BuildAsync(cancellationToken).NoContext();
+        var subscriberServiceApiClient = await new SubscriberServiceApiClientBuilder { EmulatorDetection = emulatorDetection }
+            .BuildAsync(cancellationToken)
+            .NoContext();
 
         log?.Log("Checking subscription for topic", subName, topicName.ToString());
 

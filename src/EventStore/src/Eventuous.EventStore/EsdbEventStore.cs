@@ -204,6 +204,7 @@ public class EsdbEventStore : IEventStore {
         }
         catch (Exception ex) {
             var (message, args) = getError();
+            // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             _logger?.LogWarning(ex, message, args);
             throw getException(stream, ex);
         }

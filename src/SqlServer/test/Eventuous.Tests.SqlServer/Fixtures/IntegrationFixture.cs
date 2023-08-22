@@ -12,11 +12,10 @@ using Testcontainers.SqlEdge;
 namespace Eventuous.Tests.SqlServer.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncLifetime {
-    public IEventStore            EventStore     { get; private set; } = null!;
-    public IAggregateStore        AggregateStore { get; set; }         = null!;
-    public IFixture               Auto           { get; }              = new Fixture().Customize(new NodaTimeCustomization());
-    public GetSqlServerConnection GetConnection  { get; private set; } = null!;
-    public Faker                  Faker          { get; }              = new();
+    public IEventStore            EventStore    { get; private set; } = null!;
+    public IFixture               Auto          { get; }              = new Fixture().Customize(new NodaTimeCustomization());
+    public GetSqlServerConnection GetConnection { get; private set; } = null!;
+    public Faker                  Faker         { get; }              = new();
 
     public string SchemaName { get; }
 
@@ -45,7 +44,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         await schema.CreateSchema(GetConnection);
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
         EventStore     = new SqlServerStore(GetConnection, new SqlServerStoreOptions(SchemaName), Serializer);
-        AggregateStore = new AggregateStore(EventStore);
+        new AggregateStore(EventStore);
         ActivitySource.AddActivityListener(_listener);
 
         return;

@@ -14,16 +14,14 @@ using Extensions;
 /// <summary>
 /// Subscription for events in a single stream in SQL Server event store.
 /// </summary>
-public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions> {
-    public SqlServerStreamSubscription(
+public class SqlServerStreamSubscription(
         GetSqlServerConnection             getConnection,
         SqlServerStreamSubscriptionOptions options,
         ICheckpointStore                   checkpointStore,
         ConsumePipe                        consumePipe,
         ILoggerFactory?                    loggerFactory = null
-    ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory)
-        => _streamName = options.Stream.ToString();
-
+    )
+    : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions>(getConnection, options, checkpointStore, consumePipe, loggerFactory) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadStreamSub)
             .Add("@stream_id", SqlDbType.Int, _streamId)
@@ -50,7 +48,7 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
 
     ulong           _sequence;
     int             _streamId;
-    readonly string _streamName;
+    readonly string _streamName = options.Stream.ToString();
 
     protected override IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(

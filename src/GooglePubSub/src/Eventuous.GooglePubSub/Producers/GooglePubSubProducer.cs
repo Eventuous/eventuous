@@ -26,11 +26,11 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     /// <param name="log">Optional logger instance</param>
     /// <param name="configureClient">Publisher client configuration action</param>
     public GooglePubSubProducer(
-        string                          projectId,
-        IEventSerializer?               serializer      = null,
-        ILogger<GooglePubSubProducer>?  log             = null,
-        Action<PublisherClientBuilder>? configureClient = null
-    )
+            string                          projectId,
+            IEventSerializer?               serializer      = null,
+            ILogger<GooglePubSubProducer>?  log             = null,
+            Action<PublisherClientBuilder>? configureClient = null
+        )
         : this(new PubSubProducerOptions { ProjectId = Ensure.NotEmptyString(projectId), ConfigureClientBuilder = configureClient }, serializer, log) { }
 
     /// <summary>
@@ -74,11 +74,11 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     readonly ILogger<GooglePubSubProducer>? _log;
 
     protected override async Task ProduceMessages(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        PubSubProduceOptions?        options,
-        CancellationToken            cancellationToken = default
-    ) {
+            StreamName                   stream,
+            IEnumerable<ProducedMessage> messages,
+            PubSubProduceOptions?        options,
+            CancellationToken            cancellationToken = default
+        ) {
         var client = await _clientCache.GetOrAddPublisher(stream, cancellationToken).NoContext();
 
         await Task.WhenAll(messages.Select(ProduceLocal)).NoContext();
@@ -103,8 +103,10 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
             Data        = ByteString.CopyFrom(payload),
             OrderingKey = options?.OrderingKey ?? "",
             Attributes = {
-                { _attributes.ContentType, contentType }, { _attributes.EventType, eventType }, { _attributes.MessageId, message.MessageId.ToString() }
-            },
+                { _attributes.ContentType, contentType },
+                { _attributes.EventType, eventType },
+                { _attributes.MessageId, message.MessageId.ToString() }
+            }
         };
 
         if (message.Metadata != null) {

@@ -7,12 +7,12 @@ public abstract record EventStoreSubscriptionOptions : SubscriptionOptions {
     /// <summary>
     /// User credentials
     /// </summary>
-    public UserCredentials? Credentials { get; set; }
+    public UserCredentials? Credentials { get; [PublicAPI] set; }
 
     /// <summary>
     /// Resolve link events
     /// </summary>
-    public bool ResolveLinkTos { get; set; }
+    public bool ResolveLinkTos { get; [PublicAPI] set; }
 
     /// <summary>
     /// Metadata serializer. If not assigned, the default one will be used.

@@ -12,6 +12,7 @@ public static class Chunk {
         while (e.MoveNext()) {
             var remaining = chunkSize;
 
+            // ReSharper disable once AccessToDisposedClosure
             var innerMoveNext = new Func<bool>(() => --remaining > 0 && e.MoveNext());
 
             yield return e.GetChunk(innerMoveNext);

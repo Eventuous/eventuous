@@ -11,10 +11,8 @@ namespace Eventuous.Projections.MongoDB;
 using Tools;
 
 [Obsolete("Use MongoProjector instead")]
-public abstract class MongoProjection<T> : MongoProjector<T> where T : ProjectedDocument {
-    protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null)
-        : base(database, typeMap) { }
-}
+public abstract class MongoProjection<T>(IMongoDatabase database, TypeMapper? typeMap = null) : MongoProjector<T>(database, typeMap)
+    where T : ProjectedDocument;
 
 /// <summary>
 /// Base class for MongoDB projectors. Specify your event handlers in the constructor using <code>On</code> methods family.

@@ -8,13 +8,11 @@ using Testcontainers.EventStoreDb;
 namespace Eventuous.Tests.OpenTelemetry.Fixtures;
 
 public class IntegrationFixture : IAsyncLifetime {
-    public IEventStore      EventStore     { get; set; }         = null!;
-    public IAggregateStore  AggregateStore { get; set; }         = null!;
-    public EventStoreClient Client         { get; private set; } = null!;
-    public Fixture          Auto           { get; }              = new();
+    public IEventStore      EventStore { get; set; }         = null!;
+    public EventStoreClient Client     { get; private set; } = null!;
+    public Fixture          Auto       { get; }              = new();
 
     EventStoreDbContainer _esdbContainer = null!;
-    // readonly ActivityListener _listener = DummyActivityListener.Create();
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -32,7 +30,7 @@ public class IntegrationFixture : IAsyncLifetime {
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
         Client         = new EventStoreClient(settings);
         EventStore     = new TracedEventStore(new EsdbEventStore(Client));
-        AggregateStore = new AggregateStore(EventStore);
+        new AggregateStore(EventStore);
     }
 
     public async Task DisposeAsync() {

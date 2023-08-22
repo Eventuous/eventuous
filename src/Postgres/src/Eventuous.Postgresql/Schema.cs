@@ -28,7 +28,7 @@ public class Schema {
     public string AddCheckpointSql    => $"insert into {_schema}.checkpoints (id) values (@checkpointId)";
     public string UpdateCheckpointSql => $"update {_schema}.checkpoints set position=(@position) where id=(@checkpointId)";
 
-    readonly static Assembly Assembly = typeof(Schema).Assembly;
+    static readonly Assembly Assembly = typeof(Schema).Assembly;
 
     public async Task CreateSchema(NpgsqlDataSource dataSource, ILogger<Schema> log, CancellationToken cancellationToken = default) {
         var names = Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".sql")).OrderBy(x => x);

@@ -12,6 +12,7 @@ public class TypeMapBenchmark {
     KeyValuePair<string, Type>[] _types = null!;
 
     [Params(5, 20, 100)]
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public int TypesCount { get; set; }
 
     [GlobalSetup]

@@ -36,6 +36,8 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
+          check_name: test results
+          comment_title: Test results
           files: |
             test-results/**/*.xml
             test-results/**/*.trx

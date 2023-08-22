@@ -4,11 +4,11 @@ using Google.Api.Gax;
 
 namespace Eventuous.Tests.GooglePubSub;
 
-public partial class PubSubFixture : IAsyncLifetime {
+public class PubSubFixture : IAsyncLifetime {
     public static string PubsubProjectId => "test-id";
 
     public static async Task DeleteSubscription(string subscriptionId) {
-        var builder          = new SubscriberServiceApiClientBuilder() { EmulatorDetection = EmulatorDetection.EmulatorOnly };
+        var builder          = new SubscriberServiceApiClientBuilder { EmulatorDetection = EmulatorDetection.EmulatorOnly };
         var subscriber       = await builder.BuildAsync();
         var subscriptionName = SubscriptionName.FromProjectSubscription(PubsubProjectId, subscriptionId);
         await subscriber.DeleteSubscriptionAsync(subscriptionName);

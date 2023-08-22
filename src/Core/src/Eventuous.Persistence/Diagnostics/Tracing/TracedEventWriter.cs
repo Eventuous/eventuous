@@ -8,21 +8,15 @@ namespace Eventuous.Diagnostics.Tracing;
 using Metrics;
 using static Constants;
 
-public class TracedEventWriter : BaseTracer, IEventWriter {
-    public static IEventWriter Trace(IEventWriter writer)
-        => new TracedEventWriter(writer);
-
-    public TracedEventWriter(IEventWriter writer)
-        => Inner = writer;
-
-    IEventWriter Inner { get; }
+public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
+    public static IEventWriter Trace(IEventWriter writer) => new TracedEventWriter(writer);
 
     public async Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    ) {
+            StreamName                       stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
+        ) {
         using var activity = StartActivity(stream, Operations.AppendEvents);
 
         using var measure = Measure.Start(MetricsSource, new EventStoreMetricsContext(Operations.AppendEvents));
@@ -32,13 +26,14 @@ public class TracedEventWriter : BaseTracer, IEventWriter {
             .ToArray();
 
         try {
-            var result = await Inner.AppendEvents(stream, expectedVersion, tracedEvents, cancellationToken).NoContext();
+            var result = await writer.AppendEvents(stream, expectedVersion, tracedEvents, cancellationToken).NoContext();
             activity?.SetActivityStatus(ActivityStatus.Ok());
+
             return result;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
             measure.SetError();
+
             throw;
         }
     }

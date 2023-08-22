@@ -31,7 +31,7 @@ public sealed class EventStoreDbContainerBuilder : ContainerBuilder<EventStoreDb
     /// Initializes a new instance of the <see cref="EventStoreDbBuilder" /> class.
     /// </summary>
     /// <param name="dockerResourceConfiguration">The Docker resource configuration.</param>
-    private EventStoreDbContainerBuilder(EventStoreDbConfiguration dockerResourceConfiguration)
+    EventStoreDbContainerBuilder(EventStoreDbConfiguration dockerResourceConfiguration)
         : base(dockerResourceConfiguration) {
         DockerResourceConfiguration = dockerResourceConfiguration;
     }

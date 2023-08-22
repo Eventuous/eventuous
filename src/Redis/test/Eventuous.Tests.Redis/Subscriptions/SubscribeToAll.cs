@@ -8,7 +8,6 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Redis.Subscriptions;
 
-[Collection("Sequential")]
 public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixture<TestEventHandler>(outputHelper, true, false) {
     [Fact]
     public async Task ShouldConsumeProducedEvents() {
@@ -31,7 +30,7 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
         var (_, result) = await GenerateAndProduceEvents(count);
         Handler.AssertThat().Any(_ => true);
 
-        var checkpoint = await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
+        await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
         Logger.ConfigureIfNull(SubscriptionId, LoggerFactory);
         await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, result.GlobalPosition), true, default);
 

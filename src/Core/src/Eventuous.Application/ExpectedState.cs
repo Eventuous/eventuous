@@ -3,7 +3,7 @@
 
 namespace Eventuous;
 
-enum ExpectedState {
+public enum ExpectedState {
     New,
     Existing,
     Any,

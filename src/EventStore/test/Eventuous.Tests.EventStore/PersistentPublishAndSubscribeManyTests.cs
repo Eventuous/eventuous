@@ -4,10 +4,8 @@ using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
-public class PersistentPublishAndSubscribeManyTests : PersistentSubscriptionFixture<TestEventHandler> {
-    public PersistentPublishAndSubscribeManyTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, new TestEventHandler(), false) { }
-
+public class PersistentPublishAndSubscribeManyTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
+    : PersistentSubscriptionFixture<TestEventHandler>(fixture, outputHelper, new TestEventHandler(), false) {
     [Fact]
     public async Task SubscribeAndProduceMany() {
         const int count = 10000;

@@ -11,10 +11,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.GooglePubSub.CloudRun;
 
-public class CloudRunPubSubSubscription : EventSubscription<CloudRunPubSubSubscriptionOptions> {
-    public CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
-        : base(options, consumePipe, loggerFactory) { }
-
+public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
+    : EventSubscription<CloudRunPubSubSubscriptionOptions>(options, consumePipe, loggerFactory) {
     protected override ValueTask Subscribe(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
     protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => ValueTask.CompletedTask;

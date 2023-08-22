@@ -9,9 +9,7 @@ namespace Eventuous.Subscriptions.Checkpoints;
 
 using Diagnostics;
 
-public class CommitPositionSequence : SortedSet<CommitPosition> {
-    public CommitPositionSequence() : base(new PositionsComparer()) { }
-
+public class CommitPositionSequence() : SortedSet<CommitPosition>(new PositionsComparer()) {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CommitPosition FirstBeforeGap()
         => Count switch {

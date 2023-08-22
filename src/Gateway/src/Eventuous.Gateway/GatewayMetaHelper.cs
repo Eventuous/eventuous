@@ -20,7 +20,7 @@ static class GatewayMetaHelper {
             [GatewayContextItems.OriginalGlobalPosition] = context.GlobalPosition,
             [GatewayContextItems.OriginalMessageId]      = context.MessageId,
             [GatewayContextItems.OriginalMessageType]    = context.MessageType,
-            [GatewayContextItems.OriginalMessageMeta]    = context.Metadata,
+            [GatewayContextItems.OriginalMessageMeta]    = context.Metadata
         };
 
         return new Metadata(headers);

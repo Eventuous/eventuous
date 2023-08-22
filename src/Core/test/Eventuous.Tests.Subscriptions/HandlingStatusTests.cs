@@ -3,12 +3,8 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Tests.Subscriptions;
 
-public class HandlingStatusTests {
-    readonly ITestOutputHelper _output;
-
+public class HandlingStatusTests(ITestOutputHelper output) {
     static Fixture Auto { get; } = new();
-
-    public HandlingStatusTests(ITestOutputHelper output) => _output = output;
 
     [Fact]
     public void AckAndNackShouldNack() {
@@ -43,7 +39,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void NackAndIgnoreShouldFail() {
-        var context = Auto.CreateContext(_output);
+        var context = Auto.CreateContext(output);
         context.Nack<object>(new Exception());
         context.Ignore("test");
         context.HasFailed().Should().BeTrue();
@@ -53,7 +49,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void NackAckAndIgnoreShouldFail() {
-        var context = Auto.CreateContext(_output);
+        var context = Auto.CreateContext(output);
         context.Nack<object>(new Exception());
         context.Ack<int>();
         context.Ignore<long>();
@@ -64,7 +60,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void AckAndIgnoreShouldSucceed() {
-        var context = Auto.CreateContext(_output);
+        var context = Auto.CreateContext(output);
         context.Ack<object>();
         context.Ignore<int>();
         context.HasFailed().Should().BeFalse();
@@ -74,7 +70,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void IgnoreAndIgnoreShouldIgnore() {
-        var context = Auto.CreateContext(_output);
+        var context = Auto.CreateContext(output);
         context.Ignore<object>();
         context.Ignore<int>();
         context.WasIgnored().Should().BeTrue();
@@ -83,7 +79,7 @@ public class HandlingStatusTests {
 
     [Fact]
     public void PendingShouldBePending() {
-        var context = Auto.CreateContext(_output);
+        var context = Auto.CreateContext(output);
         context.WasIgnored().Should().BeFalse();
         context.HasFailed().Should().BeFalse();
         context.HandlingResults.IsPending().Should().BeTrue();

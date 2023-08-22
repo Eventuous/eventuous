@@ -87,9 +87,7 @@ public class InMemoryEventStore : IEventStore {
         return existing;
     }
 
-    class NotFound : Exception {
-        public NotFound(StreamName stream) : base($"Stream not found: {stream}") { }
-    }
+    class NotFound(StreamName stream) : Exception($"Stream not found: {stream}");
 }
 
 record StoredEvent(StreamEvent Event, int Position);

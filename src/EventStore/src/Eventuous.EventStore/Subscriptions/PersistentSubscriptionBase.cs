@@ -15,11 +15,11 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Function type for handling event processing failures
 /// </summary>
 public delegate Task HandleEventProcessingFailure(
-    EventStoreClient       client,
-    PersistentSubscription subscription,
-    ResolvedEvent          resolvedEvent,
-    Exception              exception
-);
+        EventStoreClient       client,
+        PersistentSubscription subscription,
+        ResolvedEvent          resolvedEvent,
+        Exception              exception
+    );
 
 /// <summary>
 /// Base class for EventStoreDB persistent subscriptions
@@ -81,13 +81,13 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
 
         try {
             _subscription = await LocalSubscribe(
+                    // ReSharper disable once ConvertClosureToMethodGroup
                     (subscription, @event, retryCount, ct) => HandleEvent(subscription, @event, retryCount, ct),
                     HandleDrop,
                     cancellationToken
                 )
                 .NoContext();
-        }
-        catch (PersistentSubscriptionNotFoundException) {
+        } catch (PersistentSubscriptionNotFoundException) {
             await CreatePersistentSubscription(settings, cancellationToken);
 
             _subscription = await LocalSubscribe(
@@ -115,11 +115,9 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
                 await Handler(context).NoContext();
                 LastProcessed = EventPosition.FromContext(context);
                 await Ack(context).NoContext();
-            }
-            catch (OperationCanceledException e) when (ct.IsCancellationRequested) {
+            } catch (OperationCanceledException e) when (ct.IsCancellationRequested) {
                 Dropped(DropReason.Stopped, e);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 await Nack(context, e).NoContext();
             }
         }
@@ -128,7 +126,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// <summary>
     /// Last processed event position
     /// </summary>
-    protected EventPosition? LastProcessed { get; set; }
+    protected EventPosition? LastProcessed { [PublicAPI] get; set; }
 
     /// <summary>
     /// Internal method to subscribe to a persistent subscription
@@ -138,10 +136,10 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     protected abstract Task<PersistentSubscription> LocalSubscribe(
-        Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-        Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>?     subscriptionDropped,
-        CancellationToken                                                          cancellationToken
-    );
+            Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+            Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>?     subscriptionDropped,
+            CancellationToken                                                          cancellationToken
+        );
 
     ConcurrentQueue<ResolvedEvent> AckQueue { get; } = new();
 
@@ -218,12 +216,16 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             Stopping.Cancel(false);
             await Task.Delay(100, cancellationToken);
             _subscription?.Dispose();
-        }
-        catch (Exception) {
+        } catch (Exception) {
             // It might throw
         }
     }
 
-    static Task DefaultEventProcessingFailureHandler(EventStoreClient client, PersistentSubscription subscription, ResolvedEvent resolvedEvent, Exception exception)
+    static Task DefaultEventProcessingFailureHandler(
+            EventStoreClient       client,
+            PersistentSubscription subscription,
+            ResolvedEvent          resolvedEvent,
+            Exception              exception
+        )
         => subscription.Nack(PersistentSubscriptionNakEventAction.Retry, exception.Message, resolvedEvent);
 }

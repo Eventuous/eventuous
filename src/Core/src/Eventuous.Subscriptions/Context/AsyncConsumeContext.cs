@@ -28,7 +28,8 @@ public class AsyncConsumeContext : WrappedConsumeContext {
     /// <param name="inner">The original message context</param>
     /// <param name="acknowledge">Function to ACK the message</param>
     /// <param name="fail">Function to NACK the message in case of failure</param>
-    public AsyncConsumeContext(IMessageConsumeContext inner, Acknowledge acknowledge, Fail fail) : base(inner) {
+    public AsyncConsumeContext(IMessageConsumeContext inner, Acknowledge acknowledge, Fail fail)
+        : base(inner) {
         // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         inner.LogContext ??= Logger.Current;
         _acknowledge     =   acknowledge;
@@ -48,6 +49,6 @@ public class AsyncConsumeContext : WrappedConsumeContext {
     /// <returns></returns>
     public ValueTask Fail(Exception exception) => _fail(this, exception);
 
-    public string? PartitionKey { get; internal set; }
-    public long    PartitionId  { get; internal set; }
+    public string? PartitionKey { [PublicAPI] get; internal set; }
+    public long    PartitionId  { get;             internal set; }
 }

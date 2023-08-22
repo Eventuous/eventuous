@@ -24,7 +24,7 @@ class ClientCache(PubSubProducerOptions options, ILogger? log) {
     async Task<PublisherClient> CreateTopicAndClient(string topicId, CancellationToken cancellationToken) {
         var topicName = TopicName.FromProjectTopic(_projectId, topicId);
 
-        var builder = new PublisherClientBuilder() { Logger = log };
+        var builder = new PublisherClientBuilder { Logger = log };
         _options.ConfigureClientBuilder?.Invoke(builder);
         builder.TopicName = topicName;
 

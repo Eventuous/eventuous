@@ -3,7 +3,6 @@ using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
 
-[Collection("Sequential")]
 public class ReadEvents(IntegrationFixture fixture) : IClassFixture<IntegrationFixture> {
     [Fact]
     public async Task ShouldReadOne() {
