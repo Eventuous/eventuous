@@ -12,7 +12,8 @@ using Tools;
 
 [Obsolete("Use MongoProjector instead")]
 public abstract class MongoProjection<T> : MongoProjector<T> where T : ProjectedDocument {
-    protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null) : base(database, typeMap) { }
+    protected MongoProjection(IMongoDatabase database, TypeMapper? typeMap = null)
+        : base(database, typeMap) { }
 }
 
 /// <summary>
@@ -20,17 +21,12 @@ public abstract class MongoProjection<T> : MongoProjector<T> where T : Projected
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [UsedImplicitly]
-public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDocument {
+public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typeMap = null) : BaseEventHandler where T : ProjectedDocument {
     [PublicAPI]
-    protected IMongoCollection<T> Collection { get; }
+    protected IMongoCollection<T> Collection { get; } = Ensure.NotNull<IMongoDatabase>(database).GetDocumentCollection<T>();
 
     readonly Dictionary<Type, ProjectUntypedEvent> _handlers = new();
-    readonly TypeMapper                            _map;
-
-    protected MongoProjector(IMongoDatabase database, TypeMapper? typeMap = null) {
-        Collection = Ensure.NotNull(database).GetDocumentCollection<T>();
-        _map       = typeMap ?? TypeMap.Instance;
-    }
+    readonly TypeMapper                            _map      = typeMap ?? TypeMap.Instance;
 
     /// <summary>
     /// Register a handler for a particular event type
@@ -90,13 +86,17 @@ public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDo
         where TEvent : class {
         return context.Message is not TEvent ? NoHandler() : HandleTypedEvent();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask<MongoProjectOperation<T>> HandleTypedEvent() {
             var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
+
             return handler(typedContext);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask<MongoProjectOperation<T>> NoHandler() {
             Logger.Current.MessageHandlerNotFound(DiagnosticName, context.MessageType);
+
             return NoOp;
         }
     }
@@ -108,7 +108,7 @@ public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDo
 
         var update = updateTask == NoOp
             ? null
-            : updateTask.IsCompleted
+            : updateTask.IsCompletedSuccessfully
                 ? updateTask.Result
                 : await updateTask.NoContext();
 
@@ -118,7 +118,8 @@ public abstract class MongoProjector<T> : BaseEventHandler where T : ProjectedDo
 
         var task = update.Execute(Collection, context.CancellationToken);
 
-        if (!task.IsCompleted) await task.NoContext();
+        if (!task.IsCompletedSuccessfully) await task.NoContext();
+
         return EventHandlingStatus.Success;
     }
 

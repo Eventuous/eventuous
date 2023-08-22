@@ -60,8 +60,7 @@ public abstract class Aggregate {
     /// <exception cref="DomainException"></exception>
     protected void EnsureDoesntExist(Func<Exception>? getException = null) {
         if (CurrentVersion >= 0)
-            throw getException?.Invoke()
-               ?? new DomainException($"{GetType().Name} already exists");
+            throw getException?.Invoke() ?? new DomainException($"{GetType().Name} already exists");
     }
 
     /// <summary>
@@ -70,15 +69,11 @@ public abstract class Aggregate {
     /// <exception cref="DomainException"></exception>
     protected void EnsureExists(Func<Exception>? getException = null) {
         if (CurrentVersion < 0)
-            throw getException?.Invoke()
-               ?? new DomainException($"{GetType().Name} doesn't exist");
+            throw getException?.Invoke() ?? new DomainException($"{GetType().Name} doesn't exist");
     }
 }
 
 public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
-    protected Aggregate()
-        => State = new T();
-
     /// <summary>
     /// Applies a new event to the state, adds the event to the list of pending changes,
     /// and increases the current version.
@@ -89,6 +84,7 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
         AddChange(evt);
         var previous = State;
         State = State.When(evt);
+
         return (previous, State);
     }
 
@@ -105,5 +101,5 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
     /// <summary>
     /// Returns the current aggregate state. Cannot be mutated from the outside.
     /// </summary>
-    public T State { get; private set; }
+    public T State { get; private set; } = new();
 }

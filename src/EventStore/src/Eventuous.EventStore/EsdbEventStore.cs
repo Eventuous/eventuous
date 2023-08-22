@@ -213,6 +213,7 @@ public class EsdbEventStore : IEventStore {
     static Task<T> AnyOrNot<T>(ExpectedStreamVersion version, Func<Task<T>> whenAny, Func<Task<T>> otherwise)
         => version == ExpectedStreamVersion.Any ? whenAny() : otherwise();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     StreamEvent ToStreamEvent(ResolvedEvent resolvedEvent) {
         var deserialized = _serializer.DeserializeEvent(
             resolvedEvent.Event.Data.Span,
@@ -228,6 +229,7 @@ public class EsdbEventStore : IEventStore {
             _ => throw new SerializationException("Unknown deserialization result")
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Metadata? DeserializeMetadata() {
             var meta = resolvedEvent.Event.Metadata.Span;
 
@@ -246,16 +248,18 @@ public class EsdbEventStore : IEventStore {
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         StreamEvent AsStreamEvent(object payload)
             => new(
                 resolvedEvent.Event.EventId.ToGuid(),
                 payload,
                 DeserializeMetadata() ?? new Metadata(),
                 resolvedEvent.Event.ContentType,
-                resolvedEvent.OriginalEventNumber.ToInt64()
+                resolvedEvent.Event.EventNumber.ToInt64()
             );
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents
             .Where(x => !x.Event.EventType.StartsWith("$"))

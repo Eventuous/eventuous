@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>CA2254</NoWarn>
     </PropertyGroup>
     <ItemGroup>

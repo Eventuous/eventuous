@@ -99,6 +99,8 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
                 .NoContext();
         }
 
+        return;
+
         void HandleDrop(PersistentSubscription __, SubscriptionDroppedReason reason, Exception? exception)
             => Dropped(EsdbMappings.AsDropReason(reason), exception);
 
@@ -113,6 +115,9 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
                 await Handler(context).NoContext();
                 LastProcessed = EventPosition.FromContext(context);
                 await Ack(context).NoContext();
+            }
+            catch (OperationCanceledException e) when (ct.IsCancellationRequested) {
+                Dropped(DropReason.Stopped, e);
             }
             catch (Exception e) {
                 await Nack(context, e).NoContext();
@@ -158,6 +163,10 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     }
 
     async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
+        if (exception is OperationCanceledException && ctx.CancellationToken.IsCancellationRequested) {
+            return;
+        }
+
         ctx.LogContext.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
 
         if (Options.ThrowOnError) throw exception;
@@ -172,7 +181,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             re.Event.ContentType,
             re.Event.EventType,
             re.Event.Data,
-            re.OriginalStreamId,
+            re.Event.EventStreamId,
             re.Event.Position.CommitPosition
         );
 
@@ -180,22 +189,23 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             re.Event.EventId.ToString(),
             re.Event.EventType,
             re.Event.ContentType,
-            re.OriginalStreamId,
+            re.Event.EventStreamId,
+            re.Event.EventNumber,
             GetContextStreamPosition(re),
             re.Event.Position.CommitPosition,
             re.OriginalEventNumber,
             re.Event.Created,
             evt,
-            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.OriginalStreamId, re.Event.EventNumber),
+            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId, re.Event.EventNumber),
             SubscriptionId,
             cancellationToken
         );
     }
 
     /// <summary>
-    /// Get a stream position from the resolved event
+    /// Get stream position from the resolved event
     /// </summary>
-    /// <param name="re"></param>
+    /// <param name="re">Resolved event received from the database</param>
     /// <returns></returns>
     protected abstract ulong GetContextStreamPosition(ResolvedEvent re);
 

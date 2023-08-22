@@ -9,40 +9,21 @@ namespace Eventuous.Producers;
 
 using Diagnostics;
 
-public abstract class BaseProducer<TProduceOptions> : BaseProducer, IEventProducer<TProduceOptions> where TProduceOptions : class {
-    protected BaseProducer(ProducerTracingOptions? tracingOptions = null) : base(tracingOptions) { }
-
-    protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
-
-    /// <inheritdoc />
-    public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default) {
-        var (activity, msgs) = ProducerActivity.Start(messages, DefaultTags);
-
-        if (activity is { IsAllDataRequested: true }) {
-            activity.SetTag(Messaging.Destination, stream);
-        }
-
-        await ProduceMessages(stream, msgs, options, cancellationToken).NoContext();
-
-        activity?.Dispose();
-    }
-
-    /// <inheritdoc />
-    protected override Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default)
-        => ProduceMessages(stream, messages, null, cancellationToken);
-}
-
-public abstract class BaseProducer : IEventProducer {
-    protected KeyValuePair<string, object?>[] DefaultTags { get; }
-
+public abstract class BaseProducer<TProduceOptions> : IEventProducer<TProduceOptions> where TProduceOptions : class {
     protected BaseProducer(ProducerTracingOptions? tracingOptions = null) {
         var options = tracingOptions ?? new ProducerTracingOptions();
         DefaultTags = options.AllTags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
-    protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default);
+    protected KeyValuePair<string, object?>[] DefaultTags { get; }
 
-    public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default) {
+    protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
+
+    public Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default)
+        => Produce(stream, messages, null, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default) {
         var messagesArray = messages.ToArray();
         if (messagesArray.Length == 0) return;
 
@@ -53,11 +34,13 @@ public abstract class BaseProducer : IEventProducer {
         using var activity = traced.act;
 
         if (activity is { IsAllDataRequested: true }) {
-            activity.SetTag(Messaging.Destination, stream);
-            activity.SetTag(TelemetryTags.Eventuous.Stream, stream);
+            activity.SetTag(Messaging.Destination, stream.ToString());
+            activity.SetTag(TelemetryTags.Eventuous.Stream, stream.ToString());
         }
 
-        await ProduceMessages(stream, traced.msgs, cancellationToken).NoContext();
+        await ProduceMessages(stream, traced.msgs, options, cancellationToken).NoContext();
+
+        return;
 
         (Activity? act, ProducedMessage[] msgs) ForOne() {
             var (act, producedMessage) = ProducerActivity.Start(messagesArray[0], DefaultTags);

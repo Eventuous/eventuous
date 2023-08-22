@@ -2,9 +2,10 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -12,45 +13,50 @@ namespace Eventuous.Spyglass;
 
 public static class SpyglassApi {
     [PublicAPI]
-    public static IEndpointRouteBuilder MapEventuousSpyglass(this WebApplication app, string? key = null) {
-        if (!app.Environment.IsDevelopment() && key == null) {
-            app.Logger.LogWarning("Insecure Spyglass API is only available in development environment");
+    public static IApplicationBuilder MapEventuousSpyglass(this IApplicationBuilder app, string? key = null) {
+        var logger = app.ApplicationServices.GetRequiredService<ILogger<IApplicationBuilder>>();
+
+        if (!app.ApplicationServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment() && key == null) {
+            logger.LogWarning("Insecure Spyglass API is only available in development environment");
             key = Guid.NewGuid().ToString("N");
-            app.Logger.LogInformation("Using generated key: {Key}", key);
+            logger.LogInformation("Using generated key: {Key}", key);
         }
 
         if (key == null) {
-            app.Logger.LogWarning("Spyglass API is not secured, ensure that it's not exposed to the Internet");
+            logger.LogWarning("Spyglass API is not secured, ensure that it's not exposed to the Internet");
         }
 
-        app
-            .MapGet("/spyglass/ping", (HttpRequest request) => CheckAndReturn(request, () => "Okay"))
-            .ExcludeFromDescription();
+        app.UseRouting();
 
-        app
-            .MapGet(
-                "/spyglass/aggregates",
-                (HttpRequest request, [FromServices] InsidePeek peek) => CheckAndReturn(request, () => peek.Aggregates)
-            )
-            .ExcludeFromDescription();
+        app.UseEndpoints(
+            builder => {
+                builder.MapGet("/spyglass/ping", (HttpRequest request) => CheckAndReturn(request, () => "Okay"))
+                    .ExcludeFromDescription();
 
-        app
-            .MapGet(
-                "/spyglass/events",
-                (HttpRequest request, [FromServices] TypeMapper? typeMapper) => {
-                    var typeMap = typeMapper ?? TypeMap.Instance;
-                    return CheckAndReturn(request, () => typeMap.ReverseMap.Select(x => x.Key));
-                }
-            )
-            .ExcludeFromDescription();
+                builder.MapGet(
+                        "/spyglass/aggregates",
+                        (HttpRequest request, [FromServices] InsidePeek peek) => CheckAndReturn(request, () => peek.Aggregates)
+                    )
+                    .ExcludeFromDescription();
 
-        app
-            .MapGet(
-                "/spyglass/load/{streamName}",
-                (HttpRequest request, [FromServices] InsidePeek peek, string streamName, [FromQuery] int version)
-                    => CheckAndReturnAsync(request, () => peek.Load(streamName, version))
-            )
-            .ExcludeFromDescription();
+                builder.MapGet(
+                        "/spyglass/events",
+                        (HttpRequest request, [FromServices] TypeMapper? typeMapper) => {
+                            var typeMap = typeMapper ?? TypeMap.Instance;
+
+                            return CheckAndReturn(request, () => typeMap.ReverseMap.Select(x => x.Key));
+                        }
+                    )
+                    .ExcludeFromDescription();
+
+                builder.MapGet(
+                        "/spyglass/load/{streamName}",
+                        (HttpRequest request, [FromServices] InsidePeek peek, string streamName, [FromQuery] int version)
+                            => CheckAndReturnAsync(request, () => peek.Load(streamName, version))
+                    )
+                    .ExcludeFromDescription();
+            }
+        );
 
         return app;
 

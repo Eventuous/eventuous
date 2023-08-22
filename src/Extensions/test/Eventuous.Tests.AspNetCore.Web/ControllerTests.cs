@@ -11,20 +11,22 @@ public class ControllerTests : IDisposable {
     public ControllerTests(ITestOutputHelper output) {
         var commandMap = new MessageMap()
             .Add<BookingApi.RegisterPaymentHttp, Commands.RecordPayment>(
-                x => new Commands.RecordPayment(
-                    new BookingId(x.BookingId),
-                    x.PaymentId,
-                    new Money(x.Amount),
-                    x.PaidAt
-                )
+                x => new Commands.RecordPayment(new BookingId(x.BookingId), x.PaymentId, new Money(x.Amount), x.PaidAt)
             );
 
         _fixture = new ServerFixture(
+            output,
             services => {
                 services.AddSingleton(commandMap);
                 services.AddControllers();
             },
-            app => app.MapControllers()
+            app => {
+                app.MapControllers();
+
+                app
+                    .MapAggregateCommands<Booking>()
+                    .MapCommand<BookRoom>();
+            }
         );
 
         _listener = new TestEventListener(output);
@@ -36,14 +38,9 @@ public class ControllerTests : IDisposable {
 
         var bookRoom = _fixture.GetBookRoom();
 
-        await client.PostJsonAsync("/book", bookRoom);
+        var bookResponse = await client.PostJsonAsync("/book", bookRoom);
 
-        var registerPayment = new BookingApi.RegisterPaymentHttp(
-            bookRoom.BookingId,
-            bookRoom.RoomId,
-            100,
-            DateTimeOffset.Now
-        );
+        var registerPayment = new BookingApi.RegisterPaymentHttp(bookRoom.BookingId, bookRoom.RoomId, 100, DateTimeOffset.Now);
 
         var request  = new RestRequest("/v2/pay").AddJsonBody(registerPayment);
         var response = await client.ExecutePostAsync<OkResult>(request);

@@ -14,16 +14,13 @@ using Extensions;
 /// <summary>
 /// Subscription for events in a single stream in PostgreSQL event store.
 /// </summary>
-public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStreamSubscriptionOptions> {
-    public PostgresStreamSubscription(
+public class PostgresStreamSubscription(
         NpgsqlDataSource                  dataSource,
         PostgresStreamSubscriptionOptions options,
         ICheckpointStore                  checkpointStore,
         ConsumePipe                       consumePipe,
         ILoggerFactory?                   loggerFactory = null
-    ) : base(dataSource, options, checkpointStore, consumePipe, loggerFactory)
-        => _streamName = options.Stream.ToString();
-
+    ) : PostgresSubscriptionBase<PostgresStreamSubscriptionOptions>(dataSource, options, checkpointStore, consumePipe, loggerFactory) {
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadStreamSub)
             .Add("_stream_id", NpgsqlDbType.Integer, _streamId)
@@ -42,12 +39,11 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
         _streamId = reader.GetInt32(0);
     }
 
-    protected override long MoveStart(PersistedEvent evt)
-        => evt.StreamPosition;
+    protected override long MoveStart(PersistedEvent evt) => evt.StreamPosition;
 
     ulong           _sequence;
     int             _streamId;
-    readonly string _streamName;
+    readonly string _streamName = options.Stream.ToString();
 
     protected override IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(
@@ -55,6 +51,7 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
             evt.MessageType,
             ContentType,
             _streamName,
+            (ulong)evt.StreamPosition,
             (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
             _sequence++,
@@ -65,8 +62,12 @@ public class PostgresStreamSubscription : PostgresSubscriptionBase<PostgresStrea
             cancellationToken
         );
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
-        => EventPosition.FromContext(context);
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) => EventPosition.FromContext(context);
 }
 
-public record PostgresStreamSubscriptionOptions(StreamName Stream) : PostgresSubscriptionBaseOptions;
+public record PostgresStreamSubscriptionOptions : PostgresSubscriptionBaseOptions {
+    /// <summary>
+    /// Stream name to subscribe for
+    /// </summary>
+    public StreamName Stream { get; set; }
+}

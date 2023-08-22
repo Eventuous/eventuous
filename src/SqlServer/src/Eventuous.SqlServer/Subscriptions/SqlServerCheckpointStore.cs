@@ -18,12 +18,12 @@ public class SqlServerCheckpointStore : ICheckpointStore {
     readonly string                 _addCheckpointSql;
     readonly string                 _storeCheckpointSql;
 
-    public SqlServerCheckpointStore(GetSqlServerConnection getConnection, string schema) {
+    public SqlServerCheckpointStore(GetSqlServerConnection getConnection, SqlServerCheckpointStoreOptions? options) {
         _getConnection = getConnection;
-        var sch = new Schema(schema);
-        _getCheckpointSql   = sch.GetCheckpointSql;
-        _addCheckpointSql   = sch.AddCheckpointSql;
-        _storeCheckpointSql = sch.UpdateCheckpointSql;
+        var schema = options is { Schema: not null } ? new Schema(options.Schema) : new Schema();
+        _getCheckpointSql   = schema.GetCheckpointSql;
+        _addCheckpointSql   = schema.AddCheckpointSql;
+        _storeCheckpointSql = schema.UpdateCheckpointSql;
     }
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
@@ -69,4 +69,15 @@ public class SqlServerCheckpointStore : ICheckpointStore {
 
     static SqlCommand GetCheckpointCommand(SqlConnection connection, string sql, string checkpointId)
         => connection.GetTextCommand(sql).Add("checkpointId", SqlDbType.NVarChar, checkpointId);
+}
+
+/// <summary>
+/// SQL Server checkpoint store options.
+/// </summary>
+[PublicAPI]
+public record SqlServerCheckpointStoreOptions {
+    /// <summary>
+    /// Name of schema to use
+    /// </summary>
+    public string? Schema { get; init; }
 }

@@ -14,19 +14,13 @@ static class TaskExtensions {
 
     public static ConfiguredValueTaskAwaitable<T> NoContext<T>(this ValueTask<T> task) => task.ConfigureAwait(false);
 
-    public static ConfiguredCancelableAsyncEnumerable<T> NoContext<T>(
-        this IAsyncEnumerable<T> source,
-        CancellationToken        cancellationToken
-    )
+    public static ConfiguredCancelableAsyncEnumerable<T> NoContext<T>(this IAsyncEnumerable<T> source, CancellationToken cancellationToken)
         => source.WithCancellation(cancellationToken).ConfigureAwait(false);
 
     public static Task WhenAll(this IEnumerable<Task> tasks) => Task.WhenAll(tasks);
 
     public static async Task WhenAll(this IEnumerable<ValueTask> tasks) {
-        var toAwait = tasks
-            .Where(valueTask => !valueTask.IsCompletedSuccessfully)
-            .Select(valueTask => valueTask.AsTask())
-            .ToList();
+        var toAwait = tasks.Where(valueTask => !valueTask.IsCompletedSuccessfully).Select(valueTask => valueTask.AsTask()).ToList();
 
         if (toAwait.Count > 0) await Task.WhenAll(toAwait).NoContext();
     }
@@ -36,8 +30,10 @@ static class TaskExtensions {
         var toAwait = new List<Task<T>>();
 
         foreach (var valueTask in tasks) {
-            if (valueTask.IsCompletedSuccessfully) results.Add(valueTask.Result);
-            else toAwait.Add(valueTask.AsTask());
+            if (valueTask.IsCompletedSuccessfully)
+                results.Add(valueTask.Result);
+            else
+                toAwait.Add(valueTask.AsTask());
         }
 
         if (toAwait.Count == 0) return results;

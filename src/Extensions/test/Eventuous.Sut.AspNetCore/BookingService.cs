@@ -33,12 +33,12 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
 
 [HttpCommand(Route = "book")]
 record BookRoom(
-    string    BookingId,
-    string    RoomId,
-    LocalDate CheckIn,
-    LocalDate CheckOut,
-    float     Price,
-    string?   GuestId
-);
+        string    BookingId,
+        string    RoomId,
+        LocalDate CheckIn,
+        LocalDate CheckOut,
+        float     Price,
+        string?   GuestId
+    );
 
 record ImportBooking(BookingId BookingId, string RoomId, StayPeriod Period, Money Price);

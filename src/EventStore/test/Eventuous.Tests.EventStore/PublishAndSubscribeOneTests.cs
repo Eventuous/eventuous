@@ -4,10 +4,8 @@ using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
-public class PublishAndSubscribeOneTests : SubscriptionFixture<TestEventHandler> {
-    public PublishAndSubscribeOneTests(ITestOutputHelper outputHelper) 
-        : base(outputHelper, new TestEventHandler(), false) { }
-
+public class PublishAndSubscribeOneTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
+    : SubscriptionFixture<TestEventHandler>(fixture, outputHelper, new TestEventHandler(), false) {
     [Fact]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
@@ -18,7 +16,7 @@ public class PublishAndSubscribeOneTests : SubscriptionFixture<TestEventHandler>
 
         await Handler.Validate(10.Seconds());
         await Stop();
-        
+
         await Task.Delay(100);
         CheckpointStore.Last.Position.Should().Be(0);
     }

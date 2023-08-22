@@ -5,21 +5,16 @@ using Eventuous.Tests.SqlServer.Fixtures;
 using Hypothesist;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
-using static Eventuous.Tests.SqlServer.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 
 public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
     readonly SqlServerStore _eventStore;
 
-    public SubscribeToStream(ITestOutputHelper outputHelper)
-        : base(outputHelper, new TestEventHandler(), false, false) {
+    public SubscribeToStream(IntegrationFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, new TestEventHandler(), false, false) {
         outputHelper.WriteLine($"Schema: {SchemaName}");
-
-        _eventStore = new SqlServerStore(
-            Instance.GetConnection,
-            new SqlServerStoreOptions(SchemaName)
-        );
+        _eventStore = new SqlServerStore(fixture.GetConnection, new SqlServerStoreOptions(SchemaName));
     }
 
     [Fact]
@@ -38,13 +33,13 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
     [Fact]
     public async Task ShouldUseExistingCheckpoint() {
         const int count = 10;
-    
+
         await GenerateAndProduceEvents(count);
         Handler.AssertThat().Any(_ => true);
-    
+
         await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
         await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, 9), true, default);
-    
+
         await Start();
         await Task.Delay(TimeSpan.FromSeconds(1));
         await Stop();

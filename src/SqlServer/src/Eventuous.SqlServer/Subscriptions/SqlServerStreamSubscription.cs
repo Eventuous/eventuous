@@ -59,6 +59,7 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
             ContentType,
             _streamName,
             (ulong)evt.StreamPosition,
+            (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
             _sequence++,
             evt.Created,
@@ -71,5 +72,3 @@ public class SqlServerStreamSubscription : SqlServerSubscriptionBase<SqlServerSt
     protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
         => EventPosition.FromContext(context);
 }
-
-public record SqlServerStreamSubscriptionOptions(StreamName Stream) : SqlServerSubscriptionBaseOptions;

@@ -36,7 +36,12 @@ public static class EventuousDiagnostics {
         return combinedTags;
     }
 
-    public static bool Enabled { get; }
+    public static bool Enabled { get; private set; }
+
+    /// <summary>
+    /// Allows disabling the diagnostics from code. Normally, you disable it by setting the environment variable EVENTUOUS_DISABLE_DIAGS=1
+    /// </summary>
+    public static void Disable() => Enabled = false;
 
     public static ActivitySource ActivitySource {
         get {

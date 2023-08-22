@@ -30,7 +30,7 @@ public class GapDetectionBenchmarks {
 
     [IterationSetup]
     public void IterationSetup() {
-        _cch = new CheckpointCommitHandler("test", _store, 10);
+        _cch = new CheckpointCommitHandler("test", _store, TimeSpan.FromMilliseconds(1000), 10);
     }
 
     [IterationCleanup]

@@ -45,7 +45,7 @@ public static class SubscriptionBuilderExtensions {
     public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore<TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
         where T : class, ICheckpointStore
         where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
-        where TOptions : SubscriptionOptions {
+        where TOptions : SubscriptionWithCheckpointOptions {
         builder.Services.TryAddSingleton<T>();
 
         return EventuousDiagnostics.Enabled
@@ -68,7 +68,7 @@ public static class SubscriptionBuilderExtensions {
     )
         where T : class, ICheckpointStore
         where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
-        where TOptions : SubscriptionOptions {
+        where TOptions : SubscriptionWithCheckpointOptions {
         return EventuousDiagnostics.Enabled
             ? builder.AddParameterMap<ICheckpointStore, MeasuredCheckpointStore>(sp => new MeasuredCheckpointStore(factory(sp)))
             : builder.AddParameterMap<ICheckpointStore, T>(factory);

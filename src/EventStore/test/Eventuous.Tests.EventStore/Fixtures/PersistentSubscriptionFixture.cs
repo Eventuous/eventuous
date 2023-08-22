@@ -6,7 +6,7 @@ using Eventuous.Sut.Subs;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
 
-public abstract class PersistentSubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
+public abstract class PersistentSubscriptionFixture<T> : IClassFixture<IntegrationFixture>, IAsyncLifetime where T : class, IEventHandler {
     static PersistentSubscriptionFixture()
         => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
@@ -19,26 +19,28 @@ public abstract class PersistentSubscriptionFixture<T> : IAsyncLifetime where T 
     StreamPersistentSubscription Subscription { get; }
 
     protected PersistentSubscriptionFixture(
-        ITestOutputHelper outputHelper,
-        T                 handler,
-        bool              autoStart = true
-    ) {
-        _autoStart = autoStart;
+            IntegrationFixture integrationFixture,
+            ITestOutputHelper  outputHelper,
+            T                  handler,
+            bool               autoStart = true
+        ) {
+        IntegrationFixture1 = integrationFixture;
+        _autoStart          = autoStart;
 
         var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper);
         var subscriptionId = $"test-{Guid.NewGuid():N}";
 
         Handler  = handler;
-        Producer = new EventStoreProducer(IntegrationFixture.Instance.Client);
+        Producer = new EventStoreProducer(integrationFixture.Client);
         Log      = loggerFactory.CreateLogger(GetType());
 
         _listener = new LoggingEventListener(loggerFactory);
 
         Subscription = new StreamPersistentSubscription(
-            IntegrationFixture.Instance.Client,
+            integrationFixture.Client,
             new StreamPersistentSubscriptionOptions {
-                StreamName       = Stream,
-                SubscriptionId   = subscriptionId
+                StreamName     = Stream,
+                SubscriptionId = subscriptionId
             },
             new ConsumePipe().AddDefaultConsumer(Handler),
             loggerFactory
@@ -48,6 +50,8 @@ public abstract class PersistentSubscriptionFixture<T> : IAsyncLifetime where T 
     protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
 
     protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
+
+    protected IntegrationFixture IntegrationFixture1 { get; }
 
     readonly bool                 _autoStart;
     readonly LoggingEventListener _listener;

@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <IsTestProject>true</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <RootNamespace>Eventuous.Tests.AspNetCore</RootNamespace>
     </PropertyGroup>
     

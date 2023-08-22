@@ -42,6 +42,7 @@ public class TypeMapper {
     public string GetTypeName<T>() {
         if (!_map.TryGetValue(typeof(T), out var name)) {
             Log.TypeNotMappedToName(typeof(T));
+
             throw new UnregisteredTypeException(typeof(T));
         }
 
@@ -54,6 +55,7 @@ public class TypeMapper {
         if (!fail) return "unknown";
 
         Log.TypeNotMappedToName(o.GetType());
+
         throw new UnregisteredTypeException(o.GetType());
     }
 
@@ -61,6 +63,7 @@ public class TypeMapper {
     public string GetTypeNameByType(Type type) {
         if (!_map.TryGetValue(type, out var name)) {
             Log.TypeNotMappedToName(type);
+
             throw new UnregisteredTypeException(type);
         }
 
@@ -70,6 +73,7 @@ public class TypeMapper {
     public Type GetType(string typeName) {
         if (!_reverseMap.TryGetValue(typeName, out var type)) {
             Log.TypeNameNotMappedToType(typeName);
+
             throw new UnregisteredTypeException(typeName);
         }
 
@@ -84,8 +88,19 @@ public class TypeMapper {
 
     readonly object _lock = new();
 
+    [PublicAPI]
     public void AddType(Type type, string name) {
         lock (_lock) {
+            if (_map.TryGetValue(type, out var registeredName)) {
+                if (registeredName != name) {
+                    throw new ArgumentException($"Type {type.FullName} is already registered with a different name {registeredName}", nameof(name));
+                }
+
+                Log.TypeAlreadyRegistered(type.Name, name);
+
+                return;
+            }
+
             _reverseMap[name] = type;
             _map[type]        = name;
         }
@@ -129,15 +144,16 @@ public class TypeMapper {
                 // ReSharper disable once ConvertClosureToMethodGroup
                 var referenced = assembly.GetReferencedAssemblies().Where(name => NamePredicate(name));
                 var assemblies = referenced.Select(Assembly.Load).ToList();
+
                 return assemblies.Concat(assemblies.SelectMany(Get)).Distinct();
             }
         }
 
         bool NamePredicate(AssemblyName name)
-            => name.Name != null                   &&
-               !name.Name.StartsWith("System.")    &&
-               !name.Name.StartsWith("Microsoft.") &&
-               !name.Name.StartsWith("netstandard");
+            => name.Name != null                    &&
+                !name.Name.StartsWith("System.")    &&
+                !name.Name.StartsWith("Microsoft.") &&
+                !name.Name.StartsWith("netstandard");
     }
 
     static readonly Type AttributeType = typeof(EventTypeAttribute);
@@ -161,16 +177,15 @@ public class TypeMapper {
 }
 
 [AttributeUsage(AttributeTargets.Class)]
-public class EventTypeAttribute : Attribute {
-    public string EventType { get; }
-
-    public EventTypeAttribute(string eventType)
-        => EventType = eventType;
+public class EventTypeAttribute(string eventType) : Attribute {
+    public string EventType { get; } = eventType;
 }
 
 public class UnregisteredTypeException : Exception {
     // ReSharper disable once SuggestBaseTypeForParameterInConstructor
-    public UnregisteredTypeException(Type type) : base($"Type {type.Name} is not registered in the type map") { }
+    public UnregisteredTypeException(Type type)
+        : base($"Type {type.Name} is not registered in the type map") { }
 
-    public UnregisteredTypeException(string type) : base($"Type name {type} is not registered in the type map") { }
+    public UnregisteredTypeException(string type)
+        : base($"Type name {type} is not registered in the type map") { }
 }

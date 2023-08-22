@@ -127,7 +127,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.Kafka", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Gateway", "src\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj", "{E3D5B654-C68D-456B-8535-A9C38D37DFD2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Gateway.Tests", "src\Gateway\test\Eventuous.Gateway.Tests\Eventuous.Gateway.Tests.csproj", "{F89E7F27-D198-41DD-AC24-79709EF07537}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.Gateway", "src\Gateway\test\Eventuous.Tests.Gateway\Eventuous.Tests.Gateway.csproj", "{F89E7F27-D198-41DD-AC24-79709EF07537}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{B1AAD6CA-2710-41E0-9495-B43C313D6BCA}"
 EndProject

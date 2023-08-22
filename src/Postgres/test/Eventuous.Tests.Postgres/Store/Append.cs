@@ -6,14 +6,12 @@ using static Eventuous.Tests.Postgres.Store.Helpers;
 
 namespace Eventuous.Tests.Postgres.Store;
 
-public class AppendEvents {
-    readonly IntegrationFixture _fixture = new();
-
+public class AppendEvents(IntegrationFixture fixture) : IClassFixture<IntegrationFixture> {
     [Fact]
     public async Task ShouldAppendToNoStream() {
         var evt        = CreateEvent();
         var streamName = GetStreamName();
-        var result     = await _fixture.EventStore.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
+        var result     = await fixture.EventStore.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
         result.NextExpectedVersion.Should().Be(0);
     }
@@ -23,12 +21,12 @@ public class AppendEvents {
         var evt    = CreateEvent();
         var stream = GetStreamName();
 
-        var result = await _fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        var result = await fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
 
         evt = CreateEvent();
 
         var version = new ExpectedStreamVersion(result.NextExpectedVersion);
-        result = await _fixture.EventStore.AppendEvent(stream, evt, version);
+        result = await fixture.EventStore.AppendEvent(stream, evt, version);
 
         result.NextExpectedVersion.Should().Be(1);
     }
@@ -38,11 +36,11 @@ public class AppendEvents {
         var evt    = CreateEvent();
         var stream = GetStreamName();
 
-        await _fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        await fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
 
         evt = CreateEvent();
 
-        var task = () => _fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        var task = () => fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
 
@@ -51,11 +49,11 @@ public class AppendEvents {
         var evt    = CreateEvent();
         var stream = GetStreamName();
 
-        await _fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        await fixture.EventStore.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
 
         evt = CreateEvent();
 
-        var task = () => _fixture.EventStore.AppendEvent(stream, evt, new ExpectedStreamVersion(3));
+        var task = () => fixture.EventStore.AppendEvent(stream, evt, new ExpectedStreamVersion(3));
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
 }

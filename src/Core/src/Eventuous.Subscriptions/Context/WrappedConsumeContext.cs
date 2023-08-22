@@ -7,16 +7,14 @@ namespace Eventuous.Subscriptions.Context;
 
 using Logging;
 
-public abstract class WrappedConsumeContext : IMessageConsumeContext {
-    protected IMessageConsumeContext InnerContext { get; }
-
-    protected WrappedConsumeContext(IMessageConsumeContext innerContext)
-        => InnerContext = innerContext;
+public abstract class WrappedConsumeContext(IMessageConsumeContext innerContext) : IMessageConsumeContext {
+    public IMessageConsumeContext InnerContext { get; } = innerContext;
 
     public string          MessageId       => InnerContext.MessageId;
     public string          MessageType     => InnerContext.MessageType;
     public string          ContentType     => InnerContext.ContentType;
     public StreamName      Stream          => InnerContext.Stream;
+    public ulong           EventNumber     => InnerContext.EventNumber;
     public ulong           StreamPosition  => InnerContext.StreamPosition;
     public ulong           GlobalPosition  => InnerContext.GlobalPosition;
     public DateTime        Created         => InnerContext.Created;

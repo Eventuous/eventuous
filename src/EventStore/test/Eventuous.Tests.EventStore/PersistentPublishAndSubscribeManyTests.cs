@@ -5,8 +5,8 @@ using Hypothesist;
 namespace Eventuous.Tests.EventStore;
 
 public class PersistentPublishAndSubscribeManyTests : PersistentSubscriptionFixture<TestEventHandler> {
-    public PersistentPublishAndSubscribeManyTests(ITestOutputHelper outputHelper) 
-        : base(outputHelper, new TestEventHandler(), false) { }
+    public PersistentPublishAndSubscribeManyTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, new TestEventHandler(), false) { }
 
     [Fact]
     public async Task SubscribeAndProduceMany() {
@@ -16,7 +16,7 @@ public class PersistentPublishAndSubscribeManyTests : PersistentSubscriptionFixt
         Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
         await Start();
-        
+
         await Producer.Produce(Stream, testEvents, new Metadata());
 
         await Handler.Validate(10.Seconds());

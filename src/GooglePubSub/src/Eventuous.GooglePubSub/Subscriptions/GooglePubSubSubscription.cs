@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -35,23 +36,27 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// <param name="consumePipe">Consumer pipeline</param>
     /// <param name="loggerFactory">Logger factory instance</param>
     /// <param name="eventSerializer">Event serializer instance</param>
+    /// <param name="configureClient">Optional client configuration callback</param>
     public GooglePubSubSubscription(
-        string            projectId,
-        string            topicId,
-        string            subscriptionId,
-        ConsumePipe       consumePipe,
-        ILoggerFactory?   loggerFactory,
-        IEventSerializer? eventSerializer = null
-    ) : this(
-        new PubSubSubscriptionOptions {
-            SubscriptionId  = subscriptionId,
-            ProjectId       = projectId,
-            TopicId         = topicId,
-            EventSerializer = eventSerializer
-        },
-        consumePipe,
-        loggerFactory
-    ) { }
+            string                           projectId,
+            string                           topicId,
+            string                           subscriptionId,
+            ConsumePipe                      consumePipe,
+            ILoggerFactory?                  loggerFactory   = null,
+            IEventSerializer?                eventSerializer = null,
+            Action<SubscriberClientBuilder>? configureClient = null
+        )
+        : this(
+            new PubSubSubscriptionOptions {
+                SubscriptionId         = subscriptionId,
+                ProjectId              = projectId,
+                TopicId                = topicId,
+                EventSerializer        = eventSerializer,
+                ConfigureClientBuilder = configureClient
+            },
+            consumePipe,
+            loggerFactory
+        ) { }
 
     /// <summary>
     /// Creates a Google PubSub subscription service
@@ -61,14 +66,9 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// <param name="loggerFactory">Logger factory instance</param>
     public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
         : base(options, consumePipe, loggerFactory) {
-        _failureHandler = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
-
-        _subscriptionName = SubscriptionName.FromProjectSubscription(
-            Ensure.NotEmptyString(options.ProjectId),
-            Ensure.NotEmptyString(options.SubscriptionId)
-        );
-
-        _topicName = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
+        _failureHandler   = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
+        _subscriptionName = SubscriptionName.FromProjectSubscription(Ensure.NotEmptyString(options.ProjectId), Ensure.NotEmptyString(options.SubscriptionId));
+        _topicName        = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
 
         if (options is { FailureHandler: not null, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
     }
@@ -88,6 +88,9 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
         _subscriberTask = _client.StartAsync(Handle);
 
+        return;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
             var eventType   = msg.Attributes[Options.Attributes.EventType];
             var contentType = msg.Attributes[Options.Attributes.ContentType];
@@ -104,6 +107,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
                 0,
                 0,
                 0,
+                0,
                 msg.PublishTime.ToDateTime(),
                 evt,
                 AsMeta(msg.Attributes),
@@ -113,15 +117,13 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
             try {
                 await Handler(ctx).NoContext();
+
                 return Reply.Ack;
-            }
-            catch (Exception ex) {
-                return await _failureHandler(_client, msg, ex).NoContext();
-            }
+            } catch (Exception ex) { return await _failureHandler(_client, msg, ex).NoContext(); }
         }
 
-        Metadata AsMeta(MapField<string, string> attributes)
-            => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
@@ -130,17 +132,16 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     }
 
     public async Task CreateSubscription(
-        SubscriptionName      subscriptionName,
-        TopicName             topicName,
-        EmulatorDetection     emulatorDetection,
-        Action<Subscription>? configureSubscription,
-        CancellationToken     cancellationToken
-    ) {
+            SubscriptionName      subscriptionName,
+            TopicName             topicName,
+            EmulatorDetection     emulatorDetection,
+            Action<Subscription>? configureSubscription,
+            CancellationToken     cancellationToken
+        ) {
         Logger.Current = Log;
         await PubSub.CreateTopic(topicName, emulatorDetection, (msg, s) => Log.InfoLog?.Log(msg, s), cancellationToken).NoContext();
         await PubSub.CreateSubscription(subscriptionName, topicName, configureSubscription, emulatorDetection, cancellationToken).NoContext();
     }
 
-    static ValueTask<Reply> DefaultEventProcessingErrorHandler(SubscriberClient client, PubsubMessage message, Exception exception)
-        => new(Reply.Nack);
+    static ValueTask<Reply> DefaultEventProcessingErrorHandler(SubscriberClient client, PubsubMessage message, Exception exception) => new(Reply.Nack);
 }

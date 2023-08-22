@@ -13,7 +13,7 @@ public class AggregateFactoryRegistry {
     /// </summary>
     public static readonly AggregateFactoryRegistry Instance = new();
 
-    internal readonly Dictionary<Type, Func<Aggregate>> _registry = new();
+    internal readonly Dictionary<Type, Func<Aggregate>> Registry = new();
 
     /// <summary>
     /// Adds a custom aggregate factory to the registry
@@ -22,17 +22,17 @@ public class AggregateFactoryRegistry {
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <returns></returns>
     public AggregateFactoryRegistry CreateAggregateUsing<T>(AggregateFactory<T> factory) where T : Aggregate {
-        _registry.TryAdd(typeof(T), () => factory());
+        Registry.TryAdd(typeof(T), () => factory());
         return this;
     }
 
     public void UnsafeCreateAggregateUsing<T>(Type type, Func<T> factory) where T : Aggregate
-        => _registry.TryAdd(type, factory);
+        => Registry.TryAdd(type, factory);
 
     public T CreateInstance<T, TState>()
         where T : Aggregate<TState>
         where TState : State<TState>, new() {
-        var instance = _registry.TryGetValue(typeof(T), out var factory)
+        var instance = Registry.TryGetValue(typeof(T), out var factory)
             ? (T)factory()
             : Activator.CreateInstance<T>();
 
@@ -40,7 +40,7 @@ public class AggregateFactoryRegistry {
     }
 
     public T CreateInstance<T>() where T : Aggregate {
-        var instance = _registry.TryGetValue(typeof(T), out var factory)
+        var instance = Registry.TryGetValue(typeof(T), out var factory)
             ? (T)factory()
             : Activator.CreateInstance<T>();
 

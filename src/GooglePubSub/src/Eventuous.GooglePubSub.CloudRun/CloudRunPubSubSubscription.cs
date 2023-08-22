@@ -15,11 +15,9 @@ public class CloudRunPubSubSubscription : EventSubscription<CloudRunPubSubSubscr
     public CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
         : base(options, consumePipe, loggerFactory) { }
 
-    protected override ValueTask Subscribe(CancellationToken cancellationToken)
-        => ValueTask.CompletedTask;
+    protected override ValueTask Subscribe(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken)
-        => ValueTask.CompletedTask;
+    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
     const string DefaultContentType = "application/json";
 
@@ -39,6 +37,7 @@ public class CloudRunPubSubSubscription : EventSubscription<CloudRunPubSubSubscr
             async (Envelope envelope, CancellationToken cancellationToken) => {
                 if (envelope.Message?.Data == null) {
                     subscription.Log.ErrorLog?.Log("Bad Request: Invalid Pub/Sub message format.");
+
                     return Results.BadRequest();
                 }
 
@@ -48,6 +47,7 @@ public class CloudRunPubSubSubscription : EventSubscription<CloudRunPubSubSubscr
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                 if (envelope.Message.Attributes == null) {
                     subscription.Log.WarnLog?.Log("Message {MessageId} has no attributes", envelope.Message.MessageId);
+
                     return Results.NoContent();
                 }
 
@@ -55,18 +55,23 @@ public class CloudRunPubSubSubscription : EventSubscription<CloudRunPubSubSubscr
 
                 if (string.IsNullOrWhiteSpace(eventType)) {
                     subscription.Log.WarnLog?.Log("Message {MessageId} has no event type", envelope.Message.MessageId);
+
                     return Results.NoContent();
                 }
 
                 var contentType = envelope.Message.Attributes.TryGetValue(subscription.Options.Attributes.ContentType, out var ct) ? ct : DefaultContentType;
                 var message     = subscription.DeserializeData(contentType, eventType, data, subscription.Options.TopicId);
-                var messageId   = envelope.Message.Attributes.TryGetValue(subscription.Options.Attributes.MessageId, out var id) ? id : envelope.Message.MessageId;
+
+                var messageId = envelope.Message.Attributes.TryGetValue(subscription.Options.Attributes.MessageId, out var id)
+                    ? id
+                    : envelope.Message.MessageId;
 
                 var context = new MessageConsumeContext(
                     messageId,
                     eventType,
                     contentType,
                     subscription.Options.TopicId,
+                    0,
                     0,
                     0,
                     sequence++,

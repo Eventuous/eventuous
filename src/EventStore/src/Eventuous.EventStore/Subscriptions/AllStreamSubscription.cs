@@ -74,15 +74,7 @@ public class AllStreamSubscription
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var filterOptions = new SubscriptionFilterOptions(
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
-            Options.CheckpointInterval,
-            async (_, p, ct) => {
-                // !!! Checkpointing is disabled as it comes out of sync with delayed events
-                if (Options.ConcurrencyLimit > 1) return;
-
-                // This doesn't allow to report tie time gap
-                LastProcessed = new EventPosition(p.CommitPosition, DateTime.Now);
-                await StoreCheckpoint(LastProcessed, ct).NoContext();
-            }
+            Options.CheckpointInterval
         );
 
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
@@ -120,13 +112,14 @@ public class AllStreamSubscription
             re.Event.EventId.ToString(),
             re.Event.EventType,
             re.Event.ContentType,
-            re.OriginalStreamId,
+            re.Event.EventStreamId,
             re.Event.EventNumber,
+            re.OriginalEventNumber,
             re.Event.Position.CommitPosition,
             _sequence++,
             re.Event.Created,
             evt,
-            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.OriginalStreamId),
+            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId),
             SubscriptionId,
             cancellationToken
         );

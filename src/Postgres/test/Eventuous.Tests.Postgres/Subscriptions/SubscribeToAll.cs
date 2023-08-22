@@ -10,12 +10,10 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
 public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
-    readonly BookingService _service;
+    // readonly BookingService _service;
 
     public SubscribeToAll(ITestOutputHelper outputHelper) : base(outputHelper, true, false) {
         outputHelper.WriteLine($"Schema: {IntegrationFixture.SchemaName}");
-
-        _service = new BookingService(IntegrationFixture.AggregateStore);
     }
 
     [Fact]
@@ -56,8 +54,9 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
             .Select(_ => DomainFixture.CreateImportBooking())
             .ToList();
 
+        var service = new BookingService(IntegrationFixture.AggregateStore);
         foreach (var cmd in commands) {
-            var result = await _service.Handle(cmd, default);
+            var result = await service.Handle(cmd, default);
 
             if (result is ErrorResult<BookingState> error) {
                 throw error.Exception ?? new Exception(error.Message);

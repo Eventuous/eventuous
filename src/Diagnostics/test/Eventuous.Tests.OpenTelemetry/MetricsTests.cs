@@ -1,39 +1,66 @@
-using Eventuous.Diagnostics;
-using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Sut.Subs;
+
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace Eventuous.Tests.OpenTelemetry;
 
-public sealed class MetricsTests : IAsyncLifetime, IDisposable {
-    static MetricsTests()
-        => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
-
+public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper outputHelper) : IAsyncLifetime, IClassFixture<SubscriptionFixture> {
     const string SubscriptionId = "test-sub";
 
-    readonly StreamName _stream;
+    [Fact]
+    public void Debug() {
+        _exporter.Collect(Timeout.Infinite);
+        var values = _exporter.CollectValues();
 
-    public MetricsTests(ITestOutputHelper outputHelper) {
-        _exporter = new TestExporter();
-        _stream   = new StreamName($"test-{Guid.NewGuid():N}");
-        _output   = outputHelper;
+        foreach (var value in values) {
+            outputHelper.WriteLine(value.ToString());
+        }
+    }
 
-        _es = new TestEventListener(outputHelper);
+    [Fact]
+    public void ShouldMeasureSubscriptionGapCount() {
+        _exporter.Collect(Timeout.Infinite);
+        var values = _exporter.CollectValues();
 
-        EventuousDiagnostics.AddDefaultTag("test", "foo");
+        var counter  = _host.Services.GetRequiredService<MessageCounter>();
+        var gapCount = GetValue(values, SubscriptionMetrics.GapCountMetricName)!;
+        var duration = GetValue(values, SubscriptionMetrics.ProcessingRateName)!;
 
+        var expectedGap = SubscriptionFixture.Count - counter.Count + 1;
+
+        gapCount.Should().NotBeNull();
+        gapCount.Value.Should().BeInRange(expectedGap, expectedGap + 5);
+        GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
+        GetTag(gapCount, "test").Should().Be("foo");
+
+        duration.Should().NotBeNull();
+        GetTag(duration, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
+        GetTag(duration, SubscriptionMetrics.MessageTypeTag).Should().Be(TestEvent.TypeName);
+        GetTag(duration, "test").Should().Be("foo");
+    }
+
+    static MetricValue? GetValue(MetricValue[] values, string metric)
+        => values.FirstOrDefault(x => x.Name == metric);
+
+    static object GetTag(MetricValue metric, string key) {
+        var index = metric.Keys.Select((x, i) => (x, i)).First(x => x.x == key).i;
+
+        return metric.Values[index];
+    }
+
+    public async Task InitializeAsync() {
         var builder = new WebHostBuilder()
             .Configure(_ => { })
             .ConfigureServices(
                 services => {
-                    services.AddSingleton(IntegrationFixture.Instance.Client);
-                    services.AddEventProducer<EventStoreProducer>();
+                    services.AddSingleton(fixture.Client);
+                    services.AddSingleton<MessageCounter>();
 
                     services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
                         SubscriptionId,
                         builder => builder
-                            .Configure(options => options.StreamName = _stream)
+                            .Configure(options => options.StreamName = fixture.Stream)
                             .UseCheckpointStore<NoOpCheckpointStore>()
                             .AddEventHandler<TestHandler>()
                     );
@@ -49,70 +76,48 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
             .ConfigureLogging(cfg => cfg.AddXunit(outputHelper));
 
         _host = new TestServer(builder);
+        var counter = _host.Services.GetRequiredService<MessageCounter>();
+
+        while (counter.Count < SubscriptionFixture.Count / 3) {
+            await Task.Delay(10);
+        }
+
+        await Task.Delay(500);
     }
 
-    [Fact]
-    public void CollectorShouldNotFail()
-        => _exporter.Collect(Timeout.Infinite).Should().BeTrue();
+    public Task DisposeAsync() {
+        _host.Dispose();
+        _exporter.Dispose();
+        _es.Dispose();
 
-    [Fact]
-    public void ShouldMeasureSubscriptionGapCount() {
-        _exporter.Collect(Timeout.Infinite);
-        var values   = _exporter.CollectValues();
-        var gapCount = GetValue(values, SubscriptionMetrics.GapCountMetricName)!;
-        gapCount.Should().NotBeNull();
-        gapCount.Value.Should().BeInRange(Count / 2, Count);
-        GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
-        GetTag(gapCount, "test").Should().Be("foo");
+        return Task.CompletedTask;
     }
 
-    [Fact]
-    public void ShouldMeasureConsumeDuration() {
-        _exporter.Collect(Timeout.Infinite);
-        var values   = _exporter.CollectValues();
-        var duration = GetValue(values, SubscriptionMetrics.ProcessingRateName)!;
-        duration.Should().NotBeNull();
-        GetTag(duration, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
-        GetTag(duration, SubscriptionMetrics.MessageTypeTag).Should().Be(TestEvent.TypeName);
-        GetTag(duration, "test").Should().Be("foo");
-    }
+    TestServer                 _host     = null!;
+    readonly TestExporter      _exporter = new();
+    readonly TestEventListener _es       = new(outputHelper);
 
-    static MetricValue? GetValue(MetricValue[] values, string metric)
-        => values.FirstOrDefault(x => x.Name == metric);
-
-    static object GetTag(MetricValue metric, string key) {
-        var index = metric.Keys.Select((x, i) => (x, i)).First(x => x.x == key).i;
-        return metric.Values[index];
-    }
-
-    const int Count = 1000;
-
-    public async Task InitializeAsync() {
-        var testEvents = IntegrationFixture.Instance.Auto.CreateMany<TestEvent>(Count).ToList();
-        var producer   = _host.Services.GetRequiredService<IEventProducer>();
-        await producer.Produce(_stream, testEvents, new Metadata());
-        await Task.Delay(1000);
-    }
-
-    public Task DisposeAsync()
-        => Task.CompletedTask;
-
-    readonly TestServer        _host;
-    readonly TestExporter      _exporter;
-    readonly TestEventListener _es;
-    readonly ITestOutputHelper _output;
-
-    class TestHandler : BaseEventHandler {
+    // ReSharper disable once ClassNeverInstantiated.Local
+    class TestHandler(MessageCounter counter, ILogger<TestHandler> log) : BaseEventHandler {
         public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
             await Task.Delay(10, context.CancellationToken);
+            counter.Increment();
+            log.LogDebug("Handled event {Number} {EventId}", counter.Count, context.MessageId);
+
             return EventHandlingStatus.Success;
         }
+    }
+
+    class MessageCounter {
+        public int Count;
+        public void Increment() => Interlocked.Increment(ref Count);
     }
 
     [ExportModes(ExportModes.Pull)]
     class TestExporter : BaseExporter<Metric>, IPullMetricExporter {
         public override ExportResult Export(in Batch<Metric> batch) {
             Batch = batch;
+
             return ExportResult.Success;
         }
 
@@ -153,12 +158,6 @@ public sealed class MetricsTests : IAsyncLifetime, IDisposable {
 
             return values.ToArray();
         }
-    }
-
-    public void Dispose() {
-        _host.Dispose();
-        _exporter.Dispose();
-        _es.Dispose();
     }
 }
 

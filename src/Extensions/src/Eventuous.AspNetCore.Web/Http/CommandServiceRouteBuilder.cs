@@ -7,12 +7,8 @@ using Microsoft.AspNetCore.Routing;
 namespace Eventuous.AspNetCore.Web;
 
 [PublicAPI]
-public class CommandServiceRouteBuilder<T> where T : Aggregate {
-    readonly IEndpointRouteBuilder _builder;
-
-    public CommandServiceRouteBuilder(IEndpointRouteBuilder builder)
-        => _builder = builder;
-
+public class CommandServiceRouteBuilder<T>(IEndpointRouteBuilder builder)
+    where T : Aggregate {
     /// <summary>
     /// Maps the given command type to an HTTP endpoint. The command class can be annotated with
     /// the <seealso cref="HttpCommandAttribute"/> if you need a custom route.
@@ -22,12 +18,12 @@ public class CommandServiceRouteBuilder<T> where T : Aggregate {
     /// <typeparam name="TCommand">Command class</typeparam>
     /// <returns></returns>
     public CommandServiceRouteBuilder<T> MapCommand<TCommand>(
-        EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
-        Action<RouteHandlerBuilder>?            configure     = null
-    )
-        where TCommand : class {
-        var builder = _builder.MapCommand<TCommand, T>(enrichCommand);
-        configure?.Invoke(builder);
+            EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
+            Action<RouteHandlerBuilder>?            configure     = null
+        ) where TCommand : class {
+        if (configure == null) { builder.MapCommand<TCommand, T>(enrichCommand); }
+        else { configure(builder.MapCommand<TCommand, T>(enrichCommand)); }
+
         return this;
     }
 
@@ -40,12 +36,13 @@ public class CommandServiceRouteBuilder<T> where T : Aggregate {
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
     public CommandServiceRouteBuilder<T> MapCommand<TCommand>(
-        string                                  route,
-        EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
-        Action<RouteHandlerBuilder>?            configure     = null
-    ) where TCommand : class {
-        var builder = _builder.MapCommand<TCommand, T>(route, enrichCommand);
-        configure?.Invoke(builder);
+            string                                  route,
+            EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
+            Action<RouteHandlerBuilder>?            configure     = null
+        ) where TCommand : class {
+        if (configure == null) { builder.MapCommand<TCommand, T>(route, enrichCommand); }
+        else { configure(builder.MapCommand<TCommand, T>(route, enrichCommand)); }
+
         return this;
     }
 
@@ -60,12 +57,13 @@ public class CommandServiceRouteBuilder<T> where T : Aggregate {
     /// <typeparam name="TCommand"></typeparam>
     /// <returns></returns>
     public CommandServiceRouteBuilder<T> MapCommand<TContract, TCommand>(
-        string                                       route,
-        ConvertAndEnrichCommand<TContract, TCommand> enrichCommand,
-        Action<RouteHandlerBuilder>?                 configure = null
-    ) where TCommand : class where TContract : class {
-        var builder = _builder.MapCommand<TContract, TCommand, T>(route, Ensure.NotNull(enrichCommand));
-        configure?.Invoke(builder);
+            string                                       route,
+            ConvertAndEnrichCommand<TContract, TCommand> enrichCommand,
+            Action<RouteHandlerBuilder>?                 configure = null
+        ) where TCommand : class where TContract : class {
+        if (configure == null) { builder.MapCommand<TContract, TCommand, T>(route, Ensure.NotNull(enrichCommand)); }
+        else { configure(builder.MapCommand<TContract, TCommand, T>(route, Ensure.NotNull(enrichCommand))); }
+
         return this;
     }
 
@@ -79,14 +77,16 @@ public class CommandServiceRouteBuilder<T> where T : Aggregate {
     /// <typeparam name="TCommand"></typeparam>
     /// <returns></returns>
     public CommandServiceRouteBuilder<T> MapCommand<TContract, TCommand>(
-        ConvertAndEnrichCommand<TContract, TCommand> enrichCommand,
-        Action<RouteHandlerBuilder>?                 configure = null
-    )
+            ConvertAndEnrichCommand<TContract, TCommand> enrichCommand,
+            Action<RouteHandlerBuilder>?                 configure = null
+        )
         where TCommand : class where TContract : class {
         var attr = typeof(TContract).GetAttribute<HttpCommandAttribute>();
         AttributeCheck.EnsureCorrectAggregate<TContract, T>(attr);
-        var builder = _builder.MapCommand<TContract, TCommand, T>(attr?.Route, Ensure.NotNull(enrichCommand));
-        configure?.Invoke(builder);
+
+        if (configure == null) { builder.MapCommand<TContract, TCommand, T>(attr?.Route, Ensure.NotNull(enrichCommand)); }
+        else { configure(builder.MapCommand<TContract, TCommand, T>(attr?.Route, Ensure.NotNull(enrichCommand))); }
+
         return this;
     }
 }

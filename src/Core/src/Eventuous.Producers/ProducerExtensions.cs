@@ -15,22 +15,24 @@ public static class ProducerExtensions {
     /// <param name="metadata"></param>
     /// <param name="additionalHeaders">Optional items to be used by the producer</param>
     /// <param name="onAck">Function to confirm that the message was produced</param>
+    /// <param name="onNack">Function to report that the message wasn't produced successfully</param>
     /// <param name="cancellationToken"></param>
     /// <typeparam name="TMessage">Message typ</typeparam>
     /// <returns></returns>
     public static Task Produce<TMessage>(
-        this IEventProducer producer,
-        StreamName          stream,
-        TMessage            message,
-        Metadata?           metadata,
-        Metadata?           additionalHeaders = null,
-        AcknowledgeProduce? onAck             = null,
-        CancellationToken   cancellationToken = default
+        this IEventProducer  producer,
+        StreamName           stream,
+        TMessage             message,
+        Metadata?            metadata,
+        Metadata?            additionalHeaders = null,
+        AcknowledgeProduce?  onAck             = null,
+        ReportFailedProduce? onNack            = null,
+        CancellationToken    cancellationToken = default
     ) where TMessage : class {
         var producedMessages =
-            message is IEnumerable<object> collection
-                ? ConvertMany(collection, metadata, additionalHeaders, onAck)
-                : ConvertOne(message, metadata, additionalHeaders, onAck);
+            Ensure.NotNull(message) is IEnumerable<object> collection
+                ? ConvertMany(collection, metadata, additionalHeaders, onAck, onNack)
+                : ConvertOne(message, metadata, additionalHeaders, onAck, onNack);
 
         return producer.Produce(stream, producedMessages, cancellationToken);
     }
@@ -46,6 +48,7 @@ public static class ProducerExtensions {
     /// <param name="options">Produce options</param>
     /// <param name="additionalHeaders">Optional items to be used by the producer</param>
     /// <param name="onAck">Function to confirm that the message was produced</param>
+    /// <param name="onNack">Function to report that the message wasn't produced successfully</param>
     /// <param name="cancellationToken"></param>
     /// <typeparam name="TMessage">Message type</typeparam>
     /// <typeparam name="TProduceOptions"></typeparam>
@@ -55,32 +58,35 @@ public static class ProducerExtensions {
         StreamName                           stream,
         TMessage                             message,
         Metadata?                            metadata,
-        TProduceOptions                      options,
+        TProduceOptions?                     options           = null,
         Metadata?                            additionalHeaders = null,
         AcknowledgeProduce?                  onAck             = null,
+        ReportFailedProduce?                 onNack            = null,
         CancellationToken                    cancellationToken = default
     ) where TMessage : class where TProduceOptions : class {
         var producedMessages =
             Ensure.NotNull(message) is IEnumerable<object> collection
-                ? ConvertMany(collection, metadata, additionalHeaders, onAck)
-                : ConvertOne(message, metadata, additionalHeaders, onAck);
+                ? ConvertMany(collection, metadata, additionalHeaders, onAck, onNack)
+                : ConvertOne(message, metadata, additionalHeaders, onAck, onNack);
 
         return producer.Produce(stream, producedMessages, options, cancellationToken);
     }
 
     static IEnumerable<ProducedMessage> ConvertMany(
-        IEnumerable<object> messages,
-        Metadata?           metadata,
-        Metadata?           additionalHeaders,
-        AcknowledgeProduce? onAck
+        IEnumerable<object>  messages,
+        Metadata?            metadata,
+        Metadata?            additionalHeaders,
+        AcknowledgeProduce?  onAck,
+        ReportFailedProduce? onNack
     )
-        => messages.Select(x => new ProducedMessage(x, metadata, additionalHeaders) { OnAck = onAck });
+        => messages.Select(x => new ProducedMessage(x, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack });
 
     static IEnumerable<ProducedMessage> ConvertOne(
-        object              message,
-        Metadata?           metadata,
-        Metadata?           additionalHeaders,
-        AcknowledgeProduce? onAck
+        object               message,
+        Metadata?            metadata,
+        Metadata?            additionalHeaders,
+        AcknowledgeProduce?  onAck,
+        ReportFailedProduce? onNack
     )
-        => new[] { new ProducedMessage(message, metadata, additionalHeaders) { OnAck = onAck } };
+        => new[] { new ProducedMessage(message, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack } };
 }

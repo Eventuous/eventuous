@@ -5,7 +5,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// <summary>
 /// Base class for catch-up subscription options
 /// </summary>
-public record CatchUpSubscriptionOptions : EventStoreSubscriptionOptions {
+public record CatchUpSubscriptionOptions : EventStoreSubscriptionWithCheckpointOptions {
     /// <summary>
     /// Number of parallel consumers. Defaults to 1.
     /// Don't set this value if you use partitioned subscriptions with <see cref="PartitioningFilter"/>.

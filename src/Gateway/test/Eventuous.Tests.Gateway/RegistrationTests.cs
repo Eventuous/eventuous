@@ -1,4 +1,5 @@
-﻿using Eventuous.Producers;
+﻿using Eventuous.Gateway;
+using Eventuous.Producers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -8,12 +9,14 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Eventuous.Gateway.Tests;
+// ReSharper disable ClassNeverInstantiated.Local
 
-public class RegistrationTestsWithOptions {
+namespace Eventuous.Tests.Gateway;
+
+public class RegistrationTests {
     readonly IServiceProvider _provider;
 
-    public RegistrationTestsWithOptions() {
+    public RegistrationTests() {
         var host = new TestServer(BuildHost());
         _provider = host.Services;
     }
@@ -35,26 +38,17 @@ public class RegistrationTestsWithOptions {
     }
 
     class TestTransform : IGatewayTransform<TestProduceOptions> {
-        public ValueTask<GatewayMessage<TestProduceOptions>[]> RouteAndTransform(IMessageConsumeContext context)
-            => new();
+        public ValueTask<GatewayMessage<TestProduceOptions>[]> RouteAndTransform(IMessageConsumeContext context) => new();
     }
 
     record TestOptions : SubscriptionOptions;
 
     class TestSub : EventSubscription<TestOptions> {
-        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(
-            options,
-            consumePipe,
-            NullLoggerFactory.Instance
-        ) { }
+        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(options, consumePipe, NullLoggerFactory.Instance) { }
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
-    }
-
-    class Handler : BaseEventHandler {
-        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) => default;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {
@@ -67,6 +61,7 @@ public class RegistrationTestsWithOptions {
             CancellationToken            cancellationToken = default
         ) {
             ProducedMessages.AddRange(messages);
+
             return Task.CompletedTask;
         }
     }

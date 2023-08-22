@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
+    image: confluentinc/cp-zookeeper:7.2.6
     hostname: zookeeper
     container_name: eventuous-zookeeper
     environment:
@@ -10,7 +10,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-kafka:7.0.1
+    image: confluentinc/cp-kafka:7.2.6
     container_name: eventuous-kafka
     hostname: kafka
     ports:
@@ -28,8 +28,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
-  kafka-schema-registry:
-    image: confluentinc/cp-schema-registry:7.0.1
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.2.6
     container_name: eventuous-kafka-schema-registry
     hostname: schema-registry
     depends_on:
@@ -44,14 +44,13 @@ services:
 
   kafka-ui:
     container_name: kafka-ui
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.1
     ports:
       - "8080:8080"
     depends_on:
       - zookeeper
       - kafka
-      - kafka1
-      - schemaregistry
+      - schema-registry
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092

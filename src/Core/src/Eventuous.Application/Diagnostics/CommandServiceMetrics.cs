@@ -10,14 +10,13 @@ namespace Eventuous.Diagnostics;
 using static Tracing.Constants.Components;
 
 public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
-    const string Category = "application";
-
     public static readonly string MeterName = EventuousDiagnostics.GetMeterName(Category);
 
     public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
 
-    public const string AppServiceTag = "command-service";
-    public const string CommandTag    = "command-type";
+    const string Category      = "application";
+    const string AppServiceTag = "command-service";
+    const string CommandTag    = "command-type";
 
     readonly Meter                                         _meter;
     readonly MetricsListener<CommandServiceMetricsContext> _listener;
@@ -43,8 +42,7 @@ public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
         _meter.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags)
-        => _customTags = customTags.ToArray();
+    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
 }
 
 record CommandServiceMetricsContext(string ServiceName, string CommandName);

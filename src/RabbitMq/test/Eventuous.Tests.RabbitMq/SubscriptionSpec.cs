@@ -8,46 +8,32 @@ using Hypothesist;
 
 namespace Eventuous.Tests.RabbitMq;
 
-public class SubscriptionSpec : IAsyncLifetime, IDisposable {
+public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
     static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     static readonly Fixture Auto = new();
-    
-    readonly RabbitMqSubscription      _subscription;
-    readonly RabbitMqProducer          _producer;
-    readonly TestEventHandler          _handler;
+
+    RabbitMqSubscription               _subscription = null!;
+    RabbitMqProducer                   _producer     = null!;
+    TestEventHandler                   _handler      = null!;
     readonly StreamName                _exchange;
     readonly ILogger<SubscriptionSpec> _log;
     readonly TestEventListener         _es;
+    readonly ILoggerFactory            _loggerFactory;
+    readonly RabbitMqFixture           _fixture;
 
-    public SubscriptionSpec(ITestOutputHelper outputHelper) {
-        _es = new TestEventListener(outputHelper);
-
+    public SubscriptionSpec(RabbitMqFixture fixture, ITestOutputHelper outputHelper) {
+        _fixture  = fixture;
+        _es       = new TestEventListener(outputHelper);
         _exchange = new StreamName(Auto.Create<string>());
-        var queue = Auto.Create<string>();
 
-        var loggerFactory =
-            LoggerFactory.Create(
-                builder => builder
-                    .SetMinimumLevel(LogLevel.Debug)
-                    .AddXunit(outputHelper, LogLevel.Trace)
-            );
-
-        _log      = loggerFactory.CreateLogger<SubscriptionSpec>();
-        _handler  = new TestEventHandler();
-        _producer = new RabbitMqProducer(RabbitMqFixture.ConnectionFactory);
-
-        _subscription = new RabbitMqSubscription(
-            RabbitMqFixture.ConnectionFactory,
-            new RabbitMqSubscriptionOptions {
-                ConcurrencyLimit = 10,
-                SubscriptionId   = queue,
-                Exchange         = _exchange,
-                ThrowOnError     = true
-            },
-            new ConsumePipe().AddDefaultConsumer(_handler),
-            loggerFactory
+        _loggerFactory = LoggerFactory.Create(
+            builder => builder
+                .SetMinimumLevel(LogLevel.Debug)
+                .AddXunit(outputHelper, LogLevel.Trace)
         );
+
+        _log = _loggerFactory.CreateLogger<SubscriptionSpec>();
     }
 
     [Fact]
@@ -73,6 +59,22 @@ public class SubscriptionSpec : IAsyncLifetime, IDisposable {
     }
 
     public async Task InitializeAsync() {
+        _handler  = new TestEventHandler();
+        _producer = new RabbitMqProducer(_fixture.ConnectionFactory);
+
+        var queue = Auto.Create<string>();
+
+        _subscription = new RabbitMqSubscription(
+            _fixture.ConnectionFactory,
+            new RabbitMqSubscriptionOptions {
+                ConcurrencyLimit = 10,
+                SubscriptionId   = queue,
+                Exchange         = _exchange,
+                ThrowOnError     = true
+            },
+            new ConsumePipe().AddDefaultConsumer(_handler),
+            _loggerFactory
+        );
         await _subscription.SubscribeWithLog(_log);
         await _producer.StartAsync();
     }
@@ -80,7 +82,6 @@ public class SubscriptionSpec : IAsyncLifetime, IDisposable {
     public async Task DisposeAsync() {
         await _producer.StopAsync();
         await _subscription.UnsubscribeWithLog(_log);
+        _es.Dispose();
     }
-
-    public void Dispose() => _es.Dispose();
 }

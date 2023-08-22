@@ -11,31 +11,27 @@ public record TestEvent(string Data, int Number) {
     public const string TypeName = "test-event";
 }
 
-public class TestEventHandler : BaseEventHandler {
-    readonly ITestOutputHelper? _output;
-    readonly TimeSpan           _delay;
-    
+public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output = null) : BaseEventHandler {
+    readonly TimeSpan _delay = delay ?? TimeSpan.Zero;
+
     public int Count { get; private set; }
 
     IHypothesis<object>? _hypothesis;
 
-    public TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output = null) {
-        _output = output;
-        _delay  = delay ?? TimeSpan.Zero;
-    }
-
     public IHypothesis<object> AssertThat() {
         _hypothesis = Hypothesis.For<object>();
+
         return _hypothesis;
     }
 
     public Task Validate(TimeSpan timeout) => EnsureHypothesis.Validate(timeout);
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        _output?.WriteLine(context.Message!.ToString());
+        output?.WriteLine(context.Message!.ToString());
         await Task.Delay(_delay);
         await EnsureHypothesis.Test(context.Message!, context.CancellationToken);
         Count++;
+
         return EventHandlingStatus.Success;
     }
 

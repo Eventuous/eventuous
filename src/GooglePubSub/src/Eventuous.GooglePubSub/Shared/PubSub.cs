@@ -9,35 +9,36 @@ namespace Eventuous.GooglePubSub.Shared;
 
 public static class PubSub {
     [PublicAPI]
-    public static EmulatorDetection DetectEmulator(this SubscriberClient.ClientCreationSettings? value)
-        => value?.EmulatorDetection ?? EmulatorDetection.None;
+    public static EmulatorDetection DetectEmulator(this SubscriberClient.ClientCreationSettings? value) => value?.EmulatorDetection ?? EmulatorDetection.None;
 
     [PublicAPI]
-    public static EmulatorDetection DetectEmulator(this PublisherClient.ClientCreationSettings? value)
-        => value?.EmulatorDetection ?? EmulatorDetection.None;
+    public static EmulatorDetection DetectEmulator(this PublisherClient.ClientCreationSettings? value) => value?.EmulatorDetection ?? EmulatorDetection.None;
 
-    public static async Task CreateTopic(TopicName topicName, EmulatorDetection emulatorDetection, Action<string, string> log, CancellationToken cancellationToken) {
+    public static async Task CreateTopic(
+        TopicName              topicName,
+        EmulatorDetection      emulatorDetection,
+        Action<string, string> log,
+        CancellationToken      cancellationToken
+    ) {
         var topicString = topicName.ToString();
 
         var publisherServiceApiClient =
-            await new PublisherServiceApiClientBuilder { EmulatorDetection = emulatorDetection }
-                .BuildAsync(cancellationToken)
-                .NoContext();
+            await new PublisherServiceApiClientBuilder { EmulatorDetection = emulatorDetection }.BuildAsync(cancellationToken).NoContext();
 
         Log("Checking topic");
 
         try {
             await publisherServiceApiClient.GetTopicAsync(topicName).NoContext();
             Log("Topic exists");
-        }
-        catch (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
+        } catch (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
             Log("Topic doesn't exist");
             await publisherServiceApiClient.CreateTopicAsync(topicName).NoContext();
             Log("Created topic");
         }
 
-        void Log(string message)
-            => log(message + ": {Topic}", topicString);
+        return;
+
+        void Log(string message) => log($"{message}: {{Topic}}", topicString!);
     }
 
     public static async Task CreateSubscription(
@@ -51,20 +52,14 @@ public static class PubSub {
         var log     = Logger.Current.InfoLog;
 
         var subscriberServiceApiClient =
-            await new SubscriberServiceApiClientBuilder {
-                    EmulatorDetection = emulatorDetection
-                }
-                .BuildAsync(cancellationToken)
-                .NoContext();
+            await new SubscriberServiceApiClientBuilder { EmulatorDetection = emulatorDetection }.BuildAsync(cancellationToken).NoContext();
 
         log?.Log("Checking subscription for topic", subName, topicName.ToString());
 
         try {
             await subscriberServiceApiClient.GetSubscriptionAsync(subscriptionName);
             log?.Log("Subscription exists", subName);
-        }
-        catch
-            (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
+        } catch (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound) {
             log?.Log("Subscription doesn't exist", subName);
 
             var subscriptionRequest = new Subscription { AckDeadlineSeconds = 60 };

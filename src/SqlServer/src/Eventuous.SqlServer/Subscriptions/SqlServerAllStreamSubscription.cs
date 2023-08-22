@@ -16,12 +16,13 @@ using Extensions;
 /// </summary>
 public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions> {
     public SqlServerAllStreamSubscription(
-        GetSqlServerConnection                getConnection,
-        SqlServerAllStreamSubscriptionOptions options,
-        ICheckpointStore                      checkpointStore,
-        ConsumePipe                           consumePipe,
-        ILoggerFactory?                       loggerFactory = null
-    ) : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
+            GetSqlServerConnection                getConnection,
+            SqlServerAllStreamSubscriptionOptions options,
+            ICheckpointStore                      checkpointStore,
+            ConsumePipe                           consumePipe,
+            ILoggerFactory?                       loggerFactory = null
+        )
+        : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
 
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadAllForwards)
@@ -34,18 +35,19 @@ public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServe
     ulong _sequence;
 
     protected override IMessageConsumeContext AsContext(
-        PersistedEvent    evt,
-        object?           e,
-        Metadata?         meta,
-        CancellationToken cancellationToken
-    )
+            PersistedEvent    evt,
+            object?           e,
+            Metadata?         meta,
+            CancellationToken cancellationToken
+        )
         => new MessageConsumeContext(
             evt.MessageId.ToString(),
             evt.MessageType,
             ContentType,
             Ensure.NotEmptyString(evt.StreamName),
-            (ulong)evt.GlobalPosition - 1,
-            (ulong)evt.GlobalPosition - 1,
+            (ulong)evt.StreamPosition,
+            (ulong)evt.StreamPosition,
+            (ulong)evt.GlobalPosition,
             _sequence++,
             evt.Created,
             e,

@@ -4,7 +4,5 @@
 namespace Eventuous; 
 
 static class Exceptions {
-    internal class DuplicateTypeException<T> : ArgumentException {
-        public DuplicateTypeException() : base(ExceptionMessages.DuplicateTypeKey<T>(), typeof(T).FullName) { }
-    }
+    internal class DuplicateTypeException<T>() : ArgumentException(ExceptionMessages.DuplicateTypeKey<T>(), typeof(T).FullName);
 }

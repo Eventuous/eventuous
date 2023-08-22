@@ -11,23 +11,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Redis.Subscriptions;
 
-public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T>
-    where T : RedisSubscriptionBaseOptions {
-    readonly IMetadataSerializer     _metaSerializer;
-    readonly CancellationTokenSource _cts = new();
-
-    protected GetRedisDatabase GetDatabase { get; }
-
-    protected RedisSubscriptionBase(
+public abstract class RedisSubscriptionBase<T>(
         GetRedisDatabase getDatabase,
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
         ILoggerFactory?  loggerFactory
-    ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
-        GetDatabase     = Ensure.NotNull(getDatabase, "Connection factory");
-        _metaSerializer = DefaultMetadataSerializer.Instance;
-    }
+    )
+    : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
+    where T : RedisSubscriptionBaseOptions {
+    readonly IMetadataSerializer     _metaSerializer = DefaultMetadataSerializer.Instance;
+    readonly CancellationTokenSource _cts            = new();
+
+    protected GetRedisDatabase GetDatabase { get; } = Ensure.NotNull<GetRedisDatabase>(getDatabase, "Connection factory");
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         await BeforeSubscribe(cancellationToken).NoContext();
@@ -99,6 +95,7 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
             ContentType,
             evt.StreamName,
             (ulong)evt.StreamPosition,
+            (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
             _sequence++,
             evt.Created,
@@ -116,7 +113,7 @@ public abstract class RedisSubscriptionBase<T> : EventSubscriptionWithCheckpoint
     ulong _sequence;
 }
 
-public abstract record RedisSubscriptionBaseOptions : SubscriptionOptions {
+public abstract record RedisSubscriptionBaseOptions : SubscriptionWithCheckpointOptions {
     public int ConcurrencyLimit { get; set; } = 1;
     public int MaxPageSize      { get; set; } = 100;
 }

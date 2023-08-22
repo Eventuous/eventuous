@@ -4,18 +4,18 @@ using Eventuous.Sut.Domain;
 using Eventuous.Tests.Projections.MongoDB.Fixtures;
 using MongoDB.Driver;
 using static Eventuous.Sut.Domain.BookingEvents;
-using static Eventuous.Tests.Projections.MongoDB.Fixtures.IntegrationFixture;
 
 namespace Eventuous.Tests.Projections.MongoDB;
 
-public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingWithTypedHandlers.SutProjection> {
+public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture, ITestOutputHelper output)
+    : ProjectionTestBase<ProjectingWithTypedHandlers.SutProjection>(nameof(ProjectingWithTypedHandlers), fixture, output) {
     [Fact]
     public async Task ShouldProjectImported() {
-        var evt = DomainFixture.CreateImportBooking();
-        var id = new BookingId(CreateId());
+        var evt    = DomainFixture.CreateImportBooking();
+        var id     = new BookingId(CreateId());
         var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
 
-        var append = await Instance.AppendEvent(stream, evt);
+        var append = await Fixture.AppendEvent(stream, evt);
 
         await Task.Delay(500);
 
@@ -29,15 +29,13 @@ public sealed class ProjectingWithTypedHandlers : ProjectionTestBase<ProjectingW
             StreamPosition = (ulong)append.NextExpectedVersion
         };
 
-        var actual = await Instance.Mongo.LoadDocument<BookingDocument>(id.ToString());
+        var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(id.ToString());
         actual.Should().Be(expected);
     }
 
-    public ProjectingWithTypedHandlers(ITestOutputHelper output) : base(nameof(ProjectingWithTypedHandlers), output) {
-    }
-
     public class SutProjection : MongoProjector<BookingDocument> {
-        public SutProjection(IMongoDatabase database) : base(database) {
+        public SutProjection(IMongoDatabase database)
+            : base(database) {
             On<BookingImported>(
                 stream => stream.GetId(),
                 (ctx, update) => update

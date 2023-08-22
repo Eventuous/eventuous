@@ -5,40 +5,64 @@ namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
 
-public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, IStateCommandService<T> where T : State<T>, new() {
+public abstract class FunctionalCommandService
+    <T>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null) : IFuncCommandService<T>, IStateCommandService<T>
+    where T : State<T>, new() {
     [PublicAPI]
-    protected IEventReader Reader { get; }
+    protected IEventReader Reader { get; } = reader;
     [PublicAPI]
-    protected IEventWriter Writer { get; }
+    protected IEventWriter Writer { get; } = writer;
 
-    readonly TypeMapper               _typeMap;
-    readonly FunctionalHandlersMap<T> _handlers = new();
+    readonly TypeMapper               _typeMap   = typeMap ?? TypeMap.Instance;
+    readonly FunctionalHandlersMap<T> _handlers  = new();
+    readonly CommandToStreamMap       _streamMap = new();
 
-    protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null) : this(store, store, typeMap) { }
+    protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null)
+        : this(store, store, typeMap) { }
 
-    protected FunctionalCommandService(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null) {
-        Reader   = reader;
-        Writer   = writer;
-        _typeMap = typeMap ?? TypeMap.Instance;
+    protected void OnNew<TCommand>(
+            GetStreamNameFromCommand<TCommand>  getStreamName,
+            Func<TCommand, IEnumerable<object>> action
+        ) where TCommand : class {
+        _handlers.AddHandler<TCommand>(ExpectedState.New, (_, _, cmd) => action(cmd));
+        _streamMap.AddCommand(getStreamName);
     }
 
-    protected void OnNew<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, Func<TCommand, IEnumerable<object>> action) where TCommand : class
-        => _handlers.AddHandler<TCommand>(ExpectedState.New, getStreamName, (_, _, cmd) => action(cmd));
+    protected void OnExisting<TCommand>(
+            GetStreamNameFromCommand<TCommand> getStreamName,
+            ExecuteCommand<T, TCommand>        action
+        ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Existing, action);
+        _streamMap.AddCommand(getStreamName);
+    }
 
-    protected void OnExisting<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, ExecuteCommand<T, TCommand> action) where TCommand : class
-        => _handlers.AddHandler(ExpectedState.Existing, getStreamName, action);
-
-    protected void OnAny<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, ExecuteCommand<T, TCommand> action) where TCommand : class
-        => _handlers.AddHandler(ExpectedState.Any, getStreamName, action);
+    protected void OnAny<TCommand>(
+            GetStreamNameFromCommand<TCommand> getStreamName,
+            ExecuteCommand<T, TCommand>        action
+        ) where TCommand : class {
+        _handlers.AddHandler(ExpectedState.Any, action);
+        _streamMap.AddCommand(getStreamName);
+    }
 
     public async Task<Result<T>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();
             var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
+
             return new ErrorResult<T>(exception);
         }
 
         var streamName = await registeredHandler.GetStream(command, cancellationToken).NoContext();
+        var hasGetStreamFunction = _streamMap.TryGet<TCommand>(out var getStreamName);
+
+        if (!hasGetStreamFunction || getStreamName == null) {
+            Log.CannotCalculateAggregateId<TCommand>();
+            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
+
+            return new ErrorResult<T>(exception);
+        }
+
+        var streamName = await getStreamName(command, cancellationToken).NoContext();
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
@@ -63,8 +87,7 @@ public abstract class FunctionalCommandService<T> : IFuncCommandService<T>, ISta
             Log.CommandHandled<TCommand>();
 
             return new OkResult<T>(newState, changes, storeResult.GlobalPosition);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Log.ErrorHandlingCommand<TCommand>(e);
 
             return new ErrorResult<T>($"Error handling command {typeof(TCommand).Name}", e);

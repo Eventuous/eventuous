@@ -25,7 +25,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         public Func<IMessageConsumeContext<TEvent>, FilterDefinition<T>> GetFilter => Ensure.NotNull(_filterFunc, "Filter function");
 
         public void Filter(BuildFilter<TEvent, T> buildFilter)
-            => _filterFunc = evt => buildFilter(evt, Builders<T>.Filter);
+            => _filterFunc = evt =>  buildFilter(evt, Builders<T>.Filter);
 
         public void Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter)
             => _filterFunc = evt => new ExpressionFilterDefinition<T>(x => filter(evt, x));

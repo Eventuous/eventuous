@@ -7,12 +7,12 @@ namespace Eventuous.Subscriptions.Context;
 
 using Logging;
 
-public class MessageConsumeContext : IMessageConsumeContext {
-    public MessageConsumeContext(
+public class MessageConsumeContext(
         string            eventId,
         string            eventType,
         string            contentType,
         string            stream,
+        ulong             eventNumber,
         ulong             streamPosition,
         ulong             globalPosition,
         ulong             sequence,
@@ -21,44 +21,46 @@ public class MessageConsumeContext : IMessageConsumeContext {
         Metadata?         metadata,
         string            subscriptionId,
         CancellationToken cancellationToken
-    ) {
-        MessageId         = eventId;
-        MessageType       = eventType;
-        ContentType       = contentType;
-        Stream            = new StreamName(stream);
-        StreamPosition    = streamPosition;
-        GlobalPosition    = globalPosition;
-        Created           = created;
-        Metadata          = metadata;
-        Sequence          = sequence;
-        Message           = message;
-        CancellationToken = cancellationToken;
-        SubscriptionId    = subscriptionId;
-        LogContext        = Logger.Current;
-    }
-
-    public string            MessageId         { get; }
-    public string            MessageType       { get; }
-    public string            ContentType       { get; }
-    public StreamName        Stream            { get; }
-    public ulong             StreamPosition    { get; }
-    public ulong             GlobalPosition    { get; }
-    public DateTime          Created           { get; }
-    public Metadata?         Metadata          { get; }
-    public object?           Message           { get; }
+    )
+    : IMessageConsumeContext {
+    /// <inheritdoc />
+    public string            MessageId         { get; } = eventId;
+    /// <inheritdoc />
+    public string            MessageType       { get; } = eventType;
+    /// <inheritdoc />
+    public string            ContentType       { get; } = contentType;
+    /// <inheritdoc />
+    public StreamName        Stream            { get; } = new(stream);
+    /// <inheritdoc />
+    public ulong             EventNumber       { get; } = eventNumber;
+    /// <inheritdoc />
+    public ulong             StreamPosition    { get; } = streamPosition;
+    /// <inheritdoc />
+    public ulong             GlobalPosition    { get; } = globalPosition;
+    /// <inheritdoc />
+    public DateTime          Created           { get; } = created;
+    /// <inheritdoc />
+    public Metadata?         Metadata          { get; } = metadata;
+    /// <inheritdoc />
+    public object?           Message           { get; } = message;
+    /// <inheritdoc />
     public ContextItems      Items             { get; } = new();
+    /// <inheritdoc />
     public ActivityContext?  ParentContext     { get; set; }
-    public HandlingResults   HandlingResults   { get; } = new();
-    public CancellationToken CancellationToken { get; set; }
-    public ulong             Sequence          { get; }
-    public string            SubscriptionId    { get; }
-    public LogContext        LogContext        { get; set; }
+    /// <inheritdoc />
+    public HandlingResults   HandlingResults   { get; }      = new();
+    /// <inheritdoc />
+    public CancellationToken CancellationToken { get; set; } = cancellationToken;
+    /// <inheritdoc />
+    public ulong             Sequence          { get; }      = sequence;
+    /// <inheritdoc />
+    public string            SubscriptionId    { get; }      = subscriptionId;
+    /// <inheritdoc />
+    public LogContext        LogContext        { get; set; } = Logger.Current;
 }
 
-public class MessageConsumeContext<T> : WrappedConsumeContext, IMessageConsumeContext<T>
+public class MessageConsumeContext<T>(IMessageConsumeContext innerContext) : WrappedConsumeContext(innerContext), IMessageConsumeContext<T>
     where T : class {
-    public MessageConsumeContext(IMessageConsumeContext innerContext) : base(innerContext) { }
-
     [PublicAPI]
     public new T Message => (T)InnerContext.Message!;
 }

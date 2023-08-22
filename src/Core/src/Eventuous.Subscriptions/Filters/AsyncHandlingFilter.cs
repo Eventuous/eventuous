@@ -45,18 +45,19 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
                 var exception = ctx.HandlingResults.GetException();
 
                 switch (exception) {
-                    case TaskCanceledException: break;
-                    case null:                  throw new ApplicationException("Event handler failed");
-                    default:                    throw exception;
+                    case TaskCanceledException:      break;
+                    case OperationCanceledException: break;
+                    case null:                       throw new ApplicationException("Event handler failed");
+                    default:                         throw exception;
                 }
             }
 
             if (!ctx.HandlingResults.IsPending()) await ctx.Acknowledge().NoContext();
-        }
-        catch (TaskCanceledException) {
-            ctx.Ignore<AsyncHandlingFilter>();
-        }
-        catch (Exception e) {
+        } catch (TaskCanceledException) {
+            return;
+        } catch (OperationCanceledException) {
+            return;
+        } catch (Exception e) {
             ctx.LogContext.MessageHandlingFailed(nameof(AsyncHandlingFilter), workerTask.Context, e);
             activity?.SetActivityStatus(ActivityStatus.Error(e));
             await ctx.Fail(e).NoContext();

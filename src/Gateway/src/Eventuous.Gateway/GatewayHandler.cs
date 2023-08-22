@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Gateway;
@@ -8,49 +9,54 @@ namespace Eventuous.Gateway;
 /// <summary>
 /// Function that transforms one incoming message to zero or more outgoing messages.
 /// </summary>
-public delegate ValueTask<GatewayMessage[]> RouteAndTransform(IMessageConsumeContext context);
+public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<TProduceOptions>(IMessageConsumeContext message);
 
-class GatewayHandler : BaseEventHandler {
-    readonly IEventProducer    _eventProducer;
-    readonly RouteAndTransform _transform;
-    readonly bool              _awaitProduce;
-
-    public GatewayHandler(IEventProducer eventProducer, RouteAndTransform transform, bool awaitProduce) {
-        _eventProducer = eventProducer;
-        _transform     = transform;
-        _awaitProduce  = awaitProduce;
-    }
-
+/// <inheritdoc />
+class GatewayHandler<TProduceOptions>(
+        IEventProducer<TProduceOptions>    eventProducer,
+        RouteAndTransform<TProduceOptions> transform,
+        bool                               awaitProduce
+    ) : BaseEventHandler
+    where TProduceOptions : class {
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        var shovelMessages = await _transform(context).NoContext();
+        var shovelMessages = await transform(context).NoContext();
 
         if (shovelMessages.Length == 0) return EventHandlingStatus.Ignored;
 
-        AcknowledgeProduce? onAck = null;
+        AcknowledgeProduce?  onAck  = null;
+        ReportFailedProduce? onFail = null;
 
-        if (context is AsyncConsumeContext asyncContext) {
-            onAck = _ => asyncContext.Acknowledge();
+        if (!awaitProduce) {
+            var asyncContext = context.GetContext<AsyncConsumeContext>();
+
+            if (asyncContext != null) {
+                onAck  = _ => asyncContext.Acknowledge();
+                onFail = (_, error, ex) => asyncContext.Fail(ex ?? new ApplicationException(error));
+            }
         }
-
-        var grouped = shovelMessages.GroupBy(x => x.TargetStream);
 
         try {
-            await grouped.Select(x => ProduceToStream(x.Key, x)).WhenAll();
-        }
-        catch (OperationCanceledException e) {
-            context.Nack<GatewayHandler>(e);
-        }
+            var grouped = shovelMessages.GroupBy(x => x.TargetStream);
 
-        return _awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
+            await grouped.Select(x => ProduceToStream(x.Key, x)).WhenAll().NoContext();
+        } catch (OperationCanceledException e) { context.Nack<GatewayHandler<TProduceOptions>>(e); }
 
-        Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage> toProduce) {
-            var messages = toProduce
-                .Select(
-                    x => new ProducedMessage(x.Message, x.GetMeta(context), GatewayMetaHelper.GetContextMeta(context))
-                        { OnAck = onAck }
-                );
+        return awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
 
-            return _eventProducer.Produce(streamName, messages, context.CancellationToken);
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage<TProduceOptions>> toProduce)
+            => toProduce.Select(
+                    x => eventProducer.Produce(
+                        streamName,
+                        x.Message,
+                        x.GetMeta(context),
+                        x.ProduceOptions,
+                        GatewayMetaHelper.GetContextMeta(context),
+                        onAck,
+                        onFail,
+                        context.CancellationToken
+                    )
+                )
+                .WhenAll();
     }
 }

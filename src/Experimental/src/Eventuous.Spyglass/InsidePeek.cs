@@ -33,10 +33,10 @@ public class InsidePeek {
 
         var cl = assembly
             .ExportedTypes
-            .Where(x => DeepBaseType(x, aggregateType))
+            .Where(x => DeepBaseType(x, aggregateType) && !x.IsAbstract)
             .ToList();
 
-        var reg = _registry._registry;
+        var reg = _registry.Registry;
 
         foreach (var type in cl) {
             var stateType = GetStateType(type);
@@ -45,15 +45,10 @@ public class InsidePeek {
 
             var methods = (type as dynamic).DeclaredMethods as MethodInfo[];
 
-            AggregateInfos.Add(
-                new AggregateInfo(
-                    type,
-                    stateType,
-                    methods!,
-                    () => CreateInstance(reg, type)
-                )
-            );
+            AggregateInfos.Add(new AggregateInfo(type, stateType, methods!, () => CreateInstance(reg, type)));
         }
+
+        return;
 
         Type? GetStateType(Type type)
             => type.BaseType!.GenericTypeArguments.Length == 0
@@ -70,11 +65,9 @@ public class InsidePeek {
     }
 
     public async Task<object> Load(string streamName, int version) {
-        var typeName = streamName[..streamName.IndexOf('-')];
-        var agg      = AggregateInfos.First(x => x.AggregateType == typeName);
-
-        var events = await _eventStore.ReadStream(new StreamName(streamName), StreamReadPosition.Start, true, CancellationToken.None);
-
+        var typeName       = streamName[..streamName.IndexOf('-')];
+        var agg            = AggregateInfos.First(x => x.AggregateType == typeName);
+        var events         = await _eventStore.ReadStream(new StreamName(streamName), StreamReadPosition.Start, true, CancellationToken.None);
         var aggregate      = agg.GetAggregate();
         var selectedEvents = version == -1 ? events : events.Take(version + 1);
         aggregate.Load(selectedEvents.Select(x => x.Payload));
@@ -103,20 +96,16 @@ public class InsidePeek {
             _factory       = factory;
         }
 
-        public dynamic GetAggregate()
-            => _factory();
+        public dynamic GetAggregate() => _factory();
 
         public object GetInfo() {
-            var    instance = GetAggregate();
-            object state    = instance.State;
-            var    handlers = state.GetPrivateMember("_handlers");
-
-            var handlerType     = typeof(Func<,,>).MakeGenericType(_stateType, typeof(object), _stateType);
-            var handlersDicType = typeof(Dictionary<,>).MakeGenericType(typeof(Type), handlerType);
-
-            dynamic handlersDic = Convert.ChangeType(handlers, handlersDicType)!;
-
-            IEnumerable<Type> keys = handlersDic.Keys;
+            var               instance        = GetAggregate();
+            object            state           = instance.State;
+            var               handlers        = state.GetPrivateMember("_handlers");
+            var               handlerType     = typeof(Func<,,>).MakeGenericType(_stateType, typeof(object), _stateType);
+            var               handlersDicType = typeof(Dictionary<,>).MakeGenericType(typeof(Type), handlerType);
+            dynamic           handlersDic     = Convert.ChangeType(handlers, handlersDicType)!;
+            IEnumerable<Type> keys            = handlersDic.Keys;
 
             return new {
                 Type      = _aggregateType.Name,
@@ -126,8 +115,7 @@ public class InsidePeek {
             };
         }
 
-        public override string ToString()
-            => $"{_aggregateType.Name} ({_stateType.Name})";
+        public override string ToString() => $"{_aggregateType.Name} ({_stateType.Name})";
 
         readonly Type          _aggregateType;
         readonly Type          _stateType;
