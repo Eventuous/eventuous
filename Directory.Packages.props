@@ -32,7 +32,7 @@
     <PackageVersion Include="System.Reactive" Version="6.0.0" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.5.1" />
-    <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="23.0.0" />
+    <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="23.1.0" />
     <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.0.0" />
     <PackageVersion Include="MongoDB.Driver" Version="2.19.0" />
     <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.6.0" />
