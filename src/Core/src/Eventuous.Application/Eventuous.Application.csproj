@@ -11,18 +11,6 @@
             <Link>Tools\Ensure.cs</Link>
         </Compile>
         <Using Include="Eventuous.Tools" />
-        <Compile Update="CommandService.Async.cs">
-          <DependentUpon>CommandService.cs</DependentUpon>
-        </Compile>
-        <Compile Update="CommandService.Sync.cs">
-          <DependentUpon>CommandService.cs</DependentUpon>
-        </Compile>
-        <Compile Update="CommandHandlersMap.cs">
-          <DependentUpon>CommandService.cs</DependentUpon>
-        </Compile>
-        <Compile Update="FunctionalHandlersMap.cs">
-          <DependentUpon>FunctionalCommandService.cs</DependentUpon>
-        </Compile>
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">
