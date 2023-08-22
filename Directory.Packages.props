@@ -55,7 +55,7 @@
   </ItemGroup>
   <ItemGroup Label="References for packable projects">
     <PackageVersion Include="MinVer" Version="4.3.0" PrivateAssets="All" />
-    <PackageVersion Include="JetBrains.Annotations" Version="2023.2.1" PrivateAssets="All" />
+    <PackageVersion Include="JetBrains.Annotations" Version="2023.2.0" PrivateAssets="All" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Label="References for test projects">
