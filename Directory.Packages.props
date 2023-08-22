@@ -44,7 +44,7 @@
     <PackageVersion Include="NEST" Version="7.17.5" />
     <PackageVersion Include="Polly" Version="7.2.4" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageVersion Include="StackExchange.Redis" Version="2.6.90" />
+    <PackageVersion Include="StackExchange.Redis" Version="2.6.122" />
     <PackageVersion Include="Testcontainers.EventStoreDb" Version="3.4.0" />
     <PackageVersion Include="Testcontainers.Kafka" Version="3.4.0" />
     <PackageVersion Include="Testcontainers.MongoDb" Version="3.4.0" />
