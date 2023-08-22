@@ -21,12 +21,12 @@ public class RedisStore : IEventReader, IEventWriter {
     readonly IMetadataSerializer _metaSerializer;
 
     public RedisStore(
-        GetRedisDatabase     getDatabase,
-        // ReSharper disable once UnusedParameter.Local
-        RedisStoreOptions    options,
-        IEventSerializer?    serializer     = null,
-        IMetadataSerializer? metaSerializer = null
-    ) {
+            GetRedisDatabase getDatabase,
+            // ReSharper disable once UnusedParameter.Local
+            RedisStoreOptions    options,
+            IEventSerializer?    serializer     = null,
+            IMetadataSerializer? metaSerializer = null
+        ) {
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         _getDatabase    = Ensure.NotNull(getDatabase, "Connection factory");
@@ -35,21 +35,26 @@ public class RedisStore : IEventReader, IEventWriter {
     const string ContentType = "application/json";
 
     public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
-        var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count).NoContext();
-        if (result == null) throw new StreamNotFound(stream);
+        try {
+            var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count).NoContext();
 
-        return result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer)).ToArray();
+            if (result == null) throw new StreamNotFound(stream);
+
+            return result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer)).ToArray();
+        } catch (InvalidOperationException e) when (e.Message.Contains("Reading is not allowed after reader was completed") || cancellationToken.IsCancellationRequested) {
+            throw new OperationCanceledException("Redis read operation terminated", e, cancellationToken);
+        }
     }
 
     public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
         => throw new NotImplementedException();
 
     public async Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    ) {
+            StreamName                       stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
+        ) {
         var keys = new object[] {
             "append_events",
             3,
@@ -74,16 +79,18 @@ public class RedisStore : IEventReader, IEventWriter {
             var streamPosition       = (long)Ensure.NotNull(response?[0]);
             var globalPositionString = Ensure.NotNull(response?[1]).ToString();
             var globalPosition       = globalPositionString.AsSpan().ToULong();
+
             return new AppendEventsResult(globalPosition, streamPosition);
-        }
-        catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
+        } catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
             Log.UnableToAppendEvents(stream, e);
+
             throw new AppendToStreamException(stream, e);
         }
 
         object[] ConvertStreamEvent(StreamEvent evt) {
             var data = _serializer.SerializeEvent(evt.Payload!);
             var meta = _metaSerializer.Serialize(evt.Metadata);
+
             return new object[] { evt.Id.ToString(), data.EventType, AsString(data.Payload), AsString(meta) };
         }
 
