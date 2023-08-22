@@ -4,19 +4,15 @@ using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.Tests.Subscriptions;
 
-public class ConsumePipeTests {
-    readonly ITestOutputHelper _outputHelper;
-
+public class ConsumePipeTests(ITestOutputHelper outputHelper) {
     static readonly Fixture Auto = new();
-
-    public ConsumePipeTests(ITestOutputHelper outputHelper) => _outputHelper = outputHelper;
 
     [Fact]
     public async Task ShouldCallHandlers() {
         var handler = new TestHandler();
         var pipe    = new ConsumePipe().AddDefaultConsumer(handler);
 
-        var ctx = Auto.CreateContext(_outputHelper);
+        var ctx = Auto.CreateContext(outputHelper);
 
         await pipe.Send(ctx);
 
@@ -34,7 +30,7 @@ public class ConsumePipeTests {
 
         pipe.AddFilterFirst(new TestFilter(Key, baggage));
 
-        var ctx = Auto.CreateContext(_outputHelper);
+        var ctx = Auto.CreateContext(outputHelper);
 
         await pipe.Send(ctx);
 

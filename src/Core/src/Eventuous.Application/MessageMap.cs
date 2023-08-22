@@ -10,8 +10,7 @@ public class MessageMap {
         _typeMap.Add<TIn>(Map);
         return this;
 
-        object Map(object inCmd)
-            => map((TIn)inCmd);
+        object Map(object inCmd) => map((TIn)inCmd);
     }
 
     public TOut Convert<TIn, TOut>(TIn command) where TIn : class {

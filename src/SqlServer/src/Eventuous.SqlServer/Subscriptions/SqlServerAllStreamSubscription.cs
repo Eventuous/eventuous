@@ -14,16 +14,14 @@ using Extensions;
 /// <summary>
 /// Subscription for all events in the system using SQL Server event store.
 /// </summary>
-public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions> {
-    public SqlServerAllStreamSubscription(
-            GetSqlServerConnection                getConnection,
-            SqlServerAllStreamSubscriptionOptions options,
-            ICheckpointStore                      checkpointStore,
-            ConsumePipe                           consumePipe,
-            ILoggerFactory?                       loggerFactory = null
-        )
-        : base(getConnection, options, checkpointStore, consumePipe, loggerFactory) { }
-
+public class SqlServerAllStreamSubscription(
+        GetSqlServerConnection                getConnection,
+        SqlServerAllStreamSubscriptionOptions options,
+        ICheckpointStore                      checkpointStore,
+        ConsumePipe                           consumePipe,
+        ILoggerFactory?                       loggerFactory = null
+    )
+    : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions>(getConnection, options, checkpointStore, consumePipe, loggerFactory) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadAllForwards)
             .Add("@from_position", SqlDbType.BigInt, start + 1)
@@ -34,12 +32,7 @@ public class SqlServerAllStreamSubscription : SqlServerSubscriptionBase<SqlServe
 
     ulong _sequence;
 
-    protected override IMessageConsumeContext AsContext(
-            PersistedEvent    evt,
-            object?           e,
-            Metadata?         meta,
-            CancellationToken cancellationToken
-        )
+    protected override IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(
             evt.MessageId.ToString(),
             evt.MessageType,

@@ -5,7 +5,7 @@ using Eventuous.TestHelpers;
 namespace Eventuous.Tests.EventStore;
 
 public class AppServiceTests(IntegrationFixture fixture, ITestOutputHelper output) : IClassFixture<IntegrationFixture>, IDisposable {
-    readonly TestEventListener  _listener = new(output);
+    readonly TestEventListener _listener = new(output);
 
     BookingService Service { get; } = new(fixture.AggregateStore);
 
@@ -13,14 +13,7 @@ public class AppServiceTests(IntegrationFixture fixture, ITestOutputHelper outpu
     public async Task ProcessAnyForNew() {
         var cmd = DomainFixture.CreateImportBooking();
 
-        var expected = new object[] {
-            new BookingEvents.BookingImported(
-                cmd.RoomId,
-                cmd.Price,
-                cmd.CheckIn,
-                cmd.CheckOut
-            )
-        };
+        var expected = new object[] { new BookingEvents.BookingImported(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut) };
 
         var handlingResult = await Service.Handle(cmd, default);
         handlingResult.Success.Should().BeTrue();

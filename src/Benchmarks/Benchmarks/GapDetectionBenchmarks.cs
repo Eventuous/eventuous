@@ -19,7 +19,7 @@ public class GapDetectionBenchmarks {
     public void Setup() {
         _store = new NoOpCheckpointStore();
 
-        _store.CheckpointStored += (sender, checkpoint) => Console.WriteLine(checkpoint);
+        _store.CheckpointStored += (_, checkpoint) => Console.WriteLine(checkpoint);
 
         var numbers = Enumerable.Range(1, 1000).ToList();
         numbers.RemoveAll(x => x % 10 == 0);

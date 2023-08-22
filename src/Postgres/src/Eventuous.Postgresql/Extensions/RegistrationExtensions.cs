@@ -23,13 +23,13 @@ public static class ServiceCollectionExtensions {
     /// <param name="dataSourceLifetime">Optional> lifetime of the data source, default is singleton</param>
     /// <returns></returns>
     public static IServiceCollection AddEventuousPostgres(
-        this IServiceCollection services,
-        string                  connectionString,
-        string                  schema,
-        bool                    initializeDatabase = false,
-        ServiceLifetime         connectionLifetime = ServiceLifetime.Transient,
-        ServiceLifetime         dataSourceLifetime = ServiceLifetime.Singleton
-    ) {
+            this IServiceCollection services,
+            string                  connectionString,
+            string                  schema,
+            bool                    initializeDatabase = false,
+            ServiceLifetime         connectionLifetime = ServiceLifetime.Transient,
+            ServiceLifetime         dataSourceLifetime = ServiceLifetime.Singleton
+        ) {
         var options = new PostgresStoreOptions {
             Schema             = schema,
             ConnectionString   = connectionString,
@@ -69,11 +69,11 @@ public static class ServiceCollectionExtensions {
     }
 
     public static IServiceCollection AddEventuousPostgres(
-        this IServiceCollection services,
-        IConfiguration          config,
-        ServiceLifetime         connectionLifetime = ServiceLifetime.Transient,
-        ServiceLifetime         dataSourceLifetime = ServiceLifetime.Singleton
-    ) {
+            this IServiceCollection services,
+            IConfiguration          config,
+            ServiceLifetime         connectionLifetime = ServiceLifetime.Transient,
+            ServiceLifetime         dataSourceLifetime = ServiceLifetime.Singleton
+        ) {
         services.Configure<PostgresStoreOptions>(config);
 
         services.AddNpgsqlDataSourceCore(
@@ -101,8 +101,8 @@ public static class ServiceCollectionExtensions {
         if (config.GetValue<bool>("postgres:initializeDatabase") == true) {
             services.AddHostedService<SchemaInitializer>(
                 sp => {
-                    var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
-                    var options    = sp.GetRequiredService<IOptions<PostgresStoreOptions>>();
+                    sp.GetRequiredService<NpgsqlDataSource>();
+                    var options = sp.GetRequiredService<IOptions<PostgresStoreOptions>>();
 
                     return new SchemaInitializer(options.Value, sp.GetRequiredService<ILoggerFactory>());
                 }
@@ -113,12 +113,12 @@ public static class ServiceCollectionExtensions {
     }
 
     static void AddNpgsqlDataSourceCore(
-        this IServiceCollection                            services,
-        Func<IServiceProvider, string>                     getConnectionString,
-        Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureDataSource,
-        ServiceLifetime                                    connectionLifetime,
-        ServiceLifetime                                    dataSourceLifetime
-    ) {
+            this IServiceCollection                            services,
+            Func<IServiceProvider, string>                     getConnectionString,
+            Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureDataSource,
+            ServiceLifetime                                    connectionLifetime,
+            ServiceLifetime                                    dataSourceLifetime
+        ) {
         services.TryAdd(
             new ServiceDescriptor(
                 typeof(NpgsqlDataSource),

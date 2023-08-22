@@ -15,9 +15,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Eventuous.Tests.Subscriptions;
 
 public class RegistrationTests(ITestOutputHelper outputHelper) {
-    readonly TestServer       _server   = new TestServer(BuildHost());
-    readonly Fixture          _auto     = new();
-    readonly ILoggerFactory   _logger   = Logging.GetLoggerFactory(outputHelper);
+    readonly TestServer     _server = new(BuildHost());
+    readonly Fixture        _auto   = new();
+    readonly ILoggerFactory _logger = Logging.GetLoggerFactory(outputHelper);
 
     [Fact]
     public void ShouldBeSingletons() {
@@ -95,8 +95,9 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
 
     [Fact]
     public void ShouldRegisterTwoMeasures() {
-        var subs    = _server.Services.GetServices<TestSub>().ToArray();
-        var measure = _server.Services.GetRequiredService<SubscriptionMetrics>();
+        var subs = _server.Services.GetServices<TestSub>().ToArray();
+        subs.Should().NotBeEmpty();
+        _server.Services.GetRequiredService<SubscriptionMetrics>();
     }
 
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
@@ -125,6 +126,7 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
     }
 
     record TestOptions : SubscriptionOptions {
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
         public string? Field { get; set; }
     }
 

@@ -16,13 +16,9 @@ class ApplicationEventSource : EventSource {
     const int CommandHandledId                  = 3;
     const int CommandHandlerAlreadyRegisteredId = 4;
     const int CommandHandlerRegisteredId        = 5;
-    const int CannotGetAggregateIdFromCommandId = 11;
 
     [NonEvent]
     public void CommandHandlerNotFound<TCommand>() => CommandHandlerNotFound(typeof(TCommand).Name);
-
-    [NonEvent]
-    public void CannotCalculateAggregateId<TCommand>() => CannotCalculateAggregateId(typeof(TCommand).Name);
 
     [NonEvent]
     public void ErrorHandlingCommand<TCommand>(Exception e) => ErrorHandlingCommand(typeof(TCommand).Name, e.ToString());
@@ -42,13 +38,6 @@ class ApplicationEventSource : EventSource {
 
     [Event(CommandHandlerNotFoundId, Message = "Handler not found for command: '{0}'", Level = EventLevel.Error)]
     void CommandHandlerNotFound(string commandType) => WriteEvent(CommandHandlerNotFoundId, commandType);
-
-    [Event(
-        CannotGetAggregateIdFromCommandId,
-        Message = "Cannot get aggregate id from command: '{0}'",
-        Level = EventLevel.Error
-    )]
-    void CannotCalculateAggregateId(string commandType) => WriteEvent(CannotGetAggregateIdFromCommandId, commandType);
 
     [Event(ErrorHandlingCommandId, Message = "Error handling command: '{0}' {1}", Level = EventLevel.Error)]
     void ErrorHandlingCommand(string commandType, string exception)

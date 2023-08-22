@@ -63,7 +63,7 @@ public class MappedCommandTests(ITestOutputHelper output) : IDisposable {
                 .MapCommand<ImportBookingHttp3, ImportBooking>(EnrichCommand)
         );
 
-        Func<Task> act = () => Execute(fixture, "import3");
+        var act = () => Execute(fixture, "import3");
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }

@@ -3,14 +3,8 @@
 
 namespace Eventuous.ElasticSearch.Store;
 
-public class ElasticEventStore : IEventReader, IEventWriter {
-    readonly IElasticClient           _client;
-    readonly ElasticEventStoreOptions _options;
-
-    public ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? options = null) {
-        _client  = client;
-        _options = options ?? new ElasticEventStoreOptions();
-    }
+public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? options = null) : IEventReader, IEventWriter {
+    readonly ElasticEventStoreOptions _options = options ?? new ElasticEventStoreOptions();
 
     public async Task<AppendEventsResult> AppendEvents(
         StreamName                       stream,
@@ -21,7 +15,7 @@ public class ElasticEventStore : IEventReader, IEventWriter {
         var streamName = stream.ToString();
         var documents  = events.Select(AsDocument).ToArray();
         var bulk       = new BulkDescriptor(_options.IndexName).CreateMany(documents).Refresh(Refresh.WaitFor);
-        var result     = await _client.BulkAsync(bulk, cancellationToken);
+        var result     = await client.BulkAsync(bulk, cancellationToken);
 
         return result.IsValid
             ? new AppendEventsResult(0, documents.Last().StreamPosition + 1)
@@ -47,7 +41,7 @@ public class ElasticEventStore : IEventReader, IEventWriter {
         int                count,
         CancellationToken  cancellationToken
     ) {
-        var response = await _client.SearchAsync<PersistedEvent>(
+        var response = await client.SearchAsync<PersistedEvent>(
             d => d
                 .Index(_options.IndexName)
                 .Query(

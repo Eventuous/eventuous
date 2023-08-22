@@ -24,6 +24,5 @@ public class StreamNameMap {
             : throw new StreamNameMapNotFound<TId>(id);
 }
 
-public class StreamNameMapNotFound<TId> : Exception where TId : Id {
-    public StreamNameMapNotFound(TId id) : base($"No stream name map found for {typeof(TId).Name} with value {id}") { }
-}
+public class StreamNameMapNotFound<TId>(TId id) : Exception($"No stream name map found for {typeof(TId).Name} with value {id}")
+    where TId : Id;

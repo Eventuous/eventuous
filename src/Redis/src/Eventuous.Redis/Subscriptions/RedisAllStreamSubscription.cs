@@ -13,15 +13,14 @@ namespace Eventuous.Redis.Subscriptions;
 
 using Tools;
 
-public class RedisAllStreamSubscription : RedisSubscriptionBase<RedisSubscriptionBaseOptions> {
-    public RedisAllStreamSubscription(
+public class RedisAllStreamSubscription(
         GetRedisDatabase                  getDatabase,
         RedisAllStreamSubscriptionOptions options,
         ICheckpointStore                  checkpointStore,
         ConsumePipe                       consumePipe,
         ILoggerFactory?                   loggerFactory
-    ) : base(getDatabase, options, checkpointStore, consumePipe, loggerFactory) { }
-
+    )
+    : RedisSubscriptionBase<RedisSubscriptionBaseOptions>(getDatabase, options, checkpointStore, consumePipe, loggerFactory) {
     protected override async Task<ReceivedEvent[]> ReadEvents(IDatabase database, long position) {
         var linkedEvents     = await database.StreamReadAsync("_all", position.ToRedisValue(), Options.MaxPageSize).NoContext();
         var persistentEvents = new List<ReceivedEvent>();

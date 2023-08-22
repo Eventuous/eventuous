@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 // ReSharper disable UnusedTypeParameter
+
 namespace Eventuous;
 
 public interface ICommandService {
@@ -20,5 +21,4 @@ public interface IStateCommandService<TState>
 public interface ICommandService<T, TState, TId> : IStateCommandService<TState>
     where T : Aggregate<TState>
     where TState : State<TState>, new()
-    where TId : Id {
-}
+    where TId : Id { }

@@ -5,20 +5,15 @@ using System.Text.Json;
 
 namespace Eventuous.ElasticSearch.Store;
 
-public class ElasticSerializer : IElasticsearchSerializer {
-    readonly IElasticsearchSerializer _builtIn;
-    readonly JsonSerializerOptions    _options;
-    readonly TypeMapper               _typeMapper;
-
-    public ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerOptions? options, TypeMapper? typeMapper = null) {
-        _builtIn    = builtIn;
-        _options    = options    ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        _typeMapper = typeMapper ?? TypeMap.Instance;
-    }
+public class ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerOptions? options, TypeMapper? typeMapper = null)
+    : IElasticsearchSerializer {
+    readonly JsonSerializerOptions _options    = options    ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    readonly TypeMapper            _typeMapper = typeMapper ?? TypeMap.Instance;
 
     public object Deserialize(Type type, Stream stream) {
         var reader = new BinaryReader(stream);
         var obj    = JsonSerializer.Deserialize(reader.ReadBytes((int)stream.Length), type, _options);
+
         if (type != typeof(PersistedEvent)) return obj!;
 
         var evt         = (PersistedEvent)obj!;
@@ -31,7 +26,8 @@ public class ElasticSerializer : IElasticsearchSerializer {
 
     public void Serialize<T>(T data, Stream stream, SerializationFormatting formatting = SerializationFormatting.None) {
         if (data is not PersistedEvent) {
-            _builtIn.Serialize(data, stream, formatting);
+            builtIn.Serialize(data, stream, formatting);
+
             return;
         }
 
@@ -48,12 +44,13 @@ public class ElasticSerializer : IElasticsearchSerializer {
         => Task.FromResult(Deserialize<T>(stream));
 
     public Task SerializeAsync<T>(
-        T                       data,
-        Stream                  stream,
-        SerializationFormatting formatting        = SerializationFormatting.None,
-        CancellationToken       cancellationToken = default
-    ) {
+            T                       data,
+            Stream                  stream,
+            SerializationFormatting formatting        = SerializationFormatting.None,
+            CancellationToken       cancellationToken = default
+        ) {
         Serialize(data, stream, formatting);
+
         return Task.CompletedTask;
     }
 }

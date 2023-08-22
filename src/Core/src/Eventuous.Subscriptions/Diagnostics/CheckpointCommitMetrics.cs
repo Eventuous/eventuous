@@ -9,10 +9,8 @@ namespace Eventuous.Subscriptions.Diagnostics;
 
 using static Checkpoints.CheckpointCommitHandler;
 
-sealed class CheckpointCommitMetrics : GenericListener, IDisposable {
+sealed class CheckpointCommitMetrics() : GenericListener(DiagnosticName), IDisposable {
     readonly ConcurrentDictionary<string, CommitEvent> _commitEvents = new();
-
-    public CheckpointCommitMetrics() : base(DiagnosticName) { }
 
     protected override void OnEvent(KeyValuePair<string, object?> evt) {
         var (_, value) = evt;

@@ -15,17 +15,8 @@ public abstract record Result(object? State, bool Success, IEnumerable<Change>? 
 public record OkResult(object State, IEnumerable<Change>? Changes = null) : Result(State, true, Changes);
 
 [PublicAPI]
-public record ErrorResult : Result {
-    public ErrorResult(string message, Exception? exception) : base(null, false) {
-        Message   = message;
-        Exception = exception;
-    }
-
-    [JsonIgnore] public Exception? Exception { get; }
-
+public record ErrorResult(string Message, [property: JsonIgnore] Exception? Exception) : Result(null, false) {
     public string ErrorMessage => Exception?.Message ?? "Unknown error";
-
-    public string Message { get; }
 }
 
 [PublicAPI]

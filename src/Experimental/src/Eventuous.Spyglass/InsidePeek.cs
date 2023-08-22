@@ -72,7 +72,7 @@ public class InsidePeek {
         var selectedEvents = version == -1 ? events : events.Take(version + 1);
         aggregate.Load(selectedEvents.Select(x => x.Payload));
 
-        return new { aggregate.State, Events = events.Select(x => new { EventType = x.Payload!.GetType().Name, x.Payload, }) };
+        return new { aggregate.State, Events = events.Select(x => new { EventType = x.Payload!.GetType().Name, x.Payload }) };
     }
 
     public object[] Aggregates => AggregateInfos.Select(x => x.GetInfo()).ToArray();
