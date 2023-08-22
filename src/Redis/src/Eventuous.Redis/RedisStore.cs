@@ -22,6 +22,7 @@ public class RedisStore : IEventReader, IEventWriter {
 
     public RedisStore(
         GetRedisDatabase     getDatabase,
+        // ReSharper disable once UnusedParameter.Local
         RedisStoreOptions    options,
         IEventSerializer?    serializer     = null,
         IMetadataSerializer? metaSerializer = null

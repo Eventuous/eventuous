@@ -6,7 +6,7 @@ using Eventuous.TestHelpers;
 
 namespace Eventuous.Tests.EventStore;
 
-public class TracesTests : SubscriptionFixture<TracedHandler>, IClassFixture<IntegrationFixture>, IDisposable {
+public class TracesTests : SubscriptionFixture<TracedHandler>, IDisposable {
     readonly ActivityListener _listener;
 
     public TracesTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)

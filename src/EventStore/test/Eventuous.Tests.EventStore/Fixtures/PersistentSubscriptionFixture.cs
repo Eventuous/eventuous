@@ -24,7 +24,6 @@ public abstract class PersistentSubscriptionFixture<T> : IClassFixture<Integrati
             T                  handler,
             bool               autoStart = true
         ) {
-        IntegrationFixture1 = integrationFixture;
         _autoStart          = autoStart;
 
         var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper);
@@ -50,8 +49,6 @@ public abstract class PersistentSubscriptionFixture<T> : IClassFixture<Integrati
     protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
 
     protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
-
-    protected IntegrationFixture IntegrationFixture1 { get; }
 
     readonly bool                 _autoStart;
     readonly LoggingEventListener _listener;

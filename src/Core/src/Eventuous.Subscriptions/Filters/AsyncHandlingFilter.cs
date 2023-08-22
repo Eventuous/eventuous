@@ -29,6 +29,7 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
         );
     }
 
+    // ReSharper disable once CognitiveComplexity
     static async ValueTask DelayedConsume(WorkerTask workerTask, CancellationToken ct) {
         var ctx = workerTask.Context;
 

@@ -83,7 +83,7 @@ public class AllStreamSubscription
 
         Subscription = await EventStoreClient.SubscribeToAllAsync(
                 fromAll,
-                (subscription, @event, ct) => HandleEvent(subscription, @event, ct),
+                (_, @event, ct) => HandleEvent(@event, ct),
                 Options.ResolveLinkTos,
                 HandleDrop,
                 filterOptions,
@@ -92,7 +92,7 @@ public class AllStreamSubscription
             )
             .NoContext();
 
-        async Task HandleEvent(global::EventStore.Client.StreamSubscription _, ResolvedEvent re, CancellationToken ct)
+        async Task HandleEvent(ResolvedEvent re, CancellationToken ct)
             => await HandleInternal(CreateContext(re, ct)).NoContext();
 
         void HandleDrop(global::EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)

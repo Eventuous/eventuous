@@ -1,9 +1,6 @@
 namespace Eventuous.EventStore.Subscriptions.Diagnostics;
 
-class AllStreamSubscriptionMeasure : BaseSubscriptionMeasure {
-    public AllStreamSubscriptionMeasure(string subscriptionId, EventStoreClient eventStoreClient)
-        : base(subscriptionId, "$all", eventStoreClient) { }
-
+class AllStreamSubscriptionMeasure(string subscriptionId, EventStoreClient eventStoreClient) : BaseSubscriptionMeasure(subscriptionId, "$all", eventStoreClient) {
     protected override IAsyncEnumerable<ResolvedEvent> Read(CancellationToken cancellationToken)
         => EventStoreClient.ReadAllAsync(
             Direction.Backwards,

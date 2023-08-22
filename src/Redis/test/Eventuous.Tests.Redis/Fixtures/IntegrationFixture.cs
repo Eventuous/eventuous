@@ -10,10 +10,9 @@ using Testcontainers.Redis;
 namespace Eventuous.Tests.Redis.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncLifetime {
-    public IEventWriter     EventWriter    { get; private set; } = null!;
-    public IEventReader     EventReader    { get; private set; } = null!;
-    public IAggregateStore  AggregateStore { get; private set; } = null!;
-    public GetRedisDatabase GetDatabase    { get; private set; } = null!;
+    public IEventWriter     EventWriter { get; private set; } = null!;
+    public IEventReader     EventReader { get; private set; } = null!;
+    public GetRedisDatabase GetDatabase { get; private set; } = null!;
 
     readonly ActivityListener _listener       = DummyActivityListener.Create();
     RedisContainer            _redisContainer = null!;
@@ -38,7 +37,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         var store = new RedisStore(GetDb, new RedisStoreOptions(), Serializer);
         EventWriter    = store;
         EventReader    = store;
-        AggregateStore = new AggregateStore(store, store);
+        new AggregateStore(store, store);
 
         return;
 

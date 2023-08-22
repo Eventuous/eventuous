@@ -61,12 +61,6 @@ public sealed class ConsumePipe : IAsyncDisposable {
     }
 }
 
-public class InvalidContextTypeException : InvalidOperationException {
-    public InvalidContextTypeException(Type expected, Type actual)
-        : base($"Context type {expected.Name} is not assignable to {actual.Name}") { }
-}
+public class InvalidContextTypeException(Type expected, Type actual) : InvalidOperationException($"Context type {expected.Name} is not assignable to {actual.Name}");
 
-public class DuplicateFilterException : InvalidOperationException {
-    public DuplicateFilterException(IConsumeFilter filter)
-        : base($"Filter of type {filter.GetType()} is already registered") { }
-}
+public class DuplicateFilterException(IConsumeFilter filter) : InvalidOperationException($"Filter of type {filter.GetType()} is already registered");

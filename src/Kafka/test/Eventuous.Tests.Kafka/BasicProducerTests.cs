@@ -25,24 +25,13 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
         _output.WriteLine($"Topic: {topicName}");
 
         var producer = new KafkaBasicProducer(
-            new KafkaProducerOptions(
-                new ProducerConfig {
-                    BootstrapServers = _fixture.BootstrapServers,
-                }
-            )
+            new KafkaProducerOptions(new ProducerConfig { BootstrapServers = _fixture.BootstrapServers })
         );
 
         var produced = new List<TestEvent>();
 
         var events = Auto.CreateMany<TestEvent>().ToArray();
         await producer.StartAsync(default);
-
-        ValueTask OnAck(ProducedMessage msg) {
-            _output.WriteLine("Produced message: {0}", msg.Message);
-            produced.Add((TestEvent)msg.Message);
-
-            return ValueTask.CompletedTask;
-        }
 
         await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"), onAck: OnAck);
 
@@ -82,6 +71,15 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
 
         _output.WriteLine($"Consumed {consumed.Count} events");
         consumed.Should().BeEquivalentTo(events);
+
+        return;
+
+        ValueTask OnAck(ProducedMessage msg) {
+            _output.WriteLine("Produced message: {0}", msg.Message);
+            produced.Add((TestEvent)msg.Message);
+
+            return ValueTask.CompletedTask;
+        }
     }
 
     IConsumer<string, byte[]> GetConsumer(string groupId) {

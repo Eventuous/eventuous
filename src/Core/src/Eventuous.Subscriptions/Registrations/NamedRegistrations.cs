@@ -34,8 +34,6 @@ public static class NamedRegistrationExtensions {
     }
 }
 
-class NamedDescriptor : ServiceDescriptor {
-    public string Name { get; }
-
-    public NamedDescriptor(string name, Type serviceType, object instance) : base(serviceType, instance) => Name = name;
+class NamedDescriptor(string name, Type serviceType, object instance) : ServiceDescriptor(serviceType, instance) {
+    public string Name { get; } = name;
 }

@@ -14,15 +14,14 @@ using Extensions;
 /// <summary>
 /// Subscription for all events in the system using PostgreSQL event store.
 /// </summary>
-public class PostgresAllStreamSubscription : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions> {
-    public PostgresAllStreamSubscription(
+public class PostgresAllStreamSubscription(
         NpgsqlDataSource                     dataSource,
         PostgresAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
         ConsumePipe                          consumePipe,
         ILoggerFactory?                      loggerFactory
-    ) : base(dataSource, options, checkpointStore, consumePipe, loggerFactory) { }
-
+    )
+    : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions>(dataSource, options, checkpointStore, consumePipe, loggerFactory) {
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadAllForwards)
             .Add("_from_position", NpgsqlDbType.Bigint, start + 1)

@@ -7,16 +7,12 @@ using Eventuous.Diagnostics;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
-public class MeasuredCheckpointStore : ICheckpointStore {
+public class MeasuredCheckpointStore(ICheckpointStore checkpointStore) : ICheckpointStore {
     public const string OperationPrefix    = "checkpoint";
     public const string ReadOperationName  = $"{OperationPrefix}.read";
     public const string WriteOperationName = $"{OperationPrefix}.write";
     public const string SubscriptionIdTag  = "subscriptionId";
     public const string CheckpointBaggage  = "checkpoint";
-
-    readonly ICheckpointStore _checkpointStore;
-
-    public MeasuredCheckpointStore(ICheckpointStore checkpointStore) => _checkpointStore = checkpointStore;
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(
             string            checkpointId,
@@ -31,7 +27,7 @@ public class MeasuredCheckpointStore : ICheckpointStore {
             )
             ?.Start();
 
-        var checkpoint = await _checkpointStore.GetLastCheckpoint(checkpointId, cancellationToken).NoContext();
+        var checkpoint = await checkpointStore.GetLastCheckpoint(checkpointId, cancellationToken).NoContext();
 
         activity?.AddBaggage(CheckpointBaggage, checkpoint.Position?.ToString());
 
@@ -51,7 +47,7 @@ public class MeasuredCheckpointStore : ICheckpointStore {
             .AddBaggage(CheckpointBaggage, checkpoint.Position?.ToString())
             .Start();
 
-        return await _checkpointStore.StoreCheckpoint(checkpoint, force, cancellationToken).NoContext();
+        return await checkpointStore.StoreCheckpoint(checkpoint, force, cancellationToken).NoContext();
     }
 
     static KeyValuePair<string, object?>[] GetTags(string checkpointId)

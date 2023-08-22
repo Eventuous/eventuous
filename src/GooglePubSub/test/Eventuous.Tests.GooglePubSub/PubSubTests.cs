@@ -21,7 +21,8 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
     readonly string                   _pubsubSubscription;
     readonly ILogger<PubSubTests>     _log;
 
-    public PubSubTests(PubSubFixture fixture, ITestOutputHelper outputHelper) {
+    // ReSharper disable once UnusedParameter.Local
+    public PubSubTests(PubSubFixture _, ITestOutputHelper outputHelper) {
         var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
         _log                = loggerFactory.CreateLogger<PubSubTests>();

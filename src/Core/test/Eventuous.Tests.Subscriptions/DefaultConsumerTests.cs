@@ -5,22 +5,16 @@ using Eventuous.TestHelpers;
 
 namespace Eventuous.Tests.Subscriptions;
 
-public class DefaultConsumerTests : IDisposable {
-    readonly ITestOutputHelper _output;
-    readonly TestEventListener _listener;
+public class DefaultConsumerTests(ITestOutputHelper output) : IDisposable {
+    readonly TestEventListener _listener = new(output);
 
     static readonly Fixture Auto = new();
-
-    public DefaultConsumerTests(ITestOutputHelper output) {
-        _output   = output;
-        _listener = new TestEventListener(output);
-    }
 
     [Fact]
     public async Task ShouldFailWhenHandlerNacks() {
         var handler  = new FailingHandler();
         var consumer = new DefaultConsumer(new IEventHandler[] { handler });
-        var ctx      = Auto.CreateContext(_output);
+        var ctx      = Auto.CreateContext(output);
 
         await consumer.Consume(ctx);
 

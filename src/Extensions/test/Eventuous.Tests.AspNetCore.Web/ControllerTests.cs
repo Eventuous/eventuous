@@ -38,7 +38,7 @@ public class ControllerTests : IDisposable {
 
         var bookRoom = _fixture.GetBookRoom();
 
-        var bookResponse = await client.PostJsonAsync("/book", bookRoom);
+        await client.PostJsonAsync("/book", bookRoom);
 
         var registerPayment = new BookingApi.RegisterPaymentHttp(bookRoom.BookingId, bookRoom.RoomId, 100, DateTimeOffset.Now);
 

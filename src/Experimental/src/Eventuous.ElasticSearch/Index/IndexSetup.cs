@@ -91,6 +91,7 @@ public static class SetupIndex {
         }
     }
 
+    // ReSharper disable once CognitiveComplexity
     static PhasesDescriptor AddTier(PhasesDescriptor descriptor, TierDefinition definition) {
         return definition.Tier switch {
             "hot"    => descriptor.Hot(GetPhase),

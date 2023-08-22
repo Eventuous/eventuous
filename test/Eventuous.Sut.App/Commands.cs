@@ -1,5 +1,7 @@
 using Eventuous.Sut.Domain;
 using NodaTime;
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Eventuous.Sut.App;
 

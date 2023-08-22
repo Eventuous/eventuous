@@ -43,15 +43,15 @@ public class RegistrationTests {
 
     record TestOptions : SubscriptionOptions;
 
-    class TestSub : EventSubscription<TestOptions> {
-        public TestSub(TestOptions options, ConsumePipe consumePipe) : base(options, consumePipe, NullLoggerFactory.Instance) { }
-
+    class TestSub(TestOptions options, ConsumePipe consumePipe) : EventSubscription<TestOptions>(options, consumePipe, NullLoggerFactory.Instance) {
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {
+        // ReSharper disable once CollectionNeverQueried.Local
+        // ReSharper disable once MemberCanBePrivate.Local
         public List<ProducedMessage> ProducedMessages { get; } = new();
 
         protected override Task ProduceMessages(

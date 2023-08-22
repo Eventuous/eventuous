@@ -9,9 +9,6 @@ namespace Eventuous;
 static class ExceptionMessages {
     static readonly ResourceManager Resources = new("Eventuous.ExceptionMessages", Assembly.GetExecutingAssembly());
 
-    internal static string AggregateIdEmpty(Type idType)
-        => string.Format(Resources.GetString("AggregateIdEmpty")!, idType.Name);
-
     internal static string MissingCommandHandler(Type type)
         => string.Format(Resources.GetString("MissingCommandHandler")!, type.Name);
 

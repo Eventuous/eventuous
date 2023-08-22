@@ -10,7 +10,9 @@ namespace Eventuous.Tests.Application;
 public class BookingFuncService : FunctionalCommandService<BookingState> {
     public BookingFuncService(IEventStore store, TypeMapper? typeMap = null)
         : base(store, typeMap) {
+#pragma warning disable CS0618 // Type or member is obsolete
         OnNew<BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);
+#pragma warning restore CS0618 // Type or member is obsolete
         On<RecordPayment>().InState(ExpectedState.Existing).GetStream(cmd => GetStream(cmd.BookingId)).Act(RecordPayment);
 
         return;

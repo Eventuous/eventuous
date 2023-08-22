@@ -12,11 +12,10 @@ using Testcontainers.MongoDb;
 namespace Eventuous.Tests.Projections.MongoDB.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncLifetime {
-    public IEventStore      EventStore     { get; set; }         = null!;
-    public IAggregateStore  AggregateStore { get; set; }         = null!;
-    public EventStoreClient Client         { get; private set; } = null!;
-    public IMongoDatabase   Mongo          { get; private set; } = null!;
-    public Fixture          Auto           { get; }              = new();
+    public IEventStore      EventStore { get; set; }         = null!;
+    public EventStoreClient Client     { get; private set; } = null!;
+    public IMongoDatabase   Mongo      { get; private set; } = null!;
+    public Fixture          Auto       { get; }              = new();
 
     static IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -45,7 +44,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
         Client         = new EventStoreClient(settings);
         EventStore     = new EsdbEventStore(Client);
-        AggregateStore = new AggregateStore(EventStore);
+        new AggregateStore(EventStore);
 
         _mongoContainer = new MongoDbBuilder().Build();
         await _mongoContainer.StartAsync();

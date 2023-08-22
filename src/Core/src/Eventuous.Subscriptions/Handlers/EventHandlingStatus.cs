@@ -9,7 +9,7 @@ public enum EventHandlingStatus : short {
     Success = 0b_0001,
     Pending = 0b_0010,
     Failure = 0b_0011,
-    Handled = 0b_0111,
+    Handled = 0b_0111
     // 0111 bitmask for Handled means that if any of the three lower bits is set, the message
     // hs been handled.
 }

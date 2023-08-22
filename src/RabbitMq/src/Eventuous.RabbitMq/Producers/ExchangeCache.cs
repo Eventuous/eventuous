@@ -5,19 +5,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.RabbitMq.Producers;
 
-class ExchangeCache {
-    public ExchangeCache(ILogger? log)
-        => _log = log;
-
+class ExchangeCache(ILogger? log) {
     public void EnsureExchange(string name, Action createExchange) {
         if (_exchanges.Contains(name)) return;
 
         try {
-            _log?.LogInformation("Ensuring exchange {ExchangeName}", name);
+            log?.LogInformation("Ensuring exchange {ExchangeName}", name);
             createExchange();
         }
         catch (Exception e) {
-            _log?.LogError(e, "Failed to ensure exchange {ExchangeName}: {ErrorMessage}", name, e.Message);
+            log?.LogError(e, "Failed to ensure exchange {ExchangeName}: {ErrorMessage}", name, e.Message);
             throw;
         }
 
@@ -25,5 +22,4 @@ class ExchangeCache {
     }
 
     readonly HashSet<string> _exchanges = new();
-    readonly ILogger?        _log;
 }

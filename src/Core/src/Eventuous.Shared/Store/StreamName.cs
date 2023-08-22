@@ -22,7 +22,4 @@ public record struct StreamName {
     public override string ToString() => Value;
 }
 
-public class InvalidStreamName : Exception {
-    public InvalidStreamName(string? streamName)
-        : base($"Stream name is {(string.IsNullOrWhiteSpace(streamName) ? "empty" : "invalid")}") { }
-}
+public class InvalidStreamName(string? streamName) : Exception($"Stream name is {(string.IsNullOrWhiteSpace(streamName) ? "empty" : "invalid")}");

@@ -39,11 +39,13 @@ public record PersistedEvent {
     [Keyword]
     public string Stream { get; }
 
+    [PublicAPI]
     public ulong                        GlobalPosition { get; }
     public object?                      Message        { get; init; }
     public Dictionary<string, string?>? Metadata       { get; }
 
     [Date(Name = "@timestamp")]
     [JsonPropertyName("@timestamp")]
+    [PublicAPI]
     public DateTime Created { get; }
 }

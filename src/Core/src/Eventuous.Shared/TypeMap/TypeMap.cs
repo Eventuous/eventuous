@@ -54,6 +54,7 @@ public class TypeMap<TV> {
 
     const int DefaultCapacity = 10;
 
+    // ReSharper disable once UnusedTypeParameter
     static class TypeSlot<T> {
         // ReSharper disable once StaticMemberInGenericType
         internal static readonly int Index = Interlocked.Increment(ref _index);
