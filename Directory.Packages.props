@@ -62,7 +62,7 @@
     <PackageVersion Include="AutoFixture" Version="4.18.0" />
     <PackageVersion Include="Bogus" Version="34.0.2" />
     <PackageVersion Include="FluentAssertions" Version="6.11.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.7.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.7.1" />
     <PackageVersion Include="xunit" Version="2.5.0" />
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.0" PrivateAssets="All" />
