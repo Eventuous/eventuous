@@ -30,7 +30,7 @@ public partial class MongoOperationBuilder<TEvent, T>
     }
     
     public interface IMongoBulkBuilderFactory {
-        BuildWriteModel GetBuilder();
+        BuildWriteModel<T, TEvent> GetBuilder();
     }
 
     public class FilterBuilder {
@@ -54,6 +54,4 @@ public partial class MongoOperationBuilder<TEvent, T>
         ValueTask<MongoProjectOperation<T>> Handle(MessageConsumeContext<TEvent> ctx)
             => new(new MongoProjectOperation<T>((collection, token) => handler(ctx, collection, token)));
     }
-    
-    public delegate ValueTask<WriteModel<T>> BuildWriteModel(MessageConsumeContext<TEvent> context);
 }

@@ -42,7 +42,7 @@ public partial class MongoOperationBuilder<TEvent, T>  where T : ProjectedDocume
                 }
             );
 
-        BuildWriteModel IMongoBulkBuilderFactory.GetBuilder() => ctx
+        BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => ctx
             => new ValueTask<WriteModel<T>>(new InsertOneModel<T>(GetDocument(ctx)));
     }
 

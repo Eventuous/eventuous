@@ -43,7 +43,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                 }
             );
         
-        BuildWriteModel IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
+        BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
             var (update, options) = await GetUpdateWithOptions(ctx);
             return new UpdateOneModel<T>(FilterBuilder.GetFilter(ctx), update) {
                 Collation    = options.Collation,
@@ -69,7 +69,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                 }
             );
 
-        BuildWriteModel IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
+        BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
             var (update, options) = await GetUpdateWithOptions(ctx);
             return new UpdateManyModel<T>(FilterBuilder.GetFilter(ctx), update) {
                 Collation = options.Collation,

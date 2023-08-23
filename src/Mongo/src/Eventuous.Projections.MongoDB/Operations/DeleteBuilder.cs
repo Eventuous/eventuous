@@ -63,7 +63,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         TBuilder Self => (TBuilder)this;
 
-        BuildWriteModel IMongoBulkBuilderFactory.GetBuilder() => ctx=> {
+        BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => ctx=> {
                 var options = Options<DeleteOptions>.New(ConfigureOptions);
                 return new ValueTask<WriteModel<T>>(
                 new DeleteOneModel<T>(FilterBuilder.GetFilter(ctx)) {
