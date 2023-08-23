@@ -58,17 +58,17 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
             : base(database) {
             On<BookingImported>(
                 b => b
-                    .Bulk
-                    .Operation(x => x.InsertOne
-                        .Document(
-                            ctx => new BookingDocument(ctx.Stream.GetId()) {
-                                RoomId       = ctx.Message.RoomId,
-                                CheckInDate  = ctx.Message.CheckIn,
-                                CheckOutDate = ctx.Message.CheckOut,
-                                BookingPrice = ctx.Message.Price,
-                                Outstanding  = ctx.Message.Price
-                            }
-                        )));
+                    .InsertOne
+                    .Document(
+                        (stream, e) => new BookingDocument(stream.GetId()) {
+                            RoomId       = e.RoomId,
+                            CheckInDate  = e.CheckIn,
+                            CheckOutDate = e.CheckOut,
+                            BookingPrice = e.Price,
+                            Outstanding  = e.Price
+                        }
+                    )
+            );
           
             On<RoomBooked>(
                 b => b
