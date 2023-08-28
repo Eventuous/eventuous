@@ -82,12 +82,10 @@ public class InMemoryEventStore : IEventStore {
 
     // ReSharper disable once ReturnTypeCanBeEnumerable.Local
     InMemoryStream FindStream(StreamName stream) {
-        if (!_storage.TryGetValue(stream, out var existing)) throw new NotFound(stream);
+        if (!_storage.TryGetValue(stream, out var existing)) throw new StreamNotFound(stream);
 
         return existing;
     }
-
-    class NotFound(StreamName stream) : Exception($"Stream not found: {stream}");
 }
 
 record StoredEvent(StreamEvent Event, int Position);

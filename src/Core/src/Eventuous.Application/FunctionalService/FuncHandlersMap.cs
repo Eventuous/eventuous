@@ -35,23 +35,5 @@ class FuncHandlersMap<TState> where TState : State<TState> {
         }
     }
 
-    public void AddHandler<TCommand>(
-            ExpectedState                      expectedState,
-            GetStreamNameFromCommand<TCommand> getStreamName,
-            ExecuteCommand<TState, TCommand>   action,
-            ResolveReaderFromCommand<TCommand> resolveReaderFromCommand,
-            ResolveWriterFromCommand<TCommand> resolveWriterFromCommand
-        )
-        where TCommand : class
-        => AddHandlerInternal<TCommand>(
-            new RegisteredFuncHandler<TState>(
-                expectedState,
-                getStreamName.AsGetStream(),
-                action.AsExecute(),
-                resolveReaderFromCommand.AsResolveReader(),
-                resolveWriterFromCommand.AsResolveWriter()
-            )
-        );
-
     public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredFuncHandler<TState>? handler) => _typeMap.TryGetValue<TCommand>(out handler);
 }
