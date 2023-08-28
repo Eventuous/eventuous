@@ -39,11 +39,9 @@ public class FunctionalServiceTests : IDisposable {
 
     [Fact]
     public async Task ExecuteOnExistingStream() {
-        var bookRoom = await Seed();
-
+        var bookRoom    = await Seed();
         var paymentTime = DateTimeOffset.Now;
-
-        var cmd = new Commands.RecordPayment(new BookingId(bookRoom.BookingId), "444", new Money(bookRoom.Price), paymentTime);
+        var cmd         = new Commands.RecordPayment(new BookingId(bookRoom.BookingId), "444", new Money(bookRoom.Price), paymentTime);
 
         var result = await _service.Handle(cmd, default);
 
@@ -57,12 +55,34 @@ public class FunctionalServiceTests : IDisposable {
         newEvents.Should().BeEquivalentTo(expectedResult);
     }
 
-    async Task<Commands.BookRoom> Seed() {
+    [Fact]
+    public async Task ExecuteOnAnyForNewStream() {
+        var bookRoom    = GetBookRoom();
+        var paymentTime = DateTimeOffset.Now;
+
+        var cmd = new Commands.ImportBooking {
+            BookingId = "dummy",
+            Price     = bookRoom.Price,
+            CheckIn   = bookRoom.CheckIn,
+            CheckOut  = bookRoom.CheckOut,
+            RoomId    = bookRoom.RoomId
+        };
+        var result = await _service.Handle(cmd, default);
+        result.Success.Should().BeTrue();
+        result.Changes.Should().HaveCount(1);
+    }
+
+    static Commands.BookRoom GetBookRoom() {
         var checkIn  = LocalDate.FromDateTime(DateTime.Today);
         var checkOut = checkIn.PlusDays(1);
-        var cmd      = new Commands.BookRoom("123", "234", checkIn, checkOut, 100);
 
+        return new Commands.BookRoom("123", "234", checkIn, checkOut, 100);
+    }
+
+    async Task<Commands.BookRoom> Seed() {
+        var cmd = GetBookRoom();
         await _service.Handle(cmd, default);
+
         return cmd;
     }
 

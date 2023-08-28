@@ -14,6 +14,7 @@ public class BookingFuncService : FunctionalCommandService<BookingState> {
         OnNew<BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);
 #pragma warning restore CS0618 // Type or member is obsolete
         On<RecordPayment>().InState(ExpectedState.Existing).GetStream(cmd => GetStream(cmd.BookingId)).Act(RecordPayment);
+        On<ImportBooking>().InState(ExpectedState.Any).GetStream(cmd => GetStream(cmd.BookingId)).Act(ImportBooking);
 
         return;
 
@@ -22,6 +23,10 @@ public class BookingFuncService : FunctionalCommandService<BookingState> {
 
         static IEnumerable<object> BookRoom(BookRoom cmd) {
             yield return new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price);
+        }
+
+        static IEnumerable<object> ImportBooking(BookingState state, object[] events, ImportBooking cmd) {
+            yield return new BookingImported(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
         }
 
         static IEnumerable<object> RecordPayment(BookingState state, object[] originalEvents, RecordPayment cmd) {

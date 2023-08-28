@@ -36,7 +36,10 @@ public static class StateStoreFunctions {
         try {
             var streamEvents = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
             var events       = streamEvents.Select(x => x.Payload!).ToArray();
-            return (new FoldedEventStream<T>(streamName, new ExpectedStreamVersion(streamEvents.Last().Position), events));
+            var expectedVersion = events.Length == 0
+                ? ExpectedStreamVersion.NoStream
+                : new ExpectedStreamVersion(streamEvents.Last().Position);
+            return (new FoldedEventStream<T>(streamName, expectedVersion, events));
         }
         catch (StreamNotFound) when (!failIfNotFound) {
             return new FoldedEventStream<T>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>());

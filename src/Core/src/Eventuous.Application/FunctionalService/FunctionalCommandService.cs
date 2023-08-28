@@ -9,11 +9,6 @@ using static Diagnostics.ApplicationEventSource;
 
 public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null)
     : IFuncCommandService<TState>, IStateCommandService<TState> where TState : State<TState>, new() {
-    [PublicAPI]
-    protected IEventReader Reader { get; } = reader;
-    [PublicAPI]
-    protected IEventWriter Writer { get; } = writer;
-
     readonly TypeMapper              _typeMap  = typeMap ?? TypeMap.Instance;
     readonly FuncHandlersMap<TState> _handlers = new();
 
@@ -28,7 +23,7 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
     protected FuncCommandHandlerBuilder<TCommand, TState> On<TCommand>() where TCommand : class {
-        var builder = new FuncCommandHandlerBuilder<TCommand, TState>(Reader, Writer);
+        var builder = new FuncCommandHandlerBuilder<TCommand, TState>(reader, writer);
         _builders.Add(typeof(TCommand), builder);
 
         return builder;
@@ -57,11 +52,13 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
         }
 
         var streamName = await registeredHandler.GetStream(command, cancellationToken).NoContext();
+        var reader     = registeredHandler.ResolveReaderFromCommand(command);
+        var writer     = registeredHandler.ResolveWriterFromCommand(command);
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await Reader.LoadStateOrNew<TState>(streamName, cancellationToken).NoContext(),
-                ExpectedState.Existing => await Reader.LoadState<TState>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Any      => await reader.LoadStateOrNew<TState>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Existing => await reader.LoadState<TState>(streamName, cancellationToken).NoContext(),
                 ExpectedState.New      => new FoldedEventStream<TState>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>()),
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
@@ -76,7 +73,7 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<TState>(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await Writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, static e => e, cancellationToken).NoContext();
+            var storeResult = await writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, static e => e, cancellationToken).NoContext();
             var changes     = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
