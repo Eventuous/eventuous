@@ -18,7 +18,7 @@
     <NpgsqlVer>7.0.4</NpgsqlVer>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="BenchmarkDotNet" Version="0.13.5" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.13.8" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(MicrosoftHealthCheckVer)" />
