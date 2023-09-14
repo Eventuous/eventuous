@@ -7,9 +7,12 @@ namespace Eventuous.AspNetCore.Web;
 /// Base class for exposing commands via Web API using a controller.
 /// </summary>
 /// <typeparam name="TAggregate">Aggregate type</typeparam>
+/// <typeparam name="TResult">Result type</typeparam>
 [PublicAPI]
-public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate> service, MessageMap? commandMap = null) : ControllerBase
-    where TAggregate : Aggregate {
+public abstract class CommandHttpApiBase<TAggregate, TResult>(ICommandService<TAggregate> service, MessageMap? commandMap = null) : ControllerBase
+    where TAggregate : Aggregate
+    where TResult : class, new() {
+
     /// <summary>
     /// Call this method from your HTTP endpoints to handle commands and wrap the result properly.
     /// </summary>
@@ -17,7 +20,7 @@ public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate>
     /// <param name="cancellationToken">Request cancellation token</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
-    protected async Task<ActionResult<Result>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+    protected async Task<ActionResult<TResult>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await service.Handle(command, cancellationToken);
 
@@ -34,7 +37,7 @@ public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate>
     /// <typeparam name="TCommand">Domain command type</typeparam>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Throws if the command map hasn't been configured</exception>
-    protected async Task<ActionResult<Result>> Handle<TContract, TCommand>(TContract command, CancellationToken cancellationToken)
+    protected async Task<ActionResult<TResult>> Handle<TContract, TCommand>(TContract command, CancellationToken cancellationToken)
         where TContract : class where TCommand : class {
         if (commandMap == null) throw new InvalidOperationException("Command map is not configured");
 
@@ -44,7 +47,7 @@ public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate>
         return AsActionResult<TAggregate>(result);
     }
 
-    static ActionResult<Result> AsActionResult<T>(Result result) where T : Aggregate
+    static ActionResult<TResult> AsActionResult<T>(Result result) where T : Aggregate
         => result is ErrorResult error
             ? error.Exception switch {
                 OptimisticConcurrencyException<T> => new ConflictObjectResult(error),
