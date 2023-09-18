@@ -19,7 +19,7 @@ public abstract class CommandHttpApiBase<TAggregate, TResult>(ICommandService<TA
     /// <param name="command">Command instance</param>
     /// <param name="cancellationToken">Request cancellation token</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    /// <returns></returns>
+    /// <returns>A custom result class that inherites from <see cref="Result"/>.</returns>
     protected async Task<ActionResult<TResult>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await service.Handle(command, cancellationToken);
@@ -31,18 +31,18 @@ public abstract class CommandHttpApiBase<TAggregate, TResult>(ICommandService<TA
     /// Call this method from your HTTP endpoints to handle commands where there is a mapping between
     /// HTTP contract and the domain command, and wrap the result properly.
     /// </summary>
-    /// <param name="command">HTTP command</param>
+    /// <param name="httpCommand">HTTP command</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="TContract">HTTP command type</typeparam>
     /// <typeparam name="TCommand">Domain command type</typeparam>
-    /// <returns></returns>
+    /// <returns>A custom result class that inherites from <see cref="Result"/>.</returns>
     /// <exception cref="InvalidOperationException">Throws if the command map hasn't been configured</exception>
-    protected async Task<ActionResult<TResult>> Handle<TContract, TCommand>(TContract command, CancellationToken cancellationToken)
+    protected async Task<ActionResult<TResult>> Handle<TContract, TCommand>(TContract httpCommand, CancellationToken cancellationToken)
         where TContract : class where TCommand : class {
         if (commandMap == null) throw new InvalidOperationException("Command map is not configured");
 
-        var cmd    = commandMap.Convert<TContract, TCommand>(command);
-        var result = await service.Handle(cmd, cancellationToken);
+        var command    = commandMap.Convert<TContract, TCommand>(httpCommand);
+        var result = await service.Handle(command, cancellationToken);
 
         return AsActionResult<TAggregate>(result);
     }
