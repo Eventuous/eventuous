@@ -21,14 +21,15 @@ public static partial class RouteBuilderExtensions {
     /// <typeparam name="TContract">HTTP command type</typeparam>
     /// <typeparam name="TCommand">Domain command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <typeparam name="TResult">Result type that will be returned</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static RouteHandlerBuilder MapCommand<TContract, TCommand, TAggregate>(
+    public static RouteHandlerBuilder MapCommand<TContract, TCommand, TAggregate, TResult>(
         this IEndpointRouteBuilder                   builder,
         ConvertAndEnrichCommand<TContract, TCommand> convert
-    ) where TAggregate : Aggregate where TCommand : class where TContract : class {
+    ) where TAggregate : Aggregate where TCommand : class where TContract : class where TResult : class, new() {
         var attr = typeof(TContract).GetAttribute<HttpCommandAttribute>();
-        return Map<TAggregate, TContract, TCommand>(builder, attr?.Route, convert, attr?.PolicyName);
+        return Map<TAggregate, TContract, TCommand, TResult>(builder, attr?.Route, convert, attr?.PolicyName);
     }
 
     /// <summary>
@@ -41,13 +42,14 @@ public static partial class RouteBuilderExtensions {
     /// <typeparam name="TContract">HTTP command type</typeparam>
     /// <typeparam name="TCommand">Domain command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <typeparam name="TResult">Result type that will be returned</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static RouteHandlerBuilder MapCommand<TContract, TCommand, TAggregate>(
+    public static RouteHandlerBuilder MapCommand<TContract, TCommand, TAggregate, TResult>(
         this IEndpointRouteBuilder                   builder,
         string?                                      route,
         ConvertAndEnrichCommand<TContract, TCommand> convert,
         string?                                      policyName = null
-    ) where TAggregate : Aggregate where TCommand : class where TContract : class
-        => Map<TAggregate, TContract, TCommand>(builder, route, convert, policyName);
+    ) where TAggregate : Aggregate where TCommand : class where TContract : class where TResult : class, new()
+        => Map<TAggregate, TContract, TCommand, TResult>(builder, route, convert, policyName);
 }

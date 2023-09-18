@@ -24,15 +24,19 @@ public static partial class RouteBuilderExtensions {
     /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
+    /// <typeparam name="TResult">Result type that will be returned</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
+    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TResult>(
             this IEndpointRouteBuilder              builder,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
-        ) where TAggregate : Aggregate where TCommand : class {
+        ) 
+        where TAggregate : Aggregate 
+        where TCommand : class 
+        where TResult : class, new() {
         var attr = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
 
-        return builder.MapCommand<TCommand, TAggregate>(attr?.Route, enrichCommand, attr?.PolicyName);
+        return builder.MapCommand<TCommand, TAggregate, TResult>(attr?.Route, enrichCommand, attr?.PolicyName);
     }
 
     /// <summary>
@@ -44,15 +48,19 @@ public static partial class RouteBuilderExtensions {
     /// <param name="policyName">Authorization policy</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
+    /// <typeparam name="TResult">Result type that will be returned</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
+    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TResult>(
             this IEndpointRouteBuilder              builder,
             string?                                 route,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
             string?                                 policyName    = null
-        ) where TAggregate : Aggregate where TCommand : class
-        => Map<TAggregate, TCommand, TCommand>(
+        ) 
+        where TAggregate : Aggregate 
+        where TCommand : class
+        where TResult : class, new()
+        => Map<TAggregate, TCommand, TCommand, TResult>(
             builder,
             route,
             enrichCommand != null
@@ -67,10 +75,12 @@ public static partial class RouteBuilderExtensions {
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <typeparam name="TResult">Result type that will be returned</typeparam>
     /// <returns></returns>
     [PublicAPI]
-    public static CommandServiceRouteBuilder<TAggregate> MapAggregateCommands<TAggregate>(this IEndpointRouteBuilder builder)
+    public static CommandServiceRouteBuilder<TAggregate, TResult> MapAggregateCommands<TAggregate, TResult>(this IEndpointRouteBuilder builder)
         where TAggregate : Aggregate
+        where TResult : class, new()
         => new(builder);
 
     /// <summary>
@@ -113,18 +123,22 @@ public static partial class RouteBuilderExtensions {
                         $"Command aggregate is {attr.AggregateType.Name} but expected to be {typeof(TAggregate).Name}"
                     );
 
-                var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type, type);
+                var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type, type, attr.ResultType );
                 genericMethod.Invoke(null, new object?[] { builder, attr.Route, null, attr.PolicyName });
             }
         }
     }
 
-    static RouteHandlerBuilder Map<TAggregate, TContract, TCommand>(
+    static RouteHandlerBuilder Map<TAggregate, TContract, TCommand, TResult>(
             IEndpointRouteBuilder                         builder,
             string?                                       route,
             ConvertAndEnrichCommand<TContract, TCommand>? convert    = null,
             string?                                       policyName = null
-        ) where TAggregate : Aggregate where TCommand : class where TContract : class {
+        ) 
+        where TAggregate : Aggregate 
+        where TCommand : class 
+        where TContract : class 
+        where TResult : class, new() {
         if (convert == null && typeof(TCommand) != typeof(TContract))
             throw new InvalidOperationException($"Command type {typeof(TCommand).Name} is not assignable from {typeof(TContract).Name}");
 
@@ -145,7 +159,7 @@ public static partial class RouteBuilderExtensions {
 
                     var result = await service.Handle(command, context.RequestAborted);
 
-                    return result.AsResult();
+                    return result.AsResult<TResult>();
                 }
             )
             .Accepts<TContract>(false, "application/json")
@@ -194,11 +208,11 @@ public static partial class RouteBuilderExtensions {
 
                 if (parentAttribute == null) continue;
 
-                LocalMap(parentAttribute.AggregateType, type, attr.Route, attr.PolicyName);
+                LocalMap(parentAttribute.AggregateType, type, attr.Route, attr.PolicyName, attr.ResultType);
             }
         }
 
-        void LocalMap(Type aggregateType, Type type, string? route, string? policyName) {
+        void LocalMap(Type aggregateType, Type type, string? route, string? policyName, Type resultType) {
             var appServiceBase = typeof(ICommandService<>);
             var appServiceType = appServiceBase.MakeGenericType(aggregateType);
 
@@ -215,7 +229,11 @@ public static partial class RouteBuilderExtensions {
 
                         var result = await service.Handle(cmd, context.RequestAborted);
 
-                        return result.AsResult();
+
+                        // Don't know how to solve this part
+                        var method = typeof(ResultExtensions).GetMethod(nameof(ResultExtensions.AsResult), BindingFlags.Static | BindingFlags.Public)!;
+                        var genericMethod = method.MakeGenericMethod(resultType);
+                        return genericMethod.Invoke(null, new object?[] { result }) as IResult;
                     }
                 )
                 .Accepts(type, false, "application/json")

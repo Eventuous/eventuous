@@ -23,6 +23,11 @@ public class HttpCommandAttribute : Attribute {
     public Type? AggregateType { get; set; }
 
     /// <summary>
+    /// The result type with as default <see cref="Result"/>.
+    /// </summary>
+    public Type ResultType { get; set; } = typeof(Result);
+
+    /// <summary>
     /// Authorization policy name
     /// </summary>
     public string? PolicyName { get; set; }

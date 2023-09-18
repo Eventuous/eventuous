@@ -22,7 +22,7 @@ public class HttpCommandTests(ITestOutputHelper output) : IDisposable {
         using var fixture = new ServerFixture(
             output,
             _ => { },
-            app => app.MapAggregateCommands<Booking>().MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
+            app => app.MapAggregateCommands<Booking, BookingResult>().MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
         );
 
         using var client = fixture.GetClient();

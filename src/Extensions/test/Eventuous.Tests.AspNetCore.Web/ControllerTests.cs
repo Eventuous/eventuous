@@ -24,7 +24,7 @@ public class ControllerTests : IDisposable {
                 app.MapControllers();
 
                 app
-                    .MapAggregateCommands<Booking>()
+                    .MapAggregateCommands<Booking, BookingResult>()
                     .MapCommand<BookRoom>();
             }
         );

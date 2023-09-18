@@ -12,7 +12,7 @@ public class MappedCommandTests(ITestOutputHelper output) : IDisposable {
     public async Task MapContractToCommandExplicitly() {
         using var fixture = new ServerFixture(
             output,
-            configure: app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking>("import", EnrichCommand)
+            configure: app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking, BookingResult>("import", EnrichCommand)
         );
 
         await Execute(fixture, "import");
@@ -23,7 +23,7 @@ public class MappedCommandTests(ITestOutputHelper output) : IDisposable {
         using var fixture = new ServerFixture(
             output,
             configure: app => app
-                .MapAggregateCommands<Booking>()
+                .MapAggregateCommands<Booking, BookingResult>()
                 .MapCommand<ImportBookingHttp, ImportBooking>("import", EnrichCommand)
         );
 
@@ -35,7 +35,7 @@ public class MappedCommandTests(ITestOutputHelper output) : IDisposable {
         using var fixture = new ServerFixture(
             output,
             configure: app => app
-                .MapAggregateCommands<Booking>()
+                .MapAggregateCommands<Booking, BookingResult>()
                 .MapCommand<ImportBookingHttp1, ImportBooking>(EnrichCommand)
         );
 
@@ -47,7 +47,7 @@ public class MappedCommandTests(ITestOutputHelper output) : IDisposable {
         using var fixture = new ServerFixture(
             output,
             configure: app => app
-                .MapAggregateCommands<Booking>()
+                .MapAggregateCommands<Booking, BookingResult>()
                 .MapCommand<ImportBookingHttp2, ImportBooking>(EnrichCommand)
         );
 
@@ -59,7 +59,7 @@ public class MappedCommandTests(ITestOutputHelper output) : IDisposable {
         using var fixture = new ServerFixture(
             output,
             configure: app => app
-                .MapAggregateCommands<Booking>()
+                .MapAggregateCommands<Booking, BookingResult>()
                 .MapCommand<ImportBookingHttp3, ImportBooking>(EnrichCommand)
         );
 

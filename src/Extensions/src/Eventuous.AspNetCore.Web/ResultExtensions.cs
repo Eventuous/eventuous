@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 namespace Eventuous.AspNetCore.Web;
 
 public static class ResultExtensions {
-    public static IResult AsResult(this Result result)
+    public static IResult AsResult<TResult>(this Result result) where TResult : class, new()
         => result is ErrorResult error
             ? error.Exception switch {
                 OptimisticConcurrencyException => Results.Conflict(error),
@@ -20,5 +20,5 @@ public static class ResultExtensions {
                         Type = error.Exception?.GetType().Name
                     }
                 )
-            } : Results.Ok(result);
+            } : Results.Ok(result as TResult);
 }
