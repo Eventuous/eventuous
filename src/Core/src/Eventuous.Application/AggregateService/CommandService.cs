@@ -56,7 +56,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
 
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();
-            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
+            var exception = new Exceptions.CommandHandlerNotFound(command.GetType());
 
             return new ErrorResult<TState>(exception);
         }
