@@ -19,6 +19,17 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
                 )
         );
 
+        OnNew<NestedCommands.NestedBookRoom>(
+            cmd => new BookingId(cmd.BookingId),
+            (booking, cmd)
+                => booking.BookRoom(
+                    cmd.RoomId,
+                    new StayPeriod(cmd.CheckIn, cmd.CheckOut),
+                    new Money(cmd.Price),
+                    cmd.GuestId
+                )
+        );
+
         OnExisting<Commands.RecordPayment>(
             cmd => cmd.BookingId,
             (booking, cmd) => booking.RecordPayment(cmd.PaymentId, cmd.Amount, cmd.PaidAt)
@@ -42,3 +53,10 @@ record BookRoom(
     );
 
 record ImportBooking(BookingId BookingId, string RoomId, StayPeriod Period, Money Price);
+
+
+[AggregateCommands<Booking>]
+static class NestedCommands {
+    [HttpCommand(Route = "nested-book")]
+    internal record NestedBookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price, string? GuestId);
+}

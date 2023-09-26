@@ -18,6 +18,33 @@ public class HttpCommandTests(ITestOutputHelper output) : IDisposable {
     }
 
     [Fact]
+    public void RegisterAggregatesCommands() {
+        var builder = WebApplication.CreateBuilder();
+
+        using var app = builder.Build();
+
+        var b = app.MapDiscoveredCommands(typeof(NestedCommands).Assembly);
+
+        b.DataSources.First().Endpoints[0].DisplayName.Should().Be("HTTP: POST nested-book");
+    }
+
+    [Fact]
+    public async Task MapDiscoveredCommand() {
+        using var fixture = new ServerFixture(
+            output,
+            _ => { },
+            app => app.MapDiscoveredCommands(typeof(NestedCommands).Assembly)
+        );
+
+        using var client = fixture.GetClient();
+
+        var cmd = fixture.GetNestedBookRoom();
+
+        var response = await client.PostJsonAsync("/nested-book", cmd);
+        response.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task MapEnrichedCommand() {
         using var fixture = new ServerFixture(
             output,

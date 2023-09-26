@@ -55,6 +55,12 @@ public class ServerFixture : IDisposable {
         return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
     }
 
+    internal NestedCommands.NestedBookRoom GetNestedBookRoom() {
+        var date = LocalDate.FromDateTime(DateTime.Now);
+
+        return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
+    }
+
     public void Dispose()
         => _app.Dispose();
 }
