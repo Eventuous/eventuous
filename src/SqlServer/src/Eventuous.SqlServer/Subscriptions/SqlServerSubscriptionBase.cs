@@ -77,7 +77,11 @@ public abstract class SqlServerSubscriptionBase<T>(
                 // Nothing to do
             } catch (SqlException e) when (TransientErrorNumbers.Contains(e.Number)) {
                 // Try again
-            } catch (SqlException e) when (e.Number == 3980 && e.Message.Contains("Operation cancelled by user.")) {
+            } catch (SqlException e) when (e.Message.Contains("Operation cancelled by user.")) {
+                IsDropped = true;
+                Log.InfoLog?.Log("Polling query stopped");
+            }
+            catch (SqlException e) when (e.Number == 3980 && e.Message.Contains("Operation cancelled by user.")) {
                 IsDropped = true;
                 Log.InfoLog?.Log("Polling query stopped");
             } catch (Exception e) {

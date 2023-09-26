@@ -1,10 +1,20 @@
-name: PR Build and test
+name: "PR Build and test"
 on:
   workflow_dispatch:
   pull_request:
 
 jobs:
-  test:
+  event_file:
+    name: "Event File"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
+  build-and-test:
+    name: "Build and test"
     runs-on: ubuntu-latest
 #    env:
 #      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
@@ -31,14 +41,3 @@ jobs:
       -  
         name: Run tests
         run: dotnet test --no-build
-      -  
-        name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
-        with:
-          check_name: test results
-          comment_title: Test results
-          files: |
-            test-results/**/*.xml
-            test-results/**/*.trx
-            test-results/**/*.json
