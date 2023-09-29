@@ -7,14 +7,14 @@ namespace Eventuous.Projections.MongoDB;
 
 using Tools;
 
-public partial class MongoOperationBuilder<TEvent, T>  where T : ProjectedDocument where TEvent : class {
+public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class InsertOneBuilder : IMongoProjectorBuilder, IMongoBulkBuilderFactory {
         Func<MessageConsumeContext<TEvent>, T>? _getDocument;
         Action<InsertOneOptions>?               _configureOptions;
 
         Func<MessageConsumeContext<TEvent>, T> GetDocument => Ensure.NotNull(_getDocument, "Get document function");
 
-        public InsertOneBuilder Document(Func<StreamName, TEvent, T> getDocument) 
+        public InsertOneBuilder Document(Func<StreamName, TEvent, T> getDocument)
             => Document(ctx => getDocument(ctx.Stream, ctx.Message));
 
         public InsertOneBuilder Document(Func<MessageConsumeContext<TEvent>, T> getDocument) {
@@ -52,16 +52,17 @@ public partial class MongoOperationBuilder<TEvent, T>  where T : ProjectedDocume
 
         Func<MessageConsumeContext<TEvent>, IEnumerable<T>> GetDocuments => Ensure.NotNull(_getDocuments, "Get documents function");
 
-        public InsertManyBuilder Documents(Func<TEvent, IEnumerable<T>> getDocuments) 
+        public InsertManyBuilder Documents(Func<TEvent, IEnumerable<T>> getDocuments)
             => Documents(ctx => getDocuments(ctx.Message));
 
         public InsertManyBuilder Documents(Func<MessageConsumeContext<TEvent>, IEnumerable<T>> getDocuments) {
             _getDocuments = ctx => getDocuments(ctx)
-                .Select(x => x with 
-                {
-                    Position = ctx.GlobalPosition,
-                    StreamPosition = ctx.StreamPosition
-                });
+                .Select(
+                    x => x with {
+                        Position = ctx.GlobalPosition,
+                        StreamPosition = ctx.StreamPosition
+                    }
+                );
 
             return this;
         }
@@ -76,8 +77,8 @@ public partial class MongoOperationBuilder<TEvent, T>  where T : ProjectedDocume
             => GetHandler(
                 (ctx, collection, token) => {
                     var options = Options<InsertManyOptions>.NullIfNotConfigured(_configureOptions);
-                    var docs = GetDocuments(ctx);
-                    
+                    var docs    = GetDocuments(ctx);
+
                     return collection.InsertManyAsync(docs, options, token);
                 }
             );

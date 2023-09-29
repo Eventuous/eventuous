@@ -20,10 +20,15 @@ public partial class MongoOperationBuilder<TEvent, T>
     public class MongoBulkOperationBuilders {
         MongoBulkOperationBuilders() {}
         internal static MongoBulkOperationBuilders Instance { get; } = new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
         public UpdateOneBuilder    UpdateOne  => new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
         public UpdateManyBuilder   UpdateMany => new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
         public InsertOneBuilder    InsertOne  => new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
         public DeleteOneBuilder    DeleteOne  => new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
         public DeleteManyBuilder   DeleteMany => new();
     }
     

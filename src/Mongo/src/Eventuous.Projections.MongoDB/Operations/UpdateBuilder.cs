@@ -42,9 +42,10 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                         );
                 }
             );
-        
+
         BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
             var (update, options) = await GetUpdateWithOptions(ctx);
+
             return new UpdateOneModel<T>(FilterBuilder.GetFilter(ctx), update) {
                 Collation    = options.Collation,
                 Hint         = options.Hint,
@@ -59,6 +60,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => GetHandler(
                 async (ctx, collection, token) => {
                     var (update, options) = await GetUpdateWithOptions(ctx);
+
                     await collection.UpdateManyAsync(
                             FilterBuilder.GetFilter(ctx),
                             update,
@@ -71,10 +73,11 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
             var (update, options) = await GetUpdateWithOptions(ctx);
+
             return new UpdateManyModel<T>(FilterBuilder.GetFilter(ctx), update) {
-                Collation = options.Collation,
-                Hint = options.Hint,
-                IsUpsert = options.IsUpsert,
+                Collation    = options.Collation,
+                Hint         = options.Hint,
+                IsUpsert     = options.IsUpsert,
                 ArrayFilters = options.ArrayFilters
             };
         };
@@ -136,7 +139,6 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         }
 
         TBuilder Self => (TBuilder)this;
-        
 
         protected async Task<(UpdateDefinition<T> Update, UpdateOptions Options)> GetUpdateWithOptions(IMessageConsumeContext<TEvent> ctx) {
             var options = Options<UpdateOptions>.DefaultIfNotConfigured(_configureOptions, () => DefaultOptions);
@@ -145,7 +147,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return (
                 update
                     .Set(x => x.StreamPosition, ctx.StreamPosition)
-                    .Set(x => x.Position, ctx.GlobalPosition), 
+                    .Set(x => x.Position, ctx.GlobalPosition),
                 options);
         }
     }

@@ -25,8 +25,10 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             => GetHandler(
                 (ctx, collection, token) => {
                     var options = Options<DeleteOptions>.New(ConfigureOptions);
+
                     return collection.DeleteOneAsync(FilterBuilder.GetFilter(ctx), options, token);
-                });
+                }
+            );
     }
 
     public class DeleteManyBuilder : DeleteBuilder<DeleteManyBuilder>, IMongoProjectorBuilder {
@@ -36,7 +38,8 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                     var options = Options<DeleteOptions>.New(ConfigureOptions);
 
                     return collection.DeleteManyAsync(FilterBuilder.GetFilter(ctx), options, token);
-                });
+                }
+            );
     }
 
     public abstract class DeleteBuilder<TBuilder> : IMongoBulkBuilderFactory where TBuilder : DeleteBuilder<TBuilder> {
@@ -63,12 +66,13 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         TBuilder Self => (TBuilder)this;
 
-        BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => ctx=> {
-                var options = Options<DeleteOptions>.New(ConfigureOptions);
-                return new ValueTask<WriteModel<T>>(
+        BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => ctx => {
+            var options = Options<DeleteOptions>.New(ConfigureOptions);
+
+            return new ValueTask<WriteModel<T>>(
                 new DeleteOneModel<T>(FilterBuilder.GetFilter(ctx)) {
                     Collation = options.Collation,
-                    Hint = options.Hint
+                    Hint      = options.Hint
                 }
             );
         };
