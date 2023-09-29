@@ -10,7 +10,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         Action<BulkWriteOptions>?                 _configureOptions;
         readonly List<BuildWriteModel<T, TEvent>> _builders = new();
 
-        public BulkWriteBuilder Operation<TFactory>(Func<MongoBulkOperationBuilders, TFactory> getBuilderFactory) 
+        public BulkWriteBuilder AddOperation<TFactory>(Func<MongoBulkOperationBuilders, TFactory> getBuilderFactory) 
             where TFactory: IMongoBulkBuilderFactory {
                 var factory = getBuilderFactory(MongoBulkOperationBuilders.Instance);
                 _builders.Add(factory.GetBuilder());

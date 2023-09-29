@@ -60,7 +60,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture, ITestOutputHelpe
             On<BookingImported>(
                 b => b
                     .Bulk
-                    .Operation(x => x.InsertOne
+                    .AddOperation(x => x.InsertOne
                         .Document(
                             ctx => new BookingDocument(ctx.Stream.GetId()) {
                                 RoomId       = ctx.Message.RoomId,
@@ -75,7 +75,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture, ITestOutputHelpe
             On<RoomBooked>(
                 b => b
                     .Bulk
-                    .Operation(x => x.InsertOne
+                    .AddOperation(x => x.InsertOne
                         .Document(
                             ctx => new BookingDocument(ctx.Stream.GetId()) {
                                 BookingPrice = ctx.Message.Price,
@@ -87,7 +87,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture, ITestOutputHelpe
             On<BookingPaymentRegistered>(
                 b => b
                     .Bulk
-                    .Operation(x => x.UpdateOne
+                    .AddOperation(x => x.UpdateOne
                         .DefaultId()
                         .Update((evt, update) => update.Set(d => d.PaidAmount, evt.AmountPaid))
                     )
