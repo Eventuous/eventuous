@@ -1,5 +1,5 @@
 CREATE OR ALTER PROCEDURE __schema__.check_stream
-    @stream_name NVARCHAR(1000),
+    @stream_name NVARCHAR(850),
     @expected_version int,
     @current_version INT OUTPUT,
     @stream_id INT OUTPUT
@@ -12,7 +12,7 @@ SELECT @current_version = [Version], @stream_id =StreamId
 
 IF @stream_id is null
 BEGIN
-    IF @expected_version = -2 --Any
+    IF @expected_version = -2 -- Any
     OR @expected_version = -1 -- NoStream
         BEGIN
             INSERT INTO __schema__.Streams (StreamName, Version) VALUES (@stream_name, -1);
