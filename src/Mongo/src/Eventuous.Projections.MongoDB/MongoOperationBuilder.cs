@@ -18,11 +18,13 @@ public partial class MongoOperationBuilder<TEvent, T>
     public BulkWriteBuilder  Bulk => new();
     
     public class MongoBulkOperationBuilders {
-        public UpdateOneBuilder  UpdateOne  => new();
-        public UpdateManyBuilder UpdateMany => new();
-        public InsertOneBuilder  InsertOne  => new();
-        public DeleteOneBuilder  DeleteOne  => new();
-        public DeleteManyBuilder DeleteMany => new();
+        MongoBulkOperationBuilders() {}
+        internal static MongoBulkOperationBuilders Instance { get; } = new();
+        public UpdateOneBuilder    UpdateOne  => new();
+        public UpdateManyBuilder   UpdateMany => new();
+        public InsertOneBuilder    InsertOne  => new();
+        public DeleteOneBuilder    DeleteOne  => new();
+        public DeleteManyBuilder   DeleteMany => new();
     }
     
     public interface IMongoProjectorBuilder {

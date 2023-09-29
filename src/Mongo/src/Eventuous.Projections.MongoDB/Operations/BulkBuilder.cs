@@ -12,7 +12,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         public BulkWriteBuilder Operation<TFactory>(Func<MongoBulkOperationBuilders, TFactory> getBuilderFactory) 
             where TFactory: IMongoBulkBuilderFactory {
-                var factory = getBuilderFactory(new MongoBulkOperationBuilders());
+                var factory = getBuilderFactory(MongoBulkOperationBuilders.Instance);
                 _builders.Add(factory.GetBuilder());
 
                 return this;
