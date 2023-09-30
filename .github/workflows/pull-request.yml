@@ -33,13 +33,13 @@ jobs:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
 #          cache: true
-      -  
-        name: Install dependencies
+#      -  
+#        name: Install dependencies
 #        run: dotnet restore --locked-mode
-        run: dotnet restore
+#        run: dotnet restore
       -  
         name: Build
-        run: dotnet build --configuration Debug -f ${{ matrix.dotnet }} --no-restore
+        run: dotnet build --configuration Debug -f ${{ matrix.dotnet }}
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
