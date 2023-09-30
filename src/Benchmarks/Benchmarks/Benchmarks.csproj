@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
-        <TargetFrameworks></TargetFrameworks>
+<!--        <TargetFramework>net6.0</TargetFramework>-->
+<!--        <TargetFrameworks></TargetFrameworks>-->
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
