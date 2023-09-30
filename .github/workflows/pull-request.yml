@@ -45,7 +45,7 @@ jobs:
         uses: atomicjar/testcontainers-cloud-setup-action@main
       -  
         name: Run tests
-        run: dotnet test --no-build -f ${{ matrix.dotnet }} --logger trx --results-directory test-results --collect:"XPlat Code Coverage"
+        run: dotnet test --no-build -f ${{ matrix.dotnet }}
       -  
         name: Upload Test Results
         if: always()
