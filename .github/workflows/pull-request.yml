@@ -35,7 +35,8 @@ jobs:
 #          cache: true
       -  
         name: Install dependencies
-        run: dotnet restore --locked-mode
+#        run: dotnet restore --locked-mode
+        run: dotnet restore
       -  
         name: Build
         run: dotnet build --configuration Debug -f ${{ matrix.dotnet }} --no-restore

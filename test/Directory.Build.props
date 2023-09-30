@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
-        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+<!--        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>-->
         <IsPackable>false</IsPackable>
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
