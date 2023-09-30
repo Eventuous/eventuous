@@ -51,8 +51,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Test Results
+          name: Test Results ${{ matrix.dotnet }}
           path: |
-            test-results/*.xml
+            test-results/**/*.xml
             test-results/**/*.trx
             test-results/**/*.json
