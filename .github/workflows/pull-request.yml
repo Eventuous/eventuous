@@ -16,28 +16,45 @@ jobs:
   build-and-test:
     name: "Build and test"
     runs-on: ubuntu-latest
-#    env:
+    strategy:
+      matrix:
+        dotnet: [ 'net6.0', 'net7.0' ]
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 #      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
     steps:
       -  
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - 
         name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
-      -  
-        name: Install dependencies
-        run: dotnet restore
+#          cache: true
+#      -  
+#        name: Install dependencies
+#        run: dotnet restore --locked-mode
+#        run: dotnet restore
       -  
         name: Build
-        run: dotnet build --configuration Debug --no-restore
+        run: |
+          dotnet build --configuration Debug -f ${{ matrix.dotnet }}
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
         uses: atomicjar/testcontainers-cloud-setup-action@main
       -  
         name: Run tests
-        run: dotnet test --no-build
+        run: dotnet test --no-build -f ${{ matrix.dotnet }}
+      -  
+        name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results ${{ matrix.dotnet }}
+          path: |
+            test-results/**/*.xml
+            test-results/**/*.trx
+            test-results/**/*.json
