@@ -1,4 +1,8 @@
 <Project>
     <Import Project="Directory.Untestable.targets" Condition="'$(IsTestProject)' != 'true'" />
     <Import Project="Directory.Testable.targets" Condition="'$(IsTestProject)' == 'true'" />
+
+    <ItemGroup>
+        <None Remove="packages.lock.json" />
+    </ItemGroup>
 </Project>

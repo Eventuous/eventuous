@@ -88,8 +88,4 @@
             <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</AssemblyVersion>
         </PropertyGroup>
     </Target>
-    
-    <ItemGroup>
-        <None Remove="packages.lock.json" />
-    </ItemGroup>
 </Project>
