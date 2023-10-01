@@ -35,4 +35,3 @@ jobs:
           files: |
             artifacts/**/*.xml
             artifacts/**/*.trx
-            artifacts/**/*.json
