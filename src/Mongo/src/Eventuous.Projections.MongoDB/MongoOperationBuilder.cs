@@ -7,16 +7,37 @@ namespace Eventuous.Projections.MongoDB;
 
 using Tools;
 
-public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
+public partial class MongoOperationBuilder<TEvent, T>
+    where T : ProjectedDocument where TEvent : class {
     public UpdateOneBuilder  UpdateOne  => new();
     public UpdateManyBuilder UpdateMany => new();
     public InsertOneBuilder  InsertOne  => new();
     public InsertManyBuilder InsertMany => new();
     public DeleteOneBuilder  DeleteOne  => new();
     public DeleteManyBuilder DeleteMany => new();
-
+    public BulkWriteBuilder  Bulk => new();
+    
+    public class MongoBulkOperationBuilders {
+        MongoBulkOperationBuilders() {}
+        internal static MongoBulkOperationBuilders Instance { get; } = new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
+        public UpdateOneBuilder    UpdateOne  => new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
+        public UpdateManyBuilder   UpdateMany => new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
+        public InsertOneBuilder    InsertOne  => new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
+        public DeleteOneBuilder    DeleteOne  => new();
+        // ReSharper disable once MemberCanBeMadeStatic.Global
+        public DeleteManyBuilder   DeleteMany => new();
+    }
+    
     public interface IMongoProjectorBuilder {
         ProjectTypedEvent<T, TEvent> Build();
+    }
+    
+    public interface IMongoBulkBuilderFactory {
+        BuildWriteModel<T, TEvent> GetBuilder();
     }
 
     public class FilterBuilder {
