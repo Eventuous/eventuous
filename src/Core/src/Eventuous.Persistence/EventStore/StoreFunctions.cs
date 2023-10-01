@@ -30,10 +30,10 @@ public static class StoreFunctions {
                 .NoContext();
 
             return result;
-        } catch (Exception e) {
-            throw e.InnerException?.Message.Contains("WrongExpectedVersion") == true
-                ? new OptimisticConcurrencyException(streamName, e)
-                : e;
+        } catch (Exception e) when (e.InnerException is not null && e.InnerException.Message.Contains("WrongExpectedVersion")) {
+            throw new OptimisticConcurrencyException(streamName, e.InnerException);
+        } catch (Exception) {
+            throw;
         }
 
         StreamEvent ToStreamEvent(object evt, int position) {
@@ -55,9 +55,9 @@ public static class StoreFunctions {
         try {
             return await eventWriter.Store(streamName, aggregate.OriginalVersion, aggregate.Changes, amendEvent, cancellationToken).NoContext();
         } catch (OptimisticConcurrencyException e) {
-            Log.UnableToStoreAggregate<T>(streamName, e);
-
-            throw new OptimisticConcurrencyException<T>(streamName, e.InnerException!);
+            throw e.InnerException is null ?
+                         new OptimisticConcurrencyException<T>(streamName, e) :
+                         new OptimisticConcurrencyException<T>(streamName, e.InnerException);
         }
     }
 
