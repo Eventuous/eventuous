@@ -47,7 +47,7 @@ IF OBJECT_ID('__schema__.Checkpoints', 'U') IS NULL
         );
     END
 
-IF TYPE_ID('__schema__.stream_message') IS NULL
+IF TYPE_ID('__schema__.StreamMessage') IS NULL
     BEGIN
         CREATE type __schema__.StreamMessage AS TABLE
         (
