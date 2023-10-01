@@ -5,6 +5,8 @@ using NodaTime;
 
 namespace Eventuous.Sut.AspNetCore;
 
+using static SutBookingCommands;
+
 public class BookingService : CommandService<Booking, BookingState, BookingId> {
     public BookingService(IAggregateStore store, StreamNameMap? streamNameMap = null)
         : base(store, streamNameMap: streamNameMap) {
@@ -42,21 +44,32 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
     }
 }
 
-[HttpCommand(Route = "book")]
-record BookRoom(
-        string    BookingId,
-        string    RoomId,
-        LocalDate CheckIn,
-        LocalDate CheckOut,
-        float     Price,
-        string?   GuestId
-    );
+public static class SutBookingCommands {
+    public const string BookRoute       = "book";
+    public const string NestedBookRoute = "nested-book";
 
-record ImportBooking(BookingId BookingId, string RoomId, StayPeriod Period, Money Price);
+    [HttpCommand(Route = BookRoute)]
+    public record BookRoom(
+            string    BookingId,
+            string    RoomId,
+            LocalDate CheckIn,
+            LocalDate CheckOut,
+            float     Price,
+            string?   GuestId
+        );
 
+    public record ImportBooking(BookingId BookingId, string RoomId, StayPeriod Period, Money Price);
 
-[AggregateCommands<Booking>]
-static class NestedCommands {
-    [HttpCommand(Route = "nested-book")]
-    internal record NestedBookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price, string? GuestId);
+    [AggregateCommands<Booking>]
+    public static class NestedCommands {
+        [HttpCommand(Route = NestedBookRoute)]
+        public record NestedBookRoom(
+                string    BookingId,
+                string    RoomId,
+                LocalDate CheckIn,
+                LocalDate CheckOut,
+                float     Price,
+                string?   GuestId
+            );
+    }
 }

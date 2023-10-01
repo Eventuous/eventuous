@@ -1,0 +1,13 @@
+﻿[
+  {
+    Id: Guid_1,
+    Payload: {
+      RoomId: Guid_2,
+      CheckIn: 2023-10-01,
+      CheckOut: 2023-10-02,
+      Price: 100.0,
+      GuestId: guest
+    },
+    ContentType: 
+  }
+]

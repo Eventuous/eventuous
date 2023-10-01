@@ -3,6 +3,7 @@ namespace Eventuous.Tests.AspNetCore.Web;
 using Sut.App;
 using TestHelpers;
 using Fixture;
+using static SutBookingCommands;
 
 public class ControllerTests : IDisposable {
     readonly ServerFixture     _fixture;
