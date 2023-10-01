@@ -9,6 +9,8 @@ using RestSharp.Serializers.Json;
 
 namespace Eventuous.Tests.AspNetCore.Web.Fixture;
 
+using static SutBookingCommands;
+
 public class ServerFixture : IDisposable {
     readonly WebApplicationFactory<Program> _app;
     readonly AutoFixture.Fixture            _fixture = new();
@@ -55,8 +57,27 @@ public class ServerFixture : IDisposable {
         return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
     }
 
-    public void Dispose()
-        => _app.Dispose();
-}
+    internal NestedCommands.NestedBookRoom GetNestedBookRoom(DateTime? dateTime = null) {
+        var date = LocalDate.FromDateTime(dateTime ?? DateTime.Now);
 
-// record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price);
+        return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
+    }
+
+    public async Task ExecuteAndVerify<TCommand, TAggregate>(TCommand cmd, string route, string id, params object[] expected) where TCommand : class {
+        var events = await ExecuteAndRead<TCommand, TAggregate>(cmd, route, id);
+        var last   = events.TakeLast(expected.Length).Select(x => x.Payload);
+        last.Should().BeEquivalentTo(expected);
+    }
+
+    public async Task<StreamEvent[]> ExecuteAndRead<TCommand, TAggregate>(TCommand cmd, string route, string id) where TCommand : class {
+        using var client = GetClient();
+
+        var request  = new RestRequest(route).AddJsonBody(cmd);
+        var response = await client.ExecutePostAsync<OkResult>(request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        return await ReadStream<TAggregate>(id);
+    }
+
+    public void Dispose() => _app.Dispose();
+}
