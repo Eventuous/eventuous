@@ -17,7 +17,11 @@ jobs:
         with:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
-      - name: Create and push NuGet package
+      -
+        name: Run tests
+        run: dotnet test
+      -  
+        name: Create and push NuGet package
         run: |
           dotnet pack -c Debug -o nuget
           dotnet nuget push nuget/**/*.nupkg --skip-duplicate --api-key ${{ secrets.MYGET_API_KEY }} --source https://www.myget.org/F/${{ vars.MYGET_FEED_NAME || 'eventuous' }}/api/v3/index.json

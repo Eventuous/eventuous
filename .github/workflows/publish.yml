@@ -17,7 +17,11 @@ jobs:
         with:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
-      - name: Create and push NuGet package
+      -
+        name: Run tests
+        run: dotnet test
+      -  
+        name: Create and push NuGet package
         run: |
           dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
           dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
