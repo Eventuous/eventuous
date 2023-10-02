@@ -30,8 +30,8 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     CheckpointCommitHandler CheckpointCommitHandler { get; } = new(
         options.SubscriptionId,
         checkpointStore,
-        TimeSpan.FromMilliseconds(options.CommitDelayMs),
-        options.BatchSize,
+        TimeSpan.FromMilliseconds(options.CheckpointCommitDelayMs),
+        options.CheckpointCommitBatchSize,
         loggerFactory
     );
     ICheckpointStore CheckpointStore { get; } = Ensure.NotNull(checkpointStore);
