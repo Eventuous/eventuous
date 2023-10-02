@@ -17,10 +17,10 @@
     {
       event: {
         roomId: Guid_2,
-        checkIn: 2023-10-01,
-        checkOut: 2023-10-02,
+        checkIn: 2023-10-02,
+        checkOut: 2023-10-03,
         price: 100,
-        guestId: guest
+        guestId: test guest
       },
       eventType: RoomBooked
     }

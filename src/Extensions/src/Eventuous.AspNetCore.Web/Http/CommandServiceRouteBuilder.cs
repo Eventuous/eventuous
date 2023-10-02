@@ -7,8 +7,7 @@ using Microsoft.AspNetCore.Routing;
 namespace Eventuous.AspNetCore.Web;
 
 [PublicAPI]
-public class CommandServiceRouteBuilder<T>(IEndpointRouteBuilder builder)
-    where T : Aggregate {
+public class CommandServiceRouteBuilder<T>(IEndpointRouteBuilder builder) where T : Aggregate {
     /// <summary>
     /// Maps the given command type to an HTTP endpoint. The command class can be annotated with
     /// the <seealso cref="HttpCommandAttribute"/> if you need a custom route.

@@ -5,14 +5,18 @@
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="Eventuous" />
-        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web" />
+        <Using Include="Eventuous"/>
+        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web"/>
     </ItemGroup>
 </Project>

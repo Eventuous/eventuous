@@ -21,6 +21,14 @@ jobs:
         name: Run tests
         run: dotnet test
       -  
+        name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            test-results/**/*.xml
+            test-results/**/*.trx
+      -  
         name: Create and push NuGet package
         run: |
           dotnet pack -c Debug -o nuget

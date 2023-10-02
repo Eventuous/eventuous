@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Mvc.Testing;
+
 namespace Eventuous.Tests.AspNetCore.Web;
 
 using Fixture;
 using static SutBookingCommands;
 using static Fixture.TestCommands;
 
-public class AggregateCommandsTests(ITestOutputHelper output) : TestBaseWithLogs(output) {
+public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFactory<Program> factory)
+    : TestBaseWithLogs(output), IClassFixture<WebApplicationFactory<Program>> {
     [Fact]
     public void RegisterAggregateCommands() {
         var builder = WebApplication.CreateBuilder();
@@ -28,24 +31,26 @@ public class AggregateCommandsTests(ITestOutputHelper output) : TestBaseWithLogs
     }
 
     [Fact]
-    public async Task MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
-        using var fixture = new ServerFixture(
+    public void MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
+        var act = () => new ServerFixture(
+            factory,
             output,
-            configure: app => app
+            _ => { },
+            app => app
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp3, ImportBooking>(Enricher.EnrichCommand)
         );
-
-        var act = () => Execute(fixture, "import3");
-
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]
     public async Task MapContractToCommandExplicitly() {
-        using var fixture = new ServerFixture(
+        var fixture = new ServerFixture(
+            factory,
             output,
-            configure: app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking>(ImportRoute, Enricher.EnrichCommand)
+            _ => { },
+            app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking>(ImportRoute, Enricher.EnrichCommand)
         );
 
         await Execute(fixture, ImportRoute);
@@ -53,9 +58,11 @@ public class AggregateCommandsTests(ITestOutputHelper output) : TestBaseWithLogs
 
     [Fact]
     public async Task MapAggregateContractToCommandExplicitly() {
-        using var fixture = new ServerFixture(
+        var fixture = new ServerFixture(
+            factory,
             output,
-            configure: app => app
+            _ => { },
+            app => app
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp, ImportBooking>(ImportRoute, Enricher.EnrichCommand)
         );
@@ -65,9 +72,11 @@ public class AggregateCommandsTests(ITestOutputHelper output) : TestBaseWithLogs
 
     [Fact]
     public async Task MapAggregateContractToCommandExplicitlyWithoutRoute() {
-        using var fixture = new ServerFixture(
+        var fixture = new ServerFixture(
+            factory,
             output,
-            configure: app => app
+            _ => { },
+            app => app
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp1, ImportBooking>(Enricher.EnrichCommand)
         );
@@ -77,9 +86,11 @@ public class AggregateCommandsTests(ITestOutputHelper output) : TestBaseWithLogs
 
     [Fact]
     public async Task MapAggregateContractToCommandExplicitlyWithoutRouteWithGenericAttr() {
-        using var fixture = new ServerFixture(
+        var fixture = new ServerFixture(
+            factory,
             output,
-            configure: app => app
+            _ => { },
+            app => app
                 .MapAggregateCommands<Booking>()
                 .MapCommand<ImportBookingHttp2, ImportBooking>(Enricher.EnrichCommand)
         );
@@ -89,7 +100,8 @@ public class AggregateCommandsTests(ITestOutputHelper output) : TestBaseWithLogs
 
     [Fact]
     public async Task MapEnrichedCommand() {
-        using var fixture = new ServerFixture(
+        var fixture = new ServerFixture(
+            factory,
             output,
             _ => { },
             app => app
@@ -97,8 +109,8 @@ public class AggregateCommandsTests(ITestOutputHelper output) : TestBaseWithLogs
                 .MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
         );
         var cmd      = fixture.GetBookRoom();
-        var expected = new BookingEvents.RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price, TestData.GuestId);
-        await fixture.ExecuteAndVerify<BookRoom, Booking>(cmd, "book", cmd.BookingId, expected);
+        var content = await fixture.ExecuteRequest<BookRoom, Booking>(cmd, "book", cmd.BookingId);
+        await VerifyJson(content);
     }
 
     static async Task Execute(ServerFixture fixture, string route) {
@@ -111,7 +123,7 @@ public class AggregateCommandsTests(ITestOutputHelper output) : TestBaseWithLogs
             bookRoom.CheckOut,
             bookRoom.Price
         );
-        var expected = new BookingEvents.BookingImported(import.RoomId, import.Price, import.CheckIn, import.CheckOut);
-        await fixture.ExecuteAndVerify<ImportBookingHttp, Booking>(import, route, bookRoom.BookingId, expected);
+        var content = await fixture.ExecuteRequest<ImportBookingHttp, Booking>(import, route, bookRoom.BookingId);
+        await VerifyJson(content);
     }
 }

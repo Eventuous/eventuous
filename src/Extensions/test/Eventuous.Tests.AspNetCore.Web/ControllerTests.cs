@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc.Testing;
+
 namespace Eventuous.Tests.AspNetCore.Web;
 
 using Sut.App;
@@ -5,17 +7,18 @@ using TestHelpers;
 using Fixture;
 using static SutBookingCommands;
 
-public class ControllerTests : IDisposable {
+public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<Program>> {
     readonly ServerFixture     _fixture;
     readonly TestEventListener _listener;
 
-    public ControllerTests(ITestOutputHelper output) {
+    public ControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper output) {
         var commandMap = new MessageMap()
             .Add<BookingApi.RegisterPaymentHttp, Commands.RecordPayment>(
                 x => new Commands.RecordPayment(new BookingId(x.BookingId), x.PaymentId, new Money(x.Amount), x.PaidAt)
             );
 
         _fixture = new ServerFixture(
+            factory,
             output,
             services => {
                 services.AddSingleton(commandMap);
@@ -55,7 +58,7 @@ public class ControllerTests : IDisposable {
     }
 
     public void Dispose() {
-        _fixture.Dispose();
+        // _fixture.Dispose();
         _listener.Dispose();
     }
 }
