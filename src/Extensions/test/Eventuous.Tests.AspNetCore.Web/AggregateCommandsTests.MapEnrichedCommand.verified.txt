@@ -1,0 +1,28 @@
+﻿{
+  state: {
+    price: {
+      amount: 100,
+      currency: EUR
+    },
+    amountPaid: {
+      amount: 0,
+      currency: EUR
+    },
+    id: {
+      value: Guid_1
+    }
+  },
+  success: true,
+  changes: [
+    {
+      event: {
+        roomId: Guid_2,
+        checkIn: 2023-10-02,
+        checkOut: 2023-10-03,
+        price: 100,
+        guestId: test guest
+      },
+      eventType: RoomBooked
+    }
+  ]
+}

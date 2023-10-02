@@ -1,54 +1,39 @@
+using System.Collections.Concurrent;
+
 namespace Eventuous.TestHelpers.Fakes;
 
 public class InMemoryEventStore : IEventStore {
-    readonly Dictionary<StreamName, InMemoryStream> _storage = new();
-    readonly List<StreamEvent>                      _global  = new();
+    readonly ConcurrentDictionary<StreamName, InMemoryStream> _storage = new();
+    readonly List<StreamEvent>                                _global  = new();
 
     public Task<bool> StreamExists(StreamName streamName, CancellationToken cancellationToken)
         => Task.FromResult(_storage.ContainsKey(streamName));
 
     public Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    ) {
-        if (!_storage.TryGetValue(stream, out var existing)) {
-            existing         = new InMemoryStream(stream);
-            _storage[stream] = existing;
-        }
-
+            StreamName                       stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
+        ) {
+        var existing = _storage.GetOrAdd(stream, s => new InMemoryStream(s));
         existing.AppendEvents(expectedVersion, events);
-
         _global.AddRange(events);
 
-        return Task.FromResult(
-            new AppendEventsResult((ulong)(_global.Count - 1), existing.Version)
-        );
+        return Task.FromResult(new AppendEventsResult((ulong)(_global.Count - 1), existing.Version));
     }
 
-    public Task<StreamEvent[]> ReadEvents(
-        StreamName         stream,
-        StreamReadPosition start,
-        int                count,
-        CancellationToken  cancellationToken
-    )
-        => Task.FromResult(FindStream(stream).GetEvents(start, count).ToArray());
+    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) => Task.FromResult(FindStream(stream).GetEvents(start, count).ToArray());
 
-    public Task<StreamEvent[]> ReadEventsBackwards(
-        StreamName        stream,
-        int               count,
-        CancellationToken cancellationToken
-    )
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
         => Task.FromResult(FindStream(stream).GetEventsBackwards(count).ToArray());
 
     public Task<long> ReadStream(
-        StreamName          stream,
-        StreamReadPosition  start,
-        int                 count,
-        Action<StreamEvent> callback,
-        CancellationToken   cancellationToken
-    ) {
+            StreamName          stream,
+            StreamReadPosition  start,
+            int                 count,
+            Action<StreamEvent> callback,
+            CancellationToken   cancellationToken
+        ) {
         var readCount = 0L;
 
         foreach (var streamEvent in FindStream(stream).GetEvents(start, count)) {
@@ -60,32 +45,26 @@ public class InMemoryEventStore : IEventStore {
     }
 
     public Task TruncateStream(
-        StreamName             stream,
-        StreamTruncatePosition truncatePosition,
-        ExpectedStreamVersion  expectedVersion,
-        CancellationToken      cancellationToken
-    ) {
+            StreamName             stream,
+            StreamTruncatePosition truncatePosition,
+            ExpectedStreamVersion  expectedVersion,
+            CancellationToken      cancellationToken
+        ) {
         FindStream(stream).Truncate(expectedVersion, truncatePosition);
+
         return Task.CompletedTask;
     }
 
-    public Task DeleteStream(
-        StreamName            stream,
-        ExpectedStreamVersion expectedVersion,
-        CancellationToken     cancellationToken
-    ) {
+    public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken) {
         var existing = FindStream(stream);
         existing.CheckVersion(expectedVersion);
-        _storage.Remove(stream);
+        _storage.Remove(stream, out _);
+
         return Task.CompletedTask;
     }
 
     // ReSharper disable once ReturnTypeCanBeEnumerable.Local
-    InMemoryStream FindStream(StreamName stream) {
-        if (!_storage.TryGetValue(stream, out var existing)) throw new StreamNotFound(stream);
-
-        return existing;
-    }
+    InMemoryStream FindStream(StreamName stream) => !_storage.TryGetValue(stream, out var existing) ? throw new StreamNotFound(stream) : existing;
 }
 
 record StoredEvent(StreamEvent Event, int Position);
@@ -103,10 +82,7 @@ class InMemoryStream {
         if (expectedVersion.Value != Version) throw new WrongVersion(expectedVersion, Version);
     }
 
-    public void AppendEvents(
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events
-    ) {
+    public void AppendEvents(ExpectedStreamVersion expectedVersion, IReadOnlyCollection<StreamEvent> events) {
         CheckVersion(expectedVersion);
 
         foreach (var streamEvent in events) {

@@ -2,52 +2,61 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Text.Json;
-using Eventuous.TestHelpers.Fakes;
 using Microsoft.AspNetCore.Mvc.Testing;
 using NodaTime.Serialization.SystemTextJson;
 using RestSharp.Serializers.Json;
 
 namespace Eventuous.Tests.AspNetCore.Web.Fixture;
 
-public class ServerFixture : IDisposable {
-    readonly WebApplicationFactory<Program> _app;
-    readonly AutoFixture.Fixture            _fixture = new();
+using static SutBookingCommands;
 
-    public ServerFixture(ITestOutputHelper output, Action<IServiceCollection>? register = null, ConfigureWebApplication? configure = null) {
-        TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
+public class ServerFixture {
+    //: IDisposable {
+    readonly AutoFixture.Fixture _fixture = new();
+    readonly ITestOutputHelper   _output;
 
-        Store = new InMemoryEventStore();
+    public ServerFixture(
+            WebApplicationFactory<Program> factory,
+            ITestOutputHelper              output,
+            Action<IServiceCollection>?    register  = null,
+            ConfigureWebApplication?       configure = null
+        ) {
+        _output = output;
 
-        _app = new WebApplicationFactory<Program>()
+        var builder = factory
             .WithWebHostBuilder(
-                builder => builder
-                    .ConfigureServices(
-                        services => {
-                            register?.Invoke(services);
-                            services.AddAggregateStore(_ => Store);
-                            if (configure != null) services.AddSingleton(configure);
-                        }
-                    )
-                    .ConfigureLogging(x => x.AddXunit(output).AddConsole().SetMinimumLevel(LogLevel.Debug))
+                builder => {
+                    builder
+                        .ConfigureServices(
+                            services => {
+                                register?.Invoke(services);
+                                if (configure != null) services.AddSingleton(configure);
+                            }
+                        )
+                        .ConfigureLogging(x => x.AddXunit(output).AddConsole().SetMinimumLevel(LogLevel.Debug));
+                }
             );
+        builder.Server.PreserveExecutionContext = false;
+
+        _app = builder;
     }
 
-    InMemoryEventStore Store { get; }
+    readonly JsonSerializerOptions          _options = new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+    readonly WebApplicationFactory<Program> _app;
 
-    static readonly JsonSerializerOptions Options = new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-
-    public RestClient GetClient()
-        => new(
+    public RestClient GetClient() {
+        return new RestClient(
             _app.CreateClient(),
             disposeHttpClient: true,
-            configureSerialization: s => s.UseSerializer(() => new SystemTextJsonSerializer(Options))
+            configureSerialization: s => s.UseSerializer(() => new SystemTextJsonSerializer(_options))
         );
+    }
 
     public T Resolve<T>() where T : notnull
         => _app.Services.GetRequiredService<T>();
 
     public Task<StreamEvent[]> ReadStream<T>(string id)
-        => Store.ReadEvents(StreamName.For<T>(id), StreamReadPosition.Start, 100, default);
+        => Resolve<IEventStore>().ReadEvents(StreamName.For<T>(id), StreamReadPosition.Start, 100, default);
 
     internal BookRoom GetBookRoom() {
         var date = LocalDate.FromDateTime(DateTime.Now);
@@ -55,8 +64,19 @@ public class ServerFixture : IDisposable {
         return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
     }
 
-    public void Dispose()
-        => _app.Dispose();
-}
+    internal NestedCommands.NestedBookRoom GetNestedBookRoom(DateTime? dateTime = null) {
+        var date = LocalDate.FromDateTime(dateTime ?? DateTime.Now);
 
-// record BookRoom(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price);
+        return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
+    }
+
+    public async Task<string> ExecuteRequest<TCommand, TAggregate>(TCommand cmd, string route, string id) where TCommand : class {
+        using var client = GetClient();
+
+        var request  = new RestRequest(route).AddJsonBody(cmd);
+        var response = await client.ExecutePostAsync<OkResult>(request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        return response.Content!;
+    }
+}

@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Concurrent;
 using System.Reflection;
 using Eventuous.AspNetCore.Web;
 using Eventuous.AspNetCore.Web.Diagnostics;
@@ -143,7 +144,7 @@ public static partial class RouteBuilderExtensions {
                         ? convert(cmd, context)
                         : (cmd as TCommand)!;
 
-                    var result = await service.Handle(command, context.RequestAborted);
+                    var result = await InvokeService(service, command, context.RequestAborted);
 
                     return result.AsResult();
                 }
@@ -210,10 +211,10 @@ public static partial class RouteBuilderExtensions {
 
                         if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
 
-                        if (context.RequestServices.GetRequiredService(appServiceType) is not ICommandService
-                            service) throw new InvalidOperationException("Unable to resolve the application service");
+                        if (context.RequestServices.GetRequiredService(appServiceType) is not ICommandService service)
+                            throw new InvalidOperationException("Unable to resolve the application service");
 
-                        var result = await service.Handle(cmd, context.RequestAborted);
+                        var result = await InvokeService(service, cmd, context.RequestAborted);
 
                         return result.AsResult();
                     }
@@ -249,5 +250,24 @@ public static partial class RouteBuilderExtensions {
 
     static void AddPolicy(this RouteHandlerBuilder builder, string? policyName) {
         if (policyName != null) builder.RequireAuthorization(policyName.Split(','));
+    }
+
+    static readonly ConcurrentDictionary<Type, Delegate> MethodCache = new();
+
+    static Task<Result> InvokeService(ICommandService service, object cmd, CancellationToken cancellationToken) {
+        var type = cmd.GetType();
+
+        var handleDelegate = MethodCache.GetOrAdd(
+            type,
+            t => {
+                var method        = service.GetType().GetMethod(nameof(ICommandService.Handle));
+                var genericMethod = method!.MakeGenericMethod(t);
+                var typeArgs      = new[] { t, typeof(CancellationToken), typeof(Task<Result>) };
+                var funcType      = typeof(Func<,,>).MakeGenericType(typeArgs);
+                return Delegate.CreateDelegate(funcType, service, genericMethod);
+            }
+        );
+
+        return ((Task<Result>)handleDelegate.DynamicInvoke(cmd, cancellationToken)!)!;
     }
 }

@@ -117,6 +117,7 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture
         _checkpoints.Skip(1).Select(x => x.Position).Should().NotContain(0);
 
         await services.Select(x => x.StopAsync(default)).WhenAll();
+        await Task.Delay(500);
 
         _checkpoints.Last().Position.Should().Be(count - 1);
     }
