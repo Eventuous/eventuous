@@ -69,59 +69,68 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
 
     // ReSharper disable once CognitiveComplexity
     protected async ValueTask Handler(IMessageConsumeContext context) {
-        var activity = EventuousDiagnostics.Enabled
-            ? SubscriptionActivity.Create(
-                $"{Constants.Components.Subscription}.{SubscriptionId}/{context.MessageType}",
-                ActivityKind.Internal,
-                context,
-                EventuousDiagnostics.Tags
-            )
-            : null;
+        var scope = new Dictionary<string, object> {
+            {"SubscriptionId", SubscriptionId},
+            {"Stream", context.Stream},
+            {"MessageType", context.MessageType},
+        };
 
         // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         Logger.Current ??= Log;
-        var isAsync = context is AsyncConsumeContext;
-        if (!isAsync) activity?.Start();
 
-        Log.MessageReceived(context);
+        using (Log.Logger.BeginScope(scope)) {
+            var activity = EventuousDiagnostics.Enabled
+                ? SubscriptionActivity.Create(
+                    $"{Constants.Components.Subscription}.{SubscriptionId}/{context.MessageType}",
+                    ActivityKind.Internal,
+                    context,
+                    EventuousDiagnostics.Tags
+                )
+                : null;
 
-        try {
-            if (context.Message != null) {
-                if (activity != null) {
-                    context.ParentContext = activity.Context;
+            var isAsync = context is AsyncConsumeContext;
+            if (!isAsync) activity?.Start();
 
-                    if (isAsync) { context.Items.AddItem(ContextItemKeys.Activity, activity); }
+            Log.MessageReceived(context);
+
+            try {
+                if (context.Message != null) {
+                    if (activity != null) {
+                        context.ParentContext = activity.Context;
+
+                        if (isAsync) { context.Items.AddItem(ContextItemKeys.Activity, activity); }
+                    }
+
+                    await Pipe.Send(context).NoContext();
+                }
+                else {
+                    context.Ignore(SubscriptionId);
+
+                    if (isAsync) {
+                        var asyncContext = context as AsyncConsumeContext;
+                        await asyncContext!.Acknowledge().NoContext();
+                    }
                 }
 
-                await Pipe.Send(context).NoContext();
-            }
-            else {
-                context.Ignore(SubscriptionId);
+                if (context.WasIgnored() && activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.None;
+            } catch (OperationCanceledException e) when (Stopping.IsCancellationRequested) {
+                Log.DebugLog?.Log("Message ignored because subscription is stopping: {Message}", e.Message);
+            } catch (Exception e) { context.Nack(SubscriptionId, e); }
 
-                if (isAsync) {
-                    var asyncContext = context as AsyncConsumeContext;
-                    await asyncContext!.Acknowledge().NoContext();
+            if (context.HasFailed()) {
+                if (activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.Recorded;
+
+                var exception = context.HandlingResults.GetException();
+
+                if (Options.ThrowOnError) {
+                    activity?.Dispose();
+
+                    throw new SubscriptionException(context.Stream, context.MessageType, context.Message, exception ?? new InvalidOperationException());
                 }
             }
 
-            if (context.WasIgnored() && activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.None;
-        } catch (OperationCanceledException e) when (Stopping.IsCancellationRequested) {
-            Log.DebugLog?.Log("Message ignored because subscription is stopping: {Message}", e.Message);
-        } catch (Exception e) { context.Nack(SubscriptionId, e); }
-
-        if (context.HasFailed()) {
-            if (activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.Recorded;
-
-            var exception = context.HandlingResults.GetException();
-
-            if (Options.ThrowOnError) {
-                activity?.Dispose();
-
-                throw new SubscriptionException(context.Stream, context.MessageType, context.Message, exception ?? new InvalidOperationException());
-            }
+            if (!isAsync) activity?.Dispose();
         }
-
-        if (!isAsync) activity?.Dispose();
     }
 
     protected object? DeserializeData(string eventContentType, string eventType, ReadOnlyMemory<byte> data, string stream, ulong position = 0) {
