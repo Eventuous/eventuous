@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Eventuous.Sut.AspNetCore;
 using Eventuous.Sut.Domain;
+using Eventuous.TestHelpers.Fakes;
 using Microsoft.AspNetCore.Http.Json;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
@@ -14,6 +15,7 @@ DefaultEventSerializer.SetDefaultSerializer(
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCommandService<BookingService, Booking>();
+builder.Services.AddAggregateStore<InMemoryEventStore>();
 builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 
 var app = builder.Build();
@@ -21,5 +23,6 @@ var app = builder.Build();
 var config = app.Services.GetService<ConfigureWebApplication>();
 config?.Invoke(app);
 
-
 app.Run();
+
+public partial class Program;
