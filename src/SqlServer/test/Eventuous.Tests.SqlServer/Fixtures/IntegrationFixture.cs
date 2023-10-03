@@ -44,7 +44,6 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         await schema.CreateSchema(GetConnection);
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
         EventStore     = new SqlServerStore(GetConnection, new SqlServerStoreOptions(SchemaName), Serializer);
-        new AggregateStore(EventStore);
         ActivitySource.AddActivityListener(_listener);
 
         return;

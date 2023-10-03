@@ -18,7 +18,7 @@ public static class LoggingExtensions {
         );
 
     public static void MessageHandled(this LogContext log, string handlerType, IBaseConsumeContext context)
-        => log.DebugLog?.Log(
+        => log.TraceLog?.Log(
             "{Handler} handled {MessageType} {Stream}:{Position} seq {Sequence}",
             handlerType,
             context.MessageType,
@@ -28,7 +28,7 @@ public static class LoggingExtensions {
         );
 
     public static void MessageIgnored(this LogContext log, string handlerType, IBaseConsumeContext context)
-        => log.DebugLog?.Log(
+        => log.TraceLog?.Log(
             "{Handler} ignored {MessageType} {Stream}:{Position} seq {Sequence}",
             handlerType,
             context.MessageType,
