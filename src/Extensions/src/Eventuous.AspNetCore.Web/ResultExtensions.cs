@@ -20,5 +20,5 @@ public static class ResultExtensions {
                         Type = error.Exception?.GetType().Name
                     }
                 )
-            } : Results.Ok(result as TResult);
+            } : Results.Ok(result);
 }
