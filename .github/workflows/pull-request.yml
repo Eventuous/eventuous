@@ -1,44 +1,60 @@
-name: PR Build and test
+name: "PR Build and test"
 on:
   workflow_dispatch:
   pull_request:
 
 jobs:
-  test:
+  event_file:
+    name: "Event File"
     runs-on: ubuntu-latest
-#    env:
-#      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
+  build-and-test:
+    name: "Build and test"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet: [ 'net6.0', 'net7.0' ]
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
     steps:
       -  
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - 
         name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
-      -  
-        name: Install dependencies
-        run: dotnet restore
+#          cache: true
+#      -  
+#        name: Install dependencies
+#        run: dotnet restore --locked-mode
+#        run: dotnet restore
       -  
         name: Build
-        run: dotnet build --configuration Debug --no-restore
+        run: |
+          dotnet build --configuration Debug -f ${{ matrix.dotnet }}
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
         uses: atomicjar/testcontainers-cloud-setup-action@main
       -  
         name: Run tests
-        run: dotnet test --no-build
+        run: dotnet test --no-build -f ${{ matrix.dotnet }}
       -  
-        name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        name: Upload Test Results
         if: always()
+        uses: actions/upload-artifact@v3
         with:
-          check_name: test results
-          comment_title: Test results
-          files: |
+          name: Test Results ${{ matrix.dotnet }}
+          path: |
             test-results/**/*.xml
             test-results/**/*.trx
             test-results/**/*.json

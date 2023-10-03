@@ -1,6 +1,8 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
+
 namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
@@ -56,7 +58,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
 
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();
-            var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
+            var exception = new Exceptions.CommandHandlerNotFound(command.GetType());
 
             return new ErrorResult<TState>(exception);
         }
@@ -106,18 +108,16 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         };
     }
 
-    readonly Dictionary<Type, CommandHandlerBuilder<TAggregate, TState, TId>> _builders     = new();
-    readonly object                                                           _handlersLock = new();
+    readonly Dictionary<Type, CommandHandlerBuilder<TAggregate, TState, TId>> _builders = new();
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     void BuildHandlers() {
-        lock (_handlersLock) {
-            foreach (var commandType in _builders.Keys) {
-                var builder = _builders[commandType];
-                var handler = builder.Build();
-                _handlers.AddHandlerUntyped(commandType, handler);
-            }
-
-            _initialized = true;
+        foreach (var commandType in _builders.Keys) {
+            var builder = _builders[commandType];
+            var handler = builder.Build();
+            _handlers.AddHandlerUntyped(commandType, handler);
         }
+
+        _initialized = true;
     }
 }

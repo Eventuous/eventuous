@@ -138,3 +138,6 @@ public delegate ValueTask<MongoProjectOperation<T>> ProjectTypedEvent<T, TEvent>
     where T : ProjectedDocument where TEvent : class;
 
 public record MongoProjectOperation<T>(Func<IMongoCollection<T>, CancellationToken, Task> Execute);
+
+public delegate ValueTask<WriteModel<T>> BuildWriteModel<T, TEvent>(MessageConsumeContext<TEvent> context)
+    where T : ProjectedDocument where TEvent : class;

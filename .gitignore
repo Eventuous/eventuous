@@ -307,3 +307,5 @@ exclusive.lck
 version.txt
 /public/
 /nuget/
+*.trx
+*.received
