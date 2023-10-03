@@ -32,10 +32,22 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
     internal record CommitEvent(string Id, CommitPosition CommitPosition, CommitPosition? FirstPending);
 
-    public CheckpointCommitHandler(string subscriptionId, ICheckpointStore checkpointStore, TimeSpan delay, int batchSize = 1, ILoggerFactory? loggerFactory = null)
+    public CheckpointCommitHandler(
+            string           subscriptionId,
+            ICheckpointStore checkpointStore,
+            TimeSpan         delay,
+            int              batchSize     = 1,
+            ILoggerFactory?  loggerFactory = null
+        )
         : this(subscriptionId, checkpointStore.StoreCheckpoint, delay, batchSize, loggerFactory) { }
 
-    public CheckpointCommitHandler(string subscriptionId, CommitCheckpoint commitCheckpoint, TimeSpan delay, int batchSize = 1, ILoggerFactory? loggerFactory = null) {
+    public CheckpointCommitHandler(
+            string           subscriptionId,
+            CommitCheckpoint commitCheckpoint,
+            TimeSpan         delay,
+            int              batchSize     = 1,
+            ILoggerFactory?  loggerFactory = null
+        ) {
         _subscriptionId   = subscriptionId;
         _commitCheckpoint = commitCheckpoint;
         _loggerFactory    = loggerFactory;
@@ -63,6 +75,8 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         _worker = new ChannelWorker<CommitPosition>(channel, Process, true);
 
+        return;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
             position.LogContext.PositionReceived(position);
@@ -73,9 +87,10 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         CommitPosition AddBatchAndGetLast(IList<CommitPosition> list) {
+            _semaphore.Wait();
             _positions.UnionWith(list);
             var next = GetCommitPosition(false);
-
+            _semaphore.Release();
             return next;
         }
     }
@@ -115,8 +130,13 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         return _positions.FirstBeforeGap();
     }
 
+    readonly SemaphoreSlim _semaphore = new(1);
+
     async Task CommitInternal(CommitPosition position, bool force, CancellationToken cancellationToken) {
+        if (_semaphore.CurrentCount == 0) return;
         try {
+            await _semaphore.WaitAsync(cancellationToken).NoContext();
+
             if (_lastCommit == position && !force) {
                 Log.CheckpointAlreadyCommitted(_subscriptionId, position);
 
@@ -132,6 +152,8 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
         } catch (Exception e) {
             position.LogContext.UnableToCommitPosition(position, e);
+        } finally {
+            _semaphore.Release();
         }
     }
 
@@ -153,12 +175,16 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     }
 }
 
-public record struct CommitPosition(ulong Position, ulong Sequence, DateTime Timestamp) {
+public readonly record struct CommitPosition(ulong Position, ulong Sequence, DateTime Timestamp) {
     public bool Valid { get; private init; } = true;
 
     public LogContext LogContext { get; init; }
 
     public static readonly CommitPosition None = new(0, 0, DateTime.MinValue) { Valid = false };
+
+    public bool Equals(CommitPosition other) => Valid == other.Valid && Position == other.Position && Sequence == other.Sequence;
+
+    public override int GetHashCode() => HashCode.Combine(Valid, Position, Sequence);
 }
 
 public delegate ValueTask<Checkpoint> CommitCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken);

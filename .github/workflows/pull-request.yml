@@ -21,7 +21,7 @@ jobs:
         dotnet: [ 'net6.0', 'net7.0' ]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
-#      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
+      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
     steps:
       -  
         name: Checkout

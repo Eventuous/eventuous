@@ -59,7 +59,8 @@ public class ServerFixture {
         => Resolve<IEventStore>().ReadEvents(StreamName.For<T>(id), StreamReadPosition.Start, 100, default);
 
     internal BookRoom GetBookRoom() {
-        var date = LocalDate.FromDateTime(DateTime.Now);
+        var now  = new DateTime(2023, 10, 1);
+        var date = LocalDate.FromDateTime(now);
 
         return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
     }

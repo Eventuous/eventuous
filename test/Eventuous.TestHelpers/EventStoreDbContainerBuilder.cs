@@ -1,6 +1,3 @@
-// Copyright (C) Ubiquitous AS.All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using System.Runtime.InteropServices;
 using Docker.DotNet.Models;
 using DotNet.Testcontainers.Builders;
@@ -11,7 +8,7 @@ namespace Eventuous.TestHelpers;
 
 public sealed class EventStoreDbContainerBuilder : ContainerBuilder<EventStoreDbContainerBuilder, EventStoreDbContainer, EventStoreDbConfiguration> {
     public static readonly string ContainerTag = RuntimeInformation.ProcessArchitecture switch {
-        Architecture.Arm64 => "22.10.2-alpha-arm64v8",
+        // Architecture.Arm64 => "22.10.2-alpha-arm64v8",
         _                  => "22.10.2-buster-slim"
     };
 
