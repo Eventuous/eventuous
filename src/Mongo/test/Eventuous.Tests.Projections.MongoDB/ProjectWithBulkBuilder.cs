@@ -45,9 +45,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture, ITestOutputHelpe
     async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)
         where T : class {
         var append = await Fixture.AppendEvent(stream, evt);
-
-        await Task.Delay(500);
-
+        await WaitForPosition(append.GlobalPosition);
         var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId());
 
         return (append, actual);
@@ -56,40 +54,44 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture, ITestOutputHelpe
     public class SutBulkProjection : MongoProjector<BookingDocument> {
         public SutBulkProjection(IMongoDatabase database)
             : base(database) {
-        
             On<BookingImported>(
                 b => b
                     .Bulk
-                    .AddOperation(x => x.InsertOne
-                        .Document(
-                            ctx => new BookingDocument(ctx.Stream.GetId()) {
-                                RoomId       = ctx.Message.RoomId,
-                                CheckInDate  = ctx.Message.CheckIn,
-                                CheckOutDate = ctx.Message.CheckOut,
-                                BookingPrice = ctx.Message.Price,
-                                Outstanding  = ctx.Message.Price
-                            }
-                        ))
+                    .AddOperation(
+                        x => x.InsertOne
+                            .Document(
+                                ctx => new BookingDocument(ctx.Stream.GetId()) {
+                                    RoomId       = ctx.Message.RoomId,
+                                    CheckInDate  = ctx.Message.CheckIn,
+                                    CheckOutDate = ctx.Message.CheckOut,
+                                    BookingPrice = ctx.Message.Price,
+                                    Outstanding  = ctx.Message.Price
+                                }
+                            )
+                    )
             );
 
             On<RoomBooked>(
                 b => b
                     .Bulk
-                    .AddOperation(x => x.InsertOne
-                        .Document(
-                            ctx => new BookingDocument(ctx.Stream.GetId()) {
-                                BookingPrice = ctx.Message.Price,
-                                Outstanding  = ctx.Message.Price
-                            }
-                        ))
+                    .AddOperation(
+                        x => x.InsertOne
+                            .Document(
+                                ctx => new BookingDocument(ctx.Stream.GetId()) {
+                                    BookingPrice = ctx.Message.Price,
+                                    Outstanding  = ctx.Message.Price
+                                }
+                            )
+                    )
             );
 
             On<BookingPaymentRegistered>(
                 b => b
                     .Bulk
-                    .AddOperation(x => x.UpdateOne
-                        .DefaultId()
-                        .Update((evt, update) => update.Set(d => d.PaidAmount, evt.AmountPaid))
+                    .AddOperation(
+                        x => x.UpdateOne
+                            .DefaultId()
+                            .Update((evt, update) => update.Set(d => d.PaidAmount, evt.AmountPaid))
                     )
             );
         }

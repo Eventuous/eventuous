@@ -22,6 +22,6 @@ public abstract record SubscriptionOptions {
 }
 
 public abstract record SubscriptionWithCheckpointOptions : SubscriptionOptions {
-    public int BatchSize     { get; set; } = 100;
-    public int CommitDelayMs { get; set; } = 5000;
+    public int CheckpointCommitBatchSize { get; set; } = 100;
+    public int CheckpointCommitDelayMs   { get; set; } = 5000;
 }

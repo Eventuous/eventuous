@@ -49,7 +49,6 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
 
     public override async Task InitializeAsync() {
         await base.InitializeAsync();
-
         _commands = await GenerateAndHandleCommands(Count);
     }
 
