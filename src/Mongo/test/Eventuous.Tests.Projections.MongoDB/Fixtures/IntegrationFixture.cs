@@ -41,10 +41,8 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         _esdbContainer = new EventStoreDbBuilder().Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
-        Client         = new EventStoreClient(settings);
-        EventStore     = new EsdbEventStore(Client);
-        new AggregateStore(EventStore);
-
+        Client          = new EventStoreClient(settings);
+        EventStore      = new EsdbEventStore(Client);
         _mongoContainer = new MongoDbBuilder().Build();
         await _mongoContainer.StartAsync();
         var mongoSettings = MongoClientSettings.FromConnectionString(_mongoContainer.GetConnectionString());
