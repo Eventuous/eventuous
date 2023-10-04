@@ -9,7 +9,7 @@ namespace Eventuous.AspNetCore.Web;
 [PublicAPI]
 public class CommandServiceRouteBuilder<TAggregate, TResult>(IEndpointRouteBuilder builder)
     where TAggregate : Aggregate
-    where TResult : class, new() {
+    where TResult : Result {
     /// <summary>
     /// Maps the given command type to an HTTP endpoint. The command class can be annotated with
     /// the <seealso cref="HttpCommandAttribute"/> if you need a custom route.

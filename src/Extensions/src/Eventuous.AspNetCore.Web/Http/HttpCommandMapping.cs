@@ -34,7 +34,7 @@ public static partial class RouteBuilderExtensions {
         ) 
         where TAggregate : Aggregate 
         where TCommand : class 
-        where TResult : class, new() {
+        where TResult : Result {
         var attr = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
 
         return builder.MapCommand<TCommand, TAggregate, TResult>(attr?.Route, enrichCommand, attr?.PolicyName);
@@ -60,7 +60,7 @@ public static partial class RouteBuilderExtensions {
         ) 
         where TAggregate : Aggregate 
         where TCommand : class
-        where TResult : class, new()
+        where TResult : Result
         => Map<TAggregate, TCommand, TCommand, TResult>(
             builder,
             route,
@@ -81,7 +81,7 @@ public static partial class RouteBuilderExtensions {
     [PublicAPI]
     public static CommandServiceRouteBuilder<TAggregate, TResult> MapAggregateCommands<TAggregate, TResult>(this IEndpointRouteBuilder builder)
         where TAggregate : Aggregate
-        where TResult : class, new()
+        where TResult : Result
         => new(builder);
 
     /// <summary>
@@ -139,7 +139,7 @@ public static partial class RouteBuilderExtensions {
         where TAggregate : Aggregate 
         where TCommand : class 
         where TContract : class 
-        where TResult : class, new() {
+        where TResult : Result {
         if (convert == null && typeof(TCommand) != typeof(TContract))
             throw new InvalidOperationException($"Command type {typeof(TCommand).Name} is not assignable from {typeof(TContract).Name}");
 

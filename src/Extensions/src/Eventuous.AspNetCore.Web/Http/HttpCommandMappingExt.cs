@@ -27,7 +27,7 @@ public static partial class RouteBuilderExtensions {
     public static RouteHandlerBuilder MapCommand<TContract, TCommand, TAggregate, TResult>(
         this IEndpointRouteBuilder                   builder,
         ConvertAndEnrichCommand<TContract, TCommand> convert
-    ) where TAggregate : Aggregate where TCommand : class where TContract : class where TResult : class, new() {
+    ) where TAggregate : Aggregate where TCommand : class where TContract : class where TResult : Result {
         var attr = typeof(TContract).GetAttribute<HttpCommandAttribute>();
         return Map<TAggregate, TContract, TCommand, TResult>(builder, attr?.Route, convert, attr?.PolicyName);
     }
@@ -50,6 +50,6 @@ public static partial class RouteBuilderExtensions {
         string?                                      route,
         ConvertAndEnrichCommand<TContract, TCommand> convert,
         string?                                      policyName = null
-    ) where TAggregate : Aggregate where TCommand : class where TContract : class where TResult : class, new()
+    ) where TAggregate : Aggregate where TCommand : class where TContract : class where TResult : Result
         => Map<TAggregate, TContract, TCommand, TResult>(builder, route, convert, policyName);
 }

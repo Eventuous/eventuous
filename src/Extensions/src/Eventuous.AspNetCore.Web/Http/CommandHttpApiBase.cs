@@ -11,7 +11,7 @@ namespace Eventuous.AspNetCore.Web;
 [PublicAPI]
 public abstract class CommandHttpApiBase<TAggregate, TResult>(ICommandService<TAggregate> service, MessageMap? commandMap = null) : ControllerBase
     where TAggregate : Aggregate
-    where TResult : class, new() {
+    where TResult : Result {
 
     /// <summary>
     /// Call this method from your HTTP endpoints to handle commands and wrap the result properly.

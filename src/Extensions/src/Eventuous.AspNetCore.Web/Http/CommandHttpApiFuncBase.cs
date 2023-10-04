@@ -11,7 +11,7 @@ namespace Eventuous.AspNetCore.Web;
 [PublicAPI]
 public abstract class CommandHttpApiBaseFunc<TState, TResult>(IFuncCommandService<TState> service, MessageMap? commandMap = null) : ControllerBase
     where TState : State<TState>, new()
-    where TResult : class, new() {
+    where TResult : Result {
     /// <summary>
     /// Call this method from your HTTP endpoints to handle commands and wrap the result properly.
     /// </summary>
