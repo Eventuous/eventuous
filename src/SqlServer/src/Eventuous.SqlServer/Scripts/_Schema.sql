@@ -8,7 +8,7 @@ IF OBJECT_ID('__schema__.Streams', 'U') IS NULL
         CREATE TABLE __schema__.Streams
         (
             StreamId   INT IDENTITY (1,1) NOT NULL,
-            StreamName NVARCHAR(1000)     NOT NULL,
+            StreamName NVARCHAR(850)      NOT NULL,
             [Version]  INT DEFAULT (-1)   NOT NULL,
             CONSTRAINT PK_Streams PRIMARY KEY CLUSTERED (StreamId),
             CONSTRAINT UQ_StreamName UNIQUE NONCLUSTERED (StreamName),

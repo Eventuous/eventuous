@@ -1,5 +1,5 @@
 CREATE OR ALTER PROCEDURE __schema__.read_stream_forwards
-    @stream_name NVARCHAR(1000),
+    @stream_name NVARCHAR(850),
     @from_position INT,
     @count INT
 AS
