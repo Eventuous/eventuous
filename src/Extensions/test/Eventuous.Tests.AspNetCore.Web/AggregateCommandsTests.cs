@@ -40,34 +40,45 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
                 .MapAggregateCommands<Booking, BookingResult>()
                 .MapCommand<ImportBookingHttp3, ImportBooking>(Enricher.EnrichCommand)
         );
-        
+
         act.Should().Throw<InvalidOperationException>();
     }
 
-    [Fact]
-    public async Task MapContractToCommandExplicitly() {
+    public static IEnumerable<object[]> ResultTypesToTest() {
+        yield return new object[] { new BookingResult() };
+        yield return new object[] { new Result() };
+    }
+
+    [Theory]
+    [MemberData(nameof(ResultTypesToTest))]
+    public async Task MapContractToCommandExplicitly<TResult>(TResult tResult)
+        where TResult : Result, new() {
         var fixture = new ServerFixture(
             factory,
             output,
             _ => { },
-            app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking, BookingResult>(ImportRoute, Enricher.EnrichCommand)
+            app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking, TResult>(ImportRoute, Enricher.EnrichCommand)
         );
 
-        await Execute(fixture, ImportRoute);
+        var resultTypeName = tResult.GetType().Name;
+        await Execute(fixture, ImportRoute, resultTypeName);
     }
 
-    [Fact]
-    public async Task MapAggregateContractToCommandExplicitly() {
+    [Theory]
+    [MemberData(nameof(ResultTypesToTest))]
+    public async Task MapAggregateContractToCommandExplicitly<TResult>(TResult tResult)
+        where TResult : Result, new() {
         var fixture = new ServerFixture(
             factory,
             output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapAggregateCommands<Booking, TResult>()
                 .MapCommand<ImportBookingHttp, ImportBooking>(ImportRoute, Enricher.EnrichCommand)
         );
 
-        await Execute(fixture, ImportRoute);
+        var resultTypeName = tResult.GetType().Name;
+        await Execute(fixture, ImportRoute, resultTypeName);
     }
 
     [Fact]
@@ -113,7 +124,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         await VerifyJson(content);
     }
 
-    static async Task Execute(ServerFixture fixture, string route) {
+    static async Task Execute(ServerFixture fixture, string route, string typeName = "") {
         var bookRoom = fixture.GetBookRoom();
 
         var import = new ImportBookingHttp(
@@ -124,6 +135,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             bookRoom.Price
         );
         var content = await fixture.ExecuteRequest<ImportBookingHttp, Booking>(import, route, bookRoom.BookingId);
-        await VerifyJson(content);
+
+        await VerifyJson(content).UseParameters(typeName);
     }
 }

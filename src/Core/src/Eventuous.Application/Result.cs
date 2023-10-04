@@ -9,7 +9,7 @@ namespace Eventuous;
 public record struct Change(object Event, string EventType);
 
 [PublicAPI]
-public abstract record Result
+public record Result
 {
     // Ignore. Only to support custom return type.
     public Result() { }
