@@ -59,12 +59,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
 
         var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
 
-        await _eventStore.AppendEvents(
-            Stream,
-            ExpectedStreamVersion.Any,
-            streamEvents.ToArray(),
-            default
-        );
+        await _eventStore.AppendEvents(Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
 
         return events;
     }

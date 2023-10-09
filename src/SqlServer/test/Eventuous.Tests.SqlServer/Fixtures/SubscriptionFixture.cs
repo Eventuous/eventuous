@@ -20,7 +20,7 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
 
     protected SubscriptionFixture(
             IntegrationFixture fixture,
-            ITestOutputHelper  outputHelper,
+            ITestOutputHelper  output,
             T                  handler,
             bool               subscribeToAll,
             bool               autoStart = true,
@@ -30,8 +30,8 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
         _fixture        = fixture;
         _subscribeToAll = subscribeToAll;
         Stream          = new StreamName(fixture.Auto.Create<string>());
-        SchemaName      = fixture.GetSchemaName();
-        _loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
+        SchemaName      = fixture.SchemaName;
+        _loggerFactory  = TestHelpers.Logging.GetLoggerFactory(output, logLevel);
         _listener       = new LoggingEventListener(_loggerFactory);
         SubscriptionId  = $"test-{Guid.NewGuid():N}";
         Handler         = handler;
@@ -39,6 +39,7 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
     }
 
     protected string SubscriptionId { get; }
+    protected Schema Schema         { get; set; }
 
     protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
 
@@ -51,8 +52,8 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
     readonly ILoggerFactory       _loggerFactory;
 
     public virtual async Task InitializeAsync() {
-        var schema = new Schema(SchemaName);
-        await schema.CreateSchema(_fixture.GetConnection);
+        this.Schema = new Schema(SchemaName);
+        await Schema.CreateSchema(_fixture.GetConnection);
 
         CheckpointStoreOptions = new SqlServerCheckpointStoreOptions { Schema = SchemaName };
         CheckpointStore        = new SqlServerCheckpointStore(_fixture.GetConnection, CheckpointStoreOptions);

@@ -12,7 +12,9 @@
     <ItemGroup>
         <EmbeddedResource Include="Scripts\AppendEvents.sql"/>
         <EmbeddedResource Include="Scripts\CheckStream.sql"/>
+        <EmbeddedResource Include="Scripts\ReadAllBackwards.sql"/>
         <EmbeddedResource Include="Scripts\ReadAllForwards.sql"/>
+        <EmbeddedResource Include="Scripts\ReadStreamBackwards.sql"/>
         <EmbeddedResource Include="Scripts\ReadStreamForwards.sql"/>
         <EmbeddedResource Include="Scripts\ReadStreamSub.sql"/>
         <EmbeddedResource Include="Scripts\_Schema.sql"/>
@@ -25,5 +27,9 @@
             <Link>Tools\Ensure.cs</Link>
         </Compile>
         <Using Include="Eventuous.Tools"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Eventuous.Tests.SqlServer"/>
     </ItemGroup>
 </Project>
