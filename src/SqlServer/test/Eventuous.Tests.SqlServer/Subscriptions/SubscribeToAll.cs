@@ -30,7 +30,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
 
         await Start();
         await Handler.Validate(2.Seconds());
-        Handler.Count.Should().Be(10);
+        Handler.Count.Should().Be(testEvents.Count);
         await Stop();
     }
 

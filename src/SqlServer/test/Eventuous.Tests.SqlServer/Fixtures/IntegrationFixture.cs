@@ -36,8 +36,8 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     public async Task InitializeAsync() {
         _sqlServer = new SqlEdgeBuilder()
             .WithImage("mcr.microsoft.com/azure-sql-edge:latest")
-            .WithAutoRemove(false)
-            .WithCleanUp(false)
+            // .WithAutoRemove(false)
+            // .WithCleanUp(false)
             .Build();
         await _sqlServer.StartAsync();
 
@@ -55,7 +55,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     }
 
     public async Task DisposeAsync() {
-        // await _sqlServer.DisposeAsync();
+        await _sqlServer.DisposeAsync();
         _listener.Dispose();
     }
 }
