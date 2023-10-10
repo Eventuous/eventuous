@@ -54,8 +54,7 @@ public class FunctionalServiceTests : IDisposable {
 
     [Fact]
     public async Task ExecuteOnAnyForNewStream() {
-        var bookRoom    = GetBookRoom();
-        var paymentTime = DateTimeOffset.Now;
+        var bookRoom = GetBookRoom();
 
         var cmd = new Commands.ImportBooking {
             BookingId = "dummy",
@@ -67,6 +66,21 @@ public class FunctionalServiceTests : IDisposable {
         var result = await _service.Handle(cmd, default);
         result.Success.Should().BeTrue();
         result.Changes.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task AmendEventAddsMeta() {
+        var service = new BookingFuncService(_store, amendEvent: AddMeta);
+        var cmd     = GetBookRoom();
+
+        await service.Handle(cmd, default);
+        
+        var stream = await _store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, true, default);
+        stream[0].Metadata["foo"].Should().Be("bar");
+
+        return;
+
+        StreamEvent AddMeta(StreamEvent evt) => evt with { Metadata = new Metadata { ["foo"] = "bar" } };
     }
 
     static Commands.BookRoom GetBookRoom() {

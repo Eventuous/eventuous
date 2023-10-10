@@ -6,16 +6,15 @@ namespace Eventuous;
 using static Diagnostics.PersistenceEventSource;
 
 public class AggregateStore<TReader>(
-        IEventStore                     eventStore,
-        TReader                         archiveReader,
-        Func<StreamEvent, StreamEvent>? amendEvent      = null,
-        AggregateFactoryRegistry?       factoryRegistry = null
+        IEventStore               eventStore,
+        TReader                   archiveReader,
+        AmendEvent?               amendEvent      = null,
+        AggregateFactoryRegistry? factoryRegistry = null
     ) : IAggregateStore where TReader : class, IEventReader {
-    readonly Func<StreamEvent, StreamEvent> _amendEvent      = amendEvent      ?? (x => x);
-    readonly AggregateFactoryRegistry       _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
+    readonly AggregateFactoryRegistry _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
 
     public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate
-        => eventStore.Store(streamName, aggregate, _amendEvent, cancellationToken);
+        => eventStore.Store(streamName, aggregate, amendEvent, cancellationToken);
 
     public Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate
         => LoadInternal<T>(streamName, true, cancellationToken);
