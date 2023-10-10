@@ -9,7 +9,6 @@ namespace Eventuous.AspNetCore.Web;
 /// When used without a nesting class, the aggregate type is mandatory. The Route property
 /// is optional, if you omit it, we'll use the command class name as the route.
 /// </summary>
-[PublicAPI]
 [AttributeUsage(AttributeTargets.Class)]
 public class HttpCommandAttribute : Attribute {
     /// <summary>
@@ -33,14 +32,23 @@ public class HttpCommandAttribute : Attribute {
     public string? PolicyName { get; set; }
 }
 
-public class HttpCommandAttribute<T> : HttpCommandAttribute where T : Aggregate {
-    public HttpCommandAttribute() => AggregateType = typeof(T);
+[AttributeUsage(AttributeTargets.Class)]
+public class HttpCommandAttribute<TAggregate> : HttpCommandAttribute where TAggregate : Aggregate {
+    public HttpCommandAttribute() => AggregateType = typeof(TAggregate);
 }
 
-[PublicAPI]
+[AttributeUsage(AttributeTargets.Class)]
+public class HttpCommandAttribute<TAggregate, TResult> : HttpCommandAttribute where TAggregate : Aggregate where TResult : Result {
+    public HttpCommandAttribute() {
+        AggregateType = typeof(TAggregate);
+        ResultType    = typeof(TResult);
+    }
+}
+
 [AttributeUsage(AttributeTargets.Class)]
 public class AggregateCommandsAttribute(Type aggregateType) : Attribute {
-    public Type AggregateType { get; set; } = aggregateType;
+    public Type  AggregateType { get; set; } = aggregateType;
+    public Type? ResultType    { get; set; }
 }
 
 /// <summary>
@@ -48,19 +56,25 @@ public class AggregateCommandsAttribute(Type aggregateType) : Attribute {
 /// the commands in the nesting class contains. All commands nested in the class annotated with this attribute
 /// must operate on a single aggregate type.
 /// </summary>
-[PublicAPI]
 [AttributeUsage(AttributeTargets.Class)]
-public class AggregateCommandsAttribute<T>() : AggregateCommandsAttribute(typeof(T)) where T : Aggregate;
+public class AggregateCommandsAttribute<TAggregate>() : AggregateCommandsAttribute(typeof(TAggregate)) where TAggregate : Aggregate;
 
-public static class AttributeCheck {
+[AttributeUsage(AttributeTargets.Class)]
+public class AggregateCommandsAttribute<TAggregate, TResult> : AggregateCommandsAttribute
+    where TAggregate : Aggregate where TResult : Result {
+    public AggregateCommandsAttribute() : base(typeof(TAggregate)) {
+        ResultType = typeof(TResult);
+    }
+}
+
+static class AttributeCheck {
     public static void EnsureCorrectAggregate<TCommand, T>(HttpCommandAttribute? attr) {
         if (attr != null && attr.GetType().IsGenericType) {
             var aggregateType = attr.GetType().GetGenericArguments()[0];
 
             if (aggregateType != typeof(T)) {
                 throw new InvalidOperationException(
-                    $"Command {typeof(TCommand).Name} is mapped to aggregate {aggregateType.Name} but " +
-                    $"the route builder is for aggregate {typeof(T).Name}"
+                    $"Command {typeof(TCommand).Name} is mapped to aggregate {aggregateType.Name} but the route builder is for aggregate {typeof(T).Name}"
                 );
             }
         }
