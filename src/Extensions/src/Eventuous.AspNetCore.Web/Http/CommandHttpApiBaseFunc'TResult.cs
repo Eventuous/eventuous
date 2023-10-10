@@ -6,22 +6,24 @@ namespace Eventuous.AspNetCore.Web;
 /// <summary>
 /// Base class for exposing commands via Web API using a controller.
 /// </summary>
-/// <typeparam name="TAggregate">Aggregate type</typeparam>
+/// <typeparam name="TState">State type</typeparam>
+/// <typeparam name="TResult">Result type</typeparam>
 [PublicAPI]
-public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate> service, MessageMap? commandMap = null) : ControllerBase
-    where TAggregate : Aggregate {
+public abstract class CommandHttpApiBaseFunc<TState, TResult>(IFuncCommandService<TState> service, MessageMap? commandMap = null) : ControllerBase
+    where TState : State<TState>, new()
+    where TResult : Result {
     /// <summary>
     /// Call this method from your HTTP endpoints to handle commands and wrap the result properly.
     /// </summary>
     /// <param name="command">Command instance</param>
     /// <param name="cancellationToken">Request cancellation token</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    /// <returns>Command handling result</returns>
-    protected async Task<ActionResult<Result>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+    /// <returns>A custom result class that inherits from <see cref="Result"/>.</returns>
+    protected async Task<ActionResult<TResult>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await service.Handle(command, cancellationToken);
 
-        return AsActionResult<TAggregate>(result);
+        return AsActionResult<TState>(result);
     }
 
     /// <summary>
@@ -34,22 +36,22 @@ public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate>
     /// <typeparam name="TCommand">Domain command type</typeparam>
     /// <returns>A custom result class that inherits from <see cref="Result"/>.</returns>
     /// <exception cref="InvalidOperationException">Throws if the command map hasn't been configured</exception>
-    protected async Task<ActionResult> Handle<TContract, TCommand>(TContract httpCommand, CancellationToken cancellationToken)
+    protected async Task<ActionResult<TResult>> Handle<TContract, TCommand>(TContract httpCommand, CancellationToken cancellationToken)
         where TContract : class where TCommand : class {
         if (commandMap == null) throw new InvalidOperationException("Command map is not configured");
 
-        var command = commandMap.Convert<TContract, TCommand>(httpCommand);
-        var result  = await service.Handle(command, cancellationToken);
+        var command    = commandMap.Convert<TContract, TCommand>(httpCommand);
+        var result = await service.Handle(command, cancellationToken);
 
-        return AsActionResult<TAggregate>(result);
+        return AsActionResult<TState>(result);
     }
 
-    static ActionResult AsActionResult<T>(Result result) where T : Aggregate
+    static ActionResult<TResult> AsActionResult<T>(Result result) where T : State<T>
         => result is ErrorResult error
             ? error.Exception switch {
-                OptimisticConcurrencyException<T> => new ConflictObjectResult(error),
-                AggregateNotFoundException<T>     => new NotFoundObjectResult(error),
-                _                                 => new BadRequestObjectResult(error)
+                OptimisticConcurrencyException => new ConflictObjectResult(error),
+                AggregateNotFoundException     => new NotFoundObjectResult(error),
+                _                              => new BadRequestObjectResult(error)
             }
             : new OkObjectResult(result);
 }

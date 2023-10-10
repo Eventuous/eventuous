@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Eventuous.AspNetCore.Web;
 
-[PublicAPI]
 public class CommandServiceRouteBuilder<TAggregate, TResult>(IEndpointRouteBuilder builder)
     where TAggregate : Aggregate
     where TResult : Result {
