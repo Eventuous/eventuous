@@ -8,8 +8,8 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests.Application;
 
 public class BookingFuncService : FunctionalCommandService<BookingState> {
-    public BookingFuncService(IEventStore store, TypeMapper? typeMap = null)
-        : base(store, typeMap) {
+    public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
+        : base(store, typeMap, amendEvent) {
 #pragma warning disable CS0618 // Type or member is obsolete
         OnNew<BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);
 #pragma warning restore CS0618 // Type or member is obsolete

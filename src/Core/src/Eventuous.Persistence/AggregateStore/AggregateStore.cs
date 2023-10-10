@@ -6,10 +6,10 @@ namespace Eventuous;
 using static Diagnostics.PersistenceEventSource;
 
 public class AggregateStore : IAggregateStore {
-    readonly Func<StreamEvent, StreamEvent> _amendEvent;
-    readonly AggregateFactoryRegistry       _factoryRegistry;
-    readonly IEventReader                   _eventReader;
-    readonly IEventWriter                   _eventWriter;
+    readonly AmendEvent               _amendEvent;
+    readonly AggregateFactoryRegistry _factoryRegistry;
+    readonly IEventReader             _eventReader;
+    readonly IEventWriter             _eventWriter;
 
     /// <summary>
     /// Creates a new instance of the default aggregate store
@@ -19,11 +19,11 @@ public class AggregateStore : IAggregateStore {
     /// <param name="amendEvent"></param>
     /// <param name="factoryRegistry"></param>
     public AggregateStore(
-        IEventReader                    reader,
-        IEventWriter                    writer,
-        Func<StreamEvent, StreamEvent>? amendEvent      = null,
-        AggregateFactoryRegistry?       factoryRegistry = null
-    ) {
+            IEventReader              reader,
+            IEventWriter              writer,
+            AmendEvent?               amendEvent      = null,
+            AggregateFactoryRegistry? factoryRegistry = null
+        ) {
         _amendEvent      = amendEvent      ?? (x => x);
         _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
         _eventReader     = Ensure.NotNull(reader);
@@ -37,10 +37,11 @@ public class AggregateStore : IAggregateStore {
     /// <param name="amendEvent"></param>
     /// <param name="factoryRegistry"></param>
     public AggregateStore(
-        IEventStore                     eventStore,
-        Func<StreamEvent, StreamEvent>? amendEvent      = null,
-        AggregateFactoryRegistry?       factoryRegistry = null
-    ) : this(eventStore, eventStore, amendEvent, factoryRegistry) { }
+            IEventStore               eventStore,
+            AmendEvent?               amendEvent      = null,
+            AggregateFactoryRegistry? factoryRegistry = null
+        )
+        : this(eventStore, eventStore, amendEvent, factoryRegistry) { }
 
     public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate
         => _eventWriter.Store(streamName, aggregate, _amendEvent, cancellationToken);
@@ -57,12 +58,11 @@ public class AggregateStore : IAggregateStore {
         try {
             var events = await _eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken);
             aggregate.Load(events.Select(x => x.Payload));
-        }
-        catch (StreamNotFound) when (!failIfNotFound) {
+        } catch (StreamNotFound) when (!failIfNotFound) {
             return aggregate;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Log.UnableToLoadAggregate<T>(streamName, e);
+
             throw e is StreamNotFound ? new AggregateNotFoundException<T>(streamName, e) : e;
         }
 

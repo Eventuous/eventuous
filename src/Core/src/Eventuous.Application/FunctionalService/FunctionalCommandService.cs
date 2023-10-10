@@ -7,15 +7,30 @@ namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
 
-public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null)
+/// <summary>
+/// Base class for a functional command service for a given <seealso cref="State{T}"/> type.
+/// Add your command handlers to the service using <see cref="On{TCommand}"/>.
+/// </summary>
+/// <param name="reader">Event reader or event store</param>
+/// <param name="writer">Event writer or event store</param>
+/// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
+/// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
+/// <typeparam name="TState">State object type</typeparam>
+public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
     : IFuncCommandService<TState>, IStateCommandService<TState> where TState : State<TState>, new() {
     readonly TypeMapper              _typeMap  = typeMap ?? TypeMap.Instance;
     readonly FuncHandlersMap<TState> _handlers = new();
 
     bool _initialized;
 
-    protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null)
-        : this(store, store, typeMap) { }
+    /// <summary>
+    /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
+    /// </summary>
+    /// <param name="store">Event store</param>
+    /// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
+    /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
+    protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
+        : this(store, store, typeMap, amendEvent) { }
 
     /// <summary>
     /// Returns the command handler builder for the specified command type.
@@ -41,6 +56,14 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
     protected void OnAny<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, ExecuteCommand<TState, TCommand> action) where TCommand : class
         => On<TCommand>().InState(ExpectedState.Any).GetStream(getStreamName).Act(action);
 
+    /// <summary>
+    /// Function to handle a command and return the resulting state and changes.
+    /// </summary>
+    /// <param name="command">Command to handle</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    /// <returns><seealso cref="Result{TState}"/> instance</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Throws when there's no command handler was registered for the command type</exception>
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
         if (!_initialized) BuildHandlers();
 
@@ -73,7 +96,7 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<TState>(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, static e => e, cancellationToken).NoContext();
+            var storeResult = await writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, amendEvent, cancellationToken).NoContext();
             var changes     = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
