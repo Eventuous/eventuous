@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
 <!--        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>-->
         <LangVersion>preview</LangVersion>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
@@ -66,6 +66,7 @@
         <Using Include="FluentAssertions.Extensions"/>
         <Using Include="AutoFixture"/>
         <Using Include="Microsoft.Extensions.Logging"/>
+        <Content Include="$(RepoRoot)\xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">

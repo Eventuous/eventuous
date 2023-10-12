@@ -9,7 +9,23 @@ namespace Eventuous;
 public record struct Change(object Event, string EventType);
 
 [PublicAPI]
-public abstract record Result(object? State, bool Success, IEnumerable<Change>? Changes = null);
+public record Result
+{
+    // Ignore. Only to support custom return type.
+    public Result() { }
+
+    public Result(object? state, bool success, IEnumerable<Change>? changes = null) {
+        State = state;
+        Success = success;
+        Changes = changes;
+    }
+
+    public object? State { get; init; }
+
+    public bool Success { get; init; }
+
+    public IEnumerable<Change>? Changes { get; init; }
+}
 
 [PublicAPI]
 public record OkResult(object State, IEnumerable<Change>? Changes = null) : Result(State, true, Changes);

@@ -1,5 +1,5 @@
 CREATE OR ALTER PROCEDURE __schema__.append_events
-    @stream_name VARCHAR(1000),
+    @stream_name VARCHAR(850),
     @expected_version INT,
     @created DATETIME2 NULL,
     @messages __schema__.StreamMessage READONLY

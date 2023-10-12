@@ -1,4 +1,4 @@
-// Copyright (C) Ubiquitous AS. All rights reserved
+// Copyright (C) Ubiquitous AS.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 namespace Eventuous.AspNetCore.Web;
@@ -16,40 +16,31 @@ public abstract class CommandHttpApiBaseFunc<TState>(IFuncCommandService<TState>
     /// <param name="command">Command instance</param>
     /// <param name="cancellationToken">Request cancellation token</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    /// <returns></returns>
-    protected async Task<ActionResult<Result>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+    /// <returns>Command handling result</returns>
+    protected async Task<ActionResult<Result<TState>>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await service.Handle(command, cancellationToken);
 
-        return AsActionResult<TState>(result);
+        return result.AsActionResult<TState>();
     }
 
     /// <summary>
     /// Call this method from your HTTP endpoints to handle commands where there is a mapping between
     /// HTTP contract and the domain command, and wrap the result properly.
     /// </summary>
-    /// <param name="command">HTTP command</param>
+    /// <param name="httpCommand">HTTP command</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="TContract">HTTP command type</typeparam>
     /// <typeparam name="TCommand">Domain command type</typeparam>
-    /// <returns></returns>
+    /// <returns>Command handling result</returns>
     /// <exception cref="InvalidOperationException">Throws if the command map hasn't been configured</exception>
-    protected async Task<ActionResult<Result>> Handle<TContract, TCommand>(TContract command, CancellationToken cancellationToken)
+    protected async Task<ActionResult<Result<TState>>> Handle<TContract, TCommand>(TContract httpCommand, CancellationToken cancellationToken)
         where TContract : class where TCommand : class {
         if (commandMap == null) throw new InvalidOperationException("Command map is not configured");
 
-        var cmd    = commandMap.Convert<TContract, TCommand>(command);
-        var result = await service.Handle(cmd, cancellationToken);
+        var command = commandMap.Convert<TContract, TCommand>(httpCommand);
+        var result  = await service.Handle(command, cancellationToken);
 
-        return AsActionResult<TState>(result);
+        return result.AsActionResult<TState>();
     }
-
-    static ActionResult<Result> AsActionResult<T>(Result result) where T : State<T>
-        => result is ErrorResult error
-            ? error.Exception switch {
-                OptimisticConcurrencyException => new ConflictObjectResult(error),
-                AggregateNotFoundException     => new NotFoundObjectResult(error),
-                _                              => new BadRequestObjectResult(error)
-            }
-            : new OkObjectResult(result);
 }

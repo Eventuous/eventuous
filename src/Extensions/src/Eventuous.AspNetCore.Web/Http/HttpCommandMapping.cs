@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using Eventuous.AspNetCore.Web;
 using Eventuous.AspNetCore.Web.Diagnostics;
+using static Microsoft.AspNetCore.Http.StatusCodes;
 
 // ReSharper disable CheckNamespace
 
@@ -25,15 +26,18 @@ public static partial class RouteBuilderExtensions {
     /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
+    /// <typeparam name="TResult">Result type that will be returned</typeparam>
     /// <returns></returns>
-    [PublicAPI]
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
+    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TResult>(
             this IEndpointRouteBuilder              builder,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
-        ) where TAggregate : Aggregate where TCommand : class {
+        )
+        where TAggregate : Aggregate
+        where TCommand : class
+        where TResult : Result {
         var attr = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
 
-        return builder.MapCommand<TCommand, TAggregate>(attr?.Route, enrichCommand, attr?.PolicyName);
+        return builder.MapCommand<TCommand, TAggregate, TResult>(attr?.Route, enrichCommand, attr?.PolicyName);
     }
 
     /// <summary>
@@ -45,15 +49,18 @@ public static partial class RouteBuilderExtensions {
     /// <param name="policyName">Authorization policy</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
+    /// <typeparam name="TResult">Result type that will be returned</typeparam>
     /// <returns></returns>
-    [PublicAPI]
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate>(
+    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TResult>(
             this IEndpointRouteBuilder              builder,
             string?                                 route,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
             string?                                 policyName    = null
-        ) where TAggregate : Aggregate where TCommand : class
-        => Map<TAggregate, TCommand, TCommand>(
+        )
+        where TAggregate : Aggregate
+        where TCommand : class
+        where TResult : Result
+        => Map<TAggregate, TCommand, TCommand, TResult>(
             builder,
             route,
             enrichCommand != null
@@ -63,15 +70,26 @@ public static partial class RouteBuilderExtensions {
         );
 
     /// <summary>
-    /// Creates an instance of <see cref="CommandServiceRouteBuilder{T}"/> for a given aggregate type, so you
+    /// Creates an instance of <see cref="CommandServiceRouteBuilder{TAggregate,TResult}"/> for a given aggregate type, so you
     /// can explicitly map commands to HTTP endpoints. 
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <returns></returns>
-    [PublicAPI]
-    public static CommandServiceRouteBuilder<TAggregate> MapAggregateCommands<TAggregate>(this IEndpointRouteBuilder builder)
+    public static CommandServiceRouteBuilder<TAggregate, Result> MapAggregateCommands<TAggregate>(this IEndpointRouteBuilder builder)
+        where TAggregate : Aggregate => new(builder);
+
+    /// <summary>
+    /// Creates an instance of <see cref="CommandServiceRouteBuilder{TAggregate,TResult}"/> for a given aggregate type, so you
+    /// can explicitly map commands to HTTP endpoints. 
+    /// </summary>
+    /// <param name="builder">Endpoint route builder instance</param>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <typeparam name="TResult">Result type that will be returned</typeparam>
+    /// <returns></returns>
+    public static CommandServiceRouteBuilder<TAggregate, TResult> MapAggregateCommands<TAggregate, TResult>(this IEndpointRouteBuilder builder)
         where TAggregate : Aggregate
+        where TResult : Result
         => new(builder);
 
     /// <summary>
@@ -84,7 +102,6 @@ public static partial class RouteBuilderExtensions {
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    [PublicAPI]
     public static IEndpointRouteBuilder MapDiscoveredCommands<TAggregate>(this IEndpointRouteBuilder builder, params Assembly[] assemblies)
         where TAggregate : Aggregate {
         var assembliesToScan = assemblies.Length == 0
@@ -114,18 +131,22 @@ public static partial class RouteBuilderExtensions {
                         $"Command aggregate is {attr.AggregateType.Name} but expected to be {typeof(TAggregate).Name}"
                     );
 
-                var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type, type);
+                var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type, type, attr.ResultType);
                 genericMethod.Invoke(null, new object?[] { builder, attr.Route, null, attr.PolicyName });
             }
         }
     }
 
-    static RouteHandlerBuilder Map<TAggregate, TContract, TCommand>(
+    static RouteHandlerBuilder Map<TAggregate, TContract, TCommand, TResult>(
             IEndpointRouteBuilder                         builder,
             string?                                       route,
             ConvertAndEnrichCommand<TContract, TCommand>? convert    = null,
             string?                                       policyName = null
-        ) where TAggregate : Aggregate where TCommand : class where TContract : class {
+        )
+        where TAggregate : Aggregate
+        where TCommand : class
+        where TContract : class
+        where TResult : Result {
         if (convert == null && typeof(TCommand) != typeof(TContract))
             throw new InvalidOperationException($"Command type {typeof(TCommand).Name} is not assignable from {typeof(TContract).Name}");
 
@@ -146,14 +167,15 @@ public static partial class RouteBuilderExtensions {
 
                     var result = await InvokeService(service, command, context.RequestAborted);
 
-                    return result.AsResult();
+                    return result.AsResult<TResult>();
                 }
             )
-            .Accepts<TContract>(false, "application/json")
-            .Produces<Eventuous.OkResult>()
-            .Produces<ErrorResult>(StatusCodes.Status404NotFound)
-            .Produces<ErrorResult>(StatusCodes.Status409Conflict)
-            .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
+            .Accepts<TContract>()
+            .ProducesOk<TResult>()
+            .ProducesProblemDetails(Status404NotFound)
+            .ProducesProblemDetails(Status409Conflict)
+            .ProducesProblemDetails(Status500InternalServerError)
+            .ProducesProblemDetails(Status400BadRequest);
 
         routeBuilder.AddPolicy(policyName);
         routeBuilder.AddAuthorization(typeof(TContract));
@@ -195,13 +217,15 @@ public static partial class RouteBuilderExtensions {
 
                 if (parentAttribute == null) continue;
 
-                LocalMap(parentAttribute.AggregateType, type, attr.Route, attr.PolicyName);
+                LocalMap(parentAttribute.AggregateType, type, attr.Route, attr.PolicyName, parentAttribute.ResultType ?? attr.ResultType);
             }
         }
 
-        void LocalMap(Type aggregateType, Type type, string? route, string? policyName) {
+        void LocalMap(Type aggregateType, Type type, string? route, string? policyName, Type resultType) {
             var appServiceBase = typeof(ICommandService<>);
             var appServiceType = appServiceBase.MakeGenericType(aggregateType);
+            var method         = typeof(ResultExtensions).GetMethod(nameof(ResultExtensions.AsResult), BindingFlags.Static | BindingFlags.Public)!;
+            var genericMethod  = method.MakeGenericMethod(resultType);
 
             var routeBuilder = builder
                 .MapPost(
@@ -216,14 +240,15 @@ public static partial class RouteBuilderExtensions {
 
                         var result = await InvokeService(service, cmd, context.RequestAborted);
 
-                        return result.AsResult();
+                        return (genericMethod.Invoke(null, new object?[] { result }) as IResult)!;
                     }
                 )
-                .Accepts(type, false, "application/json")
-                .Produces<Eventuous.OkResult>()
-                .Produces<ErrorResult>(StatusCodes.Status404NotFound)
-                .Produces<ErrorResult>(StatusCodes.Status409Conflict)
-                .Produces<ErrorResult>(StatusCodes.Status400BadRequest);
+                .Accepts(type)
+                .ProducesOk(resultType)
+                .ProducesProblemDetails(Status404NotFound)
+                .ProducesProblemDetails(Status409Conflict)
+                .ProducesProblemDetails(Status400BadRequest)
+                .ProducesProblemDetails(Status500InternalServerError);
 
             routeBuilder.AddPolicy(policyName);
             routeBuilder.AddAuthorization(type);
@@ -264,6 +289,7 @@ public static partial class RouteBuilderExtensions {
                 var genericMethod = method!.MakeGenericMethod(t);
                 var typeArgs      = new[] { t, typeof(CancellationToken), typeof(Task<Result>) };
                 var funcType      = typeof(Func<,,>).MakeGenericType(typeArgs);
+
                 return Delegate.CreateDelegate(funcType, service, genericMethod);
             }
         );

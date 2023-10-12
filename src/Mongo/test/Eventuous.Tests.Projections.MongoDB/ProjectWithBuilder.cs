@@ -45,9 +45,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
     async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)
         where T : class {
         var append = await Fixture.AppendEvent(stream, evt);
-
-        await Task.Delay(500);
-
+        await WaitForPosition(append.GlobalPosition);
         var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId());
 
         return (append, actual);
@@ -69,7 +67,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
                         }
                     )
             );
-          
+
             On<RoomBooked>(
                 b => b
                     .InsertOne
@@ -80,7 +78,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
                         }
                     )
             );
-            
+
             On<BookingPaymentRegistered>(
                 b => b
                     .UpdateOne

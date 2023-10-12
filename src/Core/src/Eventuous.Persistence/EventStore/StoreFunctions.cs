@@ -6,13 +6,25 @@ namespace Eventuous;
 using static Diagnostics.PersistenceEventSource;
 
 public static class StoreFunctions {
+    /// <summary>
+    /// Stores a collection of events to the event store
+    /// </summary>
+    /// <param name="eventWriter">Event writer or event store</param>
+    /// <param name="streamName">Name of the stream where events will be appended to</param>
+    /// <param name="originalVersion">Expected version of the stream in the event store</param>
+    /// <param name="changes">Collection of events to store</param>
+    /// <param name="amendEvent">Optional: function to add extra information to an event before it gets stored</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Append events result</returns>
+    /// <exception cref="Exception">Any exception that occurred in the event store</exception>
+    /// <exception cref="OptimisticConcurrencyException">Gets thrown if the expected stream version mismatches with <see cref="originalVersion"/></exception>
     public static async Task<AppendEventsResult> Store(
-            this IEventWriter              eventWriter,
-            StreamName                     streamName,
-            int                            originalVersion,
-            IReadOnlyCollection<object>    changes,
-            Func<StreamEvent, StreamEvent> amendEvent,
-            CancellationToken              cancellationToken
+            this IEventWriter           eventWriter,
+            StreamName                  streamName,
+            int                         originalVersion,
+            IReadOnlyCollection<object> changes,
+            AmendEvent?                 amendEvent,
+            CancellationToken           cancellationToken
         ) {
         Ensure.NotNull(changes);
 
@@ -39,16 +51,27 @@ public static class StoreFunctions {
         StreamEvent ToStreamEvent(object evt, int position) {
             var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", position);
 
-            return amendEvent(streamEvent);
+            return amendEvent?.Invoke(streamEvent) ?? streamEvent;
         }
     }
 
+    /// <summary>
+    /// Store aggregate changes to the event store
+    /// </summary>
+    /// <param name="eventWriter">Event writer or event store</param>
+    /// <param name="streamName">Stream name for the aggregate</param>
+    /// <param name="aggregate">Aggregate instance</param>
+    /// <param name="amendEvent">Optional: function to add extra information to the event before it gets stored</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <returns>Append event result</returns>
+    /// <exception cref="OptimisticConcurrencyException{T}"></exception>
     public static async Task<AppendEventsResult> Store<T>(
-            this IEventWriter              eventWriter,
-            StreamName                     streamName,
-            T                              aggregate,
-            Func<StreamEvent, StreamEvent> amendEvent,
-            CancellationToken              cancellationToken
+            this IEventWriter eventWriter,
+            StreamName        streamName,
+            T                 aggregate,
+            AmendEvent?       amendEvent,
+            CancellationToken cancellationToken
         ) where T : Aggregate {
         Ensure.NotNull(aggregate);
 
@@ -63,6 +86,16 @@ public static class StoreFunctions {
         }
     }
 
+    /// <summary>
+    /// Reads a stream from the event store to a collection of <seealso cref="StreamEvent"/>
+    /// </summary>
+    /// <param name="eventReader">Event reader or event store</param>
+    /// <param name="streamName">Name of the stream to read from</param>
+    /// <param name="start">Stream version to start reading from</param>
+    /// <param name="failIfNotFound">Set to true if the function needs to throw when the stream isn't found. Default is false, and if there's no
+    /// stream with the given name found in the store, the function will return an empty collection.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Collection of events wrapped in <seealso cref="StreamEvent"/></returns>
     public static async Task<StreamEvent[]> ReadStream(
             this IEventReader  eventReader,
             StreamName         streamName,
