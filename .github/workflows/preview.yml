@@ -9,7 +9,7 @@ on:
 
 jobs:
   nuget:
-    runs-on: self-hosted
+    runs-on: arc-runner-set
     env:
       DOTNET_INSTALL_DIR: ~/.dotnet
 
