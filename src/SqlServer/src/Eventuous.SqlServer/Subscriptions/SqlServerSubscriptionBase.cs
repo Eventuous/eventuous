@@ -48,6 +48,8 @@ public abstract class SqlServerSubscriptionBase<T>(
             if (_runner != null) await _runner.NoContext();
         } catch (OperationCanceledException) {
             // Nothing to do
+        } catch (InvalidOperationException e) when (e.Message.Contains("Operation cancelled by user.")) {
+            // It's a wrapped task cancelled exception
         }
     }
 
