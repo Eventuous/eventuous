@@ -5,14 +5,17 @@
     <PropertyGroup Label="Package versions for .NET 6" Condition="$(TargetFramework) == 'net6.0'">
         <MicrosoftExtensionsVer>6.0</MicrosoftExtensionsVer>
         <MicrosoftTestHostVer>[6.0.5,7)</MicrosoftTestHostVer>
-        <MicrosoftHealthCheckVer>[6.0.21, 7)</MicrosoftHealthCheckVer>
-        <MicrosoftWebVer>[6.0.16, 7)</MicrosoftWebVer>
+        <MicrosoftHealthCheckVer>6.0</MicrosoftHealthCheckVer>
     </PropertyGroup>
     <PropertyGroup Label="Package versions for .NET 7" Condition="$(TargetFramework) == 'net7.0'">
         <MicrosoftExtensionsVer>7.0</MicrosoftExtensionsVer>
         <MicrosoftTestHostVer>7.0.10</MicrosoftTestHostVer>
-        <MicrosoftWebVer>7.0.10</MicrosoftWebVer>
-        <MicrosoftHealthCheckVer>7.0.10</MicrosoftHealthCheckVer>
+        <MicrosoftHealthCheckVer>7.0</MicrosoftHealthCheckVer>
+    </PropertyGroup>
+    <PropertyGroup Label="Package versions for .NET 8" Condition="$(TargetFramework) == 'net8.0'">
+        <MicrosoftExtensionsVer>8.0.0-rc.2.23479.6</MicrosoftExtensionsVer>
+        <MicrosoftTestHostVer>8.0.0-rc.2.23480.2</MicrosoftTestHostVer>
+        <MicrosoftHealthCheckVer>8.0.0-rc.2.23480.2</MicrosoftHealthCheckVer>
     </PropertyGroup>
     <PropertyGroup Label="Npgsql Version">
         <NpgsqlVer>7.0.4</NpgsqlVer>
