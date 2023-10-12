@@ -10,20 +10,22 @@ on:
 jobs:
   nuget:
     runs-on: arc-runner-set
-    env:
-      DOTNET_INSTALL_DIR: ~/.dotnet
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:8.0
+#    env:
+#      DOTNET_INSTALL_DIR: ~/.dotnet
 
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: |
-            6.0.415
-            7.0.402
-            8.0.x
-          dotnet-quality: 'preview'
+#      - uses: actions/setup-dotnet@v3
+#        with:
+#          dotnet-version: |
+#            6.0.415
+#            7.0.402
+#            8.0.x
+#          dotnet-quality: 'preview'
       -
         name: Run tests
         run: dotnet test
