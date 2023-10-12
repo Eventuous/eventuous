@@ -22,9 +22,9 @@ jobs:
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-#            6.0.415
-#            7.0.402
             8.0.x
+          # 6.0.415
+          # 7.0.402
           dotnet-quality: 'preview'
       -
         name: Run tests
