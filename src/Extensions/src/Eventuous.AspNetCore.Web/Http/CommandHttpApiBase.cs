@@ -44,7 +44,7 @@ public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate>
         return AsActionResult<TAggregate>(result);
     }
 
-    static ActionResult AsActionResult<T>(Result result) where T : Aggregate
+    protected virtual ActionResult AsActionResult<T>(Result result) where T : Aggregate
         => result is ErrorResult error
             ? error.Exception switch {
                 OptimisticConcurrencyException<T> => new ConflictObjectResult(error),
