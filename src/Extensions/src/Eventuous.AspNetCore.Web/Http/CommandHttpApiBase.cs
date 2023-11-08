@@ -1,6 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Formatters;
+
 namespace Eventuous.AspNetCore.Web;
 
 /// <summary>
@@ -44,12 +47,40 @@ public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate>
         return AsActionResult<TAggregate>(result);
     }
 
-    static ActionResult AsActionResult<T>(Result result) where T : Aggregate
-        => result is ErrorResult error
+    protected virtual ActionResult AsActionResult<T>(Result result) where T : Aggregate {
+        return result is ErrorResult error
             ? error.Exception switch {
-                OptimisticConcurrencyException<T> => new ConflictObjectResult(error),
-                AggregateNotFoundException<T>     => new NotFoundObjectResult(error),
-                _                                 => new BadRequestObjectResult(error)
+                OptimisticConcurrencyException<T> => AsProblemResult(StatusCodes.Status409Conflict),
+                AggregateNotFoundException<T>     => AsProblemResult(StatusCodes.Status404NotFound),
+                DomainException                   => AsValidationProblemResult(StatusCodes.Status400BadRequest),
+                _                                 => AsProblemResult(StatusCodes.Status500InternalServerError)
             }
             : new OkObjectResult(result);
+
+        ActionResult AsProblemResult(int statusCode)
+            => new ObjectResult(
+                new ProblemDetails {
+                    Status = statusCode,
+                    Title = error.ErrorMessage,
+                    Detail = error.Exception?.ToString(),
+                    Type = error.Exception?.GetType().Name
+                }
+            ) {
+                StatusCode = StatusCodes.Status400BadRequest,
+                ContentTypes = new MediaTypeCollection { ContentTypes.ProblemDetails },
+            };
+
+        ActionResult AsValidationProblemResult(int statusCode)
+            => new ObjectResult(
+                new ValidationProblemDetails(new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] }) {
+                    Status = statusCode,
+                    Title = error.ErrorMessage,
+                    Detail = error.Exception?.ToString(),
+                    Type = error.Exception?.GetType().Name
+                }
+            ) {
+                StatusCode = StatusCodes.Status400BadRequest,
+                ContentTypes = new MediaTypeCollection { ContentTypes.ProblemDetails },
+            };
+    }
 }
