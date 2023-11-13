@@ -17,7 +17,7 @@ public static class StoreFunctions {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Append events result</returns>
     /// <exception cref="Exception">Any exception that occurred in the event store</exception>
-    /// <exception cref="OptimisticConcurrencyException">Gets thrown if the expected stream version mismatches with <see cref="originalVersion"/></exception>
+    /// <exception cref="OptimisticConcurrencyException">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
     public static async Task<AppendEventsResult> Store(
             this IEventWriter           eventWriter,
             StreamName                  streamName,
@@ -65,7 +65,7 @@ public static class StoreFunctions {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <returns>Append event result</returns>
-    /// <exception cref="OptimisticConcurrencyException{T}"></exception>
+    /// <exception cref="OptimisticConcurrencyException{T}">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
     public static async Task<AppendEventsResult> Store<T>(
             this IEventWriter eventWriter,
             StreamName        streamName,

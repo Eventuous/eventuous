@@ -10,8 +10,6 @@ on:
 jobs:
   nuget:
     runs-on: self-hosted
-#    container:
-#      image: mcr.microsoft.com/dotnet/sdk:8.0
     env:
       DOTNET_INSTALL_DIR: ~/.dotnet
 

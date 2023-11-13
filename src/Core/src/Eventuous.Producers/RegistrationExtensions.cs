@@ -11,7 +11,12 @@ using Extensions;
 
 [PublicAPI]
 public static class RegistrationExtensions {
+    [Obsolete("Use AddProducer instead")]
     public static void AddEventProducer<T>(this IServiceCollection services, T producer) where T : class, IEventProducer {
+        services.AddProducer(producer);
+    }
+
+    public static void AddProducer<T>(this IServiceCollection services, T producer) where T : class, IEventProducer {
         services.TryAddSingleton(producer);
         services.TryAddSingleton<IEventProducer>(sp => sp.GetRequiredService<T>());
 
@@ -20,13 +25,22 @@ public static class RegistrationExtensions {
         }
     }
 
-    public static void AddEventProducer<T>(this IServiceCollection services, Func<IServiceProvider, T> getProducer)
-        where T : class, IEventProducer {
+    [Obsolete("Use AddProducer instead")]
+    public static void AddEventProducer<T>(this IServiceCollection services, Func<IServiceProvider, T> getProducer) where T : class, IEventProducer {
+        services.AddProducer(getProducer);
+    }
+
+    public static void AddProducer<T>(this IServiceCollection services, Func<IServiceProvider, T> getProducer) where T : class, IEventProducer {
         services.TryAddSingleton(getProducer);
         AddCommon<T>(services);
     }
 
+    [Obsolete("Use AddProducer instead")]
     public static void AddEventProducer<T>(this IServiceCollection services) where T : class, IEventProducer {
+        services.AddProducer<T>();
+    }
+
+    public static void AddProducer<T>(this IServiceCollection services) where T : class, IEventProducer {
         services.TryAddSingleton<T>();
         AddCommon<T>(services);
     }

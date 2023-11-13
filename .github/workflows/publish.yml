@@ -9,7 +9,9 @@ on:
 
 jobs:
   nuget:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    env:
+      DOTNET_INSTALL_DIR: ~/.dotnet
 
     steps:
       - uses: actions/checkout@v3

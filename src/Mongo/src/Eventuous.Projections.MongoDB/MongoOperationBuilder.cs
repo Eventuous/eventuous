@@ -15,27 +15,27 @@ public partial class MongoOperationBuilder<TEvent, T>
     public InsertManyBuilder InsertMany => new();
     public DeleteOneBuilder  DeleteOne  => new();
     public DeleteManyBuilder DeleteMany => new();
-    public BulkWriteBuilder  Bulk => new();
-    
+    public BulkWriteBuilder  Bulk       => new();
+
     public class MongoBulkOperationBuilders {
-        MongoBulkOperationBuilders() {}
+        MongoBulkOperationBuilders() { }
         internal static MongoBulkOperationBuilders Instance { get; } = new();
         // ReSharper disable once MemberCanBeMadeStatic.Global
-        public UpdateOneBuilder    UpdateOne  => new();
+        public UpdateOneBuilder UpdateOne => new();
         // ReSharper disable once MemberCanBeMadeStatic.Global
-        public UpdateManyBuilder   UpdateMany => new();
+        public UpdateManyBuilder UpdateMany => new();
         // ReSharper disable once MemberCanBeMadeStatic.Global
-        public InsertOneBuilder    InsertOne  => new();
+        public InsertOneBuilder InsertOne => new();
         // ReSharper disable once MemberCanBeMadeStatic.Global
-        public DeleteOneBuilder    DeleteOne  => new();
+        public DeleteOneBuilder DeleteOne => new();
         // ReSharper disable once MemberCanBeMadeStatic.Global
-        public DeleteManyBuilder   DeleteMany => new();
+        public DeleteManyBuilder DeleteMany => new();
     }
-    
+
     public interface IMongoProjectorBuilder {
         ProjectTypedEvent<T, TEvent> Build();
     }
-    
+
     public interface IMongoBulkBuilderFactory {
         BuildWriteModel<T, TEvent> GetBuilder();
     }
@@ -46,7 +46,7 @@ public partial class MongoOperationBuilder<TEvent, T>
         public Func<IMessageConsumeContext<TEvent>, FilterDefinition<T>> GetFilter => Ensure.NotNull(_filterFunc, "Filter function");
 
         public void Filter(BuildFilter<TEvent, T> buildFilter)
-            => _filterFunc = evt =>  buildFilter(evt, Builders<T>.Filter);
+            => _filterFunc = evt => buildFilter(evt, Builders<T>.Filter);
 
         public void Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter)
             => _filterFunc = evt => new ExpressionFilterDefinition<T>(x => filter(evt, x));
