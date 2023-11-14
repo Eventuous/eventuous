@@ -27,8 +27,8 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build() => 
             GetHandler(async (ctx, collection, token) => {
                 var options = Options<BulkWriteOptions>.New(_configureOptions);
-                var models = await _builders.Select(build => build(ctx)).WhenAll();
-                await collection.BulkWriteAsync(models, options, token);
+                var models = await _builders.Select(build => build(ctx)).WhenAll().NoContext();
+                await collection.BulkWriteAsync(models, options, token).NoContext();
         });
     }
 }

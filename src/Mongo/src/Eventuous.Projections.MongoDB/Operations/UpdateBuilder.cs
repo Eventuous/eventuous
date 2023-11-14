@@ -25,7 +25,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 async (ctx, collection, token) => {
-                    var (update, options) = await GetUpdateWithOptions(ctx);
+                    var (update, options) = await GetUpdateWithOptions(ctx).NoContext();
                     var filter = FilterBuilder.GetFilter(ctx);
                     // TODO: Make this an option (idempotence based on commit position)
                     // var filter = Builders<T>.Filter.And(
@@ -33,18 +33,12 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                     //     FilterBuilder.GetFilter(ctx)
                     // );
 
-                    await collection
-                        .UpdateOneAsync(
-                            filter,
-                            update,
-                            options,
-                            token
-                        );
+                    await collection.UpdateOneAsync(filter, update, options, token).NoContext();
                 }
             );
 
         BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
-            var (update, options) = await GetUpdateWithOptions(ctx);
+            var (update, options) = await GetUpdateWithOptions(ctx).NoContext();
 
             return new UpdateOneModel<T>(FilterBuilder.GetFilter(ctx), update) {
                 Collation    = options.Collation,
@@ -59,20 +53,14 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
                 async (ctx, collection, token) => {
-                    var (update, options) = await GetUpdateWithOptions(ctx);
+                    var (update, options) = await GetUpdateWithOptions(ctx).NoContext();
 
-                    await collection.UpdateManyAsync(
-                            FilterBuilder.GetFilter(ctx),
-                            update,
-                            options,
-                            token
-                        )
-                        .NoContext();
+                    await collection.UpdateManyAsync(FilterBuilder.GetFilter(ctx), update, options, token).NoContext();
                 }
             );
 
         BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => async ctx => {
-            var (update, options) = await GetUpdateWithOptions(ctx);
+            var (update, options) = await GetUpdateWithOptions(ctx).NoContext();
 
             return new UpdateManyModel<T>(FilterBuilder.GetFilter(ctx), update) {
                 Collation    = options.Collation,
