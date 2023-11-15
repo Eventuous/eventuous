@@ -38,6 +38,9 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
         await InitializeAsync();
 
         await TestConsumptionOfProducedEvents();
+        
+        var checkpoint = await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
+        checkpoint.Position.Should().Be(19);
 
         return;
 
@@ -51,9 +54,6 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
             await Handler.Validate(2.Seconds());
             await Stop();
             Handler.Count.Should().Be(10);
-
-            var checkpoint = await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
-            checkpoint.Position.Should().Be(count - 1);
         }
     }
 
