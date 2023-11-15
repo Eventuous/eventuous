@@ -31,6 +31,33 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
     }
 
     [Fact]
+    public async Task ShouldConsumeProducedEventsWhenRestarting() {
+        await TestConsumptionOfProducedEvents();
+
+        Handler.Reset();
+        await InitializeAsync();
+
+        await TestConsumptionOfProducedEvents();
+
+        return;
+
+        async Task TestConsumptionOfProducedEvents() {
+            const int count = 10;
+
+            var testEvents = await GenerateAndProduceEvents(count);
+            Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+
+            await Start();
+            await Handler.Validate(2.Seconds());
+            await Stop();
+            Handler.Count.Should().Be(10);
+
+            var checkpoint = await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
+            checkpoint.Position.Should().Be(count - 1);
+        }
+    }
+
+    [Fact]
     public async Task ShouldUseExistingCheckpoint() {
         const int count = 10;
 

@@ -31,6 +31,31 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     }
 
     [Fact]
+    public async Task ShouldConsumeProducedEventsWhenRestarting() {
+        await TestConsumptionOfProducedEvents();
+
+        Handler.Reset();
+        await InitializeAsync();
+
+        await TestConsumptionOfProducedEvents();
+
+        return;
+
+        async Task TestConsumptionOfProducedEvents() {
+            const int count = 10;
+
+            var commands   = await GenerateAndHandleCommands(count);
+            var testEvents = commands.Select(ToEvent).ToList();
+            Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+
+            await Start();
+            await Handler.Validate(2.Seconds());
+            await Stop();
+            Handler.Count.Should().Be(10);
+        }
+    }
+
+    [Fact]
     public async Task ShouldUseExistingCheckpoint() {
         const int count = 10;
 
