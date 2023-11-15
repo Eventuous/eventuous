@@ -1,7 +1,6 @@
 <Project>
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
-<!--        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>-->
         <LangVersion>preview</LangVersion>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
         <Nullable>enable</Nullable>
