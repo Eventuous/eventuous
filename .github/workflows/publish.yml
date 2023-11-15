@@ -4,23 +4,15 @@ on:
   push:
     tags:
       - '*'
-    paths-ignore:
-      - '**.md'
 
 jobs:
   nuget:
     runs-on: self-hosted
-    env:
-      DOTNET_INSTALL_DIR: ~/.dotnet
 
     steps:
       - uses: actions/checkout@v3
         with: 
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'
-          dotnet-quality: 'preview'
       -
         name: Run tests
         run: dotnet test
