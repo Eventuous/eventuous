@@ -47,7 +47,7 @@ static class ChannelExtensions {
 
         if (finalize == null) return;
 
-        var token = new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token;
-        await finalize(token);
+        using var ts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await finalize(ts.Token).NoContext();
     }
 }

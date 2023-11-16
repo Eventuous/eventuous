@@ -76,6 +76,13 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         _worker = new ChannelWorker<CommitPosition>(channel, Process, true);
 
+        _worker.OnDispose = _ => {
+            _subject.OnCompleted();
+            _subject.Dispose();
+
+            return default;
+        };
+
         return;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -88,10 +95,12 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         CommitPosition AddBatchAndGetLast(IList<CommitPosition> list) {
-            _semaphore.Wait();
+            _lock.EnterWriteLock();
             _positions.UnionWith(list);
+            _lock.ExitWriteLock();
+
             var next = GetCommitPosition(false);
-            _semaphore.Release();
+
             return next;
         }
     }
@@ -111,33 +120,44 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     CommitPosition GetCommitPosition(bool force) {
-        switch (_lastCommit.Valid) {
+        _lock.EnterReadLock();
+        var pos = _lastCommit.Valid switch {
             // There's a gap between the last committed position and the list head
-            case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force:
-                Log.CheckpointLastCommitGap(_lastCommit, _positions.Min);
-
-                return CommitPosition.None;
+            true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force => AtGap(),
             // The list head is not at the very beginning
-            case false when _positions.Min.Sequence != 0:
-                Log.CheckpointSequenceInvalidHead(_positions.Min);
+            false when _positions.Min.Sequence != 0                       => WrongHead(),
+            true when _lastCommit.Sequence     == _positions.Min.Sequence => BeforeGap(),
+            _                                                             => _positions.FirstBeforeGap()
+        };
+        _lock.ExitReadLock();
 
-                return CommitPosition.None;
-            case true when _lastCommit.Sequence == _positions.Min.Sequence:
-                Log.CheckpointLastCommitDuplicate(_positions.Min);
+        return pos;
 
-                break;
+        CommitPosition AtGap() {
+            Log.CheckpointLastCommitGap(_lastCommit, _positions.Min);
+
+            return CommitPosition.None;
         }
 
-        return _positions.FirstBeforeGap();
+        CommitPosition WrongHead() {
+            Log.CheckpointSequenceInvalidHead(_positions.Min);
+
+            return CommitPosition.None;
+        }
+
+        CommitPosition BeforeGap() {
+            Log.CheckpointLastCommitDuplicate(_positions.Min);
+
+            return _positions.FirstBeforeGap();
+        }
     }
 
-    readonly SemaphoreSlim _semaphore = new(1);
+    readonly ReaderWriterLockSlim _lock = new();
 
     async Task CommitInternal(CommitPosition position, bool force, CancellationToken cancellationToken) {
-        if (_semaphore.CurrentCount == 0) return;
-        try {
-            await _semaphore.WaitAsync(cancellationToken).NoContext();
+        _lock.EnterWriteLock();
 
+        try {
             if (_lastCommit == position && !force) {
                 Log.CheckpointAlreadyCommitted(_subscriptionId, position);
 
@@ -154,7 +174,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         } catch (Exception e) {
             position.LogContext.UnableToCommitPosition(position, e);
         } finally {
-            _semaphore.Release();
+            _lock.ExitWriteLock();
         }
     }
 
@@ -162,16 +182,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         Logger.ConfigureIfNull(_subscriptionId, _loggerFactory);
         Logger.Current.InfoLog?.Log("Stopping commit handler worker");
 
-        await _worker.Stop(
-                _ => {
-                    _subject.OnCompleted();
-                    _subject.Dispose();
-
-                    return default;
-                }
-            )
-            .NoContext();
-
+        await _worker.DisposeAsync().NoContext();
         _positions.Clear();
     }
 }

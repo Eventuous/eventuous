@@ -5,11 +5,13 @@ using System.Threading.Channels;
 
 namespace Eventuous.Subscriptions.Channels;
 
-public class ChannelWorker<T> {
+class ChannelWorker<T> : IAsyncDisposable {
     readonly Channel<T>              _channel;
     readonly bool                    _throwOnFull;
     readonly CancellationTokenSource _cts;
     readonly Task                    _readerTask;
+
+    public Func<CancellationToken, ValueTask>? OnDispose { get; set; }
 
     /// <summary>
     /// Creates a new instance of the channel worker, starts a task for background reads
@@ -26,13 +28,19 @@ public class ChannelWorker<T> {
 
     public ValueTask Write(T element, CancellationToken cancellationToken)
         => _stopping ? default : _channel.Write(element, _throwOnFull, cancellationToken);
+    
+    bool _stopping;
 
-    public ValueTask Stop(Func<CancellationToken, ValueTask>? finalize = null) {
-        if (_stopping) return default;
-
+    public async ValueTask DisposeAsync() {
         _stopping = true;
-        return _channel.Stop(_cts, new[] { _readerTask }, finalize);
+        await _channel.Stop(_cts, new[] { _readerTask }, OnDispose);
+#if NET8_0
+        await _cts.CancelAsync();
+#else
+        _cts.Cancel();
+#endif
+        await _readerTask.NoThrow();
+        _cts.Dispose();
+        GC.SuppressFinalize(this);
     }
-
-    volatile bool _stopping;
 }

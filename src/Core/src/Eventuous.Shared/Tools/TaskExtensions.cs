@@ -42,4 +42,16 @@ static class TaskExtensions {
 
         return results;
     }
+
+    public static ConfiguredTaskAwaitable NoThrow(this Task task) {
+#if NET8_0
+        return task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+#else
+        return Try(task.ConfigureAwait(false)).ConfigureAwait(false);
+
+        async Task Try(ConfiguredTaskAwaitable awaitable) {
+            try { await awaitable; } catch (OperationCanceledException) { }
+        }
+#endif
+    }
 }

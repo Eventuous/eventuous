@@ -10,12 +10,13 @@ namespace Eventuous.Kafka.Producers;
 /// Produces messages with byte[] payload without using the schema registry. The message type is specified in the
 /// headers, so the type mapping is required.
 /// </summary>
-public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProducer {
+public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProducer, IAsyncDisposable {
     readonly IProducer<string, byte[]> _producerWithKey;
     readonly IProducer<Null, byte[]>   _producerWithoutKey;
     readonly IEventSerializer          _serializer;
 
-    public KafkaBasicProducer(KafkaProducerOptions options, IEventSerializer? serializer = null) : base(TracingOptions) {
+    public KafkaBasicProducer(KafkaProducerOptions options, IEventSerializer? serializer = null)
+        : base(TracingOptions) {
         _producerWithKey    = new ProducerBuilder<string, byte[]>(options.ProducerConfig).Build();
         _producerWithoutKey = new DependentProducerBuilder<Null, byte[]>(_producerWithKey.Handle).Build();
         _serializer         = serializer ?? DefaultEventSerializer.Instance;
@@ -28,11 +29,11 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
     };
 
     protected override async Task ProduceMessages(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        KafkaProduceOptions?         options,
-        CancellationToken            cancellationToken = default
-    ) {
+            StreamName                   stream,
+            IEnumerable<ProducedMessage> messages,
+            KafkaProduceOptions?         options,
+            CancellationToken            cancellationToken = default
+        ) {
         foreach (var producedMessage in messages) {
             var serialized = _serializer.SerializeEvent(producedMessage.Message);
             var headers    = producedMessage.Metadata?.AsKafkaHeaders() ?? new Headers();
@@ -45,67 +46,77 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
 
             continue;
 
-            Task ProduceLocal() => options?.PartitionKey != null ? ProducePartitioned() : ProduceNotPartitioned();
+            Task ProduceLocal() => options?.PartitionKey != null
+                ? ProduceInt(options.PartitionKey, _producerWithKey)
+                : ProduceInt(null, _producerWithoutKey);
 
-            async Task ProducePartitioned() {
-                var message = new Message<string, byte[]> {
-                    Value   = serialized.Payload,
-                    Key     = options.PartitionKey,
-                    Headers = headers
-                };
-
-                if (producedMessage.OnAck == null) {
-                    await _producerWithKey.ProduceAsync(stream, message, cancellationToken).NoContext();
-                }
-                else {
-                    _producerWithKey.Produce(stream, message, r => DeliveryHandler(r, producedMessage));
-                }
-
-                // ReSharper disable once UnusedParameter.Local
-                void DeliveryHandler(DeliveryReport<string, byte[]> report, ProducedMessage msg)
-                    => Report(report.Error);
-            }
-
-            async Task ProduceNotPartitioned() {
-                var message = new Message<Null, byte[]> {
+            async Task ProduceInt<TKey>(TKey? key, IProducer<TKey, byte[]> producer) {
+                var message = new Message<TKey, byte[]> {
                     Value   = serialized.Payload,
                     Headers = headers
                 };
+                if (key != null) message.Key = key;
 
                 if (producedMessage.OnAck == null) {
-                    await _producerWithoutKey.ProduceAsync(stream, message, cancellationToken).NoContext();
+                    await producer.ProduceAsync(stream, message, cancellationToken).NoContext();
                 }
                 else {
-                    _producerWithoutKey.Produce(stream, message, DeliveryHandler);
+                    producer.Produce(stream, message, report => Report(producedMessage, report.Error));
                 }
-
-                void DeliveryHandler(DeliveryReport<Null, byte[]> report) => Report(report.Error);
             }
 
-            void Report(Error error) {
-                if (error.IsError) {
-                    producedMessage.Nack<KafkaBasicProducer>(error.Reason, null).NoContext().GetAwaiter().GetResult();
-                }
-                else {
-                    producedMessage.Ack<KafkaBasicProducer>().NoContext().GetAwaiter().GetResult();
-                }
+            static void Report(ProducedMessage msg, Error error)
+                => AwaitValueTask(error.IsError ? msg.Nack<KafkaBasicProducer>(error.Reason, null) : msg.Ack<KafkaBasicProducer>());
+
+            static void AwaitValueTask(ValueTask valueTask) {
+                if (valueTask.IsCompletedSuccessfully) return;
+
+                valueTask.AsTask().GetAwaiter().GetResult();
             }
         }
     }
 
     public Task StartAsync(CancellationToken cancellationToken) {
-        Ready = true;
+        Ready    = true;
+
         return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken) {
+        _stopping = true;
+        Ready     = false;
+
         while (!cancellationToken.IsCancellationRequested) {
             var count = _producerWithKey.Flush(TimeSpan.FromSeconds(10));
+
             if (count == 0) break;
 
             await Task.Delay(100, cancellationToken).NoContext();
         }
+
+        _stopping = false;
     }
 
     public bool Ready { get; private set; }
+
+    bool _stopping;
+
+    public async ValueTask DisposeAsync() {
+        if (Ready && !_stopping) await StopAsync(default);
+        while (_stopping || Ready) await Task.Delay(100).NoContext();
+
+        await CastAndDispose(_producerWithKey);
+        await CastAndDispose(_producerWithoutKey);
+
+        GC.SuppressFinalize(this);
+
+        return;
+
+        static async ValueTask CastAndDispose(IDisposable resource) {
+            if (resource is IAsyncDisposable resourceAsyncDisposable)
+                await resourceAsyncDisposable.DisposeAsync();
+            else
+                resource.Dispose();
+        }
+    }
 }

@@ -23,45 +23,32 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
     public async Task ShouldProduceAndWait() {
         var topicName = Auto.Create<string>();
         _output.WriteLine($"Topic: {topicName}");
+        var producerLock = new ReaderWriterLockSlim();
 
-        var producer = new KafkaBasicProducer(
-            new KafkaProducerOptions(new ProducerConfig { BootstrapServers = _fixture.BootstrapServers })
-        );
+        var events = Auto.CreateMany<TestEvent>().ToArray();
 
         var produced = new List<TestEvent>();
 
-        var events = Auto.CreateMany<TestEvent>().ToArray();
-        await producer.StartAsync(default);
-
-        await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"), onAck: OnAck);
-
-        await producer.StopAsync(default);
+        try {
+            await using var producer = new KafkaBasicProducer(
+                new KafkaProducerOptions(new ProducerConfig { BootstrapServers = _fixture.BootstrapServers })
+            );
+            await producer.StartAsync(default);
+            await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"), onAck: OnAck);
+        } catch (OperationCanceledException) { }
 
         produced.Should().BeEquivalentTo(events);
-
-        using var consumer = GetConsumer(topicName);
-
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        consumer.Subscribe(topicName);
 
         var consumed = new List<TestEvent>();
 
         try {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+            using var consumer = GetConsumer(topicName);
+            consumer.Subscribe(topicName);
+
             while (!cts.IsCancellationRequested) {
-                var msg = consumer.Consume(cts.Token);
-
-                if (msg == null) return;
-
-                var meta = msg.Message.Headers.AsMetadata();
-
-                var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
-                var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
-
-                var result = DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as SuccessfullyDeserialized;
-
-                var evt = (result!.Payload as TestEvent)!;
-                _output.WriteLine($"Consumed {evt}");
-                consumed.Add(evt);
+                await Consume(consumer, cts.Token);
 
                 if (consumed.Count == events.Length) break;
             }
@@ -75,10 +62,33 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
         return;
 
         ValueTask OnAck(ProducedMessage msg) {
+            producerLock.EnterWriteLock();
             _output.WriteLine("Produced message: {0}", msg.Message);
             produced.Add((TestEvent)msg.Message);
+            producerLock.ExitWriteLock();
 
             return ValueTask.CompletedTask;
+        }
+
+        async Task Consume(IConsumer<string, byte[]> c, CancellationToken cancellationToken) {
+            var msg = c.Consume(cancellationToken);
+
+            if (msg == null) {
+                await Task.Delay(100, cancellationToken);
+
+                return;
+            }
+
+            var meta = msg.Message.Headers.AsMetadata();
+
+            var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
+            var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
+
+            var result = DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as SuccessfullyDeserialized;
+
+            var evt = (result!.Payload as TestEvent)!;
+            _output.WriteLine($"Consumed {evt}");
+            consumed.Add(evt);
         }
     }
 
