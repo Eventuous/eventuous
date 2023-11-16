@@ -13,7 +13,7 @@ public static class ResultExtensions {
             ? error.Exception switch {
                 OptimisticConcurrencyException => AsProblemDetails(Status409Conflict, error),
                 AggregateNotFoundException     => AsProblemDetails(Status404NotFound, error),
-                DomainException                => AsProblemDetails(Status400BadRequest, error),
+                DomainException                => AsValidationProblemDetails(Status400BadRequest, error),
                 _                              => AsProblemDetails(Status500InternalServerError, error)
             }
             : Results.Ok(result);
@@ -29,12 +29,21 @@ public static class ResultExtensions {
             }
         );
 
+    static IResult AsValidationProblemDetails(int statusCode, ErrorResult error)
+        => Results.ValidationProblem(
+            errors: new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] },
+            statusCode: statusCode,
+            title: error.ErrorMessage,
+            detail: error.Exception?.ToString(),
+            type: error.Exception?.GetType().Name
+        );
+
     public static ActionResult<Result<T>> AsActionResult<T>(this Result result) where T : State<T>, new() {
         return result is ErrorResult error
             ? error.Exception switch {
                 OptimisticConcurrencyException => AsProblemResult(Status409Conflict),
                 AggregateNotFoundException     => AsProblemResult(Status404NotFound),
-                DomainException                => AsProblemResult(Status400BadRequest),
+                DomainException                => AsValidationProblemResult(Status400BadRequest),
                 _                              => AsProblemResult(Status500InternalServerError)
             }
             : new OkObjectResult(result);
@@ -42,6 +51,19 @@ public static class ResultExtensions {
         ActionResult AsProblemResult(int statusCode)
             => new ObjectResult(
                 new ProblemDetails {
+                    Status = statusCode,
+                    Title  = error.ErrorMessage,
+                    Detail = error.Exception?.ToString(),
+                    Type   = error.Exception?.GetType().Name
+                }
+            ) {
+                StatusCode   = Status400BadRequest,
+                ContentTypes = new MediaTypeCollection { ContentTypes.ProblemDetails },
+            };
+
+        ActionResult AsValidationProblemResult(int statusCode)
+            => new ObjectResult(
+                new ValidationProblemDetails(new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] }) {
                     Status = statusCode,
                     Title  = error.ErrorMessage,
                     Detail = error.Exception?.ToString(),

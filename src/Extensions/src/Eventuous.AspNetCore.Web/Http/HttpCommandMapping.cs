@@ -175,7 +175,7 @@ public static partial class RouteBuilderExtensions {
             .ProducesProblemDetails(Status404NotFound)
             .ProducesProblemDetails(Status409Conflict)
             .ProducesProblemDetails(Status500InternalServerError)
-            .ProducesProblemDetails(Status400BadRequest);
+            .ProducesValidationProblemDetails(Status400BadRequest);
 
         routeBuilder.AddPolicy(policyName);
         routeBuilder.AddAuthorization(typeof(TContract));
@@ -247,7 +247,7 @@ public static partial class RouteBuilderExtensions {
                 .ProducesOk(resultType)
                 .ProducesProblemDetails(Status404NotFound)
                 .ProducesProblemDetails(Status409Conflict)
-                .ProducesProblemDetails(Status400BadRequest)
+                .ProducesValidationProblemDetails(Status400BadRequest)
                 .ProducesProblemDetails(Status500InternalServerError);
 
             routeBuilder.AddPolicy(policyName);
