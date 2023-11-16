@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 
@@ -185,6 +186,12 @@ public readonly record struct CommitPosition(ulong Position, ulong Sequence, Dat
     public bool Equals(CommitPosition other) => Valid == other.Valid && Position == other.Position && Sequence == other.Sequence;
 
     public override int GetHashCode() => HashCode.Combine(Valid, Position, Sequence);
+
+    bool PrintMembers(StringBuilder builder) {
+        builder.Append($"Position: {Position}, Sequence: {Sequence}, Timestamp: {Timestamp:O}");
+
+        return true;
+    }
 }
 
 public delegate ValueTask<Checkpoint> CommitCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken);

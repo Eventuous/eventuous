@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ 'net6.0', 'net7.0' ]
+        dotnet: [ 'net6.0', 'net7.0', 'net8.0' ]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
       TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
@@ -32,11 +32,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
-#          cache: true
-#      -  
-#        name: Install dependencies
-#        run: dotnet restore --locked-mode
-#        run: dotnet restore
       -  
         name: Build
         run: |
