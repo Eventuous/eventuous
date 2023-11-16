@@ -8,21 +8,29 @@ using Context;
 // ReSharper disable once ParameterTypeCanBeEnumerable.Local
 public class DefaultConsumer(IEventHandler[] eventHandlers) : IMessageConsumer {
     public async ValueTask Consume(IMessageConsumeContext context) {
-        try {
-            if (context.Message == null) {
-                context.Ignore<DefaultConsumer>();
+        var scope = new Dictionary<string, object> {
+            {"SubscriptionId", context.SubscriptionId},
+            {"Stream", context.Stream},
+            {"MessageType", context.MessageType},
+        };
 
-                return;
+        using (context.LogContext.Logger.BeginScope(scope)) {
+            try {
+                if (context.Message == null) {
+                    context.Ignore<DefaultConsumer>();
+
+                    return;
+                }
+
+                var typedContext = context.ConvertToGeneric();
+                var tasks        = eventHandlers.Select(handler => Handle(typedContext, handler));
+                await tasks.WhenAll().NoContext();
+            } catch (Exception e) {
+                context.Nack<DefaultConsumer>(e);
             }
 
-            var typedContext = context.ConvertToGeneric();
-            var tasks        = eventHandlers.Select(handler => Handle(typedContext, handler));
-            await tasks.WhenAll().NoContext();
-        } catch (Exception e) {
-            context.Nack<DefaultConsumer>(e);
+            return;
         }
-
-        return;
 
         async ValueTask Handle(IMessageConsumeContext typedContext, IEventHandler handler) {
             try {

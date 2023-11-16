@@ -80,7 +80,9 @@ public static class StoreFunctions {
         } catch (OptimisticConcurrencyException e) {
             Log.UnableToStoreAggregate<T>(streamName, e);
 
-            throw new OptimisticConcurrencyException<T>(streamName, e.InnerException!);
+            throw e.InnerException is null
+                ? new OptimisticConcurrencyException<T>(streamName, e)
+                : new OptimisticConcurrencyException<T>(streamName, e.InnerException);
         }
     }
 

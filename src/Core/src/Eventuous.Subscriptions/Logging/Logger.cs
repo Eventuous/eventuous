@@ -51,6 +51,6 @@ public class LogContext {
         ErrorLog       = GetLogger(LogLevel.Error);
 
         InternalLogger? GetLogger(LogLevel logLevel)
-            => Logger.IsEnabled(logLevel) ? new InternalLogger(Logger, logLevel, SubscriptionId) : null;
+            => Logger.IsEnabled(logLevel) ? new InternalLogger(Logger, logLevel, SubscriptionId) : null;;
     }
 }
