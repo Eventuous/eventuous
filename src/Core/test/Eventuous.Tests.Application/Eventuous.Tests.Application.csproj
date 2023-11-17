@@ -3,4 +3,7 @@
         <IncludeTestHelpers>true</IncludeTestHelpers>
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
+    </ItemGroup>
 </Project>

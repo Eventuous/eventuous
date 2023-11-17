@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Eventuous.TestHelpers.Fakes;
+namespace Eventuous.Testing;
 
 public class InMemoryEventStore : IEventStore {
     readonly ConcurrentDictionary<StreamName, InMemoryStream> _storage = new();

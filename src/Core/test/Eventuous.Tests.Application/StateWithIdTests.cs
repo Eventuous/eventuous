@@ -1,9 +1,10 @@
-using Eventuous.Sut.App;
-using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers.Fakes;
 using NodaTime;
 
 namespace Eventuous.Tests.Application;
+
+using Sut.App;
+using Sut.Domain;
+using Testing;
 
 public class StateWithIdTests {
     readonly BookingService _service;

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Eventuous.Sut.AspNetCore;
 using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers.Fakes;
+using Eventuous.Testing;
 using Microsoft.AspNetCore.Http.Json;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
