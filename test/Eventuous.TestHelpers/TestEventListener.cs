@@ -2,8 +2,8 @@ using System.Diagnostics.Tracing;
 
 namespace Eventuous.TestHelpers;
 
-public sealed class TestEventListener (ITestOutputHelper outputHelper, Action<EventWrittenEventArgs>? act = null, params string[] prefixes): EventListener {
-    readonly string[]          _prefixes = prefixes.Length > 0 ? prefixes : new[] { "OpenTelemetry", "eventuous" };
+public sealed class TestEventListener(ITestOutputHelper outputHelper, Action<EventWrittenEventArgs>? act = null, params string[] prefixes) : EventListener {
+    readonly string[]          _prefixes     = prefixes.Length > 0 ? prefixes : new[] { "OpenTelemetry", "eventuous" };
     readonly List<EventSource> _eventSources = new();
 
     protected override void OnEventSourceCreated(EventSource? eventSource) {
@@ -20,23 +20,13 @@ public sealed class TestEventListener (ITestOutputHelper outputHelper, Action<Ev
         base.OnEventSourceCreated(eventSource);
     }
 
-    #nullable disable
+#nullable disable
     protected override void OnEventWritten(EventWrittenEventArgs evt) {
-        string message;
-
-        if (evt.Message != null && (evt.Payload?.Count ?? 0) > 0) {
-            message = string.Format(evt.Message, evt.Payload.ToArray());
-        }
-        else {
-            message = evt.Message;
-        }
-
-        outputHelper.WriteLine(
-            $"{evt.EventSource.Name} - EventId: [{evt.EventId}], EventName: [{evt.EventName}], Message: [{message}]"
-        );
+        var message = evt.Message != null && (evt.Payload?.Count ?? 0) > 0 ? string.Format(evt.Message, evt.Payload.ToArray()) : evt.Message;
+        outputHelper.WriteLine($"{evt.EventSource.Name} - EventId: [{evt.EventId}], EventName: [{evt.EventName}], Message: [{message}]");
         act?.Invoke(evt);
     }
-    #nullable enable
+#nullable enable
 
     public override void Dispose() {
         foreach (var eventSource in _eventSources) {

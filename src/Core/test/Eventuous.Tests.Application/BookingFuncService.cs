@@ -1,11 +1,11 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Sut.Domain;
-using static Eventuous.Sut.App.Commands;
-using static Eventuous.Sut.Domain.BookingEvents;
-
 namespace Eventuous.Tests.Application;
+
+using Sut.Domain;
+using static Sut.App.Commands;
+using static Sut.Domain.BookingEvents;
 
 public class BookingFuncService : FunctionalCommandService<BookingState> {
     public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)

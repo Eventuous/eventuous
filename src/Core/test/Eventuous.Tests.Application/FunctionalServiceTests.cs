@@ -1,10 +1,11 @@
-using Eventuous.Sut.App;
-using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers;
-using Eventuous.TestHelpers.Fakes;
 using NodaTime;
 
 namespace Eventuous.Tests.Application;
+
+using Sut.App;
+using Sut.Domain;
+using TestHelpers;
+using Testing;
 
 public class FunctionalServiceTests : IDisposable {
     readonly InMemoryEventStore _store;
@@ -74,7 +75,7 @@ public class FunctionalServiceTests : IDisposable {
         var cmd     = GetBookRoom();
 
         await service.Handle(cmd, default);
-        
+
         var stream = await _store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, true, default);
         stream[0].Metadata["foo"].Should().Be("bar");
 

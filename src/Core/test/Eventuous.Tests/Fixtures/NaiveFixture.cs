@@ -1,7 +1,7 @@
-using Eventuous.Sut.App;
-using Eventuous.TestHelpers.Fakes;
-
 namespace Eventuous.Tests.Fixtures;
+
+using Sut.App;
+using Testing;
 
 public class NaiveFixture {
     protected IEventStore     EventStore     { get; }
