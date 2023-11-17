@@ -224,8 +224,6 @@ public static partial class RouteBuilderExtensions {
         void LocalMap(Type aggregateType, Type type, string? route, string? policyName, Type resultType) {
             var appServiceBase = typeof(ICommandService<>);
             var appServiceType = appServiceBase.MakeGenericType(aggregateType);
-            var method         = typeof(ResultExtensions).GetMethod(nameof(ResultExtensions.AsResult), BindingFlags.Static | BindingFlags.Public)!;
-            var genericMethod  = method.MakeGenericMethod(resultType);
 
             var routeBuilder = builder
                 .MapPost(
@@ -240,7 +238,7 @@ public static partial class RouteBuilderExtensions {
 
                         var result = await InvokeService(service, cmd, context.RequestAborted);
 
-                        return (genericMethod.Invoke(null, new object?[] { result }) as IResult)!;
+                        return result.AsResult();
                     }
                 )
                 .Accepts(type)
