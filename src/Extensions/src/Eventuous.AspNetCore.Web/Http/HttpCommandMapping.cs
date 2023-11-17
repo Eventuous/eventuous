@@ -167,7 +167,7 @@ public static partial class RouteBuilderExtensions {
 
                     var result = await InvokeService(service, command, context.RequestAborted);
 
-                    return result.AsResult<TResult>();
+                    return result.AsResult();
                 }
             )
             .Accepts<TContract>()
@@ -294,6 +294,6 @@ public static partial class RouteBuilderExtensions {
             }
         );
 
-        return ((Task<Result>)handleDelegate.DynamicInvoke(cmd, cancellationToken)!)!;
+        return ((Task<Result>)handleDelegate.DynamicInvoke(cmd, cancellationToken)!);
     }
 }
