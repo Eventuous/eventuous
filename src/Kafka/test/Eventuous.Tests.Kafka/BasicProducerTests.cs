@@ -3,6 +3,7 @@ using Eventuous.Kafka;
 using Eventuous.Kafka.Producers;
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
+using Eventuous.Tools;
 using static System.String;
 
 namespace Eventuous.Tests.Kafka;
@@ -23,62 +24,59 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
     public async Task ShouldProduceAndWait() {
         var topicName = Auto.Create<string>();
         _output.WriteLine($"Topic: {topicName}");
-
-        var producer = new KafkaBasicProducer(
-            new KafkaProducerOptions(new ProducerConfig { BootstrapServers = _fixture.BootstrapServers })
-        );
-
-        var produced = new List<TestEvent>();
+        var producerLock = new ReaderWriterLockSlim();
 
         var events = Auto.CreateMany<TestEvent>().ToArray();
-        await producer.StartAsync(default);
 
-        await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"), onAck: OnAck);
-
-        await producer.StopAsync(default);
-
-        produced.Should().BeEquivalentTo(events);
-
-        using var consumer = GetConsumer(topicName);
-
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        consumer.Subscribe(topicName);
+        await Produce();
 
         var consumed = new List<TestEvent>();
-
-        try {
-            while (!cts.IsCancellationRequested) {
-                var msg = consumer.Consume(cts.Token);
-
-                if (msg == null) return;
-
-                var meta = msg.Message.Headers.AsMetadata();
-
-                var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
-                var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
-
-                var result = DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as SuccessfullyDeserialized;
-
-                var evt = (result!.Payload as TestEvent)!;
-                _output.WriteLine($"Consumed {evt}");
-                consumed.Add(evt);
-
-                if (consumed.Count == events.Length) break;
-            }
-        } catch (OperationCanceledException) {
-            // ignore
-        }
-
+        await ExecuteConsume().NoThrow();
         _output.WriteLine($"Consumed {consumed.Count} events");
         consumed.Should().BeEquivalentTo(events);
 
         return;
 
-        ValueTask OnAck(ProducedMessage msg) {
-            _output.WriteLine("Produced message: {0}", msg.Message);
-            produced.Add((TestEvent)msg.Message);
+        async Task Produce() {
+            await using var producer = new KafkaBasicProducer(
+                new KafkaProducerOptions(new ProducerConfig { BootstrapServers = _fixture.BootstrapServers })
+            );
+            await producer.StartAsync(default);
+            await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"));
+        }
 
-            return ValueTask.CompletedTask;
+        async Task ExecuteConsume() {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+            using var consumer = GetConsumer(topicName);
+            consumer.Subscribe(topicName);
+
+            while (!cts.IsCancellationRequested) {
+                await Consume(consumer, cts.Token);
+
+                if (consumed.Count == events.Length) break;
+            }
+        }
+
+        async Task Consume(IConsumer<string, byte[]> c, CancellationToken cancellationToken) {
+            var msg = c.Consume(cancellationToken);
+
+            if (msg == null) {
+                await Task.Delay(100, cancellationToken);
+
+                return;
+            }
+
+            var meta = msg.Message.Headers.AsMetadata();
+
+            var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
+            var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
+
+            var result = DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as SuccessfullyDeserialized;
+
+            var evt = (result!.Payload as TestEvent)!;
+            _output.WriteLine($"Consumed {evt}");
+            consumed.Add(evt);
         }
     }
 

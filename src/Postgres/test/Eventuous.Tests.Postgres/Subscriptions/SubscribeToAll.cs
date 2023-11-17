@@ -63,7 +63,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
         Handler.AssertThat().Any(_ => true);
 
         await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
-        await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, 9), true, default);
+        await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, 10), true, default);
 
         await Start();
         await Task.Delay(TimeSpan.FromSeconds(1));

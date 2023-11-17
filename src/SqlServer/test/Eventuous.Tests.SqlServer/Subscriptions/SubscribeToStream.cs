@@ -58,7 +58,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
     public async Task ShouldUseExistingCheckpoint() {
         const int count = 10;
 
-        await GenerateAndProduceEvents(count);
+        await GenerateAndProduceEvents(count * 2);
         Handler.AssertThat().Any(_ => true);
 
         await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
@@ -67,7 +67,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
         await Start();
         await Task.Delay(TimeSpan.FromSeconds(1));
         await Stop();
-        Handler.Count.Should().Be(0);
+        Handler.Count.Should().Be(count);
     }
 
     static BookingImported ToEvent(ImportBooking cmd)
@@ -83,12 +83,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
 
         var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
 
-        await _eventStore.AppendEvents(
-            Stream,
-            ExpectedStreamVersion.Any,
-            streamEvents.ToArray(),
-            default
-        );
+        await _eventStore.AppendEvents(Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
 
         return events;
     }

@@ -2,8 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Channels;
@@ -16,11 +14,11 @@ using Logging;
 using static Diagnostics.SubscriptionsEventSource;
 
 public sealed class CheckpointCommitHandler : IAsyncDisposable {
-    readonly ILoggerFactory?               _loggerFactory;
-    readonly string                        _subscriptionId;
-    readonly CommitCheckpoint              _commitCheckpoint;
-    readonly CommitPositionSequence        _positions = new();
-    readonly ChannelWorker<CommitPosition> _worker;
+    readonly ILoggerFactory?                      _loggerFactory;
+    readonly string                               _subscriptionId;
+    readonly CommitCheckpoint                     _commitCheckpoint;
+    readonly CommitPositionSequence               _positions = new();
+    readonly BatchedChannelWorker<CommitPosition> _worker;
 
     CommitPosition _lastCommit = CommitPosition.None;
 
@@ -28,8 +26,6 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     public const string CommitOperation = "Commit";
 
     static readonly DiagnosticSource Diagnostic = new DiagnosticListener(DiagnosticName);
-
-    readonly Subject<CommitPosition> _subject;
 
     internal record CommitEvent(string Id, CommitPosition CommitPosition, CommitPosition? FirstPending);
 
@@ -53,46 +49,23 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         _commitCheckpoint = commitCheckpoint;
         _loggerFactory    = loggerFactory;
         var channel = Channel.CreateBounded<CommitPosition>(batchSize * 1000);
-        _subject = new Subject<CommitPosition>();
 
-        _subject
-            .Buffer(delay, batchSize)
-            .Where(x => x.Count > 0)
-            .Select(AddBatchAndGetLast)
-            .Where(x => x.Valid)
-            .Select(x => Observable.FromAsync(ct => CommitInternal(x, false, ct)))
-            .Concat()
-            .Subscribe(
-                static _ => { },
-                exception => {
-                    Logger.ConfigureIfNull(_subscriptionId, _loggerFactory);
-                    Logger.Current.ErrorLog?.Log(exception, "Commit handler error");
-                },
-                () => {
-                    if (_lastCommit.Valid)
-                        CommitInternal(_lastCommit, true, default).NoContext().GetAwaiter().GetResult();
-                }
-            );
+        _worker = new BatchedChannelWorker<CommitPosition>(channel, Process, batchSize, delay, true);
 
-        _worker = new ChannelWorker<CommitPosition>(channel, Process, true);
+        _worker.OnDispose = async _ => {
+            if (_lastCommit.Valid)
+                await CommitInternal(_lastCommit, true, default).NoContext();
+        };
 
         return;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        ValueTask Process(CommitPosition position, CancellationToken cancellationToken) {
-            position.LogContext.PositionReceived(position);
-            _subject.OnNext(position);
-
-            return default;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        CommitPosition AddBatchAndGetLast(IList<CommitPosition> list) {
-            _semaphore.Wait();
+        async ValueTask Process(CommitPosition[] list, CancellationToken cancellationToken) {
             _positions.UnionWith(list);
             var next = GetCommitPosition(false);
-            _semaphore.Release();
-            return next;
+
+            if (!next.Valid) return;
+
+            await CommitInternal(next, false, cancellationToken).NoContext();
         }
     }
 
@@ -105,39 +78,45 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     [PublicAPI]
     public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken) {
         if (Diagnostic.IsEnabled(CommitOperation)) Diagnostic.Write(CommitOperation, new CommitEvent(_subscriptionId, position, _positions.Min));
+        position.LogContext.PositionReceived(position);
 
         return _worker.Write(position, cancellationToken);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     CommitPosition GetCommitPosition(bool force) {
-        switch (_lastCommit.Valid) {
+        var pos = _lastCommit.Valid switch {
             // There's a gap between the last committed position and the list head
-            case true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force:
-                Log.CheckpointLastCommitGap(_lastCommit, _positions.Min);
-
-                return CommitPosition.None;
+            true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force => AtGap(),
             // The list head is not at the very beginning
-            case false when _positions.Min.Sequence != 0:
-                Log.CheckpointSequenceInvalidHead(_positions.Min);
+            false when _positions.Min.Sequence != 0                       => WrongHead(),
+            true when _lastCommit.Sequence     == _positions.Min.Sequence => BeforeGap(),
+            _                                                             => _positions.FirstBeforeGap()
+        };
 
-                return CommitPosition.None;
-            case true when _lastCommit.Sequence == _positions.Min.Sequence:
-                Log.CheckpointLastCommitDuplicate(_positions.Min);
+        return pos;
 
-                break;
+        CommitPosition AtGap() {
+            Log.CheckpointLastCommitGap(_lastCommit, _positions.Min);
+
+            return CommitPosition.None;
         }
 
-        return _positions.FirstBeforeGap();
+        CommitPosition WrongHead() {
+            Log.CheckpointSequenceInvalidHead(_positions.Min);
+
+            return CommitPosition.None;
+        }
+
+        CommitPosition BeforeGap() {
+            Log.CheckpointLastCommitDuplicate(_positions.Min);
+
+            return _positions.FirstBeforeGap();
+        }
     }
 
-    readonly SemaphoreSlim _semaphore = new(1);
-
     async Task CommitInternal(CommitPosition position, bool force, CancellationToken cancellationToken) {
-        if (_semaphore.CurrentCount == 0) return;
         try {
-            await _semaphore.WaitAsync(cancellationToken).NoContext();
-
             if (_lastCommit == position && !force) {
                 Log.CheckpointAlreadyCommitted(_subscriptionId, position);
 
@@ -153,25 +132,14 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
         } catch (Exception e) {
             position.LogContext.UnableToCommitPosition(position, e);
-        } finally {
-            _semaphore.Release();
         }
     }
 
     public async ValueTask DisposeAsync() {
         Logger.ConfigureIfNull(_subscriptionId, _loggerFactory);
         Logger.Current.InfoLog?.Log("Stopping commit handler worker");
-
-        await _worker.Stop(
-                _ => {
-                    _subject.OnCompleted();
-                    _subject.Dispose();
-
-                    return default;
-                }
-            )
-            .NoContext();
-
+        await _worker.DisposeAsync().NoContext();
+        Logger.Current.InfoLog?.Log("Commit handler worker stopped");
         _positions.Clear();
     }
 }
