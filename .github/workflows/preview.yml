@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0
       -
         name: Run tests
-        run: dotnet test
+        run: dotnet test --framework net8.0
       -  
         name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
