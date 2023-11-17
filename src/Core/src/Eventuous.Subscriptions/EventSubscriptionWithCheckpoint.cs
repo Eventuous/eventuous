@@ -58,7 +58,7 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         var eventPosition = GetPositionFromContext(context);
         LastProcessed = eventPosition;
 
-        context.LogContext.TraceLog?.Log("Message {Type} acknowledged at {Position}", context.MessageType, context.GlobalPosition);
+        context.LogContext.TraceLog?.Log("Message {Type} acknowledged at {Position} {P}", context.MessageType, context.GlobalPosition, eventPosition.Position!.Value);
 
         return CheckpointCommitHandler.Commit(
             new CommitPosition(eventPosition.Position!.Value, context.Sequence, eventPosition.Created) { LogContext = context.LogContext },

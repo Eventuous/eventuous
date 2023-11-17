@@ -3,6 +3,7 @@ using Eventuous.Kafka;
 using Eventuous.Kafka.Producers;
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
+using Eventuous.Tools;
 using static System.String;
 
 namespace Eventuous.Tests.Kafka;
@@ -27,21 +28,24 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
 
         var events = Auto.CreateMany<TestEvent>().ToArray();
 
-        var produced = new List<TestEvent>();
+        await Produce();
 
-        try {
+        var consumed = new List<TestEvent>();
+        await ExecuteConsume().NoThrow();
+        _output.WriteLine($"Consumed {consumed.Count} events");
+        consumed.Should().BeEquivalentTo(events);
+
+        return;
+
+        async Task Produce() {
             await using var producer = new KafkaBasicProducer(
                 new KafkaProducerOptions(new ProducerConfig { BootstrapServers = _fixture.BootstrapServers })
             );
             await producer.StartAsync(default);
-            await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"), onAck: OnAck);
-        } catch (OperationCanceledException) { }
+            await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"));
+        }
 
-        produced.Should().BeEquivalentTo(events);
-
-        var consumed = new List<TestEvent>();
-
-        try {
+        async Task ExecuteConsume() {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
             using var consumer = GetConsumer(topicName);
@@ -52,22 +56,6 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
 
                 if (consumed.Count == events.Length) break;
             }
-        } catch (OperationCanceledException) {
-            // ignore
-        }
-
-        _output.WriteLine($"Consumed {consumed.Count} events");
-        consumed.Should().BeEquivalentTo(events);
-
-        return;
-
-        ValueTask OnAck(ProducedMessage msg) {
-            producerLock.EnterWriteLock();
-            _output.WriteLine("Produced message: {0}", msg.Message);
-            produced.Add((TestEvent)msg.Message);
-            producerLock.ExitWriteLock();
-
-            return ValueTask.CompletedTask;
         }
 
         async Task Consume(IConsumer<string, byte[]> c, CancellationToken cancellationToken) {
