@@ -57,7 +57,7 @@ public class CommandServiceRouteBuilder<TAggregate, TResult>(IEndpointRouteBuild
     /// <typeparam name="TCommand"></typeparam>
     /// <returns></returns>
     public CommandServiceRouteBuilder<TAggregate, TResult> MapCommand<TContract, TCommand>(
-            string                                       route,
+            string?                                      route,
             ConvertAndEnrichCommand<TContract, TCommand> enrichCommand,
             Action<RouteHandlerBuilder>?                 configure = null
         ) where TCommand : class where TContract : class {
@@ -83,10 +83,6 @@ public class CommandServiceRouteBuilder<TAggregate, TResult>(IEndpointRouteBuild
         where TCommand : class where TContract : class {
         var attr = typeof(TContract).GetAttribute<HttpCommandAttribute>();
         AttributeCheck.EnsureCorrectAggregate<TContract, TAggregate>(attr);
-
-        if (configure == null) { builder.MapCommand<TContract, TCommand, TAggregate, TResult>(attr?.Route, Ensure.NotNull(enrichCommand)); }
-        else { configure(builder.MapCommand<TContract, TCommand, TAggregate, TResult>(attr?.Route, Ensure.NotNull(enrichCommand))); }
-
-        return this;
+        return MapCommand(attr?.Route, Ensure.NotNull(enrichCommand), configure);
     }
 }

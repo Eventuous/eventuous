@@ -8,37 +8,37 @@ using static Microsoft.AspNetCore.Http.StatusCodes;
 namespace Eventuous.AspNetCore.Web;
 
 public static class ResultExtensions {
-    public static IResult AsResult<TResult>(this Result result) where TResult : Result {
+    public static IResult AsResult(this Result result) {
         return result is ErrorResult error
             ? error.Exception switch {
-                OptimisticConcurrencyException => AsProblemDetails(Status409Conflict, error),
-                AggregateNotFoundException     => AsProblemDetails(Status404NotFound, error),
-                DomainException                => AsValidationProblemDetails(Status400BadRequest, error),
-                _                              => AsProblemDetails(Status500InternalServerError, error)
+                OptimisticConcurrencyException => AsProblemDetails(Status409Conflict),
+                AggregateNotFoundException     => AsProblemDetails(Status404NotFound),
+                DomainException                => AsValidationProblemDetails(Status400BadRequest),
+                _                              => AsProblemDetails(Status500InternalServerError)
             }
             : Results.Ok(result);
+
+        IResult AsProblemDetails(int statusCode)
+            => Results.Problem(
+                new ProblemDetails {
+                    Status = statusCode,
+                    Title  = error.ErrorMessage,
+                    Detail = error.Exception?.ToString(),
+                    Type   = error.Exception?.GetType().Name
+                }
+            );
+
+        IResult AsValidationProblemDetails(int statusCode)
+            => Results.ValidationProblem(
+                errors: error.AsErrors(),
+                statusCode: statusCode,
+                title: error.ErrorMessage,
+                detail: error.Exception?.ToString(),
+                type: error.Exception?.GetType().Name
+            );
     }
 
-    static IResult AsProblemDetails(int statusCode, ErrorResult error)
-        => Results.Problem(
-            new ProblemDetails {
-                Status = statusCode,
-                Title  = error.ErrorMessage,
-                Detail = error.Exception?.ToString(),
-                Type   = error.Exception?.GetType().Name
-            }
-        );
-
-    static IResult AsValidationProblemDetails(int statusCode, ErrorResult error)
-        => Results.ValidationProblem(
-            errors: new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] },
-            statusCode: statusCode,
-            title: error.ErrorMessage,
-            detail: error.Exception?.ToString(),
-            type: error.Exception?.GetType().Name
-        );
-
-    public static ActionResult<Result<T>> AsActionResult<T>(this Result result) where T : State<T>, new() {
+    public static ActionResult AsActionResult(this Result result) {
         return result is ErrorResult error
             ? error.Exception switch {
                 OptimisticConcurrencyException => AsProblemResult(Status409Conflict),
@@ -63,7 +63,7 @@ public static class ResultExtensions {
 
         ActionResult AsValidationProblemResult(int statusCode)
             => new ObjectResult(
-                new ValidationProblemDetails(new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] }) {
+                new ValidationProblemDetails(error.AsErrors()) {
                     Status = statusCode,
                     Title  = error.ErrorMessage,
                     Detail = error.Exception?.ToString(),
@@ -74,4 +74,7 @@ public static class ResultExtensions {
                 ContentTypes = new MediaTypeCollection { ContentTypes.ProblemDetails },
             };
     }
+
+    public static IDictionary<string, string[]> AsErrors(this ErrorResult error)
+        => new Dictionary<string, string[]> { ["Domain"] = new[] { error.ErrorMessage } };
 }
