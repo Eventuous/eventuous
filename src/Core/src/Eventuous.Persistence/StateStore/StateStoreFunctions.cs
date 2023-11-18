@@ -86,9 +86,7 @@ public static class StateStoreFunctions {
         }
     }
 
-    static TState WithId<TState, TId>(this TState state, TId id)
-        where TState : State<TState>, new()
-        where TId : Id {
+    static TState WithId<TState, TId>(this TState state, TId id) where TState : State<TState>, new() where TId : Id {
         if (state is State<TState, TId> stateWithId) {
             stateWithId.Id = id;
         }

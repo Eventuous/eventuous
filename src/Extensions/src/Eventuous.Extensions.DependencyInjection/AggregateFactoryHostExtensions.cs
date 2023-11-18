@@ -17,6 +17,7 @@ public static class AggregateFactoryBuilderExtensions {
     /// <returns></returns>
     public static IHost UseAggregateFactory(this IHost host) {
         UseAggregateFactory(host.Services);
+
         return host;
     }
 
@@ -25,10 +26,7 @@ public static class AggregateFactoryBuilderExtensions {
         var registry  = sp.GetService<AggregateFactoryRegistry>() ?? AggregateFactoryRegistry.Instance;
 
         foreach (var resolver in resolvers) {
-            registry.UnsafeCreateAggregateUsing(
-                resolver.Type,
-                () => resolver.CreateInstance(sp)
-            );
+            registry.UnsafeCreateAggregateUsing(resolver.Type, () => resolver.CreateInstance(sp));
         }
     }
 }

@@ -93,7 +93,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
         }
 
-        TAggregate Create(TId id) => _factoryRegistry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
+        TAggregate Create(TId id) => _factoryRegistry.CreateInstance<TAggregate>().WithId<TAggregate, TState, TId>(id);
 
         StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
     }

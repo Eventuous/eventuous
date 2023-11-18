@@ -20,6 +20,7 @@
     <ItemGroup>
         <InternalsVisibleTo Include="Eventuous.Spyglass" />
         <InternalsVisibleTo Include="Eventuous.Application" />
+        <InternalsVisibleTo Include="Eventuous.Testing" />
     </ItemGroup>
     <ItemGroup>
       <None Remove="Eventuous.Persistence.csproj.DotSettings" />

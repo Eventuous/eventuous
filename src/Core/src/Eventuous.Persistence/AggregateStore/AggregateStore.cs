@@ -36,11 +36,7 @@ public class AggregateStore : IAggregateStore {
     /// <param name="eventStore">Event store implementation</param>
     /// <param name="amendEvent"></param>
     /// <param name="factoryRegistry"></param>
-    public AggregateStore(
-            IEventStore               eventStore,
-            AmendEvent?               amendEvent      = null,
-            AggregateFactoryRegistry? factoryRegistry = null
-        )
+    public AggregateStore(IEventStore eventStore, AmendEvent? amendEvent = null, AggregateFactoryRegistry? factoryRegistry = null)
         : this(eventStore, eventStore, amendEvent, factoryRegistry) { }
 
     public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate
