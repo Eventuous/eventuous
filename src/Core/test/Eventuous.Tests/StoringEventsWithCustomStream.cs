@@ -20,9 +20,7 @@ public class StoringEventsWithCustomStream : NaiveFixture {
     public async Task TestOnNew() {
         var cmd = CreateBookRoomCommand();
 
-        var expected = new Change[] {
-            new(new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), "RoomBooked")
-        };
+        Change[] expected = [ new Change(new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), "RoomBooked") ];
 
         var result = await Service.Handle(cmd, default);
 

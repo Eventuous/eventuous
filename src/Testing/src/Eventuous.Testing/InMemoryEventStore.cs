@@ -2,13 +2,18 @@ using System.Collections.Concurrent;
 
 namespace Eventuous.Testing;
 
+/// <summary>
+/// In-memory event store implementation for testing purposes
+/// </summary>
 public class InMemoryEventStore : IEventStore {
     readonly ConcurrentDictionary<StreamName, InMemoryStream> _storage = new();
-    readonly List<StreamEvent>                                _global  = new();
+    readonly List<StreamEvent>                                _global  = [];
 
+    /// <inheritdoc />
     public Task<bool> StreamExists(StreamName streamName, CancellationToken cancellationToken)
         => Task.FromResult(_storage.ContainsKey(streamName));
 
+    /// <inheritdoc />
     public Task<AppendEventsResult> AppendEvents(
             StreamName                       stream,
             ExpectedStreamVersion            expectedVersion,
@@ -22,8 +27,11 @@ public class InMemoryEventStore : IEventStore {
         return Task.FromResult(new AppendEventsResult((ulong)(_global.Count - 1), existing.Version));
     }
 
-    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) => Task.FromResult(FindStream(stream).GetEvents(start, count).ToArray());
+    /// <inheritdoc />
+    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
+        => Task.FromResult(FindStream(stream).GetEvents(start, count).ToArray());
 
+    /// <inheritdoc />
     public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
         => Task.FromResult(FindStream(stream).GetEventsBackwards(count).ToArray());
 
@@ -44,6 +52,7 @@ public class InMemoryEventStore : IEventStore {
         return Task.FromResult(readCount);
     }
 
+    /// <inheritdoc />
     public Task TruncateStream(
             StreamName             stream,
             StreamTruncatePosition truncatePosition,
@@ -55,6 +64,7 @@ public class InMemoryEventStore : IEventStore {
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken) {
         var existing = FindStream(stream);
         existing.CheckVersion(expectedVersion);
@@ -113,7 +123,4 @@ class InMemoryStream {
     }
 }
 
-class WrongVersion : Exception {
-    public WrongVersion(ExpectedStreamVersion expected, int actual)
-        : base($"Wrong stream version. Expected {expected.Value}, actual {actual}") { }
-}
+class WrongVersion(ExpectedStreamVersion expected, int actual) : Exception($"Wrong stream version. Expected {expected.Value}, actual {actual}");

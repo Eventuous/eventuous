@@ -6,11 +6,12 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
-        <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
-        <DiagRoot>$(RepoRoot)\src\Diagnostics\src</DiagRoot>
-        <EsdbRoot>$(RepoRoot)\src\EventStore\src</EsdbRoot>
-        <ExtRoot>$(RepoRoot)\src\Extensions\src</ExtRoot>
-        <GatewayRoot>$(RepoRoot)\src\Shovel\src</GatewayRoot>
+        <SrcRoot>$(RepoRoot)\src</SrcRoot>
+        <CoreRoot>$(SrcRoot)\Core\src</CoreRoot>
+        <DiagRoot>$(SrcRoot)\Diagnostics\src</DiagRoot>
+        <EsdbRoot>$(SrcRoot)\EventStore\src</EsdbRoot>
+        <ExtRoot>$(SrcRoot)\Extensions\src</ExtRoot>
+        <GatewayRoot>$(SrcRoot)\Shovel\src</GatewayRoot>
         <LocalRoot>..\..\src</LocalRoot>
     </PropertyGroup>
 

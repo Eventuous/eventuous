@@ -1,9 +1,10 @@
 global using NodaTime;
-using Eventuous.Tests.Fixtures;
-using Eventuous.Sut.App;
-using Eventuous.Sut.Domain;
 
 namespace Eventuous.Tests;
+
+using Fixtures;
+using Sut.App;
+using Sut.Domain;
 
 public class StoringEvents : NaiveFixture {
     public StoringEvents() {

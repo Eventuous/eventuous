@@ -19,22 +19,9 @@ public static class LoggingAppBuilderExtensions {
     /// <param name="level">Event level, default is Verbose. Decrease the level to improve performance.</param>
     /// <param name="keywords">Event keywords, default is All</param>
     /// <returns></returns>
-    public static IHost UseEventuousLogs(
-        this IHost    host,
-        EventLevel    level    = EventLevel.Verbose,
-        EventKeywords keywords = EventKeywords.All
-    ) {
+    public static IHost UseEventuousLogs(this IHost host, EventLevel level = EventLevel.Verbose, EventKeywords keywords = EventKeywords.All) {
         AddEventuousLogs(host.Services, level, keywords);
-        return host;
-    }
 
-    [Obsolete("Use UseEventuousLogs instead")]
-    public static IHost AddEventuousLogs(
-        this IHost    host,
-        EventLevel    level    = EventLevel.Verbose,
-        EventKeywords keywords = EventKeywords.All
-    ) {
-        AddEventuousLogs(host.Services, level, keywords);
         return host;
     }
 
@@ -45,16 +32,8 @@ public static class LoggingAppBuilderExtensions {
     /// <param name="provider"></param>
     /// <param name="level"></param>
     /// <param name="keywords"></param>
-    public static void AddEventuousLogs(
-        this IServiceProvider provider,
-        EventLevel            level    = EventLevel.Verbose,
-        EventKeywords         keywords = EventKeywords.All
-    )
-        => listener ??= new LoggingEventListener(
-            provider.GetRequiredService<ILoggerFactory>(),
-            level: level,
-            keywords: keywords
-        );
+    public static void AddEventuousLogs(this IServiceProvider provider, EventLevel level = EventLevel.Verbose, EventKeywords keywords = EventKeywords.All)
+        => listener ??= new LoggingEventListener(provider.GetRequiredService<ILoggerFactory>(), level: level, keywords: keywords);
 
     static LoggingEventListener? listener;
 }

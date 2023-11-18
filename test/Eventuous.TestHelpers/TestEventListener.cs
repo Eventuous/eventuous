@@ -3,8 +3,8 @@ using System.Diagnostics.Tracing;
 namespace Eventuous.TestHelpers;
 
 public sealed class TestEventListener(ITestOutputHelper outputHelper, Action<EventWrittenEventArgs>? act = null, params string[] prefixes) : EventListener {
-    readonly string[]          _prefixes     = prefixes.Length > 0 ? prefixes : new[] { "OpenTelemetry", "eventuous" };
-    readonly List<EventSource> _eventSources = new();
+    readonly string[]          _prefixes     = prefixes.Length > 0 ? prefixes : ["OpenTelemetry", "eventuous"];
+    readonly List<EventSource> _eventSources = [];
 
     protected override void OnEventSourceCreated(EventSource? eventSource) {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract

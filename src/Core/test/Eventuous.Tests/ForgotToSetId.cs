@@ -15,8 +15,7 @@ public class ForgotToSetId : NaiveFixture {
     TestService Service { get; }
 
     class TestService : CommandService<TestAggregate, TestState, TestId> {
-        public TestService(IAggregateStore store)
-            : base(store)
+        public TestService(IAggregateStore store) : base(store)
             => On<DoIt>().InState(ExpectedState.New).GetId(cmd => new TestId(cmd.Id)).Act((test, _) => test.Process());
     }
 
@@ -29,8 +28,7 @@ public class ForgotToSetId : NaiveFixture {
     record TestState : State<TestState>;
 
     record TestId : Id {
-        public TestId(string value)
-            : base(value) { }
+        public TestId(string value) : base(value) { }
     }
 
     record TestEvent;

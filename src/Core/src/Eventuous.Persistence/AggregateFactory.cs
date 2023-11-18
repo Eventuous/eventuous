@@ -23,26 +23,20 @@ public class AggregateFactoryRegistry {
     /// <returns></returns>
     public AggregateFactoryRegistry CreateAggregateUsing<T>(AggregateFactory<T> factory) where T : Aggregate {
         Registry.TryAdd(typeof(T), () => factory());
+
         return this;
     }
 
-    public void UnsafeCreateAggregateUsing<T>(Type type, Func<T> factory) where T : Aggregate
-        => Registry.TryAdd(type, factory);
+    public void UnsafeCreateAggregateUsing<T>(Type type, Func<T> factory) where T : Aggregate => Registry.TryAdd(type, factory);
 
-    public T CreateInstance<T, TState>()
-        where T : Aggregate<TState>
-        where TState : State<TState>, new() {
-        var instance = Registry.TryGetValue(typeof(T), out var factory)
-            ? (T)factory()
-            : Activator.CreateInstance<T>();
+    public T CreateInstance<T, TState>() where T : Aggregate<TState> where TState : State<TState>, new() {
+        var instance = CreateInstance<T>();
 
         return instance;
     }
 
     public T CreateInstance<T>() where T : Aggregate {
-        var instance = Registry.TryGetValue(typeof(T), out var factory)
-            ? (T)factory()
-            : Activator.CreateInstance<T>();
+        var instance = Registry.TryGetValue(typeof(T), out var factory) ? (T)factory() : Activator.CreateInstance<T>();
 
         return instance;
     }
