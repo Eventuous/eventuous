@@ -32,12 +32,44 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     protected virtual bool IsStopping(Exception exception) => exception is OperationCanceledException;
 
+    // ReSharper disable once CognitiveComplexity
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
         var start = position.HasValue ? (long)position : -1;
 
-        var retryDelay = 10;
+        var retryCount   = 0;
+        var currentDelay = Options.Polling.MinIntervalMs;
 
         while (!cancellationToken.IsCancellationRequested) {
+            var result = await Poll().NoContext();
+
+            if (!result.Continue) break;
+
+            if (result.Retry) {
+                await Task.Delay(Options.Retry.InitialDelayMs * retryCount++, cancellationToken).NoContext();
+
+                continue;
+            }
+
+            retryCount = 0;
+
+            // Poll again immediately if we received events
+            if (result.ReceivedEvents > 0) {
+                currentDelay = Options.Polling.MinIntervalMs;
+
+                continue;
+            }
+
+            // Otherwise, wait a bit
+            // Exponentially increase delay but do not exceed maxDelay
+            currentDelay = Math.Min((int)(currentDelay * Options.Polling.GrowFactor), Options.Polling.MaxIntervalMs);
+            await Task.Delay(currentDelay, cancellationToken).NoContext();
+        }
+
+        Log.InfoLog?.Log("Polling query stopped");
+
+        return;
+
+        async Task<PollingResult> Poll() {
             try {
                 await using var connection = await OpenConnection(cancellationToken).NoContext();
                 await using var cmd        = PrepareCommand(connection, start);
@@ -45,30 +77,29 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
                 var result = reader.ReadEvents(cancellationToken);
 
+                var received = 0;
+
                 await foreach (var persistedEvent in result.NoContext(cancellationToken)) {
                     await HandleInternal(ToConsumeContext(persistedEvent, cancellationToken)).NoContext();
                     start = MoveStart(persistedEvent);
+                    received++;
                 }
 
-                retryDelay = 10;
+                return new PollingResult(true, false, received);
             } catch (Exception e) {
                 if (IsStopping(e)) {
                     IsDropped = true;
-                    Log.InfoLog?.Log("Polling query stopped");
 
-                    return;
+                    return new PollingResult(false, false, 0);
                 }
 
                 if (IsTransient(e)) {
-                    await Task.Delay(retryDelay, cancellationToken);
-                    retryDelay *= 2;
+                    return new PollingResult(true, true, 0);
                 }
-                else {
-                    Log.InfoLog?.Log("Polling query stopped");
-                    Dropped(DropReason.ServerError, e);
 
-                    break;
-                }
+                Dropped(DropReason.ServerError, e);
+
+                return new PollingResult(false, false, 0);
             }
         }
     }
@@ -92,12 +123,11 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         }
     }
 
-    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken)
-        => Task.CompletedTask;
+    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
 
     protected abstract long MoveStart(PersistedEvent evt);
 
-    protected IMessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
+    IMessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
 
         var data = DeserializeData(ContentType, evt.MessageType, Encoding.UTF8.GetBytes(evt.JsonData), evt.StreamName!, (ulong)evt.StreamPosition);
@@ -114,4 +144,6 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     Task? _runner;
 
     protected const string ContentType = "application/json";
+
+    record struct PollingResult(bool Continue, bool Retry, int ReceivedEvents);
 }
