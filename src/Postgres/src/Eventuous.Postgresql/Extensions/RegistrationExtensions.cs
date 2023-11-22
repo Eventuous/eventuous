@@ -3,6 +3,7 @@
 
 using System.Data.Common;
 using Eventuous.Postgresql;
+using Eventuous.Sql.Base;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
