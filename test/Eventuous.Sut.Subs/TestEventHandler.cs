@@ -13,6 +13,7 @@ public record TestEvent(string Data, int Number) {
 
 public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output = null) : BaseEventHandler {
     readonly TimeSpan _delay = delay ?? TimeSpan.Zero;
+    readonly string   _id    = Guid.NewGuid().ToString("N");
 
     public int Count { get; private set; }
 
@@ -27,9 +28,9 @@ public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output 
     public Task Validate(TimeSpan timeout) => EnsureHypothesis.Validate(timeout);
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        output?.WriteLine(context.Message!.ToString());
         await Task.Delay(_delay);
         await EnsureHypothesis.Test(context.Message!, context.CancellationToken);
+        output?.WriteLine($"[{_id}] Handled event {context.GlobalPosition}, count is {Count}");
         Count++;
 
         return EventHandlingStatus.Success;

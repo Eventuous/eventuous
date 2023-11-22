@@ -59,8 +59,23 @@ public class SqlServerStore(
         }
     }
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
-        => throw new NotImplementedException();
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
+        await using var connection = await OpenConnection(cancellationToken).NoContext();
+
+        await using var cmd = connection.GetStoredProcCommand(_schema.ReadStreamBackwards)
+            .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
+            .Add("@count", SqlDbType.Int, count);
+
+        try {
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
+
+            var result = reader.ReadEvents(cancellationToken);
+
+            return await result.Select(x => ToStreamEvent(x)).ToArrayAsync(cancellationToken).NoContext();
+        } catch (SqlException e) when (e.Message.StartsWith("StreamNotFound")) {
+            throw new StreamNotFound(stream);
+        }
+    }
 
     public async Task<AppendEventsResult> AppendEvents(
             StreamName                       stream,
@@ -130,11 +145,7 @@ public class SqlServerStore(
         )
         => throw new NotImplementedException();
 
-    public Task DeleteStream(
-            StreamName            stream,
-            ExpectedStreamVersion expectedVersion,
-            CancellationToken     cancellationToken
-        )
+    public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken)
         => throw new NotImplementedException();
 
     StreamEvent ToStreamEvent(PersistedEvent evt) {

@@ -16,6 +16,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     public IFixture               Auto          { get; }              = new Fixture().Customize(new NodaTimeCustomization());
     public GetSqlServerConnection GetConnection { get; private set; } = null!;
     public Faker                  Faker         { get; }              = new();
+    public Schema                 Schema        { get; set; }
 
     public string SchemaName { get; }
 
@@ -35,15 +36,17 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     public async Task InitializeAsync() {
         _sqlServer = new SqlEdgeBuilder()
             .WithImage("mcr.microsoft.com/azure-sql-edge:latest")
+            // .WithAutoRemove(false)
+            // .WithCleanUp(false)
             .Build();
         await _sqlServer.StartAsync();
 
-        var schema     = new Schema(SchemaName);
+        Schema = new Schema(SchemaName);
         var connString = _sqlServer.GetConnectionString();
         GetConnection = () => GetConn(connString);
-        await schema.CreateSchema(GetConnection);
+        await Schema.CreateSchema(GetConnection);
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = new SqlServerStore(GetConnection, new SqlServerStoreOptions(SchemaName), Serializer);
+        EventStore = new SqlServerStore(GetConnection, new SqlServerStoreOptions(SchemaName), Serializer);
         ActivitySource.AddActivityListener(_listener);
 
         return;
