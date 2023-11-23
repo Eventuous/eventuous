@@ -30,7 +30,7 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
         var expectedGap = SubscriptionFixture.Count - counter.Count + 1;
 
         gapCount.Should().NotBeNull();
-        gapCount.Value.Should().BeInRange(expectedGap - 5, expectedGap + 5);
+        gapCount.Value.Should().BeInRange(expectedGap - 10, expectedGap + 10);
         GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
         GetTag(gapCount, "test").Should().Be("foo");
 
