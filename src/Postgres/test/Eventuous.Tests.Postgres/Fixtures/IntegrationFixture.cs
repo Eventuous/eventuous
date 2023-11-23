@@ -8,9 +8,9 @@ using Testcontainers.PostgreSql;
 namespace Eventuous.Tests.Postgres.Fixtures;
 
 public class IntegrationFixture : StoreFixtureBase<PostgreSqlContainer> {
-    public NpgsqlDataSource DataSource { get; private set; } = null!;
+    protected NpgsqlDataSource DataSource { get; private set; } = null!;
 
-    public readonly string SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    protected readonly string SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousPostgres(Container.GetConnectionString(), SchemaName, true);
