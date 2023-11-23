@@ -38,10 +38,10 @@ public class Schema(string schema = Schema.DefaultSchema) {
                 log?.LogInformation("Executing {Script}", name);
                 await using var stream = Assembly.GetManifestResourceStream(name);
                 using var       reader = new StreamReader(stream!);
-#if NET6_0
-                var script = await reader.ReadToEndAsync().NoContext();
-#else
+#if NET7_0_OR_GREATER
                 var script = await reader.ReadToEndAsync(cancellationToken).NoContext();
+#else
+                var script = await reader.ReadToEndAsync().NoContext();
 #endif
                 var cmdScript = script.Replace("__schema__", schema);
 

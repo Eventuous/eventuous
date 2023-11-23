@@ -110,37 +110,19 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         }
     }
 
-    CancellationTokenSource _cts = new();
-
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
-        _cts = new CancellationTokenSource();
         await BeforeSubscribe(cancellationToken).NoContext();
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        // _runner = Task.Run(() => PollingQuery(position, _cts.Token), _cts.Token);
-        _runner = PollingQuery(position, _cts.Token);
+        _runner = new TaskRunner(token => PollingQuery(position, token)).Start();
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         if (_runner == null) return;
 
-        try {
-            _cts.Cancel();
-            // if (_runner != null) await _runner.NoContext();
-        } finally {
-            var state        = new TaskCompletionSource<object>();
-            var registration = cancellationToken.Register((s => (((TaskCompletionSource<object>)s!)!).SetCanceled(cancellationToken)), state);
-
-            try {
-                await Task.WhenAny(_runner, state.Task).ConfigureAwait(false);
-            } finally {
-                await registration.DisposeAsync();
-            }
-
-            registration = new CancellationTokenRegistration();
-            _runner.Dispose();
-            _runner = null;
-        }
+        await _runner.Stop(cancellationToken);
+        _runner.Dispose();
+        _runner = null;
     }
 
     protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -161,7 +143,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     protected abstract IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken);
 
-    Task? _runner;
+    TaskRunner? _runner;
 
     protected const string ContentType = "application/json";
 

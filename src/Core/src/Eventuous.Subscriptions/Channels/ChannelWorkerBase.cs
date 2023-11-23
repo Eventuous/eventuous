@@ -27,7 +27,7 @@ abstract class ChannelWorkerBase<T> : IAsyncDisposable {
     public async ValueTask DisposeAsync() {
         _stopping = true;
         await _channel.Stop(_cts, _readerTasks, OnDispose).NoContext();
-#if NET8_0
+#if NET8_0_OR_GREATER
         await _cts.CancelAsync().NoContext();
 #else
         _cts.Cancel();

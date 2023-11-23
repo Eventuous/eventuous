@@ -21,7 +21,6 @@ public abstract class RedisSubscriptionBase<T>(
     : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
     where T : RedisSubscriptionBaseOptions {
     readonly IMetadataSerializer     _metaSerializer = DefaultMetadataSerializer.Instance;
-    readonly CancellationTokenSource _cts            = new();
 
     protected GetRedisDatabase GetDatabase { get; } = Ensure.NotNull<GetRedisDatabase>(getDatabase, "Connection factory");
 
@@ -30,22 +29,19 @@ public abstract class RedisSubscriptionBase<T>(
 
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        _runner = Task.Run(() => PollingQuery(position + 1, _cts.Token), _cts.Token);
+        _runner = new TaskRunner(token => PollingQuery(position + 1, token)).Start();
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        try {
-            _cts.Cancel();
-            if (_runner != null) await _runner.NoContext();
-        }
-        catch (OperationCanceledException) {
-            // Nothing to do
-        }
+        if (_runner == null) return;
+        await _runner.Stop(cancellationToken);
+        _runner.Dispose();
+        _runner = null;
     }
 
     const string ContentType = "application/json";
 
-    Task? _runner;
+    TaskRunner? _runner;
 
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
         var start = position.HasValue ? (long)position : 0;
@@ -58,13 +54,12 @@ public abstract class RedisSubscriptionBase<T>(
                     await HandleInternal(ToConsumeContext(persistentEvent, cancellationToken)).NoContext();
                     start = persistentEvent.StreamPosition + 1;
                 }
-            }
-            catch (OperationCanceledException) {
+            } catch (OperationCanceledException) {
                 // Nothing to do
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 IsDropped = true;
                 Log.WarnLog?.Log(e, "Subscription dropped");
+
                 throw;
             }
         }
