@@ -17,7 +17,7 @@ public class Schema(string schema = Schema.DefaultSchema) {
     public string AppendEvents        => $"select * from {schema}.append_events(@_stream_name, @_expected_version, @_created, @_messages)";
     public string ReadStreamForwards  => $"select * from {schema}.read_stream_forwards(@_stream_name, @_from_position, @_count)";
     public string ReadStreamBackwards => $"select * from {schema}.read_stream_backwards(@_stream_name, @_count)";
-    public string ReadStreamSub       => $"select * from {schema}.read_stream_sub(@_stream_id, @_from_position, @_count)";
+    public string ReadStreamSub       => $"select * from {schema}.read_stream_sub(@_stream_id, @_stream_name, @_from_position, @_count)";
     public string ReadAllForwards     => $"select * from {schema}.read_all_forwards(@_from_position, @_count)";
     public string CheckStream         => $"select * from {schema}.check_stream(@_stream_name, @_expected_version)";
     public string StreamExists        => $"select exists (select 1 from {schema}.streams where stream_name = (@name))";
