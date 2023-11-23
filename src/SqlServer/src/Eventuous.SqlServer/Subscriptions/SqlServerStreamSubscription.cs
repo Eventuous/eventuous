@@ -16,13 +16,12 @@ using Extensions;
 /// Subscription for events in a single stream in SQL Server event store.
 /// </summary>
 public class SqlServerStreamSubscription(
-        GetSqlServerConnection             getConnection,
         SqlServerStreamSubscriptionOptions options,
         ICheckpointStore                   checkpointStore,
         ConsumePipe                        consumePipe,
         ILoggerFactory?                    loggerFactory = null
     )
-    : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions>(getConnection, options, checkpointStore, consumePipe, loggerFactory) {
+    : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions>(options, checkpointStore, consumePipe, loggerFactory) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadStreamSub)
             .Add("@stream_id", SqlDbType.Int, _streamId)
@@ -30,8 +29,7 @@ public class SqlServerStreamSubscription(
             .Add("@count", SqlDbType.Int, Options.MaxPageSize);
 
     protected override async Task BeforeSubscribe(CancellationToken cancellationToken) {
-        await using var connection = GetConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
+        await using var connection = await OpenConnection(cancellationToken).NoContext();
 
         await using var cmd = connection.GetStoredProcCommand(Schema.CheckStream)
             .Add("@stream_name", SqlDbType.NVarChar, Options.Stream.ToString())
@@ -44,10 +42,8 @@ public class SqlServerStreamSubscription(
         _streamId = (int)streamId.Value;
     }
 
-    protected override long MoveStart(PersistedEvent evt)
-        => evt.StreamPosition;
+    protected override long MoveStart(PersistedEvent evt) => evt.StreamPosition;
 
-    ulong           _sequence;
     int             _streamId;
     readonly string _streamName = options.Stream.ToString();
 
@@ -60,7 +56,7 @@ public class SqlServerStreamSubscription(
             (ulong)evt.StreamPosition,
             (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
-            _sequence++,
+            Sequence++,
             evt.Created,
             e,
             meta,

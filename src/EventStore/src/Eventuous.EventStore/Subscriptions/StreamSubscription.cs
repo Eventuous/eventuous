@@ -138,7 +138,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             re.Event.EventNumber,
             re.OriginalEventNumber.ToUInt64(),
             re.Event.Position.CommitPosition,
-            _sequence++,
+            Sequence++,
             re.Event.Created,
             evt,
             meta,
@@ -146,8 +146,6 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             cancellationToken
         );
     }
-
-    ulong _sequence;
 
     /// <summary>
     /// Returns a measure delegate for this subscription

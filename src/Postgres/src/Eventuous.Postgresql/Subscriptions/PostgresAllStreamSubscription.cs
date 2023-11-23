@@ -28,10 +28,7 @@ public class PostgresAllStreamSubscription(
             .Add("_from_position", NpgsqlDbType.Bigint, start + 1)
             .Add("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
 
-    protected override long MoveStart(PersistedEvent evt)
-        => evt.GlobalPosition;
-
-    ulong _sequence;
+    protected override long MoveStart(PersistedEvent evt) => evt.GlobalPosition;
 
     protected override IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(
@@ -42,7 +39,7 @@ public class PostgresAllStreamSubscription(
             (ulong)evt.StreamPosition,
             (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
-            _sequence++,
+            Sequence++,
             evt.Created,
             e,
             meta,
@@ -50,8 +47,7 @@ public class PostgresAllStreamSubscription(
             cancellationToken
         );
 
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
-        => EventPosition.FromAllContext(context);
+    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) => EventPosition.FromAllContext(context);
 }
 
 public record PostgresAllStreamSubscriptionOptions : PostgresSubscriptionBaseOptions;

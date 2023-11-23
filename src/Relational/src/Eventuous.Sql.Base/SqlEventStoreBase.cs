@@ -19,6 +19,8 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
 
     protected abstract DbCommand GetReadCommand(TConnection connection, StreamName stream, StreamReadPosition start, int count);
 
+    protected abstract DbCommand GetReadBackwardsCommand(TConnection connection, StreamName stream, int count);
+
     protected abstract DbCommand GetAppendCommand(
             TConnection           connection,
             TTransaction          transaction,
@@ -26,13 +28,24 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
             ExpectedStreamVersion expectedVersion,
             NewPersistedEvent[]   events
         );
-    
+
     protected abstract DbCommand GetStreamExistsCommand(TConnection connection, StreamName stream);
 
     public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetReadCommand(connection, stream, start, count);
 
+        return await ReadInternal(cmd, stream, cancellationToken).NoContext();
+    }
+
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
+        await using var connection = await OpenConnection(cancellationToken).NoContext();
+        await using var cmd        = GetReadBackwardsCommand(connection, stream, count);
+
+        return await ReadInternal(cmd, stream, cancellationToken).NoContext();
+    }
+
+    async Task<StreamEvent[]> ReadInternal(DbCommand cmd, StreamName stream, CancellationToken cancellationToken) {
         try {
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
@@ -42,24 +55,20 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         } catch (Exception e) {
             throw IsStreamNotFound(e) ? new StreamNotFound(stream) : e;
         }
-
-        StreamEvent ToStreamEvent(PersistedEvent evt) {
-            var deserialized = _serializer.DeserializeEvent(Encoding.UTF8.GetBytes(evt.JsonData), evt.MessageType, ContentType);
-
-            var meta = evt.JsonMetadata == null ? new Metadata() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
-
-            return deserialized switch {
-                SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
-                FailedToDeserialize failed       => throw new SerializationException($"Can't deserialize {evt.MessageType}: {failed.Error}"),
-                _                                => throw new Exception("Unknown deserialization result")
-            };
-
-            StreamEvent AsStreamEvent(object payload) => new(evt.MessageId, payload, meta ?? new Metadata(), ContentType, evt.StreamPosition);
-        }
     }
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
-        throw new NotImplementedException();
+    StreamEvent ToStreamEvent(PersistedEvent evt) {
+        var deserialized = _serializer.DeserializeEvent(Encoding.UTF8.GetBytes(evt.JsonData), evt.MessageType, ContentType);
+
+        var meta = evt.JsonMetadata == null ? new Metadata() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
+
+        return deserialized switch {
+            SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
+            FailedToDeserialize failed       => throw new SerializationException($"Can't deserialize {evt.MessageType}: {failed.Error}"),
+            _                                => throw new Exception("Unknown deserialization result")
+        };
+
+        StreamEvent AsStreamEvent(object payload) => new(evt.MessageId, payload, meta ?? new Metadata(), ContentType, evt.StreamPosition);
     }
 
     public async Task<AppendEventsResult> AppendEvents(
@@ -108,7 +117,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetStreamExistsCommand(connection, stream);
-        
+
         var result = await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
 
         return (bool)result!;

@@ -116,7 +116,7 @@ public class AllStreamSubscription
             re.Event.EventNumber,
             re.OriginalEventNumber,
             re.Event.Position.CommitPosition,
-            _sequence++,
+            Sequence++,
             re.Event.Created,
             evt,
             Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId),
@@ -124,8 +124,6 @@ public class AllStreamSubscription
             cancellationToken
         );
     }
-
-    ulong _sequence;
 
     /// <summary>
     /// Returns a measure delegate for the subscription

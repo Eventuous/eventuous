@@ -42,7 +42,6 @@ public class PostgresStreamSubscription(
 
     protected override long MoveStart(PersistedEvent evt) => evt.StreamPosition;
 
-    ulong           _sequence;
     int             _streamId;
     readonly string _streamName = options.Stream.ToString();
 
@@ -55,7 +54,7 @@ public class PostgresStreamSubscription(
             (ulong)evt.StreamPosition,
             (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
-            _sequence++,
+            Sequence++,
             evt.Created,
             e,
             meta,

@@ -21,8 +21,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     )
     : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, loggerFactory)
     where TOptions : SqlSubscriptionOptionsBase where TConnection : DbConnection {
-    readonly IMetadataSerializer     _metaSerializer = DefaultMetadataSerializer.Instance;
-    readonly CancellationTokenSource _cts            = new();
+    readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 
     protected abstract ValueTask<TConnection> OpenConnection(CancellationToken cancellationToken);
 
@@ -33,39 +32,18 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     protected virtual bool IsStopping(Exception exception) => exception is OperationCanceledException;
 
     // ReSharper disable once CognitiveComplexity
+
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
         var start = position.HasValue ? (long)position : -1;
 
         var retryCount   = 0;
         var currentDelay = Options.Polling.MinIntervalMs;
 
-        while (!cancellationToken.IsCancellationRequested) {
-            var result = await Poll().NoContext();
-
-            if (!result.Continue) break;
-
-            if (result.Retry) {
-                await Task.Delay(Options.Retry.InitialDelayMs * retryCount++, cancellationToken).NoContext();
-
-                continue;
-            }
-
-            retryCount = 0;
-
-            // Poll again immediately if we received events
-            if (result.ReceivedEvents > 0) {
-                currentDelay = Options.Polling.MinIntervalMs;
-
-                continue;
-            }
-
-            // Otherwise, wait a bit
-            // Exponentially increase delay but do not exceed maxDelay
-            currentDelay = Math.Min((int)(currentDelay * Options.Polling.GrowFactor), Options.Polling.MaxIntervalMs);
-            await Task.Delay(currentDelay, cancellationToken).NoContext();
+        try {
+            await ExecutePollCycle();
+        } finally {
+            Log.InfoLog?.Log("Polling query stopped");
         }
-
-        Log.InfoLog?.Log("Polling query stopped");
 
         return;
 
@@ -102,24 +80,66 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                 return new PollingResult(false, false, 0);
             }
         }
+
+        async Task ExecutePollCycle() {
+            while (!cancellationToken.IsCancellationRequested) {
+                var result = await Poll().NoContext();
+
+                if (!result.Continue) break;
+
+                if (result.Retry) {
+                    await Task.Delay(Options.Retry.InitialDelayMs * retryCount++, cancellationToken).NoContext();
+
+                    continue;
+                }
+
+                retryCount = 0;
+
+                // Poll again immediately if we received events
+                if (result.ReceivedEvents > 0) {
+                    currentDelay = Options.Polling.MinIntervalMs;
+
+                    continue;
+                }
+
+                // Otherwise, wait a bit
+                // Exponentially increase delay but do not exceed maxDelay
+                currentDelay = Math.Min((int)(currentDelay * Options.Polling.GrowFactor), Options.Polling.MaxIntervalMs);
+                await Task.Delay(currentDelay, cancellationToken).NoContext();
+            }
+        }
     }
 
-    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
-        await BeforeSubscribe(cancellationToken).NoContext();
+    CancellationTokenSource _cts = new();
 
+    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
+        _cts = new CancellationTokenSource();
+        await BeforeSubscribe(cancellationToken).NoContext();
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        _runner = Task.Run(() => PollingQuery(position, _cts.Token), _cts.Token);
+        // _runner = Task.Run(() => PollingQuery(position, _cts.Token), _cts.Token);
+        _runner = PollingQuery(position, _cts.Token);
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
+        if (_runner == null) return;
+
         try {
             _cts.Cancel();
-            if (_runner != null) await _runner.NoContext();
-        } catch (OperationCanceledException) {
-            // Nothing to do
-        } catch (InvalidOperationException e) when (e.Message.Contains("Operation cancelled by user.")) {
-            // It's a wrapped task cancelled exception
+            // if (_runner != null) await _runner.NoContext();
+        } finally {
+            var state        = new TaskCompletionSource<object>();
+            var registration = cancellationToken.Register((s => (((TaskCompletionSource<object>)s!)!).SetCanceled(cancellationToken)), state);
+
+            try {
+                await Task.WhenAny(_runner, state.Task).ConfigureAwait(false);
+            } finally {
+                await registration.DisposeAsync();
+            }
+
+            registration = new CancellationTokenRegistration();
+            _runner.Dispose();
+            _runner = null;
         }
     }
 

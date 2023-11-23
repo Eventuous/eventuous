@@ -11,8 +11,7 @@ namespace Eventuous.Postgresql.Subscriptions;
 using Extensions;
 
 public class PostgresCheckpointStoreOptions {
-    public PostgresCheckpointStoreOptions()
-        : this(Postgresql.Schema.DefaultSchema) { }
+    public PostgresCheckpointStoreOptions() : this(Postgresql.Schema.DefaultSchema) { }
 
     // ReSharper disable once ConvertToPrimaryConstructor
     public PostgresCheckpointStoreOptions(string schema) => Schema = schema;
@@ -63,17 +62,14 @@ public class PostgresCheckpointStore : ICheckpointStore {
         return checkpoint;
 
         async Task<(Checkpoint Checkpoint, bool Loaded)> GetCheckpoint() {
-            await using var c   = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
-            await using var cmd = GetCheckpointCommand(c, _getCheckpointSql, checkpointId);
-
+            await using var c      = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
+            await using var cmd    = GetCheckpointCommand(c, _getCheckpointSql, checkpointId);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
             if (!await reader.ReadAsync(cancellationToken).NoContext()) return (Checkpoint.Empty(checkpointId), false);
 
             var hasPosition = !reader.IsDBNull(0);
-
             checkpoint = hasPosition ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0)) : Checkpoint.Empty(checkpointId);
-
             Logger.Current.CheckpointLoaded(this, checkpoint);
 
             return (checkpoint, true);

@@ -97,7 +97,7 @@ public abstract class RedisSubscriptionBase<T>(
             (ulong)evt.StreamPosition,
             (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
-            _sequence++,
+            Sequence++,
             evt.Created,
             e,
             meta,
@@ -107,10 +107,7 @@ public abstract class RedisSubscriptionBase<T>(
 
     protected abstract Task<ReceivedEvent[]> ReadEvents(IDatabase database, long position);
 
-    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken)
-        => Task.CompletedTask;
-
-    ulong _sequence;
+    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 public abstract record RedisSubscriptionBaseOptions : SubscriptionWithCheckpointOptions {

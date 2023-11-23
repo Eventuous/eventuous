@@ -4,14 +4,16 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.Postgresql;
+namespace Eventuous.SqlServer;
 
-public class SchemaInitializer(PostgresStoreOptions options, ILoggerFactory? loggerFactory = null) : IHostedService {
+public class SchemaInitializer(SqlServerStoreOptions options, ILoggerFactory? loggerFactory = null) : IHostedService {
     public Task StartAsync(CancellationToken cancellationToken) {
         if (!options.InitializeDatabase) return Task.CompletedTask;
-        var dataSource = new NpgsqlDataSourceBuilder(options.ConnectionString).Build();
-        var schema = new Schema(options.Schema);
-        return schema.CreateSchema(dataSource, loggerFactory?.CreateLogger<Schema>(), cancellationToken);
+
+        var schema           = new Schema(options.Schema);
+        var connectionString = Ensure.NotEmptyString(options.ConnectionString);
+
+        return schema.CreateSchema(connectionString, loggerFactory?.CreateLogger<Schema>(), cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

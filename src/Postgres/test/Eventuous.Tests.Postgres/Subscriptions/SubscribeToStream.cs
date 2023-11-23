@@ -1,6 +1,7 @@
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Sut.Subs;
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Postgres.Fixtures;
 using Hypothesist;
 using static Eventuous.Sut.App.Commands;
@@ -9,9 +10,11 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
 public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
-    public SubscribeToStream(ITestOutputHelper outputHelper)
-        : base(outputHelper, false, false) {
-        outputHelper.WriteLine($"Schema: {IntegrationFixture.SchemaName}");
+    readonly ITestOutputHelper _outputHelper;
+
+    public SubscribeToStream(ITestOutputHelper outputHelper) : base(outputHelper, false, false) {
+        _outputHelper = outputHelper;
+        outputHelper.WriteLine($"Schema: {SchemaName}");
     }
 
     [Fact]
@@ -32,13 +35,16 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
 
     [Fact]
     public async Task ShouldConsumeProducedEventsWhenRestarting() {
+        _outputHelper.WriteLine("Phase one");
         await TestConsumptionOfProducedEvents();
 
+        _outputHelper.WriteLine("Resetting handler");
         Handler.Reset();
-        await InitializeAsync();
+        // await InitializeAsync();
 
+        _outputHelper.WriteLine("Phase two");
         await TestConsumptionOfProducedEvents();
-        
+
         var checkpoint = await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
         checkpoint.Position.Should().Be(19);
 
@@ -47,11 +53,14 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
         async Task TestConsumptionOfProducedEvents() {
             const int count = 10;
 
+            _outputHelper.WriteLine("Generating and producing events");
             var testEvents = await GenerateAndProduceEvents(count);
             Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
+            _outputHelper.WriteLine("Starting subscription");
             await Start();
             await Handler.Validate(2.Seconds());
+            _outputHelper.WriteLine("Stopping subscription");
             await Stop();
             Handler.Count.Should().Be(10);
         }
@@ -80,23 +89,15 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
     async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking())
+            .Select(_ => DomainFixture.CreateImportBooking(Auto))
             .ToList();
 
-        var events = commands.Select(ToEvent).ToList();
-
+        var events       = commands.Select(ToEvent).ToList();
         var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
-
-        await IntegrationFixture.EventStore.AppendEvents(
-            Stream,
-            ExpectedStreamVersion.Any,
-            streamEvents.ToArray(),
-            default
-        );
+        await EventStore.AppendEvents(Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
 
         return events;
     }
 
-    protected override TestEventHandler GetHandler()
-        => new();
+    protected override TestEventHandler GetHandler() => new();
 }

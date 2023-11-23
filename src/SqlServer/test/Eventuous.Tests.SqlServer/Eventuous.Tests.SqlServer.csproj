@@ -2,6 +2,7 @@
     <PropertyGroup>
         <IncludeSutSubs>true</IncludeSutSubs>
         <IncludeSutApp>true</IncludeSutApp>
+        <IncludeTestHost>true</IncludeTestHost>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
@@ -11,5 +12,7 @@
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
         <ProjectReference Include="$(LocalRoot)\Eventuous.SqlServer\Eventuous.SqlServer.csproj" />
+        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+        <ProjectReference Include="$(SrcRoot)\Core\test\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj" />
     </ItemGroup>
 </Project>

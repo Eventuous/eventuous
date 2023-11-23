@@ -16,22 +16,18 @@ using Extensions;
 /// Subscription for all events in the system using SQL Server event store.
 /// </summary>
 public class SqlServerAllStreamSubscription(
-        GetSqlServerConnection                getConnection,
         SqlServerAllStreamSubscriptionOptions options,
         ICheckpointStore                      checkpointStore,
         ConsumePipe                           consumePipe,
         ILoggerFactory?                       loggerFactory = null
     )
-    : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions>(getConnection, options, checkpointStore, consumePipe, loggerFactory) {
+    : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions>(options, checkpointStore, consumePipe, loggerFactory) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadAllForwards)
             .Add("@from_position", SqlDbType.BigInt, start + 1)
             .Add("@count", SqlDbType.Int, Options.MaxPageSize);
 
-    protected override long MoveStart(PersistedEvent evt)
-        => evt.GlobalPosition;
-
-    ulong _sequence;
+    protected override long MoveStart(PersistedEvent evt) => evt.GlobalPosition;
 
     protected override IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(
@@ -42,7 +38,7 @@ public class SqlServerAllStreamSubscription(
             (ulong)evt.StreamPosition,
             (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
-            _sequence++,
+            Sequence++,
             evt.Created,
             e,
             meta,

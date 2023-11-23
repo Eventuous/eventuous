@@ -60,4 +60,9 @@ public static class LoggingExtensions {
 
     public static void FailedToHandleMessageWithRetry(this LogContext log, string handlerType, string messageType, int retryCount, Exception exception)
         => log.ErrorLog?.Log(exception, "Failed to handle message {MessageType} with {HandlerType} after {RetryCount} retries", messageType, handlerType, retryCount);
+
+    public static void MessageAcked(this LogContext log, string messageType, ulong position) => log.TraceLog?.Log("Message {Type} acknowledged at {Position}", messageType, position);
+
+    public static void MessageNacked(this LogContext log, string messageType, ulong position, Exception exception) 
+        => log.WarnLog?.Log(exception, "Message {Type} not acknowledged at {Position}", messageType, position);
 }

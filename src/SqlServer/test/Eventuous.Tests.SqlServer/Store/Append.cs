@@ -1,15 +1,15 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.SqlServer.Fixtures;
-using static Eventuous.Tests.SqlServer.Store.Helpers;
 
 namespace Eventuous.Tests.SqlServer.Store;
 
 public class AppendEvents(IntegrationFixture fixture) : IClassFixture<IntegrationFixture> {
     [Fact]
     public async Task ShouldAppendToNoStream() {
-        var evt        = CreateEvent();
+        var evt        = fixture.CreateEvent();
         var streamName = fixture.GetStreamName();
         var result     = await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
@@ -18,12 +18,12 @@ public class AppendEvents(IntegrationFixture fixture) : IClassFixture<Integratio
 
     [Fact]
     public async Task ShouldAppendOneByOne() {
-        var evt    = CreateEvent();
+        var evt    = fixture.CreateEvent();
         var stream = fixture.GetStreamName();
 
         var result = await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
 
-        evt = CreateEvent();
+        evt = fixture.CreateEvent();
 
         var version = new ExpectedStreamVersion(result.NextExpectedVersion);
         result = await fixture.AppendEvent(stream, evt, version);
@@ -33,12 +33,12 @@ public class AppendEvents(IntegrationFixture fixture) : IClassFixture<Integratio
 
     [Fact]
     public async Task ShouldFailOnWrongVersionNoStream() {
-        var evt    = CreateEvent();
+        var evt    = fixture.CreateEvent();
         var stream = fixture.GetStreamName();
 
         await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
 
-        evt = CreateEvent();
+        evt = fixture.CreateEvent();
 
         var task = () => fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
         await task.Should().ThrowAsync<AppendToStreamException>();
@@ -46,12 +46,12 @@ public class AppendEvents(IntegrationFixture fixture) : IClassFixture<Integratio
 
     [Fact]
     public async Task ShouldFailOnWrongVersion() {
-        var evt    = CreateEvent();
+        var evt    = fixture.CreateEvent();
         var stream = fixture.GetStreamName();
 
         await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
 
-        evt = CreateEvent();
+        evt = fixture.CreateEvent();
 
         var task = () => fixture.AppendEvent(stream, evt, new ExpectedStreamVersion(3));
         await task.Should().ThrowAsync<AppendToStreamException>();

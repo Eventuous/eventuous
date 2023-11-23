@@ -26,15 +26,9 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     static ConsumePipe ConfigurePipe(ConsumePipe pipe, int concurrencyLimit)
         => PipelineIsAsync(pipe) ? pipe : pipe.AddFilterFirst(new AsyncHandlingFilter((uint)concurrencyLimit));
 
-    EventPosition? LastProcessed { get; set; }
-    CheckpointCommitHandler CheckpointCommitHandler { get; } = new(
-        options.SubscriptionId,
-        checkpointStore,
-        TimeSpan.FromMilliseconds(options.CheckpointCommitDelayMs),
-        options.CheckpointCommitBatchSize,
-        loggerFactory
-    );
-    ICheckpointStore CheckpointStore { get; } = Ensure.NotNull(checkpointStore);
+    EventPosition?           LastProcessed           { get; set; }
+    CheckpointCommitHandler? CheckpointCommitHandler { get; set; }
+    ICheckpointStore         CheckpointStore         { get; } = Ensure.NotNull(checkpointStore);
 
     protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
 
@@ -58,21 +52,31 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         var eventPosition = GetPositionFromContext(context);
         LastProcessed = eventPosition;
 
-        context.LogContext.TraceLog?.Log("Message {Type} acknowledged at {Position} {P}", context.MessageType, context.GlobalPosition, eventPosition.Position!.Value);
+        context.LogContext.MessageAcked(context.MessageType, context.GlobalPosition);
 
-        return CheckpointCommitHandler.Commit(
+        return CheckpointCommitHandler!.Commit(
             new CommitPosition(eventPosition.Position!.Value, context.Sequence, eventPosition.Created) { LogContext = context.LogContext },
             context.CancellationToken
         );
     }
 
     ValueTask Nack(IMessageConsumeContext context, Exception exception) {
-        context.LogContext.WarnLog?.Log(exception, "Message {Type} not acknowledged at {Position}", context.MessageType, context.GlobalPosition);
+        context.LogContext.MessageNacked(context.MessageType, context.GlobalPosition, exception);
 
         return Options.ThrowOnError ? throw exception : Ack(context);
     }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
+        if (CheckpointCommitHandler == null) {
+            CheckpointCommitHandler = new CheckpointCommitHandler(
+                options.SubscriptionId,
+                checkpointStore,
+                TimeSpan.FromMilliseconds(options.CheckpointCommitDelayMs),
+                options.CheckpointCommitBatchSize,
+                LoggerFactory
+            );
+        }
+
         if (IsRunning && LastProcessed != null) { return new Checkpoint(Options.SubscriptionId, LastProcessed?.Position); }
 
         Logger.Current = Log;
@@ -84,5 +88,10 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         return checkpoint;
     }
 
-    protected override ValueTask Finalize(CancellationToken cancellationToken) => CheckpointCommitHandler.DisposeAsync();
+    protected override async ValueTask Finalize(CancellationToken cancellationToken) {
+        if (CheckpointCommitHandler == null) return;
+
+        await CheckpointCommitHandler.DisposeAsync();
+        CheckpointCommitHandler = null;
+    }
 }

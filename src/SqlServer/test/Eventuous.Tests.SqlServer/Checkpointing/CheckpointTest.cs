@@ -20,12 +20,15 @@ public class CheckpointTest : IClassFixture<IntegrationFixture>, IDisposable {
     [Fact]
     public async Task EmitMassiveNumberOfEventsAndEnsureCheckpointingWorks() {
         TypeMap.RegisterKnownEventTypes();
+        
+        // Change this number to produce more events. It's set to 1000 for the sake of CI.
+        const int count = 1000;
 
         var aggregateStore = new AggregateStore(_fixture.EventStore);
 
         var checkpointStore = new SqlServerCheckpointStore(
-            _fixture.GetConnection,
             new SqlServerCheckpointStoreOptions {
+                ConnectionString = _fixture.GetConnectionString(),
                 Schema = _fixture.SchemaName
             }
         );
@@ -35,28 +38,28 @@ public class CheckpointTest : IClassFixture<IntegrationFixture>, IDisposable {
         pipe.AddDefaultConsumer(handler);
 
         var sub = new SqlServerAllStreamSubscription(
-            _fixture.GetConnection,
             new SqlServerAllStreamSubscriptionOptions {
+                ConnectionString          = _fixture.GetConnectionString(),
                 Schema                    = _fixture.SchemaName,
                 SubscriptionId            = "TestSubscription",
-                CheckpointCommitBatchSize = 1000,
+                CheckpointCommitBatchSize = count / 100,
             },
             checkpointStore,
             pipe,
             _loggerFactory
         );
         await sub.SubscribeWithLog(_loggerFactory.CreateLogger(sub.SubscriptionId));
-        var accounts = Enumerable.Range(0, 100000).Select(n => new TestAccount($"user{n:D4}")).ToList();
+        var accounts = Enumerable.Range(0, count).Select(n => new TestAccount($"user{n:D4}")).ToList();
         await service.Handle(new InjectTestAccounts(accounts), default);
 
-        while (handler.HandledCount < 100000) {
+        while (handler.HandledCount < count) {
             await Task.Delay(100);
         }
 
         await sub.Unsubscribe(id => { }, default);
 
         var checkpoint = await checkpointStore.GetLastCheckpoint(sub.SubscriptionId, default);
-        checkpoint.Position.Should().Be(99999);
+        checkpoint.Position.Should().Be(count - 1);
     }
 
     public void Dispose() => _listener.Dispose();

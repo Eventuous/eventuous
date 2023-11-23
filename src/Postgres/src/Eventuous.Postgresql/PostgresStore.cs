@@ -51,6 +51,11 @@ public class PostgresStore : SqlEventStoreBase<NpgsqlConnection, NpgsqlTransacti
             .Add("_from_position", NpgsqlDbType.Integer, start.Value)
             .Add("_count", NpgsqlDbType.Integer, count);
 
+    protected override DbCommand GetReadBackwardsCommand(NpgsqlConnection connection, StreamName stream, int count) 
+        => connection.GetCommand(Schema.ReadStreamBackwards)
+            .Add("_stream_name", NpgsqlDbType.Varchar, stream.ToString())
+            .Add("_count", NpgsqlDbType.Integer, count);
+
     protected override bool IsStreamNotFound(Exception exception)
         => exception is PostgresException e && e.MessageText.StartsWith("StreamNotFound");
 

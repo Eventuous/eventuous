@@ -1,6 +1,6 @@
-using Eventuous.SqlServer;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.Subs;
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.SqlServer.Fixtures;
 using Hypothesist;
 using static Eventuous.Sut.App.Commands;
@@ -8,15 +8,7 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 
-public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
-    readonly SqlServerStore _eventStore;
-
-    public SubscribeToStream(IntegrationFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, new TestEventHandler(), false, false) {
-        outputHelper.WriteLine($"Schema: {SchemaName}");
-        _eventStore = new SqlServerStore(fixture.GetConnection, new SqlServerStoreOptions(SchemaName));
-    }
-
+public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFixture<TestEventHandler>(outputHelper, new TestEventHandler(), false, false) {
     [Fact]
     public async Task ShouldConsumeProducedEvents() {
         const int count = 10;
@@ -76,14 +68,14 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
     async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking())
+            .Select(_ => DomainFixture.CreateImportBooking(Fixture.Auto))
             .ToList();
 
         var events = commands.Select(ToEvent).ToList();
 
         var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
 
-        await _eventStore.AppendEvents(Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
+        await Fixture.EventStore.AppendEvents(Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
 
         return events;
     }

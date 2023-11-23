@@ -46,9 +46,9 @@ public class RegistrationTests {
             }
         );
         var app            = builder.Build();
-        var aggregateStore = app.Services.GetRequiredService<IAggregateStore>();
+        var aggregateStore = app.Services.GetService<IAggregateStore>();
         aggregateStore.Should().NotBeNull();
-        var reader       = app.Services.GetRequiredService<IEventStore>();
+        var reader       = app.Services.GetService<IEventStore>();
         var npgSqlReader = reader as PostgresStore;
         npgSqlReader.Should().NotBeNull();
         npgSqlReader!.Schema.StreamMessage.Should().Be("test.stream_message");

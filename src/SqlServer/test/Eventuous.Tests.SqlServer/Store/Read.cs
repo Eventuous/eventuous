@@ -1,6 +1,6 @@
 using System.Text.Json;
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.SqlServer.Fixtures;
-using static Eventuous.Tests.SqlServer.Store.Helpers;
 
 // ReSharper disable CoVariantArrayConversion
 
@@ -9,7 +9,7 @@ namespace Eventuous.Tests.SqlServer.Store;
 public class Read(IntegrationFixture fixture) : IClassFixture<IntegrationFixture> {
     [Fact]
     public async Task ShouldReadOne() {
-        var evt        = CreateEvent();
+        var evt        = fixture.CreateEvent();
         var streamName = fixture.GetStreamName();
         await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
@@ -22,7 +22,7 @@ public class Read(IntegrationFixture fixture) : IClassFixture<IntegrationFixture
 
     [Fact]
     public async Task ShouldReadMetadata() {
-        var evt        = CreateEvent();
+        var evt        = fixture.CreateEvent();
         var streamName = fixture.GetStreamName();
 
         await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream, new Metadata { { "Key1", "Value1" }, { "Key2", "Value2" } });
@@ -40,7 +40,7 @@ public class Read(IntegrationFixture fixture) : IClassFixture<IntegrationFixture
 
     [Fact]
     public async Task ShouldReadMany() {
-        object[] events     = CreateEvents(20).ToArray();
+        object[] events     = fixture.CreateEvents(20).ToArray();
         var      streamName = fixture.GetStreamName();
         await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -52,7 +52,7 @@ public class Read(IntegrationFixture fixture) : IClassFixture<IntegrationFixture
 
     [Fact]
     public async Task ShouldReadTail() {
-        object[] events     = CreateEvents(20).ToArray();
+        object[] events     = fixture.CreateEvents(20).ToArray();
         var      streamName = fixture.GetStreamName();
         await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -65,7 +65,7 @@ public class Read(IntegrationFixture fixture) : IClassFixture<IntegrationFixture
 
     [Fact]
     public async Task ShouldReadHead() {
-        object[] events     = CreateEvents(20).ToArray();
+        object[] events     = fixture.CreateEvents(20).ToArray();
         var      streamName = fixture.GetStreamName();
         await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 

@@ -1,17 +1,16 @@
-using Eventuous.Tests.SqlServer.Fixtures;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 
-namespace Eventuous.Tests.SqlServer.Store;
+namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
 public static class Helpers {
-    public static StreamName GetStreamName(this IntegrationFixture fixture) => new(fixture.Auto.Create<string>());
+    public static StreamName GetStreamName(this StoreFixtureBase fixture) => new(fixture.Auto.Create<string>());
 
-    public static BookingImported CreateEvent() => ToEvent(DomainFixture.CreateImportBooking());
+    public static BookingImported CreateEvent(this StoreFixtureBase fixture) => ToEvent(DomainFixture.CreateImportBooking(fixture.Auto));
 
-    public static IEnumerable<BookingImported> CreateEvents(int count) {
+    public static IEnumerable<BookingImported> CreateEvents(this StoreFixtureBase fixture, int count) {
         for (var i = 0; i < count; i++) {
-            yield return CreateEvent();
+            yield return CreateEvent(fixture);
         }
     }
 
@@ -19,10 +18,10 @@ public static class Helpers {
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     public static Task<AppendEventsResult> AppendEvents(
-            this IntegrationFixture fixture,
-            StreamName              stream,
-            object[]                evt,
-            ExpectedStreamVersion   version
+            this StoreFixtureBase fixture,
+            StreamName            stream,
+            object[]              evt,
+            ExpectedStreamVersion version
         ) {
         var streamEvents = evt.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
 
@@ -30,11 +29,11 @@ public static class Helpers {
     }
 
     public static Task<AppendEventsResult> AppendEvent(
-            this IntegrationFixture fixture,
-            StreamName              stream,
-            object                  evt,
-            ExpectedStreamVersion   version,
-            Metadata?               metadata = null
+            this StoreFixtureBase fixture,
+            StreamName            stream,
+            object                evt,
+            ExpectedStreamVersion version,
+            Metadata?             metadata = null
         ) {
         var streamEvent = new StreamEvent(Guid.NewGuid(), evt, metadata ?? new Metadata(), "", 0);
 

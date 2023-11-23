@@ -9,25 +9,27 @@ using Eventuous.SqlServer.Extensions;
 
 namespace Eventuous.SqlServer;
 
-public delegate SqlConnection GetSqlServerConnection();
+public record SqlServerStoreOptions {
+    public string? ConnectionString   { get; init; }
+    public string  Schema             { get; init; } = SqlServer.Schema.DefaultSchema;
+    public bool    InitializeDatabase { get; init; }
+}
 
-public record SqlServerStoreOptions(string Schema = Schema.DefaultSchema);
+public class SqlServerStore
+    : SqlEventStoreBase<SqlConnection, SqlTransaction> {
+    readonly GetSqlServerConnection _getConnection;
 
-public class SqlServerStore(
-        GetSqlServerConnection getConnection,
-        SqlServerStoreOptions  options,
-        IEventSerializer?      serializer     = null,
-        IMetadataSerializer?   metaSerializer = null
-    )
-    : SqlEventStoreBase<SqlConnection, SqlTransaction>(serializer, metaSerializer) {
-    readonly GetSqlServerConnection _getConnection = Ensure.NotNull(getConnection, "Connection factory");
-    readonly Schema                 _schema        = new(options.Schema);
+    readonly Schema _schema;
+
+    public SqlServerStore(SqlServerStoreOptions options, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
+        : base(serializer, metaSerializer) {
+        var connectionString = Ensure.NotEmptyString(options.ConnectionString);
+        _getConnection = ct => ConnectionFactory.GetConnection(connectionString, ct);
+        _schema        = new Schema(options.Schema);
+    }
 
     protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken) {
-        var connection = _getConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
-
-        return connection;
+        return await _getConnection(cancellationToken).NoContext();
     }
 
     protected override DbCommand GetReadCommand(SqlConnection connection, StreamName stream, StreamReadPosition start, int count)
@@ -35,6 +37,12 @@ public class SqlServerStore(
             .GetStoredProcCommand(_schema.ReadStreamForwards)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
             .Add("@from_position", SqlDbType.Int, start.Value)
+            .Add("@count", SqlDbType.Int, count);
+
+    protected override DbCommand GetReadBackwardsCommand(SqlConnection connection, StreamName stream, int count)
+        => connection
+            .GetStoredProcCommand(_schema.ReadStreamForwards)
+            .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
             .Add("@count", SqlDbType.Int, count);
 
     protected override bool IsStreamNotFound(Exception exception) => exception is SqlException e && e.Message.StartsWith("StreamNotFound");

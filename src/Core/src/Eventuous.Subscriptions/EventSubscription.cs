@@ -14,7 +14,7 @@ using Diagnostics;
 using Filters;
 using Logging;
 
-public abstract class EventSubscription<T> : IMessageSubscription where T : SubscriptionOptions {
+public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposable where T : SubscriptionOptions {
     [PublicAPI]
     public bool IsRunning { get; set; }
 
@@ -28,6 +28,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     protected ILoggerFactory?         LoggerFactory   { get; }
     protected LogContext              Log             { get; }
     protected CancellationTokenSource Stopping        { get; } = new();
+
+    protected ulong Sequence;
 
     protected EventSubscription(T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory) {
         Ensure.NotEmptyString(options.SubscriptionId);
@@ -61,8 +63,8 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
         await Unsubscribe(cancellationToken).NoContext();
         Log.InfoLog?.Log("Unsubscribed");
         onUnsubscribed(Options.SubscriptionId);
-        await Pipe.DisposeAsync().NoContext();
         await Finalize(cancellationToken);
+        Sequence = 0;
     }
 
     protected virtual ValueTask Finalize(CancellationToken cancellationToken) => default;
@@ -70,9 +72,9 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
     // ReSharper disable once CognitiveComplexity
     protected async ValueTask Handler(IMessageConsumeContext context) {
         var scope = new Dictionary<string, object> {
-            {"SubscriptionId", SubscriptionId},
-            {"Stream", context.Stream},
-            {"MessageType", context.MessageType},
+            { "SubscriptionId", SubscriptionId },
+            { "Stream", context.Stream },
+            { "MessageType", context.MessageType },
         };
 
         // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
@@ -209,6 +211,18 @@ public abstract class EventSubscription<T> : IMessageSubscription where T : Subs
                 }
             }
         );
+    }
+
+    bool _disposed;
+
+    public async ValueTask DisposeAsync() {
+        if (_disposed) return;
+
+        await Pipe.DisposeAsync();
+
+        // Stopping.Dispose();
+        _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
 
