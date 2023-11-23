@@ -56,8 +56,9 @@ public abstract class RedisSubscriptionBase<T>(
                     await HandleInternal(ToConsumeContext(persistentEvent, cancellationToken)).NoContext();
                     start = persistentEvent.StreamPosition + 1;
                 }
-            } catch (OperationCanceledException) {
-                // Nothing to do
+            } catch (InvalidOperationException e) when (e.Message.Contains("Reading is not allowed after reader was completed") ||
+                                                        cancellationToken.IsCancellationRequested) {
+                throw new OperationCanceledException("Redis read operation terminated", e, cancellationToken);
             } catch (Exception e) {
                 IsDropped = true;
                 Log.WarnLog?.Log(e, "Subscription dropped");
@@ -67,7 +68,7 @@ public abstract class RedisSubscriptionBase<T>(
         }
     }
 
-   MessageConsumeContext ToConsumeContext(ReceivedEvent evt, CancellationToken cancellationToken) {
+    MessageConsumeContext ToConsumeContext(ReceivedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
 
         var data = DeserializeData(

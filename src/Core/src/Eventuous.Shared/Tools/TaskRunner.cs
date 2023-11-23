@@ -9,9 +9,17 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
     Task? _runner;
 
     public TaskRunner Start() {
-        _runner = Task.Run(() => taskFactory(_stopSource.Token));
+        _runner = Task.Run(Run);
 
         return this;
+
+        async Task Run() {
+            try {
+                await taskFactory(_stopSource.Token);
+            } catch (OperationCanceledException) {
+                // ignore
+            }
+        }
     }
 
     public async ValueTask Stop(CancellationToken cancellationToken) {
