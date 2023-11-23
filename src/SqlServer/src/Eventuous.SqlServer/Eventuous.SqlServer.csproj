@@ -2,9 +2,11 @@
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Relational\src\Eventuous.Sql.Base\Eventuous.Sql.Base.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.SqlClient"/>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
         <PackageReference Include="System.Linq.Async"/>
         <Using Include="Microsoft.Data.SqlClient"/>
         <Using Include="System.Data"/>
@@ -13,6 +15,7 @@
         <EmbeddedResource Include="Scripts\AppendEvents.sql"/>
         <EmbeddedResource Include="Scripts\CheckStream.sql"/>
         <EmbeddedResource Include="Scripts\ReadAllForwards.sql"/>
+        <EmbeddedResource Include="Scripts\ReadStreamBackwards.sql" />
         <EmbeddedResource Include="Scripts\ReadStreamForwards.sql"/>
         <EmbeddedResource Include="Scripts\ReadStreamSub.sql"/>
         <EmbeddedResource Include="Scripts\_Schema.sql"/>

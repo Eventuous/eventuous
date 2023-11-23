@@ -2,6 +2,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Sut.Subs;
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Postgres.Fixtures;
 using Hypothesist;
 using static Eventuous.Sut.App.Commands;
@@ -10,10 +11,8 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
 public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
-    // readonly BookingService _service;
-
     public SubscribeToAll(ITestOutputHelper outputHelper) : base(outputHelper, true, false) {
-        outputHelper.WriteLine($"Schema: {IntegrationFixture.SchemaName}");
+        outputHelper.WriteLine($"Schema: {SchemaName}");
     }
 
     [Fact]
@@ -76,10 +75,10 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking())
+            .Select(_ => DomainFixture.CreateImportBooking(Auto))
             .ToList();
 
-        var service = new BookingService(IntegrationFixture.AggregateStore);
+        var service = new BookingService(AggregateStore);
         foreach (var cmd in commands) {
             var result = await service.Handle(cmd, default);
 

@@ -28,7 +28,6 @@ public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions option
     [PublicAPI]
     public static void MapSubscription(WebApplication app, string path = "/") {
         var subscription = app.Services.GetRequiredService<CloudRunPubSubSubscription>();
-        var sequence     = 0UL;
 
         app.MapPost(
             "/",
@@ -57,7 +56,7 @@ public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions option
                     return Results.NoContent();
                 }
 
-                var contentType = envelope.Message.Attributes.TryGetValue(subscription.Options.Attributes.ContentType, out var ct) ? ct : DefaultContentType;
+                var contentType = envelope.Message.Attributes.GetValueOrDefault(subscription.Options.Attributes.ContentType, DefaultContentType);
                 var message     = subscription.DeserializeData(contentType, eventType, data, subscription.Options.TopicId);
 
                 var messageId = envelope.Message.Attributes.TryGetValue(subscription.Options.Attributes.MessageId, out var id)
@@ -72,7 +71,7 @@ public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions option
                     0,
                     0,
                     0,
-                    sequence++,
+                    subscription.Sequence++,
                     envelope.Message.PublishTime,
                     message,
                     null,

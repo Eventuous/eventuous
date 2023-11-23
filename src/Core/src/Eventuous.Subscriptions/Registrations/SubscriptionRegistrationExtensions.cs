@@ -18,10 +18,10 @@ using Logging;
 [PublicAPI]
 public static class SubscriptionRegistrationExtensions {
     public static IServiceCollection AddSubscription<T, TOptions>(
-        this IServiceCollection                  services,
-        string                                   subscriptionId,
-        Action<SubscriptionBuilder<T, TOptions>> configureSubscription
-    ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
+            this IServiceCollection                  services,
+            string                                   subscriptionId,
+            Action<SubscriptionBuilder<T, TOptions>> configureSubscription
+        ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
         Ensure.NotNull(configureSubscription);
         var builder = new SubscriptionBuilder<T, TOptions>(Ensure.NotNull(services), Ensure.NotEmptyString(subscriptionId));
         configureSubscription(builder);
@@ -32,7 +32,7 @@ public static class SubscriptionRegistrationExtensions {
         return services
             .AddSubscriptionBuilder(builder)
             .AddSingleton(sp => GetBuilder(sp).ResolveSubscription(sp))
-            .AddSingleton<IHostedService>(
+            .AddSingleton<IHostedService, SubscriptionHostedService>(
                 sp =>
                     new SubscriptionHostedService(
                         GetBuilder(sp).ResolveSubscription(sp),
@@ -41,11 +41,11 @@ public static class SubscriptionRegistrationExtensions {
                     )
             );
 
-        SubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp)
-            => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);
+        SubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp) => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);
 
         GetSubscriptionEndOfStream GetEndOfStream(IServiceProvider sp) {
             var subscription = GetBuilder(sp).ResolveSubscription(sp) as IMeasuredSubscription;
+
             return subscription!.GetMeasure();
         }
     }
@@ -59,16 +59,13 @@ public static class SubscriptionRegistrationExtensions {
     /// <param name="tags">Health check tags list</param>
     /// <returns></returns>
     public static IHealthChecksBuilder AddSubscriptionsHealthCheck(
-        this IHealthChecksBuilder builder,
-        string                    checkName,
-        HealthStatus?             failureStatus,
-        string[]                  tags
-    ) {
+            this IHealthChecksBuilder builder,
+            string                    checkName,
+            HealthStatus?             failureStatus,
+            string[]                  tags
+        ) {
         builder.Services.TryAddSingleton<SubscriptionHealthCheck>();
-
-        builder.Services.TryAddSingleton<ISubscriptionHealth>(
-            sp => sp.GetRequiredService<SubscriptionHealthCheck>()
-        );
+        builder.Services.TryAddSingleton<ISubscriptionHealth>(sp => sp.GetRequiredService<SubscriptionHealthCheck>());
 
         return builder.AddCheck<SubscriptionHealthCheck>(checkName, failureStatus, tags);
     }
@@ -78,9 +75,7 @@ public static class SubscriptionRegistrationExtensions {
         services.AddSingleton<T>();
 
         return EventuousDiagnostics.Enabled
-            ? services.AddSingleton<ICheckpointStore>(
-                sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>())
-            )
+            ? services.AddSingleton<ICheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()))
             : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
     }
 
@@ -89,9 +84,7 @@ public static class SubscriptionRegistrationExtensions {
         services.AddSingleton(getStore);
 
         return EventuousDiagnostics.Enabled
-            ? services.AddSingleton<ICheckpointStore>(
-                sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>())
-            )
+            ? services.AddSingleton<ICheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()))
             : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
     }
 }

@@ -3,6 +3,7 @@
 
 using System.Data.Common;
 using Eventuous.Postgresql;
+using Eventuous.Sql.Base;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -44,30 +45,21 @@ public static class ServiceCollectionExtensions {
             connectionLifetime,
             dataSourceLifetime
         );
-
-        services.AddSingleton<PostgresStore>(
-            sp => {
-                var dataSource      = sp.GetRequiredService<NpgsqlDataSource>();
-                var eventSerializer = sp.GetService<IEventSerializer>();
-                var metaSerializer  = sp.GetService<IMetadataSerializer>();
-
-                return new PostgresStore(dataSource, options, eventSerializer, metaSerializer);
-            }
-        );
-
-        if (initializeDatabase) {
-            services.AddHostedService<SchemaInitializer>(
-                sp => {
-                    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-
-                    return new SchemaInitializer(options, loggerFactory);
-                }
-            );
-        }
+        services.AddSingleton(options);
+        services.AddSingleton<PostgresStore>();
+        services.AddHostedService<SchemaInitializer>();
 
         return services;
     }
 
+    /// <summary>
+    /// Adds PostgreSQL event store and the necessary schema to the DI container.
+    /// </summary>
+    /// <param name="services">Service collection</param>
+    /// <param name="config">Configuration section for PostgreSQL options</param>
+    /// <param name="connectionLifetime">Optional: lifetime of the connection, default is transient</param>
+    /// <param name="dataSourceLifetime">Optional> lifetime of the data source, default is singleton</param>
+    /// <returns></returns>
     public static IServiceCollection AddEventuousPostgres(
             this IServiceCollection services,
             IConfiguration          config,
@@ -75,11 +67,12 @@ public static class ServiceCollectionExtensions {
             ServiceLifetime         dataSourceLifetime = ServiceLifetime.Singleton
         ) {
         services.Configure<PostgresStoreOptions>(config);
+        services.AddSingleton<PostgresStoreOptions>(sp => sp.GetRequiredService<IOptions<PostgresStoreOptions>>().Value);
 
         services.AddNpgsqlDataSourceCore(
-            sp => sp.GetRequiredService<IOptions<PostgresStoreOptions>>().Value.ConnectionString,
+            sp => Ensure.NotEmptyString(sp.GetRequiredService<PostgresStoreOptions>().ConnectionString),
             (sp, builder) => {
-                var options = sp.GetRequiredService<IOptions<PostgresStoreOptions>>().Value;
+                var options = sp.GetRequiredService<PostgresStoreOptions>();
                 var schema  = new Schema(options.Schema);
                 builder.MapComposite<NewPersistedEvent>(schema.StreamMessage);
             },
@@ -87,27 +80,8 @@ public static class ServiceCollectionExtensions {
             dataSourceLifetime
         );
 
-        services.AddSingleton<PostgresStore>(
-            sp => {
-                var dataSource      = sp.GetRequiredService<NpgsqlDataSource>();
-                var eventSerializer = sp.GetService<IEventSerializer>();
-                var metaSerializer  = sp.GetService<IMetadataSerializer>();
-                var options         = sp.GetRequiredService<IOptions<PostgresStoreOptions>>();
-
-                return new PostgresStore(dataSource, options.Value, eventSerializer, metaSerializer);
-            }
-        );
-
-        if (config.GetValue<bool>("postgres:initializeDatabase") == true) {
-            services.AddHostedService<SchemaInitializer>(
-                sp => {
-                    sp.GetRequiredService<NpgsqlDataSource>();
-                    var options = sp.GetRequiredService<IOptions<PostgresStoreOptions>>();
-
-                    return new SchemaInitializer(options.Value, sp.GetRequiredService<ILoggerFactory>());
-                }
-            );
-        }
+        services.AddSingleton<PostgresStore>();
+        services.AddHostedService<SchemaInitializer>();
 
         return services;
     }

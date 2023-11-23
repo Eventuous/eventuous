@@ -3,8 +3,11 @@
 
 using System.ComponentModel;
 
-namespace Eventuous.SqlServer;
+namespace Eventuous.Sql.Base;
 
+/// <summary>
+/// Represents an event as stored in a relational database.
+/// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
 public record struct PersistedEvent(
     Guid     MessageId,

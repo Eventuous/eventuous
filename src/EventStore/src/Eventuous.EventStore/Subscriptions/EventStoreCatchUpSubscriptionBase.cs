@@ -19,15 +19,17 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWi
     /// <param name="options">Subscription options</param>
     /// <param name="checkpointStore">Checkpoint store</param>
     /// <param name="consumePipe">Consume pipe, usually provided by the subscription builder</param>
+    /// <param name="kind">Subscription kind: global log or a particular stream</param>
     /// <param name="loggerFactory">Optional logger factory</param>
     protected EventStoreCatchUpSubscriptionBase(
             EventStoreClient eventStoreClient,
             T                options,
             ICheckpointStore checkpointStore,
             ConsumePipe      consumePipe,
+            SubscriptionKind kind,
             ILoggerFactory?  loggerFactory
         )
-        : base(Ensure.NotNull(options), checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
+        : base(Ensure.NotNull(options), checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory)
         => EventStoreClient = eventStoreClient;
 
     /// <summary>

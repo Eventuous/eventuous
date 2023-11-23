@@ -1,14 +1,14 @@
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Postgres.Fixtures;
-using static Eventuous.Tests.Postgres.Store.Helpers;
 
 namespace Eventuous.Tests.Postgres.Store;
 
 public class OtherMethods(IntegrationFixture fixture) : IClassFixture<IntegrationFixture> {
     [Fact]
     public async Task StreamShouldExist() {
-        var evt        = CreateEvent();
-        var streamName = GetStreamName();
-        await fixture.EventStore.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
+        var evt        = fixture.CreateEvent();
+        var streamName = fixture.GetStreamName();
+        await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
         var exists = await fixture.EventStore.StreamExists(streamName, default);
         exists.Should().BeTrue();
@@ -16,7 +16,7 @@ public class OtherMethods(IntegrationFixture fixture) : IClassFixture<Integratio
 
     [Fact]
     public async Task StreamShouldNotExist() {
-        var streamName = GetStreamName();
+        var streamName = fixture.GetStreamName();
         var exists     = await fixture.EventStore.StreamExists(streamName, default);
         exists.Should().BeFalse();
     }

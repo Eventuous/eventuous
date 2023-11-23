@@ -44,7 +44,7 @@ static class TaskExtensions {
     }
 
     public static ConfiguredTaskAwaitable NoThrow(this Task task) {
-#if NET8_0
+#if NET8_0_OR_GREATER
         return task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
 #else
         return Try(task.ConfigureAwait(false)).ConfigureAwait(false);

@@ -191,7 +191,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             re.Event.EventNumber,
             GetContextStreamPosition(re),
             re.Event.Position.CommitPosition,
-            re.OriginalEventNumber,
+            Sequence++,
             re.Event.Created,
             evt,
             Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId, re.Event.EventNumber),

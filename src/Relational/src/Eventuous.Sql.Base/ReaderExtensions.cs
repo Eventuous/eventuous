@@ -1,15 +1,16 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Data.Common;
 using System.Runtime.CompilerServices;
 
-namespace Eventuous.SqlServer.Extensions;
+namespace Eventuous.Sql.Base;
 
-static class ReaderExtensions {
+public static class ReaderExtensions {
     public static async IAsyncEnumerable<PersistedEvent> ReadEvents(
-        this                     SqlDataReader     reader,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    ) {
+            this                     DbDataReader      reader,
+            [EnumeratorCancellation] CancellationToken cancellationToken
+        ) {
         while (await reader.ReadAsync(cancellationToken).NoContext()) {
             var evt = new PersistedEvent(
                 reader.GetGuid(0),

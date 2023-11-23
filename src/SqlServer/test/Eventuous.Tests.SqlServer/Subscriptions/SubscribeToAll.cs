@@ -1,8 +1,8 @@
-using Eventuous.SqlServer;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Sut.Subs;
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.SqlServer.Fixtures;
 using Hypothesist;
 using static Eventuous.Sut.App.Commands;
@@ -10,16 +10,8 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 
-public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
-    readonly BookingService _service;
-    List<ImportBooking>     _commands = null!;
-
-    public SubscribeToAll(IntegrationFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, new TestEventHandler(), true, false) {
-        var eventStore = new SqlServerStore(fixture.GetConnection, new SqlServerStoreOptions(SchemaName));
-        var store      = new AggregateStore(eventStore);
-        _service = new BookingService(store);
-    }
+public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixture<TestEventHandler>(outputHelper, new TestEventHandler(), true, false) {
+    List<ImportBooking> _commands = null!;
 
     const int Count = 10;
 
@@ -40,7 +32,7 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
 
         Handler.Reset();
         await InitializeAsync();
-        
+
         await TestConsumptionOfProducedEvents();
 
         return;
@@ -80,11 +72,12 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
     async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking())
+            .Select(_ => DomainFixture.CreateImportBooking(Fixture.Auto))
             .ToList();
 
+        var service = new BookingService(Fixture.AggregateStore);
         foreach (var cmd in commands) {
-            var result = await _service.Handle(cmd, default);
+            var result = await service.Handle(cmd, default);
 
             if (result is ErrorResult<BookingState> error) {
                 throw error.Exception ?? new Exception(error.Message);

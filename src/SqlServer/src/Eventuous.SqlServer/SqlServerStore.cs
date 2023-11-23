@@ -1,164 +1,68 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.Serialization;
-using System.Text;
-using Eventuous.Diagnostics;
+using System.Data.Common;
+using Eventuous.Sql.Base;
 using Eventuous.SqlServer.Extensions;
 
 // ReSharper disable ConvertClosureToMethodGroup
 
 namespace Eventuous.SqlServer;
 
-public delegate SqlConnection GetSqlServerConnection();
+public record SqlServerStoreOptions {
+    public string? ConnectionString   { get; init; }
+    public string  Schema             { get; init; } = SqlServer.Schema.DefaultSchema;
+    public bool    InitializeDatabase { get; init; }
+}
 
-public record SqlServerStoreOptions(string Schema = Schema.DefaultSchema);
+public class SqlServerStore
+    : SqlEventStoreBase<SqlConnection, SqlTransaction> {
+    readonly GetSqlServerConnection _getConnection;
 
-public class SqlServerStore(
-        GetSqlServerConnection getConnection,
-        SqlServerStoreOptions  options,
-        IEventSerializer?      serializer     = null,
-        IMetadataSerializer?   metaSerializer = null
-    )
-    : IEventStore {
-    readonly GetSqlServerConnection _getConnection  = Ensure.NotNull(getConnection, "Connection factory");
-    readonly IEventSerializer       _serializer     = serializer     ?? DefaultEventSerializer.Instance;
-    readonly IMetadataSerializer    _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
-    readonly Schema                 _schema         = new(options.Schema);
+    readonly Schema _schema;
 
-    const string ContentType = "application/json";
-
-    async Task<SqlConnection> OpenConnection(CancellationToken cancellationToken) {
-        var connection = _getConnection();
-        await connection.OpenAsync(cancellationToken).NoContext();
-
-        return connection;
+    public SqlServerStore(SqlServerStoreOptions options, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
+        : base(serializer, metaSerializer) {
+        var connectionString = Ensure.NotEmptyString(options.ConnectionString);
+        _getConnection = ct => ConnectionFactory.GetConnection(connectionString, ct);
+        _schema        = new Schema(options.Schema);
     }
 
-    public async Task<StreamEvent[]> ReadEvents(
-            StreamName         stream,
-            StreamReadPosition start,
-            int                count,
-            CancellationToken  cancellationToken
-        ) {
-        await using var connection = await OpenConnection(cancellationToken).NoContext();
+    protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken) {
+        return await _getConnection(cancellationToken).NoContext();
+    }
 
-        await using var cmd = connection.GetStoredProcCommand(_schema.ReadStreamForwards)
+    protected override DbCommand GetReadCommand(SqlConnection connection, StreamName stream, StreamReadPosition start, int count)
+        => connection
+            .GetStoredProcCommand(_schema.ReadStreamForwards)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
             .Add("@from_position", SqlDbType.Int, start.Value)
             .Add("@count", SqlDbType.Int, count);
 
-        try {
-            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
+    protected override DbCommand GetReadBackwardsCommand(SqlConnection connection, StreamName stream, int count)
+        => connection
+            .GetStoredProcCommand(_schema.ReadStreamForwards)
+            .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
+            .Add("@count", SqlDbType.Int, count);
 
-            var result = reader.ReadEvents(cancellationToken);
+    protected override bool IsStreamNotFound(Exception exception) => exception is SqlException e && e.Message.StartsWith("StreamNotFound");
 
-            return await result.Select(x => ToStreamEvent(x)).ToArrayAsync(cancellationToken).NoContext();
-        } catch (SqlException e) when (e.Message.StartsWith("StreamNotFound")) {
-            throw new StreamNotFound(stream);
-        }
-    }
-
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
-        => throw new NotImplementedException();
-
-    public async Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
-        ) {
-        var persistedEvents = events
-            .Where(x => x.Payload != null)
-            .Select(x => Convert(x))
-            .ToArray();
-
-        await using var connection  = await OpenConnection(cancellationToken).NoContext();
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken).NoContext();
-
-        await using var cmd = connection.GetStoredProcCommand(_schema.AppendEvents, transaction)
+    protected override DbCommand GetAppendCommand(
+            SqlConnection         connection,
+            SqlTransaction        transaction,
+            StreamName            stream,
+            ExpectedStreamVersion expectedVersion,
+            NewPersistedEvent[]   events
+        )
+        => connection.GetStoredProcCommand(_schema.AppendEvents, (SqlTransaction)transaction)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
             .Add("@expected_version", SqlDbType.Int, expectedVersion.Value)
             .Add("@created", SqlDbType.DateTime2, DateTime.UtcNow)
-            .AddPersistedEvent("@messages", persistedEvents);
+            .AddPersistedEvent("@messages", events);
 
-        try {
-            AppendEventsResult result;
+    protected override bool IsConflict(Exception exception) => exception is SqlException e && e.Number == 50000;
 
-            await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext()) {
-                await reader.ReadAsync(cancellationToken).NoContext();
-                result = new AppendEventsResult((ulong)reader.GetInt64(1), reader.GetInt32(0));
-            }
-
-            await transaction.CommitAsync(cancellationToken).NoContext();
-
-            return result;
-        } catch (SqlException e) when (e.Number == 50000) {
-            await transaction.RollbackAsync(cancellationToken).NoContext();
-            PersistenceEventSource.Log.UnableToAppendEvents(stream, e);
-
-            throw new AppendToStreamException(stream, e);
-        }
-
-        NewPersistedEvent Convert(StreamEvent evt) {
-            var data = _serializer.SerializeEvent(evt.Payload!);
-            var meta = _metaSerializer.Serialize(evt.Metadata);
-
-            return new NewPersistedEvent(evt.Id, data.EventType, AsString(data.Payload), AsString(meta));
-        }
-
-        string AsString(ReadOnlySpan<byte> bytes)
-            => Encoding.UTF8.GetString(bytes);
-    }
-
-    public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
-        await using var connection = await OpenConnection(cancellationToken).NoContext();
-
-        await using var cmd = connection.GetTextCommand(_schema.StreamExists)
+    protected override DbCommand GetStreamExistsCommand(SqlConnection connection, StreamName stream)
+        => connection.GetTextCommand(_schema.StreamExists)
             .Add("@name", SqlDbType.NVarChar, stream.ToString());
-
-        var result = await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
-
-        return (bool)result!;
-    }
-
-    public Task TruncateStream(
-            StreamName             stream,
-            StreamTruncatePosition truncatePosition,
-            ExpectedStreamVersion  expectedVersion,
-            CancellationToken      cancellationToken
-        )
-        => throw new NotImplementedException();
-
-    public Task DeleteStream(
-            StreamName            stream,
-            ExpectedStreamVersion expectedVersion,
-            CancellationToken     cancellationToken
-        )
-        => throw new NotImplementedException();
-
-    StreamEvent ToStreamEvent(PersistedEvent evt) {
-        var deserialized = _serializer.DeserializeEvent(
-            Encoding.UTF8.GetBytes(evt.JsonData),
-            evt.MessageType,
-            ContentType
-        );
-
-        var meta = evt.JsonMetadata == null
-            ? new Metadata()
-            : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
-
-        return deserialized switch {
-            SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
-            FailedToDeserialize failed => throw new SerializationException(
-                $"Can't deserialize {evt.MessageType}: {failed.Error}"
-            ),
-            _ => throw new Exception("Unknown deserialization result")
-        };
-
-        StreamEvent AsStreamEvent(object payload)
-            => new(evt.MessageId, payload, meta ?? new Metadata(), ContentType, evt.StreamPosition);
-    }
 }
-
-record NewPersistedEvent(Guid MessageId, string MessageType, string JsonData, string? JsonMetadata);

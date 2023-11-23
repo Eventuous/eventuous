@@ -3,7 +3,6 @@
 
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging;
 
@@ -21,36 +20,11 @@ public class PostgresAllStreamSubscription(
         ConsumePipe                          consumePipe,
         ILoggerFactory?                      loggerFactory
     )
-    : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions>(dataSource, options, checkpointStore, consumePipe, loggerFactory) {
+    : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions>(dataSource, options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory) {
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadAllForwards)
             .Add("_from_position", NpgsqlDbType.Bigint, start + 1)
             .Add("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
-
-    protected override long MoveStart(PersistedEvent evt)
-        => evt.GlobalPosition;
-
-    ulong _sequence;
-
-    protected override IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
-        => new MessageConsumeContext(
-            evt.MessageId.ToString(),
-            evt.MessageType,
-            ContentType,
-            Ensure.NotEmptyString(evt.StreamName),
-            (ulong)evt.StreamPosition,
-            (ulong)evt.StreamPosition,
-            (ulong)evt.GlobalPosition,
-            _sequence++,
-            evt.Created,
-            e,
-            meta,
-            Options.SubscriptionId,
-            cancellationToken
-        );
-
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
-        => EventPosition.FromAllContext(context);
 }
 
 public record PostgresAllStreamSubscriptionOptions : PostgresSubscriptionBaseOptions;

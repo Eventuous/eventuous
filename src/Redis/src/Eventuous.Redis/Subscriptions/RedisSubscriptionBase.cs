@@ -16,12 +16,12 @@ public abstract class RedisSubscriptionBase<T>(
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
+        SubscriptionKind kind,
         ILoggerFactory?  loggerFactory
     )
-    : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
+    : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory)
     where T : RedisSubscriptionBaseOptions {
-    readonly IMetadataSerializer     _metaSerializer = DefaultMetadataSerializer.Instance;
-    readonly CancellationTokenSource _cts            = new();
+    readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 
     protected GetRedisDatabase GetDatabase { get; } = Ensure.NotNull<GetRedisDatabase>(getDatabase, "Connection factory");
 
@@ -30,22 +30,20 @@ public abstract class RedisSubscriptionBase<T>(
 
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        _runner = Task.Run(() => PollingQuery(position + 1, _cts.Token), _cts.Token);
+        _runner = new TaskRunner(token => PollingQuery(position + 1, token)).Start();
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        try {
-            _cts.Cancel();
-            if (_runner != null) await _runner.NoContext();
-        }
-        catch (OperationCanceledException) {
-            // Nothing to do
-        }
+        if (_runner == null) return;
+
+        await _runner.Stop(cancellationToken);
+        _runner.Dispose();
+        _runner = null;
     }
 
     const string ContentType = "application/json";
 
-    Task? _runner;
+    TaskRunner? _runner;
 
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
         var start = position.HasValue ? (long)position : 0;
@@ -58,19 +56,19 @@ public abstract class RedisSubscriptionBase<T>(
                     await HandleInternal(ToConsumeContext(persistentEvent, cancellationToken)).NoContext();
                     start = persistentEvent.StreamPosition + 1;
                 }
-            }
-            catch (OperationCanceledException) {
-                // Nothing to do
-            }
-            catch (Exception e) {
+            } catch (InvalidOperationException e) when (e.Message.Contains("Reading is not allowed after reader was completed") ||
+                                                        cancellationToken.IsCancellationRequested) {
+                throw new OperationCanceledException("Redis read operation terminated", e, cancellationToken);
+            } catch (Exception e) {
                 IsDropped = true;
                 Log.WarnLog?.Log(e, "Subscription dropped");
+
                 throw;
             }
         }
     }
 
-    IMessageConsumeContext ToConsumeContext(ReceivedEvent evt, CancellationToken cancellationToken) {
+    MessageConsumeContext ToConsumeContext(ReceivedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
 
         var data = DeserializeData(
@@ -88,7 +86,7 @@ public abstract class RedisSubscriptionBase<T>(
         return AsContext(evt, data, meta, cancellationToken);
     }
 
-    IMessageConsumeContext AsContext(ReceivedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
+    MessageConsumeContext AsContext(ReceivedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(
             evt.MessageId.ToString(),
             evt.MessageType,
@@ -97,7 +95,7 @@ public abstract class RedisSubscriptionBase<T>(
             (ulong)evt.StreamPosition,
             (ulong)evt.StreamPosition,
             (ulong)evt.GlobalPosition,
-            _sequence++,
+            Sequence++,
             evt.Created,
             e,
             meta,
@@ -107,10 +105,7 @@ public abstract class RedisSubscriptionBase<T>(
 
     protected abstract Task<ReceivedEvent[]> ReadEvents(IDatabase database, long position);
 
-    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken)
-        => Task.CompletedTask;
-
-    ulong _sequence;
+    protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 public abstract record RedisSubscriptionBaseOptions : SubscriptionWithCheckpointOptions {

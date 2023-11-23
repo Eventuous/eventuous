@@ -4,6 +4,7 @@
 using Eventuous.Postgresql.Projections;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Postgres.Fixtures;
 using Npgsql;
 
@@ -25,9 +26,9 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : SubscriptionFixtur
 
         await Task.Delay(1000);
 
-        await using var connection = await IntegrationFixture.DataSource.OpenConnectionAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
 
-        var select = $"select * from {IntegrationFixture.SchemaName}.bookings where booking_id = @bookingId";
+        var select = $"select * from {SchemaName}.bookings where booking_id = @bookingId";
 
         foreach (var command in commands) {
             await using var cmd = new NpgsqlCommand(select, connection);
@@ -40,27 +41,26 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : SubscriptionFixtur
     }
 
     async Task CreateSchema() {
-        await using var connection = await IntegrationFixture.DataSource.OpenConnectionAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
 
         await using var cmd = connection.CreateCommand();
-        cmd.CommandText = Schema.Replace("__schema__", IntegrationFixture.SchemaName);
+        cmd.CommandText = Schema.Replace("__schema__", SchemaName);
         await cmd.ExecuteNonQueryAsync();
     }
 
-    protected override TestProjector GetHandler()
-        => new(IntegrationFixture.DataSource, IntegrationFixture.SchemaName);
+    protected override TestProjector GetHandler() => new(DataSource, SchemaName);
 
     async Task<List<Commands.ImportBooking>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking())
+            .Select(_ => DomainFixture.CreateImportBooking(Auto))
             .ToList();
 
         foreach (var command in commands) {
             var evt         = ToEvent(command);
             var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
 
-            await IntegrationFixture.EventStore.AppendEvents(
+            await EventStore.AppendEvents(
                 StreamName.For<Booking>(command.BookingId),
                 ExpectedStreamVersion.NoStream,
                 new[] { streamEvent },
@@ -76,8 +76,7 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : SubscriptionFixtur
 }
 
 public class TestProjector : PostgresProjector {
-    public TestProjector(NpgsqlDataSource dataSource, string schema)
-        : base(dataSource) {
+    public TestProjector(NpgsqlDataSource dataSource, string schema) : base(dataSource) {
         var insert = $"insert into {schema}.bookings (booking_id, checkin_date, price) values (@booking_id, @checkin_date, @price)";
 
         On<BookingEvents.BookingImported>(

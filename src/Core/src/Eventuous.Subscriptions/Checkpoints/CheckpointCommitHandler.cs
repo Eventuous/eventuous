@@ -17,7 +17,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     readonly ILoggerFactory?                      _loggerFactory;
     readonly string                               _subscriptionId;
     readonly CommitCheckpoint                     _commitCheckpoint;
-    readonly CommitPositionSequence               _positions = new();
+    readonly CommitPositionSequence               _positions = [];
     readonly BatchedChannelWorker<CommitPosition> _worker;
 
     CommitPosition _lastCommit = CommitPosition.None;

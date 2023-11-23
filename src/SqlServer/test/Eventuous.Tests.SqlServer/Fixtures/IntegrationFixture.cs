@@ -1,58 +1,23 @@
-using System.Diagnostics;
-using System.Text.Json;
-using Bogus;
-using Eventuous.Diagnostics;
 using Eventuous.SqlServer;
-using MicroElements.AutoFixture.NodaTime;
-using Microsoft.Data.SqlClient;
-using NodaTime;
-using NodaTime.Serialization.SystemTextJson;
+using Eventuous.Tests.Persistence.Base.Fixtures;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection1;
 using Testcontainers.SqlEdge;
 
 namespace Eventuous.Tests.SqlServer.Fixtures;
 
-public sealed class IntegrationFixture : IAsyncLifetime {
-    public IEventStore            EventStore    { get; private set; } = null!;
-    public IFixture               Auto          { get; }              = new Fixture().Customize(new NodaTimeCustomization());
-    public GetSqlServerConnection GetConnection { get; private set; } = null!;
-    public Faker                  Faker         { get; }              = new();
+public sealed class IntegrationFixture : StoreFixtureBase<SqlEdgeContainer> {
+    public string SchemaName { get; } = Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
-    public string SchemaName { get; }
+    public string GetConnectionString() => Container.GetConnectionString();
 
-    public IntegrationFixture() => SchemaName = GetSchemaName();
+    protected override void SetupServices(IServiceCollection services) {
+        services.AddEventuousSqlServer(Container.GetConnectionString(), SchemaName, true);
+        services.AddAggregateStore<SqlServerStore>();
+    }
 
-    public string GetSchemaName() => Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
-
-    readonly ActivityListener _listener = DummyActivityListener.Create();
-
-    SqlEdgeContainer _sqlServer = null!;
-
-    IEventSerializer Serializer { get; } = new DefaultEventSerializer(
-        new JsonSerializerOptions(JsonSerializerDefaults.Web)
-            .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-    );
-
-    public async Task InitializeAsync() {
-        _sqlServer = new SqlEdgeBuilder()
+    protected override SqlEdgeContainer CreateContainer()
+        => new SqlEdgeBuilder()
             .WithImage("mcr.microsoft.com/azure-sql-edge:latest")
             .Build();
-        await _sqlServer.StartAsync();
-
-        var schema     = new Schema(SchemaName);
-        var connString = _sqlServer.GetConnectionString();
-        GetConnection = () => GetConn(connString);
-        await schema.CreateSchema(GetConnection);
-        DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = new SqlServerStore(GetConnection, new SqlServerStoreOptions(SchemaName), Serializer);
-        ActivitySource.AddActivityListener(_listener);
-
-        return;
-
-        SqlConnection GetConn(string connectionString) => new(connectionString);
-    }
-
-    public async Task DisposeAsync() {
-        await _sqlServer.DisposeAsync();
-        _listener.Dispose();
-    }
 }
