@@ -25,7 +25,7 @@ public class SubscriptionFixture : IntegrationFixture {
             .ConfigureServices(
                 services => {
                     services.AddSingleton(Client);
-                    services.AddEventProducer<EventStoreProducer>();
+                    services.AddProducer<EventStoreProducer>();
                 }
             );
         using var host = new TestServer(builder);

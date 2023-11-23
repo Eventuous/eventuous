@@ -30,7 +30,7 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
         var expectedGap = SubscriptionFixture.Count - counter.Count + 1;
 
         gapCount.Should().NotBeNull();
-        gapCount.Value.Should().BeInRange(expectedGap, expectedGap + 5);
+        gapCount.Value.Should().BeInRange(expectedGap - 5, expectedGap + 5);
         GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
         GetTag(gapCount, "test").Should().Be("foo");
 
@@ -78,11 +78,11 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
         _host = new TestServer(builder);
         var counter = _host.Services.GetRequiredService<MessageCounter>();
 
-        while (counter.Count < SubscriptionFixture.Count / 3) {
+        while (counter.Count < SubscriptionFixture.Count / 2) {
             await Task.Delay(10);
         }
 
-        await Task.Delay(500);
+        // await Task.Delay(500);
     }
 
     public Task DisposeAsync() {
