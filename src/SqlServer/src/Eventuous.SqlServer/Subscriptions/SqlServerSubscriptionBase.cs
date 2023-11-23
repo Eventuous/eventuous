@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Sql.Base.Subscriptions;
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging;
@@ -16,15 +17,15 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
             T                options,
             ICheckpointStore checkpointStore,
             ConsumePipe      consumePipe,
+            SubscriptionKind kind,
             ILoggerFactory?  loggerFactory
-        ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory) {
+        ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory) {
         Schema            = new Schema(options.Schema);
         _connectionString = Ensure.NotEmptyString(Options.ConnectionString);
     }
 
-    protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken) {
-        return await ConnectionFactory.GetConnection(_connectionString, cancellationToken).NoContext();
-    }
+    protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken)
+        => await ConnectionFactory.GetConnection(_connectionString, cancellationToken).NoContext();
 
     protected override bool IsTransient(Exception exception) => exception is SqlException sqlException && TransientErrorNumbers.Contains(sqlException.Number);
 

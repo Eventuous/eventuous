@@ -16,8 +16,7 @@ namespace Eventuous.EventStore.Subscriptions;
 /// Catch-up subscription for EventStoreDB, using the $all global stream
 /// </summary>
 [PublicAPI]
-public class AllStreamSubscription
-    : EventStoreCatchUpSubscriptionBase<AllStreamSubscriptionOptions>, IMeasuredSubscription {
+public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStreamSubscriptionOptions>, IMeasuredSubscription {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for $all
     /// </summary>
@@ -65,7 +64,7 @@ public class AllStreamSubscription
         ICheckpointStore             checkpointStore,
         ConsumePipe                  consumePipe,
         ILoggerFactory?              loggerFactory
-    ) : base(eventStoreClient, options, checkpointStore, consumePipe, loggerFactory) { }
+    ) : base(eventStoreClient, options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory) { }
 
     /// <summary>
     /// Starts the subscription
@@ -129,14 +128,5 @@ public class AllStreamSubscription
     /// Returns a measure delegate for the subscription
     /// </summary>
     /// <returns></returns>
-    public GetSubscriptionEndOfStream GetMeasure()
-        => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient).GetEndOfStream;
-
-    /// <summary>
-    /// Gets the position from the context
-    /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
-        => EventPosition.FromAllContext(context);
+    public GetSubscriptionEndOfStream GetMeasure() => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient).GetEndOfStream;
 }

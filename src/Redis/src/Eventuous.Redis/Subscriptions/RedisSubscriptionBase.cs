@@ -16,11 +16,12 @@ public abstract class RedisSubscriptionBase<T>(
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
+        SubscriptionKind kind,
         ILoggerFactory?  loggerFactory
     )
-    : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
+    : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory)
     where T : RedisSubscriptionBaseOptions {
-    readonly IMetadataSerializer     _metaSerializer = DefaultMetadataSerializer.Instance;
+    readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 
     protected GetRedisDatabase GetDatabase { get; } = Ensure.NotNull<GetRedisDatabase>(getDatabase, "Connection factory");
 
@@ -34,6 +35,7 @@ public abstract class RedisSubscriptionBase<T>(
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         if (_runner == null) return;
+
         await _runner.Stop(cancellationToken);
         _runner.Dispose();
         _runner = null;
@@ -65,7 +67,7 @@ public abstract class RedisSubscriptionBase<T>(
         }
     }
 
-    IMessageConsumeContext ToConsumeContext(ReceivedEvent evt, CancellationToken cancellationToken) {
+   MessageConsumeContext ToConsumeContext(ReceivedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
 
         var data = DeserializeData(
@@ -83,7 +85,7 @@ public abstract class RedisSubscriptionBase<T>(
         return AsContext(evt, data, meta, cancellationToken);
     }
 
-    IMessageConsumeContext AsContext(ReceivedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
+    MessageConsumeContext AsContext(ReceivedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => new MessageConsumeContext(
             evt.MessageId.ToString(),
             evt.MessageType,

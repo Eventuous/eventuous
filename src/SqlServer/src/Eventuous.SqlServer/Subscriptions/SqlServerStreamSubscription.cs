@@ -1,10 +1,8 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Sql.Base;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging;
 
@@ -21,7 +19,7 @@ public class SqlServerStreamSubscription(
         ConsumePipe                        consumePipe,
         ILoggerFactory?                    loggerFactory = null
     )
-    : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions>(options, checkpointStore, consumePipe, loggerFactory) {
+    : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions>(options, checkpointStore, consumePipe, SubscriptionKind.Stream, loggerFactory) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadStreamSub)
             .Add("@stream_id", SqlDbType.Int, _streamId)
@@ -42,28 +40,5 @@ public class SqlServerStreamSubscription(
         _streamId = (int)streamId.Value;
     }
 
-    protected override long MoveStart(PersistedEvent evt) => evt.StreamPosition;
-
-    int             _streamId;
-    readonly string _streamName = options.Stream.ToString();
-
-    protected override IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
-        => new MessageConsumeContext(
-            evt.MessageId.ToString(),
-            evt.MessageType,
-            ContentType,
-            _streamName,
-            (ulong)evt.StreamPosition,
-            (ulong)evt.StreamPosition,
-            (ulong)evt.GlobalPosition,
-            Sequence++,
-            evt.Created,
-            e,
-            meta,
-            Options.SubscriptionId,
-            cancellationToken
-        );
-
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context)
-        => EventPosition.FromContext(context);
+    int _streamId;
 }

@@ -4,7 +4,6 @@
 using System.Globalization;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging;
 using static Eventuous.Redis.EventuousRedisKeys;
@@ -20,7 +19,7 @@ public class RedisAllStreamSubscription(
         ConsumePipe                       consumePipe,
         ILoggerFactory?                   loggerFactory
     )
-    : RedisSubscriptionBase<RedisSubscriptionBaseOptions>(getDatabase, options, checkpointStore, consumePipe, loggerFactory) {
+    : RedisSubscriptionBase<RedisSubscriptionBaseOptions>(getDatabase, options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory) {
     protected override async Task<ReceivedEvent[]> ReadEvents(IDatabase database, long position) {
         var linkedEvents     = await database.StreamReadAsync("_all", position.ToRedisValue(), Options.MaxPageSize).NoContext();
         var persistentEvents = new List<ReceivedEvent>();
@@ -48,8 +47,6 @@ public class RedisAllStreamSubscription(
 
         return persistentEvents.ToArray();
     }
-
-    protected override EventPosition GetPositionFromContext(IMessageConsumeContext context) => EventPosition.FromContext(context);
 }
 
 public record RedisAllStreamSubscriptionOptions : RedisSubscriptionBaseOptions;

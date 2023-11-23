@@ -11,11 +11,17 @@ using Context;
 using Filters;
 using Logging;
 
+public enum SubscriptionKind {
+    Stream,
+    All
+}
+
 public abstract class EventSubscriptionWithCheckpoint<T>(
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
         int              concurrencyLimit,
+        SubscriptionKind kind,
         ILoggerFactory?  loggerFactory
     )
     : EventSubscription<T>(Ensure.NotNull(options), ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) where T : SubscriptionWithCheckpointOptions {
@@ -30,7 +36,15 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     CheckpointCommitHandler? CheckpointCommitHandler { get; set; }
     ICheckpointStore         CheckpointStore         { get; } = Ensure.NotNull(checkpointStore);
 
-    protected abstract EventPosition GetPositionFromContext(IMessageConsumeContext context);
+    protected SubscriptionKind Kind { get; } = kind;
+
+    EventPosition GetPositionFromContext(IMessageConsumeContext context)
+#pragma warning disable CS8524
+        => Kind switch {
+#pragma warning restore CS8524
+            SubscriptionKind.All    => EventPosition.FromAllContext(context),
+            SubscriptionKind.Stream => EventPosition.FromContext(context)
+        };
 
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
         try {

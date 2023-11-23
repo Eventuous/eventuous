@@ -17,9 +17,10 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
         int              concurrencyLimit,
+        SubscriptionKind kind,
         ILoggerFactory?  loggerFactory
     )
-    : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, loggerFactory)
+    : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, kind, loggerFactory)
     where TOptions : SqlSubscriptionOptionsBase where TConnection : DbConnection {
     readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 
@@ -127,9 +128,14 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    protected abstract long MoveStart(PersistedEvent evt);
+#pragma warning disable CS8524
+    long MoveStart(PersistedEvent evt) => Kind switch {
+#pragma warning restore CS8524
+        SubscriptionKind.All    => evt.GlobalPosition,
+        SubscriptionKind.Stream => evt.StreamPosition,
+    };
 
-    IMessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
+    MessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
 
         var data = DeserializeData(ContentType, evt.MessageType, Encoding.UTF8.GetBytes(evt.JsonData), evt.StreamName!, (ulong)evt.StreamPosition);
@@ -141,11 +147,45 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         return AsContext(evt, data, meta, cancellationToken);
     }
 
-    protected abstract IMessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken);
+    MessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
+#pragma warning disable CS8524
+        => Kind switch {
+#pragma warning restore CS8524
+            SubscriptionKind.Stream => new MessageConsumeContext(
+                evt.MessageId.ToString(),
+                evt.MessageType,
+                ContentType,
+                evt.StreamName!,
+                (ulong)evt.StreamPosition,
+                (ulong)evt.StreamPosition,
+                (ulong)evt.GlobalPosition,
+                Sequence++,
+                evt.Created,
+                e,
+                meta,
+                Options.SubscriptionId,
+                cancellationToken
+            ),
+            SubscriptionKind.All => new MessageConsumeContext(
+                evt.MessageId.ToString(),
+                evt.MessageType,
+                ContentType,
+                Ensure.NotEmptyString(evt.StreamName),
+                (ulong)evt.StreamPosition,
+                (ulong)evt.StreamPosition,
+                (ulong)evt.GlobalPosition,
+                Sequence++,
+                evt.Created,
+                e,
+                meta,
+                Options.SubscriptionId,
+                cancellationToken
+            )
+        };
 
     TaskRunner? _runner;
 
-    protected const string ContentType = "application/json";
+    const string ContentType = "application/json";
 
     record struct PollingResult(bool Continue, bool Retry, int ReceivedEvents);
 }

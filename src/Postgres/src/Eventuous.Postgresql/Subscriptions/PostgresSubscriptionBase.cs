@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Sql.Base.Subscriptions;
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging;
@@ -13,8 +14,9 @@ public abstract class PostgresSubscriptionBase<T>(
         T                options,
         ICheckpointStore checkpointStore,
         ConsumePipe      consumePipe,
+        SubscriptionKind kind,
         ILoggerFactory?  loggerFactory
-    ) : SqlSubscriptionBase<T, NpgsqlConnection>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, loggerFactory)
+    ) : SqlSubscriptionBase<T, NpgsqlConnection>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory)
     where T : PostgresSubscriptionBaseOptions {
     protected Schema           Schema     { get; } = new(options.Schema);
     protected NpgsqlDataSource DataSource { get; } = dataSource;
