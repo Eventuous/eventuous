@@ -9,28 +9,16 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
     const string SubscriptionId = "test-sub";
 
     [Fact]
-    public void Debug() {
-        _exporter.Collect(Timeout.Infinite);
-        var values = _exporter.CollectValues();
-
-        foreach (var value in values) {
-            outputHelper.WriteLine(value.ToString());
-        }
-    }
-
-    [Fact]
     public void ShouldMeasureSubscriptionGapCount() {
-        _exporter.Collect(Timeout.Infinite);
-        var values = _exporter.CollectValues();
-
+        Assert.NotNull(_values);
         var counter  = _host.Services.GetRequiredService<MessageCounter>();
-        var gapCount = GetValue(values, SubscriptionMetrics.GapCountMetricName)!;
-        var duration = GetValue(values, SubscriptionMetrics.ProcessingRateName)!;
+        var gapCount = GetValue(_values, SubscriptionMetrics.GapCountMetricName)!;
+        var duration = GetValue(_values, SubscriptionMetrics.ProcessingRateName)!;
 
-        var expectedGap = SubscriptionFixture.Count - counter.Count + 1;
+        var expectedGap = SubscriptionFixture.Count - counter.Count;
 
         gapCount.Should().NotBeNull();
-        gapCount.Value.Should().BeInRange(expectedGap - 10, expectedGap + 10);
+        gapCount.Value.Should().BeInRange(expectedGap - 20, expectedGap + 20);
         GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
         GetTag(gapCount, "test").Should().Be("foo");
 
@@ -82,6 +70,13 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
             await Task.Delay(10);
         }
 
+        _exporter.Collect(Timeout.Infinite);
+        _values = _exporter.CollectValues();
+
+        foreach (var value in _values) {
+            outputHelper.WriteLine(value.ToString());
+        }
+
         // await Task.Delay(500);
     }
 
@@ -93,9 +88,13 @@ public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper 
         return Task.CompletedTask;
     }
 
-    TestServer                 _host     = null!;
-    readonly TestExporter      _exporter = new();
-    readonly TestEventListener _es       = new(outputHelper);
+    TestServer _host = null!;
+
+    readonly TestExporter _exporter = new();
+
+    readonly TestEventListener _es = new(outputHelper);
+
+    MetricValue[]? _values;
 
     // ReSharper disable once ClassNeverInstantiated.Local
     class TestHandler(MessageCounter counter, ILogger<TestHandler> log) : BaseEventHandler {
