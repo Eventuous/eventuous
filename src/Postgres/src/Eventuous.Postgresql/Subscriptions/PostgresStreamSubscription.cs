@@ -23,6 +23,7 @@ public class PostgresStreamSubscription(
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadStreamSub)
             .Add("_stream_id", NpgsqlDbType.Integer, _streamId)
+            .Add("_stream_name", NpgsqlDbType.Varchar, _streamName)
             .Add("_from_position", NpgsqlDbType.Integer, (int)start + 1)
             .Add("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
 
@@ -39,6 +40,8 @@ public class PostgresStreamSubscription(
     }
 
     int _streamId;
+
+    readonly string _streamName = options.Stream.ToString();
 }
 
 public record PostgresStreamSubscriptionOptions : PostgresSubscriptionBaseOptions {

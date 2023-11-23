@@ -23,6 +23,7 @@ public class SqlServerStreamSubscription(
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadStreamSub)
             .Add("@stream_id", SqlDbType.Int, _streamId)
+            .Add("@stream_name", SqlDbType.NVarChar, _streamName)
             .Add("@from_position", SqlDbType.Int, (int)start + 1)
             .Add("@count", SqlDbType.Int, Options.MaxPageSize);
 
@@ -41,4 +42,6 @@ public class SqlServerStreamSubscription(
     }
 
     int _streamId;
+    
+    readonly string _streamName = options.Stream.ToString();
 }
