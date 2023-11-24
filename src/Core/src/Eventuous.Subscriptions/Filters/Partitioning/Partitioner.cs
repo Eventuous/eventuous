@@ -6,7 +6,13 @@ namespace Eventuous.Subscriptions.Filters.Partitioning;
 using Context;
 
 public static class Partitioner {
+    /// <summary>
+    /// Partition key hash calculator function
+    /// </summary>
     public delegate uint GetPartitionHash(string partitionKey);
 
+    /// <summary>
+    /// Function to get a partition key from a message context
+    /// </summary>
     public delegate string GetPartitionKey(IMessageConsumeContext context);
 }

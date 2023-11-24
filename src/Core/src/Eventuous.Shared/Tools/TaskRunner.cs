@@ -13,13 +13,7 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
 
         return this;
 
-        async Task Run() {
-            try {
-                await taskFactory(_stopSource.Token);
-            } catch (OperationCanceledException) {
-                // ignore
-            }
-        }
+        async Task Run() => await taskFactory(_stopSource.Token).NoThrow();
     }
 
     public async ValueTask Stop(CancellationToken cancellationToken) {
@@ -31,7 +25,6 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
 #else
             _stopSource.Cancel();
 #endif
-            // if (_runner != null) await _runner.NoContext();
         } finally {
             var state        = new TaskCompletionSource<object>();
             var registration = cancellationToken.Register((s => (((TaskCompletionSource<object>)s!)!).SetCanceled(cancellationToken)), state);

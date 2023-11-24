@@ -1,8 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.CompilerServices;
-
 namespace Eventuous.Subscriptions.Filters;
 
 using Context;
@@ -31,7 +29,6 @@ public sealed class PartitioningFilter : ConsumeFilter<AsyncConsumeContext>, IAs
             .ToArray();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         var partitionKey = _partitioner(context);
         var hash         = _getHash(partitionKey);
