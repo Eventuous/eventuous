@@ -13,7 +13,6 @@ using static SutBookingCommands;
 public class ServerFixture {
     //: IDisposable {
     readonly AutoFixture.Fixture _fixture = new();
-    readonly ITestOutputHelper   _output;
 
     public ServerFixture(
             WebApplicationFactory<Program> factory,
@@ -21,8 +20,6 @@ public class ServerFixture {
             Action<IServiceCollection>?    register  = null,
             ConfigureWebApplication?       configure = null
         ) {
-        _output = output;
-
         var builder = factory
             .WithWebHostBuilder(
                 builder => {

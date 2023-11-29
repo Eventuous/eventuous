@@ -19,10 +19,7 @@ public class IntegrationFixture : IAsyncLifetime {
             .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
     );
 
-    public IntegrationFixture() {
-        DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        // ActivitySource.AddActivityListener(_listener);
-    }
+    protected IntegrationFixture() => DefaultEventSerializer.SetDefaultSerializer(Serializer);
 
     public virtual async Task InitializeAsync() {
         _esdbContainer = new EventStoreDbBuilder().Build();
@@ -30,7 +27,6 @@ public class IntegrationFixture : IAsyncLifetime {
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
         Client         = new EventStoreClient(settings);
         EventStore     = new TracedEventStore(new EsdbEventStore(Client));
-        new AggregateStore(EventStore);
     }
 
     public async Task DisposeAsync() {

@@ -6,6 +6,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -23,14 +24,22 @@ public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions option
     /// Maps the subscription endpoint to the specified <see cref="WebApplication"/>.
     /// The PubSub trigger for CLoud Run will make POST calls to the endpoint with the message payload.
     /// </summary>
-    /// <param name="app"></param>
+    /// <param name="app">Web application builder</param>
     /// <param name="path">Optional endpoint path. Default is root path. It must match with the endpoint configuration of the push trigger/</param>
-    [PublicAPI]
-    public static void MapSubscription(WebApplication app, string path = "/") {
-        var subscription = app.Services.GetRequiredService<CloudRunPubSubSubscription>();
+    public static void MapSubscription(WebApplication app, string path = "/") => MapSubscription(app, app.Services, path);
 
-        app.MapPost(
-            "/",
+    /// <summary>
+    /// Maps the subscription endpoint to the specified <see cref="WebApplication"/>.
+    /// The PubSub trigger for CLoud Run will make POST calls to the endpoint with the message payload.
+    /// </summary>
+    /// <param name="endpointBuilder">Endpoint builder instance</param>
+    /// <param name="provider">Service provider</param>
+    /// <param name="path">Optional endpoint path. Default is root path. It must match with the endpoint configuration of the push trigger/</param>
+    public static void MapSubscription(IEndpointRouteBuilder endpointBuilder, IServiceProvider provider, string path = "/") {
+        var subscription = provider.GetRequiredService<CloudRunPubSubSubscription>();
+
+        endpointBuilder.MapPost(
+            path,
             async (Envelope envelope, CancellationToken cancellationToken) => {
                 if (envelope.Message?.Data == null) {
                     subscription.Log.ErrorLog?.Log("Bad Request: Invalid Pub/Sub message format.");
@@ -41,7 +50,6 @@ public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions option
                 subscription.Log.InfoLog?.Log("Received {@Message}", envelope.Message);
                 var data = Convert.FromBase64String(envelope.Message.Data);
 
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                 if (envelope.Message.Attributes == null) {
                     subscription.Log.WarnLog?.Log("Message {MessageId} has no attributes", envelope.Message.MessageId);
 
@@ -87,7 +95,7 @@ public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions option
     }
 
     [UsedImplicitly]
-    record Message(string MessageId, Dictionary<string, string> Attributes, string Data, DateTime PublishTime);
+    record Message(string MessageId, Dictionary<string, string>? Attributes, string Data, DateTime PublishTime);
 
     [UsedImplicitly]
     record Envelope(Message? Message);
