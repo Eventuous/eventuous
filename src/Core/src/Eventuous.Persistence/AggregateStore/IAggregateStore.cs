@@ -13,22 +13,25 @@ public interface IAggregateStore {
     /// </summary>
     /// <param name="aggregate">Aggregate instance, which needs to be persisted</param>
     /// <param name="id">Aggregate id</param>
+    /// <param name="amendEvent">Function to add additional information to the event before it's stored.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns></returns>
-    public Task<AppendEventsResult> Store<T, TId>(T aggregate, TId id, CancellationToken cancellationToken) where T : Aggregate where TId : Id
-        => Store(StreamNameFactory.For<T, TId>(id), aggregate, cancellationToken);
+    public Task<AppendEventsResult> Store<T, TId>(T aggregate, TId id, AmendEvent amendEvent, CancellationToken cancellationToken)
+        where T : Aggregate where TId : Id
+        => Store(StreamNameFactory.For<T, TId>(id), aggregate, amendEvent, cancellationToken);
 
     /// <summary>
     /// Store the new or updated aggregate state
     /// </summary>
     /// <param name="streamName"></param>
     /// <param name="aggregate">Aggregate instance, which needs to be persisted</param>
+    /// <param name="amendEvent">Function to add additional information to the event before it's stored.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <returns></returns>
-    Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate;
+    Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, AmendEvent amendEvent, CancellationToken cancellationToken) where T : Aggregate;
 
     /// <summary>
     /// Load the aggregate from the store for a given id

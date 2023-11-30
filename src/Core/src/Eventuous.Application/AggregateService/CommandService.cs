@@ -18,7 +18,8 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         IAggregateStore?          store,
         AggregateFactoryRegistry? factoryRegistry = null,
         StreamNameMap?            streamNameMap   = null,
-        TypeMapper?               typeMap         = null
+        TypeMapper?               typeMap         = null,
+        AmendEvent?               amendEvent      = null
     )
     : ICommandService<TAggregate, TState, TId>, ICommandService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
@@ -53,7 +54,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns><see cref="Result{TState}"/> of the execution</returns>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
-    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
+    public async Task<Result<TState>> Handle<TCommand>(TCommand command, AmendEvent amendEvent,CancellationToken cancellationToken) where TCommand : class {
         if (!_initialized) BuildHandlers();
 
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
@@ -75,15 +76,15 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
-            var result = await registeredHandler
+            TAggregate result = await registeredHandler
                 .Handler(aggregate!, command, cancellationToken)
                 .NoContext();
 
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
-            var storeResult = await store.Store(GetAggregateStreamName(), result, cancellationToken).NoContext();
-            var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
+            var                 storeResult = await store.Store(GetAggregateStreamName(), result,amendEvent, cancellationToken).NoContext();
+            IEnumerable<Change> changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
             return new OkResult<TState>(result.State, changes, storeResult.GlobalPosition);
@@ -98,8 +99,8 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
     }
 
-    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
-        var result = await Handle(command, cancellationToken).NoContext();
+    async Task<Result> ICommandService.Handle<TCommand>(TCommand command,AmendEvent amendEvent , CancellationToken cancellationToken) where TCommand : class {
+        var result = await Handle(command,amendEvent, cancellationToken).NoContext();
 
         return result switch {
             OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),

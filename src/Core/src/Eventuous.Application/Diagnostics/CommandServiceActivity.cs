@@ -13,7 +13,7 @@ static class CommandServiceActivity {
         string                     appServiceTypeName,
         TCommand                   command,
         DiagnosticSource           diagnosticSource,
-        HandleCommand<T, TCommand> handleCommand,
+        HandleCommand<T,AmendEvent, TCommand> handleCommand,
         GetError<T>                getError,
         CancellationToken          cancellationToken
     ) where TCommand : class {
