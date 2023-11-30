@@ -26,13 +26,13 @@ public class TracedCommandService<T>(ICommandService<T> appService) : ICommandSe
         return false;
     }
 
-    public Task<Result> Handle<TCommand>(TCommand command,AmendEvent  @event ,CancellationToken cancellationToken)
+    public Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class
         => CommandServiceActivity.TryExecute(
             _appServiceTypeName,
             command,
             _metricsSource,
-            InnerService.Handle,
+            (command1, cancellationToken1) => InnerService.Handle(command1, cancellationToken1),
             GetError,
             cancellationToken
         );
@@ -62,18 +62,18 @@ public class TracedCommandService<T, TState, TId>(ICommandService<T, TState, TId
         return false;
     }
 
-    public Task<Result<TState>> Handle<TCommand>(TCommand command, AmendEvent amendEvent, CancellationToken cancellationToken)
+    public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class
         => CommandServiceActivity.TryExecute(
             _appServiceTypeName,
             command,
             _metricsSource,
-            InnerService.Handle,
+            (command1, cancellationToken1) => InnerService.Handle(command1, cancellationToken1),
             GetError,
             cancellationToken
         );
 }
 
-delegate Task<T> HandleCommand<T, in TCommand>(TCommand command, AmendEvent amendEvent, CancellationToken cancellationToken) where TCommand : class;
+delegate Task<T> HandleCommand<T, in TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class;
 
 delegate bool GetError<in T>(T result, out Exception? exception);

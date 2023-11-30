@@ -21,8 +21,8 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
     readonly TypeMapper              _typeMap  = typeMap ?? TypeMap.Instance;
     readonly FuncHandlersMap<TState> _handlers = new();
 
-    bool _initialized;
-
+    bool       _initialized;
+    AmendEvent _amendEvent = amendEvent;
     /// <summary>
     /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
     /// </summary>
@@ -96,7 +96,7 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<TState>(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, amendEvent, cancellationToken).NoContext();
+            var storeResult = await writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents,@event => amendEvent(_amendEvent(@event)), cancellationToken).NoContext();
             var changes     = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 

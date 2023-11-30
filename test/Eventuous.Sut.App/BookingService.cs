@@ -16,7 +16,11 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
 
                     return Task.CompletedTask;
                 }
-            );
+            ).AmendEvent(
+                streamEvent => {
+                    streamEvent.Metadata.Add("scoped-thing",Guid.NewGuid()); //what if I want data from command, trace, servicebus context or httpcontext?
+                    return streamEvent;
+                });
 
         On<ImportBooking>()
             .InState(ExpectedState.New)

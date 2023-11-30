@@ -12,7 +12,8 @@ record RegisteredHandler<T, TId>(
         ExpectedState                ExpectedState,
         GetIdFromUntypedCommand<TId> GetId,
         HandleUntypedCommand<T>      Handler,
-        ResolveStoreFromCommand      ResolveStore
+        ResolveStoreFromCommand      ResolveStore,
+        AmendEvent                   AmendEvent
     ) where T : Aggregate where TId : Id;
 
 class HandlersMap<TAggregate, TId> where TAggregate : Aggregate where TId : Id {

@@ -28,6 +28,7 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IAggregate
     HandleUntypedCommand<TAggregate>? _action;
     ResolveStore<TCommand>?           _resolveStore;
     ExpectedState                     _expectedState = ExpectedState.Any;
+    AmendEvent?                       _amendEvent;
 
     /// <summary>
     /// Set the expected aggregate state for the command handler.
@@ -60,6 +61,17 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IAggregate
     /// <returns></returns>
     public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> GetIdAsync(GetIdFromCommandAsync<TId, TCommand> getId) {
         _getId = getId.AsGetId();
+
+        return this;
+    }
+
+    /// <summary>
+    /// Add additional information to the event before it's stored.
+    /// </summary>
+    /// <param name="amedEvent">Function to add additional information to the event before it's stored.</param>
+    /// <returns></returns>
+    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> AmendEvent(AmendEvent amedEvent) {
+        _amendEvent = amedEvent;
 
         return this;
     }
@@ -103,7 +115,8 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IAggregate
             _expectedState,
             Ensure.NotNull(_getId, $"Function to get the aggregate id from {typeof(TCommand).Name} is not defined"),
             Ensure.NotNull(_action, $"Function to act on the aggregate for command {typeof(TCommand).Name} is not defined"),
-            (_resolveStore ?? DefaultResolve()).AsResolveStore()
+            (_resolveStore ?? DefaultResolve()).AsResolveStore(),
+            _amendEvent ?? Amend.Nothing
         );
     }
 
