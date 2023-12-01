@@ -40,7 +40,7 @@ public class TracedFunctionalService<T> : IFuncCommandService<T> where T : State
             _appServiceTypeName,
             command,
             _metricsSource,
-            (command1, cancellationToken1) => InnerService.Handle(command1, cancellationToken1),
+            InnerService.Handle,
             _getError,
             cancellationToken
         );

@@ -32,7 +32,7 @@ public class TracedCommandService<T>(ICommandService<T> appService) : ICommandSe
             _appServiceTypeName,
             command,
             _metricsSource,
-            (command1, cancellationToken1) => InnerService.Handle(command1, cancellationToken1),
+            InnerService.Handle,
             GetError,
             cancellationToken
         );
@@ -68,7 +68,7 @@ public class TracedCommandService<T, TState, TId>(ICommandService<T, TState, TId
             _appServiceTypeName,
             command,
             _metricsSource,
-            (command1, cancellationToken1) => InnerService.Handle(command1, cancellationToken1),
+            InnerService.Handle,
             GetError,
             cancellationToken
         );
