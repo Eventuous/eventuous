@@ -18,8 +18,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         IAggregateStore?          store,
         AggregateFactoryRegistry? factoryRegistry = null,
         StreamNameMap?            streamNameMap   = null,
-        TypeMapper?               typeMap         = null,
-        AmendEvent?               amendEvent      = null
+        TypeMapper?               typeMap         = null
     )
     : ICommandService<TAggregate, TState, TId>, ICommandService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
@@ -76,15 +75,15 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
-            TAggregate result = await registeredHandler
+            var result = await registeredHandler
                 .Handler(aggregate!, command, cancellationToken)
                 .NoContext();
 
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
-            var                 storeResult = await store.Store(GetAggregateStreamName(), result, registeredHandler.AmendEvent, cancellationToken).NoContext();
-            IEnumerable<Change> changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
+            var storeResult = await store.Store(GetAggregateStreamName(), result, cancellationToken).NoContext();
+            var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
             return new OkResult<TState>(result.State, changes, storeResult.GlobalPosition);

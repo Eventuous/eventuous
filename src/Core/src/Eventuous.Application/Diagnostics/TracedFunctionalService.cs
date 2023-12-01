@@ -22,12 +22,10 @@ public class TracedFunctionalService<T> : IFuncCommandService<T> where T : State
         bool GetError(Result result, out Exception? exception) {
             if (result is ErrorResult err) {
                 exception = err.Exception;
-
                 return true;
             }
 
             exception = null;
-
             return false;
         }
 
