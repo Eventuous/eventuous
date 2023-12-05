@@ -23,6 +23,7 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
 
     bool       _initialized;
     AmendEvent _amendEvent = amendEvent;
+
     /// <summary>
     /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
     /// </summary>
@@ -64,7 +65,19 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns><seealso cref="Result{TState}"/> instance</returns>
     /// <exception cref="ArgumentOutOfRangeException">Throws when there's no command handler was registered for the command type</exception>
-    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
+    public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class =>
+        Handle(command, Amend.Nothing, cancellationToken);
+    
+    /// <summary>
+    /// Function to handle a command and return the resulting state and changes.
+    /// </summary>
+    /// <param name="command">Command to handle</param>
+    /// <param name="amendEvent">Function to add additional information to the event before it's stored.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    /// <returns><seealso cref="Result{TState}"/> instance</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Throws when there's no command handler was registered for the command type</exception>
+    public async Task<Result<TState>> Handle<TCommand>(TCommand command, AmendEvent amendEvent, CancellationToken cancellationToken) where TCommand : class {
         if (!_initialized) BuildHandlers();
 
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
@@ -96,8 +109,15 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<TState>(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents,@event => amendEvent(_amendEvent(@event)), cancellationToken).NoContext();
-            var changes     = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
+            var storeResult = await writer.Store(
+                    streamName,
+                    (int)loadedState.StreamVersion.Value,
+                    newEvents,
+                    @event => amendEvent(_amendEvent(@event)),
+                    cancellationToken
+                )
+                .NoContext();
+            var changes = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
             return new OkResult<TState>(newState, changes, storeResult.GlobalPosition);
@@ -108,8 +128,8 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
         }
     }
 
-    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) {
-        var result = await Handle(command, cancellationToken).NoContext();
+    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, AmendEvent amendEvent, CancellationToken cancellationToken) {
+        var result = await Handle(command, amendEvent, cancellationToken).NoContext();
 
         return result switch {
             OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),

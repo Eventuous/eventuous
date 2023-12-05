@@ -7,9 +7,13 @@ public class ThrowingCommandService<T, TState, TId>(ICommandService<T, TState, T
     where T : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id {
-    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+    public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+        where TCommand : class
+        => Handle(command, Amend.Nothing, cancellationToken);
+
+    public async Task<Result<TState>> Handle<TCommand>(TCommand command, AmendEvent amendEvent, CancellationToken cancellationToken)
         where TCommand : class {
-        var result = await inner.Handle(command, cancellationToken);
+        var result = await inner.Handle(command, amendEvent, cancellationToken);
 
         if (result is ErrorResult<TState> error)
             throw error.Exception ?? new ApplicationException($"Error handling command {command}");
@@ -17,8 +21,8 @@ public class ThrowingCommandService<T, TState, TId>(ICommandService<T, TState, T
         return result;
     }
 
-    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) {
-        var result = await Handle(command, cancellationToken).NoContext();
+    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, AmendEvent amendEvent, CancellationToken cancellationToken) {
+        var result = await Handle(command, amendEvent, cancellationToken).NoContext();
 
         return result switch {
             OkResult<TState>(var aggregateState, var enumerable, _) => new OkResult(aggregateState, enumerable),

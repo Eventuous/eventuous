@@ -10,13 +10,14 @@ using Tracing;
 
 static class CommandServiceActivity {
     public static async Task<T> TryExecute<T, TCommand>(
-        string                     appServiceTypeName,
-        TCommand                   command,
-        DiagnosticSource           diagnosticSource,
-        HandleCommand<T, TCommand> handleCommand,
-        GetError<T>                getError,
-        CancellationToken          cancellationToken
-    ) where TCommand : class {
+            string                     appServiceTypeName,
+            TCommand                   command,
+            DiagnosticSource           diagnosticSource,
+            HandleCommand<T, TCommand> handleCommand,
+            AmendEvent                 amendEvent,
+            GetError<T>                getError,
+            CancellationToken          cancellationToken
+        ) where TCommand : class {
         var cmdName = command.GetType().Name;
 
         using var activity = StartActivity(appServiceTypeName, cmdName);
@@ -27,7 +28,7 @@ static class CommandServiceActivity {
         );
 
         try {
-            var result = await handleCommand(command, cancellationToken).NoContext();
+            var result = await handleCommand(command, amendEvent, cancellationToken).NoContext();
 
             activity?.SetActivityStatus(
                 getError(result, out var exception)

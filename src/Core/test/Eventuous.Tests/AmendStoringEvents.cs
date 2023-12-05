@@ -36,8 +36,15 @@ public class AmendStoringEvents : NaiveFixture {
             )
         };
 
+        var scopeData = Guid.NewGuid();
 
-        var result = await Service.Handle(cmd,default);
+        AmendEvent amend = streamEvent => {
+            streamEvent.Metadata.Add("scoped-thing", scopeData);
+
+            return streamEvent;
+        };
+
+        var result = await Service.Handle(cmd, amend,  CancellationToken.None);
 
         result.Success.Should().BeTrue();
         result.Changes.Should().BeEquivalentTo(expected);
@@ -48,7 +55,7 @@ public class AmendStoringEvents : NaiveFixture {
             1,
             CancellationToken.None
         );
-        
-        evt[0].Metadata.Should().ContainKey("scoped-thing").WhoseValue.Should().BeOfType<Guid>();
+
+        evt[0].Metadata.Should().ContainKey("scoped-thing").WhoseValue.Should().BeOfType<Guid>().And.Be(scopeData);
     }
 }
