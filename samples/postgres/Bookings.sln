@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookings", "Bookings\Bookings.csproj", "{7B4C2F9A-452E-4C08-86D5-F761C67089A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookings.Domain", "Bookings.Domain\Bookings.Domain.csproj", "{280363FF-F078-44B7-9A32-20FA7D6046E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookings.Payments", "Bookings.Payments\Bookings.Payments.csproj", "{EBD8B561-B354-4FDB-BF88-0BF0681F5530}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7B4C2F9A-452E-4C08-86D5-F761C67089A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B4C2F9A-452E-4C08-86D5-F761C67089A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B4C2F9A-452E-4C08-86D5-F761C67089A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B4C2F9A-452E-4C08-86D5-F761C67089A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{280363FF-F078-44B7-9A32-20FA7D6046E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{280363FF-F078-44B7-9A32-20FA7D6046E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{280363FF-F078-44B7-9A32-20FA7D6046E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{280363FF-F078-44B7-9A32-20FA7D6046E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBD8B561-B354-4FDB-BF88-0BF0681F5530}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBD8B561-B354-4FDB-BF88-0BF0681F5530}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBD8B561-B354-4FDB-BF88-0BF0681F5530}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBD8B561-B354-4FDB-BF88-0BF0681F5530}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
+EndGlobal

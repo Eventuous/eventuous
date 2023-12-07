@@ -5,6 +5,4 @@ using Eventuous.Sut.Domain;
 
 namespace Eventuous.Sut.AspNetCore;
 
-public record BookingResult : Result {
-    public new BookingState? State { get; init; }
-}
+public record BookingResult(BookingState? State, bool Success, IEnumerable<Change>? Changes = null) : Result<BookingState>(State, Success, Changes);

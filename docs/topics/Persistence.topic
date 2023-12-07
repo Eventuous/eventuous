@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic SYSTEM "https://resources.jetbrains.com/writerside/1.0/xhtml-entities.dtd">
+<topic xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://resources.jetbrains.com/writerside/1.0/topic.v2.xsd"
+       id="Persistence" title="Persistence">
+
+    <section-starting-page>
+        <title>Persistence</title>
+        <description>
+            Read more about essential concepts of event-sourced persistence.
+        </description>
+        <spotlight>
+            <a href="Event-streams.md" type="library"/>
+            <a href="Serialisation.md" type="network"/>
+        </spotlight>
+        <primary>
+            <title>Persistence stores</title>
+            <a href="Event-store.md"/>
+            <a href="Aggregate-store.md"/>
+            <a href="State-store.md"/>
+        </primary>
+        <secondary>
+            <title>Implementations</title>
+            <a href="EventStoreDB.md"/>
+            <a href="PostgreSQL.md"/>
+            <a href="MS-SQL-Server.md"/>
+        </secondary>
+    </section-starting-page>
+</topic>

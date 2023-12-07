@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Eventuous.Sut.AspNetCore;
 
-public class BookingApi(ICommandService<Booking> service, MessageMap? commandMap = null) : CommandHttpApiBase<Booking, BookingResult>(service, commandMap) {
+public class BookingApi(ICommandService<Booking> service, MessageMap? commandMap = null) : CommandHttpApiBase<Booking, Result<BookingState>>(service, commandMap) {
     [HttpPost("v2/pay")]
     public Task<ActionResult<BookingResult>> RegisterPayment([FromBody] RegisterPaymentHttp cmd, CancellationToken cancellationToken)
         => Handle<RegisterPaymentHttp, Commands.RecordPayment>(cmd, cancellationToken);

@@ -1,0 +1,16 @@
+<Project>
+    <PropertyGroup>
+        <LangVersion>preview</LangVersion>
+        <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
+        <SrcRoot>$(RepoRoot)\src</SrcRoot>
+        <CoreRoot>$(SrcRoot)\Core\src</CoreRoot>
+        <DiagRoot>$(SrcRoot)\Diagnostics\src</DiagRoot>
+        <EsdbRoot>$(SrcRoot)\EventStore\src</EsdbRoot>
+        <ExtRoot>$(SrcRoot)\Extensions\src</ExtRoot>
+        <GatewayRoot>$(SrcRoot)\Gateway\src</GatewayRoot>
+        <LocalRoot>..\..\src</LocalRoot>
+    </PropertyGroup>
+</Project>

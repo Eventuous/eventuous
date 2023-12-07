@@ -40,6 +40,18 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     }
 
     /// <summary>
+    /// Defines how to get the stream name from the command.
+    /// </summary>
+    /// <param name="getId">A function to get the identity string from a command</param>
+    /// <returns></returns>
+    public FuncCommandHandlerBuilder<TCommand, TState> GetDefaultStream(Func<TCommand, string> getId) {
+        GetStreamNameFromCommand<TCommand> getStream = cmd => StreamName.For<TState>(getId(cmd));
+        _getStream = getStream.AsGetStream();
+
+        return this;
+    }
+
+    /// <summary>
     /// Defines how to get the stream name from the command, asynchronously.
     /// </summary>
     /// <param name="getStream">A function to get the stream name from the command</param>

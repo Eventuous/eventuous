@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using Eventuous.AspNetCore.Web;
 using Eventuous.AspNetCore.Web.Diagnostics;
-using static Microsoft.AspNetCore.Http.StatusCodes;
 
 // ReSharper disable CheckNamespace
 
@@ -14,6 +13,7 @@ namespace Microsoft.AspNetCore.Routing;
 using Authorization;
 using Builder;
 using Http;
+using static Http.StatusCodes;
 
 public delegate TCommand EnrichCommandFromHttpContext<TCommand>(TCommand command, HttpContext httpContext);
 
