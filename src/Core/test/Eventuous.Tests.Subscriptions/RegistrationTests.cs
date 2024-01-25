@@ -75,7 +75,11 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
     [Fact]
     public void ShouldRegisterBothAsHealthReporters() {
         var services = _server.Services.GetServices<ISubscriptionHealth>().ToArray();
+        var health   = _server.Services.GetServices<SubscriptionHealthCheck>().ToArray();
+        
         services.Length.Should().Be(1);
+        health.Length.Should().Be(1);
+        services.Single().Should().BeSameAs(health.Single());
     }
 
     [Fact]
@@ -120,6 +124,8 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
             );
 
             services.AddOpenTelemetry().WithMetrics(builder => builder.AddEventuousSubscriptions());
+            
+            services.AddHealthChecks().AddSubscriptionsHealthCheck("subscriptions", HealthStatus.Unhealthy, new[] { "tag" });
         }
 
         public void Configure(IApplicationBuilder app) { }
