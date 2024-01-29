@@ -60,7 +60,7 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
             new StreamSubscriptionOptions {
                 StreamName     = Stream,
                 SubscriptionId = subscriptionId,
-                ResolveLinkTos = Stream.ToString().StartsWith("$")
+                ResolveLinkTos = Stream.ToString().StartsWith('$')
             },
             CheckpointStore,
             pipe,

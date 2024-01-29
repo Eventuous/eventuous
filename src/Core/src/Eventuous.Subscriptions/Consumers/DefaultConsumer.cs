@@ -23,14 +23,18 @@ public class DefaultConsumer(IEventHandler[] eventHandlers) : IMessageConsumer {
                 }
 
                 var typedContext = context.ConvertToGeneric();
-                var tasks        = eventHandlers.Select(handler => Handle(typedContext, handler));
-                await tasks.WhenAll().NoContext();
+
+                // ReSharper disable once ForCanBeConvertedToForeach
+                for (var index = 0; index < eventHandlers.Length; index++) {
+                    var handler = eventHandlers[index];
+                    await Handle(typedContext, handler).NoContext();
+                }
             } catch (Exception e) {
                 context.Nack<DefaultConsumer>(e);
             }
-
-            return;
         }
+
+        return;
 
         async ValueTask Handle(IMessageConsumeContext typedContext, IEventHandler handler) {
             try {
