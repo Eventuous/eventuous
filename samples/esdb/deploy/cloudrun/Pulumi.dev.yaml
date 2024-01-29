@@ -1,0 +1,11 @@
+config:
+  cloudrun:esdbConnectionString:
+    secure: AAABAKUgHNKrbteWTPdchE2RY5ylwiVqxpW2ONz3gXXnxrXrIt/51Zv/J072LgF1mK/NCMUogwpOjLAmdw8LL+G7oLxia3CvYod7lZNsbZOficHj2PE2ylICMt94/ONgQMX1H5JfjyqW6LXmChOV
+  cloudrun:mongoConnectionString:
+    secure: AAABAInFo85SooX04/SqvBOQT0oFJK9Safq2WBdt9LeGCW+8zBBfQ7iKrVG0CJceIN+ksDX3IVtk0E97oASgoOILME98t2ndNpTSruMogg==
+  cloudrun:otelEndpoint: https://api.honeycomb.io
+  cloudrun:otelHeaders:
+    secure: AAABAOFb1napHEajKJ8i6tunpIwh/iW3bE25DZv7kRtV6fO2w++F+WrU67GzOtJudV2ig5cWy2KSn5snthaoXeWQIl3lzLlaRlJDwyZz0q5G5ECYWckzj8HEhb3Cs/pkxazAcPvrmBXDExhEhwYu0Q==
+  cloudrun:vpcConnectorName: vpc-connector-044a222
+  gcp:project: esc-platform-advocacy
+  gcp:region: europe-west2

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic SYSTEM "https://resources.jetbrains.com/writerside/1.0/xhtml-entities.dtd">
+<topic xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://resources.jetbrains.com/writerside/1.0/topic.v2.xsd"
+       id="Start-Here" title="Start here">
+    <show-structure for="chapter,procedure" depth="2"/>
+
+    <title>
+        Start here
+    </title>
+    <p>First, why would you use Eventuous instead of rolling out your own library to support Event Sourcing? From our
+        experience, doing that is totally possible, but it's laborious, time-consuming, and prone to failure.</p>
+    <chapter title="Do you need it?" id="do-you-need-it">
+        <p>Watch this video to learn more about the motivation behind Eventuous:</p>
+        <video src="https://youtu.be/qYGKqm7CmFM?si=qgxhAopNml04o2Qh"/>
+        <p>Check out <a href="The-Right-Way.md"/> to understand how things go wrong sometimes.</p>
+    </chapter>
+
+    <p>If you are convinced that Eventuous is the right tool for you, here are the next steps:</p>
+    <procedure style="choices" title="Next steps">
+        <step>Read the <a href="Introduction.md"/> to learn what Eventuous provides</step>
+        <step><p>Learn more about the basic building blocks:</p>
+            <list>
+                <li><a href="Domain.topic"/> model components</li>
+                <li><a href="Persistence.topic"/> for events, and how it differs from the traditional
+                    approach
+                </li>
+                <li><a href="Application.topic"/> service components</li>
+                <li><a href="subscriptions">Subscriptions</a> for event processing (like <a href="read-models">read
+                    models</a>)
+                </li>
+            </list>
+        </step>
+        <step>
+            <p>Check sample applications to see how Eventuous is used in practice:
+            </p>
+            <list>
+                <li><a href="https://github.com/eventuous/dotnet-sample">EventStoreDB</a> sample</li>
+                <li><a href="https://github.com/eventuous/dotnet-sample-postgres">PostgeSQL</a> sample</li>
+            </list>
+        </step>
+    </procedure>
+    <chapter title="Community" id="community">
+        <p>Eventuous is actively maintained. You can report issues in the <a
+                href="https://github.com/eventuous/eventuous/issues">GitHub repository</a>.</p>
+        <p>Ensure you follow the <a
+                href="https://github.com/Eventuous/eventuous/blob/da47a6918626b26428063be0e115ff75c539602b/CODE_OF_CONDUCT.md">Code
+            of Conduct</a> when interacting with the community. When contributing, please follow the <a
+                href="https://github.com/Eventuous/eventuous/blob/da47a6918626b26428063be0e115ff75c539602b/CONTRIBUTING.md">Contributing
+            Guidelines</a>.</p>
+        <p>Eventuous is open source and licensed under the Apache 2.0 licence.</p>
+        <p>Support the project by providing <a href="https://github.com/sponsors/Eventuous">sponsorships</a>. Eventuous
+            has sponsor plans for both individuals and companies. You can get paid support for your projects, or just show your appreciation for the project.</p>
+    </chapter>
+
+</topic>

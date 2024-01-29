@@ -1,0 +1,3 @@
+# Consume pipe
+
+Start typing here...

@@ -39,6 +39,7 @@
         <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageTags>CQRS ES Event Sourcing EventSourcing EventStore DDD ESDB EventStoreDB</PackageTags>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsPackable)' == 'true'">

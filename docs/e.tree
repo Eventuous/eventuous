@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="e"
+                 name="Eventuous"
+                 start-page="Start-Here.topic">
+
+    <toc-element topic="Start-Here.topic"/>
+    <toc-element topic="Prologue.topic">
+        <toc-element topic="Introduction.md"/>
+        <toc-element topic="The-Right-Way.md"/>
+        <toc-element topic="Samples.topic"/>
+    </toc-element>
+    <toc-element topic="Domain.topic">
+        <toc-element topic="Aggregate.md"/>
+        <toc-element topic="State.md"/>
+        <toc-element topic="Domain-events.md"/>
+    </toc-element>
+    <toc-element topic="Persistence.topic">
+        <toc-element topic="Event-streams.md"/>
+        <toc-element topic="Serialisation.md"/>
+        <toc-element topic="Event-store.md"/>
+        <toc-element topic="Aggregate-store.md"/>
+    </toc-element>
+    <toc-element topic="Application.topic">
+        <toc-element topic="Command-service.md">
+        </toc-element>
+        <toc-element topic="Functional-service.md"/>
+        <toc-element topic="Command-API.md"/>
+        <toc-element topic="Command-mapping.md"/>
+    </toc-element>
+    <toc-element topic="Subscriptions.topic">
+        <toc-element topic="Subscription-base.md"/>
+        <toc-element topic="Checkpoints.md"/>
+        <toc-element topic="Event-handlers.md"/>
+        <toc-element topic="Consume-pipe.md"/>
+        <toc-element topic="Subscription-Diagnostics.md"/>
+    </toc-element>
+    <toc-element topic="Infrastructure.topic">
+        <toc-element topic="MS-SQL-Server.md"/>
+        <toc-element topic="PostgreSQL.md"/>
+        <toc-element topic="EventStoreDB.md"/>
+    </toc-element>
+</instance-profile>

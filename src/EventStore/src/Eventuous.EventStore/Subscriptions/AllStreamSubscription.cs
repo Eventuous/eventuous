@@ -91,8 +91,10 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             )
             .NoContext();
 
-        async Task HandleEvent(ResolvedEvent re, CancellationToken ct)
-            => await HandleInternal(CreateContext(re, ct)).NoContext();
+        return;
+
+        Task HandleEvent(ResolvedEvent re, CancellationToken ct)
+            => HandleInternal(CreateContext(re, ct)).AsTask();
 
         void HandleDrop(global::EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
