@@ -16,8 +16,5 @@ public sealed class IntegrationFixture : StoreFixtureBase<SqlEdgeContainer> {
         services.AddAggregateStore<SqlServerStore>();
     }
 
-    protected override SqlEdgeContainer CreateContainer()
-        => new SqlEdgeBuilder()
-            .WithImage("mcr.microsoft.com/azure-sql-edge:latest")
-            .Build();
+    protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();
 }

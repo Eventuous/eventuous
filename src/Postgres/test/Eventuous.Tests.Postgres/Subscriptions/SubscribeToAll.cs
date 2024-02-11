@@ -4,14 +4,13 @@ using Eventuous.Sut.Domain;
 using Eventuous.Sut.Subs;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Postgres.Fixtures;
-using Hypothesist;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
 public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
-    public SubscribeToAll(ITestOutputHelper outputHelper) : base(outputHelper, true, false) {
+    public SubscribeToAll(ITestOutputHelper outputHelper) : base(outputHelper, true, false, LogLevel.Debug) {
         outputHelper.WriteLine($"Schema: {SchemaName}");
     }
 
@@ -21,10 +20,10 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
 
         var commands   = await GenerateAndHandleCommands(count);
         var testEvents = commands.Select(ToEvent).ToList();
-        Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
         await Start();
-        await Handler.Validate(2.Seconds());
+        await Handler.Validate();
         await Stop();
         Handler.Count.Should().Be(10);
     }
@@ -45,10 +44,10 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
 
             var commands   = await GenerateAndHandleCommands(count);
             var testEvents = commands.Select(ToEvent).ToList();
-            Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+            Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
             await Start();
-            await Handler.Validate(2.Seconds());
+            await Handler.Validate();
             await Stop();
             Handler.Count.Should().Be(10);
         }
@@ -59,7 +58,6 @@ public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
         const int count = 10;
 
         await GenerateAndHandleCommands(count);
-        Handler.AssertThat().Any(_ => true);
 
         await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
         await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, 10), true, default);

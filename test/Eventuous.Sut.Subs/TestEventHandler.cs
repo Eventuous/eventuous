@@ -1,6 +1,7 @@
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Hypothesist;
+using Hypothesist.Builders;
 using Xunit.Abstractions;
 
 namespace Eventuous.Sut.Subs;
@@ -16,27 +17,34 @@ public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output 
 
     public int Count { get; private set; }
 
-    IHypothesis<object>? _hypothesis;
+    readonly Observer<object> _observer = new();
+    Hypothesis<object>?       _hypothesis;
 
-    public IHypothesis<object> AssertThat() {
-        _hypothesis = Hypothesis.For<object>();
+    public void AssertThat(TimeSpan deadline, Func<Timebox<object>, Hypothesis<object>> getHypothesis) {
+        var builder = Hypothesis.On(_observer);
 
-        return _hypothesis;
+        _hypothesis = getHypothesis(builder.Timebox(deadline));
     }
 
-    public Task Validate(TimeSpan timeout) => EnsureHypothesis.Validate(timeout);
+    public void AssertCollection(TimeSpan deadline, List<object> collection) {
+        var builder = Hypothesis.On(_observer);
+
+        _hypothesis = builder.Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
+    }
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         output?.WriteLine(context.Message!.ToString());
         await Task.Delay(_delay);
-        await EnsureHypothesis.Test(context.Message!, context.CancellationToken);
+        await _observer.Add(context.Message!, context.CancellationToken);
         Count++;
 
         return EventHandlingStatus.Success;
     }
 
+    public Task Validate() => EnsureHypothesis.Validate();
+
     public void Reset() => Count = 0;
 
-    IHypothesis<object> EnsureHypothesis =>
+    Hypothesis<object> EnsureHypothesis =>
         _hypothesis ?? throw new InvalidOperationException("Test handler not specified");
 }

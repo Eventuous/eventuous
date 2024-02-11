@@ -1,6 +1,5 @@
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
-using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -9,11 +8,11 @@ public class PublishAndSubscribeOneTests(IntegrationFixture fixture, ITestOutput
     [Fact]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
-        Handler.AssertThat().Exactly(1, x => x as TestEvent == testEvent);
+        Handler.AssertCollection(5.Seconds(), [testEvent]);
 
         await Start();
         await Producer.Produce(Stream, testEvent, new Metadata());
-        await Handler.Validate(5.Seconds());
+        await Handler.Validate();
         await Stop();
 
         await Task.Delay(100);

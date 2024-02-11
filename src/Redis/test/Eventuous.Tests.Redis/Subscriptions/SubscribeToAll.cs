@@ -2,7 +2,6 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Sut.Subs;
 using Eventuous.Tests.Redis.Fixtures;
-using Hypothesist;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 
@@ -14,10 +13,10 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
         const int count = 10;
 
         var (testEvents, _) = await GenerateAndProduceEvents(count);
-        Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        Handler.AssertThat(2.Seconds(),b => b.Exactly(count).Match(x => testEvents.Contains(x)));
 
         await Start();
-        await Handler.Validate(2.Seconds());
+        await Handler.Validate();
         await Stop();
 
         Handler.Count.Should().Be(10);
@@ -38,10 +37,10 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
             const int count = 10;
 
             var (testEvents, _) = await GenerateAndProduceEvents(count);
-            Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+            Handler.AssertCollection(2.Seconds(), [testEvents]);
 
             await Start();
-            await Handler.Validate(2.Seconds());
+            await Handler.Validate();
             await Stop();
 
             Handler.Count.Should().Be(10);
@@ -53,7 +52,6 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
         const int count = 10;
 
         var (_, result) = await GenerateAndProduceEvents(count);
-        Handler.AssertThat().Any(_ => true);
 
         await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
         Logger.ConfigureIfNull(SubscriptionId, LoggerFactory);

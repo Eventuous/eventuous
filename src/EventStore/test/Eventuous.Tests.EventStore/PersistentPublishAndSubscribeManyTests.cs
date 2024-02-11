@@ -1,6 +1,5 @@
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
-using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -11,13 +10,13 @@ public class PersistentPublishAndSubscribeManyTests(IntegrationFixture fixture, 
         const int count = 10000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
-        Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        Handler.AssertCollection(10.Seconds(), [..testEvents]);
 
         await Start();
 
         await Producer.Produce(Stream, testEvents, new Metadata());
 
-        await Handler.Validate(10.Seconds());
+        await Handler.Validate();
 
         await Stop();
     }

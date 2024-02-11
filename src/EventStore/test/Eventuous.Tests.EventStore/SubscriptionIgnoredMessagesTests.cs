@@ -6,7 +6,6 @@ using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
-using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -23,7 +22,7 @@ public class SubscriptionIgnoredMessagesTests(IntegrationFixture fixture, ITestO
         var handler    = new TestEventHandler(TimeSpan.FromMilliseconds(5));
         var producer   = new EventStoreProducer(fixture.Client);
 
-        handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        handler.AssertCollection(5.Seconds(), testEvents);
 
         TypeMap.Instance.AddType<TestEvent>(TestEvent.TypeName);
         TypeMap.Instance.AddType<UnknownEvent>("ignored");
@@ -47,7 +46,7 @@ public class SubscriptionIgnoredMessagesTests(IntegrationFixture fixture, ITestO
         var log = _loggerFactory.CreateLogger("Subscription");
         TypeMap.Instance.RemoveType<UnknownEvent>();
         await subscription.SubscribeWithLog(log);
-        await handler.Validate(5.Seconds());
+        await handler.Validate();
         await subscription.UnsubscribeWithLog(log);
 
         _checkpointStore.Last.Position.Should().Be((ulong)(testEvents.Count - 1));

@@ -2,23 +2,18 @@ using System.Diagnostics;
 using System.Text.Json;
 using EventStore.Client;
 using Eventuous.Diagnostics;
-using Eventuous.Diagnostics.Tracing;
 using Eventuous.EventStore;
-using MicroElements.AutoFixture.NodaTime;
+using Eventuous.Tests.Persistence.Base.Fixtures;
+using Microsoft.Extensions.DependencyInjection;
 using NodaTime.Serialization.SystemTextJson;
 using Testcontainers.EventStoreDb;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
 
-public sealed class IntegrationFixture : IAsyncLifetime {
-    public IEventStore      EventStore     { get; private set; } = null!;
-    public IAggregateStore  AggregateStore { get; private set; } = null!;
-    public EventStoreClient Client         { get; private set; } = null!;
-    public IFixture         Auto           { get; }              = new Fixture().Customize(new NodaTimeCustomization());
+public sealed class IntegrationFixture : StoreFixtureBase<EventStoreDbContainer> {
+    public EventStoreClient Client { get; private set; } = null!;
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
-
-    EventStoreDbContainer _esdbContainer = null!;
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -30,23 +25,12 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         ActivitySource.AddActivityListener(_listener);
     }
 
-    public async Task InitializeAsync() {
-        _esdbContainer = new EventStoreDbBuilder().Build();
-        await _esdbContainer.StartAsync();
-        var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
-        Client         = new EventStoreClient(settings);
-        EventStore     = new TracedEventStore(new EsdbEventStore(Client));
-        AggregateStore = new AggregateStore(EventStore);
+    protected override void SetupServices(IServiceCollection services) {
+        services.AddEventStoreClient(Container.GetConnectionString());
+        services.AddAggregateStore<EsdbEventStore>();
     }
 
-    public async Task DisposeAsync() {
-        _listener.Dispose();
+    protected override EventStoreDbContainer CreateContainer() => EsdbContainer.Create();
 
-        try {
-            await Client.DisposeAsync();
-            await _esdbContainer.DisposeAsync();
-        } catch (Exception e) {
-            Console.WriteLine(e);
-        }
-    }
+    protected override void GetDependencies(IServiceProvider provider) => Client = provider.GetRequiredService<EventStoreClient>();
 }

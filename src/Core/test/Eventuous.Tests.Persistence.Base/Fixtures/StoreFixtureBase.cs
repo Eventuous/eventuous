@@ -41,10 +41,11 @@ public abstract class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncLif
         AggregateStore = provider.GetRequiredService<IAggregateStore>();
         GetDependencies(provider);
         ActivitySource.AddActivityListener(_listener);
-        var initializer = provider.GetService<IHostedService>();
+        var inits = provider.GetServices<IHostedService>();
 
-        if (initializer != null)
-            await initializer.StartAsync(default);
+        foreach (var hostedService in inits) {
+            await hostedService.StartAsync(default);
+        }
     }
 
     public virtual async Task DisposeAsync() {

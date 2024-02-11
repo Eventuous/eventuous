@@ -1,17 +1,10 @@
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
-using Hypothesist;
 
 namespace Eventuous.Tests.EventStore;
 
 public class PublishAndSubscribeManyPartitionedTests(IntegrationFixture fixture, ITestOutputHelper output)
-    : SubscriptionFixture<TestEventHandler>(
-        fixture,
-        output,
-        new TestEventHandler(TimeSpan.FromMilliseconds(5)),
-        false,
-        logLevel: LogLevel.Trace
-    ) {
+    : SubscriptionFixture<TestEventHandler>(fixture, output, new TestEventHandler(5.Milliseconds()), false, logLevel: LogLevel.Trace) {
     [Fact]
     public async Task SubscribeAndProduceMany() {
         const int count = 10;
@@ -20,12 +13,12 @@ public class PublishAndSubscribeManyPartitionedTests(IntegrationFixture fixture,
             .Select(i => new TestEvent(Auto.Create<string>(), i))
             .ToList();
 
-        Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        Handler.AssertCollection(5.Seconds(), [..testEvents]);
 
         await Start();
         await Producer.Produce(Stream, testEvents, new Metadata());
 
-        await Handler.Validate(5.Seconds());
+        await Handler.Validate();
         await Stop();
 
         CheckpointStore.Last.Position.Should().Be(count - 1);

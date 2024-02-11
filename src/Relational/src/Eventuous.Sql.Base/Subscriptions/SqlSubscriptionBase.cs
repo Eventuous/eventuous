@@ -235,18 +235,34 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     GetSubscriptionEndOfStream IMeasuredSubscription.GetMeasure() => GetSubscriptionEndOfStream;
 
+    /// <summary>
+    /// Get SQL statement to get the end of the stream
+    /// </summary>
     protected abstract string GetEndOfStream { get; }
-    protected abstract string GetEndOfAll { get; }
-    
-    async ValueTask<EndOfStream> GetSubscriptionEndOfStream(CancellationToken cancellationToken) {
-        await using var connection = await OpenConnection(cancellationToken).NoContext();
-        await using var cmd        = connection.CreateCommand();
-        cmd.CommandType = CommandType.Text;
 
-        cmd.CommandText = Kind switch {
-            SubscriptionKind.All    => GetEndOfStream,
-            SubscriptionKind.Stream => GetEndOfAll
-        };
-        await using var reader     = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
+    /// <summary>
+    /// Get SQL statement to get the end of the global log
+    /// </summary>
+    protected abstract string GetEndOfAll { get; }
+
+    async ValueTask<EndOfStream> GetSubscriptionEndOfStream(CancellationToken cancellationToken) {
+        try {
+            await using var connection = await OpenConnection(cancellationToken).NoContext();
+            await using var cmd        = connection.CreateCommand();
+            cmd.CommandType = CommandType.Text;
+
+            cmd.CommandText = Kind switch {
+                SubscriptionKind.All    => GetEndOfStream,
+                SubscriptionKind.Stream => GetEndOfAll
+            };
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
+
+            var position = await reader.ReadAsync(cancellationToken).NoContext() ? reader.GetInt64(0) : 0;
+
+            return new EndOfStream(SubscriptionId, (ulong)position, DateTime.UtcNow);
+        } catch (Exception) {
+            Log.WarnLog?.Log("Failed to get end of stream");
+            return EndOfStream.Invalid;
+        }
     }
 }

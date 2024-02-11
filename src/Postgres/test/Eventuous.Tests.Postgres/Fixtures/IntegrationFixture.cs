@@ -21,10 +21,5 @@ public class IntegrationFixture : StoreFixtureBase<PostgreSqlContainer> {
         DataSource = provider.GetRequiredService<NpgsqlDataSource>();
     }
 
-    protected override PostgreSqlContainer CreateContainer()
-        => new PostgreSqlBuilder()
-            .WithUsername("postgres")
-            .WithPassword("secret")
-            .WithDatabase("eventuous")
-            .Build();
+    protected override PostgreSqlContainer CreateContainer() => PostgresContainer.Create();
 }

@@ -4,7 +4,6 @@ using Eventuous.Producers;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
 using Google.Api.Gax;
-using Hypothesist;
 
 namespace Eventuous.Tests.GooglePubSub;
 
@@ -50,11 +49,11 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
     [Fact]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
-        _handler.AssertThat().Any(x => x as TestEvent == testEvent);
+        _handler.AssertThat(10.Seconds(), b => b.Any().Match(x => x as TestEvent == testEvent));
 
         await _producer.Produce(_pubsubTopic, testEvent, null);
 
-        await _handler.Validate(10.Seconds());
+        await _handler.Validate();
     }
 
     [Fact]
@@ -62,11 +61,11 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
         const int count = 10000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
-        _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
+        _handler.AssertCollection(10.Seconds(), [..testEvents]);
 
         await _producer.Produce(_pubsubTopic, testEvents, null);
 
-        await _handler.Validate(10.Seconds());
+        await _handler.Validate();
     }
 
     public async Task InitializeAsync() {
