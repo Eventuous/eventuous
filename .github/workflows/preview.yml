@@ -7,24 +7,31 @@ on:
 
 jobs:
   nuget:
-#    runs-on: self-hosted
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+#    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      -
+        name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      -
+        name: Checkout code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      -
-        name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0'
+#      -
+#        name: Setup .NET
+#        uses: actions/setup-dotnet@v4
+#        with:
+#          dotnet-version: '8.0'
       -
         name: Run tests
         run: dotnet test --framework net8.0
       -  
         name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always()
         with:
           files: |
