@@ -1,20 +1,21 @@
+using DotNet.Testcontainers.Containers;
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Sut.Subs;
 using Eventuous.Tests.Persistence.Base.Fixtures;
-using Eventuous.Tests.Postgres.Fixtures;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 
-namespace Eventuous.Tests.Postgres.Subscriptions;
+namespace Eventuous.Tests.Subscriptions.Base;
 
-public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
-    readonly ITestOutputHelper _outputHelper;
-
-    public SubscribeToStream(ITestOutputHelper outputHelper) : base(outputHelper, false, false) {
-        _outputHelper = outputHelper;
-        outputHelper.WriteLine($"Schema: {SchemaName}");
-    }
+public abstract class SubscribeToStreamBase
+    <TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore>(ITestOutputHelper outputHelper)
+    : SubscriptionTestBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TestEventHandler>(outputHelper, false)
+    where TContainer : DockerContainer
+    where TSubscription : EventSubscription<TSubscriptionOptions>
+    where TSubscriptionOptions : SubscriptionOptions
+    where TCheckpointStore : class, ICheckpointStore {
+    readonly ITestOutputHelper _outputHelper = outputHelper;
 
     [Fact]
     public async Task ShouldConsumeProducedEvents() {
@@ -39,6 +40,7 @@ public class SubscribeToStream : SubscriptionFixture<TestEventHandler> {
 
         _outputHelper.WriteLine("Resetting handler");
         Handler.Reset();
+        // await InitializeAsync();
 
         _outputHelper.WriteLine("Phase two");
         await TestConsumptionOfProducedEvents();

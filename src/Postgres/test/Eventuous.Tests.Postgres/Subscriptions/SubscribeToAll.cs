@@ -1,93 +1,15 @@
-using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Sut.App;
-using Eventuous.Sut.Domain;
-using Eventuous.Sut.Subs;
-using Eventuous.Tests.Persistence.Base.Fixtures;
+using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Tests.Postgres.Fixtures;
-using static Eventuous.Sut.App.Commands;
-using static Eventuous.Sut.Domain.BookingEvents;
+using Eventuous.Tests.Subscriptions.Base;
+using Testcontainers.PostgreSql;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
-public class SubscribeToAll : SubscriptionFixture<TestEventHandler> {
-    public SubscribeToAll(ITestOutputHelper outputHelper) : base(outputHelper, true, false, LogLevel.Debug) {
-        outputHelper.WriteLine($"Schema: {SchemaName}");
-    }
+public class SubscribeToAll(ITestOutputHelper outputHelper)
+    : SubscribeToAllBase<PostgreSqlContainer, PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, PostgresCheckpointStore>(outputHelper) {
+    protected override PostgreSqlContainer CreateContainer() => PostgresContainer.Create();
 
-    [Fact]
-    public async Task ShouldConsumeProducedEvents() {
-        const int count = 10;
+    protected override PostgresCheckpointStore GetCheckpointStore(IServiceProvider sp) => throw new NotImplementedException();
 
-        var commands   = await GenerateAndHandleCommands(count);
-        var testEvents = commands.Select(ToEvent).ToList();
-        Handler.AssertCollection(2.Seconds(), [..testEvents]);
-
-        await Start();
-        await Handler.Validate();
-        await Stop();
-        Handler.Count.Should().Be(10);
-    }
-
-    [Fact]
-    public async Task ShouldConsumeProducedEventsWhenRestarting() {
-        await TestConsumptionOfProducedEvents();
-
-        Handler.Reset();
-        await InitializeAsync();
-
-        await TestConsumptionOfProducedEvents();
-
-        return;
-
-        async Task TestConsumptionOfProducedEvents() {
-            const int count = 10;
-
-            var commands   = await GenerateAndHandleCommands(count);
-            var testEvents = commands.Select(ToEvent).ToList();
-            Handler.AssertCollection(2.Seconds(), [..testEvents]);
-
-            await Start();
-            await Handler.Validate();
-            await Stop();
-            Handler.Count.Should().Be(10);
-        }
-    }
-
-    [Fact]
-    public async Task ShouldUseExistingCheckpoint() {
-        const int count = 10;
-
-        await GenerateAndHandleCommands(count);
-
-        await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
-        await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, 10), true, default);
-
-        await Start();
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        await Stop();
-        Handler.Count.Should().Be(0);
-    }
-
-    static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
-
-    async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
-        var commands = Enumerable
-            .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking(Auto))
-            .ToList();
-
-        var service = new BookingService(AggregateStore);
-        foreach (var cmd in commands) {
-            var result = await service.Handle(cmd, default);
-
-            if (result is ErrorResult<BookingState> error) {
-                throw error.Exception ?? new Exception(error.Message);
-            }
-        }
-
-        return commands;
-    }
-
-    protected override TestEventHandler GetHandler()
-        => new();
+    protected override void ConfigureSubscription(PostgresAllStreamSubscriptionOptions options) => throw new NotImplementedException();
 }
