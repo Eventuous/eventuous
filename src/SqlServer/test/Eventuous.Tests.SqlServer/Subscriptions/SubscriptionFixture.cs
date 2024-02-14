@@ -43,6 +43,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         services.AddEventuousSqlServer(Container.GetConnectionString(), SchemaName, true);
         services.AddAggregateStore<SqlServerStore>();
         services.AddSingleton(new SqlServerCheckpointStoreOptions { Schema = SchemaName, ConnectionString = Container.GetConnectionString() });
+        services.AddSingleton(new TestEventHandlerOptions(null, outputHelper));
         configureServices?.Invoke(services);
     }
 
