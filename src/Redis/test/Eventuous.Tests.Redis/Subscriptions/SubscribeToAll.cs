@@ -37,7 +37,7 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
             const int count = 10;
 
             var (testEvents, _) = await GenerateAndProduceEvents(count);
-            Handler.AssertCollection(2.Seconds(), [testEvents]);
+            Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
             await Start();
             await Handler.Validate();
