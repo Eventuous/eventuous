@@ -11,6 +11,20 @@ public class SubscribeToAll(ITestOutputHelper outputHelper)
         outputHelper,
         new SubscriptionFixture<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, TestEventHandler>(_ => { }, outputHelper, false)
     ) {
+    [Fact]
+    public async Task SqlServer_ShouldConsumeProducedEvents() {
+        await ShouldConsumeProducedEvents();
+    }
+
+    [Fact]
+    public async Task SqlServer_ShouldConsumeProducedEventsWhenRestarting() {
+        await ShouldConsumeProducedEventsWhenRestarting();
+    }
+
+    [Fact]
+    public async Task SqlServer_ShouldUseExistingCheckpoint() {
+        await ShouldUseExistingCheckpoint();
+    }
 }
 
 public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture streamNameFixture)
@@ -24,6 +38,21 @@ public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture
             )
         ),
         IClassFixture<StreamNameFixture> {
+    [Fact]
+    public async Task SqlServer_ShouldConsumeProducedEvents() {
+        await ShouldConsumeProducedEvents();
+    }
+
+    [Fact]
+    public async Task SqlServer_ShouldConsumeProducedEventsWhenRestarting() {
+        await ShouldConsumeProducedEventsWhenRestarting();
+    }
+
+    [Fact]
+    public async Task SqlServer_ShouldUseExistingCheckpoint() {
+        await ShouldUseExistingCheckpoint();
+    }
+
     static void ConfigureOptions(SqlServerStreamSubscriptionOptions options, StreamNameFixture streamNameFixture) {
         options.Stream = streamNameFixture.StreamName;
     }

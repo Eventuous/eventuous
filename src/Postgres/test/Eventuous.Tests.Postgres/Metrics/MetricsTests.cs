@@ -11,4 +11,9 @@ public class MetricsTests(MetricsFixture fixture, ITestOutputHelper outputHelper
     : MetricsTestsBase<MetricsFixture, PostgreSqlContainer, UniversalProducer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions>(
         fixture,
         outputHelper
-    );
+    ) {
+    [Fact]
+    public void Postgres_ShouldMeasureSubscriptionGapCount() {
+        ShouldMeasureSubscriptionGapCount();
+    }
+}

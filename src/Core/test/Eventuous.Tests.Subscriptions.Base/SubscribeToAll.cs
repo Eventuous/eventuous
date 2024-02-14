@@ -17,8 +17,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
     where TSubscription : EventSubscription<TSubscriptionOptions>
     where TSubscriptionOptions : SubscriptionOptions
     where TCheckpointStore : class, ICheckpointStore {
-    [Fact]
-    public async Task ShouldConsumeProducedEvents() {
+    protected async Task ShouldConsumeProducedEvents() {
         const int count = 10;
 
         var commands   = await GenerateAndHandleCommands(count);
@@ -31,8 +30,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         fixture.Handler.Count.Should().Be(10);
     }
 
-    [Fact]
-    public async Task ShouldConsumeProducedEventsWhenRestarting() {
+    protected async Task ShouldConsumeProducedEventsWhenRestarting() {
         await TestConsumptionOfProducedEvents();
 
         fixture.Handler.Reset();
@@ -54,8 +52,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         }
     }
 
-    [Fact]
-    public async Task ShouldUseExistingCheckpoint() {
+    protected async Task ShouldUseExistingCheckpoint() {
         const int count = 10;
 
         await GenerateAndHandleCommands(count);

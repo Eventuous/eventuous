@@ -13,8 +13,8 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
     where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
 
-    [Fact]
     public void ShouldMeasureSubscriptionGapCount() {
+        outputHelper.WriteLine($"Stream {fixture.Stream}");
         Assert.NotNull(_values);
         var gapCount = GetValue(_values, SubscriptionMetrics.GapCountMetricName)!;
         var duration = GetValue(_values, SubscriptionMetrics.ProcessingRateName)!;

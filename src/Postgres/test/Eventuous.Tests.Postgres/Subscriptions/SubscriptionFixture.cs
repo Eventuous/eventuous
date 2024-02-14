@@ -27,6 +27,8 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     where TEventHandler : class, IEventHandler {
     protected internal readonly string SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
+    readonly ITestOutputHelper _outputHelper = outputHelper;
+
     protected override PostgreSqlContainer CreateContainer() => PostgresContainer.Create();
 
     protected override PostgresCheckpointStore GetCheckpointStore(IServiceProvider sp)
@@ -42,7 +44,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         services.AddSingleton(new SchemaInfo(SchemaName));
         services.AddEventuousPostgres(Container.GetConnectionString(), SchemaName, true);
         services.AddAggregateStore<PostgresStore>();
-        services.AddSingleton(new TestEventHandlerOptions(null, outputHelper));
+        services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
         configureServices?.Invoke(services);
     }
 
@@ -52,11 +54,12 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     }
 
     public override async Task<ulong> GetLastPosition() {
-        var query = $"select m.global_position from {SchemaName}.messages m order by m.global_position desc limit 1";
+        var             query      = $"select m.global_position from {SchemaName}.messages m order by m.global_position desc limit 1";
         await using var connection = await DataSource.OpenConnectionAsync();
-        await using var cmd = new NpgsqlCommand(query, connection);
-        await using var reader = await cmd.ExecuteReaderAsync();
+        await using var cmd        = new NpgsqlCommand(query, connection);
+        await using var reader     = await cmd.ExecuteReaderAsync();
         await reader.ReadAsync();
+
         return reader.IsDBNull(0) ? 0 : (ulong)reader.GetInt64(0);
     }
 

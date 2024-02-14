@@ -11,4 +11,9 @@ public class MetricsTests(MetricsFixture fixture, ITestOutputHelper outputHelper
     : MetricsTestsBase<MetricsFixture, SqlEdgeContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions>(
         fixture,
         outputHelper
-    );
+    ) {
+    [Fact]
+    public void SqlServer_ShouldMeasureSubscriptionGapCount() {
+        ShouldMeasureSubscriptionGapCount();
+    }
+}

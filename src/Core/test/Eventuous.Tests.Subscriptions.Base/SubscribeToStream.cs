@@ -17,8 +17,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
     where TSubscription : EventSubscription<TSubscriptionOptions>
     where TSubscriptionOptions : SubscriptionOptions
     where TCheckpointStore : class, ICheckpointStore {
-    [Fact]
-    public async Task ShouldConsumeProducedEvents() {
+    protected async Task ShouldConsumeProducedEvents() {
         const int count = 10;
 
         var testEvents = await GenerateAndProduceEvents(count);
@@ -33,8 +32,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
         checkpoint.Position.Should().Be(count - 1);
     }
 
-    [Fact]
-    public async Task ShouldConsumeProducedEventsWhenRestarting() {
+    protected async Task ShouldConsumeProducedEventsWhenRestarting() {
         outputHelper.WriteLine("Phase one");
         await TestConsumptionOfProducedEvents();
 
@@ -66,7 +64,6 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
         }
     }
 
-    [Fact]
     public async Task ShouldUseExistingCheckpoint() {
         const int count = 10;
 

@@ -24,7 +24,8 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     where TSubscription : SqlServerSubscriptionBase<TSubscriptionOptions>
     where TSubscriptionOptions : SqlServerSubscriptionBaseOptions
     where TEventHandler : class, IEventHandler {
-    protected internal readonly string SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    readonly string            _schemaName   = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    readonly ITestOutputHelper _outputHelper = outputHelper;
 
     protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();
 
@@ -32,27 +33,28 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         => new(sp.GetRequiredService<SqlServerCheckpointStoreOptions>());
 
     protected override void ConfigureSubscription(TSubscriptionOptions options) {
-        options.Schema           = SchemaName;
+        options.Schema           = _schemaName;
         options.ConnectionString = Container.GetConnectionString();
         configureOptions(options);
     }
 
     protected override void SetupServices(IServiceCollection services) {
         base.SetupServices(services);
-        services.AddSingleton(new SchemaInfo(SchemaName));
-        services.AddEventuousSqlServer(Container.GetConnectionString(), SchemaName, true);
+        services.AddSingleton(new SchemaInfo(_schemaName));
+        services.AddEventuousSqlServer(Container.GetConnectionString(), _schemaName, true);
         services.AddAggregateStore<SqlServerStore>();
-        services.AddSingleton(new SqlServerCheckpointStoreOptions { Schema = SchemaName, ConnectionString = Container.GetConnectionString() });
-        services.AddSingleton(new TestEventHandlerOptions(null, outputHelper));
+        services.AddSingleton(new SqlServerCheckpointStoreOptions { Schema = _schemaName, ConnectionString = Container.GetConnectionString() });
+        services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
         configureServices?.Invoke(services);
     }
 
     public override async Task<ulong> GetLastPosition() {
         await using var connection = await ConnectionFactory.GetConnection(Container.GetConnectionString(), default);
-        await using var cmd = connection.CreateCommand();
-        cmd.CommandText = $"select max(global_position) from {SchemaName}.messages";
+        await using var cmd        = connection.CreateCommand();
+        cmd.CommandText = $"select max(GlobalPosition) from {_schemaName}.messages";
         var result = await cmd.ExecuteScalarAsync();
-        return result is DBNull ? 0 : (ulong)result!;
+
+        return (ulong)(result is DBNull ? 0 : (long)result!);
     }
 }
 
