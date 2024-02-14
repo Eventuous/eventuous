@@ -5,7 +5,6 @@ using Eventuous.SqlServer.Subscriptions;
 using Eventuous.Tests.OpenTelemetry.Fixtures;
 using Eventuous.Tests.SqlServer.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection1;
 using Testcontainers.SqlEdge;
 
 namespace Eventuous.Tests.SqlServer.Metrics;

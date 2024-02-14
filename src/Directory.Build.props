@@ -67,6 +67,7 @@
         <Using Include="FluentAssertions.Extensions"/>
         <Using Include="AutoFixture"/>
         <Using Include="Microsoft.Extensions.Logging"/>
+        <Content Include="$(RepoRoot)\test\xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">

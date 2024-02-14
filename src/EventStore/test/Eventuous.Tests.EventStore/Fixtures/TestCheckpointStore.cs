@@ -1,23 +1,19 @@
 namespace Eventuous.Tests.EventStore.Fixtures; 
 
 public class TestCheckpointStore : ICheckpointStore {
-    readonly Checkpoint _start;
+    readonly Dictionary<string, Checkpoint> _checkpoints = new();
     
-    public Checkpoint Last { get; private set; }
-
-    public TestCheckpointStore(ulong? start = null) {
-        _start = new Checkpoint("", start);
-        Last   = _start;
-    }
-
     public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
-        Logger.Current.CheckpointLoaded(this, _start);
-        return new ValueTask<Checkpoint>(_start);
+        var checkpoint = _checkpoints.TryGetValue(checkpointId, out var cp) ? cp : new Checkpoint(checkpointId, null);
+        Logger.Current.CheckpointLoaded(this, checkpoint);
+        return new ValueTask<Checkpoint>(checkpoint);
     }
 
     public ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
-        Last = checkpoint;
         Logger.Current.CheckpointStored(this, checkpoint, force);
+        _checkpoints[checkpoint.Id] = checkpoint;
         return new ValueTask<Checkpoint>(checkpoint);
     }
+    
+    public ulong? GetCheckpoint(string checkpointId) => _checkpoints.TryGetValue(checkpointId, out var cp) ? cp.Position : null;
 }

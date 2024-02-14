@@ -1,9 +1,9 @@
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
 
-namespace Eventuous.Tests.EventStore;
+namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public class PersistentPublishAndSubscribeManyTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
+public class PersistentPublishAndSubscribeManyTests(StoreFixture fixture, ITestOutputHelper outputHelper)
     : PersistentSubscriptionFixture<TestEventHandler>(fixture, outputHelper, new TestEventHandler(), false) {
     [Fact]
     public async Task SubscribeAndProduceMany() {

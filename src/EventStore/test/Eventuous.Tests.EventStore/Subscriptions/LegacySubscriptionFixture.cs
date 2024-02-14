@@ -4,38 +4,38 @@ using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
 
-namespace Eventuous.Tests.EventStore.Fixtures;
+namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>, IAsyncLifetime where T : class, IEventHandler {
-    static SubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+public abstract class LegacySubscriptionFixture<T> : IClassFixture<StoreFixture>, IAsyncLifetime where T : class, IEventHandler {
+    static LegacySubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     protected readonly Fixture Auto = new();
 
-    protected StreamName          Stream             { get; } = new($"test-{Guid.NewGuid():N}");
-    public    IntegrationFixture  IntegrationFixture { get; }
-    protected T                   Handler            { get; }
-    protected EventStoreProducer  Producer           { get; private set; } = null!;
-    protected ILogger             Log                { get; }
-    protected TestCheckpointStore CheckpointStore    { get; }
-    StreamSubscription            Subscription       { get; set; } = null!;
+    protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
+    public    StoreFixture        StoreFixture    { get; }
+    protected T                   Handler         { get; }
+    protected EventStoreProducer  Producer        { get; private set; } = null!;
+    protected ILogger             Log             { get; }
+    protected TestCheckpointStore CheckpointStore { get; }
+    protected StreamSubscription  Subscription    { get; set; } = null!;
 
-    protected SubscriptionFixture(
-            IntegrationFixture integrationFixture,
-            ITestOutputHelper  outputHelper,
-            T                  handler,
-            bool               autoStart = true,
-            StreamName?        stream    = null,
-            LogLevel           logLevel  = LogLevel.Debug
+    protected LegacySubscriptionFixture(
+            StoreFixture      storeFixture,
+            ITestOutputHelper outputHelper,
+            T                 handler,
+            bool              autoStart = true,
+            StreamName?       stream    = null,
+            LogLevel          logLevel  = LogLevel.Debug
         ) {
         _autoStart = autoStart;
         if (stream is { } s) Stream = s;
 
         LoggerFactory = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
 
-        IntegrationFixture = integrationFixture;
-        Handler            = handler;
-        Log                = LoggerFactory.CreateLogger(GetType());
-        CheckpointStore    = new TestCheckpointStore();
+        StoreFixture    = storeFixture;
+        Handler         = handler;
+        Log             = LoggerFactory.CreateLogger(GetType());
+        CheckpointStore = new TestCheckpointStore();
 
         _listener = new LoggingEventListener(LoggerFactory);
     }
@@ -49,14 +49,14 @@ public abstract class SubscriptionFixture<T> : IClassFixture<IntegrationFixture>
     readonly LoggingEventListener _listener;
 
     public async Task InitializeAsync() {
-        Producer = new EventStoreProducer(IntegrationFixture.Client);
+        Producer = new EventStoreProducer(StoreFixture.Client);
 
         var subscriptionId = $"test-{Guid.NewGuid():N}";
         var pipe           = new ConsumePipe();
         pipe.AddDefaultConsumer(Handler);
 
         Subscription = new StreamSubscription(
-            IntegrationFixture.Client,
+            StoreFixture.Client,
             new StreamSubscriptionOptions {
                 StreamName     = Stream,
                 SubscriptionId = subscriptionId,

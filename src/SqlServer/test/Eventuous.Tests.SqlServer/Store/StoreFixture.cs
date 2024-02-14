@@ -1,15 +1,13 @@
 using Eventuous.SqlServer;
 using Eventuous.Tests.Persistence.Base.Fixtures;
+using Eventuous.Tests.SqlServer.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection1;
 using Testcontainers.SqlEdge;
 
-namespace Eventuous.Tests.SqlServer.Fixtures;
+namespace Eventuous.Tests.SqlServer.Store;
 
-public sealed class IntegrationFixture : StoreFixtureBase<SqlEdgeContainer> {
-    public string SchemaName { get; } = Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
-
-    public string GetConnectionString() => Container.GetConnectionString();
+public sealed class StoreFixture : StoreFixtureBase<SqlEdgeContainer> {
+    string SchemaName { get; } = Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousSqlServer(Container.GetConnectionString(), SchemaName, true);

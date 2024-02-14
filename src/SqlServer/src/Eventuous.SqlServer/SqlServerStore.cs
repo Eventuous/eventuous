@@ -15,11 +15,9 @@ public record SqlServerStoreOptions {
     public bool    InitializeDatabase { get; init; }
 }
 
-public class SqlServerStore
-    : SqlEventStoreBase<SqlConnection, SqlTransaction> {
+public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
     readonly GetSqlServerConnection _getConnection;
-
-    readonly Schema _schema;
+    readonly Schema                 _schema;
 
     public SqlServerStore(SqlServerStoreOptions options, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
         : base(serializer, metaSerializer) {

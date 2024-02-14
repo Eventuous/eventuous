@@ -11,8 +11,8 @@ public record TestEvent(string Data, int Number) {
     public const string TypeName = "test-event";
 }
 
-public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output = null) : BaseEventHandler {
-    readonly TimeSpan _delay = delay ?? TimeSpan.Zero;
+public class TestEventHandler(TestEventHandlerOptions options) : BaseEventHandler {
+    readonly TimeSpan _delay = options.Delay ?? TimeSpan.Zero;
 
     public int Count { get; private set; }
 
@@ -32,7 +32,7 @@ public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output 
     }
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        output?.WriteLine(context.Message!.ToString());
+        options.Output?.WriteLine(context.Message!.ToString());
         await Task.Delay(_delay);
         await _observer.Add(context.Message!, context.CancellationToken);
         Count++;
@@ -47,3 +47,5 @@ public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output 
     Hypothesis<object> EnsureHypothesis =>
         _hypothesis ?? throw new InvalidOperationException("Test handler not specified");
 }
+
+public record TestEventHandlerOptions(TimeSpan? Delay = null, ITestOutputHelper? Output = null);

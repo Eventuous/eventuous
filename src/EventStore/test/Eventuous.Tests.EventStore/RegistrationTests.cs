@@ -7,7 +7,7 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 
 namespace Eventuous.Tests.EventStore;
 
-public class RegistrationTests(IntegrationFixture fixture) : IClassFixture<IntegrationFixture>, IAsyncLifetime {
+public class RegistrationTests(StoreFixture fixture) : IClassFixture<StoreFixture>, IAsyncLifetime {
     const string SubId = "Test";
 
     static readonly StreamName Stream = new("teststream");

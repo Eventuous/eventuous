@@ -8,14 +8,14 @@ using Eventuous.Sut.Domain;
 using Eventuous.Sut.Subs;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
-namespace Eventuous.Tests.EventStore;
+namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<IntegrationFixture>, IDisposable {
-    readonly IntegrationFixture   _fixture;
+public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFixture>, IDisposable {
+    readonly StoreFixture   _fixture;
     readonly ILoggerFactory       _loggerFactory;
     readonly LoggingEventListener _listener;
 
-    public StreamSubscriptionDeletedEventsTests(IntegrationFixture fixture, ITestOutputHelper output) {
+    public StreamSubscriptionDeletedEventsTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
 
         _loggerFactory = LoggerFactory.Create(

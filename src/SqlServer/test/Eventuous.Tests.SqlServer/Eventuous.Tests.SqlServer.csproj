@@ -15,5 +15,6 @@
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
         <ProjectReference Include="$(SrcRoot)\Core\test\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj" />
         <ProjectReference Include="$(SrcRoot)\Diagnostics\test\Eventuous.Tests.OpenTelemetry\Eventuous.Tests.OpenTelemetry.csproj" />
+        <ProjectReference Include="$(SrcRoot)\Core\test\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
     </ItemGroup>
 </Project>

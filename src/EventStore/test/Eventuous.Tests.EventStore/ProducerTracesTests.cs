@@ -3,13 +3,14 @@ using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
 using Eventuous.TestHelpers;
+using Eventuous.Tests.EventStore.Subscriptions;
 
 namespace Eventuous.Tests.EventStore;
 
-public class TracesTests : SubscriptionFixture<TracedHandler>, IDisposable {
+public class TracesTests : LegacySubscriptionFixture<TracedHandler>, IDisposable {
     readonly ActivityListener _listener;
 
-    public TracesTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
+    public TracesTests(StoreFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, new TracedHandler(), false) {
         _listener = new ActivityListener {
             ShouldListenTo = _ => true,
@@ -34,7 +35,7 @@ public class TracesTests : SubscriptionFixture<TracedHandler>, IDisposable {
 
         await Start();
 
-        var writtenEvent = (await IntegrationFixture.EventStore.ReadEvents(Stream, StreamReadPosition.Start, 1, default))[0];
+        var writtenEvent = (await StoreFixture.EventStore.ReadEvents(Stream, StreamReadPosition.Start, 1, default))[0];
 
         var meta = writtenEvent.Metadata;
         var (traceId, spanId, _) = meta.GetTracingMeta();

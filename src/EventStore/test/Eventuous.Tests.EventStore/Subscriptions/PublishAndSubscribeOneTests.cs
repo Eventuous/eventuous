@@ -1,10 +1,10 @@
 using Eventuous.Producers;
 using Eventuous.Sut.Subs;
 
-namespace Eventuous.Tests.EventStore;
+namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public class PublishAndSubscribeOneTests(IntegrationFixture fixture, ITestOutputHelper outputHelper)
-    : SubscriptionFixture<TestEventHandler>(fixture, outputHelper, new TestEventHandler(), false, logLevel: LogLevel.Trace) {
+public class PublishAndSubscribeOneTests(StoreFixture fixture, ITestOutputHelper outputHelper)
+    : LegacySubscriptionFixture<TestEventHandler>(fixture, outputHelper, new TestEventHandler(), false, logLevel: LogLevel.Trace) {
     [Fact]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
@@ -16,6 +16,6 @@ public class PublishAndSubscribeOneTests(IntegrationFixture fixture, ITestOutput
         await Stop();
 
         await Task.Delay(100);
-        CheckpointStore.Last.Position.Should().Be(0);
+        CheckpointStore.GetCheckpoint(Subscription.SubscriptionId).Should().Be(0);
     }
 }

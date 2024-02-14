@@ -4,9 +4,9 @@ using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
 
-namespace Eventuous.Tests.EventStore.Fixtures;
+namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public abstract class PersistentSubscriptionFixture<T> : IClassFixture<IntegrationFixture>, IAsyncLifetime where T : class, IEventHandler {
+public abstract class PersistentSubscriptionFixture<T> : IClassFixture<StoreFixture>, IAsyncLifetime where T : class, IEventHandler {
     static PersistentSubscriptionFixture()
         => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
@@ -19,7 +19,7 @@ public abstract class PersistentSubscriptionFixture<T> : IClassFixture<Integrati
     StreamPersistentSubscription Subscription { get; }
 
     protected PersistentSubscriptionFixture(
-            IntegrationFixture integrationFixture,
+            StoreFixture storeFixture,
             ITestOutputHelper  outputHelper,
             T                  handler,
             bool               autoStart = true
@@ -30,13 +30,13 @@ public abstract class PersistentSubscriptionFixture<T> : IClassFixture<Integrati
         var subscriptionId = $"test-{Guid.NewGuid():N}";
 
         Handler  = handler;
-        Producer = new EventStoreProducer(integrationFixture.Client);
+        Producer = new EventStoreProducer(storeFixture.Client);
         Log      = loggerFactory.CreateLogger(GetType());
 
         _listener = new LoggingEventListener(loggerFactory);
 
         Subscription = new StreamPersistentSubscription(
-            integrationFixture.Client,
+            storeFixture.Client,
             new StreamPersistentSubscriptionOptions {
                 StreamName     = Stream,
                 SubscriptionId = subscriptionId

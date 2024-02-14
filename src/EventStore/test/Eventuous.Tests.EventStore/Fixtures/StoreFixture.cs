@@ -10,7 +10,7 @@ using Testcontainers.EventStoreDb;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
 
-public sealed class IntegrationFixture : StoreFixtureBase<EventStoreDbContainer> {
+public sealed class StoreFixture : StoreFixtureBase<EventStoreDbContainer> {
     public EventStoreClient Client { get; private set; } = null!;
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
@@ -20,7 +20,7 @@ public sealed class IntegrationFixture : StoreFixtureBase<EventStoreDbContainer>
             .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
     );
 
-    public IntegrationFixture() {
+    public StoreFixture() {
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
         ActivitySource.AddActivityListener(_listener);
     }

@@ -8,6 +8,13 @@ using Eventuous.Diagnostics;
 
 namespace Eventuous.Sql.Base;
 
+/// <summary>
+/// Base class for SQL-based event stores
+/// </summary>
+/// <param name="serializer">Event serializer instance</param>
+/// <param name="metaSerializer">Metadata serializer instance</param>
+/// <typeparam name="TConnection">Database connection type</typeparam>
+/// <typeparam name="TTransaction">Database transaction type</typeparam>
 public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSerializer? serializer, IMetadataSerializer? metaSerializer) : IEventStore
     where TConnection : DbConnection where TTransaction : DbTransaction {
     readonly IEventSerializer    _serializer     = serializer     ?? DefaultEventSerializer.Instance;
@@ -15,12 +22,41 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
 
     const string ContentType = "application/json";
 
+    /// <summary>
+    /// Function to open a new database connection
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Open connection</returns>
     protected abstract ValueTask<TConnection> OpenConnection(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Get command to read events from the stream
+    /// </summary>
+    /// <param name="connection">Pre-opened connection</param>
+    /// <param name="stream">Stream name</param>
+    /// <param name="start">Starting position to read from</param>
+    /// <param name="count">Number of events to read</param>
+    /// <returns></returns>
     protected abstract DbCommand GetReadCommand(TConnection connection, StreamName stream, StreamReadPosition start, int count);
 
+    /// <summary>
+    /// Get command to read events from the stream in reverse order
+    /// </summary>
+    /// <param name="connection">Pre-opened connection</param>
+    /// <param name="stream">Stream name</param>
+    /// <param name="count">Number of events to read</param>
+    /// <returns></returns>
     protected abstract DbCommand GetReadBackwardsCommand(TConnection connection, StreamName stream, int count);
 
+    /// <summary>
+    /// Get command to append events to the stream
+    /// </summary>
+    /// <param name="connection">Pre-opened connection</param>
+    /// <param name="transaction">Started transaction</param>
+    /// <param name="stream">Stream name</param>
+    /// <param name="expectedVersion">Expected stream version</param>
+    /// <param name="events">Events to append</param>
+    /// <returns></returns>
     protected abstract DbCommand GetAppendCommand(
             TConnection           connection,
             TTransaction          transaction,
@@ -29,8 +65,15 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
             NewPersistedEvent[]   events
         );
 
+    /// <summary>
+    /// Get command to check if the stream exists
+    /// </summary>
+    /// <param name="connection">Pre-opened connection</param>
+    /// <param name="stream">Stream name</param>
+    /// <returns>true if stream exists, otherwise false</returns>
     protected abstract DbCommand GetStreamExistsCommand(TConnection connection, StreamName stream);
 
+    /// <inheritdoc />
     public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetReadCommand(connection, stream, start, count);
@@ -38,6 +81,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         return await ReadInternal(cmd, stream, cancellationToken).NoContext();
     }
 
+    /// <inheritdoc />
     public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetReadBackwardsCommand(connection, stream, count);
@@ -71,6 +115,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         StreamEvent AsStreamEvent(object payload) => new(evt.MessageId, payload, meta ?? new Metadata(), ContentType, evt.StreamPosition);
     }
 
+    /// <inheritdoc />
     public async Task<AppendEventsResult> AppendEvents(
             StreamName                       stream,
             ExpectedStreamVersion            expectedVersion,
@@ -114,6 +159,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         string AsString(ReadOnlySpan<byte> bytes) => Encoding.UTF8.GetString(bytes);
     }
 
+    /// <inheritdoc />
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetStreamExistsCommand(connection, stream);
@@ -123,14 +169,26 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         return (bool)result!;
     }
 
+    /// <inheritdoc />
     public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken) {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Checks if the exception indicates that the stream is not found
+    /// </summary>
+    /// <param name="exception">Exception returned by the database driver</param>
+    /// <returns></returns>
     protected abstract bool IsStreamNotFound(Exception exception);
 
+    /// <summary>
+    /// Checks if the exception indicates a version conflict
+    /// </summary>
+    /// <param name="exception">Exception returned by the database driver</param>
+    /// <returns></returns>
     protected abstract bool IsConflict(Exception exception);
 
+    /// <inheritdoc />
     public Task TruncateStream(
             StreamName             stream,
             StreamTruncatePosition truncatePosition,
@@ -141,4 +199,11 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     }
 }
 
+/// <summary>
+/// Record representing a new persisted event
+/// </summary>
+/// <param name="MessageId">Unique message id</param>
+/// <param name="MessageType">Message type string</param>
+/// <param name="JsonData">Message payload as JSON</param>
+/// <param name="JsonMetadata">Message metadata as JSON</param>
 public record NewPersistedEvent(Guid MessageId, string MessageType, string JsonData, string? JsonMetadata);

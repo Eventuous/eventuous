@@ -7,40 +7,30 @@ using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Tests.Subscriptions.Base;
 
-public abstract class SubscriptionTestBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, T> : StoreFixtureBase<TContainer>
-    where T : class, IEventHandler
+public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TEventHandler>(
+        ITestOutputHelper outputHelper,
+        bool              autoStart = true,
+        LogLevel          logLevel  = LogLevel.Trace
+    )
+    : StoreFixtureBase<TContainer>
+    where TEventHandler : class, IEventHandler
     where TContainer : DockerContainer
     where TCheckpointStore : class, ICheckpointStore
     where TSubscription : EventSubscription<TSubscriptionOptions>
     where TSubscriptionOptions : SubscriptionOptions {
-    static SubscriptionTestBase() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static SubscriptionFixtureBase() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    protected StreamName       Stream          { get; }
-    protected T                Handler         { get; private set; } = null!;
-    protected ILogger          Log             { get; set; }         = null!;
-    protected ICheckpointStore CheckpointStore { get; private set; } = null!;
-    IMessageSubscription       Subscription    { get; set; }         = null!;
-    protected ILoggerFactory   LoggerFactory   { get; set; }         = null!;
+    protected internal TEventHandler    Handler         { get; private set; } = null!;
+    protected          ILogger          Log             { get; set; }         = null!;
+    protected internal ICheckpointStore CheckpointStore { get; private set; } = null!;
+    IMessageSubscription                Subscription    { get; set; }         = null!;
+    protected internal ILoggerFactory   LoggerFactory   { get; set; }         = null!;
 
-    protected SubscriptionTestBase(ITestOutputHelper outputHelper, bool autoStart = true, LogLevel logLevel = LogLevel.Trace) {
-        _outputHelper  = outputHelper;
-        _autoStart     = autoStart;
-        _logLevel      = logLevel;
-        Stream         = new StreamName(Auto.Create<string>());
-        SubscriptionId = $"test-{Guid.NewGuid():N}";
-    }
+    public string SubscriptionId { get; } = $"test-{Guid.NewGuid():N}";
 
-    protected abstract T GetHandler();
+    protected internal ValueTask Start() => Subscription.SubscribeWithLog(Log);
 
-    public string SubscriptionId { get; }
-
-    protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
-
-    protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
-
-    readonly ITestOutputHelper _outputHelper;
-    readonly bool              _autoStart;
-    readonly LogLevel          _logLevel;
+    protected internal ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
 
     protected abstract TCheckpointStore GetCheckpointStore(IServiceProvider sp);
 
@@ -52,7 +42,7 @@ public abstract class SubscriptionTestBase<TContainer, TSubscription, TSubscript
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             SubscriptionId,
             b => {
-                b.AddEventHandler(_ => GetHandler());
+                b.AddEventHandler<TEventHandler>();
                 b.Configure(ConfigureSubscription);
             }
         );
@@ -63,7 +53,7 @@ public abstract class SubscriptionTestBase<TContainer, TSubscription, TSubscript
 
         var host = services.First(x => x.ImplementationFactory?.GetType() == typeof(Func<IServiceProvider, SubscriptionHostedService>));
         services.Remove(host);
-        services.AddLogging(b => b.AddXunit(_outputHelper, _logLevel).SetMinimumLevel(_logLevel));
+        services.AddLogging(b => ConfigureLogging(b.AddXunit(outputHelper, logLevel).SetMinimumLevel(logLevel)));
     }
 
     protected override void GetDependencies(IServiceProvider provider) {
@@ -71,18 +61,22 @@ public abstract class SubscriptionTestBase<TContainer, TSubscription, TSubscript
         base.GetDependencies(provider);
         CheckpointStore = provider.GetRequiredService<ICheckpointStore>();
         Subscription    = provider.GetRequiredService<IMessageSubscription>();
-        Handler         = provider.GetRequiredService<T>();
+        Handler         = provider.GetRequiredService<TEventHandler>();
         LoggerFactory   = provider.GetRequiredService<ILoggerFactory>();
         Log             = LoggerFactory.CreateLogger(GetType());
     }
 
+    protected virtual ILoggingBuilder ConfigureLogging(ILoggingBuilder builder) => builder;
+
+    public abstract Task<ulong> GetLastPosition();
+
     public override async Task InitializeAsync() {
         await base.InitializeAsync();
-        if (_autoStart) await Start();
+        if (autoStart) await Start();
     }
 
     public override async Task DisposeAsync() {
-        if (_autoStart) await Stop();
+        if (autoStart) await Stop();
         await base.DisposeAsync();
     }
 }

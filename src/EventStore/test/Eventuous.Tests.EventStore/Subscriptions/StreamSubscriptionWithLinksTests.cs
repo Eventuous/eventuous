@@ -9,12 +9,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
-namespace Eventuous.Tests.EventStore;
+namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture> {
+public class StreamSubscriptionWithLinksTests : IClassFixture<StoreFixture> {
     const string SubId = "Test";
 
-    public StreamSubscriptionWithLinksTests(IntegrationFixture fixture, ITestOutputHelper output) {
+    public StreamSubscriptionWithLinksTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
         _output  = output;
         _prefix  = $"{Faker.Commerce.ProductAdjective()}{Faker.Commerce.Product()}";
@@ -24,7 +24,7 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture
 
         services.AddLogging(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Information));
         services.AddSingleton(fixture.Client);
-        services.AddEventProducer<EventStoreProducer>();
+        services.AddProducer<EventStoreProducer>();
 
         services
             .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
@@ -44,7 +44,7 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<IntegrationFixture
     }
 
     readonly List<Checkpoint>   _checkpoints = new();
-    readonly IntegrationFixture _fixture;
+    readonly StoreFixture _fixture;
     readonly ITestOutputHelper  _output;
     readonly string             _prefix;
     readonly List<TestEvent>    _events = new();

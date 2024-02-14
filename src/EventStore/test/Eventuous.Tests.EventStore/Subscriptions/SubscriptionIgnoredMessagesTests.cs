@@ -7,9 +7,9 @@ using Eventuous.Producers;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.Subs;
 
-namespace Eventuous.Tests.EventStore;
+namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public class SubscriptionIgnoredMessagesTests(IntegrationFixture fixture, ITestOutputHelper outputHelper) : IClassFixture<IntegrationFixture> {
+public class SubscriptionIgnoredMessagesTests(StoreFixture fixture, ITestOutputHelper outputHelper) : IClassFixture<StoreFixture> {
     readonly ILoggerFactory      _loggerFactory   = TestHelpers.Logging.GetLoggerFactory(outputHelper);
     readonly TestCheckpointStore _checkpointStore = new();
 
@@ -49,7 +49,8 @@ public class SubscriptionIgnoredMessagesTests(IntegrationFixture fixture, ITestO
         await handler.Validate();
         await subscription.UnsubscribeWithLog(log);
 
-        _checkpointStore.Last.Position.Should().Be((ulong)(testEvents.Count - 1));
+        var last = await _checkpointStore.GetLastCheckpoint(subscriptionId, default);
+        last.Position.Should().Be((ulong)(testEvents.Count - 1));
 
         return;
 

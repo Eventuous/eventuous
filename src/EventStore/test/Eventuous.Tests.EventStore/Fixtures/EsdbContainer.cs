@@ -9,6 +9,11 @@ public static class EsdbContainer {
             ? "eventstore/eventstore:23.10.0-alpha-arm64v8"
             : "eventstore/eventstore:23.10.0-bookworm-slim";
 
-        return new EventStoreDbBuilder().WithImage(image).Build();
+        return new EventStoreDbBuilder()
+            .WithImage(image)
+            .WithEnvironment("EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP", "true")
+            // .WithCleanUp(false)
+            // .WithAutoRemove(false)
+            .Build();
     }
 }

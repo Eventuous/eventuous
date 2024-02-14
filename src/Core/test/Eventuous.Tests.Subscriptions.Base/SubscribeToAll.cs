@@ -9,8 +9,10 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Subscriptions.Base;
 
-public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore>(ITestOutputHelper outputHelper)
-    :  SubscriptionTestBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TestEventHandler>(outputHelper, false, LogLevel.Debug)
+public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore>(
+        ITestOutputHelper outputHelper,
+        SubscriptionFixtureBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TestEventHandler> fixture
+    ) : IAsyncLifetime
     where TContainer : DockerContainer
     where TSubscription : EventSubscription<TSubscriptionOptions>
     where TSubscriptionOptions : SubscriptionOptions
@@ -21,36 +23,34 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
 
         var commands   = await GenerateAndHandleCommands(count);
         var testEvents = commands.Select(ToEvent).ToList();
-        Handler.AssertCollection(2.Seconds(), [..testEvents]);
+        fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
-        await Start();
-        await Handler.Validate();
-        await Stop();
-        Handler.Count.Should().Be(10);
+        await fixture.Start();
+        await fixture.Handler.Validate();
+        await fixture.Stop();
+        fixture.Handler.Count.Should().Be(10);
     }
 
     [Fact]
     public async Task ShouldConsumeProducedEventsWhenRestarting() {
         await TestConsumptionOfProducedEvents();
 
-        Handler.Reset();
-        await InitializeAsync();
+        fixture.Handler.Reset();
+        await fixture.InitializeAsync();
 
         await TestConsumptionOfProducedEvents();
 
         return;
 
         async Task TestConsumptionOfProducedEvents() {
-            const int count = 10;
-
-            var commands   = await GenerateAndHandleCommands(count);
-            var testEvents = commands.Select(ToEvent).ToList();
-            Handler.AssertCollection(2.Seconds(), [..testEvents]);
-
-            await Start();
-            await Handler.Validate();
-            await Stop();
-            Handler.Count.Should().Be(10);
+            const int count      = 10;
+            var       commands   = await GenerateAndHandleCommands(count);
+            var       testEvents = commands.Select(ToEvent).ToList();
+            fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]);
+            await fixture.Start();
+            await fixture.Handler.Validate();
+            await fixture.Stop();
+            fixture.Handler.Count.Should().Be(10);
         }
     }
 
@@ -60,13 +60,17 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
 
         await GenerateAndHandleCommands(count);
 
-        await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
-        await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, 10), true, default);
+        await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
+        var last = await fixture.GetLastPosition();
+        await fixture.CheckpointStore.StoreCheckpoint(new Checkpoint(fixture.SubscriptionId, last), true, default);
+        
+        var l = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
+        outputHelper.WriteLine("Last checkpoint: {0}", l.Position);
 
-        await Start();
+        await fixture.Start();
         await Task.Delay(TimeSpan.FromSeconds(1));
-        await Stop();
-        Handler.Count.Should().Be(0);
+        await fixture.Stop();
+        fixture.Handler.Count.Should().Be(0);
     }
 
     static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
@@ -74,10 +78,10 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
     async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking(Auto))
+            .Select(_ => DomainFixture.CreateImportBooking(fixture.Auto))
             .ToList();
 
-        var service = new BookingService(AggregateStore);
+        var service = new BookingService(fixture.AggregateStore);
 
         foreach (var cmd in commands) {
             var result = await service.Handle(cmd, default);
@@ -90,5 +94,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         return commands;
     }
 
-    protected override TestEventHandler GetHandler() => new();
+    public Task InitializeAsync() => fixture.InitializeAsync();
+
+    public Task DisposeAsync() => fixture.DisposeAsync();
 }

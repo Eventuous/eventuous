@@ -16,6 +16,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     where TProducer : class, IEventProducer
     where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
+    // ReSharper disable once ConvertToConstant.Global
     public readonly int Count = 100;
 
     static MetricsSubscriptionFixtureBase() {
@@ -25,6 +26,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
 
     public StreamName Stream { get; } = new($"test-{Guid.NewGuid():N}");
 
+    // ReSharper disable once ConvertToConstant.Global
     public readonly string SubscriptionId = "test-sub";
 
     protected abstract void ConfigureSubscription(TSubscriptionOptions options);

@@ -1,12 +1,12 @@
 using System.Collections.Immutable;
 
-namespace Eventuous.Tests.EventStore;
+namespace Eventuous.Tests.EventStore.Store;
 
-public class AggregateStoreTests : IClassFixture<IntegrationFixture> {
-    readonly IntegrationFixture           _fixture;
+public class AggregateStoreTests : IClassFixture<StoreFixture> {
+    readonly StoreFixture           _fixture;
     readonly ILogger<AggregateStoreTests> _log;
 
-    public AggregateStoreTests(IntegrationFixture fixture, ITestOutputHelper output) {
+    public AggregateStoreTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
         TypeMap.Instance.AddType<TestEvent>("testEvent");
 
