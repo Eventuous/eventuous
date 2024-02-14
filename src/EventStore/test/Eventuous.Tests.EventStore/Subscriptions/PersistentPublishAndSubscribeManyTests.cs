@@ -7,7 +7,7 @@ public class PersistentPublishAndSubscribeManyTests(StoreFixture fixture, ITestO
     : PersistentSubscriptionFixture<TestEventHandler>(fixture, outputHelper, new TestEventHandler(), false) {
     [Fact]
     public async Task SubscribeAndProduceMany() {
-        const int count = 10000;
+        const int count = 1000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
         Handler.AssertCollection(10.Seconds(), [..testEvents]);

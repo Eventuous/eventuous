@@ -19,14 +19,15 @@ public abstract class PersistentSubscriptionFixture<T> : IClassFixture<StoreFixt
     StreamPersistentSubscription Subscription { get; }
 
     protected PersistentSubscriptionFixture(
-            StoreFixture storeFixture,
-            ITestOutputHelper  outputHelper,
-            T                  handler,
-            bool               autoStart = true
+            StoreFixture      storeFixture,
+            ITestOutputHelper outputHelper,
+            T                 handler,
+            bool              autoStart = true,
+            LogLevel          logLevel  = LogLevel.Information
         ) {
-        _autoStart          = autoStart;
+        _autoStart = autoStart;
 
-        var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper);
+        var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
         var subscriptionId = $"test-{Guid.NewGuid():N}";
 
         Handler  = handler;
