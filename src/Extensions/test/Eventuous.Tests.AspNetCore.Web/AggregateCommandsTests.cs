@@ -8,6 +8,8 @@ using static Fixture.TestCommands;
 
 public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFactory<Program> factory)
     : TestBaseWithLogs(output), IClassFixture<WebApplicationFactory<Program>> {
+    readonly ITestOutputHelper _output = output;
+
     [Fact]
     public void RegisterAggregateCommands() {
         var builder = WebApplication.CreateBuilder();
@@ -34,7 +36,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
     public void MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
         var act = () => new ServerFixture(
             factory,
-            output,
+            _output,
             _ => { },
             app => app
                 .MapAggregateCommands<Booking, BookingResult>()
@@ -55,7 +57,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         where TResult : Result, new() {
         var fixture = new ServerFixture(
             factory,
-            output,
+            _output,
             _ => { },
             app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking, TResult>(ImportRoute, Enricher.EnrichCommand)
         );
@@ -70,7 +72,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         where TResult : Result, new() {
         var fixture = new ServerFixture(
             factory,
-            output,
+            _output,
             _ => { },
             app => app
                 .MapAggregateCommands<Booking, TResult>()
@@ -85,7 +87,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
     public async Task MapAggregateContractToCommandExplicitlyWithoutRoute() {
         var fixture = new ServerFixture(
             factory,
-            output,
+            _output,
             _ => { },
             app => app
                 .MapAggregateCommands<Booking, BookingResult>()
@@ -99,7 +101,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
     public async Task MapAggregateContractToCommandExplicitlyWithoutRouteWithGenericAttr() {
         var fixture = new ServerFixture(
             factory,
-            output,
+            _output,
             _ => { },
             app => app
                 .MapAggregateCommands<Booking, BookingResult>()
@@ -113,7 +115,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
     public async Task MapEnrichedCommand() {
         var fixture = new ServerFixture(
             factory,
-            output,
+            _output,
             _ => { },
             app => app
                 .MapAggregateCommands<Booking, BookingResult>()
