@@ -44,4 +44,10 @@
         <toc-element topic="Elasticsearch.md"/>
         <toc-element topic="Redis.md"/>
     </toc-element>
+    <toc-element topic="Read-models.topic">
+        <toc-element topic="What-are-read-models.md"/>
+        <toc-element topic="Projectors.md"/>
+    </toc-element>
+    <toc-element topic="Producers.topic"/>
+    <toc-element topic="Gateway.topic"/>
 </instance-profile>
