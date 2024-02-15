@@ -1,6 +1,6 @@
 # Aggregate store
 
-> Eventuous does not have a concept of Repository. Find out why [on this page](../../persistence).
+> Eventuous does not have a concept of Repository. Find out why [on this page](Persistence.topic).
 
 Eventuous provides a single abstraction for the domain objects persistence, which is the `AggregateStore`.
 
@@ -14,7 +14,7 @@ The `AggregateStore` constructor needs two arguments:
 - [Event store](Event-store.md) (`IEventStore`)
 - [Event serializer](Serialisation.md) (`IEventSerializer`)
 
-Our [`CommandService`](../../application/app-service.md) uses the `AggregateStore` in its command-handling flow.
+Our [`CommandService`](Command-service.md) uses the `AggregateStore` in its command-handling flow.
 
 ## Using EventStoreDB
 

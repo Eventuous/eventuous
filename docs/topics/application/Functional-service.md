@@ -122,7 +122,7 @@ public class CommandApi : ControllerBase {
 >
 {style="warning"}
 
-You can also use the `CommandHttpApiBaseFunc` base class as described on the [command API](./command-api.md) page.
+You can also use the `CommandHttpApiBaseFunc` base class as described on the [command API](Command-API.md) page.
 
 ### Registration
 
