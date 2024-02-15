@@ -9,7 +9,7 @@ on:
 
 env:
   INSTANCE: docs/e
-  ARTIFACT: webHelpE-all.zip
+  ARTIFACT: webHelpE2-all.zip
   DOCKER_VERSION: 233.14389
 
 jobs:
