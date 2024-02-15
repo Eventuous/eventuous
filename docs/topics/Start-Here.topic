@@ -12,7 +12,7 @@
         experience, doing that is totally possible, but it's laborious, time-consuming, and prone to failure.</p>
     <chapter title="Do you need it?" id="do-you-need-it">
         <p>Watch this video to learn more about the motivation behind Eventuous:</p>
-        <video src="https://youtu.be/qYGKqm7CmFM?si=qgxhAopNml04o2Qh"/>
+        <video src="https://youtu.be/qYGKqm7CmFM?si=qgxhAopNml04o2Qh" preview-src="video-preview.png"/>
         <p>Check out <a href="The-Right-Way.md"/> to understand how things go wrong sometimes.</p>
     </chapter>
 
