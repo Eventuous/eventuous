@@ -12,6 +12,11 @@ env:
   ARTIFACT: webHelpE2-all.zip
   DOCKER_VERSION: 233.14389
 
+defaults: 
+    run:
+        working-directory: docs
+    container-user-id: 1000
+
 jobs:
   build:
     runs-on: self-hosted
