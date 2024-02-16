@@ -16,7 +16,6 @@
             <a href="Functional-service.md" type="filtering" summary="Application service with functions">Functional service</a>
         </spotlight>
 
-        <!--    Add several topics that are most important for this section.    -->
         <primary>
             <title>Get started</title>
             <a href=""/>
@@ -25,7 +24,6 @@
             <a href="" summary="With a custom card summary">Custom card title</a>
         </primary>
 
-        <!--    Add several topics that are less important or are relevant only for advanced/experienced users.    -->
         <secondary>
             <title>Explore advanced features</title>
             <a href=""/>
@@ -34,7 +32,6 @@
             <a href="" summary="With a custom card summary">Custom card title</a>
         </secondary>
 
-        <!--    Optionally add additional cards and links to topics that are not in this section but may be relevant.    -->
         <misc>
             <cards>
                 <title>Other relevant topics as wide cards</title>
