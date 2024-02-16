@@ -15,7 +15,6 @@ env:
 defaults: 
     run:
         working-directory: docs
-    container-user-id: 1000
 
 jobs:
   build:
