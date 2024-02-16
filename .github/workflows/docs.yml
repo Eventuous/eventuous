@@ -12,13 +12,9 @@ env:
   ARTIFACT: webHelpE2-all.zip
   DOCKER_VERSION: 233.14389
 
-defaults: 
-    run:
-        working-directory: docs
-
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       -  
         name: Checkout repository
