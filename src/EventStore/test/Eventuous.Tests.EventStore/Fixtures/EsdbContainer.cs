@@ -6,8 +6,8 @@ namespace Eventuous.Tests.EventStore.Fixtures;
 public static class EsdbContainer {
     public static EventStoreDbContainer Create() {
         var image = RuntimeInformation.ProcessArchitecture == Architecture.Arm64
-            ? "eventstore/eventstore:23.10.0-alpha-arm64v8"
-            : "eventstore/eventstore:23.10.0-bookworm-slim";
+            ? "eventstore/eventstore:22.10.5-alpha-arm64v8"
+            : "eventstore/eventstore:22.10.5-bookworm-slim";
 
         return new EventStoreDbBuilder()
             .WithImage(image)
