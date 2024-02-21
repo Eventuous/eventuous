@@ -13,10 +13,9 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
         const int count = 10;
 
         var (testEvents, _) = await GenerateAndProduceEvents(count);
-        Handler.AssertThat(2.Seconds(),b => b.Exactly(count).Match(x => testEvents.Contains(x)));
 
         await Start();
-        await Handler.Validate();
+        await Handler.AssertThat().Timebox(2.Seconds()).Exactly(count).Match(x => testEvents.Contains(x)).Validate();
         await Stop();
 
         Handler.Count.Should().Be(10);
@@ -37,10 +36,9 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
             const int count = 10;
 
             var (testEvents, _) = await GenerateAndProduceEvents(count);
-            Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
             await Start();
-            await Handler.Validate();
+            await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
             await Stop();
 
             Handler.Count.Should().Be(10);

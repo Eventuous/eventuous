@@ -9,6 +9,7 @@ using Eventuous.Sut.Subs;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
+[Collection("Database")]
 public class SubscriptionIgnoredMessagesTests(StoreFixture fixture, ITestOutputHelper outputHelper) : IClassFixture<StoreFixture> {
     readonly ILoggerFactory      _loggerFactory   = TestHelpers.Logging.GetLoggerFactory(outputHelper);
     readonly TestCheckpointStore _checkpointStore = new();
@@ -21,8 +22,6 @@ public class SubscriptionIgnoredMessagesTests(StoreFixture fixture, ITestOutputH
         var testEvents = Generate().ToList();
         var handler    = new TestEventHandler(TimeSpan.FromMilliseconds(5));
         var producer   = new EventStoreProducer(fixture.Client);
-
-        handler.AssertCollection(5.Seconds(), testEvents);
 
         TypeMap.Instance.AddType<TestEvent>(TestEvent.TypeName);
         TypeMap.Instance.AddType<UnknownEvent>("ignored");
@@ -45,8 +44,10 @@ public class SubscriptionIgnoredMessagesTests(StoreFixture fixture, ITestOutputH
 
         var log = _loggerFactory.CreateLogger("Subscription");
         TypeMap.Instance.RemoveType<UnknownEvent>();
+
+        var expected = testEvents.Where(x => x.GetType() == typeof(TestEvent)).ToList();
         await subscription.SubscribeWithLog(log);
-        await handler.Validate();
+        await handler.AssertCollection(5.Seconds(), expected).Validate();
         await subscription.UnsubscribeWithLog(log);
 
         var last = await _checkpointStore.GetLastCheckpoint(subscriptionId, default);

@@ -18,19 +18,10 @@ public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output 
     public int Count { get; private set; }
 
     readonly Observer<object> _observer = new();
-    Hypothesis<object>?       _hypothesis;
 
-    public void AssertThat(TimeSpan deadline, Func<Timebox<object>, Hypothesis<object>> getHypothesis) {
-        var builder = Hypothesis.On(_observer);
+    public On<object> AssertThat() => Hypothesis.On(_observer);
 
-        _hypothesis = getHypothesis(builder.Timebox(deadline));
-    }
-
-    public void AssertCollection(TimeSpan deadline, List<object> collection) {
-        var builder = Hypothesis.On(_observer);
-
-        _hypothesis = builder.Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
-    }
+    public Hypothesis<object> AssertCollection(TimeSpan deadline, List<object> collection) => Hypothesis.On(_observer).Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         output?.WriteLine(context.Message!.ToString());
@@ -41,10 +32,5 @@ public class TestEventHandler(TimeSpan? delay = null, ITestOutputHelper? output 
         return EventHandlingStatus.Success;
     }
 
-    public Task Validate() => EnsureHypothesis.Validate();
-
     public void Reset() => Count = 0;
-
-    Hypothesis<object> EnsureHypothesis =>
-        _hypothesis ?? throw new InvalidOperationException("Test handler not specified");
 }

@@ -10,6 +10,7 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
+[Collection("Database")]
 public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFixture>, IDisposable {
     readonly StoreFixture   _fixture;
     readonly ILoggerFactory       _loggerFactory;

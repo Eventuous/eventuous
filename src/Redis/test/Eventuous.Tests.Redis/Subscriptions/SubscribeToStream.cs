@@ -13,10 +13,9 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
         const int count = 10;
 
         var testEvents = await GenerateAndProduceEvents(count);
-        Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
         await Start();
-        await Handler.Validate();
+        await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
         await Stop();
 
         Handler.Count.Should().Be(10);
@@ -37,10 +36,9 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
             const int count = 10;
 
             var testEvents = await GenerateAndProduceEvents(count);
-            Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
             await Start();
-            await Handler.Validate();
+            await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
             await Stop();
 
             Handler.Count.Should().Be(10);

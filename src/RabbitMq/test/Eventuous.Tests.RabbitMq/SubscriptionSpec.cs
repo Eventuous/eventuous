@@ -38,11 +38,8 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
     [Fact]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
-
-        _handler.AssertThat(10.Seconds(), b => b.Any().Match(x => x as TestEvent == testEvent));
-
         await _producer.Produce(_exchange, testEvent, new Metadata());
-        await _handler.Validate();
+        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate();
     }
 
     [Fact]
@@ -50,11 +47,8 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
         const int count = 10000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
-
-        _handler.AssertCollection(10.Seconds(), [..testEvents]);
-
         await _producer.Produce(_exchange, testEvents, new Metadata());
-        await _handler.Validate();
+        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate();
     }
 
     public async Task InitializeAsync() {

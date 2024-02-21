@@ -3,6 +3,7 @@ using Eventuous.Sut.Subs;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
+[Collection("Database")]
 public class PublishAndSubscribeManyPartitionedTests(StoreFixture fixture, ITestOutputHelper output)
     : LegacySubscriptionFixture<TestEventHandler>(fixture, output, new TestEventHandler(5.Milliseconds()), false, logLevel: LogLevel.Trace) {
     [Fact]
@@ -13,12 +14,9 @@ public class PublishAndSubscribeManyPartitionedTests(StoreFixture fixture, ITest
             .Select(i => new TestEvent(Auto.Create<string>(), i))
             .ToList();
 
-        Handler.AssertCollection(5.Seconds(), [..testEvents]);
-
         await Start();
         await Producer.Produce(Stream, testEvents, new Metadata());
-
-        await Handler.Validate();
+        await Handler.AssertCollection(5.Seconds(), [..testEvents]).Validate();
         await Stop();
 
         CheckpointStore.GetCheckpoint(Subscription.SubscriptionId).Should().Be(count - 1);

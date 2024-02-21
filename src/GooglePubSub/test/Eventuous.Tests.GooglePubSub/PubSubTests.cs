@@ -49,11 +49,10 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
     [Fact]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
-        _handler.AssertThat(10.Seconds(), b => b.Any().Match(x => x as TestEvent == testEvent));
 
         await _producer.Produce(_pubsubTopic, testEvent, null);
 
-        await _handler.Validate();
+        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate();
     }
 
     [Fact]
@@ -61,11 +60,9 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
         const int count = 10000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
-        _handler.AssertCollection(10.Seconds(), [..testEvents]);
 
         await _producer.Produce(_pubsubTopic, testEvents, null);
-
-        await _handler.Validate();
+        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate();
     }
 
     public async Task InitializeAsync() {

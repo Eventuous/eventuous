@@ -11,6 +11,7 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
+[Collection("Database")]
 public class StreamSubscriptionWithLinksTests : IClassFixture<StoreFixture> {
     const string SubId = "Test";
 
@@ -43,12 +44,12 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<StoreFixture> {
         _services = services;
     }
 
-    readonly List<Checkpoint>   _checkpoints = new();
-    readonly StoreFixture _fixture;
-    readonly ITestOutputHelper  _output;
-    readonly string             _prefix;
-    readonly List<TestEvent>    _events = new();
-    readonly ServiceCollection  _services;
+    readonly List<Checkpoint>  _checkpoints = [];
+    readonly StoreFixture      _fixture;
+    readonly ITestOutputHelper _output;
+    readonly string            _prefix;
+    readonly List<TestEvent>   _events = [];
+    readonly ServiceCollection _services;
 
     Faker Faker { get; } = new();
 
@@ -93,42 +94,58 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<StoreFixture> {
 
     [Fact]
     public async Task ShouldHandleAllEventsFromStart() {
-        const int count = 5000;
-
-        AddCheckpointStore(null);
-        var provider = Build();
-        await Seed(provider, count);
-        var services = GetHostedServices(provider);
-
-        await services.Select(
-                async x => {
-                    _output.WriteLine($"Starting service {x.GetType().Name}");
-                    await x.StartAsync(default);
-                }
-            )
-            .WhenAll();
-
-        await Task.Delay(1000);
-        var handler = provider.GetRequiredService<TestHandler>();
-        var diff    = handler.Handled.Except(_events);
-        diff.Should().BeEmpty();
-        _output.WriteLine($"Checkpoints stored {_checkpoints.Count} times");
-        _checkpoints.Count.Should().BeGreaterThan(0);
-        _checkpoints.Skip(1).Select(x => x.Position).Should().NotContain(0);
-
-        await services.Select(x => x.StopAsync(default)).WhenAll();
-        await Task.Delay(500);
-
-        _checkpoints.Last().Position.Should().Be(count - 1);
+        await Execute(5000, null);
     }
 
     [Fact]
     public async Task ShouldHandleHalfOfTheEvents() {
         const int count = 1000;
+        await Execute(count, count / 2);
+    }
 
-        AddCheckpointStore(count / 2);
+    async Task Execute(int count, ulong? start) {
+        AddCheckpointStore(start);
         var provider = Build();
         await Seed(provider, count);
+        var services = await StartServices(provider);
+
+        await WaitForCheckpoint(count, 10.Seconds());
+
+        ValidateProcessed(provider, start == null ? _events : _events.Skip((int)start.Value));
+
+        await StopServices(services);
+        ValidateCheckpoint(count);
+    }
+
+    static void ValidateProcessed(IServiceProvider provider, IEnumerable<TestEvent> events) {
+        var handler = provider.GetRequiredService<TestHandler>();
+        var diff    = handler.Handled.Except(events);
+        diff.Should().BeEmpty();
+    }
+
+    void ValidateCheckpoint(int count) {
+        _checkpoints.Count.Should().BeGreaterThan(0);
+        _checkpoints.Skip(1).Select(x => x.Position).Should().NotContain(0);
+        _checkpoints.Last().Position.Should().Be((ulong)(count - 1));
+    }
+
+    async Task WaitForCheckpoint(int count, TimeSpan deadline) {
+        var source = new CancellationTokenSource(deadline);
+
+        var expected = (ulong)(count - 1);
+
+        try {
+            var last = _checkpoints.LastOrDefault().Position;
+
+            if (last == expected) return;
+
+            await Task.Delay(500, source.Token);
+        } catch (OperationCanceledException) {
+            _output.WriteLine("Deadline exceeded");
+        }
+    }
+
+    async Task<IHostedService[]> StartServices(IServiceProvider provider) {
         var services = GetHostedServices(provider);
 
         await services.Select(
@@ -139,17 +156,11 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<StoreFixture> {
             )
             .WhenAll();
 
-        await Task.Delay(1000);
-        var handler = provider.GetRequiredService<TestHandler>();
-        var diff    = handler.Handled.Except(_events.Skip(count / 2));
-        diff.Should().BeEmpty();
-        _output.WriteLine($"Checkpoints stored {_checkpoints.Count} times");
-        _checkpoints.Count.Should().BeGreaterThan(0);
-        _checkpoints.Skip(1).Select(x => x.Position).Should().NotContain(0);
+        return services;
+    }
 
+    async Task StopServices(IHostedService[] services) {
         await services.Select(x => x.StopAsync(default)).WhenAll();
-
-        _checkpoints.Last().Position.Should().Be(count - 1);
     }
 
     // ReSharper disable once ClassNeverInstantiated.Local
