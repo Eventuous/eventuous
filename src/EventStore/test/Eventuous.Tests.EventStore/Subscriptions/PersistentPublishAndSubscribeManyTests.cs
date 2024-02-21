@@ -4,8 +4,8 @@ using Eventuous.Sut.Subs;
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
-public class PersistentPublishAndSubscribeManyTests(StoreFixture fixture, ITestOutputHelper outputHelper)
-    : PersistentSubscriptionFixture<TestEventHandler>(fixture, outputHelper, new TestEventHandler(), false) {
+public class PersistentPublishAndSubscribeManyTests(ITestOutputHelper outputHelper)
+    : PersistentSubscriptionFixture<TestEventHandler>(outputHelper, new TestEventHandler(), false) {
     [Fact]
     public async Task SubscribeAndProduceMany() {
         const int count = 1000;

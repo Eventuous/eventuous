@@ -10,8 +10,7 @@ namespace Eventuous.Tests.EventStore;
 public class TracesTests : LegacySubscriptionFixture<TracedHandler>, IDisposable {
     readonly ActivityListener _listener;
 
-    public TracesTests(StoreFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, new TracedHandler(), false) {
+    public TracesTests(ITestOutputHelper outputHelper) : base(outputHelper, new TracedHandler(), false) {
         _listener = new ActivityListener {
             ShouldListenTo = _ => true,
             Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,

@@ -4,8 +4,14 @@ using Eventuous.Sut.Subs;
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
-public class PublishAndSubscribeManyPartitionedTests(StoreFixture fixture, ITestOutputHelper output)
-    : LegacySubscriptionFixture<TestEventHandler>(fixture, output, new TestEventHandler(5.Milliseconds()), false, logLevel: LogLevel.Trace) {
+public class PublishAndSubscribeManyPartitionedTests(ITestOutputHelper output)
+    : LegacySubscriptionFixture<TestEventHandler>(
+        output,
+        new TestEventHandler(5.Milliseconds()),
+        false,
+        new StreamName(Guid.NewGuid().ToString("N")),
+        logLevel: LogLevel.Trace
+    ) {
     [Fact]
     public async Task SubscribeAndProduceMany() {
         const int count = 10;

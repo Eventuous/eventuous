@@ -4,8 +4,8 @@ using Eventuous.Sut.Subs;
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
-public class PublishAndSubscribeOneTests(StoreFixture fixture, ITestOutputHelper outputHelper)
-    : LegacySubscriptionFixture<TestEventHandler>(fixture, outputHelper, new TestEventHandler(output: outputHelper), false, logLevel: LogLevel.Trace) {
+public class PublishAndSubscribeOneTests(ITestOutputHelper outputHelper)
+    : LegacySubscriptionFixture<TestEventHandler>(outputHelper, new TestEventHandler(output: outputHelper), false, logLevel: LogLevel.Trace) {
     [Fact]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();

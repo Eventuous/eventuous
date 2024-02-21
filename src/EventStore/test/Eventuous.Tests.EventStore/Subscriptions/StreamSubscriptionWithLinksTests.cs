@@ -12,36 +12,14 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
-public class StreamSubscriptionWithLinksTests : IClassFixture<StoreFixture> {
+public class StreamSubscriptionWithLinksTests : IAsyncLifetime {
     const string SubId = "Test";
 
-    public StreamSubscriptionWithLinksTests(StoreFixture fixture, ITestOutputHelper output) {
-        _fixture = fixture;
+    public StreamSubscriptionWithLinksTests(ITestOutputHelper output) {
+        _fixture = new StoreFixture();
         _output  = output;
         _prefix  = $"{Faker.Commerce.ProductAdjective()}{Faker.Commerce.Product()}";
         output.WriteLine($"Stream prefix: {_prefix}");
-
-        var services = new ServiceCollection();
-
-        services.AddLogging(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Information));
-        services.AddSingleton(fixture.Client);
-        services.AddProducer<EventStoreProducer>();
-
-        services
-            .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
-                SubId,
-                builder => builder
-                    .Configure(
-                        x => {
-                            x.StreamName       = new StreamName($"$ce-{_prefix}");
-                            x.ConcurrencyLimit = 5;
-                            x.ResolveLinkTos   = true;
-                        }
-                    )
-                    .AddEventHandler<TestHandler>()
-            );
-
-        _services = services;
     }
 
     readonly List<Checkpoint>  _checkpoints = [];
@@ -49,7 +27,7 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<StoreFixture> {
     readonly ITestOutputHelper _output;
     readonly string            _prefix;
     readonly List<TestEvent>   _events = [];
-    readonly ServiceCollection _services;
+    readonly ServiceCollection _services = [];
 
     Faker Faker { get; } = new();
 
@@ -174,5 +152,31 @@ public class StreamSubscriptionWithLinksTests : IClassFixture<StoreFixture> {
 
             return ValueTask.FromResult(EventHandlingStatus.Success);
         }
+    }
+
+    public async Task InitializeAsync() {
+        await _fixture.InitializeAsync();
+
+        _services.AddLogging(cfg => cfg.AddXunit(_output).SetMinimumLevel(LogLevel.Information));
+        _services.AddSingleton(_fixture.Client);
+        _services.AddProducer<EventStoreProducer>();
+
+        _services
+            .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
+                SubId,
+                builder => builder
+                    .Configure(
+                        x => {
+                            x.StreamName       = new StreamName($"$ce-{_prefix}");
+                            x.ConcurrencyLimit = 5;
+                            x.ResolveLinkTos   = true;
+                        }
+                    )
+                    .AddEventHandler<TestHandler>()
+            );
+    }
+
+    public async Task DisposeAsync() {
+        await _fixture.DisposeAsync();
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 namespace Eventuous.Tests.EventStore.Store;
 
 public class AggregateStoreTests : IClassFixture<StoreFixture> {
-    readonly StoreFixture           _fixture;
+    readonly StoreFixture                 _fixture;
     readonly ILogger<AggregateStoreTests> _log;
 
     public AggregateStoreTests(StoreFixture fixture, ITestOutputHelper output) {

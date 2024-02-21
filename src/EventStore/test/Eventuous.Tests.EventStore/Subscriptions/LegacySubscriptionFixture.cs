@@ -1,4 +1,3 @@
-using Eventuous.Diagnostics.Logging;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
@@ -6,7 +5,7 @@ using Eventuous.Sut.Subs;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public abstract class LegacySubscriptionFixture<T> : IClassFixture<StoreFixture>, IAsyncLifetime where T : class, IEventHandler {
+public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
     static LegacySubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     protected readonly Fixture Auto = new();
@@ -20,7 +19,6 @@ public abstract class LegacySubscriptionFixture<T> : IClassFixture<StoreFixture>
     protected StreamSubscription  Subscription    { get; set; } = null!;
 
     protected LegacySubscriptionFixture(
-            StoreFixture      storeFixture,
             ITestOutputHelper outputHelper,
             T                 handler,
             bool              autoStart = true,
@@ -32,12 +30,12 @@ public abstract class LegacySubscriptionFixture<T> : IClassFixture<StoreFixture>
 
         LoggerFactory = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
 
-        StoreFixture    = storeFixture;
+        StoreFixture    = new StoreFixture();
         Handler         = handler;
         Log             = LoggerFactory.CreateLogger(GetType());
         CheckpointStore = new TestCheckpointStore();
 
-        _listener = new LoggingEventListener(LoggerFactory);
+        // _listener = new LoggingEventListener(LoggerFactory);
     }
 
     protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
@@ -46,9 +44,10 @@ public abstract class LegacySubscriptionFixture<T> : IClassFixture<StoreFixture>
     ILoggerFactory LoggerFactory { get; }
 
     readonly bool                 _autoStart;
-    readonly LoggingEventListener _listener;
+    // readonly LoggingEventListener _listener;
 
     public async Task InitializeAsync() {
+        await StoreFixture.InitializeAsync();
         Producer = new EventStoreProducer(StoreFixture.Client);
 
         var subscriptionId = $"test-{Guid.NewGuid():N}";
@@ -71,6 +70,7 @@ public abstract class LegacySubscriptionFixture<T> : IClassFixture<StoreFixture>
 
     public async Task DisposeAsync() {
         if (_autoStart) await Stop();
-        _listener.Dispose();
+        // _listener.Dispose();
+        await StoreFixture.DisposeAsync();
     }
 }
