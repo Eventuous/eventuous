@@ -6,6 +6,7 @@ using Testcontainers.PostgreSql;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
+[Collection("Database")]
 public class SubscribeToAll(ITestOutputHelper outputHelper)
     : SubscribeToAllBase<PostgreSqlContainer, PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, PostgresCheckpointStore>(
         outputHelper,
@@ -27,6 +28,7 @@ public class SubscribeToAll(ITestOutputHelper outputHelper)
     }
 }
 
+[Collection("Database")]
 public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture streamNameFixture)
     : SubscribeToStreamBase<PostgreSqlContainer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions, PostgresCheckpointStore>(
             outputHelper,

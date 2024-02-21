@@ -11,6 +11,7 @@ using Npgsql;
 
 namespace Eventuous.Tests.Postgres.Projections;
 
+[Collection("Database")]
 public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
     readonly SubscriptionFixture<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, TestProjector> _fixture
         = new(_ => { }, outputHelper);

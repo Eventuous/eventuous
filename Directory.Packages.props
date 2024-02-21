@@ -2,29 +2,27 @@
     <PropertyGroup>
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
+    <PropertyGroup Label="Microsoft extensions">
+        <MicrosoftExtensionsVer>8.0</MicrosoftExtensionsVer>
+        <MicrosoftHealthCheckVer>8.0.2</MicrosoftHealthCheckVer>
+    </PropertyGroup>
     <PropertyGroup Label="Package versions for .NET 6" Condition="'$(TargetFramework)' == 'net6.0'">
-        <MicrosoftExtensionsVer>6.0</MicrosoftExtensionsVer>
         <MicrosoftTestHostVer>[6.0.5,7)</MicrosoftTestHostVer>
-        <MicrosoftHealthCheckVer>6.0</MicrosoftHealthCheckVer>
     </PropertyGroup>
     <PropertyGroup Label="Package versions for .NET 7" Condition="'$(TargetFramework)' == 'net7.0'">
-        <MicrosoftExtensionsVer>7.0</MicrosoftExtensionsVer>
         <MicrosoftTestHostVer>7.0.10</MicrosoftTestHostVer>
-        <MicrosoftHealthCheckVer>7.0</MicrosoftHealthCheckVer>
     </PropertyGroup>
     <PropertyGroup Label="Package versions for .NET 8" Condition="'$(TargetFramework)' == 'net8.0'">
-        <MicrosoftExtensionsVer>8.0</MicrosoftExtensionsVer>
-        <MicrosoftTestHostVer>8.0.1</MicrosoftTestHostVer>
-        <MicrosoftHealthCheckVer>8.0</MicrosoftHealthCheckVer>
+        <MicrosoftTestHostVer>8.0.2</MicrosoftTestHostVer>
     </PropertyGroup>
     <PropertyGroup Label="Npgsql Version">
-        <NpgsqlVer>7.0.6</NpgsqlVer>
+        <NpgsqlVer>8.0.2</NpgsqlVer>
     </PropertyGroup>
     <PropertyGroup Label="Testcontainers version">
         <TestcontainersVersion>3.7.0</TestcontainersVersion>
     </PropertyGroup>
     <ItemGroup>
-        <PackageVersion Include="BenchmarkDotNet" Version="0.13.10"/>
+        <PackageVersion Include="BenchmarkDotNet" Version="0.13.12"/>
         <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftExtensionsVer)"/>
         <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftExtensionsVer)"/>
         <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(MicrosoftHealthCheckVer)"/>
@@ -33,15 +31,15 @@
         <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsVer)"/>
         <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVer)"/>
         <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsVer)"/>
-        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftHealthCheckVer)"/>
-        <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftHealthCheckVer)"/>
+        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftExtensionsVer)"/>
+        <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="8.0.0"/>
         <PackageVersion Include="System.Reactive" Version="6.0.0"/>
         <PackageVersion Include="System.Linq.Async" Version="6.0.1"/>
-        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.6.0"/>
+        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.7.0"/>
         <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="23.1.0"/>
         <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.1.0"/>
         <PackageVersion Include="MongoDB.Driver" Version="2.19.0"/>
-        <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.8.0"/>
+        <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.9.1"/>
         <PackageVersion Include="Confluent.Kafka" Version="2.3.0"/>
         <PackageVersion Include="Npgsql" Version="$(NpgsqlVer)"/>
         <PackageVersion Include="Npgsql.DependencyInjection" Version="$(NpgsqlVer)"/>
@@ -73,10 +71,10 @@
         <PackageVersion Include="Bogus" Version="35.4.0"/>
         <PackageVersion Include="FluentAssertions" Version="6.12.0"/>
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0"/>
-        <PackageVersion Include="xunit" Version="2.6.6"/>
+        <PackageVersion Include="xunit" Version="2.7.0"/>
         <PackageVersion Include="xunit.abstractions" Version="2.0.3"/>
-        <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.6" PrivateAssets="All"/>
-        <PackageVersion Include="coverlet.collector" Version="6.0.0" PrivateAssets="All"/>
+        <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.7" PrivateAssets="All"/>
+        <PackageVersion Include="coverlet.collector" Version="6.0.1" PrivateAssets="All"/>
         <PackageVersion Include="Xunit.Extensions.Logging" Version="1.1.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(MicrosoftTestHostVer)"/>
         <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)"/>

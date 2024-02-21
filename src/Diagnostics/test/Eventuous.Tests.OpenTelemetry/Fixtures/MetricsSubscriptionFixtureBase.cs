@@ -14,17 +14,21 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     : StoreFixtureBase<TContainer>
     where TContainer : DockerContainer
     where TProducer : class, IEventProducer
-    where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>
+    where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>, IMeasuredSubscription
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
     // ReSharper disable once ConvertToConstant.Global
     public readonly int Count = 100;
 
+    public static readonly KeyValuePair<string, string> DefaultTag = new("test", "foo");
+    
     static MetricsSubscriptionFixtureBase() {
         TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
-        EventuousDiagnostics.AddDefaultTag("test", "foo");
+        EventuousDiagnostics.AddDefaultTag(DefaultTag.Key, DefaultTag.Value);
     }
 
     public StreamName Stream { get; } = new($"test-{Guid.NewGuid():N}");
+    public string DefaultTagKey => DefaultTag.Key;
+    public string DefaultTagValue => DefaultTag.Value;
 
     // ReSharper disable once ConvertToConstant.Global
     public readonly string SubscriptionId = "test-sub";

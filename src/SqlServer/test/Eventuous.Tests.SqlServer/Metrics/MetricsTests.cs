@@ -7,13 +7,5 @@ using Testcontainers.SqlEdge;
 
 namespace Eventuous.Tests.SqlServer.Metrics;
 
-public class MetricsTests(MetricsFixture fixture, ITestOutputHelper outputHelper)
-    : MetricsTestsBase<MetricsFixture, SqlEdgeContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions>(
-        fixture,
-        outputHelper
-    ) {
-    [Fact]
-    public void SqlServer_ShouldMeasureSubscriptionGapCount() {
-        ShouldMeasureSubscriptionGapCount();
-    }
-}
+public class MetricsTests(ITestOutputHelper outputHelper)
+    : MetricsTestsBase<MetricsFixture, SqlEdgeContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions>(outputHelper);
