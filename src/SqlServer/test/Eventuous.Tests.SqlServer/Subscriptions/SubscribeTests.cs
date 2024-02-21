@@ -6,6 +6,7 @@ using Testcontainers.SqlEdge;
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 
+[Collection("Database")]
 public class SubscribeToAll(ITestOutputHelper outputHelper)
     : SubscribeToAllBase<SqlEdgeContainer, SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, SqlServerCheckpointStore>(
         outputHelper,
@@ -27,6 +28,7 @@ public class SubscribeToAll(ITestOutputHelper outputHelper)
     }
 }
 
+[Collection("Database")]
 public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture streamNameFixture)
     : SubscribeToStreamBase<SqlEdgeContainer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, SqlServerCheckpointStore>(
             outputHelper,

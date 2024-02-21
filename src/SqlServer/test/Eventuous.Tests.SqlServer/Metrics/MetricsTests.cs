@@ -7,5 +7,6 @@ using Testcontainers.SqlEdge;
 
 namespace Eventuous.Tests.SqlServer.Metrics;
 
+[Collection("Database")]
 public class MetricsTests(ITestOutputHelper outputHelper)
     : MetricsTestsBase<MetricsFixture, SqlEdgeContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions>(outputHelper);
