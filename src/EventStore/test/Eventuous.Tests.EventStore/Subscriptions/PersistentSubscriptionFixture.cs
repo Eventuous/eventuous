@@ -2,7 +2,7 @@ using Eventuous.Diagnostics.Logging;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Sut.Subs;
+using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 

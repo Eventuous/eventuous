@@ -1,16 +1,16 @@
 using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Producers;
-using Eventuous.Sut.Subs;
 using Eventuous.TestHelpers;
 using Eventuous.Tests.EventStore.Subscriptions;
+using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.EventStore;
 
 public class TracesTests : LegacySubscriptionFixture<TracedHandler>, IDisposable {
     readonly ActivityListener _listener;
 
-    public TracesTests(ITestOutputHelper outputHelper) : base(outputHelper, new TracedHandler(), false) {
+    public TracesTests(ITestOutputHelper output) : base(output, new TracedHandler(), false) {
         _listener = new ActivityListener {
             ShouldListenTo = _ => true,
             Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
@@ -27,6 +27,7 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler>, IDisposable
     }
 
     [Fact]
+    [Trait("Category", "Diagnostics")]
     public async Task ShouldPropagateRemoveContext() {
         var testEvent = Auto.Create<TestEvent>();
 

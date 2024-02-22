@@ -1,5 +1,5 @@
 using Eventuous.Producers;
-using Eventuous.Sut.Subs;
+using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
@@ -7,12 +7,13 @@ namespace Eventuous.Tests.EventStore.Subscriptions;
 public class PublishAndSubscribeManyPartitionedTests(ITestOutputHelper output)
     : LegacySubscriptionFixture<TestEventHandler>(
         output,
-        new TestEventHandler(5.Milliseconds()),
+        new TestEventHandler(new TestEventHandlerOptions(5.Milliseconds(), output)),
         false,
         new StreamName(Guid.NewGuid().ToString("N")),
         logLevel: LogLevel.Trace
     ) {
     [Fact]
+    [Trait("Category", "Stream catch-up subscription")]
     public async Task SubscribeAndProduceMany() {
         const int count = 10;
 

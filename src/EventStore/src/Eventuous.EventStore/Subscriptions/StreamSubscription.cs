@@ -91,6 +91,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
                 cancellationToken
             )
             .NoContext();
+        Log.InfoLog?.Log("Subscribed to stream {Stream}", Options.StreamName);
 
         return;
 

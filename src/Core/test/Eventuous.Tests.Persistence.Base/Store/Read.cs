@@ -5,6 +5,7 @@ namespace Eventuous.Tests.Persistence.Base.Store;
 
 public abstract class StoreReadTests<T>(T fixture) : IClassFixture<T> where T : StoreFixtureBase {
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldReadOne() {
         var evt        = fixture.CreateEvent();
         var streamName = fixture.GetStreamName();
@@ -16,6 +17,7 @@ public abstract class StoreReadTests<T>(T fixture) : IClassFixture<T> where T : 
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldReadMany() {
         // ReSharper disable once CoVariantArrayConversion
         object[] events     = fixture.CreateEvents(20).ToArray();
@@ -28,6 +30,7 @@ public abstract class StoreReadTests<T>(T fixture) : IClassFixture<T> where T : 
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldReadTail() {
         // ReSharper disable once CoVariantArrayConversion
         object[] events     = fixture.CreateEvents(20).ToArray();
@@ -41,6 +44,7 @@ public abstract class StoreReadTests<T>(T fixture) : IClassFixture<T> where T : 
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldReadHead() {
         // ReSharper disable once CoVariantArrayConversion
         object[] events     = fixture.CreateEvents(20).ToArray();
@@ -54,6 +58,7 @@ public abstract class StoreReadTests<T>(T fixture) : IClassFixture<T> where T : 
     }
     
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldReadMetadata() {
         var evt        = fixture.CreateEvent();
         var streamName = fixture.GetStreamName();

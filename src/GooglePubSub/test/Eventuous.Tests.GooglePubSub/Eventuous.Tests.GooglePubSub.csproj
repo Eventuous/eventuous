@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeSutSubs>true</IncludeSutSubs>
-    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj" />
+        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="Google.Cloud.PubSub.V1" />

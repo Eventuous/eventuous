@@ -11,28 +11,20 @@ public record TestEvent(string Data, int Number) {
     public const string TypeName = "test-event";
 }
 
-public class TestEventHandler(TestEventHandlerOptions options) : BaseEventHandler {
-    readonly TimeSpan _delay = options.Delay ?? TimeSpan.Zero;
+public class TestEventHandler(TestEventHandlerOptions? options = null) : BaseEventHandler {
+    readonly TimeSpan _delay = options?.Delay ?? TimeSpan.Zero;
 
     public int Count { get; private set; }
 
     readonly Observer<object> _observer = new();
-    Hypothesis<object>?       _hypothesis;
 
-    public void AssertThat(TimeSpan deadline, Func<Timebox<object>, Hypothesis<object>> getHypothesis) {
-        var builder = Hypothesis.On(_observer);
+    public On<object> AssertThat() => Hypothesis.On(_observer);
 
-        _hypothesis = getHypothesis(builder.Timebox(deadline));
-    }
-
-    public void AssertCollection(TimeSpan deadline, List<object> collection) {
-        var builder = Hypothesis.On(_observer);
-
-        _hypothesis = builder.Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
-    }
+    public Hypothesis<object> AssertCollection(TimeSpan deadline, List<object> collection)
+        => Hypothesis.On(_observer).Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        options.Output?.WriteLine(context.Message!.ToString());
+        options?.Output?.WriteLine(context.Message!.ToString());
         await Task.Delay(_delay);
         await _observer.Add(context.Message!, context.CancellationToken);
         Count++;
@@ -40,12 +32,7 @@ public class TestEventHandler(TestEventHandlerOptions options) : BaseEventHandle
         return EventHandlingStatus.Success;
     }
 
-    public Task Validate() => EnsureHypothesis.Validate();
-
     public void Reset() => Count = 0;
-
-    Hypothesis<object> EnsureHypothesis =>
-        _hypothesis ?? throw new InvalidOperationException("Test handler not specified");
 }
 
 public record TestEventHandlerOptions(TimeSpan? Delay = null, ITestOutputHelper? Output = null);

@@ -8,6 +8,7 @@
         <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
         <SrcRoot>$(RepoRoot)\src</SrcRoot>
         <CoreRoot>$(SrcRoot)\Core\src</CoreRoot>
+        <CoreTestRoot>$(SrcRoot)\Core\test</CoreTestRoot>
         <DiagRoot>$(SrcRoot)\Diagnostics\src</DiagRoot>
         <EsdbRoot>$(SrcRoot)\EventStore\src</EsdbRoot>
         <ExtRoot>$(SrcRoot)\Extensions\src</ExtRoot>
@@ -76,9 +77,6 @@
     <ItemGroup Condition="'$(IncludeSutApp)' == 'true'">
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj"/>
-    </ItemGroup>
-    <ItemGroup Condition="'$(IncludeSutSubs)' == 'true'">
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj"/>
     </ItemGroup>
     <ItemGroup Condition="'$(IncludeTestHelpers)' == 'true'">
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>

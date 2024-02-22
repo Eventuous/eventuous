@@ -1,5 +1,5 @@
 using Eventuous.Producers;
-using Eventuous.Sut.Subs;
+using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
@@ -7,6 +7,7 @@ namespace Eventuous.Tests.EventStore.Subscriptions;
 public class PersistentPublishAndSubscribeManyTests(ITestOutputHelper outputHelper)
     : PersistentSubscriptionFixture<TestEventHandler>(outputHelper, new TestEventHandler(), false) {
     [Fact]
+    [Trait("Category", "Persistent subscription")]
     public async Task SubscribeAndProduceMany() {
         const int count = 1000;
 

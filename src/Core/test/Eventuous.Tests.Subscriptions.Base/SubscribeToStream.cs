@@ -21,10 +21,9 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
         const int count = 10;
 
         var testEvents = await GenerateAndProduceEvents(count);
-        fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
         await fixture.Start();
-        await fixture.Handler.Validate();
+        await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
         await fixture.Stop();
         fixture.Handler.Count.Should().Be(10);
 
@@ -53,11 +52,10 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
 
             outputHelper.WriteLine("Generating and producing events");
             var testEvents = await GenerateAndProduceEvents(count);
-            fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
             outputHelper.WriteLine("Starting subscription");
             await fixture.Start();
-            await fixture.Handler.Validate();
+            await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
             outputHelper.WriteLine("Stopping subscription");
             await fixture.Stop();
             fixture.Handler.Count.Should().Be(10);

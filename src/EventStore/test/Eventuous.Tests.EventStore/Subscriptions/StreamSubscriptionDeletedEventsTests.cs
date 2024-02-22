@@ -5,7 +5,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using Eventuous.Sut.Subs;
+using Eventuous.Tests.Subscriptions.Base;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
@@ -27,6 +27,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
     }
 
     [Fact]
+    [Trait("Category", "Special cases")]
     public async Task StreamSubscriptionGetsDeletedEvents() {
         var service = new BookingService(_fixture.AggregateStore);
 

@@ -1,7 +1,7 @@
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Sut.Subs;
+using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
@@ -11,7 +11,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
     protected readonly Fixture Auto = new();
 
     protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
-    public    StoreFixture        StoreFixture    { get; }
+    protected StoreFixture        StoreFixture    { get; }
     protected T                   Handler         { get; }
     protected EventStoreProducer  Producer        { get; private set; } = null!;
     protected ILogger             Log             { get; }
@@ -19,7 +19,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
     protected StreamSubscription  Subscription    { get; set; } = null!;
 
     protected LegacySubscriptionFixture(
-            ITestOutputHelper outputHelper,
+            ITestOutputHelper output,
             T                 handler,
             bool              autoStart = true,
             StreamName?       stream    = null,
@@ -28,7 +28,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
         _autoStart = autoStart;
         if (stream is { } s) Stream = s;
 
-        LoggerFactory = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
+        LoggerFactory = TestHelpers.Logging.GetLoggerFactory(output, logLevel);
 
         StoreFixture    = new StoreFixture();
         Handler         = handler;

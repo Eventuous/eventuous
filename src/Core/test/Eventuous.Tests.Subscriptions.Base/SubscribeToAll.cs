@@ -22,10 +22,9 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
 
         var commands   = await GenerateAndHandleCommands(count);
         var testEvents = commands.Select(ToEvent).ToList();
-        fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]);
 
         await fixture.Start();
-        await fixture.Handler.Validate();
+        await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
         await fixture.Stop();
         fixture.Handler.Count.Should().Be(10);
     }
@@ -44,9 +43,8 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
             const int count      = 10;
             var       commands   = await GenerateAndHandleCommands(count);
             var       testEvents = commands.Select(ToEvent).ToList();
-            fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]);
             await fixture.Start();
-            await fixture.Handler.Validate();
+            await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
             await fixture.Stop();
             fixture.Handler.Count.Should().Be(10);
         }

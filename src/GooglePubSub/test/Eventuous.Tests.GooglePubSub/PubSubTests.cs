@@ -2,7 +2,7 @@ using Eventuous.GooglePubSub.Producers;
 using Eventuous.GooglePubSub.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Sut.Subs;
+using Eventuous.Tests.Subscriptions.Base;
 using Google.Api.Gax;
 
 namespace Eventuous.Tests.GooglePubSub;

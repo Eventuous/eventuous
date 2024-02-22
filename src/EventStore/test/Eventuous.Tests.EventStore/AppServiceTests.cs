@@ -10,6 +10,7 @@ public class AppServiceTests(StoreFixture fixture, ITestOutputHelper output) : I
     BookingService Service { get; } = new(fixture.AggregateStore);
 
     [Fact]
+    [Trait("Category", "Application")]
     public async Task ProcessAnyForNew() {
         var cmd = DomainFixture.CreateImportBooking();
 

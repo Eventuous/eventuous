@@ -1,7 +1,7 @@
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Sut.Subs;
 using Eventuous.Tests.Redis.Fixtures;
+using Eventuous.Tests.Subscriptions.Base;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 

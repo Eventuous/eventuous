@@ -2,8 +2,8 @@ using Eventuous.Producers;
 using Eventuous.RabbitMq.Producers;
 using Eventuous.RabbitMq.Subscriptions;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Sut.Subs;
 using Eventuous.TestHelpers;
+using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.RabbitMq;
 

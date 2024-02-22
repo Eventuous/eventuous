@@ -7,6 +7,7 @@ namespace Eventuous.Tests.Persistence.Base.Store;
 
 public abstract class StoreAppendTests<T>(T fixture) : IClassFixture<T> where T : StoreFixtureBase {
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldAppendToNoStream() {
         var evt        = fixture.CreateEvent();
         var streamName = fixture.GetStreamName();
@@ -16,6 +17,7 @@ public abstract class StoreAppendTests<T>(T fixture) : IClassFixture<T> where T 
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldAppendOneByOne() {
         var evt    = fixture.CreateEvent();
         var stream = fixture.GetStreamName();
@@ -31,6 +33,7 @@ public abstract class StoreAppendTests<T>(T fixture) : IClassFixture<T> where T 
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldFailOnWrongVersionNoStream() {
         var evt    = fixture.CreateEvent();
         var stream = fixture.GetStreamName();
@@ -44,6 +47,7 @@ public abstract class StoreAppendTests<T>(T fixture) : IClassFixture<T> where T 
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldFailOnWrongVersion() {
         var evt    = fixture.CreateEvent();
         var stream = fixture.GetStreamName();

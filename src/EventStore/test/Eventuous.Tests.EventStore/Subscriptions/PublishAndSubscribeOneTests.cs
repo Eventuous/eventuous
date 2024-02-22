@@ -1,12 +1,13 @@
 using Eventuous.Producers;
-using Eventuous.Sut.Subs;
+using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
-public class PublishAndSubscribeOneTests(ITestOutputHelper outputHelper)
-    : LegacySubscriptionFixture<TestEventHandler>(outputHelper, new TestEventHandler(output: outputHelper), false, logLevel: LogLevel.Trace) {
+public class PublishAndSubscribeOneTests(ITestOutputHelper output)
+    : LegacySubscriptionFixture<TestEventHandler>(output, new TestEventHandler(new TestEventHandlerOptions(null, output)), false, logLevel: LogLevel.Trace) {
     [Fact]
+    [Trait("Category", "Stream catch-up subscription")]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
 

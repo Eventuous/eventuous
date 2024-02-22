@@ -18,6 +18,7 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task AppendedEventShouldBeTraced() {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
@@ -26,6 +27,7 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldReadLongAggregateStream() {
         const int count = 9000;
 
@@ -62,6 +64,7 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     }
 
     [Fact]
+    [Trait("Category", "Store")]
     public async Task ShouldReadAggregateStreamManyTimes() {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();

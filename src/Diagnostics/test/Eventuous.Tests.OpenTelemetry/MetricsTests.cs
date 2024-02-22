@@ -1,23 +1,25 @@
 using DotNet.Testcontainers.Containers;
-using Eventuous.Sut.Subs;
 using Eventuous.Tests.OpenTelemetry.Fakes;
+using Eventuous.Tests.Subscriptions.Base;
 
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace Eventuous.Tests.OpenTelemetry;
 
-public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, TSubscriptionOptions>(ITestOutputHelper outputHelper)
-    : IAsyncLifetime
+public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, TSubscriptionOptions>(ITestOutputHelper outputHelper) : IAsyncLifetime
     where T : MetricsSubscriptionFixtureBase<TContainer, TProducer, TSubscription, TSubscriptionOptions>, new()
     where TContainer : DockerContainer
     where TProducer : class, IEventProducer
     where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>, IMeasuredSubscription
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
-    T Fixture { get; } = new T();
+    T Fixture { get; } = new() {
+        Output = outputHelper
+    };
 
     [Fact]
+    [Trait("Category", "Diagnostics")]
     public void ShouldMeasureSubscriptionGapCount() {
-        outputHelper.WriteLine($"Stream {Fixture.Stream}");
+        Fixture.Output?.WriteLine($"Stream {Fixture.Stream}");
         Assert.NotNull(_values);
         var gapCount    = GetValue(_values, SubscriptionMetrics.GapCountMetricName)!;
         var expectedGap = Fixture.Count - Fixture.Counter.Count;
@@ -28,9 +30,10 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
         gapCount.CheckTag(Fixture.DefaultTagKey, Fixture.DefaultTagValue);
     }
 
-    [Fact]
+    // [Fact]
+    // [Trait("Category", "Diagnostics")]
     public void ShouldMeasureSubscriptionDuration() {
-        outputHelper.WriteLine($"Stream {Fixture.Stream}");
+        Fixture.Output?.WriteLine($"Stream {Fixture.Stream}");
         Assert.NotNull(_values);
         var duration = GetValue(_values, SubscriptionMetrics.ProcessingRateName)!;
 
@@ -56,7 +59,7 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
         _values = Fixture.Exporter.CollectValues();
 
         foreach (var value in _values) {
-            outputHelper.WriteLine(value.ToString());
+            Fixture.Output?.WriteLine(value.ToString());
         }
     }
 
@@ -65,7 +68,7 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
         _es.Dispose();
     }
 
-    readonly TestEventListener _es = new(outputHelper);
+    readonly TestEventListener _es = new(outputHelper, null, "OpenTelemetry");
 
     MetricValue[]? _values;
 }

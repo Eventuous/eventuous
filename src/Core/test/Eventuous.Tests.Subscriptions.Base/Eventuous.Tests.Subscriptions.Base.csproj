@@ -10,4 +10,7 @@
     <ItemGroup>
         <None Remove="Eventuous.Tests.Subscriptions.Base.csproj.DotSettings"/>
     </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Hypothesist"/>
+    </ItemGroup>
 </Project>

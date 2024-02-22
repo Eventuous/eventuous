@@ -6,6 +6,6 @@ using Testcontainers.EventStoreDb;
 
 namespace Eventuous.Tests.EventStore.Metrics;
 
-// [Collection("Database")]
+[Collection("Database")]
 public class MetricsTests(ITestOutputHelper outputHelper)
     : MetricsTestsBase<MetricsFixture, EventStoreDbContainer, EventStoreProducer, StreamSubscription, StreamSubscriptionOptions>(outputHelper);

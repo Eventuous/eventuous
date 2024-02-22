@@ -3,32 +3,32 @@
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeTestHelpers>true</IncludeTestHelpers>
         <IncludeSutApp>true</IncludeSutApp>
-        <IncludeSutSubs>true</IncludeSutSubs>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Core\test\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj" />
-        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-        <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
+        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj"/>
+        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj"/>
+        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="NodaTime" />
-        <Using Include="Eventuous.Subscriptions" />
-        <Using Include="Eventuous.Subscriptions.Checkpoints" />
-        <Using Include="Eventuous.Subscriptions.Logging" />
-        <Using Include="Eventuous.Diagnostics.OpenTelemetry" />
-        <Using Include="Eventuous.Producers" />
-        <Using Include="Eventuous.Subscriptions.Context" />
-        <Using Include="Eventuous.Subscriptions.Diagnostics" />
-        <Using Include="Eventuous.TestHelpers" />
-        <Using Include="Eventuous.Tests.OpenTelemetry.Fixtures" />
-        <Using Include="Microsoft.AspNetCore.Hosting" />
-        <Using Include="Microsoft.AspNetCore.TestHost" />
-        <Using Include="Microsoft.Extensions.DependencyInjection" />
-        <Using Include="OpenTelemetry" />
-        <Using Include="OpenTelemetry.Metrics" />
+        <Using Include="NodaTime"/>
+        <Using Include="Eventuous.Subscriptions"/>
+        <Using Include="Eventuous.Subscriptions.Checkpoints"/>
+        <Using Include="Eventuous.Subscriptions.Logging"/>
+        <Using Include="Eventuous.Diagnostics.OpenTelemetry"/>
+        <Using Include="Eventuous.Producers"/>
+        <Using Include="Eventuous.Subscriptions.Context"/>
+        <Using Include="Eventuous.Subscriptions.Diagnostics"/>
+        <Using Include="Eventuous.TestHelpers"/>
+        <Using Include="Eventuous.Tests.OpenTelemetry.Fixtures"/>
+        <Using Include="Microsoft.AspNetCore.Hosting"/>
+        <Using Include="Microsoft.AspNetCore.TestHost"/>
+        <Using Include="Microsoft.Extensions.DependencyInjection"/>
+        <Using Include="OpenTelemetry"/>
+        <Using Include="OpenTelemetry.Metrics"/>
     </ItemGroup>
 </Project>
