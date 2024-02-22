@@ -3,17 +3,17 @@
         SYSTEM "https://resources.jetbrains.com/writerside/1.0/xhtml-entities.dtd">
 <topic xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="https://resources.jetbrains.com/writerside/1.0/topic.v2.xsd"
-       title="Application" id="Application">
+       title="Read models" id="Read-models">
 
     <section-starting-page>
-        <title>Components for Application layer</title>
+        <title>Section starting page title</title>
         <description>
-            Application layer finds itself between your domain model and external interfaces like HTTP, gRPC, GraphQL, and alike.
+            Add an introductory paragraph: explain what this section is about in 2-3 short sentences.
         </description>
 
         <spotlight>
-            <a href="Command-service.md" type="container" summary="Application service with Aggregates">Command service</a>
-            <a href="Functional-service.md" type="filtering" summary="Application service with functions">Functional service</a>
+            <a href="" type="account" summary="This overrides the card summary of the topic">Custom card title</a>
+            <a href="" type="search" summary="This overrides the card summary of the topic">Another custom title</a>
         </spotlight>
 
         <primary>
@@ -93,4 +93,5 @@
             </links>
         </misc>
     </section-starting-page>
+
 </topic>

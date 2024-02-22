@@ -3,19 +3,21 @@
         SYSTEM "https://resources.jetbrains.com/writerside/1.0/xhtml-entities.dtd">
 <topic xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="https://resources.jetbrains.com/writerside/1.0/topic.v2.xsd"
-       title="Application" id="Application">
+       title="Gateway" id="Gateway">
 
     <section-starting-page>
-        <title>Components for Application layer</title>
+        <title>Section starting page title</title>
         <description>
-            Application layer finds itself between your domain model and external interfaces like HTTP, gRPC, GraphQL, and alike.
+            Add an introductory paragraph: explain what this section is about in 2-3 short sentences.
         </description>
 
+        <!--    Add up to 2 topics that you want to promote. Use the "type" attribute to select an icon.    -->
         <spotlight>
-            <a href="Command-service.md" type="container" summary="Application service with Aggregates">Command service</a>
-            <a href="Functional-service.md" type="filtering" summary="Application service with functions">Functional service</a>
+            <a href="" type="account" summary="This overrides the card summary of the topic">Custom card title</a>
+            <a href="" type="search" summary="This overrides the card summary of the topic">Another custom title</a>
         </spotlight>
 
+        <!--    Add several topics that are most important for this section.    -->
         <primary>
             <title>Get started</title>
             <a href=""/>
@@ -24,6 +26,7 @@
             <a href="" summary="With a custom card summary">Custom card title</a>
         </primary>
 
+        <!--    Add several topics that are less important or are relevant only for advanced/experienced users.    -->
         <secondary>
             <title>Explore advanced features</title>
             <a href=""/>
@@ -32,6 +35,7 @@
             <a href="" summary="With a custom card summary">Custom card title</a>
         </secondary>
 
+        <!--    Optionally add additional cards and links to topics that are not in this section but may be relevant.    -->
         <misc>
             <cards>
                 <title>Other relevant topics as wide cards</title>
@@ -93,4 +97,5 @@
             </links>
         </misc>
     </section-starting-page>
+
 </topic>
