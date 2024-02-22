@@ -8,10 +8,10 @@ namespace Eventuous.Diagnostics.Tracing;
 using static Constants;
 
 public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore {
-    public static IEventStore Trace(IEventStore eventStore)
-        => new TracedEventStore(eventStore);
+    public static IEventStore Trace(IEventStore eventStore) => new TracedEventStore(eventStore);
 
-    IEventStore       Inner  { get; } = eventStore;
+    internal IEventStore Inner { get; } = eventStore;
+
     TracedEventReader Reader { get; } = new(eventStore);
     TracedEventWriter Writer { get; } = new(eventStore);
 

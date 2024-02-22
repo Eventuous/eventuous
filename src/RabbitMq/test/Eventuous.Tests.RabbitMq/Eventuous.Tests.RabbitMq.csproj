@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeSutSubs>true</IncludeSutSubs>
-    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
+        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="RabbitMQ.Client" />
