@@ -10,22 +10,23 @@ using Context;
 
 static class SubscriptionActivity {
     public static Activity? Create(
-        string                                      name,
-        ActivityKind                                activityKind,
-        IMessageConsumeContext                      context,
-        IEnumerable<KeyValuePair<string, object?>>? tags = null
-    ) {
+            string                                      name,
+            ActivityKind                                activityKind,
+            IMessageConsumeContext                      context,
+            IEnumerable<KeyValuePair<string, object?>>? tags = null
+        ) {
         context.ParentContext = GetParentContext(context);
         var activity = Create(name, activityKind, context.ParentContext, tags);
+
         return activity?.SetContextTags(context);
     }
 
     public static Activity? Start(
-        string                                      name,
-        ActivityKind                                activityKind,
-        IMessageConsumeContext                      context,
-        IEnumerable<KeyValuePair<string, object?>>? tags = null
-    )
+            string                                      name,
+            ActivityKind                                activityKind,
+            IMessageConsumeContext                      context,
+            IEnumerable<KeyValuePair<string, object?>>? tags = null
+        )
         => Create(name, activityKind, context, tags)?.Start();
 
     public static Activity? SetContextTags(this Activity? activity, IMessageConsumeContext context) {
@@ -38,10 +39,7 @@ static class SubscriptionActivity {
             .SetTag(TelemetryTags.Eventuous.Stream, context.Stream)
             .SetTag(TelemetryTags.Eventuous.Subscription, context.SubscriptionId)
             .CopyParentTag(TelemetryTags.Messaging.ConversationId)
-            .SetOrCopyParentTag(
-                TelemetryTags.Messaging.CorrelationId,
-                context.Metadata?.GetCorrelationId()
-            );
+            .SetOrCopyParentTag(TelemetryTags.Messaging.CorrelationId, context.Metadata?.GetCorrelationId());
     }
 
     static ActivityContext? GetParentContext(IBaseConsumeContext context) {
@@ -52,15 +50,16 @@ static class SubscriptionActivity {
         }
 
         var tracingData = context.Metadata?.GetTracingMeta();
+
         return tracingData?.ToActivityContext(true);
     }
 
     public static Activity? Create(
-        string                                      name,
-        ActivityKind                                activityKind,
-        ActivityContext?                            parentContext = null,
-        IEnumerable<KeyValuePair<string, object?>>? tags          = null
-    )
+            string                                      name,
+            ActivityKind                                activityKind,
+            ActivityContext?                            parentContext = null,
+            IEnumerable<KeyValuePair<string, object?>>? tags          = null
+        )
         => EventuousDiagnostics.ActivitySource.CreateActivity(
             name,
             activityKind,
