@@ -5,20 +5,57 @@ using Eventuous.Subscriptions;
 
 namespace Eventuous.Sql.Base.Subscriptions;
 
+/// <summary>
+/// Options for SQL-based subscriptions.
+/// </summary>
 public abstract record SqlSubscriptionOptionsBase : SubscriptionWithCheckpointOptions {
-    public string         Schema           { get; set; } = "eventuous";
-    public int            ConcurrencyLimit { get; set; } = 1;
-    public int            MaxPageSize      { get; set; } = 1024;
-    public PollingOptions Polling          { get; set; } = new();
-    public RetryOptions   Retry            { get; set; } = new();
+    /// <summary>
+    /// Database schema name. Default is "eventuous".
+    /// </summary>
+    public string Schema { get; set; } = "eventuous";
+    /// <summary>
+    /// How many consumers can process messages concurrently. Default is 1.
+    /// </summary>
+    public int ConcurrencyLimit { get; set; } = 1;
+    /// <summary>
+    /// How many messages to fetch at once. Default is 1024.
+    /// </summary>
+    public int MaxPageSize { get; set; } = 1024;
+    /// <summary>
+    /// Polling query options.
+    /// </summary>
+    public PollingOptions Polling { get; set; } = new();
+    /// <summary>
+    /// Retry options.
+    /// </summary>
+    public RetryOptions Retry { get; set; } = new();
 
+    /// <summary>
+    /// Options for polling.
+    /// </summary>
     public record PollingOptions {
-        public int    MinIntervalMs { get; set; } = 5;
-        public int    MaxIntervalMs { get; set; } = 1000;
-        public double GrowFactor    { get; set; } = 1.5;
+        /// <summary>
+        /// Minimum interval between polling attempts in milliseconds. Default is 5.
+        /// </summary>
+        public int MinIntervalMs { get; set; } = 5;
+
+        /// <summary>
+        /// Maximum interval between polling attempts in milliseconds. Default is 1000.
+        /// </summary>
+        public int MaxIntervalMs { get; set; } = 1000;
+        /// <summary>
+        /// How much to grow the interval between polling attempts. Default is 1.5.
+        /// </summary>
+        public double GrowFactor { get; set; } = 1.5;
     }
 
+    /// <summary>
+    /// Retry options.
+    /// </summary>
     public record RetryOptions {
-        public int    InitialDelayMs  { get; set; } = 50;
+        /// <summary>
+        /// Initial delay between retries in milliseconds. Default is 50.
+        /// </summary>
+        public int InitialDelayMs { get; set; } = 50;
     }
 }

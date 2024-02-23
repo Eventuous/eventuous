@@ -25,7 +25,7 @@ public static class SubscriptionRegistrationExtensions {
         Ensure.NotNull(configureSubscription);
         var builder = new SubscriptionBuilder<T, TOptions>(Ensure.NotNull(services), Ensure.NotEmptyString(subscriptionId));
         configureSubscription(builder);
-        services.TryAddSingleton<ISubscriptionHealth, SubscriptionHealthCheck>();
+        TryAddSubscriptionHealthCheck(services);
 
         if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T))) services.AddSingleton(GetEndOfStream);
 
@@ -64,8 +64,7 @@ public static class SubscriptionRegistrationExtensions {
             HealthStatus?             failureStatus,
             string[]                  tags
         ) {
-        builder.Services.TryAddSingleton<SubscriptionHealthCheck>();
-        builder.Services.TryAddSingleton<ISubscriptionHealth>(sp => sp.GetRequiredService<SubscriptionHealthCheck>());
+        TryAddSubscriptionHealthCheck(builder.Services);
 
         return builder.AddCheck<SubscriptionHealthCheck>(checkName, failureStatus, tags);
     }
@@ -86,5 +85,10 @@ public static class SubscriptionRegistrationExtensions {
         return EventuousDiagnostics.Enabled
             ? services.AddSingleton<ICheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()))
             : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
+    }
+
+    static void TryAddSubscriptionHealthCheck(IServiceCollection services) {
+        services.TryAddSingleton<SubscriptionHealthCheck>();
+        services.TryAddSingleton<ISubscriptionHealth>(sp => sp.GetRequiredService<SubscriptionHealthCheck>());
     }
 }

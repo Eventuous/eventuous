@@ -70,6 +70,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     protected virtual ValueTask Finalize(CancellationToken cancellationToken) => default;
 
     // ReSharper disable once CognitiveComplexity
+    // ReSharper disable once CyclomaticComplexity
     protected async ValueTask Handler(IMessageConsumeContext context) {
         var scope = new Dictionary<string, object> {
             { "SubscriptionId", SubscriptionId },

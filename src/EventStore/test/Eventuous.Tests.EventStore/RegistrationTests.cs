@@ -7,7 +7,7 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 
 namespace Eventuous.Tests.EventStore;
 
-public class RegistrationTests(IntegrationFixture fixture) : IClassFixture<IntegrationFixture>, IAsyncLifetime {
+public class RegistrationTests(StoreFixture fixture) : IClassFixture<StoreFixture>, IAsyncLifetime {
     const string SubId = "Test";
 
     static readonly StreamName Stream = new("teststream");
@@ -16,15 +16,18 @@ public class RegistrationTests(IntegrationFixture fixture) : IClassFixture<Integ
     StreamSubscription Sub      { get; set; } = null!;
 
     [Fact]
+    [Trait("Category", "Dependency injection")]
     public void ShouldResolveSubscription() {
         Sub.Should().NotBeNull();
         Sub.Should().BeOfType<StreamSubscription>();
     }
 
     [Fact]
+    [Trait("Category", "Dependency injection")]
     public void ShouldHaveProperId() => Sub.SubscriptionId.Should().Be(SubId);
 
     [Fact]
+    [Trait("Category", "Dependency injection")]
     public void ShouldHaveEventStoreClient() {
         var client = Sub.GetPrivateMember<EventStoreClient>("EventStoreClient");
 
@@ -32,6 +35,7 @@ public class RegistrationTests(IntegrationFixture fixture) : IClassFixture<Integ
     }
 
     [Fact]
+    [Trait("Category", "Dependency injection")]
     public void ShouldHaveNoOpStore() {
         var store = Sub.GetPrivateMember<ICheckpointStore>("CheckpointStore");
 

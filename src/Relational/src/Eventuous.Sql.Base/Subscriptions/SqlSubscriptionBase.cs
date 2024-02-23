@@ -1,17 +1,30 @@
 // Copyright (C) Ubiquitous AS.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Data;
 using System.Data.Common;
 using System.Text;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Sql.Base.Subscriptions;
 
+/// <summary>
+/// Base class for subscriptions that use relational databases and ADO.NET
+/// </summary>
+/// <param name="options">Subscription options</param>
+/// <param name="checkpointStore">Checkpoint store for the subscription</param>
+/// <param name="consumePipe">Pre-populated consume pipe</param>
+/// <param name="concurrencyLimit">Limit the number of concurrent consumers</param>
+/// <param name="kind">All or Stream</param>
+/// <param name="loggerFactory">Logger factory (optional)</param>
+/// <typeparam name="TOptions"></typeparam>
+/// <typeparam name="TConnection"></typeparam>
 public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         TOptions         options,
         ICheckpointStore checkpointStore,
@@ -20,16 +33,38 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         SubscriptionKind kind,
         ILoggerFactory?  loggerFactory
     )
-    : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, kind, loggerFactory)
+    : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, kind, loggerFactory),
+        IMeasuredSubscription
     where TOptions : SqlSubscriptionOptionsBase where TConnection : DbConnection {
     readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 
+    /// <summary>
+    /// Create and open the SQL connection
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     protected abstract ValueTask<TConnection> OpenConnection(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Prepares a command to poll the messages table for new records
+    /// </summary>
+    /// <param name="connection">Connection that can be used to create the command</param>
+    /// <param name="start">Starting position</param>
+    /// <returns></returns>
     protected abstract DbCommand PrepareCommand(TConnection connection, long start);
 
+    /// <summary>
+    /// Returns true if the SQL operation returned a transient exception
+    /// </summary>
+    /// <param name="exception"></param>
+    /// <returns></returns>
     protected abstract bool IsTransient(Exception exception);
 
+    /// <summary>
+    /// Returns true if the subscription is stopping
+    /// </summary>
+    /// <param name="exception"></param>
+    /// <returns></returns>
     protected virtual bool IsStopping(Exception exception) => exception is OperationCanceledException;
 
     // ReSharper disable once CognitiveComplexity
@@ -111,6 +146,10 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         }
     }
 
+    /// <summary>
+    /// Starts the subscription
+    /// </summary>
+    /// <param name="cancellationToken"></param>
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         await BeforeSubscribe(cancellationToken).NoContext();
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
@@ -118,6 +157,10 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         _runner = new TaskRunner(token => PollingQuery(position, token)).Start();
     }
 
+    /// <summary>
+    /// Stops the subscription.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         if (_runner == null) return;
 
@@ -126,11 +169,14 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         _runner = null;
     }
 
+    /// <summary>
+    /// This function is called before the subscription starts.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     protected virtual Task BeforeSubscribe(CancellationToken cancellationToken) => Task.CompletedTask;
 
-#pragma warning disable CS8524
     long MoveStart(PersistedEvent evt) => Kind switch {
-#pragma warning restore CS8524
         SubscriptionKind.All    => evt.GlobalPosition,
         SubscriptionKind.Stream => evt.StreamPosition,
     };
@@ -148,9 +194,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     }
 
     MessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
-#pragma warning disable CS8524
         => Kind switch {
-#pragma warning restore CS8524
             SubscriptionKind.Stream => new MessageConsumeContext(
                 evt.MessageId.ToString(),
                 evt.MessageType,
@@ -188,4 +232,37 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     const string ContentType = "application/json";
 
     record struct PollingResult(bool Continue, bool Retry, int ReceivedEvents);
+
+    GetSubscriptionEndOfStream IMeasuredSubscription.GetMeasure() => GetSubscriptionEndOfStream;
+
+    /// <summary>
+    /// Get SQL statement to get the end of the stream
+    /// </summary>
+    protected abstract string GetEndOfStream { get; }
+
+    /// <summary>
+    /// Get SQL statement to get the end of the global log
+    /// </summary>
+    protected abstract string GetEndOfAll { get; }
+
+    async ValueTask<EndOfStream> GetSubscriptionEndOfStream(CancellationToken cancellationToken) {
+        try {
+            await using var connection = await OpenConnection(cancellationToken).NoContext();
+            await using var cmd        = connection.CreateCommand();
+            cmd.CommandType = CommandType.Text;
+
+            cmd.CommandText = Kind switch {
+                SubscriptionKind.All    => GetEndOfStream,
+                SubscriptionKind.Stream => GetEndOfAll
+            };
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
+
+            var position = await reader.ReadAsync(cancellationToken).NoContext() ? reader.GetInt64(0) : 0;
+
+            return new EndOfStream(SubscriptionId, (ulong)position, DateTime.UtcNow);
+        } catch (Exception) {
+            Log.WarnLog?.Log("Failed to get end of stream");
+            return EndOfStream.Invalid;
+        }
+    }
 }

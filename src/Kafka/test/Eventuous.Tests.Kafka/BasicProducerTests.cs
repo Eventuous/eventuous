@@ -2,7 +2,7 @@ using Confluent.Kafka;
 using Eventuous.Kafka;
 using Eventuous.Kafka.Producers;
 using Eventuous.Producers;
-using Eventuous.Sut.Subs;
+using Eventuous.Tests.Subscriptions.Base;
 using Eventuous.Tools;
 using static System.String;
 

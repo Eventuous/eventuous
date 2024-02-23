@@ -14,23 +14,27 @@ public class DefaultConsumer(IEventHandler[] eventHandlers) : IMessageConsumer {
             {"MessageType", context.MessageType},
         };
 
-        using (context.LogContext.Logger.BeginScope(scope)) {
-            try {
-                if (context.Message == null) {
-                    context.Ignore<DefaultConsumer>();
+        using var _ = context.LogContext.Logger.BeginScope(scope);
 
-                    return;
-                }
+        try {
+            if (context.Message == null) {
+                context.Ignore<DefaultConsumer>();
 
-                var typedContext = context.ConvertToGeneric();
-                var tasks        = eventHandlers.Select(handler => Handle(typedContext, handler));
-                await tasks.WhenAll().NoContext();
-            } catch (Exception e) {
-                context.Nack<DefaultConsumer>(e);
+                return;
             }
 
-            return;
+            var typedContext = context.ConvertToGeneric();
+
+            // ReSharper disable once ForCanBeConvertedToForeach
+            for (var index = 0; index < eventHandlers.Length; index++) {
+                var handler = eventHandlers[index];
+                await Handle(typedContext, handler).NoContext();
+            }
+        } catch (Exception e) {
+            context.Nack<DefaultConsumer>(e);
         }
+
+        return;
 
         async ValueTask Handle(IMessageConsumeContext typedContext, IEventHandler handler) {
             try {

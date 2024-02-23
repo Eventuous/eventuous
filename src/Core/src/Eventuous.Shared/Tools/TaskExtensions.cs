@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
+
 // ReSharper disable PossibleMultipleEnumeration
 
 namespace Eventuous.Tools;
@@ -27,27 +28,25 @@ static class TaskExtensions {
     public static Task WhenAll(this IEnumerable<Task> tasks) => Task.WhenAll(tasks);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static async Task WhenAll(this IEnumerable<ValueTask> tasks) {
-        var toAwait = tasks.Where(valueTask => !valueTask.IsCompletedSuccessfully).Select(valueTask => valueTask.AsTask());
+    public static ValueTask WhenAll(this IEnumerable<ValueTask> tasks) {
+        return tasks is ValueTask[] array ? AwaitArray(array) : AwaitArray(tasks.ToArray());
 
-        if (toAwait.Any()) await Task.WhenAll(toAwait).NoContext();
+        // ReSharper disable once SuggestBaseTypeForParameter
+        async ValueTask AwaitArray(ValueTask[] t) {
+            // ReSharper disable once ForCanBeConvertedToForeach
+            for (var i = 0; i < t.Length; i++) {
+                await t[i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static async Task<IReadOnlyCollection<T>> WhenAll<T>(this IEnumerable<ValueTask<T>> tasks) {
         var results = new List<T>();
-        var toAwait = new List<Task<T>>();
 
         foreach (var valueTask in tasks) {
-            if (valueTask.IsCompletedSuccessfully)
-                results.Add(valueTask.Result);
-            else
-                toAwait.Add(valueTask.AsTask());
+            results.Add(valueTask.IsCompletedSuccessfully ? valueTask.Result : await valueTask);
         }
-
-        if (toAwait.Count == 0) return results;
-
-        results.AddRange(await Task.WhenAll(toAwait).NoContext());
 
         return results;
     }

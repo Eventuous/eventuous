@@ -17,8 +17,7 @@ public static class EventuousDiagnostics {
     static ActivitySource?   activitySource;
     static ActivityListener? listener;
 
-    public static KeyValuePair<string, object?>[] Tags { get; private set; } =
-        Array.Empty<KeyValuePair<string, object?>>();
+    public static KeyValuePair<string, object?>[] Tags { get; private set; } = [];
 
     public static void AddDefaultTag(string key, object? value) {
         var tags = new List<KeyValuePair<string, object?>>(Tags) { new(key, value) };

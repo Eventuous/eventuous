@@ -1,0 +1,41 @@
+name: Publish docs
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'docs/**'
+
+env:
+  INSTANCE: docs/e
+  ARTIFACT: webHelpE2-all.zip
+  DOCKER_VERSION: 233.14389
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -  
+        name: Checkout repository
+        uses: actions/checkout@v4
+      -  
+        name: Build Writerside docs using Docker
+        uses: JetBrains/writerside-github-action@v4
+        with:
+          instance: ${{ env.INSTANCE }}
+          artifact: ${{ env.ARTIFACT }}
+          docker-version: ${{ env.DOCKER_VERSION }}
+      -
+        name: Extract Files
+        run: 7z x artifacts/${{ env.ARTIFACT }} -ocf-pages
+      -
+        name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: eventuous-docs
+          directory: cf-pages
+          branch: dev
+          wranglerVersion: '3'

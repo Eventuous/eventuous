@@ -5,11 +5,11 @@ namespace Eventuous.Diagnostics.Tracing;
 
 public static class Constants {
     public static class Components {
-        public const string CommandService   = "service";
-        public const string EventStore   = "eventstore";
-        public const string Subscription = "sub";
-        public const string Consumer     = "consumer";
-        public const string EventHandler = "handler";
+        public const string CommandService = "service";
+        public const string EventStore     = "eventstore";
+        public const string Subscription   = "sub";
+        public const string Consumer       = "consumer";
+        public const string EventHandler   = "handler";
     }
 
     public static class Operations {

@@ -1,7 +1,19 @@
 <Project>
-    <Import Project="..\props\Common.Build.Props"/>
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+        <LangVersion>preview</LangVersion>
+        <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
+        <SrcRoot>$(RepoRoot)\src</SrcRoot>
+        <CoreRoot>$(SrcRoot)\Core\src</CoreRoot>
+        <CoreTestRoot>$(SrcRoot)\Core\test</CoreTestRoot>
+        <DiagRoot>$(SrcRoot)\Diagnostics\src</DiagRoot>
+        <EsdbRoot>$(SrcRoot)\EventStore\src</EsdbRoot>
+        <ExtRoot>$(SrcRoot)\Extensions\src</ExtRoot>
+        <GatewayRoot>$(SrcRoot)\Shovel\src</GatewayRoot>
+        <LocalRoot>..\..\src</LocalRoot>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Eventuous.Tests'))">
@@ -28,6 +40,7 @@
         <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageTags>CQRS ES Event Sourcing EventSourcing EventStore DDD ESDB EventStoreDB</PackageTags>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsPackable)' == 'true'">
@@ -55,6 +68,7 @@
         <Using Include="FluentAssertions.Extensions"/>
         <Using Include="AutoFixture"/>
         <Using Include="Microsoft.Extensions.Logging"/>
+        <Content Include="$(RepoRoot)\test\xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
@@ -63,9 +77,6 @@
     <ItemGroup Condition="'$(IncludeSutApp)' == 'true'">
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.App\Eventuous.Sut.App.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Domain\Eventuous.Sut.Domain.csproj"/>
-    </ItemGroup>
-    <ItemGroup Condition="'$(IncludeSutSubs)' == 'true'">
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.Sut.Subs\Eventuous.Sut.Subs.csproj"/>
     </ItemGroup>
     <ItemGroup Condition="'$(IncludeTestHelpers)' == 'true'">
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>

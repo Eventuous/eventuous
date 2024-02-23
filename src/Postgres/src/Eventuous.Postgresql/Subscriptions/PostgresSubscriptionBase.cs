@@ -16,7 +16,8 @@ public abstract class PostgresSubscriptionBase<T>(
         ConsumePipe      consumePipe,
         SubscriptionKind kind,
         ILoggerFactory?  loggerFactory
-    ) : SqlSubscriptionBase<T, NpgsqlConnection>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory)
+    )
+    : SqlSubscriptionBase<T, NpgsqlConnection>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory)
     where T : PostgresSubscriptionBaseOptions {
     protected Schema           Schema     { get; } = new(options.Schema);
     protected NpgsqlDataSource DataSource { get; } = dataSource;
@@ -25,6 +26,9 @@ public abstract class PostgresSubscriptionBase<T>(
         => await DataSource.OpenConnectionAsync(cancellationToken).NoContext();
 
     protected override bool IsTransient(Exception exception) => exception is PostgresException { IsTransient: true };
+
+    protected override string GetEndOfStream { get; } = $"select max(stream_position) from {options.Schema}.messages";
+    protected override string GetEndOfAll    { get; } = $"select max(global_position) from {options.Schema}.messages";
 }
 
 public abstract record PostgresSubscriptionBaseOptions : SqlSubscriptionOptionsBase;
