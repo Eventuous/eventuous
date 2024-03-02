@@ -32,13 +32,14 @@ public class TracedFunctionalService<T> : IFuncCommandService<T> where T : State
         _getError = GetError;
     }
 
-    public Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+    public Task<Result> Handle<TCommand>(TCommand command,AmendEvent amendEvent ,CancellationToken cancellationToken)
         where TCommand : class
         => CommandServiceActivity.TryExecute(
             _appServiceTypeName,
             command,
             _metricsSource,
             InnerService.Handle,
+            amendEvent,
             _getError,
             cancellationToken
         );

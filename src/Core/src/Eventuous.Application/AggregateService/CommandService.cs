@@ -53,7 +53,18 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns><see cref="Result{TState}"/> of the execution</returns>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
-    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
+    public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class
+        => Handle(command, Amend.Nothing, cancellationToken);
+
+    /// <summary>
+    /// The command handler. Call this function from your edge (API).
+    /// </summary>
+    /// <param name="command">Command to execute</param>
+    /// <param name="amend">Function to add additional information to the event before it's stored.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns><see cref="Result{TState}"/> of the execution</returns>
+    /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
+    public async Task<Result<TState>> Handle<TCommand>(TCommand command, AmendEvent amend, CancellationToken cancellationToken) where TCommand : class {
         if (!_initialized) BuildHandlers();
 
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
@@ -82,7 +93,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
-            var storeResult = await store.Store(GetAggregateStreamName(), result, cancellationToken).NoContext();
+            var storeResult = await store.Store(GetAggregateStreamName(), result, amend, cancellationToken).NoContext();
             var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
@@ -98,8 +109,8 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
     }
 
-    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
-        var result = await Handle(command, cancellationToken).NoContext();
+    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, AmendEvent amendEvent, CancellationToken cancellationToken) where TCommand : class {
+        var result = await Handle(command, amendEvent, cancellationToken).NoContext();
 
         return result switch {
             OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),

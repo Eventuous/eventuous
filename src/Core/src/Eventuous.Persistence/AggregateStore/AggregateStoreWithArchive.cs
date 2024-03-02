@@ -13,7 +13,7 @@ public class AggregateStore<TReader>(
     ) : IAggregateStore where TReader : class, IEventReader {
     readonly AggregateFactoryRegistry _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
 
-    public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate, CancellationToken cancellationToken) where T : Aggregate
+    public Task<AppendEventsResult> Store<T>(StreamName streamName, T aggregate,AmendEvent amendEvent, CancellationToken cancellationToken) where T : Aggregate
         => eventStore.Store(streamName, aggregate, amendEvent, cancellationToken);
 
     public Task<T> Load<T>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate

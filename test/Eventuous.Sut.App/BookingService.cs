@@ -17,7 +17,7 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
                     return Task.CompletedTask;
                 }
             );
-
+        
         On<ImportBooking>()
             .InState(ExpectedState.New)
             .GetId(cmd => new BookingId(cmd.BookingId))
