@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.ExceptionServices;
 namespace Eventuous;
 
 public class ThrowingCommandService<T, TState, TId>(ICommandService<T, TState, TId> inner) : ICommandService<T, TState, TId>, ICommandService<T>
@@ -11,8 +12,12 @@ public class ThrowingCommandService<T, TState, TId>(ICommandService<T, TState, T
         where TCommand : class {
         var result = await inner.Handle(command, cancellationToken);
 
-        if (result is ErrorResult<TState> error)
-            throw error.Exception ?? new ApplicationException($"Error handling command {command}");
+        if (result is ErrorResult<TState> error) {
+            if (error.Exception is not null) {
+                ExceptionDispatchInfo.Capture(error.Exception).Throw();
+            }
+            throw new ApplicationException($"Error handling command {command}");
+        }
 
         return result;
     }
