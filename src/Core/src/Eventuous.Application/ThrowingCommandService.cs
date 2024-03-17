@@ -14,7 +14,7 @@ public class ThrowingCommandService<T, TState, TId>(ICommandService<T, TState, T
 
         if (result is ErrorResult<TState> error) {
             if (error.Exception is not null) {
-                ExceptionDispatchInfo.Capture(error.Exception).Throw();
+                ExceptionDispatchInfo.Throw(error.Exception);
             }
             throw new ApplicationException($"Error handling command {command}");
         }
