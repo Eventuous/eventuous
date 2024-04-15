@@ -2,9 +2,8 @@ using Eventuous.Producers;
 using Eventuous.RabbitMq.Producers;
 using Eventuous.RabbitMq.Subscriptions;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Sut.Subs;
 using Eventuous.TestHelpers;
-using Hypothesist;
+using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.RabbitMq;
 
@@ -39,11 +38,8 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
     [Fact]
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
-
-        _handler.AssertThat().Any(x => x as TestEvent == testEvent);
-
         await _producer.Produce(_exchange, testEvent, new Metadata());
-        await _handler.Validate(10.Seconds());
+        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate();
     }
 
     [Fact]
@@ -51,11 +47,8 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
         const int count = 10000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
-
-        _handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
-
         await _producer.Produce(_exchange, testEvents, new Metadata());
-        await _handler.Validate(10.Seconds());
+        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate();
     }
 
     public async Task InitializeAsync() {

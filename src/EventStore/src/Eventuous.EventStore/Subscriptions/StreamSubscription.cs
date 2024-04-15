@@ -91,6 +91,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
                 cancellationToken
             )
             .NoContext();
+        Log.InfoLog?.Log("Subscribed to stream {Stream}", Options.StreamName);
 
         return;
 
@@ -113,7 +114,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
-    IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
+    MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,

@@ -4,12 +4,13 @@ using Eventuous.TestHelpers;
 
 namespace Eventuous.Tests.EventStore;
 
-public class AppServiceTests(IntegrationFixture fixture, ITestOutputHelper output) : IClassFixture<IntegrationFixture>, IDisposable {
+public class AppServiceTests(StoreFixture fixture, ITestOutputHelper output) : IClassFixture<StoreFixture>, IDisposable {
     readonly TestEventListener _listener = new(output);
 
     BookingService Service { get; } = new(fixture.AggregateStore);
 
     [Fact]
+    [Trait("Category", "Application")]
     public async Task ProcessAnyForNew() {
         var cmd = DomainFixture.CreateImportBooking();
 

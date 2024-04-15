@@ -1,8 +1,7 @@
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
-using Eventuous.Sut.Subs;
 using Eventuous.Tests.Redis.Fixtures;
-using Hypothesist;
+using Eventuous.Tests.Subscriptions.Base;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 
@@ -14,10 +13,9 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
         const int count = 10;
 
         var testEvents = await GenerateAndProduceEvents(count);
-        Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
         await Start();
-        await Handler.Validate(2.Seconds());
+        await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
         await Stop();
 
         Handler.Count.Should().Be(10);
@@ -38,10 +36,9 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
             const int count = 10;
 
             var testEvents = await GenerateAndProduceEvents(count);
-            Handler.AssertThat().Exactly(count, x => testEvents.Contains(x));
 
             await Start();
-            await Handler.Validate(2.Seconds());
+            await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
             await Stop();
 
             Handler.Count.Should().Be(10);
@@ -53,7 +50,6 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
         const int count = 10;
 
         await GenerateAndProduceEvents(count);
-        Handler.AssertThat().Any(_ => true);
 
         await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
         var streamPosition = await GetStreamPosition(count);

@@ -96,7 +96,7 @@ Then, you won't need to call the `TypeMap` registration in the application code 
 
 ## Default serializer
 
-Eventuous provides a default serializer implementation, which uses `System.Text.Json`. You just need to register it in the `Startup` to make it available for the infrastructure components, like [aggregate store](Aggregate-store.md) and [subscriptions](../subscriptions).
+Eventuous provides a default serializer implementation, which uses `System.Text.Json`. You just need to register it in the `Startup` to make it available for the infrastructure components, like [aggregate store](Aggregate-store.md) and [subscriptions](Subscriptions.topic).
 
 Normally, you don't need to register or provide the serializer instance to any of the Eventuous classes that perform serialization and deserialization work. It's because they will use the default serializer instance instead.
 

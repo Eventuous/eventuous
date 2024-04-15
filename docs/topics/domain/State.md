@@ -4,7 +4,7 @@ In event-sourced systems, state is not mutated by changing its properties, but b
 
 # Event-sourced state
 
-Eventuous has an abstraction for event-sourced state. The state can be used both as an aggregate state, or independently when using functions to handle commands and produce new events using the [functional service](../application/func-service.md). Moving along, we consider event-based state transitions as part of the state handling. Therefore, the state objects needs to expose an API to receive events and produce a new instance of itself (remember that the state is immutable).
+Eventuous has an abstraction for event-sourced state. The state can be used both as an aggregate state, or independently when using functions to handle commands and produce new events using the [functional service](Functional-service.md). Moving along, we consider event-based state transitions as part of the state handling. Therefore, the state objects needs to expose an API to receive events and produce a new instance of itself (remember that the state is immutable).
 
 To support state immutability, `State` is an abstract _record_, not class. Therefore, it supports immutability out of the box and supports `with` syntax to make state transitions easier.
 
@@ -41,7 +41,7 @@ Although it is possible to use pattern matching, we recommend using explicit han
 
 You can also use explicit event handlers, where you define one function per event, and register them in the constructor. In that case, there's no need to override the `When` function.
 
-The syntax is similar to registered command handlers for the [command service](../application):
+The syntax is similar to registered command handlers for the [command service](Command-service.md):
 
 ```c#
 public record BookingState : State<BookingState> {

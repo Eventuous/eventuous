@@ -1,4 +1,4 @@
-using Eventuous.Diagnostics;
+using Eventuous.Diagnostics.Tracing;
 using Eventuous.Postgresql;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -30,7 +30,6 @@ public class RegistrationTests {
 
     [Fact]
     public void Should_resolve_store_with_extensions() {
-        EventuousDiagnostics.Disable();
         var builder = new WebHostBuilder();
         var config  = new Dictionary<string, string?> {
             ["postgres:schema"] = "test",
@@ -49,7 +48,7 @@ public class RegistrationTests {
         var aggregateStore = app.Services.GetService<IAggregateStore>();
         aggregateStore.Should().NotBeNull();
         var reader       = app.Services.GetService<IEventStore>();
-        var npgSqlReader = reader as PostgresStore;
+        var npgSqlReader = ((reader as TracedEventStore)!).Inner as PostgresStore;
         npgSqlReader.Should().NotBeNull();
         npgSqlReader!.Schema.StreamMessage.Should().Be("test.stream_message");
     }

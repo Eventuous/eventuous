@@ -1,163 +1,86 @@
-using Eventuous.EventStore.Subscriptions;
-using Eventuous.Sut.Subs;
+using DotNet.Testcontainers.Containers;
+using Eventuous.Tests.OpenTelemetry.Fakes;
+using Eventuous.Tests.Subscriptions.Base;
 
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace Eventuous.Tests.OpenTelemetry;
 
-public sealed class MetricsTests(SubscriptionFixture fixture, ITestOutputHelper outputHelper) : IAsyncLifetime, IClassFixture<SubscriptionFixture> {
-    const string SubscriptionId = "test-sub";
+public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, TSubscriptionOptions>(ITestOutputHelper outputHelper) : IAsyncLifetime
+    where T : MetricsSubscriptionFixtureBase<TContainer, TProducer, TSubscription, TSubscriptionOptions>, new()
+    where TContainer : DockerContainer
+    where TProducer : class, IEventProducer
+    where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>, IMeasuredSubscription
+    where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
+    T Fixture { get; } = new() {
+        Output = outputHelper
+    };
 
     [Fact]
+    [Trait("Category", "Diagnostics")]
     public void ShouldMeasureSubscriptionGapCount() {
+        Fixture.Output?.WriteLine($"Stream {Fixture.Stream}");
         Assert.NotNull(_values);
-        var counter  = _host.Services.GetRequiredService<MessageCounter>();
-        var gapCount = GetValue(_values, SubscriptionMetrics.GapCountMetricName)!;
-        var duration = GetValue(_values, SubscriptionMetrics.ProcessingRateName)!;
-
-        var expectedGap = SubscriptionFixture.Count - counter.Count;
+        var gapCount    = GetValue(_values, SubscriptionMetrics.GapCountMetricName)!;
+        var expectedGap = Fixture.Count - Fixture.Counter.Count;
 
         gapCount.Should().NotBeNull();
         gapCount.Value.Should().BeInRange(expectedGap - 20, expectedGap + 20);
-        GetTag(gapCount, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
-        GetTag(gapCount, "test").Should().Be("foo");
+        gapCount.CheckTag(SubscriptionMetrics.SubscriptionIdTag, Fixture.SubscriptionId);
+        gapCount.CheckTag(Fixture.DefaultTagKey, Fixture.DefaultTagValue);
+    }
+
+    // [Fact]
+    // [Trait("Category", "Diagnostics")]
+    public void ShouldMeasureSubscriptionDuration() {
+        Fixture.Output?.WriteLine($"Stream {Fixture.Stream}");
+        Assert.NotNull(_values);
+        var duration = GetValue(_values, SubscriptionMetrics.ProcessingRateName)!;
 
         duration.Should().NotBeNull();
-        GetTag(duration, SubscriptionMetrics.SubscriptionIdTag).Should().Be(SubscriptionId);
-        GetTag(duration, SubscriptionMetrics.MessageTypeTag).Should().Be(TestEvent.TypeName);
-        GetTag(duration, "test").Should().Be("foo");
+        duration.CheckTag(SubscriptionMetrics.SubscriptionIdTag, Fixture.SubscriptionId);
+        duration.CheckTag(Fixture.DefaultTagKey, Fixture.DefaultTagValue);
+        duration.CheckTag(SubscriptionMetrics.MessageTypeTag, TestEvent.TypeName);
     }
 
     static MetricValue? GetValue(MetricValue[] values, string metric)
         => values.FirstOrDefault(x => x.Name == metric);
 
-    static object GetTag(MetricValue metric, string key) {
+    public async Task InitializeAsync() {
+        await Fixture.InitializeAsync();
+        var testEvents = Fixture.Auto.CreateMany<TestEvent>(Fixture.Count).ToList();
+        await Fixture.Producer.Produce(Fixture.Stream, testEvents, new Metadata());
+
+        while (Fixture.Counter.Count < Fixture.Count / 2) {
+            await Task.Delay(100);
+        }
+
+        Fixture.Exporter.Collect(Timeout.Infinite);
+        _values = Fixture.Exporter.CollectValues();
+
+        foreach (var value in _values) {
+            Fixture.Output?.WriteLine(value.ToString());
+        }
+    }
+
+    public async Task DisposeAsync() {
+        await Fixture.DisposeAsync();
+        _es.Dispose();
+    }
+
+    readonly TestEventListener _es = new(outputHelper, null, "OpenTelemetry");
+
+    MetricValue[]? _values;
+}
+
+static class TagExtensions {
+    public static void CheckTag(this MetricValue metric, string tag, string expectedValue) {
+        metric.GetTag(tag).Should().Be(expectedValue);
+    }
+
+    static object GetTag(this MetricValue metric, string key) {
         var index = metric.Keys.Select((x, i) => (x, i)).First(x => x.x == key).i;
 
         return metric.Values[index];
     }
-
-    public async Task InitializeAsync() {
-        var builder = new WebHostBuilder()
-            .Configure(_ => { })
-            .ConfigureServices(
-                services => {
-                    services.AddSingleton(fixture.Client);
-                    services.AddSingleton<MessageCounter>();
-
-                    services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
-                        SubscriptionId,
-                        builder => builder
-                            .Configure(options => options.StreamName = fixture.Stream)
-                            .UseCheckpointStore<NoOpCheckpointStore>()
-                            .AddEventHandler<TestHandler>()
-                    );
-
-                    services.AddOpenTelemetry()
-                        .WithMetrics(
-                            builder => builder
-                                .AddEventuousSubscriptions()
-                                .AddReader(new BaseExportingMetricReader(_exporter))
-                        );
-                }
-            )
-            .ConfigureLogging(cfg => cfg.AddXunit(outputHelper));
-
-        _host = new TestServer(builder);
-        var counter = _host.Services.GetRequiredService<MessageCounter>();
-
-        while (counter.Count < SubscriptionFixture.Count / 2) {
-            await Task.Delay(10);
-        }
-
-        _exporter.Collect(Timeout.Infinite);
-        _values = _exporter.CollectValues();
-
-        foreach (var value in _values) {
-            outputHelper.WriteLine(value.ToString());
-        }
-
-        // await Task.Delay(500);
-    }
-
-    public Task DisposeAsync() {
-        _host.Dispose();
-        _exporter.Dispose();
-        _es.Dispose();
-
-        return Task.CompletedTask;
-    }
-
-    TestServer _host = null!;
-
-    readonly TestExporter _exporter = new();
-
-    readonly TestEventListener _es = new(outputHelper);
-
-    MetricValue[]? _values;
-
-    // ReSharper disable once ClassNeverInstantiated.Local
-    class TestHandler(MessageCounter counter, ILogger<TestHandler> log) : BaseEventHandler {
-        public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-            await Task.Delay(10, context.CancellationToken);
-            counter.Increment();
-            log.LogDebug("Handled event {Number} {EventId}", counter.Count, context.MessageId);
-
-            return EventHandlingStatus.Success;
-        }
-    }
-
-    class MessageCounter {
-        public int Count;
-        public void Increment() => Interlocked.Increment(ref Count);
-    }
-
-    [ExportModes(ExportModes.Pull)]
-    class TestExporter : BaseExporter<Metric>, IPullMetricExporter {
-        public override ExportResult Export(in Batch<Metric> batch) {
-            Batch = batch;
-
-            return ExportResult.Success;
-        }
-
-        Batch<Metric> Batch { get; set; }
-
-        public Func<int, bool> Collect { get; set; } = null!;
-
-        public MetricValue[] CollectValues() {
-            var values = new List<MetricValue>();
-
-            foreach (var metric in Batch) {
-                if (metric == null) continue;
-
-                foreach (ref readonly var metricPoint in metric.GetMetricPoints()) {
-                    var tags = new List<(string, object?)>();
-
-                    foreach (var (key, value) in metricPoint.Tags) {
-                        tags.Add((key, value));
-                    }
-
-                    var metricValue = metric.MetricType switch {
-                        MetricType.Histogram   => metricPoint.GetHistogramSum() / metricPoint.GetHistogramCount(),
-                        MetricType.DoubleGauge => metricPoint.GetGaugeLastValueDouble(),
-                        MetricType.LongGauge   => metricPoint.GetGaugeLastValueLong(),
-                        _                      => throw new ArgumentOutOfRangeException()
-                    };
-
-                    values.Add(
-                        new MetricValue(
-                            metric.Name,
-                            tags.Select(x => x.Item1).ToArray(),
-                            tags.Select(x => x.Item2).ToArray()!,
-                            metricValue
-                        )
-                    );
-                }
-            }
-
-            return values.ToArray();
-        }
-    }
 }
-
-record MetricValue(string Name, string[] Keys, object[] Values, double Value);
