@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IncludeTestHost>true</IncludeTestHost>
+        <IncludeTestHelpers>true</IncludeTestHelpers>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj"/>
+        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <None Remove="Eventuous.Tests.Subscriptions.Base.csproj.DotSettings"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Hypothesist"/>
+    </ItemGroup>
+</Project>

@@ -4,7 +4,7 @@ Find out about abstractions Eventuous provides to implement the pattern, with sa
 </card-summary>
 # Aggregate
 
-> From version 0.14.0 using aggregates is **optional**. You can define your domain logic using [functional services](../application/func-service.md) instead.
+> From version 0.14.0 using aggregates is **optional**. You can define your domain logic using [functional services](Functional-service.md) instead.
 >
 {style="note"}
 
@@ -160,7 +160,7 @@ public record BookingId(string Value) : AggregateId(Value);
 
 The abstract record overrides its `ToString` to return the string value as-is. It also has an implicit conversion operator, which allows you to use a string value without explicitly instantiating the identity record. However, we still recommend instantiating the identity explicitly to benefit from type safety.
 
-The aggregate identity type is only used by the [command service](../application/app-service.md) and for calculating the [stream name](../persistence/aggregate-stream.md) for loading and saving events.
+The aggregate identity type is only used by the [command service](Command-service.md) and for calculating the [stream name](Event-streams.md) for loading and saving events.
 
 ## Aggregate factory
 

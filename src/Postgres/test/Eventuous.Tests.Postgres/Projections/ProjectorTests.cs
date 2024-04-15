@@ -2,15 +2,20 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Postgresql.Projections;
+using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
-using Eventuous.Tests.Postgres.Fixtures;
+using Eventuous.Tests.Postgres.Subscriptions;
 using Npgsql;
 
 namespace Eventuous.Tests.Postgres.Projections;
 
-public class ProjectorTests(ITestOutputHelper outputHelper) : SubscriptionFixture<TestProjector>(outputHelper, true) {
+[Collection("Database")]
+public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
+    readonly SubscriptionFixture<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, TestProjector> _fixture
+        = new(_ => { }, outputHelper);
+
     const string Schema = """
                           create table if not exists __schema__.bookings (
                               booking_id varchar(1000) not null primary key,
@@ -26,9 +31,9 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : SubscriptionFixtur
 
         await Task.Delay(1000);
 
-        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var connection = await _fixture.DataSource.OpenConnectionAsync();
 
-        var select = $"select * from {SchemaName}.bookings where booking_id = @bookingId";
+        var select = $"select * from {_fixture.SchemaName}.bookings where booking_id = @bookingId";
 
         foreach (var command in commands) {
             await using var cmd = new NpgsqlCommand(select, connection);
@@ -41,26 +46,24 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : SubscriptionFixtur
     }
 
     async Task CreateSchema() {
-        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var connection = await _fixture.DataSource.OpenConnectionAsync();
 
         await using var cmd = connection.CreateCommand();
-        cmd.CommandText = Schema.Replace("__schema__", SchemaName);
+        cmd.CommandText = Schema.Replace("__schema__", _fixture.SchemaName);
         await cmd.ExecuteNonQueryAsync();
     }
-
-    protected override TestProjector GetHandler() => new(DataSource, SchemaName);
 
     async Task<List<Commands.ImportBooking>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking(Auto))
+            .Select(_ => DomainFixture.CreateImportBooking(_fixture.Auto))
             .ToList();
 
         foreach (var command in commands) {
             var evt         = ToEvent(command);
             var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
 
-            await EventStore.AppendEvents(
+            await _fixture.EventStore.AppendEvents(
                 StreamName.For<Booking>(command.BookingId),
                 ExpectedStreamVersion.NoStream,
                 new[] { streamEvent },
@@ -73,11 +76,15 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : SubscriptionFixtur
 
     static BookingEvents.BookingImported ToEvent(Commands.ImportBooking cmd)
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
+
+    public Task InitializeAsync() => _fixture.InitializeAsync();
+
+    public Task DisposeAsync() => _fixture.DisposeAsync();
 }
 
 public class TestProjector : PostgresProjector {
-    public TestProjector(NpgsqlDataSource dataSource, string schema) : base(dataSource) {
-        var insert = $"insert into {schema}.bookings (booking_id, checkin_date, price) values (@booking_id, @checkin_date, @price)";
+    public TestProjector(NpgsqlDataSource dataSource, SchemaInfo schemaInfo) : base(dataSource) {
+        var insert = $"insert into {schemaInfo.Schema}.bookings (booking_id, checkin_date, price) values (@booking_id, @checkin_date, @price)";
 
         On<BookingEvents.BookingImported>(
             (connection, ctx) =>

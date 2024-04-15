@@ -38,8 +38,16 @@
         <toc-element topic="Subscription-Diagnostics.md"/>
     </toc-element>
     <toc-element topic="Infrastructure.topic">
-        <toc-element topic="MS-SQL-Server.md"/>
-        <toc-element topic="PostgreSQL.md"/>
         <toc-element topic="EventStoreDB.md"/>
+        <toc-element topic="PostgreSQL.md"/>
+        <toc-element topic="MS-SQL-Server.md"/>
+        <toc-element topic="Elasticsearch.md"/>
+        <toc-element topic="Redis.md"/>
     </toc-element>
+    <toc-element topic="Read-models.topic">
+        <toc-element topic="What-are-read-models.md"/>
+        <toc-element topic="Projectors.md"/>
+    </toc-element>
+    <toc-element topic="Producers.topic"/>
+    <toc-element topic="Gateway.topic"/>
 </instance-profile>

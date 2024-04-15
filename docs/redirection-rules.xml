@@ -10,4 +10,8 @@
         <description><![CDATA[Created after removal of "<State-store.md>" from Eventuous]]></description>
         <accepts>State-store.html</accepts>
     </rule>
+    <rule id="7461418b">
+        <description>Created after removal of "Starter" from Eventuous</description>
+        <accepts>Starter.html</accepts>
+    </rule>
 </rules>

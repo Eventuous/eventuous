@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <NoWarn>CS8524</NoWarn>
+    </PropertyGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
             <Link>Tools\TaskExtensions.cs</Link>
@@ -13,6 +16,7 @@
     <ItemGroup>
       <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
       <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj" />
+      <ProjectReference Include="..\..\..\Core\src\Eventuous.Producers\Eventuous.Producers.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="System.Linq.Async"/>
