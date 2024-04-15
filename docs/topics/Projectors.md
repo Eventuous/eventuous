@@ -1,3 +1,0 @@
-# Projectors
-
-Start typing here...

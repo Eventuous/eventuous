@@ -1,3 +1,0 @@
-# Diagnostics
-
-Start typing here...

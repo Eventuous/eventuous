@@ -1,3 +1,0 @@
-# Event handlers
-
-Start typing here...

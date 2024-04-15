@@ -1,3 +1,0 @@
-# Redis
-
-Start typing here...

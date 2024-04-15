@@ -1,3 +1,0 @@
-# EventStoreDB
-
-Start typing here...

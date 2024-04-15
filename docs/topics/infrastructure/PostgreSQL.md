@@ -1,3 +1,0 @@
-# PostgreSQL
-
-Start typing here...
