@@ -28,7 +28,7 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
                 app.MapControllers();
 
                 app
-                    .MapAggregateCommands<Booking, BookingResult>()
+                    .MapAggregateCommands<Booking, BookingState>()
                     .MapCommand<BookRoom>();
             }
         );
@@ -58,7 +58,6 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
     }
 
     public void Dispose() {
-        // _fixture.Dispose();
         _listener.Dispose();
     }
 }

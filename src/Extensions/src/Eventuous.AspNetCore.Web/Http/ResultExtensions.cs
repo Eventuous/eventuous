@@ -22,7 +22,7 @@ public static class ResultExtensions {
         IResult AsValidationProblem(int statusCode) => Results.Problem(PopulateDetails(new ValidationProblemDetails(error.AsErrors()), error, statusCode));
     }
 
-    public static ActionResult AsActionResult(this Result result) {
+    public static ActionResult<Result<TState>> AsActionResult<TState>(this Result<TState> result) where TState : State<TState> {
         return result is ErrorResult error
             ? error.Exception switch {
                 OptimisticConcurrencyException => AsProblem(Status409Conflict),
@@ -42,10 +42,7 @@ public static class ResultExtensions {
             details.Detail = error.Exception?.ToString();
             details.Type   = error.Exception?.GetType().Name;
 
-            return new ObjectResult(details) {
-                StatusCode   = Status400BadRequest,
-                ContentTypes = [ContentTypes.ProblemDetails],
-            };
+            return new BadRequestObjectResult(details) { ContentTypes = [ContentTypes.ProblemDetails] };
         }
     }
 
@@ -57,6 +54,8 @@ public static class ResultExtensions {
 
         return details;
     }
+    
+    static IDictionary<string, string[]> GetErrors(string message) => new Dictionary<string, string[]> { ["Domain"] = [message] };
 
-    static IDictionary<string, string[]> AsErrors(this ErrorResult error) => new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] };
+    static IDictionary<string, string[]> AsErrors(this ErrorResult error) => GetErrors(error.ErrorMessage);
 }

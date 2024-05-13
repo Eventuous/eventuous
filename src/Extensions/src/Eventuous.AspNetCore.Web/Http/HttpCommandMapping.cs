@@ -26,18 +26,18 @@ public static partial class RouteBuilderExtensions {
     /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
-    /// <typeparam name="TResult">Result type that will be returned</typeparam>
+    /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns></returns>
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TResult>(
+    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TState>(
             this IEndpointRouteBuilder              builder,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
         )
-        where TAggregate : Aggregate
+        where TAggregate : Aggregate<TState>
         where TCommand : class
-        where TResult : Result {
+        where TState : State<TState>, new() {
         var attr = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
 
-        return builder.MapCommand<TCommand, TAggregate, TResult>(attr?.Route, enrichCommand, attr?.PolicyName);
+        return builder.MapCommand<TCommand, TAggregate, TState>(attr?.Route, enrichCommand, attr?.PolicyName);
     }
 
     /// <summary>
@@ -49,18 +49,18 @@ public static partial class RouteBuilderExtensions {
     /// <param name="policyName">Authorization policy</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
-    /// <typeparam name="TResult">Result type that will be returned</typeparam>
+    /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns></returns>
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TResult>(
+    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TState>(
             this IEndpointRouteBuilder              builder,
             string?                                 route,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
             string?                                 policyName    = null
         )
-        where TAggregate : Aggregate
+        where TAggregate : Aggregate<TState>
         where TCommand : class
-        where TResult : Result
-        => Map<TAggregate, TCommand, TCommand, TResult>(
+        where TState : State<TState>, new()
+        => Map<TAggregate, TState, TCommand, TCommand>(
             builder,
             route,
             enrichCommand != null
@@ -75,21 +75,11 @@ public static partial class RouteBuilderExtensions {
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns></returns>
-    public static CommandServiceRouteBuilder<TAggregate, Result> MapAggregateCommands<TAggregate>(this IEndpointRouteBuilder builder)
-        where TAggregate : Aggregate => new(builder);
-
-    /// <summary>
-    /// Creates an instance of <see cref="CommandServiceRouteBuilder{TAggregate,TResult}"/> for a given aggregate type, so you
-    /// can explicitly map commands to HTTP endpoints. 
-    /// </summary>
-    /// <param name="builder">Endpoint route builder instance</param>
-    /// <typeparam name="TAggregate">Aggregate type</typeparam>
-    /// <typeparam name="TResult">Result type that will be returned</typeparam>
-    /// <returns></returns>
-    public static CommandServiceRouteBuilder<TAggregate, TResult> MapAggregateCommands<TAggregate, TResult>(this IEndpointRouteBuilder builder)
-        where TAggregate : Aggregate
-        where TResult : Result
+    public static CommandServiceRouteBuilder<TAggregate, TState> MapAggregateCommands<TAggregate, TState>(this IEndpointRouteBuilder builder)
+        where TAggregate : Aggregate<TState>
+        where TState : State<TState>, new()
         => new(builder);
 
     /// <summary>
@@ -137,16 +127,16 @@ public static partial class RouteBuilderExtensions {
         }
     }
 
-    static RouteHandlerBuilder Map<TAggregate, TContract, TCommand, TResult>(
+    static RouteHandlerBuilder Map<TAggregate, TState, TContract, TCommand>(
             IEndpointRouteBuilder                         builder,
             string?                                       route,
             ConvertAndEnrichCommand<TContract, TCommand>? convert    = null,
             string?                                       policyName = null
         )
-        where TAggregate : Aggregate
+        where TAggregate : Aggregate<TState>
         where TCommand : class
         where TContract : class
-        where TResult : Result {
+        where TState : State<TState>, new() {
         if (convert == null && typeof(TCommand) != typeof(TContract))
             throw new InvalidOperationException($"Command type {typeof(TCommand).Name} is not assignable from {typeof(TContract).Name}");
 
@@ -171,7 +161,7 @@ public static partial class RouteBuilderExtensions {
                 }
             )
             .Accepts<TContract>()
-            .ProducesOk<TResult>()
+            .ProducesOk<TState>()
             .ProducesProblemDetails(Status404NotFound)
             .ProducesProblemDetails(Status409Conflict)
             .ProducesProblemDetails(Status500InternalServerError)

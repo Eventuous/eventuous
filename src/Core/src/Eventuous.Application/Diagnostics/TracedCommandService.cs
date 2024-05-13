@@ -5,11 +5,11 @@ using System.Diagnostics;
 
 namespace Eventuous.Diagnostics;
 
-public class TracedCommandService<T>(ICommandService<T> appService) : ICommandService<T> where T : Aggregate {
-    public static ICommandService<T> Trace(ICommandService<T> appService)
-        => new TracedCommandService<T>(appService);
+public class TracedCommandService<TAggregate>(ICommandService<TAggregate> appService) : ICommandService<TAggregate> where TAggregate : Aggregate {
+    public static ICommandService<TAggregate> Trace(ICommandService<TAggregate> appService)
+        => new TracedCommandService<TAggregate>(appService);
 
-    ICommandService<T> InnerService { get; } = appService;
+    ICommandService<TAggregate> InnerService { get; } = appService;
 
     readonly string           _appServiceTypeName = appService.GetType().Name;
     readonly DiagnosticSource _metricsSource      = new DiagnosticListener(CommandServiceMetrics.ListenerName);
@@ -26,8 +26,7 @@ public class TracedCommandService<T>(ICommandService<T> appService) : ICommandSe
         return false;
     }
 
-    public Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
-        where TCommand : class
+    public Task<Result> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class
         => CommandServiceActivity.TryExecute(
             _appServiceTypeName,
             command,
@@ -38,14 +37,14 @@ public class TracedCommandService<T>(ICommandService<T> appService) : ICommandSe
         );
 }
 
-public class TracedCommandService<T, TState, TId>(ICommandService<T, TState, TId> appService) : ICommandService<T, TState, TId>
+public class TracedCommandService<TAggregate, TState, TId>(ICommandService<TAggregate, TState, TId> appService) : ICommandService<TAggregate, TState, TId>
     where TState : State<TState>, new()
     where TId : Id
-    where T : Aggregate<TState> {
-    public static ICommandService<T, TState, TId> Trace(ICommandService<T, TState, TId> appService)
-        => new TracedCommandService<T, TState, TId>(appService);
+    where TAggregate : Aggregate<TState> {
+    public static ICommandService<TAggregate, TState, TId> Trace(ICommandService<TAggregate, TState, TId> appService)
+        => new TracedCommandService<TAggregate, TState, TId>(appService);
 
-    ICommandService<T, TState, TId> InnerService { get; } = appService;
+    ICommandService<TAggregate, TState, TId> InnerService { get; } = appService;
 
     readonly DiagnosticSource _metricsSource      = new DiagnosticListener(CommandServiceMetrics.ListenerName);
     readonly string           _appServiceTypeName = appService.GetType().Name;

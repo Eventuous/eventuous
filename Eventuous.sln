@@ -213,6 +213,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookings.Domain", "samples\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookings.Payments", "samples\postgres\Bookings.Payments\Bookings.Payments.csproj", "{EFC04988-0DA8-4EF7-A1F4-96CA6534EBC0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookings", "samples\postgres\Bookings\Bookings.csproj", "{A3CD84D0-F419-4BAC-A01E-418871BCFE94}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -447,6 +449,10 @@ Global
 		{EFC04988-0DA8-4EF7-A1F4-96CA6534EBC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFC04988-0DA8-4EF7-A1F4-96CA6534EBC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFC04988-0DA8-4EF7-A1F4-96CA6534EBC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3CD84D0-F419-4BAC-A01E-418871BCFE94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3CD84D0-F419-4BAC-A01E-418871BCFE94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3CD84D0-F419-4BAC-A01E-418871BCFE94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3CD84D0-F419-4BAC-A01E-418871BCFE94}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -542,6 +548,7 @@ Global
 		{2595490D-610C-4E97-B0EA-AAC25A039AB5} = {49CCE0F5-C2A7-4058-BDCA-9C9413BDC64A}
 		{5E77AB12-37A9-4300-B4B4-8A85ADE19D87} = {2595490D-610C-4E97-B0EA-AAC25A039AB5}
 		{EFC04988-0DA8-4EF7-A1F4-96CA6534EBC0} = {2595490D-610C-4E97-B0EA-AAC25A039AB5}
+		{A3CD84D0-F419-4BAC-A01E-418871BCFE94} = {2595490D-610C-4E97-B0EA-AAC25A039AB5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0691467B-C257-46DB-BC4F-88EB7CD615B8}

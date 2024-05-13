@@ -37,13 +37,13 @@ app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 try {
     app.Run("http://*:5051");
+
     return 0;
-}
-catch (Exception e) {
+} catch (Exception e) {
     Log.Fatal(e, "Host terminated unexpectedly");
+
     return 1;
-}
-finally {
+} finally {
     Log.CloseAndFlush();
 }
 
@@ -51,5 +51,6 @@ async Task InitialiseSchema(IHost webApplication) {
     var store  = webApplication.Services.GetRequiredService<PostgresStore>();
     var schema = store.Schema;
     var ds     = webApplication.Services.GetRequiredService<NpgsqlDataSource>();
-    await schema.CreateSchema(ds);
+    var log    = webApplication.Services.GetRequiredService<ILogger<Schema>>();
+    await schema.CreateSchema(ds, log);
 }

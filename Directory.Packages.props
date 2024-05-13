@@ -50,7 +50,6 @@
         <PackageVersion Include="Polly" Version="8.2.0"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageVersion Include="StackExchange.Redis" Version="2.6.90"/>
-        <PackageVersion Include="Verify.DiffPlex" Version="2.3.0"/>
     </ItemGroup>
     <ItemGroup Label="Testcontainers">
         <PackageVersion Include="Testcontainers" Version="$(TestcontainersVersion)"/>
@@ -86,5 +85,20 @@
         <PackageVersion Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0"/>
         <PackageVersion Include="MongoDb.Bson.NodaTime" Version="3.0.0"/>
         <PackageVersion Include="Verify.Xunit" Version="22.4.1"/>
+        <PackageVersion Include="Verify.DiffPlex" Version="2.3.0"/>
+    </ItemGroup>
+    <ItemGroup Label="Packages for samples">
+        <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.5.0-rc.1"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.Zipkin" Version="1.5.1"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.5.1"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.5.1-beta.1"/>
+        <PackageVersion Include="Serilog.AspNetCore" Version="7.0.0"/>
+        <PackageVersion Include="Serilog.Sinks.Console" Version="4.1.0"/>
+        <PackageVersion Include="Serilog.Sinks.Seq" Version="5.2.2"/>
+        <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
+        <PackageVersion Include="MongoDB.Driver.Core.Extensions.OpenTelemetry" Version="1.0.0"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.7.0-beta.1"/>
+        <PackageVersion Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
+        <PackageVersion Include="Npgsql.OpenTelemetry" Version="$(NpgsqlVer)"/>
     </ItemGroup>
 </Project>

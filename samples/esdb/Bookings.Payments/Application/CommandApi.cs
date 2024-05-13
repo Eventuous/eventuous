@@ -8,9 +8,9 @@ namespace Bookings.Payments.Application;
 
 [Route("payment")]
 public class CommandApi : CommandHttpApiBase<Payment> {
-    public CommandApi(IApplicationService<Payment> service) : base(service) { }
+    public CommandApi(IStateCommandService<Payment> service) : base(service) { }
 
     [HttpPost]
-    public Task<ActionResult<Result>> RegisterPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
+    public Task<ActionResult<Result<Payment>>> RegisterPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
         => Handle(cmd, cancellationToken);
 }

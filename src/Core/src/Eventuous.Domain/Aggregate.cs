@@ -23,8 +23,7 @@ public abstract class Aggregate {
     /// <summary>
     /// Clears all the pending changes. Normally not used. Can be used for testing purposes.
     /// </summary>
-    public void ClearChanges()
-        => _changes.Clear();
+    public void ClearChanges() => _changes.Clear();
 
     /// <summary>
     /// The original version is the aggregate version we got from the store.
@@ -51,8 +50,7 @@ public abstract class Aggregate {
     /// Adds an event to the list of pending changes.
     /// </summary>
     /// <param name="evt">New domain event</param>
-    protected void AddChange(object evt)
-        => _changes.Add(evt);
+    protected void AddChange(object evt) => _changes.Add(evt);
 
     /// <summary>
     /// Use this method to ensure you are operating on a new aggregate.
@@ -73,14 +71,14 @@ public abstract class Aggregate {
     }
 }
 
-public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
+public abstract class Aggregate<TState> : Aggregate where TState : State<TState>, new() {
     /// <summary>
     /// Applies a new event to the state, adds the event to the list of pending changes,
     /// and increases the current version.
     /// </summary>
     /// <param name="evt">New domain event to be applied</param>
     /// <returns>The previous and the new aggregate states</returns>
-    protected (T PreviousState, T CurrentState) Apply<TEvent>(TEvent evt) where TEvent : class {
+    protected (TState PreviousState, TState CurrentState) Apply<TEvent>(TEvent evt) where TEvent : class {
         AddChange(evt);
         var previous = State;
         State = State.When(evt);
@@ -92,14 +90,13 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
     public override void Load(IEnumerable<object?> events) {
         Original = events.Where(x => x != null).ToArray()!;
         // ReSharper disable once ConvertClosureToMethodGroup
-        State = Original.Aggregate(new T(), (state, o) => Fold(state, o));
+        State = Original.Aggregate(new TState(), (state, o) => Fold(state, o));
     }
 
-    static T Fold(T state, object evt)
-        => state.When(evt);
+    static TState Fold(TState state, object evt) => state.When(evt);
 
     /// <summary>
     /// Returns the current aggregate state. Cannot be mutated from the outside.
     /// </summary>
-    public T State { get; private set; } = new();
+    public TState State { get; private set; } = new();
 }

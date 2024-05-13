@@ -1,19 +1,16 @@
 using Bookings.Domain.Bookings;
 using Eventuous;
 using Eventuous.AspNetCore.Web;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Bookings.Application.BookingCommands;
 
 namespace Bookings.HttpApi.Bookings;
 
 [Route("/booking")]
-public class CommandApi : CommandHttpApiBase<Booking> {
-    public CommandApi(ICommandService<Booking> service) : base(service) { }
-
+public class CommandApi(ICommandService<Booking, BookingState> service) : CommandHttpApiBase<Booking, BookingState>(service) {
     [HttpPost]
     [Route("book")]
-    public Task<ActionResult<Result>> BookRoom([FromBody] BookRoom cmd, CancellationToken cancellationToken)
+    public Task<ActionResult<Result<BookingState>>> BookRoom([FromBody] BookRoom cmd, CancellationToken cancellationToken)
         => Handle(cmd, cancellationToken);
 
     /// <summary>
@@ -26,7 +23,7 @@ public class CommandApi : CommandHttpApiBase<Booking> {
     /// <returns></returns>
     [HttpPost]
     [Route("recordPayment")]
-    public Task<ActionResult<Result>> RecordPayment(
+    public Task<ActionResult<Result<BookingState>>> RecordPayment(
         [FromBody] RecordPayment cmd, CancellationToken cancellationToken
     )
         => Handle(cmd, cancellationToken);

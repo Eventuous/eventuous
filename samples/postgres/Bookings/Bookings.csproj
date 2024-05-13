@@ -3,26 +3,31 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Eventuous.Diagnostics.OpenTelemetry" Version="$(EventuousVersion)" />
-        <PackageReference Include="Eventuous.Postgresql" Version="$(EventuousVersion)" />
-        <PackageReference Include="Eventuous.RabbitMq" Version="$(EventuousVersion)" />
-        <PackageReference Include="Eventuous.Projections.MongoDB" Version="$(EventuousVersion)" />
-        <PackageReference Include="Eventuous.AspNetCore.Web" Version="$(EventuousVersion)" />
-        <PackageReference Include="MongoDb.Bson.NodaTime" Version="3.0.0" />
-        <PackageReference Include="MongoDB.Driver.Core.Extensions.OpenTelemetry" Version="1.0.0" />
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.1.0" />
-        <PackageReference Include="Npgsql.OpenTelemetry" Version="7.0.4" />
-        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.5.0-rc.1" />
-        <PackageReference Include="OpenTelemetry.Exporter.Zipkin" Version="1.5.1" />
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.5.1" />
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.5.1" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.5.1-beta.1" />
-        <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
-        <PackageReference Include="Serilog.Sinks.Seq" Version="5.2.2" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+        <PackageReference Include="MongoDb.Bson.NodaTime"/>
+        <PackageReference Include="MongoDB.Driver.Core.Extensions.OpenTelemetry"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="Npgsql.OpenTelemetry"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Zipkin"/>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore"/>
+        <PackageReference Include="Serilog.AspNetCore"/>
+        <PackageReference Include="Serilog.Sinks.Console"/>
+        <PackageReference Include="Serilog.Sinks.Seq"/>
+        <PackageReference Include="Swashbuckle.AspNetCore"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj" />
+        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Postgres\src\Eventuous.Postgresql\Eventuous.Postgresql.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Experimental\src\Eventuous.Spyglass\Eventuous.Spyglass.csproj"/>
+        <ProjectReference Include="$(ExtRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\RabbitMq\src\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj"/>
+        <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj"/>
     </ItemGroup>
 </Project>

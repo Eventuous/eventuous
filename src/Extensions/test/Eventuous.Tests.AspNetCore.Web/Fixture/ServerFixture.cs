@@ -13,7 +13,6 @@ using static SutBookingCommands;
 public class ServerFixture {
     //: IDisposable {
     readonly AutoFixture.Fixture _fixture = new();
-    readonly ITestOutputHelper   _output;
 
     public ServerFixture(
             WebApplicationFactory<Program> factory,
@@ -21,8 +20,6 @@ public class ServerFixture {
             Action<IServiceCollection>?    register  = null,
             ConfigureWebApplication?       configure = null
         ) {
-        _output = output;
-
         var builder = factory
             .WithWebHostBuilder(
                 builder => {
@@ -41,16 +38,15 @@ public class ServerFixture {
         _app = builder;
     }
 
-    readonly JsonSerializerOptions          _options = new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+    static readonly JsonSerializerOptions Options = new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+
     readonly WebApplicationFactory<Program> _app;
 
-    public RestClient GetClient() {
-        return new RestClient(
-            _app.CreateClient(),
-            disposeHttpClient: true,
-            configureSerialization: s => s.UseSerializer(() => new SystemTextJsonSerializer(_options))
-        );
-    }
+    public RestClient GetClient() => new(
+        _app.CreateClient(),
+        disposeHttpClient: true,
+        configureSerialization: s => s.UseSerializer(() => new SystemTextJsonSerializer(Options))
+    );
 
     public T Resolve<T>() where T : notnull
         => _app.Services.GetRequiredService<T>();

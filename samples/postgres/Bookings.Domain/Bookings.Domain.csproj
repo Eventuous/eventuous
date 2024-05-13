@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="NodaTime" Version="3.1.9" />
+        <PackageReference Include="NodaTime"/>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="$(CoreRoot)\Eventuous.Domain\Eventuous.Domain.csproj" />
-      <ProjectReference Include="$(CoreRoot)\Eventuous.Shared\Eventuous.Shared.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Domain\Eventuous.Domain.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Shared\Eventuous.Shared.csproj"/>
     </ItemGroup>
 </Project>

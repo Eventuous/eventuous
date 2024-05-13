@@ -1,18 +1,15 @@
-using Bookings.Payments.Domain;
 using Eventuous;
 using Eventuous.AspNetCore.Web;
 using Microsoft.AspNetCore.Mvc;
-using static Bookings.Payments.Application.PaymentCommands;
 
 namespace Bookings.Payments.Application;
 
-[Route("payment")]
-public class CommandApi : CommandHttpApiBase<Payment> {
-    public CommandApi(ICommandService<Payment> service) : base(service) { }
+using Domain;
+using static PaymentCommands;
 
+[Route("payment")]
+public class CommandApi(ICommandService<Payment, PaymentState> service) : CommandHttpApiBase<Payment, PaymentState>(service) {
     [HttpPost]
-    public Task<ActionResult<Result>> RegisterPayment(
-        [FromBody] RecordPayment cmd, CancellationToken cancellationToken
-    )
+    public Task<ActionResult<Result<PaymentState>>> RegisterPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
         => Handle(cmd, cancellationToken);
 }

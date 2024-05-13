@@ -74,14 +74,14 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             return new ErrorResult<TState>(exception);
         }
 
-        var streamName = await registeredHandler.GetStream(command, cancellationToken).NoContext();
-        var reader     = registeredHandler.ResolveReaderFromCommand(command);
-        var writer     = registeredHandler.ResolveWriterFromCommand(command);
+        var streamName  = await registeredHandler.GetStream(command, cancellationToken).NoContext();
+        var localReader = registeredHandler.ResolveReaderFromCommand(command);
+        var localWriter = registeredHandler.ResolveWriterFromCommand(command);
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await reader.LoadStateOrNew<TState>(streamName, cancellationToken).NoContext(),
-                ExpectedState.Existing => await reader.LoadState<TState>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Any      => await localReader.LoadStateOrNew<TState>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Existing => await localReader.LoadState<TState>(streamName, cancellationToken).NoContext(),
                 ExpectedState.New      => new FoldedEventStream<TState>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>()),
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
@@ -96,7 +96,7 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<TState>(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await writer.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, amendEvent, cancellationToken).NoContext();
+            var storeResult = await localWriter.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, amendEvent, cancellationToken).NoContext();
             var changes     = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 

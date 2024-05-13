@@ -39,7 +39,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapAggregateCommands<Booking, BookingState>()
                 .MapCommand<ImportBookingHttp3, ImportBooking>(Enricher.EnrichCommand)
         );
 
@@ -47,8 +47,8 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
     }
 
     public static IEnumerable<object[]> ResultTypesToTest() {
-        yield return new object[] { new BookingResult() };
-        yield return new object[] { new Result() };
+        yield return [new OkResult<BookingState>(new BookingState(), [], 0)];
+        yield return [new Result()];
     }
 
     [Theory]
@@ -59,7 +59,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             factory,
             _output,
             _ => { },
-            app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking, TResult>(ImportRoute, Enricher.EnrichCommand)
+            app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking, BookingState>(ImportRoute, Enricher.EnrichCommand)
         );
 
         var resultTypeName = tResult.GetType().Name;
@@ -75,7 +75,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, TResult>()
+                .MapAggregateCommands<Booking, BookingState>()
                 .MapCommand<ImportBookingHttp, ImportBooking>(ImportRoute, Enricher.EnrichCommand)
         );
 
@@ -90,7 +90,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapAggregateCommands<Booking, BookingState>()
                 .MapCommand<ImportBookingHttp1, ImportBooking>(Enricher.EnrichCommand)
         );
 
@@ -104,7 +104,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapAggregateCommands<Booking, BookingState>()
                 .MapCommand<ImportBookingHttp2, ImportBooking>(Enricher.EnrichCommand)
         );
 
@@ -118,7 +118,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapAggregateCommands<Booking, BookingState>()
                 .MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
         );
         var cmd      = fixture.GetBookRoom();

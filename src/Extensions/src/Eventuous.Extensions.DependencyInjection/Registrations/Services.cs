@@ -90,19 +90,19 @@ public static partial class ServiceCollectionExtensions {
     /// Registers the application service in the container
     /// </summary>
     /// <param name="services"></param>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TService"></typeparam>
     /// <typeparam name="TState"></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddFunctionalService<T, TState>(this IServiceCollection services)
-        where T : class, IFuncCommandService<TState>
+    public static IServiceCollection AddFunctionalService<TService, TState>(this IServiceCollection services)
+        where TService : class, IFuncCommandService<TState>
         where TState : State<TState>, new() {
-        services.AddSingleton<T>();
+        services.AddSingleton<TService>();
 
         if (EventuousDiagnostics.Enabled) {
-            services.AddSingleton(sp => TracedFunctionalService<TState>.Trace(sp.GetRequiredService<T>()));
+            services.AddSingleton(sp => TracedFunctionalService<TState>.Trace(sp.GetRequiredService<TService>()));
         }
         else {
-            services.AddSingleton<IFuncCommandService<TState>>(sp => sp.GetRequiredService<T>());
+            services.AddSingleton<IFuncCommandService<TState>>(sp => sp.GetRequiredService<TService>());
         }
 
         return services;

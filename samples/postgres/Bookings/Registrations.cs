@@ -34,10 +34,7 @@ public static class Registrations {
 
         services.AddSingleton(connectionFactory);
 
-        services.AddEventuousPostgres(
-            configuration["Postgres:ConnectionString"]!,
-            new PostgresStoreOptions("bookings")
-        );
+        services.AddEventuousPostgres(configuration);
         services.AddAggregateStore<PostgresStore>();
         services.AddCommandService<BookingsCommandService, Booking>();
 

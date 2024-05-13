@@ -7,10 +7,11 @@ using static Bookings.Application.BookingCommands;
 namespace Bookings.HttpApi.Bookings;
 
 [Route("/booking")]
-public class CommandApi(ICommandService<Booking> service) : CommandHttpApiBase<Booking>(service) {
+public class CommandApi(ICommandService<Booking, BookingState> service) : CommandHttpApiBase<Booking, BookingState>(service) {
     [HttpPost]
     [Route("book")]
-    public Task<ActionResult<Result>> BookRoom([FromBody] BookRoom cmd, CancellationToken cancellationToken) => Handle(cmd, cancellationToken);
+    public Task<ActionResult<Result<BookingState>>> BookRoom([FromBody] BookRoom cmd, CancellationToken cancellationToken) 
+        => Handle(cmd, cancellationToken);
 
     /// <summary>
     /// This endpoint is for demo purposes only. The normal flow to register booking payments is to submit
@@ -22,6 +23,6 @@ public class CommandApi(ICommandService<Booking> service) : CommandHttpApiBase<B
     /// <returns></returns>
     [HttpPost]
     [Route("recordPayment")]
-    public Task<ActionResult<Result>> RecordPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
+    public Task<ActionResult<Result<BookingState>>> RecordPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
         => Handle(cmd, cancellationToken);
 }

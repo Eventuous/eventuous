@@ -26,7 +26,7 @@ public static partial class RouteBuilderExtensions {
             this IEndpointRouteBuilder              builder,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
         )
-        where TState : State<TState>
+        where TState : State<TState>, new()
         where TCommand : class {
         var attr = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
 
@@ -72,7 +72,7 @@ public static partial class RouteBuilderExtensions {
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
             string?                                 policyName    = null
         )
-        where TState : State<TState>
+        where TState : State<TState>, new()
         where TCommand : class
         where TResult : Result<TState>
         => MapFunc<TState, TCommand, TCommand, TResult>(
@@ -90,7 +90,7 @@ public static partial class RouteBuilderExtensions {
             ConvertAndEnrichCommand<TContract, TCommand>? convert    = null,
             string?                                       policyName = null
         )
-        where TState : State<TState>
+        where TState : State<TState>, new()
         where TCommand : class
         where TContract : class
         where TResult : Result<TState> {

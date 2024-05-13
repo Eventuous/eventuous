@@ -8,8 +8,16 @@ namespace Eventuous;
 public record struct Change(object Event, string EventType);
 
 public record Result : Result<object> {
-    public Result() : base(null, false) { }
+    public Result() : this(null, false, null) { }
     public Result(object? State, bool Success, IEnumerable<Change>? Changes = null) : base(State, Success, Changes) { }
+
+    public static Result FromResult<T>(Result<T> result) where T : State<T> {
+        return result switch {
+            OkResult<T> ok       => new OkResult(ok.State!, ok.Changes),
+            ErrorResult<T> error => new ErrorResult(error.Message, error.Exception),
+            _                    => throw new InvalidOperationException("Unknown result type")
+        };
+    }
 }
 
 public record OkResult(object State, IEnumerable<Change>? Changes = null) : Result(State, true, Changes);
@@ -19,7 +27,7 @@ public record ErrorResult(string Message, [property: JsonIgnore] Exception? Exce
 }
 
 [PublicAPI]
-public abstract record Result<TState>(TState? State, bool Success, IEnumerable<Change>? Changes = null) where TState: class;
+public abstract record Result<TState>(TState? State, bool Success, IEnumerable<Change>? Changes = null) where TState : class;
 
 [PublicAPI]
 public record OkResult<TState>(TState State, IEnumerable<Change> Changes, ulong StreamPosition)
@@ -41,5 +49,5 @@ public record ErrorResult<TState> : Result<TState> where TState : State<TState> 
 
     [JsonIgnore] public Exception? Exception { get; init; }
 
-    public string? ErrorMessage => Exception?.Message;
+    public string ErrorMessage => Exception?.Message ?? "Unknown error";
 }
