@@ -40,7 +40,6 @@ public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture
             )
         ),
         IClassFixture<StreamNameFixture> {
-
     [Fact]
     public async Task Postgres_ShouldConsumeProducedEvents() {
         await ShouldConsumeProducedEvents();
@@ -55,7 +54,6 @@ public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture
     public async Task Postgres_ShouldUseExistingCheckpoint() {
         await ShouldUseExistingCheckpoint();
     }
-
 
     static void ConfigureOptions(PostgresStreamSubscriptionOptions options, StreamNameFixture streamNameFixture) {
         options.Stream = streamNameFixture.StreamName;

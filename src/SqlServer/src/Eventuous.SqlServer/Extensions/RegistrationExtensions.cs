@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceCollectionExtensions {
     /// <summary>
-    /// Adds PostgreSQL event store and the necessary schema to the DI container.
+    /// Adds SQL Server event store and the necessary schema to the DI container.
     /// </summary>
     /// <param name="services">Service collection</param>
     /// <param name="connectionString">Connection string</param>
