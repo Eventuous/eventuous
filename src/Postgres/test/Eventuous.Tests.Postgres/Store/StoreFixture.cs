@@ -11,7 +11,7 @@ namespace Eventuous.Tests.Postgres.Store;
 public class StoreFixture : StoreFixtureBase<PostgreSqlContainer> {
     protected NpgsqlDataSource DataSource { get; private set; } = null!;
 
-    readonly string _schemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    readonly string _schemaName = Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
 
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousPostgres(Container.GetConnectionString(), _schemaName, true);

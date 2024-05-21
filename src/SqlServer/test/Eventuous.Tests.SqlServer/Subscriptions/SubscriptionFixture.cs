@@ -25,6 +25,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     where TSubscriptionOptions : SqlServerSubscriptionBaseOptions
     where TEventHandler : class, IEventHandler {
     protected internal readonly string SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+
     readonly ITestOutputHelper _outputHelper = outputHelper;
 
     protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();
