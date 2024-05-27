@@ -42,7 +42,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     protected override void SetupServices(IServiceCollection services) {
         base.SetupServices(services);
         services.AddSingleton(new SchemaInfo(SchemaName));
-        services.AddSingleton(new SubscriptionsInfo() { ConnectionString = Container.GetConnectionString() });
+        services.AddSingleton(new SubscriptionOptions() { ConnectionString = Container.GetConnectionString() });
         services.AddEventuousSqlServer(Container.GetConnectionString(), SchemaName, true);
         services.AddAggregateStore<SqlServerStore>();
         services.AddSingleton(new SqlServerCheckpointStoreOptions { Schema = SchemaName, ConnectionString = Container.GetConnectionString() });
@@ -69,5 +69,4 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
 
 public record SchemaInfo(string Schema);
 
-
-public record SubscriptionsInfo : SqlServerSubscriptionBaseOptions;
+public record SubscriptionOptions : SqlServerSubscriptionBaseOptions;
