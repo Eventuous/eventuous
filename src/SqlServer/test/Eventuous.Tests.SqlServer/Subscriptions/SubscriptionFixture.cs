@@ -52,7 +52,17 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
 
     protected override void GetDependencies(IServiceProvider provider) {
         base.GetDependencies(provider);
-        ConnectionString = Container.GetConnectionString();
+        SubscriptionOptions = provider.GetRequiredService<SubscriptionOptions>();
+
+        if (SubscriptionOptions is null) {
+            throw new InvalidOperationException("Subscription options not found");
+        }
+
+        if (SubscriptionOptions.ConnectionString is null) {
+            throw new InvalidOperationException("Connection string not found");
+        }
+
+        ConnectionString = SubscriptionOptions.ConnectionString;
     }
 
     public override async Task<ulong> GetLastPosition() {
@@ -63,6 +73,8 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
 
         return (ulong)(result is DBNull ? 0 : (long)result!);
     }
+
+    public SubscriptionOptions SubscriptionOptions { get; private set; } = null!;
 
     public string ConnectionString { get; private set; } = null!;
 }
