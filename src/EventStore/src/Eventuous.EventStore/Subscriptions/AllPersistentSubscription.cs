@@ -28,16 +28,18 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
     /// </summary>
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
     /// <param name="subscriptionId">Subscription ID</param>
-    /// <param name="consumerPipe"></param>
-    /// <param name="eventSerializer">Event serializer instance</param>
-    /// <param name="metaSerializer"></param>
-    /// <param name="loggerFactory"></param>
+    /// <param name="consumerPipe">Consume pipe</param>
+    /// <param name="eventSerializer">Optional: event serializer instance</param>
+    /// <param name="metaSerializer">Optional: metadata serializer instance</param>
+    /// <param name="eventFilter">Optional: subscription filter</param>
+    /// <param name="loggerFactory">Optional: logger factory</param>
     public AllPersistentSubscription(
             EventStoreClient     eventStoreClient,
             string               subscriptionId,
             ConsumePipe          consumerPipe,
             IEventSerializer?    eventSerializer = null,
             IMetadataSerializer? metaSerializer  = null,
+            IEventFilter?        eventFilter     = null,
             ILoggerFactory?      loggerFactory   = null
         )
         : this(
@@ -45,7 +47,8 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
             new AllPersistentSubscriptionOptions {
                 SubscriptionId     = subscriptionId,
                 EventSerializer    = eventSerializer,
-                MetadataSerializer = metaSerializer
+                MetadataSerializer = metaSerializer,
+                EventFilter        = eventFilter
             },
             consumerPipe,
             loggerFactory
@@ -60,6 +63,7 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
     protected override Task CreatePersistentSubscription(PersistentSubscriptionSettings settings, CancellationToken cancellationToken)
         => SubscriptionClient.CreateToAllAsync(
             Options.SubscriptionId,
+            Options.EventFilter!, // although the argument is not nullable, it calls an internal method that accepts null
             settings,
             Options.Deadline,
             Options.Credentials,

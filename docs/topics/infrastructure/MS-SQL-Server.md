@@ -1,3 +1,0 @@
-# Microsoft SQL Server
-
-Start typing here...

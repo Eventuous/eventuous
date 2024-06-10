@@ -1,3 +1,0 @@
-# Elasticsearch
-
-Start typing here...

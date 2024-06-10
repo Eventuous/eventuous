@@ -1,3 +1,0 @@
-# Checkpoints
-
-Start typing here...
