@@ -84,15 +84,21 @@ public abstract class Aggregate<T> : Aggregate where T : State<T>, new() {
         AddChange(evt);
         var previous = State;
         State = State.When(evt);
-
+        When(evt);
         return (previous, State);
     }
 
+    protected virtual void When(object evt) {}
+    
     /// <inheritdoc />
     public override void Load(IEnumerable<object?> events) {
         Original = events.Where(x => x != null).ToArray()!;
         // ReSharper disable once ConvertClosureToMethodGroup
-        State = Original.Aggregate(new T(), (state, o) => Fold(state, o));
+        foreach (var o in Original) {
+            State = Fold(State, o);
+            When(o);
+        }
+       
     }
 
     static T Fold(T state, object evt)
