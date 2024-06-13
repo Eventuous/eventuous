@@ -195,6 +195,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.Persistence
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.Subscriptions.Base", "src\Core\test\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj", "{B9C5E752-81CB-4582-8105-75B3EFEE36A0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{603055ED-9CFE-4464-8459-5AD5B86A722B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

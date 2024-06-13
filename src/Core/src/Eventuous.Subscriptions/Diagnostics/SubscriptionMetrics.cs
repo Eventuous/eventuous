@@ -150,9 +150,9 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     public void SetCustomTags(TagList customTags) => _customTags = _customTags.Concat(customTags).ToArray();
 
     public void Dispose() {
-        _meter.Dispose();
         _listener.Dispose();
         _checkpointMetrics.Dispose();
+        _meter.Dispose();
     }
 
     internal record SubscriptionMetricsContext(string EventHandler, IMessageConsumeContext Context);
