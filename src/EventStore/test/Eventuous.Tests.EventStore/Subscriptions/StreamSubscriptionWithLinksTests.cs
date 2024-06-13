@@ -83,7 +83,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
     }
 
     async Task WaitForCheckpoint(int count, TimeSpan deadline) {
-        var source = new CancellationTokenSource(deadline);
+        using var source = new CancellationTokenSource(deadline);
 
         var expected = (ulong)(count - 1);
 
