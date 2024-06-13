@@ -15,6 +15,7 @@ public abstract class BaseProducer<TProduceOptions> : IEventProducer<TProduceOpt
         DefaultTags = options.AllTags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
     protected KeyValuePair<string, object?>[] DefaultTags { get; }
 
     protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
@@ -44,7 +45,7 @@ public abstract class BaseProducer<TProduceOptions> : IEventProducer<TProduceOpt
 
         (Activity? act, ProducedMessage[] msgs) ForOne() {
             var (act, producedMessage) = ProducerActivity.Start(messagesArray[0], DefaultTags);
-            return (act?.Start(), new[] { producedMessage });
+            return (act, [producedMessage]);
         }
     }
 }
