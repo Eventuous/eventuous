@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Postgresql;
 
 /// <summary>
-/// Instantiate a new Schema object with the specified schema name. Default schema name is "eventuous"
+/// Instantiate a new Schema object with the specified schema name. The default schema name is "eventuous"
 /// </summary>
 /// <param name="schema"></param>
 public class Schema(string schema = Schema.DefaultSchema) {
