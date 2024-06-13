@@ -17,13 +17,12 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     public string             SubscriptionId { get; } = subscriptionId;
     public IServiceCollection Services       { get; } = services;
 
-    readonly List<ResolveHandler> _handlers = new();
+    readonly List<ResolveHandler> _handlers = [];
 
     protected ConsumePipe     Pipe            { get; }      = new();
     protected ResolveConsumer ResolveConsumer { get; set; } = null!;
 
-    protected IEventHandler[] ResolveHandlers(IServiceProvider sp)
-        => _handlers.Select(x => x(sp)).ToArray();
+    protected IEventHandler[] ResolveHandlers(IServiceProvider sp) => _handlers.Select(x => x(sp)).ToArray();
 
     /// <summary>
     /// Adds an event handler to the subscription
@@ -42,12 +41,25 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// Adds an event handler to the subscription
     /// </summary>
     /// <param name="getHandler">A function to resolve event handler using the service provider</param>
-    /// <typeparam name="THandler"></typeparam>
+    /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
     public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler)
         where THandler : class, IEventHandler {
         Services.TryAddSingleton(getHandler);
         AddHandlerResolve(sp => sp.GetRequiredService<THandler>());
+
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an event handler to the subscription by instance
+    /// </summary>
+    /// <param name="handler">Event handler instance</param>
+    /// <typeparam name="THandler">Event handler type</typeparam>
+    /// <returns></returns>
+    public SubscriptionBuilder AddEventHandler<THandler>(THandler handler)
+        where THandler : class, IEventHandler {
+        AddHandlerResolve(_ => handler);
 
         return this;
     }
