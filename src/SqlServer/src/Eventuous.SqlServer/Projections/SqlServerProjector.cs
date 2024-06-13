@@ -1,4 +1,4 @@
-﻿// Copyright (C) Ubiquitous AS.All rights reserved
+﻿// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.SqlServer.Subscriptions;
@@ -6,11 +6,12 @@ using Eventuous.Subscriptions.Context;
 using EventHandler = Eventuous.Subscriptions.EventHandler;
 
 namespace Eventuous.SqlServer.Projections;
+
 /// <summary>
 /// Base class for projectors that store read models in SQL Server.
 /// </summary>
 public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions options, TypeMapper? mapper = null) : EventHandler(mapper) {
-    string _connectionString = Ensure.NotEmptyString(options.ConnectionString);
+    readonly string _connectionString = Ensure.NotEmptyString(options.ConnectionString);
 
     protected void On<T>(ProjectToSqlServer<T> handler) where T : class {
         base.On<T>(async ctx => await Handle(ctx, GetCommand).ConfigureAwait(false));
@@ -31,7 +32,7 @@ public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions option
 
     async Task Handle<T>(MessageConsumeContext<T> context, ProjectToSqlServerAsync<T> handler) where T : class {
         await using var connection = await ConnectionFactory.GetConnection(_connectionString, context.CancellationToken);
-        var cmd = await handler(connection, context).ConfigureAwait(false);
+        var             cmd        = await handler(connection, context).ConfigureAwait(false);
         await cmd.ExecuteNonQueryAsync(context.CancellationToken).ConfigureAwait(false);
     }
 
