@@ -112,6 +112,8 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
 
     [MethodImpl(MethodImplOptions.Synchronized)]
     void BuildHandlers() {
+        if (_initialized) return;
+
         foreach (var commandType in _builders.Keys) {
             var builder = _builders[commandType];
             var handler = builder.Build();
