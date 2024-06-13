@@ -5,6 +5,7 @@ using Eventuous.SqlServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
+// ReSharper disable UnusedMethodReturnValue.Global
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 

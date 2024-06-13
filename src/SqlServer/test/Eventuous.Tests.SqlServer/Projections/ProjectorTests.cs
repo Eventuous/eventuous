@@ -18,11 +18,14 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
         = new(_ => { }, outputHelper);
 
     const string Schema = """
-                          create table if not exists __schema__.bookings (
-                              booking_id varchar(1000) not null primary key,
-                              checkin_date timestamp,
-                              price numeric(10,2)
-                          );
+                          IF OBJECT_ID('__schema__.Bookings', 'U') IS NULL
+                          BEGIN
+                              CREATE TABLE __schema__.Bookings (
+                                  BookingId VARCHAR(1000) NOT NULL PRIMARY KEY,
+                                  CheckinDate DATETIME2,
+                                  Price NUMERIC(10,2)
+                              );
+                          END
                           """;
 
     [Fact]
@@ -34,15 +37,22 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
 
         await using var connection = await ConnectionFactory.GetConnection(_fixture.ConnectionString, default);
 
-        var select = $"select * from {_fixture.SchemaName}.bookings where booking_id = @bookingId";
+        var select = $"SELECT * FROM {_fixture.SchemaName}.Bookings where BookingId = @BookingId";
 
         foreach (var command in commands) {
-            await using var cmd = new SqlCommand(select, connection);
-            cmd.Parameters.AddWithValue("@bookingId", command.BookingId);
+            await ValidateProjectedObject(connection, command);
+        }
+
+        return;
+
+        async Task ValidateProjectedObject(SqlConnection conn, Commands.ImportBooking command) {
+            await using var cmd = new SqlCommand(select, conn);
+            cmd.Parameters.AddWithValue("@BookingId", command.BookingId);
             await using var reader = await cmd.ExecuteReaderAsync();
             await reader.ReadAsync();
-            reader["checkin_date"].Should().Be(command.CheckIn.ToDateTimeUnspecified());
-            reader["price"].Should().Be(command.Price);
+            reader["CheckinDate"].Should().Be(command.CheckIn.ToDateTimeUnspecified());
+            reader["Price"].Should().Be(command.Price);
+            
         }
     }
 
@@ -67,7 +77,7 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
             await _fixture.EventStore.AppendEvents(
                 StreamName.For<Booking>(command.BookingId),
                 ExpectedStreamVersion.NoStream,
-                new[] { streamEvent },
+                [ streamEvent ],
                 default
             );
         }
@@ -85,16 +95,16 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
 
 public class TestProjector : SqlServerProjector {
     public TestProjector(SubscriptionOptions options, SchemaInfo schemaInfo) : base(options) {
-        var insert = $"insert into {schemaInfo.Schema}.bookings (booking_id, checkin_date, price) values (@booking_id, @checkin_date, @price)";
+        var insert = $"INSERT INTO {schemaInfo.Schema}.Bookings (BookingId, CheckinDate, Price) values (@BookingId, @CheckinDate, @Price)";
 
         On<BookingEvents.BookingImported>(
             (connection, ctx) =>
                 Project(
                     connection,
                     insert,
-                    new SqlParameter("@booking_id", ctx.Stream.GetId()),
-                    new SqlParameter("@checkin_date", ctx.Message.CheckIn.ToDateTimeUnspecified()),
-                    new SqlParameter("@price", ctx.Message.Price)
+                    new SqlParameter("@BookingId", ctx.Stream.GetId()),
+                    new SqlParameter("@CheckinDate", ctx.Message.CheckIn.ToDateTimeUnspecified()),
+                    new SqlParameter("@Price", ctx.Message.Price)
                 )
         );
     }

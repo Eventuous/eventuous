@@ -8,7 +8,7 @@ It includes the following components:
 
 Remember that RabbitMQ doesn't support ordered message delivery.
 
-For each "stream", you will get an exchange, where the messages will be produced to.
+For each "stream," you will get an exchange, where the messages will be produced to.
 
 Creating a subscription will add a queue and an exchange. The queue and subscription exchange names will be the subscription id. 
-The subscription queue binds to the subscription exchange, the subscription exchange binds to the exchange of the "stream".
+The subscription queue binds to the subscription exchange, the subscription exchange binds to the exchange of the "stream."
