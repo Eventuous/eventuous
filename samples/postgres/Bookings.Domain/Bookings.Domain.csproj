@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="NodaTime"/>
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\Core\src\Eventuous.Domain\Eventuous.Domain.csproj" />
+      <ProjectReference Include="..\..\..\src\Core\src\Eventuous.Shared\Eventuous.Shared.csproj" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <ItemGroup>
+        <PackageReference Include="MongoDB.Driver"/>
+        <PackageReference Include="MongoDB.Driver.Core.Extensions.OpenTelemetry"/>
+        <PackageReference Include="MongoDb.Bson.NodaTime"/>
+        <PackageReference Include="Npgsql"/>
+        <PackageReference Include="Npgsql.OpenTelemetry"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore"/>
+        <PackageReference Include="RabbitMQ.Client" />
+        <PackageReference Include="Swashbuckle.AspNetCore"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Zipkin"/>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
+        <PackageReference Include="Serilog.Sinks.Console"/>
+        <PackageReference Include="Serilog.Extensions.Hosting"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\Bookings\Infrastructure\Logging.cs">
+            <Link>Infrastructure\Logging.cs</Link>
+        </Compile>
+        <Compile Include="..\Bookings\Infrastructure\Mongo.cs">
+            <Link>Infrastructure\Mongo.cs</Link>
+        </Compile>
+        <Compile Include="..\Bookings\Infrastructure\Telemetry.cs">
+            <Link>Infrastructure\Telemetry.cs</Link>
+        </Compile>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
+        <ProjectReference Include="..\..\..\src\Extensions\src\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>
+        <ProjectReference Include="..\..\..\src\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+        <ProjectReference Include="..\..\..\src\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
+        <ProjectReference Include="..\..\..\src\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
+        <ProjectReference Include="..\..\..\src\Postgres\src\Eventuous.Postgresql\Eventuous.Postgresql.csproj"/>
+        <ProjectReference Include="..\..\..\src\RabbitMq\src\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
+    </ItemGroup>
+</Project>
