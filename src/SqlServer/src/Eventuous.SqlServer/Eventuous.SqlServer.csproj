@@ -12,13 +12,13 @@
         <Using Include="System.Data"/>
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="Scripts\AppendEvents.sql"/>
-        <EmbeddedResource Include="Scripts\CheckStream.sql"/>
-        <EmbeddedResource Include="Scripts\ReadAllForwards.sql"/>
-        <EmbeddedResource Include="Scripts\ReadStreamBackwards.sql" />
-        <EmbeddedResource Include="Scripts\ReadStreamForwards.sql"/>
-        <EmbeddedResource Include="Scripts\ReadStreamSub.sql"/>
-        <EmbeddedResource Include="Scripts\_Schema.sql"/>
+        <EmbeddedResource Include="Scripts\1_Schema.sql"/>
+        <EmbeddedResource Include="Scripts\2_AppendEvents.sql"/>
+        <EmbeddedResource Include="Scripts\3_CheckStream.sql"/>
+        <EmbeddedResource Include="Scripts\4_ReadAllForwards.sql"/>
+        <EmbeddedResource Include="Scripts\5_ReadStreamBackwards.sql" />
+        <EmbeddedResource Include="Scripts\6_ReadStreamForwards.sql"/>
+        <EmbeddedResource Include="Scripts\7_ReadStreamSub.sql"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">

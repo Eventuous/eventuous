@@ -2,6 +2,7 @@
     <PropertyGroup>
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeTestHost>true</IncludeTestHost>
+        <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
