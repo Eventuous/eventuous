@@ -46,8 +46,7 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
         }
 
         async Task ExecuteConsume() {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-
+            using var cts      = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             using var consumer = GetConsumer(topicName);
             consumer.Subscribe(topicName);
 

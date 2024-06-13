@@ -34,8 +34,7 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
         var ctx = workerTask.Context;
 
         using var activity = ctx.Items.GetItem<Activity>(ContextItemKeys.Activity)?.Start();
-
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
+        using var cts      = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
         ctx.CancellationToken = cts.Token;
         Logger.Current        = ctx.LogContext;
 

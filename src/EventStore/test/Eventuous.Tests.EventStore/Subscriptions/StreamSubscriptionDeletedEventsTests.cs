@@ -91,7 +91,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
 
         await subscription.SubscribeWithLog(log);
 
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(200));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(200));
 
         while (handler.Count < produceCount - deleteCount && !cts.IsCancellationRequested) {
             await Task.Delay(100, cts.Token);

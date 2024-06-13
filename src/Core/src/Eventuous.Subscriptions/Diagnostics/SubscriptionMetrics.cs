@@ -107,7 +107,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         }
 
         (EndOfStream, ulong) GetGap(GetSubscriptionEndOfStream getEndOfStream) {
-            var cts = new CancellationTokenSource(500);
+            using var cts = new CancellationTokenSource(500);
 
             try {
                 var t = getEndOfStream(cts.Token);
