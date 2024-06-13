@@ -17,13 +17,14 @@ public record SqlServerStoreOptions {
 
 public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
     readonly GetSqlServerConnection _getConnection;
-    readonly Schema                 _schema;
+    
+    public Schema Schema { get; }
 
     public SqlServerStore(SqlServerStoreOptions options, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
         : base(serializer, metaSerializer) {
         var connectionString = Ensure.NotEmptyString(options.ConnectionString);
         _getConnection = ct => ConnectionFactory.GetConnection(connectionString, ct);
-        _schema        = new Schema(options.Schema);
+        Schema        = new Schema(options.Schema);
     }
 
     protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken) {
@@ -32,14 +33,14 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
 
     protected override DbCommand GetReadCommand(SqlConnection connection, StreamName stream, StreamReadPosition start, int count)
         => connection
-            .GetStoredProcCommand(_schema.ReadStreamForwards)
+            .GetStoredProcCommand(Schema.ReadStreamForwards)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
             .Add("@from_position", SqlDbType.Int, start.Value)
             .Add("@count", SqlDbType.Int, count);
 
     protected override DbCommand GetReadBackwardsCommand(SqlConnection connection, StreamName stream, int count)
         => connection
-            .GetStoredProcCommand(_schema.ReadStreamForwards)
+            .GetStoredProcCommand(Schema.ReadStreamForwards)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
             .Add("@count", SqlDbType.Int, count);
 
@@ -52,7 +53,7 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
             ExpectedStreamVersion expectedVersion,
             NewPersistedEvent[]   events
         )
-        => connection.GetStoredProcCommand(_schema.AppendEvents, (SqlTransaction)transaction)
+        => connection.GetStoredProcCommand(Schema.AppendEvents, (SqlTransaction)transaction)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
             .Add("@expected_version", SqlDbType.Int, expectedVersion.Value)
             .Add("@created", SqlDbType.DateTime2, DateTime.UtcNow)
@@ -61,6 +62,6 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
     protected override bool IsConflict(Exception exception) => exception is SqlException e && e.Number == 50000;
 
     protected override DbCommand GetStreamExistsCommand(SqlConnection connection, StreamName stream)
-        => connection.GetTextCommand(_schema.StreamExists)
+        => connection.GetTextCommand(Schema.StreamExists)
             .Add("@name", SqlDbType.NVarChar, stream.ToString());
 }
