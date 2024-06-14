@@ -28,9 +28,9 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
 
     public string SubscriptionId { get; } = $"test-{Guid.NewGuid():N}";
 
-    protected internal ValueTask Start() => Subscription.SubscribeWithLog(Log);
+    protected internal ValueTask StartSubscription() => Subscription.SubscribeWithLog(Log);
 
-    protected internal ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
+    protected internal ValueTask StopSubscription() => Subscription.UnsubscribeWithLog(Log);
 
     protected abstract TCheckpointStore GetCheckpointStore(IServiceProvider sp);
 
@@ -72,11 +72,11 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
 
     public override async Task InitializeAsync() {
         await base.InitializeAsync();
-        if (autoStart) await Start();
+        if (autoStart) await StartSubscription();
     }
 
     public override async Task DisposeAsync() {
-        if (autoStart) await Stop();
+        if (autoStart) await StopSubscription();
         await base.DisposeAsync();
     }
 }

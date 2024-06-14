@@ -10,6 +10,6 @@ class GenericObserver<T>(Action<T>? onNext, Action? onCompleted = null) : IObser
 
     public void OnNext(T value) => _onNext(value);
 
-    readonly Action<T> _onNext      = onNext      ?? new Action<T>(_ => { });
-    readonly Action    _onCompleted = onCompleted ?? new Action(() => { });
+    readonly Action<T> _onNext      = onNext      ?? (_ => { });
+    readonly Action    _onCompleted = onCompleted ?? (() => { });
 }

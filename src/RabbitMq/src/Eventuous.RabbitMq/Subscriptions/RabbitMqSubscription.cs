@@ -157,7 +157,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         return default;
     }
 
-    IMessageConsumeContext CreateContext(object sender, BasicDeliverEventArgs received) {
+    MessageConsumeContext CreateContext(object sender, BasicDeliverEventArgs received) {
         var evt = DeserializeData(received.BasicProperties.ContentType, received.BasicProperties.Type, received.Body, received.Exchange);
 
         var meta = received.BasicProperties.Headers != null

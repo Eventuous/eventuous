@@ -13,7 +13,7 @@ public class DefaultConsumerTests(ITestOutputHelper output) : IDisposable {
     [Fact]
     public async Task ShouldFailWhenHandlerNacks() {
         var handler  = new FailingHandler();
-        var consumer = new DefaultConsumer(new IEventHandler[] { handler });
+        var consumer = new DefaultConsumer([handler]);
         var ctx      = Auto.CreateContext(output);
 
         await consumer.Consume(ctx);

@@ -33,7 +33,7 @@ class HandlersMap<TAggregate, TId> where TAggregate : Aggregate where TId : Id {
     }
 
     internal void AddHandlerUntyped(Type command, RegisteredHandler<TAggregate, TId> handler)
-        => AddHandlerInternalMethod.MakeGenericMethod(command).Invoke(this, new object?[] { handler });
+        => AddHandlerInternalMethod.MakeGenericMethod(command).Invoke(this, [handler]);
 
     public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TAggregate, TId>? handler) => _typeMap.TryGetValue<TCommand>(out handler);
 }

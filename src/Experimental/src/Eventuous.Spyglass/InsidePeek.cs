@@ -56,7 +56,7 @@ public class InsidePeek {
                 : type.BaseType!.GenericTypeArguments[0];
     }
 
-    static dynamic CreateInstance(IReadOnlyDictionary<Type, Func<Aggregate>> reg, Type aggregateType) {
+    static dynamic CreateInstance(Dictionary<Type, Func<Aggregate>> reg, Type aggregateType) {
         var instance = reg.TryGetValue(aggregateType, out var factory)
             ? factory()
             : Activator.CreateInstance(aggregateType)!;
@@ -77,7 +77,7 @@ public class InsidePeek {
 
     public object[] Aggregates => AggregateInfos.Select(x => x.GetInfo()).ToArray();
 
-    List<AggregateInfo> AggregateInfos { get; } = new();
+    List<AggregateInfo> AggregateInfos { get; } = [];
 
     static bool DeepBaseType(Type t, Type compareWith) {
         while (true) {

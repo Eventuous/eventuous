@@ -21,7 +21,7 @@ public readonly record struct EventHandlingResult(EventHandlingStatus Status, st
 }
 
 public class HandlingResults {
-    readonly ConcurrentBag<EventHandlingResult> _results = new();
+    readonly ConcurrentBag<EventHandlingResult> _results = [];
 
     EventHandlingStatus _handlingStatus = 0;
 

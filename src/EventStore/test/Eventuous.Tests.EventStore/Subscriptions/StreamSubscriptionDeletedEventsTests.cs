@@ -115,7 +115,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
     class TestHandler : BaseEventHandler {
         public int Count { get; private set; }
 
-        public List<IMessageConsumeContext> Processed { get; } = new();
+        public List<IMessageConsumeContext> Processed { get; } = [];
 
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) {
             Count++;

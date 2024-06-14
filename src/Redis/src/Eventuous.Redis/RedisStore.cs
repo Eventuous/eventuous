@@ -91,7 +91,7 @@ public class RedisStore : IEventReader, IEventWriter {
             var data = _serializer.SerializeEvent(evt.Payload!);
             var meta = _metaSerializer.Serialize(evt.Metadata);
 
-            return new object[] { evt.Id.ToString(), data.EventType, AsString(data.Payload), AsString(meta) };
+            return [evt.Id.ToString(), data.EventType, AsString(data.Payload), AsString(meta)];
         }
 
         string AsString(ReadOnlySpan<byte> bytes)

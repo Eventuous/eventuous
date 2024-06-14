@@ -53,13 +53,13 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
             ExpectedStreamVersion expectedVersion,
             NewPersistedEvent[]   events
         )
-        => connection.GetStoredProcCommand(Schema.AppendEvents, (SqlTransaction)transaction)
+        => connection.GetStoredProcCommand(Schema.AppendEvents, transaction)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
             .Add("@expected_version", SqlDbType.Int, expectedVersion.Value)
             .Add("@created", SqlDbType.DateTime2, DateTime.UtcNow)
             .AddPersistedEvent("@messages", events);
 
-    protected override bool IsConflict(Exception exception) => exception is SqlException e && e.Number == 50000;
+    protected override bool IsConflict(Exception exception) => exception is SqlException { Number: 50000 };
 
     protected override DbCommand GetStreamExistsCommand(SqlConnection connection, StreamName stream)
         => connection.GetTextCommand(Schema.StreamExists)

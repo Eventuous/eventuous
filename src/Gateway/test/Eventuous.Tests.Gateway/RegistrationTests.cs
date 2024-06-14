@@ -47,7 +47,7 @@ public class RegistrationTests : IDisposable {
     class TestProducer : BaseProducer<TestProduceOptions> {
         // ReSharper disable once CollectionNeverQueried.Local
         // ReSharper disable once MemberCanBePrivate.Local
-        public List<ProducedMessage> ProducedMessages { get; } = new();
+        public List<ProducedMessage> ProducedMessages { get; } = [];
 
         protected override Task ProduceMessages(
             StreamName                   stream,

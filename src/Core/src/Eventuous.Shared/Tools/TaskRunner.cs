@@ -32,7 +32,7 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
 #endif
         } finally {
             var state        = new TaskCompletionSource<object>();
-            var registration = cancellationToken.Register((s => (((TaskCompletionSource<object>)s!)!).SetCanceled(cancellationToken)), state);
+            var registration = cancellationToken.Register((s => (((TaskCompletionSource<object>)s!)).SetCanceled(cancellationToken)), state);
 
             try {
                 await Task.WhenAny(_runner, state.Task).NoContext();

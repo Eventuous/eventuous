@@ -10,7 +10,9 @@ public class TestExporter : BaseExporter<Metric>, IPullMetricExporter {
 
     Batch<Metric> Batch { get; set; }
 
+#pragma warning disable CS8767
     public Func<int, bool> Collect { get; set; } = null!;
+#pragma warning restore CS8767
 
     public MetricValue[] CollectValues() {
         var values = new List<MetricValue>();

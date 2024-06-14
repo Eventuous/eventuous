@@ -78,7 +78,7 @@ public static class StateStoreFunctions {
             return (new FoldedEventStream<T>(streamName, expectedVersion, events));
         }
         catch (StreamNotFound) when (!failIfNotFound) {
-            return new FoldedEventStream<T>(streamName, ExpectedStreamVersion.NoStream, Array.Empty<object>());
+            return new FoldedEventStream<T>(streamName, ExpectedStreamVersion.NoStream, []);
         }
         catch (Exception e) {
             Log.UnableToLoadStream(streamName, e);

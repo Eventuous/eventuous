@@ -46,7 +46,7 @@ public class AggregateStore<TReader>(
             try {
                 return await reader.ReadStream(streamName, start, failIfNotFound, cancellationToken).NoContext();
             } catch (StreamNotFound) {
-                return Array.Empty<StreamEvent>();
+                return [];
             } catch (Exception e) {
                 Log.UnableToLoadAggregate<T>(streamName, e);
 

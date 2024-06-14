@@ -183,8 +183,6 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     }
 
     public T ResolveSubscription(IServiceProvider sp) {
-        const string subscriptionIdParameterName = "subscriptionId";
-
         if (_resolvedSubscription != null) {
             return _resolvedSubscription;
         }

@@ -8,7 +8,7 @@ namespace Eventuous;
 [PublicAPI]
 [Obsolete("Use IEventReader extension functions to load state")]
 public class StateStore(IEventReader eventReader, IEventSerializer? serializer = null) : IStateStore {
-    readonly IEventReader     _eventReader = Ensure.NotNull<IEventReader>(eventReader);
+    readonly IEventReader     _eventReader = Ensure.NotNull(eventReader);
     readonly IEventSerializer _serializer  = serializer ?? DefaultEventSerializer.Instance;
 
     const int PageSize = 500;

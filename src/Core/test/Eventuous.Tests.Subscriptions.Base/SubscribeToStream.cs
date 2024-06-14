@@ -22,9 +22,9 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
 
         var testEvents = await GenerateAndProduceEvents(count);
 
-        await fixture.Start();
+        await fixture.StartSubscription();
         await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
-        await fixture.Stop();
+        await fixture.StopSubscription();
         fixture.Handler.Count.Should().Be(10);
 
         var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
@@ -54,10 +54,10 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
             var testEvents = await GenerateAndProduceEvents(count);
 
             outputHelper.WriteLine("Starting subscription");
-            await fixture.Start();
+            await fixture.StartSubscription();
             await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
             outputHelper.WriteLine("Stopping subscription");
-            await fixture.Stop();
+            await fixture.StopSubscription();
             fixture.Handler.Count.Should().Be(10);
         }
     }
@@ -71,9 +71,9 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
         Logger.ConfigureIfNull(fixture.SubscriptionId, fixture.LoggerFactory);
         await fixture.CheckpointStore.StoreCheckpoint(new Checkpoint(fixture.SubscriptionId, 9), true, default);
 
-        await fixture.Start();
+        await fixture.StartSubscription();
         await Task.Delay(TimeSpan.FromSeconds(1));
-        await fixture.Stop();
+        await fixture.StopSubscription();
         fixture.Handler.Count.Should().Be(0);
     }
 

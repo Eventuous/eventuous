@@ -45,7 +45,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
 
     [PublicAPI]
     public PostgresCheckpointStore(NpgsqlDataSource dataSource, IOptions<PostgresCheckpointStoreOptions>? options, ILoggerFactory? loggerFactory)
-        : this(dataSource, options?.Value?.Schema ?? Schema.DefaultSchema, loggerFactory) { }
+        : this(dataSource, options?.Value.Schema ?? Schema.DefaultSchema, loggerFactory) { }
 
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, _loggerFactory);

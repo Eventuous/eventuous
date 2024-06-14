@@ -44,7 +44,7 @@ public static class ResultExtensions {
 
             return new ObjectResult(details) {
                 StatusCode   = Status400BadRequest,
-                ContentTypes = [ContentTypes.ProblemDetails],
+                ContentTypes = [ContentTypes.ProblemDetails]
             };
         }
     }
@@ -58,5 +58,5 @@ public static class ResultExtensions {
         return details;
     }
 
-    static IDictionary<string, string[]> AsErrors(this ErrorResult error) => new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] };
+    static Dictionary<string, string[]> AsErrors(this ErrorResult error) => new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] };
 }

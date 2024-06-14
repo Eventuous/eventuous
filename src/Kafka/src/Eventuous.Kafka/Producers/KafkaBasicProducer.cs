@@ -36,7 +36,7 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
         ) {
         foreach (var producedMessage in messages) {
             var serialized = _serializer.SerializeEvent(producedMessage.Message);
-            var headers    = producedMessage.Metadata?.AsKafkaHeaders() ?? new Headers();
+            var headers    = producedMessage.Metadata?.AsKafkaHeaders() ?? [];
 
             headers
                 .AddHeader(KafkaHeaderKeys.MessageTypeHeader, serialized.EventType)

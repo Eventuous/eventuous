@@ -6,7 +6,7 @@ using Eventuous.TestHelpers;
 namespace Eventuous.Tests.Subscriptions.Base;
 
 public class TracedHandler : BaseEventHandler {
-    public List<RecordedTrace> Contexts { get; } = new();
+    public List<RecordedTrace> Contexts { get; } = [];
 
     static readonly ValueTask<EventHandlingStatus> Success = new(EventHandlingStatus.Success);
     

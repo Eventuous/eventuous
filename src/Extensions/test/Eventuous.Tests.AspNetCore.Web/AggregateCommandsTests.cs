@@ -47,8 +47,8 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
     }
 
     public static IEnumerable<object[]> ResultTypesToTest() {
-        yield return new object[] { new BookingResult() };
-        yield return new object[] { new Result() };
+        yield return [new BookingResult()];
+        yield return [new Result()];
     }
 
     [Theory]

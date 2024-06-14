@@ -14,7 +14,8 @@ using Diagnostics;
 public class TracedEventHandler(IEventHandler eventHandler) : IEventHandler {
     readonly DiagnosticSource _metricsSource = new DiagnosticListener(SubscriptionMetrics.ListenerName);
 
-    readonly KeyValuePair<string, object?>[] _defaultTags = { new(TelemetryTags.Eventuous.EventHandler, eventHandler.GetType().Name) };
+    readonly KeyValuePair<string, object?>[] _defaultTags =
+        [new KeyValuePair<string, object?>(TelemetryTags.Eventuous.EventHandler, eventHandler.GetType().Name)];
 
     public string DiagnosticName { get; } = eventHandler.DiagnosticName;
 
