@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
+// ReSharper disable ClassNeverInstantiated.Local
 
 namespace Eventuous.Tests.Subscriptions;
 

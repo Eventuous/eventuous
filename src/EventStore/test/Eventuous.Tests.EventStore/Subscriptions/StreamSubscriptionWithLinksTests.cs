@@ -68,7 +68,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
     }
 
     void ValidateProcessed(IServiceProvider provider, IEnumerable<TestEvent> events) {
-        var handler = provider.GetRequiredService<TestHandler>();
+        var handler = provider.GetRequiredKeyedService<TestHandler>(SubId);
         Output?.WriteLine($"Processed {handler.Handled.Count} events");
         // handler.Handled.Should().BeEquivalentTo(events);
         foreach (var evt in events) {

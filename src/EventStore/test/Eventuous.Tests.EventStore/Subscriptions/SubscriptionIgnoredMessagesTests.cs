@@ -71,8 +71,8 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
     protected override void GetDependencies(IServiceProvider provider) {
         base.GetDependencies(provider);
         _producer        = provider.GetRequiredService<IEventProducer>();
-        _checkpointStore = provider.GetRequiredService<TestCheckpointStore>();
-        _handler         = provider.GetRequiredService<TestEventHandler>();
+        _checkpointStore = provider.GetRequiredKeyedService<TestCheckpointStore>(_subscriptionId);
+        _handler         = provider.GetRequiredKeyedService<TestEventHandler>(_subscriptionId);
     }
 
     record UnknownEvent(string Data, int Number);

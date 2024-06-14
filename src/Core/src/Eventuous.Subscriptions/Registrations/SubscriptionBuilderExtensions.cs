@@ -42,15 +42,24 @@ public static class SubscriptionBuilderExtensions {
     /// <typeparam name="TOptions">Subscription options type</typeparam>
     /// <typeparam name="T">Checkpoint store type</typeparam>
     /// <returns></returns>
-    public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore<TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
+    public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore
+        <TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
         where T : class, ICheckpointStore
         where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
         where TOptions : SubscriptionWithCheckpointOptions {
-        builder.Services.TryAddSingleton<T>();
+        builder.Services.TryAddKeyedSingleton<T>(builder.SubscriptionId);
 
-        return EventuousDiagnostics.Enabled
-            ? builder.AddParameterMap<ICheckpointStore, MeasuredCheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()))
-            : builder.AddParameterMap<ICheckpointStore, T>();
+        if (EventuousDiagnostics.Enabled) {
+            builder.Services.TryAddKeyedSingleton<ICheckpointStore>(
+                builder.SubscriptionId,
+                (sp, key) => new MeasuredCheckpointStore(sp.GetRequiredKeyedService<T>(key))
+            );
+        }
+        else {
+            builder.Services.TryAddKeyedSingleton<ICheckpointStore, T>(builder.SubscriptionId);
+        }
+
+        return builder;
     }
 
     /// <summary>
@@ -63,14 +72,22 @@ public static class SubscriptionBuilderExtensions {
     /// <typeparam name="T">Checkpoint store type</typeparam>
     /// <returns></returns>
     public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore<TSubscription, TOptions, T>(
-        this SubscriptionBuilder<TSubscription, TOptions> builder,
-        Func<IServiceProvider, T>                         factory
-    )
+            this SubscriptionBuilder<TSubscription, TOptions> builder,
+            Func<IServiceProvider, T>                         factory
+        )
         where T : class, ICheckpointStore
         where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
         where TOptions : SubscriptionWithCheckpointOptions {
-        return EventuousDiagnostics.Enabled
-            ? builder.AddParameterMap<ICheckpointStore, MeasuredCheckpointStore>(sp => new MeasuredCheckpointStore(factory(sp)))
-            : builder.AddParameterMap<ICheckpointStore, T>(factory);
+        if (EventuousDiagnostics.Enabled) {
+            builder.Services.TryAddKeyedSingleton<ICheckpointStore>(
+                builder.SubscriptionId,
+                (sp, _) => new MeasuredCheckpointStore(factory(sp))
+            );
+        }
+        else {
+            builder.Services.TryAddKeyedSingleton<ICheckpointStore>(builder.SubscriptionId, (sp, _) => factory(sp));
+        }
+
+        return builder;
     }
 }
