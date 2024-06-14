@@ -51,7 +51,7 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
             sp => sp.GetSubscriptionBuilder<TSubscription, TSubscriptionOptions>(SubscriptionId).ResolveSubscription(sp)
         );
 
-        var host = services.First(x => x.ImplementationFactory?.GetType() == typeof(Func<IServiceProvider, SubscriptionHostedService>));
+        var host = services.First(x => !x.IsKeyedService && x.ImplementationFactory?.GetType() == typeof(Func<IServiceProvider, SubscriptionHostedService>));
         services.Remove(host);
         services.AddLogging(b => ConfigureLogging(b.AddXunit(outputHelper, logLevel).SetMinimumLevel(logLevel)));
     }
@@ -61,7 +61,7 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
         base.GetDependencies(provider);
         CheckpointStore = provider.GetRequiredService<ICheckpointStore>();
         Subscription    = provider.GetRequiredService<IMessageSubscription>();
-        Handler         = provider.GetRequiredService<TEventHandler>();
+        Handler         = provider.GetRequiredKeyedService<TEventHandler>(SubscriptionId);
         LoggerFactory   = provider.GetRequiredService<ILoggerFactory>();
         Log             = LoggerFactory.CreateLogger(GetType());
     }
