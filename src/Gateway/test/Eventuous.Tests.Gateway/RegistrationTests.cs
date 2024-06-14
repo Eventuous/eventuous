@@ -13,13 +13,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Eventuous.Tests.Gateway;
 
-public class RegistrationTests {
-    readonly IServiceProvider _provider;
-
-    public RegistrationTests() {
-        var host = new TestServer(BuildHost());
-        _provider = host.Services;
-    }
+public class RegistrationTests : IDisposable {
+    readonly TestServer _host = new(BuildHost());
 
     [Fact]
     public void Test() { }
@@ -67,4 +62,6 @@ public class RegistrationTests {
     }
 
     record TestProduceOptions;
+
+    public void Dispose() => _host.Dispose();
 }

@@ -46,7 +46,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// <returns></returns>
     public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler)
         where THandler : class, IEventHandler {
-        Services.TryAddKeyedSingleton(SubscriptionId, getHandler);
+        Services.TryAddKeyedSingleton<THandler>(SubscriptionId, (sp, _) => getHandler(sp));
         AddHandlerResolve(sp => sp.GetRequiredKeyedService<THandler>(SubscriptionId));
 
         return this;

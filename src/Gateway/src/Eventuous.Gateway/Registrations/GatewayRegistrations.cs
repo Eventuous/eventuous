@@ -101,7 +101,7 @@ public static class GatewayRegistrations {
 
         return services;
 
-        IEventHandler GetHandler(IServiceProvider sp) {
+        GatewayHandler<TProduceOptions> GetHandler(IServiceProvider sp) {
             var transform = sp.GetRequiredService<RouteAndTransform<TProduceOptions>>();
             var producer  = sp.GetRequiredService<TProducer>();
 
@@ -151,7 +151,7 @@ public static class GatewayRegistrations {
 
         return services;
 
-        IEventHandler GetHandler(IServiceProvider sp) {
+        GatewayHandler<TTransform, TProduceOptions> GetHandler(IServiceProvider sp) {
             var transform = sp.GetRequiredService<TTransform>();
             var producer  = sp.GetRequiredService<TProducer>();
 
