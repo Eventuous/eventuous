@@ -13,7 +13,9 @@ namespace Eventuous.Postgresql;
 public class Schema(string schema = Schema.DefaultSchema) {
     public const string DefaultSchema = "eventuous";
 
-    public string StreamMessage       => $"{schema}.stream_message";
+    public static string GetStreamMessageTypeName(string schema = Schema.DefaultSchema) => $"{schema}.stream_message";
+
+    public string StreamMessage       => GetStreamMessageTypeName(schema);
     public string AppendEvents        => $"select * from {schema}.append_events(@_stream_name, @_expected_version, @_created, @_messages)";
     public string ReadStreamForwards  => $"select * from {schema}.read_stream_forwards(@_stream_name, @_from_position, @_count)";
     public string ReadStreamBackwards => $"select * from {schema}.read_stream_backwards(@_stream_name, @_count)";
@@ -42,7 +44,7 @@ public class Schema(string schema = Schema.DefaultSchema) {
                 using var       reader = new StreamReader(stream!);
 
 #if NET7_0_OR_GREATER
-            var script = await reader.ReadToEndAsync(cancellationToken).NoContext();
+                var script = await reader.ReadToEndAsync(cancellationToken).NoContext();
 #else
                 var script = await reader.ReadToEndAsync().NoContext();
 #endif

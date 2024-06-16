@@ -20,16 +20,19 @@ public static class ServiceCollectionExtensions {
     /// <param name="connectionString">Connection string</param>
     /// <param name="schema">Schema name</param>
     /// <param name="initializeDatabase">Set to true if you want the schema to be created on startup</param>
+    /// <param name="configureBuilder">Optional: function to configure the data source builder</param>
     /// <param name="connectionLifetime">Optional: lifetime of the connection, default is transient</param>
     /// <param name="dataSourceLifetime">Optional> lifetime of the data source, default is singleton</param>
-    /// <returns></returns>
+    /// <returns>Services collection</returns>
+    // ReSharper disable once UnusedMethodReturnValue.Global
     public static IServiceCollection AddEventuousPostgres(
-            this IServiceCollection services,
-            string                  connectionString,
-            string                  schema,
-            bool                    initializeDatabase = false,
-            ServiceLifetime         connectionLifetime = ServiceLifetime.Transient,
-            ServiceLifetime         dataSourceLifetime = ServiceLifetime.Singleton
+            this IServiceCollection                            services,
+            string                                             connectionString,
+            string                                             schema,
+            bool                                               initializeDatabase = false,
+            Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureBuilder   = null,
+            ServiceLifetime                                    connectionLifetime = ServiceLifetime.Transient,
+            ServiceLifetime                                    dataSourceLifetime = ServiceLifetime.Singleton
         ) {
         var options = new PostgresStoreOptions {
             Schema             = schema,
@@ -37,11 +40,12 @@ public static class ServiceCollectionExtensions {
             InitializeDatabase = initializeDatabase
         };
 
-        var s = new Schema(schema);
-
         services.AddNpgsqlDataSourceCore(
             _ => connectionString,
-            (_, builder) => builder.MapComposite<NewPersistedEvent>(s.StreamMessage),
+            (sp, builder) => {
+                builder.MapComposite<NewPersistedEvent>(Schema.GetStreamMessageTypeName(schema));
+                configureBuilder?.Invoke(sp, builder);
+            },
             connectionLifetime,
             dataSourceLifetime
         );
@@ -57,14 +61,17 @@ public static class ServiceCollectionExtensions {
     /// </summary>
     /// <param name="services">Service collection</param>
     /// <param name="config">Configuration section for PostgreSQL options</param>
+    /// <param name="configureBuilder">Optional: function to configure the data source builder</param>
     /// <param name="connectionLifetime">Optional: lifetime of the connection, default is transient</param>
     /// <param name="dataSourceLifetime">Optional> lifetime of the data source, default is singleton</param>
-    /// <returns></returns>
+    /// <returns>Services collection</returns>
+    // ReSharper disable once UnusedMethodReturnValue.Global
     public static IServiceCollection AddEventuousPostgres(
-            this IServiceCollection services,
-            IConfiguration          config,
-            ServiceLifetime         connectionLifetime = ServiceLifetime.Transient,
-            ServiceLifetime         dataSourceLifetime = ServiceLifetime.Singleton
+            this IServiceCollection                            services,
+            IConfiguration                                     config,
+            Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureBuilder   = null,
+            ServiceLifetime                                    connectionLifetime = ServiceLifetime.Transient,
+            ServiceLifetime                                    dataSourceLifetime = ServiceLifetime.Singleton
         ) {
         services.Configure<PostgresStoreOptions>(config);
         services.AddSingleton<PostgresStoreOptions>(sp => sp.GetRequiredService<IOptions<PostgresStoreOptions>>().Value);
@@ -73,8 +80,8 @@ public static class ServiceCollectionExtensions {
             sp => Ensure.NotEmptyString(sp.GetRequiredService<PostgresStoreOptions>().ConnectionString),
             (sp, builder) => {
                 var options = sp.GetRequiredService<PostgresStoreOptions>();
-                var schema  = new Schema(options.Schema);
-                builder.MapComposite<NewPersistedEvent>(schema.StreamMessage);
+                builder.MapComposite<NewPersistedEvent>(Schema.GetStreamMessageTypeName(options.Schema));
+                configureBuilder?.Invoke(sp, builder);
             },
             connectionLifetime,
             dataSourceLifetime
