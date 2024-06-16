@@ -1,11 +1,12 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Reflection;
 using Eventuous.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+
+// ReSharper disable UnusedMethodReturnValue.Global
 
 namespace Eventuous.Subscriptions.Registrations;
 
@@ -17,13 +18,12 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     public string             SubscriptionId { get; } = subscriptionId;
     public IServiceCollection Services       { get; } = services;
 
-    readonly List<ResolveHandler> _handlers = new();
+    readonly List<ResolveHandler> _handlers = [];
 
     protected ConsumePipe     Pipe            { get; }      = new();
     protected ResolveConsumer ResolveConsumer { get; set; } = null!;
 
-    protected IEventHandler[] ResolveHandlers(IServiceProvider sp)
-        => _handlers.Select(x => x(sp)).ToArray();
+    protected IEventHandler[] ResolveHandlers(IServiceProvider sp) => _handlers.Select(x => x(sp)).ToArray();
 
     /// <summary>
     /// Adds an event handler to the subscription
@@ -32,8 +32,8 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// <returns></returns>
     public SubscriptionBuilder AddEventHandler<THandler>()
         where THandler : class, IEventHandler {
-        Services.TryAddSingleton<THandler>();
-        AddHandlerResolve(sp => sp.GetRequiredService<THandler>());
+        Services.TryAddKeyedSingleton<THandler>(SubscriptionId);
+        AddHandlerResolve(sp => sp.GetRequiredKeyedService<THandler>(SubscriptionId));
 
         return this;
     }
@@ -42,20 +42,33 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// Adds an event handler to the subscription
     /// </summary>
     /// <param name="getHandler">A function to resolve event handler using the service provider</param>
-    /// <typeparam name="THandler"></typeparam>
+    /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
     public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler)
         where THandler : class, IEventHandler {
-        Services.TryAddSingleton(getHandler);
-        AddHandlerResolve(sp => sp.GetRequiredService<THandler>());
+        Services.TryAddKeyedSingleton<THandler>(SubscriptionId, (sp, _) => getHandler(sp));
+        AddHandlerResolve(sp => sp.GetRequiredKeyedService<THandler>(SubscriptionId));
+
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an event handler to the subscription by instance
+    /// </summary>
+    /// <param name="handler">Event handler instance</param>
+    /// <typeparam name="THandler">Event handler type</typeparam>
+    /// <returns></returns>
+    public SubscriptionBuilder AddEventHandler<THandler>(THandler handler)
+        where THandler : class, IEventHandler {
+        AddHandlerResolve(_ => handler);
 
         return this;
     }
 
     public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(Func<THandler, TWrappingHandler> getWrappingHandler)
         where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
-        Services.TryAddSingleton<THandler>();
-        AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
+        Services.TryAddKeyedSingleton<THandler>(SubscriptionId);
+        AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredKeyedService<THandler>(SubscriptionId)));
 
         return this;
     }
@@ -64,8 +77,8 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
             Func<IServiceProvider, THandler> getInnerHandler,
             Func<THandler, TWrappingHandler> getWrappingHandler
         ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
-        Services.TryAddSingleton(getInnerHandler);
-        AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredService<THandler>()));
+        Services.TryAddKeyedSingleton(SubscriptionId, getInnerHandler);
+        AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredKeyedService<THandler>(SubscriptionId)));
 
         return this;
     }
@@ -138,8 +151,6 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
     public Action<TOptions> ConfigureOptions { get; private set; }
 
-    ParameterMap ParametersMap { get; } = new();
-
     /// <summary>
     /// Configure subscription options
     /// </summary>
@@ -157,59 +168,6 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         }
     }
 
-    /// <summary>
-    /// Add custom dependency resolver for the subscription. The service be resolved from the service provider.
-    /// </summary>
-    /// <typeparam name="TService">Dependency type</typeparam>
-    /// <returns></returns>
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService>() where TService : class {
-        ParametersMap.Add<TService, TService>();
-
-        return this;
-    }
-
-    /// <summary>
-    /// Add custom dependency resolver for the subscription. The service be resolved from the service provider.
-    /// </summary>
-    /// <typeparam name="TService">Dependency type</typeparam>
-    /// <typeparam name="TImplementation">Service type that implements <code>TService</code></typeparam>
-    /// <returns></returns>
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>()
-        where TImplementation : class, TService {
-        ParametersMap.Add<TService, TImplementation>();
-
-        return this;
-    }
-
-    /// <summary>
-    /// Add custom dependency resolver for the subscription.
-    /// The service be resolved from the service provider by using the factory function..
-    /// </summary>
-    /// <param name="resolver">Function to resolve the service from the service provider</param>
-    /// <typeparam name="TService">Dependency type</typeparam>
-    /// <returns></returns>
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService>(Func<IServiceProvider, TService> resolver)
-        where TService : class {
-        ParametersMap.Add<TService, TService>(resolver);
-
-        return this;
-    }
-
-    /// <summary>
-    /// Add custom dependency resolver for the subscription.
-    /// The service be resolved from the service provider by using the factory function..
-    /// </summary>
-    /// <param name="resolver">Function to resolve the service from the service provider</param>
-    /// <typeparam name="TService">Dependency type</typeparam>
-    /// <typeparam name="TImplementation">Service type that implements <code>TService</code></typeparam>
-    /// <returns></returns>
-    public SubscriptionBuilder<T, TOptions> AddParameterMap<TService, TImplementation>(Func<IServiceProvider, TImplementation> resolver)
-        where TImplementation : class, TService {
-        ParametersMap.Add<TService, TImplementation>(resolver);
-
-        return this;
-    }
-
     IMessageConsumer GetConsumer(IServiceProvider sp) {
         if (_resolvedConsumer != null) return _resolvedConsumer;
 
@@ -224,10 +182,7 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
         return _resolvedConsumer;
     }
 
-    // ReSharper disable once CognitiveComplexity
     public T ResolveSubscription(IServiceProvider sp) {
-        const string subscriptionIdParameterName = "subscriptionId";
-
         if (_resolvedSubscription != null) {
             return _resolvedSubscription;
         }
@@ -240,76 +195,14 @@ public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
 
         Pipe.AddFilterLast(new ConsumerFilter(consumer));
 
-        var constructors = typeof(T).GetConstructors<TOptions>();
+        var opt      = Ensure.NotNull(sp.GetService<IOptionsMonitor<TOptions>>(), typeof(TOptions).Name);
+        var provider = new KeyedServiceProvider(sp, SubscriptionId);
 
-        switch (constructors.Length) {
-            case > 1: throw new ArgumentOutOfRangeException(typeof(T).Name, "Subscription type must have only one constructor with options argument");
-            case 0:
-                constructors = typeof(T).GetConstructors<string>(subscriptionIdParameterName);
-
-                break;
-        }
-
-        if (constructors.Length == 0) {
-            throw new ArgumentOutOfRangeException(
-                typeof(T).Name,
-                "Subscription type must have at least one constructor with options or subscription id argument"
-            );
-        }
-
-        var (ctor, parameters, parameter) = constructors[0];
-
-        var args = parameters.Select(CreateArg).ToArray();
-
-        if (ctor.Invoke(args) is not T instance) {
-            throw new InvalidOperationException($"Unable to instantiate {typeof(T)}");
-        }
-
+        var instance = ActivatorUtilities.CreateInstance<T>(provider, opt.Get(SubscriptionId), Pipe);
         _resolvedSubscription = instance;
 
         return instance;
-
-        object? CreateArg(ParameterInfo parameterInfo) {
-            if (parameterInfo == parameter) {
-                if (parameter.Name == subscriptionIdParameterName) {
-                    return SubscriptionId;
-                }
-
-                var options = Ensure.NotNull(sp.GetService<IOptionsMonitor<TOptions>>(), typeof(TOptions).Name);
-
-                return options.Get(SubscriptionId);
-            }
-
-            // ReSharper disable once ConvertIfStatementToReturnStatement
-            // ReSharper disable once InvertIf
-            if (parameterInfo.ParameterType == typeof(ConsumePipe)) {
-                return Pipe;
-            }
-
-            // ReSharper disable once ConvertIfStatementToReturnStatement
-            if (ParametersMap.TryGetResolver(parameterInfo.ParameterType, out var resolver)) {
-                return resolver!(sp);
-            }
-
-            return sp.GetService(parameterInfo.ParameterType);
-        }
     }
-}
-
-static class TypeExtensionsForRegistrations {
-    public static (ConstructorInfo Ctor, ParameterInfo[] parameters, ParameterInfo? Options)[] GetConstructors<T>(this Type type, string? name = null)
-        => type
-            .GetConstructors()
-            .Select(x => (Ctor: x, Parameters: x.GetParameters()))
-            .Select(
-                x => (
-                    x.Ctor,
-                    x.Parameters,
-                    Options: x.Parameters.SingleOrDefault(y => y.ParameterType == typeof(T) && (name == null || y.Name == name))
-                )
-            )
-            .Where(x => x.Options != null)
-            .ToArray();
 }
 
 public delegate IEventHandler ResolveHandler(IServiceProvider sp);

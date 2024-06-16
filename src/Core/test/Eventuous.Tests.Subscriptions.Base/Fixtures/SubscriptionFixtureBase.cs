@@ -28,9 +28,9 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
 
     public string SubscriptionId { get; } = $"test-{Guid.NewGuid():N}";
 
-    protected internal ValueTask Start() => Subscription.SubscribeWithLog(Log);
+    protected internal ValueTask StartSubscription() => Subscription.SubscribeWithLog(Log);
 
-    protected internal ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
+    protected internal ValueTask StopSubscription() => Subscription.UnsubscribeWithLog(Log);
 
     protected abstract TCheckpointStore GetCheckpointStore(IServiceProvider sp);
 
@@ -51,7 +51,7 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
             sp => sp.GetSubscriptionBuilder<TSubscription, TSubscriptionOptions>(SubscriptionId).ResolveSubscription(sp)
         );
 
-        var host = services.First(x => x.ImplementationFactory?.GetType() == typeof(Func<IServiceProvider, SubscriptionHostedService>));
+        var host = services.First(x => !x.IsKeyedService && x.ImplementationFactory?.GetType() == typeof(Func<IServiceProvider, SubscriptionHostedService>));
         services.Remove(host);
         services.AddLogging(b => ConfigureLogging(b.AddXunit(outputHelper, logLevel).SetMinimumLevel(logLevel)));
     }
@@ -61,7 +61,7 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
         base.GetDependencies(provider);
         CheckpointStore = provider.GetRequiredService<ICheckpointStore>();
         Subscription    = provider.GetRequiredService<IMessageSubscription>();
-        Handler         = provider.GetRequiredService<TEventHandler>();
+        Handler         = provider.GetRequiredKeyedService<TEventHandler>(SubscriptionId);
         LoggerFactory   = provider.GetRequiredService<ILoggerFactory>();
         Log             = LoggerFactory.CreateLogger(GetType());
     }
@@ -72,11 +72,11 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
 
     public override async Task InitializeAsync() {
         await base.InitializeAsync();
-        if (autoStart) await Start();
+        if (autoStart) await StartSubscription();
     }
 
     public override async Task DisposeAsync() {
-        if (autoStart) await Stop();
+        if (autoStart) await StopSubscription();
         await base.DisposeAsync();
     }
 }

@@ -178,7 +178,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     long MoveStart(PersistedEvent evt) => Kind switch {
         SubscriptionKind.All    => evt.GlobalPosition,
-        SubscriptionKind.Stream => evt.StreamPosition,
+        SubscriptionKind.Stream => evt.StreamPosition
     };
 
     MessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {

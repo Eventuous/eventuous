@@ -16,6 +16,11 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
         async Task Run() => await taskFactory(_stopSource.Token).NoThrow();
     }
 
+    /// <summary>
+    /// Stops the running task, considering the cancellation token provided as an argument.
+    /// The code of this function closely resembles BackgroundService.StopAsync function.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
     public async ValueTask Stop(CancellationToken cancellationToken) {
         if (_runner == null) return;
 
@@ -27,7 +32,7 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
 #endif
         } finally {
             var state        = new TaskCompletionSource<object>();
-            var registration = cancellationToken.Register((s => (((TaskCompletionSource<object>)s!)!).SetCanceled(cancellationToken)), state);
+            var registration = cancellationToken.Register((s => (((TaskCompletionSource<object>)s!)).SetCanceled(cancellationToken)), state);
 
             try {
                 await Task.WhenAny(_runner, state.Task).NoContext();
@@ -35,7 +40,9 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
                 await registration.DisposeAsync();
             }
 
+            // ReSharper disable once RedundantAssignment
             registration = new CancellationTokenRegistration();
+            _runner      = null;
         }
     }
 

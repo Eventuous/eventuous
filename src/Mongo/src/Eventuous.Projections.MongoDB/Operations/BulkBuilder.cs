@@ -8,7 +8,7 @@ using Tools;
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class BulkWriteBuilder : IMongoProjectorBuilder {
         Action<BulkWriteOptions>?                 _configureOptions;
-        readonly List<BuildWriteModel<T, TEvent>> _builders = new();
+        readonly List<BuildWriteModel<T, TEvent>> _builders = [];
 
         public BulkWriteBuilder AddOperation<TFactory>(Func<MongoBulkOperationBuilders, TFactory> getBuilderFactory) 
             where TFactory: IMongoBulkBuilderFactory {

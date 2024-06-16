@@ -5,7 +5,7 @@ namespace Eventuous.Diagnostics.Logging;
 
 public sealed class LoggingEventListener : EventListener {
     readonly string            _prefix       = DiagnosticName.BaseName;
-    readonly List<EventSource> _eventSources = new();
+    readonly List<EventSource> _eventSources = [];
     readonly ILogger           _log;
     readonly EventLevel        _level;
     readonly EventKeywords     _keywords;

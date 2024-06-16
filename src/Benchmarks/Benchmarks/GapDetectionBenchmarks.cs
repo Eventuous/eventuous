@@ -35,7 +35,7 @@ public class GapDetectionBenchmarks {
 
     [IterationCleanup]
     public void IterationCleanup() {
-        _cch.DisposeAsync().GetAwaiter().GetResult();
+        _cch.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
     [Benchmark]

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
+// ReSharper disable ClassNeverInstantiated.Local
 
 namespace Eventuous.Tests.Subscriptions;
 
@@ -125,7 +126,7 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
 
             services.AddOpenTelemetry().WithMetrics(builder => builder.AddEventuousSubscriptions());
             
-            services.AddHealthChecks().AddSubscriptionsHealthCheck("subscriptions", HealthStatus.Unhealthy, new[] { "tag" });
+            services.AddHealthChecks().AddSubscriptionsHealthCheck("subscriptions", HealthStatus.Unhealthy, ["tag"]);
         }
 
         public void Configure(IApplicationBuilder app) { }
@@ -164,7 +165,7 @@ class TestHandlerLogger {
         return ValueTask.FromResult(EventHandlingStatus.Success);
     }
 
-    public List<TestHandlerLogRecord> Records { get; } = new();
+    public List<TestHandlerLogRecord> Records { get; } = [];
 }
 
 record TestHandlerLogRecord(Type HandlerType, IMessageConsumeContext Context);

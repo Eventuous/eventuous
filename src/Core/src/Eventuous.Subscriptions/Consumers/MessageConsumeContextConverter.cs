@@ -29,10 +29,10 @@ static class MessageConsumeContextConverter {
         return (IMessageConsumeContext)conversion!(context);
     }
 
-    static Func<IMessageConsumeContext, object>? CreateConversionFunction(Type messageType) {
+    static Func<IMessageConsumeContext, object> CreateConversionFunction(Type messageType) {
         var contextType   = typeof(MessageConsumeContext<>).MakeGenericType(messageType);
         var contextParam  = Expression.Parameter(typeof(IMessageConsumeContext), "context");
-        var newExpression = Expression.New(contextType.GetConstructor(new[] { typeof(IMessageConsumeContext) })!, contextParam);
+        var newExpression = Expression.New(contextType.GetConstructor([typeof(IMessageConsumeContext)])!, contextParam);
         return Expression.Lambda<Func<IMessageConsumeContext, object>>(newExpression, contextParam).Compile();
     }
 }

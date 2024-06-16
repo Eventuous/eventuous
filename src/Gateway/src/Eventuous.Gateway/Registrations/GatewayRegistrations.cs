@@ -1,11 +1,10 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-// ReSharper disable CheckNamespace
-
 using Eventuous.Gateway;
 using Eventuous.Subscriptions.Registrations;
 
+// ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 using Extensions;
@@ -30,13 +29,13 @@ public static class GatewayRegistrations {
     /// <typeparam name="TProduceOptions">Options for producing a message.</typeparam>
     /// <returns></returns>
     public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions>(
-        this IServiceCollection                                           services,
-        string                                                            subscriptionId,
-        RouteAndTransform<TProduceOptions>                                routeAndTransform,
-        Action<TSubscriptionOptions>?                                     configureSubscription = null,
-        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
-        bool                                                              awaitProduce          = true
-    )
+            this IServiceCollection                                           services,
+            string                                                            subscriptionId,
+            RouteAndTransform<TProduceOptions>                                routeAndTransform,
+            Action<TSubscriptionOptions>?                                     configureSubscription = null,
+            Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+            bool                                                              awaitProduce          = true
+        )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
         where TProduceOptions : class
@@ -78,12 +77,12 @@ public static class GatewayRegistrations {
     /// <typeparam name="TProduceOptions">Options for producing a message.</typeparam>
     /// <returns></returns>
     public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions>(
-        this IServiceCollection                                           services,
-        string                                                            subscriptionId,
-        Action<TSubscriptionOptions>?                                     configureSubscription = null,
-        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
-        bool                                                              awaitProduce          = true
-    )
+            this IServiceCollection                                           services,
+            string                                                            subscriptionId,
+            Action<TSubscriptionOptions>?                                     configureSubscription = null,
+            Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+            bool                                                              awaitProduce          = true
+        )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
         where TProduceOptions : class
@@ -102,9 +101,10 @@ public static class GatewayRegistrations {
 
         return services;
 
-        IEventHandler GetHandler(IServiceProvider sp) {
+        GatewayHandler<TProduceOptions> GetHandler(IServiceProvider sp) {
             var transform = sp.GetRequiredService<RouteAndTransform<TProduceOptions>>();
             var producer  = sp.GetRequiredService<TProducer>();
+
             return new GatewayHandler<TProduceOptions>(new GatewayProducer<TProduceOptions>(producer), transform, awaitProduce);
         }
     }
@@ -125,18 +125,20 @@ public static class GatewayRegistrations {
     /// <typeparam name="TTransform">Message router and transformer type.</typeparam>
     /// <returns></returns>
     public static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions, TTransform>(
-        this IServiceCollection                                           services,
-        string                                                            subscriptionId,
-        Action<TSubscriptionOptions>?                                     configureSubscription = null,
-        Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
-        bool                                                              awaitProduce          = true
-    )
+            this IServiceCollection                                           services,
+            string                                                            subscriptionId,
+            Action<TSubscriptionOptions>?                                     configureSubscription = null,
+            Action<SubscriptionBuilder<TSubscription, TSubscriptionOptions>>? configureBuilder      = null,
+            bool                                                              awaitProduce          = true
+        )
         where TSubscription : EventSubscription<TSubscriptionOptions>
         where TProducer : class, IEventProducer<TProduceOptions>
         where TProduceOptions : class
         where TTransform : class, IGatewayTransform<TProduceOptions>
         where TSubscriptionOptions : SubscriptionOptions {
         services.TryAddSingleton<TTransform>();
+        services.TryAddSingleton<TProducer>();
+        services.AddHostedServiceIfSupported<TProducer>();
 
         services.AddSubscription<TSubscription, TSubscriptionOptions>(
             subscriptionId,
@@ -149,10 +151,11 @@ public static class GatewayRegistrations {
 
         return services;
 
-        IEventHandler GetHandler(IServiceProvider sp) {
+        GatewayHandler<TTransform, TProduceOptions> GetHandler(IServiceProvider sp) {
             var transform = sp.GetRequiredService<TTransform>();
             var producer  = sp.GetRequiredService<TProducer>();
-            return new GatewayHandler<TProduceOptions>(new GatewayProducer<TProduceOptions>(producer), transform.RouteAndTransform, awaitProduce);
+
+            return new GatewayHandler<TTransform, TProduceOptions>(new GatewayProducer<TProduceOptions>(producer), transform, awaitProduce);
         }
     }
 }

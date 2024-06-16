@@ -81,15 +81,13 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
-        if (CheckpointCommitHandler == null) {
-            CheckpointCommitHandler = new CheckpointCommitHandler(
-                options.SubscriptionId,
-                checkpointStore,
-                TimeSpan.FromMilliseconds(options.CheckpointCommitDelayMs),
-                options.CheckpointCommitBatchSize,
-                LoggerFactory
-            );
-        }
+        CheckpointCommitHandler ??= new CheckpointCommitHandler(
+            options.SubscriptionId,
+            checkpointStore,
+            TimeSpan.FromMilliseconds(options.CheckpointCommitDelayMs),
+            options.CheckpointCommitBatchSize,
+            LoggerFactory
+        );
 
         if (IsRunning && LastProcessed != null) { return new Checkpoint(Options.SubscriptionId, LastProcessed?.Position); }
 

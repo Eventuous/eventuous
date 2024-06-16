@@ -60,3 +60,11 @@ class GatewayHandler<TProduceOptions>(
                 .WhenAll();
     }
 }
+
+class GatewayHandler<TTransform, TProduceOptions>(
+        IEventProducer<TProduceOptions> eventProducer,
+        TTransform                      transform,
+        bool                            awaitProduce
+    ) : GatewayHandler<TProduceOptions>(eventProducer, transform.RouteAndTransform, awaitProduce)
+    where TProduceOptions : class
+    where TTransform : class, IGatewayTransform<TProduceOptions>;

@@ -10,7 +10,7 @@ public static class ConfigureElastic {
             IndexName = "eventuous",
             Lifecycle = new LifecycleConfig {
                 PolicyName = "eventuous",
-                Tiers = new[] {
+                Tiers = [
                     new TierDefinition {
                         Tier     = "hot",
                         MinAge   = "1d",
@@ -32,7 +32,7 @@ public static class ConfigureElastic {
                         Priority = 0,
                         ReadOnly = true
                     }
-                }
+                ]
             },
             Template = new DataStreamTemplateConfig {
                 TemplateName = "eventuous"

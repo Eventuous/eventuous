@@ -13,13 +13,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Eventuous.Tests.Gateway;
 
-public class RegistrationTests {
-    readonly IServiceProvider _provider;
-
-    public RegistrationTests() {
-        var host = new TestServer(BuildHost());
-        _provider = host.Services;
-    }
+public class RegistrationTests : IDisposable {
+    readonly TestServer _host = new(BuildHost());
 
     [Fact]
     public void Test() { }
@@ -52,7 +47,7 @@ public class RegistrationTests {
     class TestProducer : BaseProducer<TestProduceOptions> {
         // ReSharper disable once CollectionNeverQueried.Local
         // ReSharper disable once MemberCanBePrivate.Local
-        public List<ProducedMessage> ProducedMessages { get; } = new();
+        public List<ProducedMessage> ProducedMessages { get; } = [];
 
         protected override Task ProduceMessages(
             StreamName                   stream,
@@ -67,4 +62,6 @@ public class RegistrationTests {
     }
 
     record TestProduceOptions;
+
+    public void Dispose() => _host.Dispose();
 }

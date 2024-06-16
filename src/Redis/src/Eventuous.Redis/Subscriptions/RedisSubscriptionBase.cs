@@ -23,7 +23,7 @@ public abstract class RedisSubscriptionBase<T>(
     where T : RedisSubscriptionBaseOptions {
     readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 
-    protected GetRedisDatabase GetDatabase { get; } = Ensure.NotNull<GetRedisDatabase>(getDatabase, "Connection factory");
+    protected GetRedisDatabase GetDatabase { get; } = Ensure.NotNull(getDatabase, "Connection factory");
 
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         await BeforeSubscribe(cancellationToken).NoContext();
@@ -87,7 +87,7 @@ public abstract class RedisSubscriptionBase<T>(
     }
 
     MessageConsumeContext AsContext(ReceivedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
-        => new MessageConsumeContext(
+        => new(
             evt.MessageId.ToString(),
             evt.MessageType,
             ContentType,

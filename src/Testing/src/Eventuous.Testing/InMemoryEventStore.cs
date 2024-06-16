@@ -79,14 +79,11 @@ public class InMemoryEventStore : IEventStore {
 
 record StoredEvent(StreamEvent Event, int Position);
 
-class InMemoryStream {
+class InMemoryStream(StreamName name) {
     public int Version { get; private set; } = -1;
 
-    StreamName                 _name;
-    readonly List<StoredEvent> _events = new();
-
-    public InMemoryStream(StreamName name)
-        => _name = name;
+    StreamName                 _name   = name;
+    readonly List<StoredEvent> _events = [];
 
     public void CheckVersion(ExpectedStreamVersion expectedVersion) {
         if (expectedVersion.Value != Version) throw new WrongVersion(expectedVersion, Version);

@@ -21,5 +21,5 @@ class ExchangeCache(ILogger? log) {
         _exchanges.Add(name);
     }
 
-    readonly HashSet<string> _exchanges = new();
+    readonly HashSet<string> _exchanges = [];
 }

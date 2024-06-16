@@ -71,7 +71,7 @@ static class ChannelExtensions {
         var timerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         try {
-            List<T> buffer = new();
+            List<T> buffer = [];
 
             while (true) {
                 var token = buffer.Count == 0 ? cancellationToken : timerCts.Token;

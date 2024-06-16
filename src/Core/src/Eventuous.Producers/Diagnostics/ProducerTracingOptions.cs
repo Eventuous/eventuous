@@ -12,9 +12,9 @@ public record ProducerTracingOptions {
     public string? DestinationKind  { get; init; }
     public string? ProduceOperation { get; init; }
 
-    public KeyValuePair<string, object?>[] AllTags => new KeyValuePair<string, object?>[] {
-        new(TelemetryTags.Messaging.System, MessagingSystem),
-        new(TelemetryTags.Messaging.DestinationKind, DestinationKind),
-        new(TelemetryTags.Messaging.Operation, ProduceOperation)
-    };
+    public KeyValuePair<string, object?>[] AllTags => [
+        new KeyValuePair<string, object?>(TelemetryTags.Messaging.System, MessagingSystem),
+        new KeyValuePair<string, object?>(TelemetryTags.Messaging.DestinationKind, DestinationKind),
+        new KeyValuePair<string, object?>(TelemetryTags.Messaging.Operation, ProduceOperation)
+    ];
 }

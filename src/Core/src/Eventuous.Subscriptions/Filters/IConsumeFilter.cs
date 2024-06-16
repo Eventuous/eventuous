@@ -16,7 +16,7 @@ public interface IConsumeFilter {
 
 public interface IConsumeFilter<in TIn, TOut> : IConsumeFilter
     where TIn : class, IBaseConsumeContext
-    where TOut : class, IBaseConsumeContext { }
+    where TOut : class, IBaseConsumeContext;
 
 public abstract class ConsumeFilter<TIn, TOut> : IConsumeFilter<TIn, TOut>
     where TIn : class, IBaseConsumeContext where TOut : class, IBaseConsumeContext {
@@ -44,4 +44,4 @@ public abstract class ConsumeFilter<TIn, TOut> : IConsumeFilter<TIn, TOut>
 }
 
 public abstract class ConsumeFilter<TContext> : ConsumeFilter<TContext, TContext>
-    where TContext : class, IBaseConsumeContext { }
+    where TContext : class, IBaseConsumeContext;

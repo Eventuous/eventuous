@@ -8,7 +8,7 @@ public abstract class Aggregate {
     /// <summary>
     /// The collection of previously persisted events
     /// </summary>
-    public object[] Original { get; protected set; } = Array.Empty<object>();
+    public object[] Original { get; protected set; } = [];
 
     /// <summary>
     /// Get the list of pending changes (new events) within the scope of the current operation.
@@ -39,7 +39,7 @@ public abstract class Aggregate {
     /// </summary>
     public int CurrentVersion => OriginalVersion + Changes.Count;
 
-    readonly List<object> _changes = new();
+    readonly List<object> _changes = [];
 
     /// <summary>
     /// Restores the aggregate state from a collection of events, previously stored in the AggregateStore/>

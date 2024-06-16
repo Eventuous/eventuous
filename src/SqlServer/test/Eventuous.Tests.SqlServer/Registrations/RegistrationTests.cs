@@ -16,7 +16,7 @@ public class RegistrationTests {
         builder.ConfigureServices(
             services => {
                 services.AddAggregateStore<SqlServerStore>();
-                services.AddSingleton(new SqlServerStoreOptions() { ConnectionString = ConnectionString });
+                services.AddSingleton(new SqlServerStoreOptions { ConnectionString = ConnectionString });
             }
         );
         var app            = builder.Build();

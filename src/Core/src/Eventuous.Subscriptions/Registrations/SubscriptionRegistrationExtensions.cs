@@ -6,13 +6,13 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Registrations;
+using Microsoft.Extensions.Hosting;
 
 // ReSharper disable CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 using Extensions;
 using Diagnostics.HealthChecks;
-using Hosting;
 using Logging;
 
 [PublicAPI]
@@ -73,22 +73,24 @@ public static class SubscriptionRegistrationExtensions {
         where T : class, ICheckpointStore {
         services.AddSingleton<T>();
 
-        return EventuousDiagnostics.Enabled
-            ? services.AddSingleton<ICheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()))
-            : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
+        return AddCheckpointStoreInternal<T>(services);
     }
 
     public static IServiceCollection AddCheckpointStore<T>(this IServiceCollection services, Func<IServiceProvider, T> getStore)
         where T : class, ICheckpointStore {
         services.AddSingleton(getStore);
 
-        return EventuousDiagnostics.Enabled
-            ? services.AddSingleton<ICheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()))
-            : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
+        return AddCheckpointStoreInternal<T>(services);
     }
 
     static void TryAddSubscriptionHealthCheck(IServiceCollection services) {
         services.TryAddSingleton<SubscriptionHealthCheck>();
         services.TryAddSingleton<ISubscriptionHealth>(sp => sp.GetRequiredService<SubscriptionHealthCheck>());
+    }
+
+    static IServiceCollection AddCheckpointStoreInternal<T>(IServiceCollection services) where T : class, ICheckpointStore {
+        return EventuousDiagnostics.Enabled
+            ? services.AddSingleton<ICheckpointStore>(sp => new MeasuredCheckpointStore(sp.GetRequiredService<T>()))
+            : services.AddSingleton<ICheckpointStore>(sp => sp.GetRequiredService<T>());
     }
 }

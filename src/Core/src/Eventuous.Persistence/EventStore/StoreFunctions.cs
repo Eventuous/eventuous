@@ -119,7 +119,7 @@ public static class StoreFunctions {
                 position = new StreamReadPosition(position.Value + events.Length);
             }
         } catch (StreamNotFound) when (!failIfNotFound) {
-            return Array.Empty<StreamEvent>();
+            return [];
         }
 
         return streamEvents.ToArray();

@@ -23,9 +23,9 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         var commands   = await GenerateAndHandleCommands(count);
         var testEvents = commands.Select(ToEvent).ToList();
 
-        await fixture.Start();
+        await fixture.StartSubscription();
         await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
-        await fixture.Stop();
+        await fixture.StopSubscription();
         fixture.Handler.Count.Should().Be(10);
     }
 
@@ -43,9 +43,9 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
             const int count      = 10;
             var       commands   = await GenerateAndHandleCommands(count);
             var       testEvents = commands.Select(ToEvent).ToList();
-            await fixture.Start();
+            await fixture.StartSubscription();
             await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
-            await fixture.Stop();
+            await fixture.StopSubscription();
             fixture.Handler.Count.Should().Be(10);
         }
     }
@@ -62,9 +62,9 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         var l = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
         outputHelper.WriteLine("Last checkpoint: {0}", l.Position);
 
-        await fixture.Start();
+        await fixture.StartSubscription();
         await Task.Delay(TimeSpan.FromSeconds(1));
-        await fixture.Stop();
+        await fixture.StopSubscription();
         fixture.Handler.Count.Should().Be(0);
     }
 

@@ -42,7 +42,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     protected override void SetupServices(IServiceCollection services) {
         base.SetupServices(services);
         services.AddSingleton(new SchemaInfo(SchemaName));
-        services.AddSingleton(new SubscriptionOptions() { ConnectionString = Container.GetConnectionString() });
+        services.AddSingleton(new SubscriptionOptions { ConnectionString = Container.GetConnectionString() });
         services.AddEventuousSqlServer(Container.GetConnectionString(), SchemaName, true);
         services.AddAggregateStore<SqlServerStore>();
         services.AddSingleton(new SqlServerCheckpointStoreOptions { Schema = SchemaName, ConnectionString = Container.GetConnectionString() });
@@ -58,11 +58,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
             throw new InvalidOperationException("Subscription options not found");
         }
 
-        if (SubscriptionOptions.ConnectionString is null) {
-            throw new InvalidOperationException("Connection string not found");
-        }
-
-        ConnectionString = SubscriptionOptions.ConnectionString;
+        ConnectionString = SubscriptionOptions.ConnectionString ?? throw new InvalidOperationException("Connection string not found");
     }
 
     public override async Task<ulong> GetLastPosition() {

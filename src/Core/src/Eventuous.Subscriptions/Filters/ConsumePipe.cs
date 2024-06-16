@@ -6,7 +6,7 @@ namespace Eventuous.Subscriptions.Filters;
 using Context;
 
 public sealed class ConsumePipe : IAsyncDisposable {
-    readonly LinkedList<IConsumeFilter> _filters = new();
+    readonly LinkedList<IConsumeFilter> _filters = [];
 
     public IEnumerable<object> RegisteredFilters => _filters.AsEnumerable();
 

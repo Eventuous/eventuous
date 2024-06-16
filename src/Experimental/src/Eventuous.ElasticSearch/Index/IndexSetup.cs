@@ -10,7 +10,7 @@ public static class SetupIndex {
     static readonly AsyncPolicy RetryPolicy = Polly.Policy
         .Handle<ElasticsearchClientException>()
         .WaitAndRetryAsync(10, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-            (_, span, _) => {
+            (_, _, _) => {
                 // Log.Warning("Elasticsearch exception encountered. Retrying in {TimeSpan}", span);
             });
     

@@ -27,7 +27,6 @@ public class TwoAggregateOpsSpec : AggregateSpec<Booking> {
     public void should_produce_fully_paid_event() {
         var expected = new BookingFullyPaid(_testData.PaidAt);
         Then().Changes.Should().Contain(expected);
-        ;
     }
 
     [Fact]

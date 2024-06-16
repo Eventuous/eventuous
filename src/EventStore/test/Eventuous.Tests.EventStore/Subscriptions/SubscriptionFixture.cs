@@ -64,10 +64,10 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
     }
 
     // ReSharper disable once StaticMemberInGenericType
-    static readonly string[] Categories = {
+    static readonly string[] Categories = [
         // "EventStore.Client.SharingProvider",
         // "Grpc.Net.Client.Internal.GrpcCall"
-    };
+    ];
 
     readonly ITestOutputHelper _outputHelper = outputHelper;
 
