@@ -1,0 +1,85 @@
+version: '3.7'
+
+services:
+
+  postgres:
+    container_name: evt_pgsql_postgres
+    image: postgres:14.2
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "secret"
+      POSTGRES_DB: "eventuous"
+    ports:
+      - "5432:5432"
+  
+  pgadmin:
+    container_name: evt_pgsql_pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "pgadmin4@pgadmin.org"
+      PGADMIN_DEFAULT_PASSWORD: "secret"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+
+  rabbitmq:
+    container_name: evt_pgsql_rabbitmq
+    hostname: rabbitmq
+    image: rabbitmq:management-alpine
+    ports:
+      - '4369:4369'
+      - '5672:5672'
+      - '25672:25672'
+      - '15672:15672'
+
+  mongo:
+    container_name: evt_pgsql_mongo
+    image: mongo
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD: secret
+
+  zipkin-storage:
+    image: ghcr.io/openzipkin/zipkin-elasticsearch7:${TAG:-latest}
+    container_name: evt_pgsql_zipkin-mysql
+    
+  zipkin:
+    image: ghcr.io/openzipkin/zipkin-slim:${TAG:-latest}
+    container_name: evt_pgsql_zipkin
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      - ES_HOSTS=zipkin-storage:9200
+      - JAVA_OPTS=-Xms128m -Xmx128m -XX:+ExitOnOutOfMemoryError
+    ports:
+      - "9411:9411"
+
+  prometheus:
+    container_name: evt_pgsql_prometheus
+    image: prom/prometheus:v2.17.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    container_name: evt_pgsql_grafana
+    image: grafana/grafana:6.7.2
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yaml
+      - ./grafana/dashboards:/dashboards
+
+  seq:
+    image: datalust/seq:latest
+    container_name: evt_pgsql_seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:80"
+
+networks:
+  default:
+    name: eventuous-demo

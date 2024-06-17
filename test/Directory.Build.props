@@ -7,10 +7,15 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
         <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
+        <Configurations>Debug;Release;Debug CI</Configurations>
+        <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
-
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug CI' ">
+        <DebugSymbols Condition=" '$(DebugSymbols)' == '' ">true</DebugSymbols>
+        <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
+    </PropertyGroup>
     <ItemGroup>
         <Using Include="Eventuous"/>
-        <None Remove="packages.lock.json" />
+        <None Remove="packages.lock.json"/>
     </ItemGroup>
 </Project>
