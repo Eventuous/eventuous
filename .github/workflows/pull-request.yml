@@ -34,7 +34,7 @@ jobs:
       -  
         name: Build
         run: |
-          dotnet build -c Release -f ${{ matrix.dotnet }}
+          dotnet build -c "Debug CI" -f ${{ matrix.dotnet }}
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''

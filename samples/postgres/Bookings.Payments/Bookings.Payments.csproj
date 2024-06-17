@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MongoDb.Bson.NodaTime" />
     <PackageReference Include="MongoDB.Driver" />
@@ -27,12 +30,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
-    <ProjectReference Include="..\..\..\src\Extensions\src\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
-    <ProjectReference Include="..\..\..\src\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="..\..\..\src\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
-    <ProjectReference Include="..\..\..\src\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
-    <ProjectReference Include="..\..\..\src\Postgres\src\Eventuous.Postgresql\Eventuous.Postgresql.csproj" />
-    <ProjectReference Include="..\..\..\src\RabbitMq\src\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Postgres\src\Eventuous.Postgresql\Eventuous.Postgresql.csproj" />
+    <ProjectReference Include="$(SrcRoot)\RabbitMq\src\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
   </ItemGroup>
 </Project>

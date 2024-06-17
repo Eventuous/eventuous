@@ -14,6 +14,12 @@
         <ExtRoot>$(SrcRoot)\Extensions\src</ExtRoot>
         <GatewayRoot>$(SrcRoot)\Shovel\src</GatewayRoot>
         <LocalRoot>..\..\src</LocalRoot>
+        <Configurations>Debug;Release;Debug CI</Configurations>
+        <Platforms>AnyCPU</Platforms>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug CI' ">
+        <DebugSymbols Condition=" '$(DebugSymbols)' == '' ">true</DebugSymbols>
+        <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     </PropertyGroup>
     <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Eventuous.Tests'))">
         <VSTestLogger>trx%3bLogFileName=$(MSBuildProjectName).trx</VSTestLogger>
