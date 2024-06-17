@@ -4,5 +4,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
+        <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
+        <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
+        <SrcRoot>$(RepoRoot)\src</SrcRoot>
     </PropertyGroup>
 </Project>
