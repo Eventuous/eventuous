@@ -143,9 +143,7 @@ public static partial class RouteBuilderExtensions {
 
                 var stateType = parentAttribute?.StateType ?? attr.StateType;
 
-                if (stateType == null) {
-                    throw new InvalidOperationException($"Unable to resolve the state type from attributes of {type.Name}");
-                }
+                if (stateType == null) continue;
 
                 if (parentAttribute != null && stateType != parentAttribute.StateType) {
                     throw new InvalidOperationException(
