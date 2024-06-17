@@ -81,6 +81,7 @@
         <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.1.0"/>
         <PackageVersion Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0"/>
         <PackageVersion Include="MongoDb.Bson.NodaTime" Version="3.0.0"/>
-        <PackageVersion Include="Verify.Xunit" Version="22.4.1"/>
+        <PackageVersion Include="Verify" Version="25.0.3"/>
+        <PackageVersion Include="Verify.Xunit" Version="25.0.3"/>
     </ItemGroup>
 </Project>
