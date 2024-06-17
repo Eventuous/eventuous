@@ -19,7 +19,7 @@ public static class Registrations {
         services.AddSingleton(connectionFactory);
         services.AddEventuousPostgres(configuration.GetSection("Postgres"));
         services.AddAggregateStore<PostgresStore>();
-        services.AddCommandService<CommandService, Payment>();
+        services.AddCommandService<CommandService, PaymentState>();
         services.AddSingleton(Mongo.ConfigureMongo(configuration));
         services.AddCheckpointStore<MongoCheckpointStore>();
         services.AddProducer<RabbitMqProducer>();

@@ -9,37 +9,32 @@ using Metrics;
 using Tracing;
 
 static class CommandServiceActivity {
-    public static async Task<T> TryExecute<T, TCommand>(
-        string                     appServiceTypeName,
-        TCommand                   command,
-        DiagnosticSource           diagnosticSource,
-        HandleCommand<T, TCommand> handleCommand,
-        GetError<T>                getError,
-        CancellationToken          cancellationToken
-    ) where TCommand : class {
+    public static async Task<Result<T>> TryExecute<T, TCommand>(
+            string                     appServiceTypeName,
+            TCommand                   command,
+            DiagnosticSource           diagnosticSource,
+            HandleCommand<T, TCommand> handleCommand,
+            CancellationToken          cancellationToken
+        ) where TCommand : class where T : State<T>, new() {
         var cmdName = command.GetType().Name;
 
         using var activity = StartActivity(appServiceTypeName, cmdName);
-
-        using var measure = Measure.Start(
-            diagnosticSource,
-            new CommandServiceMetricsContext(appServiceTypeName, cmdName)
-        );
+        using var measure  = Measure.Start(diagnosticSource, new CommandServiceMetricsContext(appServiceTypeName, cmdName));
 
         try {
-            var result = await handleCommand(command, cancellationToken).NoContext();
+            var result  = await handleCommand(command, cancellationToken).NoContext();
 
             activity?.SetActivityStatus(
-                getError(result, out var exception)
-                    ? ActivityStatus.Error(exception)
+                result is ErrorResult<T> err
+                    ? ActivityStatus.Error(err.Exception)
                     : ActivityStatus.Ok()
             );
 
             return result;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
             measure.SetError();
+
             throw;
         }
     }

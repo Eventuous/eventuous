@@ -4,8 +4,9 @@
 namespace Eventuous.AspNetCore.Web;
 
 /// <summary>
-/// Use this attribute on individual command contracts. It can be used in combination with
-/// <see cref="AggregateCommandsAttribute"/>, in that case you won't need to specify the aggregate type.
+/// Use this attribute on individual command contracts.
+/// It can be used in combination with <see cref="StateCommandsAttribute"/>.
+/// In that case, you won't need to specify the aggregate type.
 /// When used without a nesting class, the aggregate type is mandatory. The Route property
 /// is optional, if you omit it, we'll use the command class name as the route.
 /// </summary>
@@ -17,14 +18,9 @@ public class HttpCommandAttribute : Attribute {
     public string? Route { get; set; }
 
     /// <summary>
-    /// Aggregate type for the command, will be used to resolve the command service
+    /// Aggregate type for the command will be used to resolve the command service
     /// </summary>
-    public Type? AggregateType { get; set; }
-
-    /// <summary>
-    /// The result type with as default <see cref="Result"/>.
-    /// </summary>
-    public Type ResultType { get; set; } = typeof(Result);
+    public Type? StateType { get; set; }
 
     /// <summary>
     /// Authorization policy name
@@ -33,22 +29,13 @@ public class HttpCommandAttribute : Attribute {
 }
 
 [AttributeUsage(AttributeTargets.Class)]
-public class HttpCommandAttribute<TAggregate> : HttpCommandAttribute where TAggregate : Aggregate {
-    public HttpCommandAttribute() => AggregateType = typeof(TAggregate);
+public class HttpCommandAttribute<TState> : HttpCommandAttribute where TState : State<TState> {
+    public HttpCommandAttribute() => StateType = typeof(TState);
 }
 
 [AttributeUsage(AttributeTargets.Class)]
-public class HttpCommandAttribute<TAggregate, TResult> : HttpCommandAttribute where TAggregate : Aggregate where TResult : Result {
-    public HttpCommandAttribute() {
-        AggregateType = typeof(TAggregate);
-        ResultType    = typeof(TResult);
-    }
-}
-
-[AttributeUsage(AttributeTargets.Class)]
-public class AggregateCommandsAttribute(Type aggregateType) : Attribute {
-    public Type  AggregateType { get; set; } = aggregateType;
-    public Type? ResultType    { get; set; }
+public class StateCommandsAttribute(Type stateType) : Attribute {
+    public Type StateType { get; set; } = stateType;
 }
 
 /// <summary>
@@ -57,24 +44,16 @@ public class AggregateCommandsAttribute(Type aggregateType) : Attribute {
 /// must operate on a single aggregate type.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class AggregateCommandsAttribute<TAggregate>() : AggregateCommandsAttribute(typeof(TAggregate)) where TAggregate : Aggregate;
-
-[AttributeUsage(AttributeTargets.Class)]
-public class AggregateCommandsAttribute<TAggregate, TResult> : AggregateCommandsAttribute
-    where TAggregate : Aggregate where TResult : Result {
-    public AggregateCommandsAttribute() : base(typeof(TAggregate)) {
-        ResultType = typeof(TResult);
-    }
-}
+public class StateCommandsAttribute<TState>() : StateCommandsAttribute(typeof(TState)) where TState : State<TState>;
 
 static class AttributeCheck {
-    public static void EnsureCorrectAggregate<TCommand, T>(HttpCommandAttribute? attr) {
+    public static void EnsureCorrectParent<TCommand, T>(HttpCommandAttribute? attr) {
         if (attr != null && attr.GetType().IsGenericType) {
-            var aggregateType = attr.GetType().GetGenericArguments()[0];
+            var stateType = attr.GetType().GetGenericArguments()[0];
 
-            if (aggregateType != typeof(T)) {
+            if (stateType != typeof(T)) {
                 throw new InvalidOperationException(
-                    $"Command {typeof(TCommand).Name} is mapped to aggregate {aggregateType.Name} but the route builder is for aggregate {typeof(T).Name}"
+                    $"Command {typeof(TCommand).Name} is mapped to state {stateType.Name} but the route builder is for state {typeof(T).Name}"
                 );
             }
         }

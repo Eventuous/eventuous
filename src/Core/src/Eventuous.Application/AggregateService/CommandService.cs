@@ -20,7 +20,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         StreamNameMap?            streamNameMap   = null,
         TypeMapper?               typeMap         = null
     )
-    : ICommandService<TAggregate, TState, TId>, ICommandService<TAggregate>
+    : ICommandService<TAggregate, TState, TId>//, ICommandService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
     where TId : Id {
@@ -98,15 +98,15 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
     }
 
-    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
-        var result = await Handle(command, cancellationToken).NoContext();
-
-        return result switch {
-            OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),
-            ErrorResult<TState> error                      => new ErrorResult(error.Message, error.Exception),
-            _                                              => throw new ApplicationException("Unknown result type")
-        };
-    }
+    // async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
+    //     var result = await Handle(command, cancellationToken).NoContext();
+    //
+    //     return result switch {
+    //         OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),
+    //         ErrorResult<TState> error                      => new ErrorResult(error.Message, error.Exception),
+    //         _                                              => throw new ApplicationException("Unknown result type")
+    //     };
+    // }
 
     readonly Dictionary<Type, CommandHandlerBuilder<TAggregate, TState, TId>> _builders = new();
 

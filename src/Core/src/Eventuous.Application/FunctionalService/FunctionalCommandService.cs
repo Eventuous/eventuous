@@ -17,7 +17,7 @@ using static Diagnostics.ApplicationEventSource;
 /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
 /// <typeparam name="TState">State object type</typeparam>
 public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
-    : IFuncCommandService<TState>, IStateCommandService<TState> where TState : State<TState>, new() {
+    : ICommandService<TState> where TState : State<TState>, new() {
     readonly TypeMapper              _typeMap  = typeMap ?? TypeMap.Instance;
     readonly FuncHandlersMap<TState> _handlers = new();
 
@@ -107,16 +107,6 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
 
             return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
         }
-    }
-
-    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) {
-        var result = await Handle(command, cancellationToken).NoContext();
-
-        return result switch {
-            OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),
-            ErrorResult<TState> error                      => new ErrorResult(error.Message, error.Exception),
-            _                                              => throw new ApplicationException("Unknown result type")
-        };
     }
 
     readonly Dictionary<Type, FuncCommandHandlerBuilder<TState>> _builders     = new();

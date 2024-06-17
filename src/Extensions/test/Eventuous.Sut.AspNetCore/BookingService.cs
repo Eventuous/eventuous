@@ -66,7 +66,7 @@ public static class SutBookingCommands {
 
     public record ImportBooking(BookingId BookingId, string RoomId, StayPeriod Period, Money Price);
 
-    [AggregateCommands<Booking>]
+    [StateCommands<BookingState>]
     public static class NestedCommands {
         [HttpCommand(Route = NestedBookRoute)]
         public record NestedBookRoom(

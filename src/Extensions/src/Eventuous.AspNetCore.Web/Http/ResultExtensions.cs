@@ -6,9 +6,9 @@ using static Microsoft.AspNetCore.Http.StatusCodes;
 
 namespace Eventuous.AspNetCore.Web;
 
-public static class ResultExtensions {
-    public static IResult AsResult(this Result result) {
-        return result is ErrorResult error
+static class ResultExtensions {
+    public static IResult AsResult<TState>(this Result<TState> result) where TState : State<TState>, new() {
+        return result is ErrorResult<TState> error
             ? error.Exception switch {
                 OptimisticConcurrencyException => AsProblem(Status409Conflict),
                 AggregateNotFoundException     => AsProblem(Status404NotFound),
@@ -22,8 +22,8 @@ public static class ResultExtensions {
         IResult AsValidationProblem(int statusCode) => Results.Problem(PopulateDetails(new ValidationProblemDetails(error.AsErrors()), error, statusCode));
     }
 
-    public static ActionResult AsActionResult(this Result result) {
-        return result is ErrorResult error
+    public static ActionResult AsActionResult<TState>(this Result<TState> result) where TState : State<TState>, new() {
+        return result is ErrorResult<TState> error
             ? error.Exception switch {
                 OptimisticConcurrencyException => AsProblem(Status409Conflict),
                 AggregateNotFoundException     => AsProblem(Status404NotFound),
@@ -49,7 +49,7 @@ public static class ResultExtensions {
         }
     }
 
-    static T PopulateDetails<T>(T details, ErrorResult error, int statusCode) where T : ProblemDetails {
+    static T PopulateDetails<T, TState>(T details, ErrorResult<TState> error, int statusCode) where T : ProblemDetails where TState : State<TState>, new() {
         details.Status = statusCode;
         details.Title  = error.ErrorMessage;
         details.Detail = error.Exception?.ToString();
@@ -58,5 +58,5 @@ public static class ResultExtensions {
         return details;
     }
 
-    static Dictionary<string, string[]> AsErrors(this ErrorResult error) => new Dictionary<string, string[]> { ["Domain"] = [error.ErrorMessage] };
+    static Dictionary<string, string[]> AsErrors<TState>(this ErrorResult<TState> error) where TState : State<TState>, new() => new() { ["Domain"] = [error.ErrorMessage!] };
 }
