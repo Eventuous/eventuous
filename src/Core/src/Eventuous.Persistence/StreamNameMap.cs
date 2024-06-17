@@ -8,14 +8,13 @@ namespace Eventuous;
 public class StreamNameMap {
     readonly TypeMap<Func<Id, StreamName>> _typeMap = new();
 
-    public void Register<TId>(Func<TId, StreamName> map) where TId : Id
-        => _typeMap.Add<TId>(id => map((TId)id));
+    public void Register<TId>(Func<TId, StreamName> map) where TId : Id => _typeMap.Add<TId>(id => map((TId)id));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public StreamName GetStreamName<T, TId>(TId aggregateId) where TId : Id where T : Aggregate
+    public StreamName GetStreamName<T, TState, TId>(TId aggregateId) where TId : Id where T : Aggregate<TState> where TState : State<TState>, new()
         => _typeMap.TryGetValue<TId>(out var map)
             ? map(aggregateId)
-            : StreamNameFactory.For<T, TId>(aggregateId);
+            : StreamNameFactory.For<T, TState, TId>(aggregateId);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public StreamName GetStreamName<TId>(TId id) where TId : Id
@@ -24,5 +23,4 @@ public class StreamNameMap {
             : throw new StreamNameMapNotFound<TId>(id);
 }
 
-public class StreamNameMapNotFound<TId>(TId id) : Exception($"No stream name map found for {typeof(TId).Name} with value {id}")
-    where TId : Id;
+public class StreamNameMapNotFound<TId>(TId id) : Exception($"No stream name map found for {typeof(TId).Name} with value {id}") where TId : Id;

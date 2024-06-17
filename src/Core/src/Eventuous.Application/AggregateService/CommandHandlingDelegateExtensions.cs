@@ -12,14 +12,16 @@ static class CommandHandlingDelegateExtensions {
     public static GetIdFromUntypedCommand<TId> AsGetId<TId, TCommand>(this GetIdFromCommand<TId, TCommand> getId) where TId : Id where TCommand : class
         => (cmd, _) => ValueTask.FromResult(getId((TCommand)cmd));
 
-    public static HandleUntypedCommand<TAggregate> AsAct<TAggregate, TCommand>(this ActOnAggregateAsync<TAggregate, TCommand> act) where TAggregate : Aggregate
+    public static HandleUntypedCommand<TAggregate, TState> AsAct<TAggregate, TState, TCommand>(this ActOnAggregateAsync<TAggregate, TState, TCommand> act)
+        where TAggregate : Aggregate<TState> where TState : State<TState>, new()
         => async (aggregate, cmd, ct) => {
             await act(aggregate, (TCommand)cmd, ct).NoContext();
 
             return aggregate;
         };
 
-    public static HandleUntypedCommand<TAggregate> AsAct<TAggregate, TCommand>(this ActOnAggregate<TAggregate, TCommand> act) where TAggregate : Aggregate
+    public static HandleUntypedCommand<TAggregate, TState> AsAct<TAggregate, TState, TCommand>(this ActOnAggregate<TAggregate, TState, TCommand> act)
+        where TAggregate : Aggregate<TState> where TState : State<TState>, new()
         => (aggregate, cmd, _) => {
             act(aggregate, (TCommand)cmd);
 

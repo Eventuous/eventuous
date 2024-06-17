@@ -9,7 +9,8 @@ namespace Eventuous.Testing;
 /// </summary>
 /// <param name="registry"></param>
 /// <typeparam name="TAggregate"></typeparam>
-public abstract class AggregateSpec<TAggregate>(AggregateFactoryRegistry? registry = null) where TAggregate : Aggregate {
+public abstract class AggregateSpec<TAggregate, TState>(AggregateFactoryRegistry? registry = null)
+    where TAggregate : Aggregate<TState> where TState : State<TState>, new() {
     readonly AggregateFactoryRegistry _registry = registry ?? AggregateFactoryRegistry.Instance;
 
     /// <summary>
@@ -29,7 +30,7 @@ public abstract class AggregateSpec<TAggregate>(AggregateFactoryRegistry? regist
     /// </summary>
     /// <returns></returns>
     protected TAggregate Then() {
-        var instance = _registry.CreateInstance<TAggregate>();
+        var instance = _registry.CreateInstance<TAggregate, TState>();
         instance.Load(GivenEvents());
         When(instance);
 

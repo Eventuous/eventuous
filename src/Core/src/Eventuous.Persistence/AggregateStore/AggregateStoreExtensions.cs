@@ -17,7 +17,7 @@ public static class AggregateStoreExtensions {
     /// <returns></returns>
     public static async Task<T> Load<T, TState, TId>(this IAggregateStore store, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
         where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
-        var aggregate = await store.Load<T>(streamNameMap.GetStreamName<T, TId>(id), cancellationToken).NoContext();
+        var aggregate = await store.Load<T, TState>(streamNameMap.GetStreamName<T, TState, TId>(id), cancellationToken).NoContext();
         return aggregate.WithId<T, TState, TId>(id);
     }
 
@@ -35,7 +35,7 @@ public static class AggregateStoreExtensions {
     /// <returns></returns>
     public static async Task<T> LoadOrNew<T, TState, TId>(this IAggregateStore store, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
         where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
-        var aggregate = await store.LoadOrNew<T>(streamNameMap.GetStreamName<T, TId>(id), cancellationToken).NoContext();
+        var aggregate = await store.LoadOrNew<T, TState>(streamNameMap.GetStreamName<T, TState, TId>(id), cancellationToken).NoContext();
         return aggregate.WithId<T, TState, TId>(id);
     }
 

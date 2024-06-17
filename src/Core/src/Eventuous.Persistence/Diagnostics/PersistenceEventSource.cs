@@ -17,12 +17,12 @@ public class PersistenceEventSource : EventSource {
     const int UnableToAppendEventsId   = 7;
 
     [NonEvent]
-    public void UnableToLoadAggregate<T>(StreamName streamName, Exception exception) where T : Aggregate {
+    public void UnableToLoadAggregate<T, TState>(StreamName streamName, Exception exception) where T : Aggregate<TState> where TState : State<TState>, new() {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToLoadAggregate(typeof(T).Name, streamName, exception.ToString());
     }
 
     [NonEvent]
-    public void UnableToStoreAggregate<T>(StreamName streamName, Exception exception) where T : Aggregate {
+    public void UnableToStoreAggregate<T, TState>(StreamName streamName, Exception exception) where T : Aggregate<TState> where TState : State<TState>, new() {
         if (IsEnabled(EventLevel.Warning, EventKeywords.All)) UnableToStoreAggregate(typeof(T).Name, streamName, exception.ToString());
     }
 

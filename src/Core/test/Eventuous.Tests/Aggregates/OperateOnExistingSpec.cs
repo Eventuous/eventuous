@@ -3,7 +3,7 @@ namespace Eventuous.Tests.Aggregates;
 using Sut.Domain;
 using Testing;
 
-public class OperateOnExistingSpec : AggregateSpec<Booking> {
+public class OperateOnExistingSpec : AggregateSpec<Booking, BookingState> {
     protected override object[] GivenEvents() => [
         new BookingEvents.RoomBooked("room1", LocalDate.FromDateTime(DateTime.Today), LocalDate.FromDateTime(DateTime.Today.AddDays(2)), 100.0f),
     ];

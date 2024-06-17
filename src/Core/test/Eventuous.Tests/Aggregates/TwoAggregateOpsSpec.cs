@@ -4,7 +4,7 @@ using Sut.Domain;
 using Testing;
 using static Sut.Domain.BookingEvents;
 
-public class TwoAggregateOpsSpec : AggregateSpec<Booking> {
+public class TwoAggregateOpsSpec : AggregateSpec<Booking, BookingState> {
     readonly Fixture _fixture = new();
 
     public TwoAggregateOpsSpec() {

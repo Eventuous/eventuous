@@ -29,7 +29,7 @@ public class InsidePeek {
             return;
         }
 
-        var aggregateType = typeof(Aggregate);
+        var aggregateType = typeof(Aggregate<>);
 
         var cl = assembly
             .ExportedTypes
@@ -56,7 +56,7 @@ public class InsidePeek {
                 : type.BaseType!.GenericTypeArguments[0];
     }
 
-    static dynamic CreateInstance(Dictionary<Type, Func<Aggregate>> reg, Type aggregateType) {
+    static dynamic CreateInstance(Dictionary<Type, Func<dynamic>> reg, Type aggregateType) {
         var instance = reg.TryGetValue(aggregateType, out var factory)
             ? factory()
             : Activator.CreateInstance(aggregateType)!;

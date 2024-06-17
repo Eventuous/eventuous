@@ -8,20 +8,20 @@ namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
 
-record RegisteredHandler<T, TId>(
-        ExpectedState                ExpectedState,
-        GetIdFromUntypedCommand<TId> GetId,
-        HandleUntypedCommand<T>      Handler,
-        ResolveStoreFromCommand      ResolveStore
-    ) where T : Aggregate where TId : Id;
+record RegisteredHandler<T, TState, TId>(
+        ExpectedState                   ExpectedState,
+        GetIdFromUntypedCommand<TId>    GetId,
+        HandleUntypedCommand<T, TState> Handler,
+        ResolveStoreFromCommand         ResolveStore
+    ) where T : Aggregate<TState> where TId : Id where TState : State<TState>, new();
 
-class HandlersMap<TAggregate, TId> where TAggregate : Aggregate where TId : Id {
-    readonly TypeMap<RegisteredHandler<TAggregate, TId>> _typeMap = new();
+class HandlersMap<TAggregate, TState, TId> where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
+    readonly TypeMap<RegisteredHandler<TAggregate, TState, TId>> _typeMap = new();
 
     static readonly MethodInfo AddHandlerInternalMethod =
-        typeof(HandlersMap<TAggregate, TId>).GetMethod(nameof(AddHandlerInternal), BindingFlags.NonPublic | BindingFlags.Instance)!;
+        typeof(HandlersMap<TAggregate, TState, TId>).GetMethod(nameof(AddHandlerInternal), BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-    internal void AddHandlerInternal<TCommand>(RegisteredHandler<TAggregate, TId> handler) {
+    internal void AddHandlerInternal<TCommand>(RegisteredHandler<TAggregate, TState, TId> handler) {
         try {
             _typeMap.Add<TCommand>(handler);
             Log.CommandHandlerRegistered<TCommand>();
@@ -32,8 +32,8 @@ class HandlersMap<TAggregate, TId> where TAggregate : Aggregate where TId : Id {
         }
     }
 
-    internal void AddHandlerUntyped(Type command, RegisteredHandler<TAggregate, TId> handler)
+    internal void AddHandlerUntyped(Type command, RegisteredHandler<TAggregate, TState, TId> handler)
         => AddHandlerInternalMethod.MakeGenericMethod(command).Invoke(this, [handler]);
 
-    public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TAggregate, TId>? handler) => _typeMap.TryGetValue<TCommand>(out handler);
+    public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TAggregate, TState, TId>? handler) => _typeMap.TryGetValue<TCommand>(out handler);
 }

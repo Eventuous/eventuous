@@ -5,9 +5,8 @@ using static Eventuous.CommandServiceDelegates;
 
 namespace Eventuous;
 
-public abstract class CommandHandlerBuilder<TAggregate, TState, TId>
-    where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
-    internal abstract RegisteredHandler<TAggregate, TId> Build();
+public abstract class CommandHandlerBuilder<TAggregate, TState, TId> where TAggregate : Aggregate<TState> where TState : State<TState>, new() where TId : Id {
+    internal abstract RegisteredHandler<TAggregate, TState, TId> Build();
 }
 
 /// <summary>
@@ -24,14 +23,14 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IAggregate
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
     where TId : Id {
-    GetIdFromUntypedCommand<TId>?     _getId;
-    HandleUntypedCommand<TAggregate>? _action;
-    ResolveStore<TCommand>?           _resolveStore;
-    ExpectedState                     _expectedState = ExpectedState.Any;
+    GetIdFromUntypedCommand<TId>?             _getId;
+    HandleUntypedCommand<TAggregate, TState>? _action;
+    ResolveStore<TCommand>?                   _resolveStore;
+    ExpectedState                             _expectedState = ExpectedState.Any;
 
     /// <summary>
     /// Set the expected aggregate state for the command handler.
-    /// If the aggregate won't be in the expected state, the command handler will return an error.
+    /// If the aggregate isn't in the expected state, the command handler will return an error.
     /// The default is <see cref="ExpectedState.Any" />.
     /// </summary>
     /// <param name="expectedState">Expected aggregate state</param>
@@ -69,7 +68,7 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IAggregate
     /// </summary>
     /// <param name="action">A function that executes an operation on an aggregate</param>
     /// <returns></returns>
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> Act(ActOnAggregate<TAggregate, TCommand> action) {
+    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> Act(ActOnAggregate<TAggregate, TState, TCommand> action) {
         _action = action.AsAct();
 
         return this;
@@ -80,7 +79,7 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IAggregate
     /// </summary>
     /// <param name="action">A function that executes an asynchronous operation on an aggregate</param>
     /// <returns></returns>
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> ActAsync(ActOnAggregateAsync<TAggregate, TCommand> action) {
+    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> ActAsync(ActOnAggregateAsync<TAggregate, TState, TCommand> action) {
         _action = action.AsAct();
 
         return this;
@@ -98,8 +97,8 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IAggregate
         return this;
     }
 
-    internal override RegisteredHandler<TAggregate, TId> Build() {
-        return new RegisteredHandler<TAggregate, TId>(
+    internal override RegisteredHandler<TAggregate, TState, TId> Build() {
+        return new RegisteredHandler<TAggregate, TState, TId>(
             _expectedState,
             Ensure.NotNull(_getId, $"Function to get the aggregate id from {typeof(TCommand).Name} is not defined"),
             Ensure.NotNull(_action, $"Function to act on the aggregate for command {typeof(TCommand).Name} is not defined"),

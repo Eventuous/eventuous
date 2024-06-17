@@ -21,9 +21,9 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     [Trait("Category", "Store")]
     public async Task AppendedEventShouldBeTraced() {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
-        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
+        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.AggregateStore.Store(aggregate, id, CancellationToken.None);
+        await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, CancellationToken.None);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
             .Select(x => new TestEvent(x.ToString()))
             .ToArray();
 
-        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
+        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate, TestState>();
 
         var counter = 0;
 
@@ -49,15 +49,15 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
             if (counter != 1000) continue;
 
             _log.LogInformation("Storing batch of events..");
-            await _fixture.AggregateStore.Store(aggregate, id, CancellationToken.None);
-            aggregate = await _fixture.AggregateStore.Load<TestAggregate, TestId>(id, CancellationToken.None);
+            await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, CancellationToken.None);
+            aggregate = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, CancellationToken.None);
             counter   = 0;
         }
 
-        await _fixture.AggregateStore.Store(aggregate, id, CancellationToken.None);
+        await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, CancellationToken.None);
 
         _log.LogInformation("Loading large aggregate stream..");
-        var restored = await _fixture.AggregateStore.Load<TestAggregate, TestId>(id, CancellationToken.None);
+        var restored = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, CancellationToken.None);
 
         restored.State.Values.Count.Should().Be(count);
         restored.State.Values.Should().BeEquivalentTo(aggregate.State.Values);
@@ -67,14 +67,14 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     [Trait("Category", "Store")]
     public async Task ShouldReadAggregateStreamManyTimes() {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
-        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate>();
+        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.AggregateStore.Store(aggregate, id, default);
+        await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, default);
 
         const int numberOfReads = 100;
 
         foreach (var unused in Enumerable.Range(0, numberOfReads)) {
-            var read = await _fixture.AggregateStore.Load<TestAggregate, TestId>(id, default);
+            var read = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, default);
             read.State.Should().BeEquivalentTo(aggregate.State);
         }
     }
