@@ -14,15 +14,19 @@
         <ExtRoot>$(SrcRoot)\Extensions\src</ExtRoot>
         <GatewayRoot>$(SrcRoot)\Shovel\src</GatewayRoot>
         <LocalRoot>..\..\src</LocalRoot>
+        <Configurations>Debug;Release;Debug CI</Configurations>
+        <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
-
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug CI' ">
+        <DebugSymbols Condition=" '$(DebugSymbols)' == '' ">true</DebugSymbols>
+        <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
+    </PropertyGroup>
     <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Eventuous.Tests'))">
         <VSTestLogger>trx%3bLogFileName=$(MSBuildProjectName).trx</VSTestLogger>
         <VSTestResultsDirectory>$(RepoRoot)/test-results/$(TargetFramework)</VSTestResultsDirectory>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
     </PropertyGroup>
-
     <PropertyGroup Condition="!($(MSBuildProjectName.StartsWith('Eventuous.Tests')))">
         <IsPackable>true</IsPackable>
         <IncludeSymbols>true</IncludeSymbols>
@@ -42,35 +46,32 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <PackageTags>CQRS ES Event Sourcing EventSourcing EventStore DDD ESDB EventStoreDB</PackageTags>
     </PropertyGroup>
-
     <ItemGroup Condition="'$(IsPackable)' == 'true'">
-        <PackageReference Include="MinVer" PrivateAssets="All"/>
+        <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
-        <None Include="$(RepoRoot)\e-logo.png" Pack="true" PackagePath="\"/>
-        <Using Include="JetBrains.Annotations"/>
+        <PackageReference Include="MinVer" PrivateAssets="All"/>
         <Using Include="Eventuous"/>
+        <Using Include="JetBrains.Annotations"/>
         <Using Include="System.Diagnostics.CodeAnalysis"/>
     </ItemGroup>
-
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+        <Content Include="$(RepoRoot)\test\xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
         <PackageReference Include="AutoFixture"/>
         <PackageReference Include="Bogus"/>
+        <PackageReference Include="coverlet.collector"/>
         <PackageReference Include="FluentAssertions"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="xunit"/>
-        <PackageReference Include="xunit.runner.visualstudio"/>
-        <PackageReference Include="coverlet.collector"/>
         <PackageReference Include="Xunit.Extensions.Logging"/>
-        <Using Include="Xunit"/>
-        <Using Include="Xunit.Abstractions"/>
+        <PackageReference Include="xunit.runner.visualstudio"/>
+        <Using Include="AutoFixture"/>
         <Using Include="FluentAssertions"/>
         <Using Include="FluentAssertions.Extensions"/>
-        <Using Include="AutoFixture"/>
         <Using Include="Microsoft.Extensions.Logging"/>
-        <Content Include="$(RepoRoot)\test\xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+        <Using Include="Xunit"/>
+        <Using Include="Xunit.Abstractions"/>
     </ItemGroup>
-
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
         <PackageReference Include="Microsoft.AspNetCore.TestHost"/>
     </ItemGroup>
@@ -81,7 +82,6 @@
     <ItemGroup Condition="'$(IncludeTestHelpers)' == 'true'">
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
     </ItemGroup>
-
     <Target Name="CustomVersion" AfterTargets="MinVer">
         <PropertyGroup>
             <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</FileVersion>

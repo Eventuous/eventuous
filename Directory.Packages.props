@@ -84,4 +84,19 @@
         <PackageVersion Include="Verify" Version="25.0.3"/>
         <PackageVersion Include="Verify.Xunit" Version="25.0.3"/>
     </ItemGroup>
+    <ItemGroup Label="Packages for samples">
+        <PackageVersion Include="MongoDB.Driver.Core.Extensions.OpenTelemetry" Version="1.0.0"/>
+        <PackageVersion Include="Npgsql.OpenTelemetry" Version="8.0.3"/>
+        <PackageVersion Include="OpenTelemetry" Version="1.8.1"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.1"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.0-rc.1"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.Zipkin" Version="1.8.1"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.1"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.8.0-beta.1"/>
+        <PackageVersion Include="Serilog.AspNetCore" Version="8.0.1"/>
+        <PackageVersion Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
+        <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0"/>
+        <PackageVersion Include="Serilog.Sinks.Seq" Version="8.0.0"/>
+        <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+    </ItemGroup>
 </Project>

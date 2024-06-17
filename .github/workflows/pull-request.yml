@@ -34,14 +34,15 @@ jobs:
       -  
         name: Build
         run: |
-          dotnet build --configuration Debug -f ${{ matrix.dotnet }}
+          dotnet build -c "Debug CI" -f ${{ matrix.dotnet }}
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
         uses: atomicjar/testcontainers-cloud-setup-action@main
       -  
         name: Run tests
-        run: dotnet test --no-build -f ${{ matrix.dotnet }}
+        run: |
+          dotnet test -c "Debug CI" --no-build -f ${{ matrix.dotnet }}
       -  
         name: Upload Test Results
         if: always()

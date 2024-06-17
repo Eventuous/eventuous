@@ -1,0 +1,64 @@
+version: '3.7'
+
+services:
+
+  esdb:
+    container_name: esdemo-esdb
+    image: ghcr.io/eventstore/eventstore:21.10.0-alpha-arm64v8
+#    image: eventstore/eventstore:latest #20.10.2-buster-slim
+    ports:
+      - '2113:2113'
+      - '1113:1113'
+    environment:
+      EVENTSTORE_INSECURE: 'true'
+      EVENTSTORE_CLUSTER_SIZE: 1
+      EVENTSTORE_EXT_TCP_PORT: 1113
+      EVENTSTORE_HTTP_PORT: 2113
+      EVENTSTORE_ENABLE_EXTERNAL_TCP: 'true'
+      EVENTSTORE_RUN_PROJECTIONS: all
+      EVENTSTORE_START_STANDARD_PROJECTIONS: "true"
+      EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP: "true"
+
+  mongo:
+    container_name: esdemo-mongo
+    image: mongo
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD: secret
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: esdemo-zipkin
+    ports:
+      - "9411:9411"
+
+  prometheus:
+    container_name: esdemo-prometheus
+    image: prom/prometheus:v2.17.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    container_name: esdemo-grafana
+    image: grafana/grafana:6.7.2
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yaml
+      - ./grafana/dashboards:/dashboards
+
+  seq:
+    image: datalust/seq:latest
+    container_name: esdemo-seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:80"
+
+networks:
+  default:
+    name: eventuous-demo

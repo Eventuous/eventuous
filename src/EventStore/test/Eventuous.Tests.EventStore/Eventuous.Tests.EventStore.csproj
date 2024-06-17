@@ -1,33 +1,33 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeTestHost>true</IncludeTestHost>
-        <IncludeTestHelpers>true</IncludeTestHelpers>
-        <IncludeSutApp>true</IncludeSutApp>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
-        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-        <ProjectReference Include="$(LocalRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
-        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Diagnostics\test\Eventuous.Tests.OpenTelemetry\Eventuous.Tests.OpenTelemetry.csproj" />
-        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
-        <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
-        <PackageReference Include="Testcontainers.EventStoreDb" />
-    </ItemGroup>
-    <ItemGroup>
-        <Using Include="NodaTime" />
-        <Using Include="Eventuous.Subscriptions" />
-        <Using Include="Eventuous.Subscriptions.Checkpoints" />
-        <Using Include="Eventuous.Subscriptions.Logging" />
-        <Using Include="Eventuous.Tests.EventStore.Fixtures" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
-            <Link>Tools\TaskExtensions.cs</Link>
-        </Compile>
-    </ItemGroup>
+  <PropertyGroup>
+    <IncludeTestHost>true</IncludeTestHost>
+    <IncludeTestHelpers>true</IncludeTestHelpers>
+    <IncludeSutApp>true</IncludeSutApp>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
+    <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
+    <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="$(LocalRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
+    <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Diagnostics\test\Eventuous.Tests.OpenTelemetry\Eventuous.Tests.OpenTelemetry.csproj" />
+    <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
+    <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+    <PackageReference Include="Testcontainers.EventStoreDb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="NodaTime" />
+    <Using Include="Eventuous.Subscriptions" />
+    <Using Include="Eventuous.Subscriptions.Checkpoints" />
+    <Using Include="Eventuous.Subscriptions.Logging" />
+    <Using Include="Eventuous.Tests.EventStore.Fixtures" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
+      <Link>Tools\TaskExtensions.cs</Link>
+    </Compile>
+  </ItemGroup>
 </Project>

@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeSutApp>true</IncludeSutApp>
-        <IncludeTestHost>true</IncludeTestHost>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
-        <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
-        <PackageReference Include="Testcontainers.SqlEdge" />
-    </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
-        <ProjectReference Include="$(LocalRoot)\Eventuous.SqlServer\Eventuous.SqlServer.csproj" />
-        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Diagnostics\test\Eventuous.Tests.OpenTelemetry\Eventuous.Tests.OpenTelemetry.csproj" />
-        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
-    </ItemGroup>
+  <PropertyGroup>
+    <IncludeSutApp>true</IncludeSutApp>
+    <IncludeTestHost>true</IncludeTestHost>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
+    <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+    <PackageReference Include="Testcontainers.SqlEdge" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
+    <ProjectReference Include="$(LocalRoot)\Eventuous.SqlServer\Eventuous.SqlServer.csproj" />
+    <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Diagnostics\test\Eventuous.Tests.OpenTelemetry\Eventuous.Tests.OpenTelemetry.csproj" />
+    <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
+  </ItemGroup>
 </Project>

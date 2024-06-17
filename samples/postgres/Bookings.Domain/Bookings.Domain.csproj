@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+      <Configurations>Debug;Release</Configurations>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="NodaTime"/>
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="$(CoreRoot)\Eventuous.Domain\Eventuous.Domain.csproj" />
+      <ProjectReference Include="$(CoreRoot)\Eventuous.Shared\Eventuous.Shared.csproj" />
+    </ItemGroup>
+</Project>

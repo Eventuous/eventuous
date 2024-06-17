@@ -1,12 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeSutApp>true</IncludeSutApp>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
-        <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
-        <PackageReference Include="Testcontainers"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
-    </ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IncludeSutApp>true</IncludeSutApp>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+    <PackageReference Include="Testcontainers" />
+  </ItemGroup>
 </Project>

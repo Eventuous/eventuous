@@ -1,0 +1,3 @@
+name: cloudrun
+runtime: nodejs
+description: Eventuous sample application deployment to Google Cloud Run
