@@ -7,16 +7,10 @@ namespace Bookings.Payments.Application;
 
 public class CommandService : CommandService<Payment, PaymentState, PaymentId> {
     public CommandService(IAggregateStore store) : base(store) {
-        OnNew<PaymentCommands.RecordPayment>(
-            cmd => new PaymentId(cmd.PaymentId),
-            (payment, cmd) => payment.ProcessPayment(
-                new PaymentId(cmd.PaymentId),
-                cmd.BookingId,
-                new Money(cmd.Amount, cmd.Currency),
-                cmd.Method,
-                cmd.Provider
-            )
-        );
+        On<PaymentCommands.RecordPayment>()
+            .InState(ExpectedState.New)
+            .GetId(cmd => new PaymentId(cmd.PaymentId))
+            .Act((payment, cmd) => payment.ProcessPayment(cmd.BookingId, new Money(cmd.Amount, cmd.Currency), cmd.Method, cmd.Provider));
     }
 }
 
@@ -24,12 +18,12 @@ public class CommandService : CommandService<Payment, PaymentState, PaymentId> {
 public static class PaymentCommands {
     [HttpCommand]
     public record RecordPayment(
-        string                        PaymentId,
-        string                        BookingId,
-        float                         Amount,
-        string                        Currency,
-        string                        Method,
-        string                        Provider,
-        [property: JsonIgnore] string PaidBy
-    );
+            string                        PaymentId,
+            string                        BookingId,
+            float                         Amount,
+            string                        Currency,
+            string                        Method,
+            string                        Provider,
+            [property: JsonIgnore] string PaidBy
+        );
 }
