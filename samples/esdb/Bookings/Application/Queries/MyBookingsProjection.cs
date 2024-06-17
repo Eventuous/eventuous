@@ -4,7 +4,7 @@ using static Bookings.Domain.Bookings.BookingEvents;
 
 namespace Bookings.Application.Queries;
 
-public class MyBookingsProjection : MongoProjection<MyBookings> {
+public class MyBookingsProjection : MongoProjector<MyBookings> {
     public MyBookingsProjection(IMongoDatabase database) : base(database) {
         On<V1.RoomBooked>(b => b
             .UpdateOne

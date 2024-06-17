@@ -4,6 +4,7 @@ using Eventuous.EventStore.Producers;
 using Eventuous.Gateway;
 using Eventuous.Subscriptions.Context;
 using static Bookings.Payments.Integration.IntegrationEvents;
+// ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace Bookings.Payments.Integration;
 
@@ -14,12 +15,13 @@ public static class PaymentsGateway {
         var result = original.Message is PaymentEvents.PaymentRecorded evt
             ? new GatewayMessage<EventStoreProduceOptions>(
                 Stream,
-                new BookingPaymentRecorded(evt.PaymentId, evt.BookingId, evt.Amount, evt.Currency),
+                new BookingPaymentRecorded(original.Stream.GetId(), evt.BookingId, evt.Amount, evt.Currency),
                 new Metadata(),
                 new EventStoreProduceOptions()
             )
             : null;
-        return ValueTask.FromResult(result != null ? new []{result} : Array.Empty<GatewayMessage<EventStoreProduceOptions>>());
+        GatewayMessage<EventStoreProduceOptions>[] gatewayMessages = result != null ? [result] : [];
+        return ValueTask.FromResult(gatewayMessages);
     }
 }
 
