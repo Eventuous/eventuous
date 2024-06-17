@@ -11,8 +11,9 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="RestSharp"/>
-        <PackageReference Include="Verify.DiffPlex" />
+        <PackageReference Include="Verify.DiffPlex"/>
         <PackageReference Include="Verify.Xunit"/>
+        <PackageReference Include="Verify"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="Eventuous.Sut.AspNetCore"/>

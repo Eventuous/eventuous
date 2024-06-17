@@ -7,7 +7,7 @@ using static Bookings.Domain.Bookings.BookingEvents;
 
 namespace Bookings.Application.Queries;
 
-public class BookingStateProjection : MongoProjection<BookingDocument> {
+public class BookingStateProjection : MongoProjector<BookingDocument> {
     public BookingStateProjection(IMongoDatabase database) : base(database) {
         On<V1.RoomBooked>(stream => stream.GetId(), HandleRoomBooked);
 
