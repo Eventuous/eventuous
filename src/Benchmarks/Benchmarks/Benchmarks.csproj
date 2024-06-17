@@ -1,15 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-<!--        <TargetFramework>net6.0</TargetFramework>-->
-<!--        <TargetFrameworks></TargetFrameworks>-->
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
-      <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj" />
-      <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="BenchmarkDotNet" />
+        <PackageReference Include="BenchmarkDotNet"/>
     </ItemGroup>
 </Project>

@@ -8,9 +8,8 @@
         <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
         <CoreRoot>$(RepoRoot)\src\Core\src</CoreRoot>
     </PropertyGroup>
-
     <ItemGroup>
         <Using Include="Eventuous"/>
-        <None Remove="packages.lock.json" />
+        <None Remove="packages.lock.json"/>
     </ItemGroup>
 </Project>

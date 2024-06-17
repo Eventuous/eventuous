@@ -1,17 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeTestHost>true</IncludeTestHost>
-        <IncludeTestHelpers>true</IncludeTestHelpers>
-        <IncludeSutApp>true</IncludeSutApp>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
-        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
-        <PackageReference Include="MongoDb.Bson.NodaTime" />
-        <PackageReference Include="Testcontainers.MongoDb" />
-    </ItemGroup>
+  <PropertyGroup>
+    <IncludeTestHost>true</IncludeTestHost>
+    <IncludeTestHelpers>true</IncludeTestHelpers>
+    <IncludeSutApp>true</IncludeSutApp>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
+    <ProjectReference Include="$(LocalRoot)\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
+    <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MongoDb.Bson.NodaTime" />
+    <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+    <PackageReference Include="Testcontainers.MongoDb" />
+  </ItemGroup>
 </Project>
