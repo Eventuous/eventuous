@@ -8,7 +8,7 @@ using Sut.Domain;
 
 public class StoringEvents : NaiveFixture {
     public StoringEvents() {
-        Service = new BookingService(AggregateStore);
+        Service = new(AggregateStore);
         TypeMap.RegisterKnownEventTypes();
     }
 
@@ -24,29 +24,14 @@ public class StoringEvents : NaiveFixture {
             Auto.Create<float>()
         );
 
-        var expected = new Change[] {
-            new(
-                new BookingEvents.RoomBooked(
-                    cmd.RoomId,
-                    cmd.CheckIn,
-                    cmd.CheckOut,
-                    cmd.Price
-                ),
-                "RoomBooked"
-            )
-        };
+        Change[] expected = [new(new BookingEvents.RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), "RoomBooked")];
 
         var result = await Service.Handle(cmd, default);
 
         result.Success.Should().BeTrue();
         result.Changes.Should().BeEquivalentTo(expected);
 
-        var evt = await EventStore.ReadEvents(
-            StreamName.For<Booking>(cmd.BookingId),
-            StreamReadPosition.Start,
-            1,
-            CancellationToken.None
-        );
+        var evt = await EventStore.ReadEvents(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, 1, CancellationToken.None);
 
         evt[0].Payload.Should().BeEquivalentTo(result.Changes!.First().Event);
     }

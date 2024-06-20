@@ -11,9 +11,7 @@ namespace Eventuous.Tests.AspNetCore.Web.Fixture;
 using static SutBookingCommands;
 
 public class ServerFixture {
-    //: IDisposable {
     readonly AutoFixture.Fixture _fixture = new();
-    readonly ITestOutputHelper   _output;
 
     public ServerFixture(
             WebApplicationFactory<Program> factory,
@@ -21,8 +19,6 @@ public class ServerFixture {
             Action<IServiceCollection>?    register  = null,
             ConfigureWebApplication?       configure = null
         ) {
-        _output = output;
-
         var builder = factory
             .WithWebHostBuilder(
                 builder => {
@@ -52,8 +48,7 @@ public class ServerFixture {
         );
     }
 
-    public T Resolve<T>() where T : notnull
-        => _app.Services.GetRequiredService<T>();
+    public T Resolve<T>() where T : notnull => _app.Services.GetRequiredService<T>();
 
     public Task<StreamEvent[]> ReadStream<T>(string id)
         => Resolve<IEventStore>().ReadEvents(StreamName.For<T>(id), StreamReadPosition.Start, 100, default);
@@ -71,7 +66,7 @@ public class ServerFixture {
         return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
     }
 
-    public async Task<string> ExecuteRequest<TCommand, TAggregate>(TCommand cmd, string route, string id) where TCommand : class {
+    public async Task<string> ExecuteRequest<TCommand>(TCommand cmd, string route, string id) where TCommand : class {
         using var client = GetClient();
 
         var request  = new RestRequest(route).AddJsonBody(cmd);

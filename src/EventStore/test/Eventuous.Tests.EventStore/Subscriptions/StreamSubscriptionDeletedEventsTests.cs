@@ -12,63 +12,39 @@ namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
 public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFixture>, IDisposable {
-    readonly StoreFixture   _fixture;
+    readonly StoreFixture         _fixture;
     readonly ILoggerFactory       _loggerFactory;
     readonly LoggingEventListener _listener;
 
     public StreamSubscriptionDeletedEventsTests(StoreFixture fixture, ITestOutputHelper output) {
-        _fixture = fixture;
-
-        _loggerFactory = LoggerFactory.Create(
-            cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug)
-        );
-
-        _listener = new LoggingEventListener(_loggerFactory);
+        _fixture       = fixture;
+        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug));
+        _listener      = new(_loggerFactory);
     }
 
     [Fact]
     [Trait("Category", "Special cases")]
     public async Task StreamSubscriptionGetsDeletedEvents() {
-        var service = new BookingService(_fixture.AggregateStore);
-
-        var categoryStream = new StreamName("$ce-Booking");
-
-        ulong? startPosition = null;
+        var    service        = new BookingService(_fixture.AggregateStore);
+        var    categoryStream = new StreamName("$ce-Booking");
+        ulong? startPosition  = null;
 
         try {
-            var last = await _fixture.Client.ReadStreamAsync(
-                    Direction.Backwards,
-                    categoryStream,
-                    StreamPosition.End,
-                    1
-                )
-                .ToArrayAsync();
-
+            var last = await _fixture.Client.ReadStreamAsync(Direction.Backwards, categoryStream, StreamPosition.End, 1).ToArrayAsync();
             startPosition = last[0].OriginalEventNumber;
         } catch (StreamNotFoundException) { }
 
         const int produceCount = 20;
         const int deleteCount  = 5;
 
-        var commands = Enumerable.Range(0, produceCount)
-            .Select(_ => DomainFixture.CreateImportBooking())
-            .ToArray();
+        var commands = Enumerable.Range(0, produceCount).Select(_ => DomainFixture.CreateImportBooking()).ToArray();
 
-        await Task.WhenAll(
-            commands.Select(x => service.Handle(x, CancellationToken.None))
-        );
+        await Task.WhenAll(commands.Select(x => service.Handle(x, CancellationToken.None)));
 
         var delete = Enumerable.Range(5, deleteCount).Select(x => commands[x]).ToList();
 
         await Task.WhenAll(
-            delete
-                .Select(
-                    x => _fixture.EventStore.DeleteStream(
-                        StreamName.For<Booking>(x.BookingId),
-                        ExpectedStreamVersion.Any,
-                        CancellationToken.None
-                    )
-                )
+            delete.Select(x => _fixture.EventStore.DeleteStream(StreamName.For<Booking>(x.BookingId), ExpectedStreamVersion.Any, CancellationToken.None))
         );
 
         var handler = new TestHandler();
@@ -77,7 +53,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
 
         var subscription = new StreamSubscription(
             _fixture.Client,
-            new StreamSubscriptionOptions {
+            new() {
                 StreamName     = categoryStream,
                 SubscriptionId = subscriptionId,
                 ResolveLinkTos = true,
@@ -99,17 +75,8 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
 
         await subscription.UnsubscribeWithLog(log);
 
-        log.LogInformation("Received {Count} events", handler.Count);
-
-        var actual = handler.Processed
-            .Select(x => x.Stream.GetId())
-            .ToList();
-
-        log.LogInformation("Actual contains {Count} events", actual.Count);
-
-        actual
-            .Should()
-            .BeEquivalentTo(commands.Except(delete).Select(x => x.BookingId));
+        var actual = handler.Processed.Select(x => x.Stream.GetId()).ToList();
+        actual.Should().BeEquivalentTo(commands.Except(delete).Select(x => x.BookingId));
     }
 
     class TestHandler : BaseEventHandler {

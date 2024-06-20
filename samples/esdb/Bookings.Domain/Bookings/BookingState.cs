@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Eventuous;
 using static Bookings.Domain.Bookings.BookingEvents;
+
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -14,11 +15,11 @@ public record BookingState : State<BookingState> {
     public Money      Price       { get; init; } = null!;
     public Money      Outstanding { get; init; } = null!;
     public bool       Paid        { get; init; }
-    
+
     public ImmutableArray<PaymentRecord> Payments { get; init; } = ImmutableArray<PaymentRecord>.Empty;
-    
+
     internal bool HasPaymentBeenRegistered(string paymentId) => Payments.Any(x => x.PaymentId == paymentId);
-    
+
     public BookingState() {
         On<V1.RoomBooked>(HandleBooked);
         On<V1.PaymentRecorded>(HandlePayment);
@@ -36,7 +37,7 @@ public record BookingState : State<BookingState> {
             RoomId = new RoomId(booked.RoomId),
             Period = new StayPeriod(booked.CheckInDate, booked.CheckOutDate),
             GuestId = booked.GuestId,
-            Price = new Money { Amount = booked.BookingPrice, Currency = booked.Currency },
+            Price = new Money { Amount       = booked.BookingPrice, Currency      = booked.Currency },
             Outstanding = new Money { Amount = booked.OutstandingAmount, Currency = booked.Currency }
         };
 }

@@ -15,9 +15,9 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
     /// <typeparam name="TCommand">Command type</typeparam>
     [Obsolete("Use On<TCommand>().InState(ExpectedState.New).GetId(...).ActAsync(...).ResolveStore(...) instead")]
     protected void OnNewAsync<TCommand>(
-            GetIdFromCommand<TId, TCommand>           getId,
-            ActOnAggregateAsync<TAggregate, TCommand> action,
-            ResolveStore<TCommand>?                   resolveStore = null
+            GetIdFromCommand<TId, TCommand>                   getId,
+            ActOnAggregateAsync<TAggregate, TState, TCommand> action,
+            ResolveStore<TCommand>?                           resolveStore = null
         ) where TCommand : class
         => On<TCommand>().InState(ExpectedState.New).GetId(getId).ActAsync(action).ResolveStore(resolveStore);
 
@@ -31,9 +31,9 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Existing).GetId(...).ActAsync(...).ResolveStore(...) instead")]
     [PublicAPI]
     protected void OnExistingAsync<TCommand>(
-            GetIdFromCommand<TId, TCommand>           getId,
-            ActOnAggregateAsync<TAggregate, TCommand> action,
-            ResolveStore<TCommand>?                   resolveStore = null
+            GetIdFromCommand<TId, TCommand>                   getId,
+            ActOnAggregateAsync<TAggregate, TState, TCommand> action,
+            ResolveStore<TCommand>?                           resolveStore = null
         ) where TCommand : class
         => On<TCommand>().InState(ExpectedState.Existing).GetId(getId).ActAsync(action).ResolveStore(resolveStore);
 
@@ -47,9 +47,9 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Existing).GetIdAsync(...).ActAsync(...).ResolveStore(...) instead")]
     [PublicAPI]
     protected void OnExistingAsync<TCommand>(
-            GetIdFromCommandAsync<TId, TCommand>      getId,
-            ActOnAggregateAsync<TAggregate, TCommand> action,
-            ResolveStore<TCommand>?                   resolveStore = null
+            GetIdFromCommandAsync<TId, TCommand>              getId,
+            ActOnAggregateAsync<TAggregate, TState, TCommand> action,
+            ResolveStore<TCommand>?                           resolveStore = null
         ) where TCommand : class
     // => _handlers.AddHandler(ExpectedState.Existing, getId, action, resolveStore ?? DefaultResolve<TCommand>());
         => On<TCommand>().InState(ExpectedState.Existing).GetIdAsync(getId).ActAsync(action).ResolveStore(resolveStore);
@@ -64,11 +64,11 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Any).GetId(...).ActAsync(...).ResolveStore(...) instead")]
     [PublicAPI]
     protected void OnAnyAsync<TCommand>(
-            GetIdFromCommand<TId, TCommand>           getId,
-            ActOnAggregateAsync<TAggregate, TCommand> action,
-            ResolveStore<TCommand>?                   resolveStore = null
+            GetIdFromCommand<TId, TCommand>                   getId,
+            ActOnAggregateAsync<TAggregate, TState, TCommand> action,
+            ResolveStore<TCommand>?                           resolveStore = null
         ) where TCommand : class
-        // => _handlers.AddHandler(ExpectedState.Any, getId, action, resolveStore ?? DefaultResolve<TCommand>());
+    // => _handlers.AddHandler(ExpectedState.Any, getId, action, resolveStore ?? DefaultResolve<TCommand>());
         => On<TCommand>().InState(ExpectedState.Any).GetId(getId).ActAsync(action).ResolveStore(resolveStore);
 
     /// <summary>
@@ -81,10 +81,10 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Any).GetIdAsync(...).ActAsync(...).ResolveStore(...) instead")]
     [PublicAPI]
     protected void OnAnyAsync<TCommand>(
-            GetIdFromCommandAsync<TId, TCommand>      getId,
-            ActOnAggregateAsync<TAggregate, TCommand> action,
-            ResolveStore<TCommand>?                   resolveStore = null
+            GetIdFromCommandAsync<TId, TCommand>              getId,
+            ActOnAggregateAsync<TAggregate, TState, TCommand> action,
+            ResolveStore<TCommand>?                           resolveStore = null
         ) where TCommand : class
-        // => _handlers.AddHandler(ExpectedState.Any, getId, action, resolveStore ?? DefaultResolve<TCommand>());
+    // => _handlers.AddHandler(ExpectedState.Any, getId, action, resolveStore ?? DefaultResolve<TCommand>());
         => On<TCommand>().InState(ExpectedState.Any).GetIdAsync(getId).ActAsync(action).ResolveStore(resolveStore);
 }

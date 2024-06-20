@@ -10,6 +10,5 @@ using Context;
 
 public class ConsumerFilter(IMessageConsumer<IMessageConsumeContext> consumer) : ConsumeFilter<IMessageConsumeContext> {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next)
-        => consumer.Consume(context);
+    protected override ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) => consumer.Consume(context);
 }

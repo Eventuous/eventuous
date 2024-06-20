@@ -53,15 +53,14 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         _onDropped    = onDropped;
         await Subscribe(cts.Token).NoContext();
         IsRunning = true;
-        Log.InfoLog?.Log("Started");
-
+        Log.SubscriptionStarted();
         onSubscribed(Options.SubscriptionId);
     }
 
     public async ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken) {
         IsRunning = false;
         await Unsubscribe(cancellationToken).NoContext();
-        Log.InfoLog?.Log("Unsubscribed");
+        Log.SubscriptionStopped();
         onUnsubscribed(Options.SubscriptionId);
         await Finalize(cancellationToken);
         Sequence = 0;
@@ -117,7 +116,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
                 if (context.WasIgnored() && activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.None;
             } catch (OperationCanceledException e) when (Stopping.IsCancellationRequested) {
-                Log.DebugLog?.Log("Message ignored because subscription is stopping: {Message}", e.Message);
+                Log.MessageIgnoredWhenStopping(e);
             } catch (Exception e) { context.Nack(SubscriptionId, e); }
 
             if (context.HasFailed()) {
@@ -151,7 +150,6 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
             };
         } catch (Exception e) {
             var exception = new DeserializationException(stream, eventType, position, e);
-
             Log.PayloadDeserializationFailed(stream, position, eventType, exception);
 
             if (Options.ThrowOnError) throw;
@@ -176,16 +174,16 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
         while (IsRunning && IsDropped && !cancellationToken.IsCancellationRequested) {
             try {
-                Log.WarnLog?.Log("Resubscribing");
+                Log.SubscriptionResubscribing();
 
                 await Subscribe(cancellationToken).NoContext();
 
                 IsDropped = false;
                 _onSubscribed?.Invoke(Options.SubscriptionId);
 
-                Log.InfoLog?.Log("Resubscribed");
+                Log.SubscriptionResubscribed();
             } catch (OperationCanceledException) { } catch (Exception e) {
-                Log.ErrorLog?.Log(e, "Failed to resubscribe");
+                Log.SubscriptionResubscribeFailed(e);
                 await Task.Delay(1000, cancellationToken).NoContext();
             }
         }
@@ -194,7 +192,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning) return;
 
-        Log.WarnLog?.Log(exception, "Dropped: {Reason}", reason);
+        Log.SubscriptionDropped(reason, exception);
 
         IsDropped = true;
         _onDropped?.Invoke(Options.SubscriptionId, reason, exception);
@@ -202,10 +200,9 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         Task.Run(
             async () => {
                 var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2);
+                Log.SubscriptionWillResubscribe(delay);
 
-                Log.WarnLog?.Log($"Will resubscribe after {delay}");
-
-                try { await Resubscribe(delay, Stopping.Token); } catch (Exception e) {
+                try { await Resubscribe(delay, Stopping.Token).NoContext(); } catch (Exception e) {
                     Log.WarnLog?.Log(e.Message);
 
                     throw;
@@ -219,7 +216,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     public async ValueTask DisposeAsync() {
         if (_disposed) return;
 
-        await Pipe.DisposeAsync();
+        await Pipe.DisposeAsync().NoContext();
 
         // Stopping.Dispose();
         _disposed = true;

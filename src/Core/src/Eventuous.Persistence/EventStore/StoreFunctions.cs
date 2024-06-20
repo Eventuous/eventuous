@@ -64,25 +64,26 @@ public static class StoreFunctions {
     /// <param name="amendEvent">Optional: function to add extra information to the event before it gets stored</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns>Append event result</returns>
-    /// <exception cref="OptimisticConcurrencyException{T}">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
-    public static async Task<AppendEventsResult> Store<T>(
+    /// <exception cref="OptimisticConcurrencyException{T, TState}">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
+    public static async Task<AppendEventsResult> Store<T, TState>(
             this IEventWriter eventWriter,
             StreamName        streamName,
             T                 aggregate,
             AmendEvent?       amendEvent,
             CancellationToken cancellationToken
-        ) where T : Aggregate {
+        ) where T : Aggregate<TState> where TState : State<TState>, new() {
         Ensure.NotNull(aggregate);
 
         try {
             return await eventWriter.Store(streamName, aggregate.OriginalVersion, aggregate.Changes, amendEvent, cancellationToken).NoContext();
         } catch (OptimisticConcurrencyException e) {
-            Log.UnableToStoreAggregate<T>(streamName, e);
+            Log.UnableToStoreAggregate<T, TState>(streamName, e);
 
             throw e.InnerException is null
-                ? new OptimisticConcurrencyException<T>(streamName, e)
-                : new OptimisticConcurrencyException<T>(streamName, e.InnerException);
+                ? new OptimisticConcurrencyException<T, TState>(streamName, e)
+                : new OptimisticConcurrencyException<T, TState>(streamName, e.InnerException);
         }
     }
 

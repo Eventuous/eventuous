@@ -4,14 +4,23 @@
 namespace Eventuous.AspNetCore.Web;
 
 /// <summary>
-/// Base class for exposing commands via Web API using a controller.
+/// Base class for exposing commands via Web API using a controller that returns the default result.
 /// </summary>
-/// <typeparam name="TAggregate">Aggregate type</typeparam>
-/// <typeparam name="TResult">Result type</typeparam>
+/// <typeparam name="TState">State type</typeparam>
 [PublicAPI]
-public abstract class CommandHttpApiBase<TAggregate, TResult>(ICommandService<TAggregate> service, MessageMap? commandMap = null) : ControllerBase
-    where TAggregate : Aggregate
-    where TResult : Result {
+public abstract class CommandHttpApiBase<TState>(ICommandService<TState> service, MessageMap? commandMap = null)
+    : CommandHttpApiBase<TState, Result<TState>>(service, commandMap) where TState : State<TState>, new();
+
+/// <summary>
+/// Base class for exposing commands via Web API using a controller returning custom result type.
+/// </summary>
+/// <param name="service">Command service</param>
+/// <param name="commandMap">Optional: Map between external and internal commands</param>
+/// <typeparam name="TState">State type</typeparam>
+/// <typeparam name="TResult">Custom result type</typeparam>
+[PublicAPI]
+public abstract class CommandHttpApiBase<TState, TResult>(ICommandService<TState> service, MessageMap? commandMap = null) : ControllerBase
+    where TState : State<TState>, new() {
     /// <summary>
     /// Call this method from your HTTP endpoints to handle commands and wrap the result properly.
     /// </summary>
@@ -19,7 +28,7 @@ public abstract class CommandHttpApiBase<TAggregate, TResult>(ICommandService<TA
     /// <param name="cancellationToken">Request cancellation token</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns>A custom result class that inherits from <see cref="Result"/>.</returns>
-    protected async Task<ActionResult<TResult>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
+    protected virtual async Task<ActionResult<TResult>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await service.Handle(command, cancellationToken);
 
@@ -36,7 +45,7 @@ public abstract class CommandHttpApiBase<TAggregate, TResult>(ICommandService<TA
     /// <typeparam name="TCommand">Domain command type</typeparam>
     /// <returns>A custom result class that inherits from <see cref="Result"/>.</returns>
     /// <exception cref="InvalidOperationException">Throws if the command map hasn't been configured</exception>
-    protected async Task<ActionResult<TResult>> Handle<TContract, TCommand>(TContract httpCommand, CancellationToken cancellationToken)
+    protected virtual async Task<ActionResult<TResult>> Handle<TContract, TCommand>(TContract httpCommand, CancellationToken cancellationToken)
         where TContract : class where TCommand : class {
         if (commandMap == null) throw new InvalidOperationException("Command map is not configured");
 
@@ -46,14 +55,10 @@ public abstract class CommandHttpApiBase<TAggregate, TResult>(ICommandService<TA
         return AsActionResult(result);
     }
 
-    protected virtual ActionResult AsActionResult(Result result) {
-        return result.AsActionResult();
-    }
+    /// <summary>
+    /// Function to convert the default result to a custom result
+    /// </summary>
+    /// <param name="result">Command execution result</param>
+    /// <returns>ActionResult with custom payload</returns>
+    protected virtual ActionResult AsActionResult(Result<TState> result) => result.AsActionResult();
 }
-
-/// <summary>
-/// Base class for exposing commands via Web API using a controller.
-/// </summary>
-/// <typeparam name="TAggregate">Aggregate type</typeparam>
-public abstract class CommandHttpApiBase<TAggregate>(ICommandService<TAggregate> service, MessageMap? commandMap = null)
-    : CommandHttpApiBase<TAggregate, Result>(service, commandMap) where TAggregate : Aggregate;

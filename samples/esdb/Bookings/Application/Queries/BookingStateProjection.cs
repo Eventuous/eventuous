@@ -15,21 +15,18 @@ public class BookingStateProjection : MongoProjector<BookingDocument> {
             b => b
                 .UpdateOne
                 .DefaultId()
-                .Update((evt, update) =>
-                    update.Set(x => x.Outstanding, evt.Outstanding)
-                )
+                .Update((evt, update) => update.Set(x => x.Outstanding, evt.Outstanding))
         );
 
-        On<V1.BookingFullyPaid>(b => b
-            .UpdateOne
-            .DefaultId()
-            .Update((_, update) => update.Set(x => x.Paid, true))
+        On<V1.BookingFullyPaid>(
+            b => b
+                .UpdateOne
+                .DefaultId()
+                .Update((_, update) => update.Set(x => x.Paid, true))
         );
     }
 
-    static UpdateDefinition<BookingDocument> HandleRoomBooked(
-        IMessageConsumeContext<V1.RoomBooked> ctx, UpdateDefinitionBuilder<BookingDocument> update
-    ) {
+    static UpdateDefinition<BookingDocument> HandleRoomBooked(IMessageConsumeContext<V1.RoomBooked> ctx, UpdateDefinitionBuilder<BookingDocument> update) {
         var evt = ctx.Message;
 
         return update.SetOnInsert(x => x.Id, ctx.Stream.GetId())

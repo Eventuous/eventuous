@@ -57,7 +57,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
 
         await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
         var last = await fixture.GetLastPosition();
-        await fixture.CheckpointStore.StoreCheckpoint(new Checkpoint(fixture.SubscriptionId, last), true, default);
+        await fixture.CheckpointStore.StoreCheckpoint(new(fixture.SubscriptionId, last), true, default);
         
         var l = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
         outputHelper.WriteLine("Last checkpoint: {0}", l.Position);

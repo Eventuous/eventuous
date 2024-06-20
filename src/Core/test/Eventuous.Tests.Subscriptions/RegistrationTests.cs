@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
+
 // ReSharper disable ClassNeverInstantiated.Local
 
 namespace Eventuous.Tests.Subscriptions;
@@ -77,7 +78,7 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
     public void ShouldRegisterBothAsHealthReporters() {
         var services = _server.Services.GetServices<ISubscriptionHealth>().ToArray();
         var health   = _server.Services.GetServices<SubscriptionHealthCheck>().ToArray();
-        
+
         services.Length.Should().Be(1);
         health.Length.Should().Be(1);
         services.Single().Should().BeSameAs(health.Single());
@@ -118,14 +119,8 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
                     .AddEventHandler<Handler1>()
             );
 
-            services.AddSubscription<TestSub, TestOptions>(
-                "sub2",
-                builder => builder
-                    .AddEventHandler<Handler2>()
-            );
-
+            services.AddSubscription<TestSub, TestOptions>("sub2", builder => builder.AddEventHandler<Handler2>());
             services.AddOpenTelemetry().WithMetrics(builder => builder.AddEventuousSubscriptions());
-            
             services.AddHealthChecks().AddSubscriptionsHealthCheck("subscriptions", HealthStatus.Unhealthy, ["tag"]);
         }
 

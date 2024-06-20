@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Diagnostics;
-using Eventuous.Subscriptions.Checkpoints;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -10,6 +9,7 @@ namespace Eventuous.Subscriptions.Registrations;
 
 using Filters;
 using Filters.Partitioning;
+using Checkpoints;
 
 public static class SubscriptionBuilderExtensions {
     /// <summary>

@@ -2,4 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
 </Project>

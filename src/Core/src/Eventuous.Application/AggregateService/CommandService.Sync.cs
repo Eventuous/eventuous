@@ -15,10 +15,10 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
     /// <typeparam name="TCommand">Command type</typeparam>
     [Obsolete("Use On<TCommand>().InState(ExpectedState.New).GetId(...).Act(...).ResolveStore(...) instead")]
     protected void OnNew<TCommand>(
-        GetIdFromCommand<TId, TCommand>      getId,
-        ActOnAggregate<TAggregate, TCommand> action,
-        ResolveStore<TCommand>?              resolveStore = null
-    ) where TCommand : class
+            GetIdFromCommand<TId, TCommand>              getId,
+            ActOnAggregate<TAggregate, TState, TCommand> action,
+            ResolveStore<TCommand>?                      resolveStore = null
+        ) where TCommand : class
         => On<TCommand>().InState(ExpectedState.New).GetId(getId).Act(action).ResolveStore(resolveStore);
 
     /// <summary>
@@ -30,10 +30,10 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
     /// <typeparam name="TCommand">Command type</typeparam>
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Existing).GetId(...).Act(...).ResolveStore(...) instead")]
     protected void OnExisting<TCommand>(
-        GetIdFromCommand<TId, TCommand>      getId,
-        ActOnAggregate<TAggregate, TCommand> action,
-        ResolveStore<TCommand>?              resolveStore = null
-    ) where TCommand : class
+            GetIdFromCommand<TId, TCommand>              getId,
+            ActOnAggregate<TAggregate, TState, TCommand> action,
+            ResolveStore<TCommand>?                      resolveStore = null
+        ) where TCommand : class
         => On<TCommand>().InState(ExpectedState.Existing).GetId(getId).Act(action).ResolveStore(resolveStore);
 
     /// <summary>
@@ -45,9 +45,9 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
     /// <typeparam name="TCommand">Command type</typeparam>
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Any).GetId(...).Act(...).ResolveStore(...) instead")]
     protected void OnAny<TCommand>(
-            GetIdFromCommand<TId, TCommand>      getId,
-            ActOnAggregate<TAggregate, TCommand> action,
-            ResolveStore<TCommand>?              resolveStore = null
+            GetIdFromCommand<TId, TCommand>              getId,
+            ActOnAggregate<TAggregate, TState, TCommand> action,
+            ResolveStore<TCommand>?                      resolveStore = null
         ) where TCommand : class
         => On<TCommand>().InState(ExpectedState.Any).GetId(getId).Act(action).ResolveStore(resolveStore);
 }

@@ -12,11 +12,11 @@ public static class TestCommands {
     public record ImportBookingHttp1(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price)
         : ImportBookingHttp(BookingId, RoomId, CheckIn, CheckOut, Price);
 
-    [HttpCommand<Booking>(Route = Import2Route)]
+    [HttpCommand<BookingState>(Route = Import2Route)]
     public record ImportBookingHttp2(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price)
         : ImportBookingHttp(BookingId, RoomId, CheckIn, CheckOut, Price);
 
-    [HttpCommand<Brooking>(Route = ImportWrongRoute)]
+    [HttpCommand<BrookingState>(Route = ImportWrongRoute)]
     public record ImportBookingHttp3(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price)
         : ImportBookingHttp(BookingId, RoomId, CheckIn, CheckOut, Price);
 }

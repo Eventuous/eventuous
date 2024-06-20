@@ -14,10 +14,7 @@ public class MeasuredCheckpointStore(ICheckpointStore checkpointStore) : ICheckp
     public const string SubscriptionIdTag  = "subscriptionId";
     public const string CheckpointBaggage  = "checkpoint";
 
-    public async ValueTask<Checkpoint> GetLastCheckpoint(
-            string            checkpointId,
-            CancellationToken cancellationToken
-        ) {
+    public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
                 ReadOperationName,
                 ActivityKind.Internal,
@@ -51,7 +48,5 @@ public class MeasuredCheckpointStore(ICheckpointStore checkpointStore) : ICheckp
     }
 
     static KeyValuePair<string, object?>[] GetTags(string checkpointId)
-        => EventuousDiagnostics.CombineWithDefaultTags(
-            new KeyValuePair<string, object?>(SubscriptionIdTag, checkpointId)
-        );
+        => EventuousDiagnostics.CombineWithDefaultTags(new KeyValuePair<string, object?>(SubscriptionIdTag, checkpointId));
 }

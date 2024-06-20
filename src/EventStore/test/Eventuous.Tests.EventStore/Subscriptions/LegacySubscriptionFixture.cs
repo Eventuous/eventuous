@@ -11,11 +11,11 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
     protected readonly Fixture Auto = new();
 
     protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
-    protected StoreFixture        StoreFixture    { get; }
+    protected StoreFixture        StoreFixture    { get; } = new();
     protected T                   Handler         { get; }
     protected EventStoreProducer  Producer        { get; private set; } = null!;
     protected ILogger             Log             { get; }
-    protected TestCheckpointStore CheckpointStore { get; }
+    protected TestCheckpointStore CheckpointStore { get; }      = new();
     protected StreamSubscription  Subscription    { get; set; } = null!;
 
     protected LegacySubscriptionFixture(
@@ -29,13 +29,8 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
         if (stream is { } s) Stream = s;
 
         LoggerFactory = TestHelpers.Logging.GetLoggerFactory(output, logLevel);
-
-        StoreFixture    = new StoreFixture();
-        Handler         = handler;
-        Log             = LoggerFactory.CreateLogger(GetType());
-        CheckpointStore = new TestCheckpointStore();
-
-        // _listener = new LoggingEventListener(LoggerFactory);
+        Handler       = handler;
+        Log           = LoggerFactory.CreateLogger(GetType());
     }
 
     protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
@@ -43,8 +38,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
     protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
     ILoggerFactory LoggerFactory { get; }
 
-    readonly bool                 _autoStart;
-    // readonly LoggingEventListener _listener;
+    readonly bool _autoStart;
 
     public async Task InitializeAsync() {
         await StoreFixture.InitializeAsync();
@@ -54,9 +48,9 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
         var pipe           = new ConsumePipe();
         pipe.AddDefaultConsumer(Handler);
 
-        Subscription = new StreamSubscription(
+        Subscription = new(
             StoreFixture.Client,
-            new StreamSubscriptionOptions {
+            new() {
                 StreamName     = Stream,
                 SubscriptionId = subscriptionId,
                 ResolveLinkTos = Stream.ToString().StartsWith('$')
@@ -70,7 +64,6 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
 
     public async Task DisposeAsync() {
         if (_autoStart) await Stop();
-        // _listener.Dispose();
         await StoreFixture.DisposeAsync();
     }
 }

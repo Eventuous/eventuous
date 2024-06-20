@@ -3,12 +3,9 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests;
 
 public class TypeRegistrationTests {
-    readonly TypeMapper _typeMapper;
+    readonly TypeMapper _typeMapper = new();
 
-    public TypeRegistrationTests() {
-        _typeMapper = new TypeMapper();
-        _typeMapper.RegisterKnownEventTypes(typeof(BookingCancelled).Assembly);
-    }
+    public TypeRegistrationTests() => _typeMapper.RegisterKnownEventTypes(typeof(BookingCancelled).Assembly);
 
     [Fact]
     public void ShouldResolveDecoratedEvent() {

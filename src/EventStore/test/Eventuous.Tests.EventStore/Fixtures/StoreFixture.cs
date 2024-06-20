@@ -21,8 +21,7 @@ public class StoreFixture : StoreFixtureBase<EventStoreDbContainer> {
     }
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(
-        new JsonSerializerOptions(JsonSerializerDefaults.Web)
-            .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
+        new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
     );
 
     public StoreFixture() {

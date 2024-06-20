@@ -36,7 +36,7 @@ public static class Registrations {
 
         services.AddEventuousPostgres(configuration.GetSection("Postgres"));
         services.AddAggregateStore<PostgresStore>();
-        services.AddCommandService<BookingsCommandService, Booking>();
+        services.AddCommandService<BookingsCommandService, BookingState>();
 
         services.AddSingleton<Services.IsRoomAvailable>((id, period) => new ValueTask<bool>(true));
 

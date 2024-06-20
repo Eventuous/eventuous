@@ -19,6 +19,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     // ReSharper disable once ConvertToConstant.Global
     public readonly int Count = 100;
 
+    // ReSharper disable once StaticMemberInGenericType
     static readonly KeyValuePair<string, string> DefaultTag = new("test", "foo");
 
     static MetricsSubscriptionFixtureBase() {
@@ -38,8 +39,9 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
 
     protected override void SetupServices(IServiceCollection services) {
         if (Output != null) {
-            _listener = new TestListener(Output);
+            _listener = new(Output);
         }
+
         services.AddProducer<TProducer>();
         services.AddSingleton<MessageCounter>();
 
@@ -51,12 +53,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
                 .AddEventHandler<TestHandler>()
         );
 
-        services.AddOpenTelemetry()
-            .WithMetrics(
-                builder => builder
-                    .AddEventuousSubscriptions()
-                    .AddReader(new BaseExportingMetricReader(Exporter))
-            );
+        services.AddOpenTelemetry().WithMetrics(builder => builder.AddEventuousSubscriptions().AddReader(new BaseExportingMetricReader(Exporter)));
     }
 
     protected override void GetDependencies(IServiceProvider provider) {
@@ -76,6 +73,6 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     }
 }
 
-class TestListener(ITestOutputHelper output): GenericListener(SubscriptionMetrics.ListenerName) {
+class TestListener(ITestOutputHelper output) : GenericListener(SubscriptionMetrics.ListenerName) {
     protected override void OnEvent(KeyValuePair<string, object?> obj) => output.WriteLine($"{obj.Key} {obj.Value}");
 }

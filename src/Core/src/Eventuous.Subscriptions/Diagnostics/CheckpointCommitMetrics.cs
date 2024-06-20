@@ -21,14 +21,10 @@ sealed class CheckpointCommitMetrics() : GenericListener(DiagnosticName), IDispo
     }
 
     public DateTime GetLastTimestamp(string subscriptionId)
-        => _commitEvents.TryGetValue(subscriptionId, out var commitEvent)
-            ? commitEvent.CommitPosition.Timestamp
-            : DateTime.MinValue;
+        => _commitEvents.TryGetValue(subscriptionId, out var commitEvent) ? commitEvent.CommitPosition.Timestamp : DateTime.MinValue;
 
     public ulong GetLastCommitPosition(string subscriptionId)
-        => _commitEvents.TryGetValue(subscriptionId, out var commitEvent)
-            ? commitEvent.CommitPosition.Position
-            : 0;
+        => _commitEvents.TryGetValue(subscriptionId, out var commitEvent) ? commitEvent.CommitPosition.Position : 0;
 
     public IEnumerable<Measurement<long>> Record()
         => _commitEvents

@@ -15,11 +15,25 @@ public record struct StreamName {
 
     public static StreamName For<T>(string entityId) => new($"{typeof(T).Name}-{Ensure.NotEmptyString(entityId)}");
 
-    public string GetId() => Value[(Value.IndexOf("-", StringComparison.InvariantCulture) + 1)..];
-    
+    public static StreamName ForState<TState>(string entityId) {
+        var stateName = typeof(TState).Name;
+
+        if (stateName.EndsWith("State")) {
+            stateName = stateName[..^SuffixLength];
+        }
+
+        stateName = stateName.Length > 0 ? stateName : typeof(TState).Name;
+
+        return new StreamName($"{stateName}-{Ensure.NotEmptyString(entityId)}");
+    }
+
+    public string GetId() => Value[(Value.IndexOf('-') + 1)..];
+
     public static implicit operator string(StreamName streamName) => streamName.Value;
 
     public override string ToString() => Value;
+
+    static readonly int SuffixLength = "State".Length;
 }
 
 public class InvalidStreamName(string? streamName) : Exception($"Stream name is {(string.IsNullOrWhiteSpace(streamName) ? "empty" : "invalid")}");

@@ -10,24 +10,19 @@ using static Sut.Domain.BookingEvents;
 public class BookingFuncService : FunctionalCommandService<BookingState> {
     public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
         : base(store, typeMap, amendEvent) {
-#pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CS0618
+        // Keep it for tests until the old API is gone
         OnNew<BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);
-#pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning restore CS0618
         On<RecordPayment>().InState(ExpectedState.Existing).GetStream(cmd => GetStream(cmd.BookingId)).Act(RecordPayment);
         On<ImportBooking>().InState(ExpectedState.Any).GetStream(cmd => GetStream(cmd.BookingId)).Act(ImportBooking);
 
         return;
 
-        static StreamName GetStream(string id)
-            => StreamName.For<Booking>(id);
+        static IEnumerable<object> BookRoom(BookRoom cmd) => [new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price)];
 
-        static IEnumerable<object> BookRoom(BookRoom cmd) {
-            yield return new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price);
-        }
-
-        static IEnumerable<object> ImportBooking(BookingState state, object[] events, ImportBooking cmd) {
-            yield return new BookingImported(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
-        }
+        static IEnumerable<object> ImportBooking(BookingState state, object[] events, ImportBooking cmd)
+            => [new BookingImported(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut)];
 
         static IEnumerable<object> RecordPayment(BookingState state, object[] originalEvents, RecordPayment cmd) {
             if (state.HasPayment(cmd.PaymentId)) yield break;

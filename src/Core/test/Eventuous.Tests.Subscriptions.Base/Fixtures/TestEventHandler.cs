@@ -2,6 +2,7 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Hypothesist;
 using Hypothesist.Builders;
+// ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace Eventuous.Tests.Subscriptions.Base;
 

@@ -25,8 +25,7 @@ app.UseSwagger();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 // Here we discover commands by their annotations
-// app.MapDiscoveredCommands();
-app.MapDiscoveredCommands<Payment>();
+app.MapDiscoveredCommands<PaymentState>();
 
 app.UseSwaggerUI();
 

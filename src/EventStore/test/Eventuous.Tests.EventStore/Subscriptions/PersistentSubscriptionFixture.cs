@@ -11,11 +11,8 @@ public abstract class PersistentSubscriptionFixture<T>(
         T                 handler,
         bool              autoStart = true,
         LogLevel          logLevel  = LogLevel.Information
-    )
-    : IAsyncLifetime
-    where T : class, IEventHandler {
-    static PersistentSubscriptionFixture()
-        => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    ) : IAsyncLifetime where T : class, IEventHandler {
+    static PersistentSubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     protected readonly Fixture Auto = new();
 
@@ -30,20 +27,20 @@ public abstract class PersistentSubscriptionFixture<T>(
 
     protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
 
-    LoggingEventListener       _listener = null!;
+    LoggingEventListener _listener = null!;
 
     public async Task InitializeAsync() {
         await Fixture.InitializeAsync();
-        Producer = new EventStoreProducer(Fixture.Client);
+        Producer = new(Fixture.Client);
         var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
         var subscriptionId = $"test-{Guid.NewGuid():N}";
         Log = loggerFactory.CreateLogger(GetType());
 
-        _listener = new LoggingEventListener(loggerFactory);
+        _listener = new(loggerFactory);
 
-        Subscription = new StreamPersistentSubscription(
+        Subscription = new(
             Fixture.Client,
-            new StreamPersistentSubscriptionOptions {
+            new() {
                 StreamName     = Stream,
                 SubscriptionId = subscriptionId
             },

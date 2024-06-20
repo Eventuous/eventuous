@@ -6,16 +6,9 @@ using NodaTime;
 namespace Eventuous.Tests.Application;
 
 public class CommandServiceTests {
-    readonly AggregateStore _aggregateStore;
+    readonly AggregateStore _aggregateStore = new(new InMemoryEventStore());
 
-    static CommandServiceTests() {
-        TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
-    }
-
-    public CommandServiceTests() {
-        var store = new InMemoryEventStore();
-        _aggregateStore = new AggregateStore(store);
-    }
+    static CommandServiceTests() => TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
 
     [Fact]
     public async Task HandleFirstCommandThreadSafe() {
@@ -41,6 +34,6 @@ public class CommandServiceTests {
         var checkIn  = LocalDate.FromDateTime(DateTime.Today);
         var checkOut = checkIn.PlusDays(1);
 
-        return new Commands.BookRoom(bookingId, "234", checkIn, checkOut, 100);
+        return new(bookingId, "234", checkIn, checkOut, 100);
     }
 }

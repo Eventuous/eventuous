@@ -6,14 +6,11 @@ using System.Collections.Concurrent;
 namespace Eventuous.Subscriptions;
 
 public readonly record struct EventHandlingResult(EventHandlingStatus Status, string HandlerType, Exception? Exception = null) {
-    public static EventHandlingResult Succeeded(string handlerType)
-        => new(EventHandlingStatus.Success, handlerType);
+    public static EventHandlingResult Succeeded(string handlerType) => new(EventHandlingStatus.Success, handlerType);
 
-    public static EventHandlingResult Ignored(string handlerType)
-        => new(EventHandlingStatus.Ignored, handlerType);
+    public static EventHandlingResult Ignored(string handlerType) => new(EventHandlingStatus.Ignored, handlerType);
 
-    public static EventHandlingResult Failed(string handlerType, Exception? e)
-        => new(EventHandlingStatus.Failure, handlerType, e);
+    public static EventHandlingResult Failed(string handlerType, Exception? e) => new(EventHandlingStatus.Failure, handlerType, e);
 
     public EventHandlingStatus Status      { get; } = Status;
     public Exception?          Exception   { get; } = Exception;
@@ -32,8 +29,7 @@ public class HandlingResults {
         _results.Add(result);
     }
 
-    public IEnumerable<EventHandlingResult> GetResultsOf(EventHandlingStatus status)
-        => _results.Where(x => x.Status == status);
+    public IEnumerable<EventHandlingResult> GetResultsOf(EventHandlingStatus status) => _results.Where(x => x.Status == status);
 
     public bool ReportedBy(string handlerType) => _results.Any(x => x.HandlerType == handlerType);
 

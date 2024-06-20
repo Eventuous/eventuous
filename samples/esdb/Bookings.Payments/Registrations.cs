@@ -17,15 +17,15 @@ public static class Registrations {
     public static void AddServices(this IServiceCollection services, IConfiguration configuration) {
         services.AddEventStoreClient(configuration["EventStore:ConnectionString"]!);
         services.AddAggregateStore<EsdbEventStore>();
-        services.AddCommandService<CommandService, Payment>();
+        services.AddCommandService<CommandService, PaymentState>();
         services.AddSingleton(Mongo.ConfigureMongo(configuration));
         services.AddCheckpointStore<MongoCheckpointStore>();
         services.AddProducer<EventStoreProducer>();
 
         services
             .AddGateway<AllStreamSubscription, AllStreamSubscriptionOptions, EventStoreProducer, EventStoreProduceOptions>(
-                subscriptionId: "IntegrationSubscription",
-                routeAndTransform: PaymentsGateway.Transform
+                "IntegrationSubscription",
+                PaymentsGateway.Transform
             );
     }
 

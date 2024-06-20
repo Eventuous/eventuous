@@ -17,7 +17,7 @@ public class AggregateFactoryRegistrationTests {
 
     [Fact]
     public void ShouldCreateNewAggregateWithExplicitFunction() {
-        var instance = _registry.CreateInstance<TestAggregate>();
+        var instance = _registry.CreateInstance<TestAggregate, TestState>();
         instance.Should().BeOfType<TestAggregate>();
         instance.Dependency.Should().NotBeNull();
         instance.State.Should().NotBeNull();
@@ -25,7 +25,7 @@ public class AggregateFactoryRegistrationTests {
 
     [Fact]
     public void ShouldCreateNewAggregateByResolve() {
-        var instance = _registry.CreateInstance<AnotherTestAggregate>();
+        var instance = _registry.CreateInstance<AnotherTestAggregate, TestState>();
         instance.Should().BeOfType<AnotherTestAggregate>();
         instance.Dependency.Should().NotBeNull();
         instance.State.Should().NotBeNull();
@@ -33,8 +33,8 @@ public class AggregateFactoryRegistrationTests {
 
     [Fact]
     public void ShouldCreateTwoSeparateInstances() {
-        var instance1 = _registry.CreateInstance<AnotherTestAggregate>();
-        var instance2 = _registry.CreateInstance<AnotherTestAggregate>();
+        var instance1 = _registry.CreateInstance<AnotherTestAggregate, TestState>();
+        var instance2 = _registry.CreateInstance<AnotherTestAggregate, TestState>();
         instance1.Should().NotBeSameAs(instance2);
     }
 
@@ -42,8 +42,8 @@ public class AggregateFactoryRegistrationTests {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddAggregateStore<FakeStore>();
         builder.Services.AddSingleton<TestDependency>();
-        builder.Services.AddAggregate(sp => new TestAggregate(sp.GetRequiredService<TestDependency>()));
-        builder.Services.AddAggregate<AnotherTestAggregate>();
+        builder.Services.AddAggregate<TestAggregate, TestState>(sp => new TestAggregate(sp.GetRequiredService<TestDependency>()));
+        builder.Services.AddAggregate<AnotherTestAggregate, TestState>();
 
         return builder;
     }

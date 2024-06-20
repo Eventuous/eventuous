@@ -6,8 +6,7 @@ namespace Eventuous.Subscriptions;
 using Context;
 
 public abstract class BaseEventHandler : IEventHandler {
-    protected BaseEventHandler()
-        => DiagnosticName = GetType().Name;
+    protected BaseEventHandler() => DiagnosticName = GetType().Name;
 
     public string DiagnosticName { get; }
 

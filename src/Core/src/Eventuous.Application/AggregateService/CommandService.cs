@@ -20,14 +20,14 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         StreamNameMap?            streamNameMap   = null,
         TypeMapper?               typeMap         = null
     )
-    : ICommandService<TAggregate, TState, TId>, ICommandService<TAggregate>
+    : ICommandService<TAggregate, TState, TId>//, ICommandService<TAggregate>
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
     where TId : Id {
     [PublicAPI]
     protected IAggregateStore? Store { get; } = store;
 
-    readonly HandlersMap<TAggregate, TId> _handlers        = new();
+    readonly HandlersMap<TAggregate, TState, TId> _handlers        = new();
     readonly AggregateFactoryRegistry     _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
     readonly StreamNameMap                _streamNameMap   = streamNameMap   ?? new StreamNameMap();
     readonly TypeMapper                   _typeMap         = typeMap         ?? TypeMap.Instance;
@@ -82,7 +82,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
-            var storeResult = await store.Store(GetAggregateStreamName(), result, cancellationToken).NoContext();
+            var storeResult = await store.Store<TAggregate, TState>(GetAggregateStreamName(), result, cancellationToken).NoContext();
             var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
@@ -93,19 +93,9 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
         }
 
-        TAggregate Create(TId id) => _factoryRegistry.CreateInstance<TAggregate>().WithId<TAggregate, TState, TId>(id);
+        TAggregate Create(TId id) => _factoryRegistry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
 
-        StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TId>(aggregateId);
-    }
-
-    async Task<Result> ICommandService.Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
-        var result = await Handle(command, cancellationToken).NoContext();
-
-        return result switch {
-            OkResult<TState>(var state, var enumerable, _) => new OkResult(state, enumerable),
-            ErrorResult<TState> error                      => new ErrorResult(error.Message, error.Exception),
-            _                                              => throw new ApplicationException("Unknown result type")
-        };
+        StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TState, TId>(aggregateId);
     }
 
     readonly Dictionary<Type, CommandHandlerBuilder<TAggregate, TState, TId>> _builders = new();

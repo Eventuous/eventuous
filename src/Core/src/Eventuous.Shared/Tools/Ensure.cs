@@ -17,13 +17,19 @@ static class Ensure {
     /// <exception cref="ArgumentNullException"></exception>
     [DebuggerHidden]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T NotNull<T>(T? value, [CallerArgumentExpression("value")] string? name = default) where T : class
-        => value ?? throw new ArgumentNullException(name);
+    public static T NotNull<T>(T? value, [CallerArgumentExpression("value")] string? name = default) where T : class {
+        ArgumentNullException.ThrowIfNull(value, name);
+
+        return value;
+    }
 
     [DebuggerHidden]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T NotNull<T>(T? value, [CallerArgumentExpression("value")] string? name = default) where T : struct
-        => value ?? throw new ArgumentNullException(name);
+    public static T NotNull<T>(T? value, [CallerArgumentExpression("value")] string? name = default) where T : struct {
+        ArgumentNullException.ThrowIfNull(value, name);
+
+        return value.Value;
+    }
 
     /// <summary>
     /// Checks if the string is not null or empty, otherwise throws
@@ -34,8 +40,14 @@ static class Ensure {
     /// <exception cref="ArgumentNullException"></exception>
     [DebuggerHidden]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string NotEmptyString(string? value, [CallerArgumentExpression("value")] string? name = default)
-        => !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentNullException(name);
+    public static string NotEmptyString(string? value, [CallerArgumentExpression("value")] string? name = default) {
+#if NET8_0_OR_GREATER
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(value, name);
+        return value;
+#else
+        return !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentNullException(name);
+#endif
+    }
 
     /// <summary>
     /// Throws a custom exception if the condition is not met

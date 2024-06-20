@@ -22,22 +22,15 @@ namespace Bookings;
 public static class Registrations {
     public static void AddEventuous(this IServiceCollection services, IConfiguration configuration) {
         DefaultEventSerializer.SetDefaultSerializer(
-            new DefaultEventSerializer(
-                new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(
-                    DateTimeZoneProviders.Tzdb
-                )
-            )
+            new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
         );
 
         services.AddEventStoreClient(configuration["EventStore:ConnectionString"]!);
         services.AddAggregateStore<EsdbEventStore>();
-        services.AddCommandService<BookingsCommandService, Booking>();
+        services.AddCommandService<BookingsCommandService, BookingState>();
 
-        services.AddSingleton<Services.IsRoomAvailable>((id, period) => new ValueTask<bool>(true));
-
-        services.AddSingleton<Services.ConvertCurrency>((from, currency)
-            => new Money(from.Amount * 2, currency)
-        );
+        services.AddSingleton<Services.IsRoomAvailable>((_,    _) => new(true));
+        services.AddSingleton<Services.ConvertCurrency>((from, currency) => new Money(from.Amount * 2, currency));
 
         services.AddSingleton(Mongo.ConfigureMongo(configuration));
         services.AddCheckpointStore<MongoCheckpointStore>();
@@ -50,6 +43,7 @@ public static class Registrations {
                 .AddEventHandler<MyBookingsProjection>()
                 .WithPartitioningByStream(2)
         );
+        services.AddSingleton<BookingsQueryService>();
 
         services.AddSubscription<StreamPersistentSubscription, StreamPersistentSubscriptionOptions>(
             "PaymentIntegration",

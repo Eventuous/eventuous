@@ -30,8 +30,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// </summary>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    public SubscriptionBuilder AddEventHandler<THandler>()
-        where THandler : class, IEventHandler {
+    public SubscriptionBuilder AddEventHandler<THandler>() where THandler : class, IEventHandler {
         Services.TryAddKeyedSingleton<THandler>(SubscriptionId);
         AddHandlerResolve(sp => sp.GetRequiredKeyedService<THandler>(SubscriptionId));
 
@@ -44,8 +43,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// <param name="getHandler">A function to resolve event handler using the service provider</param>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler)
-        where THandler : class, IEventHandler {
+    public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler) where THandler : class, IEventHandler {
         Services.TryAddKeyedSingleton<THandler>(SubscriptionId, (sp, _) => getHandler(sp));
         AddHandlerResolve(sp => sp.GetRequiredKeyedService<THandler>(SubscriptionId));
 
@@ -58,8 +56,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// <param name="handler">Event handler instance</param>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    public SubscriptionBuilder AddEventHandler<THandler>(THandler handler)
-        where THandler : class, IEventHandler {
+    public SubscriptionBuilder AddEventHandler<THandler>(THandler handler) where THandler : class, IEventHandler {
         AddHandlerResolve(_ => handler);
 
         return this;
@@ -140,8 +137,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
 public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
     where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
-    public SubscriptionBuilder(IServiceCollection services, string subscriptionId)
-        : base(services, subscriptionId) {
+    public SubscriptionBuilder(IServiceCollection services, string subscriptionId) : base(services, subscriptionId) {
         ResolveConsumer  = ResolveDefaultConsumer;
         ConfigureOptions = options => options.SubscriptionId = subscriptionId;
     }

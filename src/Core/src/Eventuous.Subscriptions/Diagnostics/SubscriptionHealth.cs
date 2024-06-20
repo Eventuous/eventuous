@@ -37,9 +37,7 @@ public class SubscriptionHealthCheck : ISubscriptionHealth, IHealthCheck {
         return Task.FromResult(result);
     }
 
-    public void ReportHealthy(string subscriptionId)
-        => _healthReports[subscriptionId] = HealthReport.Healthy();
+    public void ReportHealthy(string subscriptionId) => _healthReports[subscriptionId] = HealthReport.Healthy();
 
-    public void ReportUnhealthy(string subscriptionId, Exception? exception)
-        => _healthReports[subscriptionId] = HealthReport.Unhealthy(exception);
+    public void ReportUnhealthy(string subscriptionId, Exception? exception) => _healthReports[subscriptionId] = HealthReport.Unhealthy(exception);
 }

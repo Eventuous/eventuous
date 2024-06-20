@@ -42,7 +42,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
         _options           = options;
         _serializer        = serializer ?? DefaultEventSerializer.Instance;
         _connectionFactory = Ensure.NotNull(connectionFactory);
-        _exchangeCache     = new(_log);
+        _exchangeCache     = new ExchangeCache(_log);
     }
 
     public Task StartAsync(CancellationToken cancellationToken = default) {

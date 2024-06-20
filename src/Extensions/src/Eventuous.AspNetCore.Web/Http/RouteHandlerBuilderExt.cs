@@ -16,12 +16,9 @@ static class RouteHandlerBuilderExt {
     public static RouteHandlerBuilder ProducesOk(this RouteHandlerBuilder builder, Type resultType)
         => builder.Produces(StatusCodes.Status200OK, resultType, ContentTypes.Json);
 
-    public static RouteHandlerBuilder ProducesOk<T>(this RouteHandlerBuilder builder) where T : Result
-        => builder.ProducesOk(typeof(T));
+    public static RouteHandlerBuilder ProducesOk<TState>(this RouteHandlerBuilder builder) where TState : new() => builder.ProducesOk(typeof(Result<TState>));
 
-    public static RouteHandlerBuilder Accepts(this RouteHandlerBuilder builder, Type commandType)
-        => builder.Accepts(commandType, false, ContentTypes.Json);
+    public static RouteHandlerBuilder Accepts(this RouteHandlerBuilder builder, Type commandType) => builder.Accepts(commandType, false, ContentTypes.Json);
 
-    public static RouteHandlerBuilder Accepts<T>(this RouteHandlerBuilder builder)
-        => builder.Accepts(typeof(T));
+    public static RouteHandlerBuilder Accepts<T>(this RouteHandlerBuilder builder) => builder.Accepts(typeof(T));
 }

@@ -25,7 +25,7 @@ app.UseSwagger().UseSwaggerUI();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 // Here we discover commands by their annotations
-app.MapDiscoveredCommands<Payment>();
+app.MapDiscoveredCommands<PaymentState>();
 
 if (app.Configuration.GetValue<bool>("Postgres:InitializeDatabase")) {
     await InitialiseSchema(app);

@@ -1,4 +1,5 @@
 ﻿{
+  streamPosition: 0,
   state: {
     price: {
       amount: 100,

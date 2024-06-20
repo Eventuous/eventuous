@@ -6,11 +6,16 @@ using static Bookings.Application.BookingCommands;
 
 namespace Bookings.HttpApi.Bookings;
 
+/// <summary>
+/// This controller exposes a Web API to execute HTTP POST requests matching application commands using the
+/// command service registered in the DI container.
+/// </summary>
+/// <param name="service"></param>
 [Route("/booking")]
-public class CommandApi(ICommandService<Booking> service) : CommandHttpApiBase<Booking>(service) {
+public class CommandApi(ICommandService<BookingState> service) : CommandHttpApiBase<BookingState>(service) {
     [HttpPost]
     [Route("book")]
-    public Task<ActionResult<Result>> BookRoom([FromBody] BookRoom cmd, CancellationToken cancellationToken)
+    public Task<ActionResult<Result<BookingState>>> BookRoom([FromBody] BookRoom cmd, CancellationToken cancellationToken)
         => Handle(cmd, cancellationToken);
 
     /// <summary>
@@ -23,6 +28,6 @@ public class CommandApi(ICommandService<Booking> service) : CommandHttpApiBase<B
     /// <returns></returns>
     [HttpPost]
     [Route("recordPayment")]
-    public Task<ActionResult<Result>> RecordPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
+    public Task<ActionResult<Result<BookingState>>> RecordPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
         => Handle(cmd, cancellationToken);
 }

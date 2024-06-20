@@ -14,19 +14,17 @@ public sealed class PartitioningFilter : ConsumeFilter<AsyncConsumeContext>, IAs
     readonly int                   _partitionCount;
 
     public PartitioningFilter(
-        int               partitionCount,
-        GetPartitionKey?  partitioner = null,
-        GetPartitionHash? getHash     = null
-    ) {
+            int               partitionCount,
+            GetPartitionKey?  partitioner = null,
+            GetPartitionHash? getHash     = null
+        ) {
         if (partitionCount <= 0) throw new ArgumentOutOfRangeException(nameof(partitionCount), "Partition count must be greater than zero");
 
         _getHash        = getHash ?? MurmurHash3.Hash;
         _partitionCount = partitionCount;
         _partitioner    = partitioner ?? (ctx => ctx.Stream);
 
-        _filters = Enumerable.Range(0, _partitionCount)
-            .Select(_ => new AsyncHandlingFilter(1))
-            .ToArray();
+        _filters = Enumerable.Range(0, _partitionCount).Select(_ => new AsyncHandlingFilter(1)).ToArray();
     }
 
     protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
@@ -35,6 +33,7 @@ public sealed class PartitioningFilter : ConsumeFilter<AsyncConsumeContext>, IAs
         var partition    = hash % _partitionCount;
         context.PartitionKey = partitionKey;
         context.PartitionId  = partition;
+
         return _filters[partition].Send(context, next);
     }
 

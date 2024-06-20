@@ -35,23 +35,6 @@ public class InMemoryEventStore : IEventStore {
     public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
         => Task.FromResult(FindStream(stream).GetEventsBackwards(count).ToArray());
 
-    public Task<long> ReadStream(
-            StreamName          stream,
-            StreamReadPosition  start,
-            int                 count,
-            Action<StreamEvent> callback,
-            CancellationToken   cancellationToken
-        ) {
-        var readCount = 0L;
-
-        foreach (var streamEvent in FindStream(stream).GetEvents(start, count)) {
-            callback(streamEvent);
-            readCount++;
-        }
-
-        return Task.FromResult(readCount);
-    }
-
     /// <inheritdoc />
     public Task TruncateStream(
             StreamName             stream,
@@ -82,7 +65,6 @@ record StoredEvent(StreamEvent Event, int Position);
 class InMemoryStream(StreamName name) {
     public int Version { get; private set; } = -1;
 
-    StreamName                 _name   = name;
     readonly List<StoredEvent> _events = [];
 
     public void CheckVersion(ExpectedStreamVersion expectedVersion) {

@@ -46,8 +46,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         return this;
     }
 
-    public ValueTask Send(IBaseConsumeContext context)
-        => Move(_filters.First, context);
+    public ValueTask Send(IBaseConsumeContext context) => Move(_filters.First, context);
 
     static ValueTask Move(LinkedListNode<IConsumeFilter>? node, IBaseConsumeContext context)
         => node == null ? default : node.Value.Send(context, node.Next);

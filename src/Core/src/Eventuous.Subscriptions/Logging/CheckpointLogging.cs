@@ -8,6 +8,9 @@ namespace Eventuous.Subscriptions.Logging;
 using Checkpoints;
 
 public static class CheckpointLogging {
+    const int BaseEventId        = 15000;
+    const int PositionReceivedId = BaseEventId + 1;
+
     public static void PositionReceived(this LogContext log, CommitPosition checkpoint)
         => log.TraceLog?.Log("Received checkpoint: {Position}", checkpoint);
 

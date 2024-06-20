@@ -35,7 +35,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
         const int expectedCount = count / 2;
 
         var checkpointStore = Provider.GetRequiredService<NoOpCheckpointStore>();
-        await checkpointStore.StoreCheckpoint(new Checkpoint(SubId, expectedCount - 1), true, default);
+        await checkpointStore.StoreCheckpoint(new(SubId, expectedCount - 1), true, default);
 
         await Start();
         await Execute(count, expectedCount);
@@ -70,7 +70,6 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
     void ValidateProcessed(IServiceProvider provider, IEnumerable<TestEvent> events) {
         var handler = provider.GetRequiredKeyedService<TestHandler>(SubId);
         Output?.WriteLine($"Processed {handler.Handled.Count} events");
-        // handler.Handled.Should().BeEquivalentTo(events);
         foreach (var evt in events) {
             handler.Handled.Should().Contain(evt);
         }
@@ -125,7 +124,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
                 builder => builder
                     .Configure(
                         x => {
-                            x.StreamName       = new StreamName($"$ce-{_prefix}");
+                            x.StreamName       = new($"$ce-{_prefix}");
                             x.ConcurrencyLimit = 5;
                             x.ResolveLinkTos   = true;
                         }

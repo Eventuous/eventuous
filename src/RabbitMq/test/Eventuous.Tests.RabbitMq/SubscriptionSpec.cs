@@ -22,15 +22,10 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
     readonly RabbitMqFixture           _fixture;
 
     public SubscriptionSpec(RabbitMqFixture fixture, ITestOutputHelper outputHelper) {
-        _fixture  = fixture;
-        _es       = new TestEventListener(outputHelper);
-        _exchange = new StreamName(Auto.Create<string>());
-
-        _loggerFactory = LoggerFactory.Create(
-            builder => builder
-                .SetMinimumLevel(LogLevel.Debug)
-                .AddXunit(outputHelper, LogLevel.Trace)
-        );
+        _fixture       = fixture;
+        _es            = new TestEventListener(outputHelper);
+        _exchange      = new StreamName(Auto.Create<string>());
+        _loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper, LogLevel.Trace));
 
         _log = _loggerFactory.CreateLogger<SubscriptionSpec>();
     }

@@ -15,8 +15,10 @@ public static class AggregateFactoryContainerExtensions {
     /// <param name="services"></param>
     /// <param name="createInstance">Aggregate factory function, which can get dependencies from the container.</param>
     /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddAggregate<T>(this IServiceCollection services, Func<IServiceProvider, T> createInstance) where T : Aggregate {
+    public static IServiceCollection AddAggregate<T, TState>(this IServiceCollection services, Func<IServiceProvider, T> createInstance)
+        where T : Aggregate<TState> where TState : State<TState>, new() {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddSingleton(new ResolveAggregateFactory(typeof(T), createInstance));
 
@@ -30,8 +32,9 @@ public static class AggregateFactoryContainerExtensions {
     /// </summary>
     /// <param name="services"></param>
     /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddAggregate<T>(this IServiceCollection services) where T : Aggregate {
+    public static IServiceCollection AddAggregate<T, TState>(this IServiceCollection services) where T : Aggregate<TState> where TState : State<TState>, new() {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddTransient<T>();
         // ReSharper disable once ConvertToLocalFunction
@@ -41,4 +44,4 @@ public static class AggregateFactoryContainerExtensions {
     }
 }
 
-public record ResolveAggregateFactory(Type Type, Func<IServiceProvider, Aggregate> CreateInstance);
+record ResolveAggregateFactory(Type Type, Func<IServiceProvider, object> CreateInstance);

@@ -16,7 +16,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
 
         using var app = builder.Build();
 
-        var b = app.MapDiscoveredCommands<Booking>(typeof(BookRoom).Assembly);
+        var b = app.MapDiscoveredCommands<BookingState>(typeof(BookRoom).Assembly);
 
         b.DataSources.First().Endpoints[0].DisplayName.Should().Be("HTTP: POST book");
     }
@@ -39,48 +39,26 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapCommands<BookingState>()
                 .MapCommand<ImportBookingHttp3, ImportBooking>(Enricher.EnrichCommand)
         );
 
         act.Should().Throw<InvalidOperationException>();
     }
 
-    public static IEnumerable<object[]> ResultTypesToTest() {
-        yield return [new BookingResult()];
-        yield return [new Result()];
-    }
 
-    [Theory]
-    [MemberData(nameof(ResultTypesToTest))]
-    public async Task MapContractToCommandExplicitly<TResult>(TResult tResult)
-        where TResult : Result, new() {
-        var fixture = new ServerFixture(
-            factory,
-            _output,
-            _ => { },
-            app => app.MapCommand<ImportBookingHttp, ImportBooking, Booking, TResult>(ImportRoute, Enricher.EnrichCommand)
-        );
-
-        var resultTypeName = tResult.GetType().Name;
-        await Execute(fixture, ImportRoute, resultTypeName);
-    }
-
-    [Theory]
-    [MemberData(nameof(ResultTypesToTest))]
-    public async Task MapAggregateContractToCommandExplicitly<TResult>(TResult tResult)
-        where TResult : Result, new() {
+    [Fact]
+    public async Task MapAggregateContractToCommandExplicitly() {
         var fixture = new ServerFixture(
             factory,
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, TResult>()
+                .MapCommands<BookingState>()
                 .MapCommand<ImportBookingHttp, ImportBooking>(ImportRoute, Enricher.EnrichCommand)
         );
 
-        var resultTypeName = tResult.GetType().Name;
-        await Execute(fixture, ImportRoute, resultTypeName);
+        await Execute(fixture, ImportRoute);
     }
 
     [Fact]
@@ -90,7 +68,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapCommands<BookingState>()
                 .MapCommand<ImportBookingHttp1, ImportBooking>(Enricher.EnrichCommand)
         );
 
@@ -104,7 +82,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapCommands<BookingState>()
                 .MapCommand<ImportBookingHttp2, ImportBooking>(Enricher.EnrichCommand)
         );
 
@@ -118,15 +96,15 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             _output,
             _ => { },
             app => app
-                .MapAggregateCommands<Booking, BookingResult>()
+                .MapCommands<BookingState>()
                 .MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
         );
         var cmd      = fixture.GetBookRoom();
-        var content = await fixture.ExecuteRequest<BookRoom, Booking>(cmd, "book", cmd.BookingId);
+        var content = await fixture.ExecuteRequest<BookRoom>(cmd, "book", cmd.BookingId);
         await VerifyJson(content);
     }
 
-    static async Task Execute(ServerFixture fixture, string route, string typeName = "") {
+    static async Task Execute(ServerFixture fixture, string route) {
         var bookRoom = fixture.GetBookRoom();
 
         var import = new ImportBookingHttp(
@@ -136,8 +114,8 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             bookRoom.CheckOut,
             bookRoom.Price
         );
-        var content = await fixture.ExecuteRequest<ImportBookingHttp, Booking>(import, route, bookRoom.BookingId);
+        var content = await fixture.ExecuteRequest<ImportBookingHttp>(import, route, bookRoom.BookingId);
 
-        await VerifyJson(content).UseParameters(typeName);
+        await VerifyJson(content);
     }
 }

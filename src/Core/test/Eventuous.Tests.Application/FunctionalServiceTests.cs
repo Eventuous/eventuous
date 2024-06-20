@@ -17,9 +17,9 @@ public class FunctionalServiceTests : IDisposable {
     }
 
     public FunctionalServiceTests(ITestOutputHelper output) {
-        _store    = new InMemoryEventStore();
-        _service  = new BookingFuncService(_store);
-        _listener = new TestEventListener(output);
+        _store    = new();
+        _service  = new(_store);
+        _listener = new(output);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class FunctionalServiceTests : IDisposable {
         var checkIn  = LocalDate.FromDateTime(DateTime.Today);
         var checkOut = checkIn.PlusDays(1);
 
-        return new Commands.BookRoom("123", "234", checkIn, checkOut, 100);
+        return new("123", "234", checkIn, checkOut, 100);
     }
 
     async Task<Commands.BookRoom> Seed() {
@@ -98,6 +98,5 @@ public class FunctionalServiceTests : IDisposable {
         return cmd;
     }
 
-    public void Dispose()
-        => _listener.Dispose();
+    public void Dispose() => _listener.Dispose();
 }

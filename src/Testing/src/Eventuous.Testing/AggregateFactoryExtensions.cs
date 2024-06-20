@@ -16,7 +16,7 @@ public static class AggregateFactoryExtensions {
     [Obsolete("This overload is for backwards compability. Use CreateTestAggregateInstance that uses Id in stead of AggregateId as TId parameter.")]
     public static TAggregate CreateTestAggregateInstanceForAggregateId<TAggregate, TState, TId>(this AggregateFactoryRegistry registry, TId id) 
         where TAggregate : Aggregate<TState> where TState : State<TState>, new() where TId : AggregateId
-        => registry.CreateInstance<TAggregate>().WithId<TAggregate, TState, TId>(id);
+        => registry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
 
     /// <summary>
     /// Creates an instance of the aggregate and assigns the ID of the aggregate
@@ -29,5 +29,5 @@ public static class AggregateFactoryExtensions {
     /// <returns></returns>
     public static TAggregate CreateTestAggregateInstance<TAggregate, TState, TId>(this AggregateFactoryRegistry registry, TId id)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new() where TId : Id
-        => registry.CreateInstance<TAggregate>().WithId<TAggregate, TState, TId>(id);
+        => registry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
 }

@@ -67,6 +67,8 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
         _listener = new MetricsListener<SubscriptionMetricsContext>(ListenerName, duration, errorCount, GetTags);
 
+        return;
+
         IEnumerable<Measurement<double>> ObserveTimeValues()
             => streams.Values.Select(
                 x => Measure(
@@ -87,6 +89,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             }
 
             var tags = new List<KeyValuePair<string, object?>>(_customTags) { SubTag(subscriptionId) };
+
             return new Measurement<T>(value, tags);
         }
 
@@ -115,10 +118,11 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
                 var endOfStream = t.IsCompletedSuccessfully ? t.Result : t.NoContext().GetAwaiter().GetResult();
                 streams[endOfStream.SubscriptionId] = endOfStream;
                 var lastProcessed = _checkpointMetrics.GetLastCommitPosition(endOfStream.SubscriptionId);
+
                 return (endOfStream, lastProcessed);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.MetricCollectionFailed("Subscription Gap", e);
+
                 return (EndOfStream.Invalid, 0);
             }
         }
@@ -128,16 +132,15 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         where T : struct {
         try {
             return observe();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Log.MetricCollectionFailed(metric, e);
             Activity.Current?.SetStatus(ActivityStatusCode.Error, e.Message);
+
             return Array.Empty<Measurement<T>>();
         }
     }
 
-    static KeyValuePair<string, object?> SubTag(object? id)
-        => new(SubscriptionIdTag, id);
+    static KeyValuePair<string, object?> SubTag(object? id) => new(SubscriptionIdTag, id);
 
     readonly Meter _meter = EventuousDiagnostics.GetMeter(MeterName);
 

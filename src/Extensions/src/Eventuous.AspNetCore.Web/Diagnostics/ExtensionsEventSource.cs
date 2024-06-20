@@ -18,12 +18,6 @@ public class ExtensionsEventSource : EventSource {
             HttpEndpointRegistered(typeof(T).Name, route);
     }
 
-    [Event(
-        HttpEndpointRegisteredId,
-        Message = "Http endpoint registered for {0} at {1}",
-        Level = EventLevel.Verbose
-    )]
-    void HttpEndpointRegistered(string type, string route)
-        => WriteEvent(HttpEndpointRegisteredId, type, route);
-
+    [Event(HttpEndpointRegisteredId, Message = "Http endpoint registered for {0} at {1}", Level = EventLevel.Verbose)]
+    void HttpEndpointRegistered(string type, string route) => WriteEvent(HttpEndpointRegisteredId, type, route);
 }

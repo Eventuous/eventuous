@@ -13,33 +13,30 @@ public class AggregateFactoryRegistry {
     /// </summary>
     public static readonly AggregateFactoryRegistry Instance = new();
 
-    internal readonly Dictionary<Type, Func<Aggregate>> Registry = new();
+    internal readonly Dictionary<Type, Func<object>> Registry = new();
 
     /// <summary>
     /// Adds a custom aggregate factory to the registry
     /// </summary>
     /// <param name="factory">Function to create a given aggregate type instance</param>
     /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns></returns>
-    public AggregateFactoryRegistry CreateAggregateUsing<T>(AggregateFactory<T> factory) where T : Aggregate {
+    public AggregateFactoryRegistry CreateAggregateUsing<T, TState>(AggregateFactory<T, TState> factory)
+        where T : Aggregate<TState> where TState : State<TState>, new() {
         Registry.TryAdd(typeof(T), () => factory());
 
         return this;
     }
 
-    public void UnsafeCreateAggregateUsing<T>(Type type, Func<T> factory) where T : Aggregate => Registry.TryAdd(type, factory);
+    public void UnsafeCreateAggregateUsing(Type type, Func<object> factory)
+        => Registry.TryAdd(type, factory);
 
     public T CreateInstance<T, TState>() where T : Aggregate<TState> where TState : State<TState>, new() {
-        var instance = CreateInstance<T>();
-
-        return instance;
-    }
-
-    public T CreateInstance<T>() where T : Aggregate {
         var instance = Registry.TryGetValue(typeof(T), out var factory) ? (T)factory() : Activator.CreateInstance<T>();
 
         return instance;
     }
 }
 
-public delegate T AggregateFactory<out T>() where T : Aggregate;
+public delegate T AggregateFactory<out T, TState>() where T : Aggregate<TState> where TState : State<TState>, new();

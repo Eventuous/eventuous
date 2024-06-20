@@ -19,7 +19,7 @@ public class DiscoveredCommandsTests(ITestOutputHelper output, WebApplicationFac
         );
 
         var cmd          = fixture.GetNestedBookRoom(new DateTime(2023, 10, 1));
-        var streamEvents = await fixture.ExecuteRequest<NestedCommands.NestedBookRoom, Booking>(cmd, NestedBookRoute, cmd.BookingId);
+        var streamEvents = await fixture.ExecuteRequest<NestedCommands.NestedBookRoom>(cmd, NestedBookRoute, cmd.BookingId);
         await VerifyJson(streamEvents);
     }
 }

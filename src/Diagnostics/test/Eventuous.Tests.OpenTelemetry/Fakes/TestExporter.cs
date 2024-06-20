@@ -35,14 +35,7 @@ public class TestExporter : BaseExporter<Metric>, IPullMetricExporter {
                     _                      => throw new ArgumentOutOfRangeException()
                 };
 
-                values.Add(
-                    new MetricValue(
-                        metric.Name,
-                        tags.Select(x => x.Item1).ToArray(),
-                        tags.Select(x => x.Item2).ToArray()!,
-                        metricValue
-                    )
-                );
+                values.Add(new(metric.Name, tags.Select(x => x.Item1).ToArray(), tags.Select(x => x.Item2).ToArray()!, metricValue));
             }
         }
 

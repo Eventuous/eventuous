@@ -1,7 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Concurrent;
 using System.Reflection;
 using Eventuous.AspNetCore.Web;
 using Eventuous.AspNetCore.Web.Diagnostics;
@@ -25,19 +24,17 @@ public static partial class RouteBuilderExtensions {
     /// <param name="builder">Endpoint route builder instance</param>
     /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
-    /// <typeparam name="TResult">Result type that will be returned</typeparam>
+    /// <typeparam name="TState">State type on which the command will operate</typeparam>
     /// <returns></returns>
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TResult>(
+    public static RouteHandlerBuilder MapCommand<TCommand, TState>(
             this IEndpointRouteBuilder              builder,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null
         )
-        where TAggregate : Aggregate
-        where TCommand : class
-        where TResult : Result {
+        where TState : State<TState>, new()
+        where TCommand : class {
         var attr = typeof(TCommand).GetAttribute<HttpCommandAttribute>();
 
-        return builder.MapCommand<TCommand, TAggregate, TResult>(attr?.Route, enrichCommand, attr?.PolicyName);
+        return builder.MapCommand<TCommand, TState>(attr?.Route, enrichCommand, attr?.PolicyName);
     }
 
     /// <summary>
@@ -48,65 +45,46 @@ public static partial class RouteBuilderExtensions {
     /// <param name="enrichCommand">A function to populate command props from HttpContext</param>
     /// <param name="policyName">Authorization policy</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    /// <typeparam name="TAggregate">Aggregate type on which the command will operate</typeparam>
-    /// <typeparam name="TResult">Result type that will be returned</typeparam>
+    /// <typeparam name="TState">State type on which the command will operate</typeparam>
     /// <returns></returns>
-    public static RouteHandlerBuilder MapCommand<TCommand, TAggregate, TResult>(
+    public static RouteHandlerBuilder MapCommand<TCommand, TState>(
             this IEndpointRouteBuilder              builder,
             string?                                 route,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
             string?                                 policyName    = null
         )
-        where TAggregate : Aggregate
+        where TState : State<TState>, new()
         where TCommand : class
-        where TResult : Result
-        => Map<TAggregate, TCommand, TCommand, TResult>(
+        => MapInternal<TState, TCommand, TCommand>(
             builder,
             route,
-            enrichCommand != null
-                ? (command, context) => enrichCommand(command, context)
-                : (command, _) => command,
+            enrichCommand != null ? (command, context) => enrichCommand(command, context) : (command, _) => command,
             policyName
         );
 
     /// <summary>
-    /// Creates an instance of <see cref="CommandServiceRouteBuilder{TAggregate,TResult}"/> for a given aggregate type, so you
+    /// Creates an instance of <see cref="CommandServiceRouteBuilder{TState}"/> for a given aggregate type, so you
     /// can explicitly map commands to HTTP endpoints. 
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
-    /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <typeparam name="TState">State type</typeparam>
     /// <returns></returns>
-    public static CommandServiceRouteBuilder<TAggregate, Result> MapAggregateCommands<TAggregate>(this IEndpointRouteBuilder builder)
-        where TAggregate : Aggregate => new(builder);
-
-    /// <summary>
-    /// Creates an instance of <see cref="CommandServiceRouteBuilder{TAggregate,TResult}"/> for a given aggregate type, so you
-    /// can explicitly map commands to HTTP endpoints. 
-    /// </summary>
-    /// <param name="builder">Endpoint route builder instance</param>
-    /// <typeparam name="TAggregate">Aggregate type</typeparam>
-    /// <typeparam name="TResult">Result type that will be returned</typeparam>
-    /// <returns></returns>
-    public static CommandServiceRouteBuilder<TAggregate, TResult> MapAggregateCommands<TAggregate, TResult>(this IEndpointRouteBuilder builder)
-        where TAggregate : Aggregate
-        where TResult : Result
-        => new(builder);
+    public static CommandServiceRouteBuilder<TState> MapCommands<TState>(this IEndpointRouteBuilder builder)
+        where TState : State<TState>, new() => new(builder);
 
     /// <summary>
     /// Maps all commands annotated by <seealso cref="HttpCommandAttribute"/> to HTTP endpoints to be handled
-    /// by <seealso cref="ICommandService{T}"/> where T is the aggregate type provided. Only use it if your
-    /// application only handles commands for one aggregate type.
+    /// by <seealso cref="ICommandService{TState}"/> where <code>TState</code> is the state type provided.
+    /// Only use it if your application only handles commands for one state type.
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
     /// <param name="assemblies">List of assemblies to scan</param>
-    /// <typeparam name="TAggregate">Aggregate type</typeparam>
+    /// <typeparam name="TState">State type</typeparam>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static IEndpointRouteBuilder MapDiscoveredCommands<TAggregate>(this IEndpointRouteBuilder builder, params Assembly[] assemblies)
-        where TAggregate : Aggregate {
-        var assembliesToScan = assemblies.Length == 0
-            ? AppDomain.CurrentDomain.GetAssemblies()
-            : assemblies;
+    public static IEndpointRouteBuilder MapDiscoveredCommands<TState>(this IEndpointRouteBuilder builder, params Assembly[] assemblies)
+        where TState : State<TState> {
+        var assembliesToScan = assemblies.Length == 0 ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
 
         var attributeType = typeof(HttpCommandAttribute);
 
@@ -121,70 +99,20 @@ public static partial class RouteBuilderExtensions {
                 x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == attributeType)
             );
 
-            var method = typeof(RouteBuilderExtensions).GetMethod(nameof(Map), BindingFlags.Static | BindingFlags.NonPublic)!;
-
             foreach (var type in decoratedTypes) {
                 var attr = type.GetAttribute<HttpCommandAttribute>()!;
 
-                if (attr.AggregateType != null && attr.AggregateType != typeof(TAggregate))
-                    throw new InvalidOperationException(
-                        $"Command aggregate is {attr.AggregateType.Name} but expected to be {typeof(TAggregate).Name}"
-                    );
+                if (attr.StateType != null && attr.StateType != typeof(TState)) {
+                    throw new InvalidOperationException($"Command state is {attr.StateType.Name} but expected to be {typeof(TState).Name}");
+                }
 
-                var genericMethod = method.MakeGenericMethod(typeof(TAggregate), type, type, attr.ResultType);
-                genericMethod.Invoke(null, [builder, attr.Route, null, attr.PolicyName]);
+                builder.LocalMap(typeof(TState), type, attr.Route, attr.PolicyName);
             }
         }
     }
 
-    static RouteHandlerBuilder Map<TAggregate, TContract, TCommand, TResult>(
-            IEndpointRouteBuilder                         builder,
-            string?                                       route,
-            ConvertAndEnrichCommand<TContract, TCommand>? convert    = null,
-            string?                                       policyName = null
-        )
-        where TAggregate : Aggregate
-        where TCommand : class
-        where TContract : class
-        where TResult : Result {
-        if (convert == null && typeof(TCommand) != typeof(TContract))
-            throw new InvalidOperationException($"Command type {typeof(TCommand).Name} is not assignable from {typeof(TContract).Name}");
-
-        var resolvedRoute = GetRoute<TContract>(route);
-        ExtensionsEventSource.Log.HttpEndpointRegistered<TContract>(resolvedRoute);
-
-        var routeBuilder = builder
-            .MapPost(
-                resolvedRoute,
-                async Task<IResult> (HttpContext context, ICommandService<TAggregate> service) => {
-                    var cmd = await context.Request.ReadFromJsonAsync<TContract>(context.RequestAborted);
-
-                    if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
-
-                    var command = convert != null
-                        ? convert(cmd, context)
-                        : (cmd as TCommand)!;
-
-                    var result = await InvokeService(service, command, context.RequestAborted);
-
-                    return result.AsResult();
-                }
-            )
-            .Accepts<TContract>()
-            .ProducesOk<TResult>()
-            .ProducesProblemDetails(Status404NotFound)
-            .ProducesProblemDetails(Status409Conflict)
-            .ProducesProblemDetails(Status500InternalServerError)
-            .ProducesValidationProblemDetails(Status400BadRequest);
-
-        routeBuilder.AddPolicy(policyName);
-        routeBuilder.AddAuthorization(typeof(TContract));
-
-        return routeBuilder;
-    }
-
     /// <summary>
-    /// Maps commands that are annotated either with <seealso cref="AggregateCommandsAttribute"/> and/or
+    /// Maps commands that are annotated either with <seealso cref="StateCommandsAttribute"/> and/or
     /// <seealso cref="HttpCommandAttribute"/> in given assemblies. Will use assemblies of the current
     /// application domain if no assembly is specified explicitly.
     /// </summary>
@@ -194,9 +122,7 @@ public static partial class RouteBuilderExtensions {
     /// <exception cref="InvalidOperationException"></exception>
     [PublicAPI]
     public static IEndpointRouteBuilder MapDiscoveredCommands(this IEndpointRouteBuilder builder, params Assembly[] assemblies) {
-        var assembliesToScan = assemblies.Length == 0
-            ? AppDomain.CurrentDomain.GetAssemblies()
-            : assemblies;
+        var assembliesToScan = assemblies.Length == 0 ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
 
         var attributeType = typeof(HttpCommandAttribute);
 
@@ -213,85 +139,84 @@ public static partial class RouteBuilderExtensions {
 
             foreach (var type in decoratedTypes) {
                 var attr            = type.GetAttribute<HttpCommandAttribute>()!;
-                var parentAttribute = type.DeclaringType?.GetAttribute<AggregateCommandsAttribute>();
+                var parentAttribute = type.DeclaringType?.GetAttribute<StateCommandsAttribute>();
 
-                if (parentAttribute == null) continue;
+                var stateType = parentAttribute?.StateType ?? attr.StateType;
 
-                LocalMap(parentAttribute.AggregateType, type, attr.Route, attr.PolicyName, parentAttribute.ResultType ?? attr.ResultType);
+                if (stateType == null) continue;
+
+                if (parentAttribute != null && stateType != parentAttribute.StateType) {
+                    throw new InvalidOperationException(
+                        $"Command state type {stateType.Name} doesn't match with parent state type {parentAttribute.StateType.Name}"
+                    );
+                }
+
+                builder.LocalMap(stateType, type, attr.Route, attr.PolicyName);
             }
         }
-
-        void LocalMap(Type aggregateType, Type type, string? route, string? policyName, Type resultType) {
-            var appServiceBase = typeof(ICommandService<>);
-            var appServiceType = appServiceBase.MakeGenericType(aggregateType);
-
-            var routeBuilder = builder
-                .MapPost(
-                    GetRoute(type, route),
-                    async Task<IResult> (HttpContext context) => {
-                        var cmd = await context.Request.ReadFromJsonAsync(type, context.RequestAborted);
-
-                        if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
-
-                        if (context.RequestServices.GetRequiredService(appServiceType) is not ICommandService service)
-                            throw new InvalidOperationException("Unable to resolve the application service");
-
-                        var result = await InvokeService(service, cmd, context.RequestAborted);
-
-                        return result.AsResult();
-                    }
-                )
-                .Accepts(type)
-                .ProducesOk(resultType)
-                .ProducesProblemDetails(Status404NotFound)
-                .ProducesProblemDetails(Status409Conflict)
-                .ProducesValidationProblemDetails(Status400BadRequest)
-                .ProducesProblemDetails(Status500InternalServerError);
-
-            routeBuilder.AddPolicy(policyName);
-            routeBuilder.AddAuthorization(type);
-        }
     }
 
-    static string GetRoute<TCommand>(string? route)
-        => GetRoute(typeof(TCommand), route);
-
-    static string GetRoute(MemberInfo type, string? route) {
-        return route ?? Generate();
-
-        string Generate() {
-            var gen = type.Name;
-
-            return char.ToLowerInvariant(gen[0]) + gen[1..];
-        }
+    static void LocalMap(this IEndpointRouteBuilder builder, Type stateType, Type type, string? route, string? policyName) {
+        var genericMethod = MapMethod.MakeGenericMethod(stateType, type, type);
+        genericMethod.Invoke(null, [builder, route, null, policyName]);
     }
 
-    static void AddAuthorization(this RouteHandlerBuilder builder, Type contractType) {
-        var authAttr = contractType.GetAttribute<AuthorizeAttribute>();
-        if (authAttr != null) builder.RequireAuthorization(authAttr);
-    }
+    static readonly MethodInfo MapMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapInternal), BindingFlags.Static | BindingFlags.NonPublic)!;
 
-    static void AddPolicy(this RouteHandlerBuilder builder, string? policyName) {
-        if (policyName != null) builder.RequireAuthorization(policyName.Split(','));
-    }
+    static RouteHandlerBuilder MapInternal<TState, TContract, TCommand>(
+            IEndpointRouteBuilder                         builder,
+            string?                                       route,
+            ConvertAndEnrichCommand<TContract, TCommand>? convert    = null,
+            string?                                       policyName = null
+        )
+        where TState : State<TState>, new()
+        where TCommand : class
+        where TContract : class {
+        if (convert == null && typeof(TCommand) != typeof(TContract))
+            throw new InvalidOperationException($"Command type {typeof(TCommand).Name} is not assignable from {typeof(TContract).Name}");
 
-    static readonly ConcurrentDictionary<Type, Delegate> MethodCache = new();
+        var resolvedRoute = GetRoute(route);
+        ExtensionsEventSource.Log.HttpEndpointRegistered<TContract>(resolvedRoute);
 
-    static Task<Result> InvokeService(ICommandService service, object cmd, CancellationToken cancellationToken) {
-        var type = cmd.GetType();
+        var routeBuilder = builder
+            .MapPost(
+                resolvedRoute,
+                async Task<IResult> (HttpContext context, ICommandService<TState> service) => {
+                    var cmd = await context.Request.ReadFromJsonAsync<TContract>(context.RequestAborted);
 
-        var handleDelegate = MethodCache.GetOrAdd(
-            type,
-            t => {
-                var method        = service.GetType().GetMethod(nameof(ICommandService.Handle));
-                var genericMethod = method!.MakeGenericMethod(t);
-                var typeArgs      = new[] { t, typeof(CancellationToken), typeof(Task<Result>) };
-                var funcType      = typeof(Func<,,>).MakeGenericType(typeArgs);
+                    if (cmd == null) throw new InvalidOperationException("Failed to deserialize the command");
 
-                return Delegate.CreateDelegate(funcType, service, genericMethod);
+                    var command = convert != null ? convert(cmd, context) : (cmd as TCommand)!;
+
+                    var result = await service.Handle(command, context.RequestAborted);
+
+                    return result.AsResult();
+                }
+            )
+            .Accepts<TContract>()
+            .ProducesOk<TState>()
+            .ProducesProblemDetails(Status404NotFound)
+            .ProducesProblemDetails(Status409Conflict)
+            .ProducesProblemDetails(Status500InternalServerError)
+            .ProducesValidationProblemDetails(Status400BadRequest);
+
+        // Add policy
+        if (policyName != null) routeBuilder.RequireAuthorization(policyName.Split(','));
+
+        // Add authorization
+        var authAttr = typeof(TContract).GetAttribute<AuthorizeAttribute>();
+        if (authAttr != null) routeBuilder.RequireAuthorization(authAttr);
+
+        return routeBuilder;
+
+        static string GetRoute(string? route) {
+            return route ?? Generate();
+
+            string Generate() {
+                var gen = typeof(TCommand).Name;
+
+                return char.ToLowerInvariant(gen[0]) + gen[1..];
             }
-        );
-
-        return ((Task<Result>)handleDelegate.DynamicInvoke(cmd, cancellationToken)!);
+        }
     }
 }

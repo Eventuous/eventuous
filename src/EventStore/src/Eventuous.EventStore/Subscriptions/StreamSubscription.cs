@@ -77,9 +77,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        var fromStream = position == null
-            ? FromStream.Start
-            : FromStream.After(StreamPosition.FromInt64((long)position));
+        var fromStream = position == null ? FromStream.Start : FromStream.After(StreamPosition.FromInt64((long)position));
 
         Subscription = await EventStoreClient.SubscribeToStreamAsync(
                 Options.StreamName,
@@ -106,11 +104,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             await HandleInternal(CreateContext(re, ct)).NoContext();
         }
 
-        void HandleDrop(
-                global::EventStore.Client.StreamSubscription _,
-                SubscriptionDroppedReason                    reason,
-                Exception?                                   ex
-            )
+        void HandleDrop(global::EventStore.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 

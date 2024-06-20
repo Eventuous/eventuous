@@ -5,6 +5,7 @@
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="FluentValidation" />
     <PackageReference Include="MongoDb.Bson.NodaTime" />
     <PackageReference Include="MongoDB.Driver.Core.Extensions.OpenTelemetry" />
     <PackageReference Include="NodaTime.Serialization.SystemTextJson" />

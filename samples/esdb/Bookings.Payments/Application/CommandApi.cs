@@ -7,8 +7,8 @@ using static Bookings.Payments.Application.PaymentCommands;
 namespace Bookings.Payments.Application; 
 
 [Route("payment")]
-public class CommandApi(ICommandService<Payment> service) : CommandHttpApiBase<Payment>(service) {
+public class CommandApi(ICommandService<PaymentState> service) : CommandHttpApiBase<PaymentState>(service) {
     [HttpPost]
-    public Task<ActionResult<Result>> RegisterPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
+    public Task<ActionResult<Result<PaymentState>>> RegisterPayment([FromBody] RecordPayment cmd, CancellationToken cancellationToken)
         => Handle(cmd, cancellationToken);
 }

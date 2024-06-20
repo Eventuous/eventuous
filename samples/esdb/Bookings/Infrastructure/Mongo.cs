@@ -7,11 +7,10 @@ namespace Bookings.Infrastructure;
 public static class Mongo {
     public static IMongoDatabase ConfigureMongo(IConfiguration configuration) {
         NodaTimeSerializers.Register();
-        var config = configuration.GetSection("Mongo").Get<MongoSettings>();
-
+        var config   = configuration.GetSection("Mongo").Get<MongoSettings>();
         var settings = MongoClientSettings.FromConnectionString(config!.ConnectionString);
 
-        if (config.User != null && config.Password != null) {
+        if (config is { User: not null, Password: not null }) {
             settings.Credential = new MongoCredential(
                 null,
                 new MongoInternalIdentity("admin", config.User),
@@ -20,6 +19,7 @@ public static class Mongo {
         }
 
         settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
+
         return new MongoClient(settings).GetDatabase(config.Database);
     }
 

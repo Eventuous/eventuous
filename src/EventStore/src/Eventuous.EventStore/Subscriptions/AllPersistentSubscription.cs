@@ -1,3 +1,6 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Eventuous.EventStore.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
@@ -92,13 +95,11 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
         );
 
     /// <inheritdoc />
-    protected override ulong GetContextStreamPosition(ResolvedEvent re)
-        => re.Event.Position.CommitPosition;
+    protected override ulong GetContextStreamPosition(ResolvedEvent re) => re.Event.Position.CommitPosition;
 
     /// <summary>
     /// Returns a measure callback for the subscription
     /// </summary>
     /// <returns></returns>
-    public GetSubscriptionEndOfStream GetMeasure()
-        => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient).GetEndOfStream;
+    public GetSubscriptionEndOfStream GetMeasure() => new AllStreamSubscriptionMeasure(Options.SubscriptionId, EventStoreClient).GetEndOfStream;
 }

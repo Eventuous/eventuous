@@ -19,11 +19,11 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
     /// <param name="consumePipe">Consume pipe, provided automatically</param>
     /// <param name="loggerFactory">Optional logger factory</param>
     public StreamPersistentSubscription(
-        EventStoreClient                    eventStoreClient,
-        StreamPersistentSubscriptionOptions options,
-        ConsumePipe                         consumePipe,
-        ILoggerFactory?                     loggerFactory
-    ) : base(eventStoreClient, options, consumePipe, loggerFactory)
+            EventStoreClient                    eventStoreClient,
+            StreamPersistentSubscriptionOptions options,
+            ConsumePipe                         consumePipe,
+            ILoggerFactory?                     loggerFactory
+        ) : base(eventStoreClient, options, consumePipe, loggerFactory)
         => Ensure.NotEmptyString(options.StreamName);
 
     /// <summary>
@@ -37,14 +37,14 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
     /// <param name="metaSerializer"></param>
     /// <param name="loggerFactory"></param>
     public StreamPersistentSubscription(
-        EventStoreClient     eventStoreClient,
-        StreamName           streamName,
-        string               subscriptionId,
-        ConsumePipe          consumerPipe,
-        IEventSerializer?    eventSerializer = null,
-        IMetadataSerializer? metaSerializer  = null,
-        ILoggerFactory?      loggerFactory   = null
-    ) : this(
+            EventStoreClient     eventStoreClient,
+            StreamName           streamName,
+            string               subscriptionId,
+            ConsumePipe          consumerPipe,
+            IEventSerializer?    eventSerializer = null,
+            IMetadataSerializer? metaSerializer  = null,
+            ILoggerFactory?      loggerFactory   = null
+        ) : this(
         eventStoreClient,
         new StreamPersistentSubscriptionOptions {
             StreamName         = streamName,
@@ -58,9 +58,9 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
 
     /// <inheritdoc/>
     protected override Task CreatePersistentSubscription(
-        PersistentSubscriptionSettings settings,
-        CancellationToken              cancellationToken
-    )
+            PersistentSubscriptionSettings settings,
+            CancellationToken              cancellationToken
+        )
         => SubscriptionClient.CreateToStreamAsync(
             Options.StreamName,
             Options.SubscriptionId,
@@ -72,10 +72,10 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
 
     /// <inheritdoc/>
     protected override Task<PersistentSubscription> LocalSubscribe(
-        Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-        Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>?     subscriptionDropped,
-        CancellationToken                                                          cancellationToken
-    )
+            Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+            Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>?     subscriptionDropped,
+            CancellationToken                                                          cancellationToken
+        )
         => SubscriptionClient.SubscribeToStreamAsync(
             Options.StreamName,
             Options.SubscriptionId,
@@ -91,6 +91,5 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
 
     /// <inheritdoc/>
     public GetSubscriptionEndOfStream GetMeasure()
-        => new StreamSubscriptionMeasure(Options.SubscriptionId, Options.StreamName, EventStoreClient)
-            .GetEndOfStream;
+        => new StreamSubscriptionMeasure(Options.SubscriptionId, Options.StreamName, EventStoreClient).GetEndOfStream;
 }
