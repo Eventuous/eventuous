@@ -19,11 +19,11 @@ public class CommandApiWithCustomResult(ICommandService<BookingState> service) :
     public Task<ActionResult<CustomBookingResult>> BookRoom([FromBody] BookRoom cmd, CancellationToken cancellationToken)
         => Handle(cmd, cancellationToken);
 
-    protected override ActionResult AsActionResult(Result<BookingState> result) {
-        return result switch {
+    protected override ActionResult AsActionResult(Result<BookingState> result)
+        => result switch {
             ErrorResult<BookingState> error => error.Exception switch {
-                FluentValidation.ValidationException => MapValidationExceptionAsValidationProblemDetails(error),
-                _                                    => base.AsActionResult(result)
+                ValidationException => MapValidationExceptionAsValidationProblemDetails(error),
+                _                   => base.AsActionResult(result)
             },
             OkResult<BookingState> { State: not null } okResult => new OkObjectResult(
                 new CustomBookingResult {
@@ -36,7 +36,6 @@ public class CommandApiWithCustomResult(ICommandService<BookingState> service) :
             ),
             _ => base.AsActionResult(result)
         };
-    }
 
     static BadRequestObjectResult MapValidationExceptionAsValidationProblemDetails(ErrorResult<BookingState> error) {
         if (error?.Exception is not ValidationException exception) {
