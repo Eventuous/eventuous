@@ -12,8 +12,8 @@ namespace Bookings.HttpApi.Bookings;
 /// This command API is for demo purposes only. It's the same as the CommandApi, but with a different route and a custom result type.
 /// Check the swagger UI for the API documentation and see the custom result type in action.
 /// </summary>
-[Route("/booking3")]
-public class CommandApi3(ICommandService<BookingState> service) : CommandHttpApiBase<BookingState, CustomBookingResult>(service) {
+[Route("/custom/booking")]
+public class CommandApiWithCustomResult(ICommandService<BookingState> service) : CommandHttpApiBase<BookingState, CustomBookingResult>(service) {
     [HttpPost]
     [Route("book")]
     public Task<ActionResult<CustomBookingResult>> BookRoom([FromBody] BookRoom cmd, CancellationToken cancellationToken)
@@ -23,9 +23,9 @@ public class CommandApi3(ICommandService<BookingState> service) : CommandHttpApi
         return result switch {
             ErrorResult<BookingState> error => error.Exception switch {
                 FluentValidation.ValidationException => MapValidationExceptionAsValidationProblemDetails(error),
-                _ => base.AsActionResult(result)
+                _                                    => base.AsActionResult(result)
             },
-            OkResult<BookingState> {State: not null} okResult => new OkObjectResult(
+            OkResult<BookingState> { State: not null } okResult => new OkObjectResult(
                 new CustomBookingResult {
                     GuestId         = okResult.State.GuestId,
                     RoomId          = okResult.State.RoomId,
