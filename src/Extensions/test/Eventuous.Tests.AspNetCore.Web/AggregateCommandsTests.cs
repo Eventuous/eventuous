@@ -100,7 +100,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
                 .MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
         );
         var cmd      = fixture.GetBookRoom();
-        var content = await fixture.ExecuteRequest<BookRoom, Booking>(cmd, "book", cmd.BookingId);
+        var content = await fixture.ExecuteRequest<BookRoom>(cmd, "book", cmd.BookingId);
         await VerifyJson(content);
     }
 
@@ -114,7 +114,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
             bookRoom.CheckOut,
             bookRoom.Price
         );
-        var content = await fixture.ExecuteRequest<ImportBookingHttp, Booking>(import, route, bookRoom.BookingId);
+        var content = await fixture.ExecuteRequest<ImportBookingHttp>(import, route, bookRoom.BookingId);
 
         await VerifyJson(content);
     }

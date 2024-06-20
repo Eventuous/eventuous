@@ -14,10 +14,10 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
     public ControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper output) {
         var commandMap = new MessageMap()
             .Add<BookingApi.RegisterPaymentHttp, Commands.RecordPayment>(
-                x => new Commands.RecordPayment(new BookingId(x.BookingId), x.PaymentId, new Money(x.Amount), x.PaidAt)
+                x => new(new(x.BookingId), x.PaymentId, new Money(x.Amount), x.PaidAt)
             );
 
-        _fixture = new ServerFixture(
+        _fixture = new(
             factory,
             output,
             services => {
@@ -33,7 +33,7 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
             }
         );
 
-        _listener = new TestEventListener(output);
+        _listener = new(output);
     }
 
     [Fact]
