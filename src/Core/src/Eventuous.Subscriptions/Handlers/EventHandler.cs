@@ -36,6 +36,8 @@ public abstract class EventHandler(TypeMapper? mapper = null) : BaseEventHandler
             SubscriptionsEventSource.Log.MessageTypeNotRegistered<T>();
         }
 
+        return;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask<EventHandlingStatus> Handle(IMessageConsumeContext context) {
             return context.Message is not T ? NoHandler() : HandleTypedEvent();

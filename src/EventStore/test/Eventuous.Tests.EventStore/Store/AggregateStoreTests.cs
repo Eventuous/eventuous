@@ -79,16 +79,10 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
         }
     }
 
-    record TestId : Id {
-        public TestId(string value)
-            : base(value) { }
-    }
+    record TestId(string Value) : Id(Value);
 
     record TestState : State<TestState> {
-        public TestState()
-            => On<TestEvent>(
-                (state, evt) => state with { Values = state.Values.Add(evt.Data) }
-            );
+        public TestState() => On<TestEvent>((state, evt) => state with { Values = state.Values.Add(evt.Data) });
 
         public ImmutableList<string> Values { get; init; } = ImmutableList<string>.Empty;
     }

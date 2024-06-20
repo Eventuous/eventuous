@@ -6,58 +6,32 @@ namespace Bookings.Domain.Bookings;
 
 public class Booking : Aggregate<BookingState> {
     public async Task BookRoom(
-        string guestId,
-        RoomId roomId,
-        StayPeriod period,
-        Money price,
-        Money prepaid,
-        DateTimeOffset bookedAt,
-        IsRoomAvailable isRoomAvailable
-    ) {
+            string          guestId,
+            RoomId          roomId,
+            StayPeriod      period,
+            Money           price,
+            Money           prepaid,
+            DateTimeOffset  bookedAt,
+            IsRoomAvailable isRoomAvailable
+        ) {
         EnsureDoesntExist();
         await EnsureRoomAvailable(roomId, period, isRoomAvailable);
 
         var outstanding = price - prepaid;
 
-        Apply(
-            new V1.RoomBooked(
-                guestId,
-                roomId,
-                period.CheckIn,
-                period.CheckOut,
-                price.Amount,
-                prepaid.Amount,
-                outstanding.Amount,
-                price.Currency,
-                bookedAt
-            )
-        );
+        Apply(new V1.RoomBooked(guestId, roomId, period.CheckIn, period.CheckOut, price.Amount, prepaid.Amount, outstanding.Amount, price.Currency, bookedAt));
 
         MarkFullyPaidIfNecessary(bookedAt);
     }
 
-    public void RecordPayment(
-        Money paid,
-        string paymentId,
-        string paidBy,
-        DateTimeOffset paidAt
-    ) {
+    public void RecordPayment(Money paid, string paymentId, string paidBy, DateTimeOffset paidAt) {
         EnsureExists();
 
         if (State.HasPaymentBeenRegistered(paymentId)) return;
 
         var outstanding = State.Outstanding - paid;
 
-        Apply(
-            new V1.PaymentRecorded(
-                paid.Amount,
-                outstanding.Amount,
-                paid.Currency,
-                paymentId,
-                paidBy,
-                paidAt
-            )
-        );
+        Apply(new V1.PaymentRecorded(paid.Amount, outstanding.Amount, paid.Currency, paymentId, paidBy, paidAt));
 
         MarkFullyPaidIfNecessary(paidAt);
         MarkOverpaid(paidAt);
@@ -75,6 +49,7 @@ public class Booking : Aggregate<BookingState> {
 
     static async Task EnsureRoomAvailable(RoomId roomId, StayPeriod period, IsRoomAvailable isRoomAvailable) {
         var roomAvailable = await isRoomAvailable(roomId, period);
+
         if (!roomAvailable) throw new DomainException("Room not available");
     }
 }

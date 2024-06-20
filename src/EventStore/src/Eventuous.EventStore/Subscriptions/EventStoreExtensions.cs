@@ -1,11 +1,13 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Reflection;
 
 namespace Eventuous.EventStore.Subscriptions; 
 
 static class EventStoreExtensions {
     public static EventStoreClientSettings GetSettings(this EventStoreClient client) {
-        var prop =
-            typeof(EventStoreClient).GetProperty("Settings", BindingFlags.NonPublic | BindingFlags.Instance);
+        var prop = typeof(EventStoreClient).GetProperty("Settings", BindingFlags.NonPublic | BindingFlags.Instance);
 
         var getter = prop!.GetGetMethod(true);
         return (EventStoreClientSettings) getter!.Invoke(client, null)!;

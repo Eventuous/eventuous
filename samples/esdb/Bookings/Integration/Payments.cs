@@ -17,16 +17,7 @@ public class PaymentsIntegrationHandler : EventHandler {
     }
 
     Task HandlePayment(BookingPaymentRecorded evt, CancellationToken cancellationToken)
-        => _applicationService.Handle(
-            new RecordPayment(
-                evt.BookingId,
-                evt.Amount,
-                evt.Currency,
-                evt.PaymentId,
-                ""
-            ),
-            cancellationToken
-        );
+        => _applicationService.Handle(new RecordPayment(evt.BookingId, evt.Amount, evt.Currency, evt.PaymentId, ""), cancellationToken);
 }
 
 static class IntegrationEvents {

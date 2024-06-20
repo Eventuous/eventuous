@@ -44,7 +44,7 @@ public record RabbitMqSubscriptionOptions : SubscriptionOptions {
     public uint   ConcurrencyLimit { get; set; } = 1;
 
     /// <summary>
-    /// Number of messages to prefetch..
+    /// Number of messages to prefetch.
     /// </summary>
     public ushort PrefetchCount    { get; set; }
 

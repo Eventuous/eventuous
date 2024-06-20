@@ -98,7 +98,7 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IAggregate
     }
 
     internal override RegisteredHandler<TAggregate, TState, TId> Build() {
-        return new RegisteredHandler<TAggregate, TState, TId>(
+        return new(
             _expectedState,
             Ensure.NotNull(_getId, $"Function to get the aggregate id from {typeof(TCommand).Name} is not defined"),
             Ensure.NotNull(_action, $"Function to act on the aggregate for command {typeof(TCommand).Name} is not defined"),

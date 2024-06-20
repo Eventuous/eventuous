@@ -1,3 +1,6 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 namespace Eventuous.EventStore.Subscriptions;
 
 /// <summary>
@@ -23,7 +26,7 @@ public abstract record PersistentSubscriptionOptions : EventStoreSubscriptionOpt
     // public uint ConcurrencyLevel { get; set; } = 1;
 
     /// <summary>
-    /// Allows to override the failure handling behaviour. By default, when the consumer crashes, the event is
+    /// Allows overriding the failure handling behavior. By default, when the consumer crashes, the event is
     /// retries and then NACKed. You can use this function to, for example, park the failed event.
     /// </summary>
     public HandleEventProcessingFailure? FailureHandler { get; set; }

@@ -29,11 +29,11 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     /// <param name="consumePipe"></param>
     /// <param name="loggerFactory"></param>
     public RabbitMqSubscription(
-        ConnectionFactory                     connectionFactory,
-        IOptions<RabbitMqSubscriptionOptions> options,
-        ConsumePipe                           consumePipe,
-        ILoggerFactory?                       loggerFactory
-    ) : this(connectionFactory, options.Value, consumePipe, loggerFactory) { }
+            ConnectionFactory                     connectionFactory,
+            IOptions<RabbitMqSubscriptionOptions> options,
+            ConsumePipe                           consumePipe,
+            ILoggerFactory?                       loggerFactory
+        ) : this(connectionFactory, options.Value, consumePipe, loggerFactory) { }
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
@@ -43,11 +43,11 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     /// <param name="consumePipe"></param>
     /// <param name="loggerFactory"></param>
     public RabbitMqSubscription(
-        ConnectionFactory           connectionFactory,
-        RabbitMqSubscriptionOptions options,
-        ConsumePipe                 consumePipe,
-        ILoggerFactory?             loggerFactory
-    )
+            ConnectionFactory           connectionFactory,
+            RabbitMqSubscriptionOptions options,
+            ConsumePipe                 consumePipe,
+            ILoggerFactory?             loggerFactory
+        )
         : base(
             Ensure.NotNull(options),
             consumePipe.AddFilterFirst(new AsyncHandlingFilter(options.ConcurrencyLimit * 10)),
@@ -74,16 +74,15 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     /// <param name="loggerFactory"></param>
     /// <param name="eventSerializer">Event serializer instance</param>
     public RabbitMqSubscription(
-        ConnectionFactory connectionFactory,
-        string            exchange,
-        string            subscriptionId,
-        ConsumePipe       consumePipe,
-        ILoggerFactory?   loggerFactory,
-        IEventSerializer? eventSerializer = null
-    ) : this(
+            ConnectionFactory connectionFactory,
+            string            exchange,
+            string            subscriptionId,
+            ConsumePipe       consumePipe,
+            ILoggerFactory?   loggerFactory,
+            IEventSerializer? eventSerializer = null
+        ) : this(
         connectionFactory,
-        new RabbitMqSubscriptionOptions
-            { Exchange = exchange, SubscriptionId = subscriptionId, EventSerializer = eventSerializer },
+        new RabbitMqSubscriptionOptions { Exchange = exchange, SubscriptionId = subscriptionId, EventSerializer = eventSerializer },
         consumePipe,
         loggerFactory
     ) { }
@@ -136,8 +135,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         try {
             var ctx = CreateContext(sender, received).WithItem(ReceivedMessageKey, received);
             await Handler(new AsyncConsumeContext(ctx, Ack, Nack)).NoContext();
-        }
-        catch (Exception) {
+        } catch (Exception) {
             // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
             if (Options.ThrowOnError) throw;
         }
@@ -146,6 +144,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     ValueTask Ack(IMessageConsumeContext ctx) {
         var received = ctx.Items.GetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
         _channel.BasicAck(received.DeliveryTag, false);
+
         return default;
     }
 
@@ -154,6 +153,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
 
         var received = ctx.Items.GetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
         _failureHandler(_channel, received, exception);
+
         return default;
     }
 

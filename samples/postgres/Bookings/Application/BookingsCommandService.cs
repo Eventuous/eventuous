@@ -13,7 +13,6 @@ public class BookingsCommandService : CommandService<Booking, BookingState, Book
             .GetId(cmd => new BookingId(cmd.BookingId))
             .ActAsync(
                 (booking, cmd, _) => booking.BookRoom(
-                    new BookingId(cmd.BookingId),
                     cmd.GuestId,
                     new RoomId(cmd.RoomId),
                     new StayPeriod(LocalDate.FromDateTime(cmd.CheckInDate), LocalDate.FromDateTime(cmd.CheckOutDate)),
@@ -27,13 +26,6 @@ public class BookingsCommandService : CommandService<Booking, BookingState, Book
         On<RecordPayment>()
             .InState(ExpectedState.Existing)
             .GetId(cmd => new BookingId(cmd.BookingId))
-            .Act(
-                (booking, cmd) => booking.RecordPayment(
-                    new Money(cmd.PaidAmount, cmd.Currency),
-                    cmd.PaymentId,
-                    cmd.PaidBy,
-                    DateTimeOffset.Now
-                )
-            );
+            .Act((booking, cmd) => booking.RecordPayment(new Money(cmd.PaidAmount, cmd.Currency), cmd.PaymentId, cmd.PaidBy, DateTimeOffset.Now));
     }
 }

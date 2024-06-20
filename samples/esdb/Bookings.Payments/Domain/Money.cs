@@ -6,7 +6,7 @@ public record Money {
     public float  Amount   { get; internal init; }
     public string Currency { get; internal init; } = null!;
 
-    static readonly string[] SupportedCurrencies = { "USD", "GPB", "EUR" };
+    static readonly string[] SupportedCurrencies = ["USD", "GPB", "EUR"];
 
     // ReSharper disable once UnusedMember.Global
     internal Money() { }

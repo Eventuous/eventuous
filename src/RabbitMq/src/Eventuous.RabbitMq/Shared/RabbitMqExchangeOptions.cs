@@ -3,7 +3,6 @@
 
 namespace Eventuous.RabbitMq.Shared;
 
-[PublicAPI]
 public class RabbitMqExchangeOptions {
     public string Type       { get; init; } = ExchangeType.Fanout;
     public bool   Durable    { get; init; } = true;

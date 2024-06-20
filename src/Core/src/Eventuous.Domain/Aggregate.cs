@@ -80,7 +80,7 @@ public abstract class Aggregate<T> where T : State<T>, new() {
 
     public void Load(IEnumerable<object?> events) {
         Original = events.Where(x => x != null).ToArray()!;
-        State = Original.Aggregate(new T(), Fold);
+        State = Original.Aggregate(State, Fold);
     }
 
     static T Fold(T state, object evt) => state.When(evt);

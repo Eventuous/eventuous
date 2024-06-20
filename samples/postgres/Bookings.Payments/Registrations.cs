@@ -25,8 +25,7 @@ public static class Registrations {
         services.AddProducer<RabbitMqProducer>();
 
         services
-            .AddGateway<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions,
-                RabbitMqProducer, RabbitMqProduceOptions>(
+            .AddGateway<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, RabbitMqProducer, RabbitMqProduceOptions>(
                 "IntegrationSubscription",
                 PaymentsGateway.Transform
             );

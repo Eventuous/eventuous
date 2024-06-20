@@ -60,11 +60,5 @@ static class SubscriptionActivity {
             ActivityContext?                            parentContext = null,
             IEnumerable<KeyValuePair<string, object?>>? tags          = null
         )
-        => EventuousDiagnostics.ActivitySource.CreateActivity(
-            name,
-            activityKind,
-            parentContext ?? default,
-            tags,
-            idFormat: ActivityIdFormat.W3C
-        );
+        => EventuousDiagnostics.ActivitySource.CreateActivity(name, activityKind, parentContext ?? default, tags, idFormat: ActivityIdFormat.W3C);
 }

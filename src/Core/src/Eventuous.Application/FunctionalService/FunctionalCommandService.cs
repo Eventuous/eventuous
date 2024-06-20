@@ -108,6 +108,8 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
         }
     }
+    
+    protected static StreamName GetStream(string id) => StreamName.ForState<TState>(id);
 
     readonly Dictionary<Type, FuncCommandHandlerBuilder<TState>> _builders     = new();
     readonly object                                              _handlersLock = new();

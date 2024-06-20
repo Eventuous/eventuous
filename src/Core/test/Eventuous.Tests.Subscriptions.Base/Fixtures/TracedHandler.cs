@@ -9,15 +9,9 @@ public class TracedHandler : BaseEventHandler {
     public List<RecordedTrace> Contexts { get; } = [];
 
     static readonly ValueTask<EventHandlingStatus> Success = new(EventHandlingStatus.Success);
-    
+
     public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        Contexts.Add(
-            new RecordedTrace(
-                Activity.Current?.TraceId,
-                Activity.Current?.SpanId,
-                Activity.Current?.ParentSpanId
-            )
-        );
+        Contexts.Add(new(Activity.Current?.TraceId, Activity.Current?.SpanId, Activity.Current?.ParentSpanId));
 
         return Success;
     }

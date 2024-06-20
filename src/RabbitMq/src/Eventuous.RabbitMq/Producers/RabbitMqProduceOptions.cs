@@ -1,9 +1,10 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 namespace Eventuous.RabbitMq.Producers;
 
-[PublicAPI]
 public class RabbitMqProduceOptions {
     public string? RoutingKey    { get; init; }
     public string? AppId         { get; init; }

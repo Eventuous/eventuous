@@ -12,9 +12,7 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
     where TProducer : class, IEventProducer
     where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>, IMeasuredSubscription
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
-    T Fixture { get; } = new() {
-        Output = outputHelper
-    };
+    T Fixture { get; } = new() { Output = outputHelper };
 
     [Fact]
     [Trait("Category", "Diagnostics")]

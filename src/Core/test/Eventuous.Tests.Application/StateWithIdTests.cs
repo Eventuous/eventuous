@@ -11,9 +11,8 @@ public class StateWithIdTests {
     readonly AggregateStore _aggregateStore;
 
     public StateWithIdTests() {
-        var store = new InMemoryEventStore();
-        _aggregateStore = new AggregateStore(store);
-        _service        = new BookingService(_aggregateStore);
+        _aggregateStore = new(new InMemoryEventStore());
+        _service        = new(_aggregateStore);
     }
 
     [Fact]

@@ -18,42 +18,7 @@ using MongoDefaults = Eventuous.Projections.MongoDB.Tools.MongoDefaults;
 /// Checkpoint store for MongoDB, which stores checkpoints in a collection.
 /// Use it when you create read models in MongoDB too.
 /// </summary>
-public class MongoCheckpointStore : ICheckpointStore {
-    MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options, ILoggerFactory loggerFactory) {
-        _loggerFactory = loggerFactory;
-        Checkpoints    = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
-        _getSubject    = GetSubject;
-
-        return;
-
-        Subject<EventuousCheckpoint> GetSubject() {
-            var subject = new Subject<EventuousCheckpoint>();
-
-            var observable = options switch {
-                { BatchSize: > 0, BatchIntervalSec: > 0 } => subject.Buffer(
-                    TimeSpan.FromSeconds(options.BatchIntervalSec),
-                    options.BatchSize
-                ),
-                { BatchSize: > 0, BatchIntervalSec: 0 } => subject.Buffer(options.BatchSize),
-                { BatchSize: 0, BatchIntervalSec: > 0 } => subject.Buffer(
-                    TimeSpan.FromSeconds(options.BatchIntervalSec)
-                ),
-                _ => subject.Select(x => new List<EventuousCheckpoint> { x })
-            };
-
-            observable
-                .Where(x => x.Count > 0)
-                .Select(x => Observable.FromAsync(ct => StoreInternal(x.Last(), false, ct)))
-                .Concat()
-                .Subscribe();
-
-            return subject;
-        }
-    }
-
-    readonly Func<Subject<EventuousCheckpoint>> _getSubject;
-    readonly ILoggerFactory                     _loggerFactory;
-
+public class MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreOptions options, ILoggerFactory loggerFactory) : ICheckpointStore {
     [PublicAPI]
     public MongoCheckpointStore(IMongoDatabase database, ILoggerFactory loggerFactory)
         : this(database, new MongoCheckpointStoreOptions(), loggerFactory) { }
@@ -62,7 +27,7 @@ public class MongoCheckpointStore : ICheckpointStore {
     public MongoCheckpointStore(IMongoDatabase database, IOptions<MongoCheckpointStoreOptions> options, ILoggerFactory loggerFactory)
         : this(database, options.Value, loggerFactory) { }
 
-    IMongoCollection<Checkpoint> Checkpoints { get; }
+    IMongoCollection<Checkpoint> Checkpoints { get; } = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
 
     public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken = default) {
         var storedCheckpoint = await Checkpoints.AsQueryable()
@@ -74,16 +39,36 @@ public class MongoCheckpointStore : ICheckpointStore {
 
         Logger.Current.CheckpointLoaded(this, checkpoint);
 
-        _subjects[checkpointId] = _getSubject();
+        _subjects[checkpointId] = GetSubject();
 
         return checkpoint;
     }
 
     readonly Dictionary<string, Subject<EventuousCheckpoint>> _subjects = new();
 
+    Subject<EventuousCheckpoint> GetSubject() {
+        var subject = new Subject<EventuousCheckpoint>();
+
+        var observable = options switch {
+            { BatchSize: > 0, BatchIntervalSec: > 0 } => subject.Buffer(TimeSpan.FromSeconds(options.BatchIntervalSec), options.BatchSize),
+            { BatchSize: > 0, BatchIntervalSec: 0 }   => subject.Buffer(options.BatchSize),
+            { BatchSize: 0, BatchIntervalSec: > 0 }   => subject.Buffer(TimeSpan.FromSeconds(options.BatchIntervalSec)),
+            _                                         => subject.Select(x => new List<EventuousCheckpoint> { x })
+        };
+
+        observable
+            .Where(x => x.Count > 0)
+            .Select(x => Observable.FromAsync(ct => StoreInternal(x.Last(), false, ct)))
+            .Concat()
+            .Subscribe();
+
+        return subject;
+    }
+
     public async ValueTask<EventuousCheckpoint> StoreCheckpoint(EventuousCheckpoint checkpoint, bool force, CancellationToken cancellationToken = default) {
         if (force) {
             await StoreInternal(checkpoint, true, cancellationToken).NoContext();
+
             return checkpoint;
         }
 
@@ -101,7 +86,7 @@ public class MongoCheckpointStore : ICheckpointStore {
             )
             .NoContext();
 
-        Logger.ConfigureIfNull(checkpoint.Id, _loggerFactory);
+        Logger.ConfigureIfNull(checkpoint.Id, loggerFactory);
         Logger.Current.CheckpointStored(this, checkpoint, force);
     }
 
@@ -122,15 +107,15 @@ public record MongoCheckpointStoreOptions {
     /// <summary>
     /// Collection for checkpoint documents (one per subscription). Default is "checkpoint".
     /// </summary>
-    public string CollectionName   { get; init; } = "checkpoint";
+    public string CollectionName { get; init; } = "checkpoint";
 
     /// <summary>
     /// Commit batch size, default is 1. Increase it to improve performance.
     /// </summary>
-    public int    BatchSize        { get; init; } = 1;
+    public int BatchSize { get; init; } = 1;
 
     /// <summary>
     /// Commit batch interval in seconds, default is 5. Increase it to improve performance.
     /// </summary>
-    public int    BatchIntervalSec { get; init; } = 5;
+    public int BatchIntervalSec { get; init; } = 5;
 }

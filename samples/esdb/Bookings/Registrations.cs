@@ -22,11 +22,7 @@ namespace Bookings;
 public static class Registrations {
     public static void AddEventuous(this IServiceCollection services, IConfiguration configuration) {
         DefaultEventSerializer.SetDefaultSerializer(
-            new DefaultEventSerializer(
-                new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(
-                    DateTimeZoneProviders.Tzdb
-                )
-            )
+            new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
         );
 
         services.AddEventStoreClient(configuration["EventStore:ConnectionString"]!);
@@ -35,8 +31,9 @@ public static class Registrations {
 
         services.AddSingleton<Services.IsRoomAvailable>((id, period) => new ValueTask<bool>(true));
 
-        services.AddSingleton<Services.ConvertCurrency>((from, currency)
-            => new Money(from.Amount * 2, currency)
+        services.AddSingleton<Services.ConvertCurrency>(
+            (from, currency)
+                => new Money(from.Amount * 2, currency)
         );
 
         services.AddSingleton(Mongo.ConfigureMongo(configuration));

@@ -7,7 +7,7 @@ namespace Eventuous.Tests.EventStore.Subscriptions;
 public class PublishAndSubscribeManyPartitionedTests(ITestOutputHelper output)
     : LegacySubscriptionFixture<TestEventHandler>(
         output,
-        new TestEventHandler(new TestEventHandlerOptions(5.Milliseconds(), output)),
+        new(new(5.Milliseconds(), output)),
         false,
         new StreamName(Guid.NewGuid().ToString("N")),
         logLevel: LogLevel.Trace

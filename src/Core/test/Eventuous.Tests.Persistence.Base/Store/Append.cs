@@ -56,7 +56,7 @@ public abstract class StoreAppendTests<T>(T fixture) : IClassFixture<T> where T 
 
         evt = fixture.CreateEvent();
 
-        var task = () => fixture.AppendEvent(stream, evt, new ExpectedStreamVersion(3));
+        var task = () => fixture.AppendEvent(stream, evt, new(3));
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
 }

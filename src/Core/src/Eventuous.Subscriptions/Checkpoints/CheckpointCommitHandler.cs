@@ -70,7 +70,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     }
 
     /// <summary>
-    /// Commit a position to be stored, the store action can be delayed
+    /// Commit a position to be stored; the store action can be delayed
     /// </summary>
     /// <param name="position">Position to commit</param>
     /// <param name="cancellationToken">Cancellation token</param>

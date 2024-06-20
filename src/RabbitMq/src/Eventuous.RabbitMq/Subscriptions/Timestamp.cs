@@ -11,6 +11,5 @@ static class Timestamp {
         return new AmqpTimestamp((long) unixTime);
     }
 
-    internal static DateTime ToDateTime(this AmqpTimestamp timestamp)
-        => Epoch.AddSeconds(timestamp.UnixTime).ToLocalTime();
+    internal static DateTime ToDateTime(this AmqpTimestamp timestamp) => Epoch.AddSeconds(timestamp.UnixTime).ToLocalTime();
 }

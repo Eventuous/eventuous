@@ -8,14 +8,14 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Subscriptions.Base;
 
-public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore>(
-        ITestOutputHelper                                                                                            outputHelper,
-        StreamName                                                                                                   streamName,
-        SubscriptionFixtureBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TestEventHandler> fixture
+public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TCheckpointStore>(
+        ITestOutputHelper                                                                          outputHelper,
+        StreamName                                                                                 streamName,
+        SubscriptionFixtureBase<TContainer, TSub, TSubOptions, TCheckpointStore, TestEventHandler> fixture
     ) : IAsyncLifetime
     where TContainer : DockerContainer
-    where TSubscription : EventSubscription<TSubscriptionOptions>
-    where TSubscriptionOptions : SubscriptionOptions
+    where TSub : EventSubscription<TSubOptions>
+    where TSubOptions : SubscriptionOptions
     where TCheckpointStore : class, ICheckpointStore {
     protected async Task ShouldConsumeProducedEvents() {
         const int count = 10;
@@ -82,6 +82,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSubscription, TSubscrip
 
     async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
         outputHelper.WriteLine($"Producing events to {streamName}");
+
         var commands = Enumerable
             .Range(0, count)
             .Select(_ => DomainFixture.CreateImportBooking(fixture.Auto))

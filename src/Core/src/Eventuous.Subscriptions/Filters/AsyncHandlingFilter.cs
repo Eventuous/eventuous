@@ -21,12 +21,7 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
             SingleReader = concurrencyLimit == 1, SingleWriter = true
         };
 
-        _worker = new ConcurrentChannelWorker<WorkerTask>(
-            Channel.CreateBounded<WorkerTask>(options),
-            // ReSharper disable once ConvertClosureToMethodGroup
-            (task, token) => DelayedConsume(task, token),
-            (int)concurrencyLimit
-        );
+        _worker = new ConcurrentChannelWorker<WorkerTask>(Channel.CreateBounded<WorkerTask>(options), DelayedConsume, (int)concurrencyLimit);
     }
 
     // ReSharper disable once CognitiveComplexity

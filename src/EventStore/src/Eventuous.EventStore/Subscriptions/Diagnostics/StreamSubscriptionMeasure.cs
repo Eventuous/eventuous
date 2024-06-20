@@ -1,3 +1,6 @@
+// Copyright (C) Ubiquitous AS. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 namespace Eventuous.EventStore.Subscriptions.Diagnostics;
 
 class StreamSubscriptionMeasure(string subscriptionId, StreamName streamName, EventStoreClient eventStoreClient)

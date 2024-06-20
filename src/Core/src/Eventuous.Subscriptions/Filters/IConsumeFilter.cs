@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 // ReSharper disable UnusedTypeParameter
+
 namespace Eventuous.Subscriptions.Filters;
 
 using Context;
@@ -24,16 +25,10 @@ public abstract class ConsumeFilter<TIn, TOut> : IConsumeFilter<TIn, TOut>
 
     public ValueTask Send(IBaseConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         if (context is not TIn ctx)
-            throw new ArgumentException(
-                $"Context type expected to be {typeof(TIn)} but it is {context.GetType().Name}",
-                nameof(context)
-            );
+            throw new ArgumentException($"Context type expected to be {typeof(TIn)} but it is {context.GetType().Name}", nameof(context));
 
         if (next != null && !next.Value.Consumes.IsAssignableFrom(typeof(TOut)))
-            throw new ArgumentException(
-                $"Next filter type expected to consume {typeof(TIn)} but it consumes {next.Value.Consumes}",
-                nameof(next)
-            );
+            throw new ArgumentException($"Next filter type expected to consume {typeof(TIn)} but it consumes {next.Value.Consumes}", nameof(next));
 
         return Send(ctx, next);
     }
@@ -43,5 +38,4 @@ public abstract class ConsumeFilter<TIn, TOut> : IConsumeFilter<TIn, TOut>
     public Type Produces => typeof(TOut);
 }
 
-public abstract class ConsumeFilter<TContext> : ConsumeFilter<TContext, TContext>
-    where TContext : class, IBaseConsumeContext;
+public abstract class ConsumeFilter<TContext> : ConsumeFilter<TContext, TContext> where TContext : class, IBaseConsumeContext;

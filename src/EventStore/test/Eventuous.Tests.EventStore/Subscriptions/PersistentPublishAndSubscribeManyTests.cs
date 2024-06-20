@@ -5,7 +5,7 @@ namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
 public class PersistentPublishAndSubscribeManyTests(ITestOutputHelper outputHelper)
-    : PersistentSubscriptionFixture<TestEventHandler>(outputHelper, new TestEventHandler(), false) {
+    : PersistentSubscriptionFixture<TestEventHandler>(outputHelper, new(), false) {
     [Fact]
     [Trait("Category", "Persistent subscription")]
     public async Task SubscribeAndProduceMany() {

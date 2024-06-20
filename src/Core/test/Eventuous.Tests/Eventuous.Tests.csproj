@@ -4,6 +4,7 @@
         <IncludeTestHelpers>true</IncludeTestHelpers>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
     <ItemGroup>

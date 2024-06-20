@@ -10,8 +10,7 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
             .InState(ExpectedState.New)
             .GetId(cmd => new BookingId(cmd.BookingId))
             .ActAsync(
-                (booking, cmd, _)
-                    => {
+                (booking, cmd, _) => {
                     booking.BookRoom(cmd.RoomId, new StayPeriod(cmd.CheckIn, cmd.CheckOut), new Money(cmd.Price));
 
                     return Task.CompletedTask;

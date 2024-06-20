@@ -44,8 +44,7 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
 
     public EventStoreClient Client { get; set; } = null!;
 
-    protected override ILoggingBuilder ConfigureLogging(ILoggingBuilder builder)
-        => base.ConfigureLogging(builder).AddFilter(Filter);
+    protected override ILoggingBuilder ConfigureLogging(ILoggingBuilder builder) => base.ConfigureLogging(builder).AddFilter(Filter);
 
     public override async Task<ulong> GetLastPosition() {
         return streamName == "$all" ? await GetLastFromAll() : await GetLastFromStream();

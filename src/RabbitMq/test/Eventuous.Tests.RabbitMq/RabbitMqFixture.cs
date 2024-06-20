@@ -10,14 +10,8 @@ public class RabbitMqFixture : IAsyncLifetime {
     public async Task InitializeAsync() {
         _rabbitMq = new RabbitMqBuilder().Build();
         await _rabbitMq.StartAsync();
-
-        ConnectionFactory = new ConnectionFactory {
-            Uri                    = new Uri(_rabbitMq.GetConnectionString()),
-            DispatchConsumersAsync = true
-        };
+        ConnectionFactory = new ConnectionFactory { Uri = new Uri(_rabbitMq.GetConnectionString()), DispatchConsumersAsync = true };
     }
 
-    public async Task DisposeAsync() {
-        await _rabbitMq.DisposeAsync();
-    }
+    public async Task DisposeAsync() => await _rabbitMq.DisposeAsync();
 }
