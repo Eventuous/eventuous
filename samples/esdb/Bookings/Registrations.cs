@@ -29,12 +29,8 @@ public static class Registrations {
         services.AddAggregateStore<EsdbEventStore>();
         services.AddCommandService<BookingsCommandService, BookingState>();
 
-        services.AddSingleton<Services.IsRoomAvailable>((id, period) => new ValueTask<bool>(true));
-
-        services.AddSingleton<Services.ConvertCurrency>(
-            (from, currency)
-                => new Money(from.Amount * 2, currency)
-        );
+        services.AddSingleton<Services.IsRoomAvailable>((_,    _) => new(true));
+        services.AddSingleton<Services.ConvertCurrency>((from, currency) => new Money(from.Amount * 2, currency));
 
         services.AddSingleton(Mongo.ConfigureMongo(configuration));
         services.AddCheckpointStore<MongoCheckpointStore>();
@@ -47,6 +43,7 @@ public static class Registrations {
                 .AddEventHandler<MyBookingsProjection>()
                 .WithPartitioningByStream(2)
         );
+        services.AddSingleton<BookingsQueryService>();
 
         services.AddSubscription<StreamPersistentSubscription, StreamPersistentSubscriptionOptions>(
             "PaymentIntegration",

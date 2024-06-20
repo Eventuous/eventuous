@@ -1,4 +1,5 @@
 using Bookings;
+using Bookings.Application;
 using Bookings.Domain.Bookings;
 using Eventuous;
 using Eventuous.Diagnostics.Logging;
@@ -25,18 +26,13 @@ Log.Logger = new LoggerConfiguration()
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
-builder.Services
-    .AddControllers()
-    .AddJsonOptions(cfg => cfg.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+builder.Services.AddControllers().AddJsonOptions(cfg => cfg.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddTelemetry();
 builder.Services.AddEventuous(builder.Configuration);
 builder.Services.AddEventuousSpyglass();
-
-builder.Services.Configure<JsonOptions>(options
-    => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-);
+builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 
 var app = builder.Build();
 
@@ -46,18 +42,27 @@ app.MapControllers();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 app.MapEventuousSpyglass();
 
+app.MapGet(
+    "/bookings/my/{userId}",
+    async (string userId, BookingsQueryService queryService) => {
+        var userBookings = await queryService.GetUserBookings(userId);
+
+        return userBookings == null ? Results.NotFound() : Results.Ok(userBookings);
+    }
+);
+
 var factory  = app.Services.GetRequiredService<ILoggerFactory>();
 var listener = new LoggingEventListener(factory, "OpenTelemetry");
 
 try {
     app.Run("http://*:5051");
+
     return 0;
-}
-catch (Exception e) {
+} catch (Exception e) {
     Log.Fatal(e, "Host terminated unexpectedly");
+
     return 1;
-}
-finally {
+} finally {
     Log.CloseAndFlush();
     listener.Dispose();
 }

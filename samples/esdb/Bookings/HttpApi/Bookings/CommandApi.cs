@@ -6,6 +6,11 @@ using static Bookings.Application.BookingCommands;
 
 namespace Bookings.HttpApi.Bookings;
 
+/// <summary>
+/// This controller exposes a Web API to execute HTTP POST requests matching application commands using the
+/// command service registered in the DI container.
+/// </summary>
+/// <param name="service"></param>
 [Route("/booking")]
 public class CommandApi(ICommandService<BookingState> service) : CommandHttpApiBase<BookingState>(service) {
     [HttpPost]
