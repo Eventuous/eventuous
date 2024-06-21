@@ -13,7 +13,7 @@ public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<T
 
 /// <inheritdoc />
 class GatewayHandler<TProduceOptions>(
-        IEventProducer<TProduceOptions>    eventProducer,
+        IProducer<TProduceOptions>    producer,
         RouteAndTransform<TProduceOptions> transform,
         bool                               awaitProduce
     ) : BaseEventHandler
@@ -46,7 +46,7 @@ class GatewayHandler<TProduceOptions>(
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage<TProduceOptions>> toProduce)
             => toProduce.Select(
-                    x => eventProducer.Produce(
+                    x => producer.Produce(
                         streamName,
                         x.Message,
                         x.GetMeta(context),
@@ -62,9 +62,9 @@ class GatewayHandler<TProduceOptions>(
 }
 
 class GatewayHandler<TTransform, TProduceOptions>(
-        IEventProducer<TProduceOptions> eventProducer,
+        IProducer<TProduceOptions> producer,
         TTransform                      transform,
         bool                            awaitProduce
-    ) : GatewayHandler<TProduceOptions>(eventProducer, transform.RouteAndTransform, awaitProduce)
+    ) : GatewayHandler<TProduceOptions>(producer, transform.RouteAndTransform, awaitProduce)
     where TProduceOptions : class
     where TTransform : class, IGatewayTransform<TProduceOptions>;

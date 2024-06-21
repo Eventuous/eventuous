@@ -17,16 +17,13 @@ class TypeMapEventSource : EventSource {
     const int TypeMapAlreadyRegisteredId = 11;
 
     [NonEvent]
-    public void TypeNotMappedToName(Type type)
-        => TypeNotMappedToName(type.Name);
+    public void TypeNotMappedToName(Type type) => TypeNotMappedToName(type.Name);
 
     [Event(TypeNotMappedToNameId, Message = "Type {0} is not registered in the type map", Level = EventLevel.Error)]
-    public void TypeNotMappedToName(string type)
-        => WriteEvent(TypeNotMappedToNameId, type);
+    public void TypeNotMappedToName(string type) => WriteEvent(TypeNotMappedToNameId, type);
 
     [Event(TypeNameNotMappedToTypeId, Message = "Type name {0} is not mapped to any type", Level = EventLevel.Error)]
-    public void TypeNameNotMappedToType(string typeName)
-        => WriteEvent(TypeNameNotMappedToTypeId, typeName);
+    public void TypeNameNotMappedToType(string typeName) => WriteEvent(TypeNameNotMappedToTypeId, typeName);
 
     [Event(TypeMapRegisteredId, Message = "Type {0} registered as {1}", Level = EventLevel.Verbose)]
     public void TypeMapRegistered(string type, string typeName) {

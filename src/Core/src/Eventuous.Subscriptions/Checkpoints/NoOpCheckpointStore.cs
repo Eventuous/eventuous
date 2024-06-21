@@ -5,6 +5,10 @@ namespace Eventuous.Subscriptions.Checkpoints;
 
 using Logging;
 
+/// <summary>
+/// Fake checkpoint store; can be useful for testing. It always starts at the beginning.
+/// </summary>
+/// <param name="start"></param>
 public class NoOpCheckpointStore(ulong? start = null) : ICheckpointStore {
     Checkpoint _start = new("", start);
 
@@ -12,7 +16,7 @@ public class NoOpCheckpointStore(ulong? start = null) : ICheckpointStore {
         var checkpoint = _start with { Id = checkpointId };
         Logger.Current.CheckpointLoaded(this, checkpoint);
 
-        return new ValueTask<Checkpoint>(checkpoint);
+        return new(checkpoint);
     }
 
     public ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
@@ -20,7 +24,7 @@ public class NoOpCheckpointStore(ulong? start = null) : ICheckpointStore {
         CheckpointStored?.Invoke(this, checkpoint);
         Logger.Current.CheckpointStored(this, checkpoint, force);
 
-        return new ValueTask<Checkpoint>(checkpoint);
+        return new(checkpoint);
     }
 
     public event EventHandler<Checkpoint>? CheckpointStored;

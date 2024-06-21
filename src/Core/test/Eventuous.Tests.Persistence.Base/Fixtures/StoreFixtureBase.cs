@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Bogus;
 using DotNet.Testcontainers.Containers;
 using MicroElements.AutoFixture.NodaTime;
@@ -22,7 +23,7 @@ public abstract class StoreFixtureBase {
     public           ITestOutputHelper? Output         { get; set; }
 }
 
-public abstract class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncLifetime where TContainer : DockerContainer {
+public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncLifetime where TContainer : DockerContainer {
     IEventSerializer Serializer { get; } =
         new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 
@@ -82,4 +83,13 @@ public abstract class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncLif
     protected TContainer Container { get; private set; } = null!;
 
     bool _disposed;
+
+    public static string GetSchemaName() => NormaliseRegex().Replace(new Faker().Internet.UserName(), "").ToLower();
+
+#if NET8_0_OR_GREATER
+    [GeneratedRegex(@"[\.\-\s]")]
+    private static partial Regex NormaliseRegex();
+#else
+    static Regex NormaliseRegex() => new(@"[\.\-\s]");
+#endif
 }

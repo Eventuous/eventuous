@@ -60,8 +60,7 @@ public class TypeMap<TV> {
         internal static readonly int Index = Interlocked.Increment(ref _index);
     }
 
-    static int GetIndex<TK>()
-        => TypeSlot<TK>.Index;
+    static int GetIndex<TK>() => TypeSlot<TK>.Index;
 
     static int RecommendedCapacity {
         get {

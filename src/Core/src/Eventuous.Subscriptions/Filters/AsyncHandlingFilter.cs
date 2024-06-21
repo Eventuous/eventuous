@@ -21,7 +21,7 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
             SingleReader = concurrencyLimit == 1, SingleWriter = true
         };
 
-        _worker = new ConcurrentChannelWorker<WorkerTask>(Channel.CreateBounded<WorkerTask>(options), DelayedConsume, (int)concurrencyLimit);
+        _worker = new(Channel.CreateBounded<WorkerTask>(options), DelayedConsume, (int)concurrencyLimit);
     }
 
     // ReSharper disable once CognitiveComplexity
@@ -64,7 +64,7 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
     protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         if (next == null) throw new InvalidOperationException("Concurrent context must have a next filer");
 
-        return _worker.Write(new WorkerTask(context, next), context.CancellationToken);
+        return _worker.Write(new(context, next), context.CancellationToken);
     }
 
     record struct WorkerTask(AsyncConsumeContext Context, LinkedListNode<IConsumeFilter> Filter);

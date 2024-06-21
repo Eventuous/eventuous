@@ -9,7 +9,7 @@ namespace Eventuous.Sql.Base.Producers;
 /// Universal producer that uses the event store to append events to a stream
 /// </summary>
 /// <param name="store"></param>
-public class UniversalProducer(IEventStore store) : IEventProducer {
+public class UniversalProducer(IEventStore store) : IProducer {
     /// <inheritdoc />
     public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default) {
         var events = messages.Select(ToStreamEvent).ToList();

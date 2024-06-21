@@ -1,4 +1,3 @@
-using Bogus;
 using Eventuous.Sql.Base.Producers;
 using Eventuous.SqlServer;
 using Eventuous.SqlServer.Subscriptions;
@@ -11,7 +10,7 @@ namespace Eventuous.Tests.SqlServer.Metrics;
 
 public class MetricsFixture
     : MetricsSubscriptionFixtureBase<SqlEdgeContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions> {
-    readonly string _schemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    readonly string _schemaName = GetSchemaName();
 
     protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();
 

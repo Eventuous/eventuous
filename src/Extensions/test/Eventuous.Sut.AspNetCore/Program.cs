@@ -8,9 +8,7 @@ using NodaTime.Serialization.SystemTextJson;
 using BookingService = Eventuous.Sut.AspNetCore.BookingService;
 
 DefaultEventSerializer.SetDefaultSerializer(
-    new DefaultEventSerializer(
-        new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-    )
+    new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
 );
 
 var builder = WebApplication.CreateBuilder(args);

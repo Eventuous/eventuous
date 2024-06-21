@@ -32,9 +32,7 @@ sealed class CheckpointCommitMetrics() : GenericListener(DiagnosticName), IDispo
             .Select(
                 x => new Measurement<long>(
                     (long)(x.Value.CommitPosition.Sequence - x.Value.FirstPending!.Value.Sequence),
-                    EventuousDiagnostics.CombineWithDefaultTags(
-                        new KeyValuePair<string, object?>(SubscriptionMetrics.SubscriptionIdTag, x.Value.Id)
-                    )
+                    EventuousDiagnostics.CombineWithDefaultTags(new KeyValuePair<string, object?>(SubscriptionMetrics.SubscriptionIdTag, x.Value.Id))
                 )
             );
 }

@@ -8,6 +8,6 @@ public class AnotherTestAggregate(TestDependency dependency) : Aggregate<TestSta
     public TestDependency Dependency { get; } = dependency;
 }
 
-public record TestState : State<TestState>;
+public record TestState : State<TestState, TestId>;
 
 public record TestId(string Value) : Id(Value);

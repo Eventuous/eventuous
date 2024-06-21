@@ -5,11 +5,11 @@ using static Eventuous.FuncServiceDelegates;
 
 namespace Eventuous;
 
-public abstract class FuncCommandHandlerBuilder<TState> where TState : State<TState> {
-    internal abstract RegisteredFuncHandler<TState> Build();
+public abstract class CommandHandlerBuilder<TState> where TState : State<TState> {
+    internal abstract RegisteredHandler<TState> Build();
 }
 
-public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, IEventWriter? writer) : FuncCommandHandlerBuilder<TState>
+public class CommandHandlerBuilder<TCommand, TState>(IEventReader? reader, IEventWriter? writer) : CommandHandlerBuilder<TState>
     where TState : State<TState> where TCommand : class {
     ExpectedState                       _expectedState = ExpectedState.Any;
     GetStreamNameFromUntypedCommand?    _getStream;
@@ -22,7 +22,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="expectedState">Expected stream state</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> InState(ExpectedState expectedState) {
+    public CommandHandlerBuilder<TCommand, TState> InState(ExpectedState expectedState) {
         _expectedState = expectedState;
 
         return this;
@@ -33,7 +33,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="getStream">A function to get the stream name from the command</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> GetStream(GetStreamNameFromCommand<TCommand> getStream) {
+    public CommandHandlerBuilder<TCommand, TState> GetStream(GetStreamNameFromCommand<TCommand> getStream) {
         _getStream = getStream.AsGetStream();
 
         return this;
@@ -44,7 +44,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="getStream">A function to get the stream name from the command</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> GetStreamAsync(GetStreamNameFromCommandAsync<TCommand> getStream) {
+    public CommandHandlerBuilder<TCommand, TState> GetStreamAsync(GetStreamNameFromCommandAsync<TCommand> getStream) {
         _getStream = getStream.AsGetStream();
 
         return this;
@@ -55,7 +55,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="executeCommand">Function to be executed on the stream for the command</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> Act(ExecuteCommand<TState, TCommand> executeCommand) {
+    public CommandHandlerBuilder<TCommand, TState> Act(ExecuteCommand<TState, TCommand> executeCommand) {
         _execute = executeCommand.AsExecute();
 
         return this;
@@ -67,7 +67,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="executeCommand">Function to be executed on the stream for the command</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> ActAsync(ExecuteCommandAsync<TState, TCommand> executeCommand) {
+    public CommandHandlerBuilder<TCommand, TState> ActAsync(ExecuteCommandAsync<TState, TCommand> executeCommand) {
         _execute = executeCommand.AsExecute();
 
         return this;
@@ -78,7 +78,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="executeCommand">Function to be executed on a new stream for the command</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> Act(Func<TCommand, IEnumerable<object>> executeCommand) {
+    public CommandHandlerBuilder<TCommand, TState> Act(Func<TCommand, IEnumerable<object>> executeCommand) {
         // This is not ideal as we can return more specific interface depending on expected state, but it would do for now.
         if (_expectedState != ExpectedState.New) {
             throw new InvalidOperationException("Action without state is only allowed for new streams");
@@ -94,7 +94,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="executeCommand">Function to be executed on a new stream for the command</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> ActAsync(Func<TCommand, Task<IEnumerable<object>>> executeCommand) {
+    public CommandHandlerBuilder<TCommand, TState> ActAsync(Func<TCommand, Task<IEnumerable<object>>> executeCommand) {
         // This is not ideal as we can return more specific interface depending on expected state, but it would do for now.
         if (_expectedState != ExpectedState.New) {
             throw new InvalidOperationException("Action without state is only allowed for new streams");
@@ -111,7 +111,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="resolveReader">Function to resolve the event reader</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> ResolveReader(ResolveReaderFromCommand<TCommand>? resolveReader) {
+    public CommandHandlerBuilder<TCommand, TState> ResolveReader(ResolveReaderFromCommand<TCommand>? resolveReader) {
         _reader = resolveReader;
 
         return this;
@@ -123,7 +123,7 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="resolveWriter">Function to resolve the event writer</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> ResolveWriter(ResolveWriterFromCommand<TCommand>? resolveWriter) {
+    public CommandHandlerBuilder<TCommand, TState> ResolveWriter(ResolveWriterFromCommand<TCommand>? resolveWriter) {
         _writer = resolveWriter;
 
         return this;
@@ -135,15 +135,15 @@ public class FuncCommandHandlerBuilder<TCommand, TState>(IEventReader? reader, I
     /// </summary>
     /// <param name="resolveStore">Function to resolve the event writer</param>
     /// <returns></returns>
-    public FuncCommandHandlerBuilder<TCommand, TState> ResolveStore(ResolveEventStoreFromCommand<TCommand>? resolveStore) {
+    public CommandHandlerBuilder<TCommand, TState> ResolveStore(ResolveEventStoreFromCommand<TCommand>? resolveStore) {
         _reader ??= resolveStore?.AsResolveReader();
         _writer ??= resolveStore?.AsResolveWriter();
 
         return this;
     }
 
-    internal override RegisteredFuncHandler<TState> Build() {
-        return new RegisteredFuncHandler<TState>(
+    internal override RegisteredHandler<TState> Build() {
+        return new(
             _expectedState,
             Ensure.NotNull(_getStream, $"Function to get the stream id from {typeof(TCommand).Name} is not defined"),
             Ensure.NotNull(_execute, $"Function to act on the stream for command {typeof(TCommand).Name} is not defined"),

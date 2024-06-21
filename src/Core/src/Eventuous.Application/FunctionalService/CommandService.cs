@@ -7,42 +7,11 @@ namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
 
-/// <summary>
-/// Base class for a functional command service for a given <seealso cref="State{T}"/> type.
-/// Add your command handlers to the service using <see cref="On{TCommand}"/>.
-/// </summary>
-/// <param name="reader">Event reader or event store</param>
-/// <param name="writer">Event writer or event store</param>
-/// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
-/// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
-/// <typeparam name="TState">State object type</typeparam>
+[Obsolete("Use CommandService<TState>")]
 public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
-    : ICommandService<TState> where TState : State<TState>, new() {
-    readonly TypeMapper              _typeMap  = typeMap ?? TypeMap.Instance;
-    readonly FuncHandlersMap<TState> _handlers = new();
-
-    bool _initialized;
-
-    /// <summary>
-    /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
-    /// </summary>
-    /// <param name="store">Event store</param>
-    /// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
-    /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
+    : CommandService<TState>(reader, writer, typeMap, amendEvent) where TState : State<TState>, new() {
     protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
         : this(store, store, typeMap, amendEvent) { }
-
-    /// <summary>
-    /// Returns the command handler builder for the specified command type.
-    /// </summary>
-    /// <typeparam name="TCommand">Command type</typeparam>
-    /// <returns></returns>
-    protected FuncCommandHandlerBuilder<TCommand, TState> On<TCommand>() where TCommand : class {
-        var builder = new FuncCommandHandlerBuilder<TCommand, TState>(reader, writer);
-        _builders.Add(typeof(TCommand), builder);
-
-        return builder;
-    }
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.New).GetStream(...).Act(...) instead")]
     protected void OnNew<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, Func<TCommand, IEnumerable<object>> action) where TCommand : class
@@ -55,6 +24,45 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Any).GetStream(...).Act(...) instead")]
     protected void OnAny<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, ExecuteCommand<TState, TCommand> action) where TCommand : class
         => On<TCommand>().InState(ExpectedState.Any).GetStream(getStreamName).Act(action);
+}
+
+/// <summary>
+/// Base class for a functional command service for a given <seealso cref="State{T}"/> type.
+/// Add your command handlers to the service using <see cref="On{TCommand}"/>.
+/// </summary>
+/// <param name="reader">Event reader or event store</param>
+/// <param name="writer">Event writer or event store</param>
+/// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
+/// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
+/// <typeparam name="TState">State object type</typeparam>
+public abstract class CommandService<TState>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
+    : ICommandService<TState> where TState : State<TState>, new() {
+    readonly TypeMapper          _typeMap  = typeMap ?? TypeMap.Instance;
+    readonly HandlersMap<TState> _handlers = new();
+
+    bool _initialized;
+
+    /// <summary>
+    /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
+    /// </summary>
+    /// <param name="store">Event store</param>
+    /// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
+    /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
+    // ReSharper disable once UnusedMember.Global
+    protected CommandService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
+        : this(store, store, typeMap, amendEvent) { }
+
+    /// <summary>
+    /// Returns the command handler builder for the specified command type.
+    /// </summary>
+    /// <typeparam name="TCommand">Command type</typeparam>
+    /// <returns></returns>
+    protected CommandHandlerBuilder<TCommand, TState> On<TCommand>() where TCommand : class {
+        var builder = new CommandHandlerBuilder<TCommand, TState>(reader, writer);
+        _builders.Add(typeof(TCommand), builder);
+
+        return builder;
+    }
 
     /// <summary>
     /// Function to handle a command and return the resulting state and changes.
@@ -82,7 +90,7 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             var loadedState = registeredHandler.ExpectedState switch {
                 ExpectedState.Any      => await resolvedReader.LoadStateOrNew<TState>(streamName, cancellationToken).NoContext(),
                 ExpectedState.Existing => await resolvedReader.LoadState<TState>(streamName, cancellationToken).NoContext(),
-                ExpectedState.New      => new FoldedEventStream<TState>(streamName, ExpectedStreamVersion.NoStream, []),
+                ExpectedState.New      => new(streamName, ExpectedStreamVersion.NoStream, []),
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
@@ -108,11 +116,11 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
             return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
         }
     }
-    
+
     protected static StreamName GetStream(string id) => StreamName.ForState<TState>(id);
 
-    readonly Dictionary<Type, FuncCommandHandlerBuilder<TState>> _builders     = new();
-    readonly object                                              _handlersLock = new();
+    readonly Dictionary<Type, CommandHandlerBuilder<TState>> _builders     = new();
+    readonly object                                          _handlersLock = new();
 
     void BuildHandlers() {
         lock (_handlersLock) {

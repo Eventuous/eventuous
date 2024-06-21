@@ -69,7 +69,7 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         context.LogContext.MessageAcked(context.MessageType, context.GlobalPosition);
 
         return CheckpointCommitHandler!.Commit(
-            new CommitPosition(eventPosition.Position!.Value, context.Sequence, eventPosition.Created) { LogContext = context.LogContext },
+            new(eventPosition.Position!.Value, context.Sequence, eventPosition.Created) { LogContext = context.LogContext },
             context.CancellationToken
         );
     }
@@ -81,7 +81,7 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     }
 
     protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
-        CheckpointCommitHandler ??= new CheckpointCommitHandler(
+        CheckpointCommitHandler ??= new(
             options.SubscriptionId,
             checkpointStore,
             TimeSpan.FromMilliseconds(options.CheckpointCommitDelayMs),

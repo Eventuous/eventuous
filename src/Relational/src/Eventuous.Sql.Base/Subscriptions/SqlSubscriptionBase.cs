@@ -33,8 +33,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         SubscriptionKind kind,
         ILoggerFactory?  loggerFactory
     )
-    : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, kind, loggerFactory),
-        IMeasuredSubscription
+    : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, kind, loggerFactory), IMeasuredSubscription
     where TOptions : SqlSubscriptionOptionsBase where TConnection : DbConnection {
     readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 
@@ -104,16 +103,16 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                 if (IsStopping(e)) {
                     IsDropped = true;
 
-                    return new PollingResult(false, false, 0);
+                    return new(false, false, 0);
                 }
 
                 if (IsTransient(e)) {
-                    return new PollingResult(true, true, 0);
+                    return new(true, true, 0);
                 }
 
                 Dropped(DropReason.ServerError, e);
 
-                return new PollingResult(false, false, 0);
+                return new(false, false, 0);
             }
         }
 
@@ -186,16 +185,14 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
         var data = DeserializeData(ContentType, evt.MessageType, Encoding.UTF8.GetBytes(evt.JsonData), evt.StreamName!, (ulong)evt.StreamPosition);
 
-        var meta = evt.JsonMetadata == null
-            ? new Metadata()
-            : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
+        var meta = evt.JsonMetadata == null ? new() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
 
         return AsContext(evt, data, meta, cancellationToken);
     }
 
     MessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => Kind switch {
-            SubscriptionKind.Stream => new MessageConsumeContext(
+            SubscriptionKind.Stream => new(
                 evt.MessageId.ToString(),
                 evt.MessageType,
                 ContentType,
@@ -210,7 +207,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                 Options.SubscriptionId,
                 cancellationToken
             ),
-            SubscriptionKind.All => new MessageConsumeContext(
+            SubscriptionKind.All => new(
                 evt.MessageId.ToString(),
                 evt.MessageType,
                 ContentType,
@@ -259,7 +256,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
             var position = await reader.ReadAsync(cancellationToken).NoContext() ? reader.GetInt64(0) : 0;
 
-            return new EndOfStream(SubscriptionId, (ulong)position, DateTime.UtcNow);
+            return new(SubscriptionId, (ulong)position, DateTime.UtcNow);
         } catch (Exception) {
             Log.WarnLog?.Log("Failed to get end of stream");
             return EndOfStream.Invalid;

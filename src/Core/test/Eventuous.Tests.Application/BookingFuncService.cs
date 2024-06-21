@@ -7,9 +7,9 @@ using Sut.Domain;
 using static Sut.App.Commands;
 using static Sut.Domain.BookingEvents;
 
+[Obsolete("Obsolete")]
 public class BookingFuncService : FunctionalCommandService<BookingState> {
-    public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
-        : base(store, typeMap, amendEvent) {
+    public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null) : base(store, typeMap, amendEvent) {
 #pragma warning disable CS0618
         // Keep it for tests until the old API is gone
         OnNew<BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);

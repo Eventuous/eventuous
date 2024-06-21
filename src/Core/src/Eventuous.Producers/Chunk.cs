@@ -1,6 +1,8 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
+
 namespace Eventuous.Producers;
 
 public static class Chunk {
@@ -23,6 +25,7 @@ public static class Chunk {
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static IEnumerable<T> GetChunk<T>(this IEnumerator<T> e, Func<bool> innerMoveNext) {
         do yield return e.Current;
         while (innerMoveNext());

@@ -28,12 +28,14 @@ public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
 
         var duration   = _meter.CreateHistogram<double>(CommandService, "ms", "Command execution duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>($"{CommandService}.errors", "errors", "Number of failed commands");
-        _listener = new MetricsListener<CommandServiceMetricsContext>(ListenerName, duration, errorCount, GetTags);
+        _listener = new(ListenerName, duration, errorCount, GetTags);
+
+        return;
 
         TagList GetTags(CommandServiceMetricsContext ctx)
             => new(_customTags) {
-                new KeyValuePair<string, object?>(AppServiceTag, ctx.ServiceName),
-                new KeyValuePair<string, object?>(CommandTag, ctx.CommandName)
+                new(AppServiceTag, ctx.ServiceName),
+                new(CommandTag, ctx.CommandName)
             };
     }
 

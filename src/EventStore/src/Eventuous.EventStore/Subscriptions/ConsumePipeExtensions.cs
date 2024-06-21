@@ -14,6 +14,5 @@ public static class ConsumePipeExtensions {
     /// </summary>
     /// <param name="pipe"></param>
     /// <returns></returns>
-    public static ConsumePipe AddSystemEventsFilter(this ConsumePipe pipe)
-        => pipe.AddFilterLast(new MessageFilter(x => !x.MessageType.StartsWith("$")));
+    public static ConsumePipe AddSystemEventsFilter(this ConsumePipe pipe) => pipe.AddFilterLast(new MessageFilter(x => !x.MessageType.StartsWith("$")));
 }

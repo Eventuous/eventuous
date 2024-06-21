@@ -25,16 +25,13 @@ public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
 
     public PersistenceMetrics() {
         _meter = EventuousDiagnostics.GetMeter(MeterName);
-
-        var duration = _meter.CreateHistogram<double>(EventStore, "ms", "Event store operation duration, milliseconds");
-
+        var duration   = _meter.CreateHistogram<double>(EventStore, "ms", "Event store operation duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>($"{EventStore}.errors", "errors", "Number of failed event store operations");
+        _listener = new(ListenerName, duration, errorCount, GetTags);
 
-        _listener = new MetricsListener<EventStoreMetricsContext>(ListenerName, duration, errorCount, GetTags);
+        return;
 
-        TagList GetTags(EventStoreMetricsContext ctx)
-            // ReSharper disable once ArrangeObjectCreationWhenTypeEvident
-            => new TagList(_customTags) { new(OperationTag, ctx.Operation) };
+        TagList GetTags(EventStoreMetricsContext ctx) => new(_customTags) { new(OperationTag, ctx.Operation) };
     }
 
     public void Dispose() {

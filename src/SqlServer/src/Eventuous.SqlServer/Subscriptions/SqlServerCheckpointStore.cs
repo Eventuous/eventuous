@@ -36,9 +36,7 @@ public class SqlServerCheckpointStore : ICheckpointStore {
             if (await reader.ReadAsync(cancellationToken).NoContext()) {
                 var hasPosition = !reader.IsDBNull(0);
 
-                checkpoint = hasPosition
-                    ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0))
-                    : Checkpoint.Empty(checkpointId);
+                checkpoint = hasPosition ? new(checkpointId, (ulong?)reader.GetInt64(0)) : Checkpoint.Empty(checkpointId);
 
                 Logger.Current.CheckpointLoaded(this, checkpoint);
 

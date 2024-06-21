@@ -9,7 +9,7 @@ namespace Eventuous.Tests.OpenTelemetry;
 public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, TSubscriptionOptions>(ITestOutputHelper outputHelper) : IAsyncLifetime
     where T : MetricsSubscriptionFixtureBase<TContainer, TProducer, TSubscription, TSubscriptionOptions>, new()
     where TContainer : DockerContainer
-    where TProducer : class, IEventProducer
+    where TProducer : class, IProducer
     where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>, IMeasuredSubscription
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
     T Fixture { get; } = new() { Output = outputHelper };

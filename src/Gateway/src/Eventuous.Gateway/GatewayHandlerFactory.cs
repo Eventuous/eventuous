@@ -5,6 +5,6 @@ namespace Eventuous.Gateway;
 
 [PublicAPI]
 public static class GatewayHandlerFactory {
-    public static IEventHandler Create<T>(IEventProducer<T> producer, RouteAndTransform<T> routeAndTransform, bool awaitProduce) where T : class
+    public static IEventHandler Create<T>(IProducer<T> producer, RouteAndTransform<T> routeAndTransform, bool awaitProduce) where T : class
         => new GatewayHandler<T>(new GatewayProducer<T>(producer), routeAndTransform, awaitProduce);
 }

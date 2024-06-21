@@ -27,11 +27,11 @@ abstract class BaseSubscriptionMeasure(string subscriptionId, string streamName,
 
             activity?.SetActivityStatus(ActivityStatus.Ok());
 
-            return new EndOfStream(subscriptionId, GetLastPosition(events[0]), events[0].Event.Created);
+            return new(subscriptionId, GetLastPosition(events[0]), events[0].Event.Created);
         } catch (StreamNotFoundException) {
             activity?.SetActivityStatus(ActivityStatus.Ok());
 
-            return new EndOfStream(subscriptionId, 0, DateTime.MinValue);
+            return new(subscriptionId, 0, DateTime.MinValue);
         } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
 

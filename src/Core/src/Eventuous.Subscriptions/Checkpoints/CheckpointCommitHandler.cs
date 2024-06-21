@@ -50,7 +50,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         _loggerFactory    = loggerFactory;
         var channel = Channel.CreateBounded<CommitPosition>(batchSize * 1000);
 
-        _worker = new BatchedChannelWorker<CommitPosition>(channel, Process, batchSize, delay, true);
+        _worker = new(channel, Process, batchSize, delay, true);
 
         _worker.OnDispose = async _ => {
             if (_lastCommit.Valid)
@@ -88,7 +88,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         var pos = _lastCommit.Valid switch {
             // There's a gap between the last committed position and the list head
             true when _lastCommit.Sequence + 1 != _positions.Min.Sequence && !force => AtGap(),
-            // The list head is not at the very beginning
+            // The list head is not in the very beginning
             false when _positions.Min.Sequence != 0                       => WrongHead(),
             true when _lastCommit.Sequence     == _positions.Min.Sequence => BeforeGap(),
             _                                                             => _positions.FirstBeforeGap()
@@ -124,11 +124,11 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             }
 
             position.LogContext.CommittingPosition(position);
-            await _commitCheckpoint(new Checkpoint(_subscriptionId, position.Position), force, cancellationToken).NoContext();
+            await _commitCheckpoint(new(_subscriptionId, position.Position), force, cancellationToken).NoContext();
             _lastCommit = position;
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
         } catch (OperationCanceledException) {
-            await _commitCheckpoint(new Checkpoint(_subscriptionId, position.Position), true, default).NoContext();
+            await _commitCheckpoint(new(_subscriptionId, position.Position), true, default).NoContext();
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
         } catch (Exception e) {
             position.LogContext.UnableToCommitPosition(position, e);

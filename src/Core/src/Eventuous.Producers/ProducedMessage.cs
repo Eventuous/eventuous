@@ -6,12 +6,7 @@ namespace Eventuous.Producers;
 using Diagnostics;
 
 public readonly record struct ProducedMessage {
-    public ProducedMessage(
-        object    message,
-        Metadata? metadata,
-        Metadata? additionalHeaders = null,
-        Guid?     messageId         = null
-    ) {
+    public ProducedMessage(object message, Metadata? metadata, Metadata? additionalHeaders = null, Guid? messageId = null) {
         Message           = message;
         Metadata          = metadata;
         AdditionalHeaders = additionalHeaders;
@@ -29,11 +24,13 @@ public readonly record struct ProducedMessage {
 
     public ValueTask Ack<T>() where T : class {
         ProducerEventSource<T>.Log.ProduceAcknowledged(this);
+
         return OnAck?.Invoke(this) ?? default;
     }
 
     public ValueTask Nack<T>(string message, Exception? exception) where T : class {
         ProducerEventSource<T>.Log.ProduceNotAcknowledged(this, message, exception);
+
         if (OnNack != null) return OnNack(this, message, exception);
 
         throw exception ?? new InvalidOperationException(message);

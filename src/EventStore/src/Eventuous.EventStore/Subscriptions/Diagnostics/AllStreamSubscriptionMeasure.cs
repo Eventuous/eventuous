@@ -8,6 +8,5 @@ class AllStreamSubscriptionMeasure(string subscriptionId, EventStoreClient event
     protected override IAsyncEnumerable<ResolvedEvent> Read(CancellationToken cancellationToken)
         => EventStoreClient.ReadAllAsync(Direction.Backwards, Position.End, 1, cancellationToken: cancellationToken);
 
-    protected override ulong GetLastPosition(ResolvedEvent resolvedEvent)
-        => resolvedEvent.Event.Position.CommitPosition;
+    protected override ulong GetLastPosition(ResolvedEvent resolvedEvent) => resolvedEvent.Event.Position.CommitPosition;
 }

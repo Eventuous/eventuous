@@ -40,17 +40,12 @@ class ApplicationEventSource : EventSource {
     void CommandHandlerNotFound(string commandType) => WriteEvent(CommandHandlerNotFoundId, commandType);
 
     [Event(ErrorHandlingCommandId, Message = "Error handling command: '{0}' {1}", Level = EventLevel.Error)]
-    void ErrorHandlingCommand(string commandType, string exception)
-        => WriteEvent(ErrorHandlingCommandId, commandType, exception);
+    void ErrorHandlingCommand(string commandType, string exception) => WriteEvent(ErrorHandlingCommandId, commandType, exception);
 
     [Event(CommandHandledId, Message = "Command handled: '{0}'", Level = EventLevel.Verbose)]
     void CommandHandled(string commandType) => WriteEvent(CommandHandledId, commandType);
 
-    [Event(
-        CommandHandlerAlreadyRegisteredId,
-        Message = "Command handler already registered for {0}",
-        Level = EventLevel.Critical
-    )]
+    [Event(CommandHandlerAlreadyRegisteredId, Message = "Command handler already registered for {0}", Level = EventLevel.Critical)]
     void CommandHandlerAlreadyRegistered(string type) => WriteEvent(CommandHandlerAlreadyRegisteredId, type);
 
     [Event(CommandHandlerRegisteredId, Message = "Command handler registered for {0}", Level = EventLevel.Verbose)]

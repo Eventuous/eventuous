@@ -22,13 +22,8 @@ static class CommandServiceActivity {
         using var measure  = Measure.Start(diagnosticSource, new CommandServiceMetricsContext(appServiceTypeName, cmdName));
 
         try {
-            var result  = await handleCommand(command, cancellationToken).NoContext();
-
-            activity?.SetActivityStatus(
-                result is ErrorResult<T> err
-                    ? ActivityStatus.Error(err.Exception)
-                    : ActivityStatus.Ok()
-            );
+            var result = await handleCommand(command, cancellationToken).NoContext();
+            activity?.SetActivityStatus(result is ErrorResult<T> err ? ActivityStatus.Error(err.Exception) : ActivityStatus.Ok());
 
             return result;
         } catch (Exception e) {

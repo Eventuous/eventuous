@@ -5,9 +5,6 @@
 
 namespace Eventuous;
 
-[Obsolete("Use ICommandService<TState> instead")]
-public interface IFuncCommandService<TState> : ICommandService<TState> where TState : State<TState>, new();
-
 public interface ICommandService<TState> where TState : State<TState>, new() {
     Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class;
 }

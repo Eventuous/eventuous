@@ -7,7 +7,7 @@ using static Eventuous.FuncServiceDelegates;
 
 namespace Eventuous;
 
-record RegisteredFuncHandler<T>(
+record RegisteredHandler<T>(
         ExpectedState                   ExpectedState,
         GetStreamNameFromUntypedCommand GetStream,
         ExecuteUntypedCommand<T>        Handler,
@@ -15,16 +15,16 @@ record RegisteredFuncHandler<T>(
         ResolveWriterFromCommand        ResolveWriterFromCommand
     ) where T : State<T>;
 
-class FuncHandlersMap<TState> where TState : State<TState> {
-    readonly TypeMap<RegisteredFuncHandler<TState>> _typeMap = new();
+class HandlersMap<TState> where TState : State<TState> {
+    readonly TypeMap<RegisteredHandler<TState>> _typeMap = new();
 
     static readonly MethodInfo AddHandlerInternalMethod =
-        typeof(FuncHandlersMap<TState>).GetMethod(nameof(AddHandlerInternal), BindingFlags.NonPublic | BindingFlags.Instance)!;
+        typeof(HandlersMap<TState>).GetMethod(nameof(AddHandlerInternal), BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-    internal void AddHandlerUntyped(Type commandType, RegisteredFuncHandler<TState> handler)
+    internal void AddHandlerUntyped(Type commandType, RegisteredHandler<TState> handler)
         => AddHandlerInternalMethod.MakeGenericMethod(commandType).Invoke(this, [handler]);
 
-    void AddHandlerInternal<TCommand>(RegisteredFuncHandler<TState> handler) where TCommand : class {
+    void AddHandlerInternal<TCommand>(RegisteredHandler<TState> handler) where TCommand : class {
         try {
             _typeMap.Add<TCommand>(handler);
             ApplicationEventSource.Log.CommandHandlerRegistered<TCommand>();
@@ -35,5 +35,5 @@ class FuncHandlersMap<TState> where TState : State<TState> {
         }
     }
 
-    public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredFuncHandler<TState>? handler) => _typeMap.TryGetValue<TCommand>(out handler);
+    public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TState>? handler) => _typeMap.TryGetValue<TCommand>(out handler);
 }

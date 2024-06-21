@@ -1,4 +1,5 @@
 using NodaTime;
+#pragma warning disable CS0618 // Type or member is obsolete
 
 namespace Eventuous.Tests.Application;
 
@@ -12,9 +13,7 @@ public class FunctionalServiceTests : IDisposable {
     readonly BookingFuncService _service;
     readonly TestEventListener  _listener;
 
-    static FunctionalServiceTests() {
-        TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
-    }
+    static FunctionalServiceTests() => TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
 
     public FunctionalServiceTests(ITestOutputHelper output) {
         _store    = new();

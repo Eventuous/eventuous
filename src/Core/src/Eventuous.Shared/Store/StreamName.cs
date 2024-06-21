@@ -24,7 +24,7 @@ public record struct StreamName {
 
         stateName = stateName.Length > 0 ? stateName : typeof(TState).Name;
 
-        return new StreamName($"{stateName}-{Ensure.NotEmptyString(entityId)}");
+        return new($"{stateName}-{Ensure.NotEmptyString(entityId)}");
     }
 
     public string GetId() => Value[(Value.IndexOf('-') + 1)..];

@@ -7,8 +7,7 @@ namespace Eventuous;
 
 [PublicAPI]
 public class DefaultEventSerializer(JsonSerializerOptions options, TypeMapper? typeMapper = null) : IEventSerializer {
-    public static IEventSerializer Instance { get; private set; } =
-        new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    public static IEventSerializer Instance { get; private set; } = new DefaultEventSerializer(new(JsonSerializerDefaults.Web));
 
     readonly TypeMapper _typeMapper = typeMapper ?? TypeMap.Instance;
 

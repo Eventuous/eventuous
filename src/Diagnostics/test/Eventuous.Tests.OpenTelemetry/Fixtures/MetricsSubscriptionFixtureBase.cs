@@ -13,7 +13,7 @@ namespace Eventuous.Tests.OpenTelemetry.Fixtures;
 
 public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSubscription, TSubscriptionOptions> : StoreFixtureBase<TContainer>
     where TContainer : DockerContainer
-    where TProducer : class, IEventProducer
+    where TProducer : class, IProducer
     where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>, IMeasuredSubscription
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
     // ReSharper disable once ConvertToConstant.Global
@@ -33,7 +33,8 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
 
     // ReSharper disable once ConvertToConstant.Global
     public readonly string SubscriptionId = "test-sub";
-    TestListener?          _listener;
+
+    TestListener? _listener;
 
     protected abstract void ConfigureSubscription(TSubscriptionOptions options);
 

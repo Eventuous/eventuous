@@ -87,8 +87,7 @@ public class SubscriptionsEventSource : EventSource {
         Level = EventLevel.Verbose,
         Keywords = Keywords.Checkpoints
     )]
-    void CheckpointSequenceInvalidHead(ulong sequence, ulong position)
-        => WriteEvent(CheckpointSequenceInvalidHeadId, sequence, position);
+    void CheckpointSequenceInvalidHead(ulong sequence, ulong position) => WriteEvent(CheckpointSequenceInvalidHeadId, sequence, position);
 
     [Event(
         CheckpointGapDetectedId,

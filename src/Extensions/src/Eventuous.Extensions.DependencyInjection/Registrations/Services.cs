@@ -21,7 +21,7 @@ public static partial class ServiceCollectionExtensions {
         services.AddSingleton<T>();
 
         if (EventuousDiagnostics.Enabled) {
-            services.AddSingleton(sp => TracedFunctionalService<TState>.Trace(sp.GetRequiredService<T>()));
+            services.AddSingleton(sp => TracedCommandService<TState>.Trace(sp.GetRequiredService<T>()));
         }
         else {
             services.AddSingleton<ICommandService<TState>>(sp => sp.GetRequiredService<T>());
@@ -43,7 +43,7 @@ public static partial class ServiceCollectionExtensions {
         services.AddSingleton(getService);
 
         if (EventuousDiagnostics.Enabled) {
-            services.AddSingleton(sp => TracedFunctionalService<TState>.Trace(sp.GetRequiredService<T>()));
+            services.AddSingleton(sp => TracedCommandService<TState>.Trace(sp.GetRequiredService<T>()));
         }
         else {
             services.AddSingleton<ICommandService<TState>>(sp => sp.GetRequiredService<T>());

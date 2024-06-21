@@ -7,14 +7,11 @@ namespace Eventuous;
 
 [PublicAPI]
 public class DefaultMetadataSerializer(JsonSerializerOptions options) : IMetadataSerializer {
-    public static IMetadataSerializer Instance { get; private set; } =
-        new DefaultMetadataSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    public static IMetadataSerializer Instance { get; private set; } = new DefaultMetadataSerializer(new(JsonSerializerDefaults.Web));
 
-    public static void SetDefaultSerializer(IMetadataSerializer serializer)
-        => Instance = serializer;
+    public static void SetDefaultSerializer(IMetadataSerializer serializer) => Instance = serializer;
 
-    public byte[] Serialize(Metadata evt)
-        => JsonSerializer.SerializeToUtf8Bytes(evt, options);
+    public byte[] Serialize(Metadata evt) => JsonSerializer.SerializeToUtf8Bytes(evt, options);
 
     /// <inheritdoc/>
     public Metadata? Deserialize(ReadOnlySpan<byte> bytes) {

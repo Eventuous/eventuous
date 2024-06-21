@@ -15,10 +15,4 @@ public record FoldedEventStream<T> where T : State<T>, new() {
     public ExpectedStreamVersion StreamVersion { get; }
     public object[]              Events        { get; }
     public T                     State         { get; init; }
-
-    public void Deconstruct(out StreamName streamName, out ExpectedStreamVersion streamVersion, out object[] events) {
-        streamName    = StreamName;
-        streamVersion = StreamVersion;
-        events        = Events;
-    }
 }

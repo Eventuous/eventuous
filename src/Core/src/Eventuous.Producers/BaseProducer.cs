@@ -9,7 +9,7 @@ namespace Eventuous.Producers;
 
 using Diagnostics;
 
-public abstract class BaseProducer<TProduceOptions> : IEventProducer<TProduceOptions> where TProduceOptions : class {
+public abstract class BaseProducer<TProduceOptions> : IProducer<TProduceOptions> where TProduceOptions : class {
     protected BaseProducer(ProducerTracingOptions? tracingOptions = null) {
         var options = tracingOptions ?? new ProducerTracingOptions();
         DefaultTags = options.AllTags.Concat(EventuousDiagnostics.Tags).ToArray();
@@ -28,9 +28,7 @@ public abstract class BaseProducer<TProduceOptions> : IEventProducer<TProduceOpt
         var messagesArray = messages.ToArray();
         if (messagesArray.Length == 0) return;
 
-        var traced = messagesArray.Length == 1
-            ? ForOne()
-            : ProducerActivity.Start(messagesArray, DefaultTags);
+        var traced = messagesArray.Length == 1 ? ForOne() : ProducerActivity.Start(messagesArray, DefaultTags);
 
         using var activity = traced.act;
 

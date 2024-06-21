@@ -91,11 +91,9 @@ public class MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreO
     }
 
     record Checkpoint(string Id, ulong? Position) {
-        public static Checkpoint FromCheckpoint(EventuousCheckpoint checkpoint)
-            => new(checkpoint.Id, checkpoint.Position);
+        public static Checkpoint FromCheckpoint(EventuousCheckpoint checkpoint) => new(checkpoint.Id, checkpoint.Position);
 
-        public EventuousCheckpoint ToCheckpoint()
-            => new(Id, Position);
+        public EventuousCheckpoint ToCheckpoint() => new(Id, Position);
     }
 }
 

@@ -63,7 +63,8 @@ public class InMemoryEventStore : IEventStore {
 record StoredEvent(StreamEvent Event, int Position);
 
 class InMemoryStream(StreamName name) {
-    public int Version { get; private set; } = -1;
+    public int    Version { get; private set; } = -1;
+    public string Name    { get; }              = name;
 
     readonly List<StoredEvent> _events = [];
 
@@ -75,7 +76,7 @@ class InMemoryStream(StreamName name) {
         CheckVersion(expectedVersion);
 
         foreach (var streamEvent in events) {
-            _events.Add(new StoredEvent(streamEvent, ++Version));
+            _events.Add(new(streamEvent, ++Version));
         }
     }
 

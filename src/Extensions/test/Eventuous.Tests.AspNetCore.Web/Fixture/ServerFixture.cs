@@ -66,11 +66,12 @@ public class ServerFixture {
         return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
     }
 
-    public async Task<string> ExecuteRequest<TCommand>(TCommand cmd, string route, string id) where TCommand : class {
+    public async Task<string> ExecuteRequest<TCommand, TResult>(TCommand cmd, string route, string id)
+        where TCommand : class where TResult : State<TResult>, new() {
         using var client = GetClient();
 
         var request  = new RestRequest(route).AddJsonBody(cmd);
-        var response = await client.ExecutePostAsync<OkResult>(request);
+        var response = await client.ExecutePostAsync<OkResult<TResult>>(request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         return response.Content!;

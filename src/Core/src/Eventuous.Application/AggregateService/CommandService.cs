@@ -20,7 +20,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         StreamNameMap?            streamNameMap   = null,
         TypeMapper?               typeMap         = null
     )
-    : ICommandService<TAggregate, TState, TId>//, ICommandService<TAggregate>
+    : ICommandService<TAggregate, TState, TId>
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
     where TId : Id {

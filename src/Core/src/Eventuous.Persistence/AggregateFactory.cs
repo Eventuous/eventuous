@@ -4,7 +4,7 @@
 namespace Eventuous;
 
 /// <summary>
-/// The aggregate factory registry allows customising the way how aggregate instances are
+/// The aggregate factory registry allows customizing the way how aggregate instances are
 /// created by <see cref="AggregateStore"/> and <see langword="CommandService{T,TState,TId}"/>
 /// </summary>
 public class AggregateFactoryRegistry {
@@ -29,8 +29,7 @@ public class AggregateFactoryRegistry {
         return this;
     }
 
-    public void UnsafeCreateAggregateUsing(Type type, Func<object> factory)
-        => Registry.TryAdd(type, factory);
+    public void UnsafeCreateAggregateUsing(Type type, Func<object> factory) => Registry.TryAdd(type, factory);
 
     public T CreateInstance<T, TState>() where T : Aggregate<TState> where TState : State<TState>, new() {
         var instance = Registry.TryGetValue(typeof(T), out var factory) ? (T)factory() : Activator.CreateInstance<T>();

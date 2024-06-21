@@ -3,7 +3,7 @@
 
 namespace Eventuous.Gateway;
 
-class GatewayProducer<T>(IEventProducer<T> inner) : IEventProducer<T> where T : class {
+class GatewayProducer<T>(IProducer<T> inner) : IProducer<T> where T : class {
     readonly bool _isHostedService = inner is not IHostedProducer;
 
     public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, T? options, CancellationToken cancellationToken = default) {
@@ -12,7 +12,7 @@ class GatewayProducer<T>(IEventProducer<T> inner) : IEventProducer<T> where T : 
         await inner.Produce(stream, messages, options, cancellationToken).NoContext();
     }
 
-    static async ValueTask WaitForInner(IEventProducer<T> inner, CancellationToken cancellationToken) {
+    static async ValueTask WaitForInner(IProducer<T> inner, CancellationToken cancellationToken) {
         if (inner is not IHostedProducer hosted) return;
 
         while (!hosted.Ready) {

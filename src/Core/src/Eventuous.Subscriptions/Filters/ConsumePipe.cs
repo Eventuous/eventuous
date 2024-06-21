@@ -48,8 +48,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
 
     public ValueTask Send(IBaseConsumeContext context) => Move(_filters.First, context);
 
-    static ValueTask Move(LinkedListNode<IConsumeFilter>? node, IBaseConsumeContext context)
-        => node == null ? default : node.Value.Send(context, node.Next);
+    static ValueTask Move(LinkedListNode<IConsumeFilter>? node, IBaseConsumeContext context) => node == null ? default : node.Value.Send(context, node.Next);
 
     public async ValueTask DisposeAsync() {
         foreach (var filter in _filters) {

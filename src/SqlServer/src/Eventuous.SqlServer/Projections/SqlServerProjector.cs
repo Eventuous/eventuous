@@ -18,8 +18,7 @@ public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions option
 
         return;
 
-        ValueTask<SqlCommand> GetCommand(SqlConnection connection, MessageConsumeContext<T> context)
-            => new(handler(connection, context));
+        ValueTask<SqlCommand> GetCommand(SqlConnection connection, MessageConsumeContext<T> context) => new(handler(connection, context));
     }
 
     /// <summary>
@@ -32,7 +31,8 @@ public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions option
 
     async Task Handle<T>(MessageConsumeContext<T> context, ProjectToSqlServerAsync<T> handler) where T : class {
         await using var connection = await ConnectionFactory.GetConnection(_connectionString, context.CancellationToken);
-        var             cmd        = await handler(connection, context).ConfigureAwait(false);
+
+        var cmd = await handler(connection, context).ConfigureAwait(false);
         await cmd.ExecuteNonQueryAsync(context.CancellationToken).ConfigureAwait(false);
     }
 
@@ -46,8 +46,6 @@ public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions option
     }
 }
 
-public delegate SqlCommand ProjectToSqlServer<T>(SqlConnection connection, MessageConsumeContext<T> consumeContext)
-    where T : class;
+public delegate SqlCommand ProjectToSqlServer<T>(SqlConnection connection, MessageConsumeContext<T> consumeContext) where T : class;
 
-public delegate ValueTask<SqlCommand> ProjectToSqlServerAsync<T>(SqlConnection connection, MessageConsumeContext<T> consumeContext)
-    where T : class;
+public delegate ValueTask<SqlCommand> ProjectToSqlServerAsync<T>(SqlConnection connection, MessageConsumeContext<T> consumeContext) where T : class;

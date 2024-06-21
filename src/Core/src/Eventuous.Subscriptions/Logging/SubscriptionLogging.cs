@@ -82,7 +82,7 @@ public static class LoggingExtensions {
         => log.WarnLog?.Log(exception, "Message {Type} not acknowledged at {Position}", messageType, position);
 
     public static void SubscriptionStarted(this LogContext log) => log.InfoLog?.Log("Started");
-    
+
     public static void SubscriptionStopped(this LogContext log) => log.InfoLog?.Log("Stopped");
 
     public static void SubscriptionDropped(this LogContext log, DropReason reason, Exception? exception)

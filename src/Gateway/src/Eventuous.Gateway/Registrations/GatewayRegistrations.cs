@@ -37,7 +37,7 @@ public static class GatewayRegistrations {
             bool                                                              awaitProduce          = true
         )
         where TSubscription : EventSubscription<TSubscriptionOptions>
-        where TProducer : class, IEventProducer<TProduceOptions>
+        where TProducer : class, IProducer<TProduceOptions>
         where TProduceOptions : class
         where TSubscriptionOptions : SubscriptionOptions {
         services.TryAddSingleton<TProducer>();
@@ -84,7 +84,7 @@ public static class GatewayRegistrations {
             bool                                                              awaitProduce          = true
         )
         where TSubscription : EventSubscription<TSubscriptionOptions>
-        where TProducer : class, IEventProducer<TProduceOptions>
+        where TProducer : class, IProducer<TProduceOptions>
         where TProduceOptions : class
         where TSubscriptionOptions : SubscriptionOptions {
         services.TryAddSingleton<TProducer>();
@@ -132,7 +132,7 @@ public static class GatewayRegistrations {
             bool                                                              awaitProduce          = true
         )
         where TSubscription : EventSubscription<TSubscriptionOptions>
-        where TProducer : class, IEventProducer<TProduceOptions>
+        where TProducer : class, IProducer<TProduceOptions>
         where TProduceOptions : class
         where TTransform : class, IGatewayTransform<TProduceOptions>
         where TSubscriptionOptions : SubscriptionOptions {
