@@ -5,10 +5,9 @@ using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Producers;
 
-public interface IEventProducer {
+public interface IProducer {
     /// <summary>
-    /// Produce a message wrapped in the <see cref="ProducedMessage"/>.
-    /// in the <seealso cref="TypeMap"/>.
+    /// Produce a message wrapped in the <see cref="ProducedMessage"/>
     /// </summary>
     /// <param name="stream">Stream name where the message should be produced</param>
     /// <param name="messages">Collection of messages to produce</param>
@@ -18,10 +17,9 @@ public interface IEventProducer {
 }
 
 [PublicAPI]
-public interface IEventProducer<in TProduceOptions> : IEventProducer where TProduceOptions : class {
+public interface IProducer<in TProduceOptions> : IProducer where TProduceOptions : class {
     /// <summary>
     /// Produce a message wrapped in the <see cref="ProducedMessage"/>.
-    /// in the <seealso cref="TypeMap"/>.
     /// </summary>
     /// <param name="stream">Stream name where the message should be produced</param>
     /// <param name="messages">Collection of messages to produce</param>

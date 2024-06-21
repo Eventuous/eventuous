@@ -122,11 +122,9 @@ public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typ
     }
 
     [PublicAPI]
-    protected virtual ValueTask<MongoProjectOperation<T>> GetUpdate(object evt, ulong? position)
-        => NoOp;
+    protected virtual ValueTask<MongoProjectOperation<T>> GetUpdate(object evt, ulong? position) => NoOp;
 
-    ValueTask<MongoProjectOperation<T>> GetUpdate(IMessageConsumeContext context)
-        => GetUpdate(context.Message!, context.StreamPosition);
+    ValueTask<MongoProjectOperation<T>> GetUpdate(IMessageConsumeContext context) => GetUpdate(context.Message!, context.StreamPosition);
 
     [PublicAPI]
     protected static readonly ValueTask<MongoProjectOperation<T>> NoOp = new((MongoProjectOperation<T>)null!);
@@ -139,5 +137,4 @@ public delegate ValueTask<MongoProjectOperation<T>> ProjectTypedEvent<T, TEvent>
 
 public record MongoProjectOperation<T>(Func<IMongoCollection<T>, CancellationToken, Task> Execute);
 
-public delegate ValueTask<WriteModel<T>> BuildWriteModel<T, TEvent>(MessageConsumeContext<TEvent> context)
-    where T : ProjectedDocument where TEvent : class;
+public delegate ValueTask<WriteModel<T>> BuildWriteModel<T, TEvent>(MessageConsumeContext<TEvent> context) where T : ProjectedDocument where TEvent : class;

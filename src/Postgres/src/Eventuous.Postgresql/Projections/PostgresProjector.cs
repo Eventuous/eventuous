@@ -16,8 +16,7 @@ public abstract class PostgresProjector(NpgsqlDataSource dataSource, TypeMapper?
 
         return;
 
-        ValueTask<NpgsqlCommand> GetCommand(NpgsqlConnection connection, MessageConsumeContext<T> context)
-            => new(handler(connection, context));
+        ValueTask<NpgsqlCommand> GetCommand(NpgsqlConnection connection, MessageConsumeContext<T> context) => new(handler(connection, context));
     }
 
     /// <summary>
@@ -25,8 +24,7 @@ public abstract class PostgresProjector(NpgsqlDataSource dataSource, TypeMapper?
     /// </summary>
     /// <param name="handler">Function to project the event to a read model in PostgreSQL.</param>
     /// <typeparam name="T"></typeparam>
-    protected void On<T>(ProjectToPostgresAsync<T> handler) where T : class
-        => base.On<T>(async ctx => await Handle(ctx, handler).NoContext());
+    protected void On<T>(ProjectToPostgresAsync<T> handler) where T : class => base.On<T>(async ctx => await Handle(ctx, handler).NoContext());
 
     async Task Handle<T>(MessageConsumeContext<T> context, ProjectToPostgresAsync<T> handler) where T : class {
         await using var connection = await dataSource.OpenConnectionAsync().NoContext();
@@ -42,8 +40,6 @@ public abstract class PostgresProjector(NpgsqlDataSource dataSource, TypeMapper?
     }
 }
 
-public delegate NpgsqlCommand ProjectToPostgres<T>(NpgsqlConnection connection, MessageConsumeContext<T> consumeContext)
-    where T : class;
+public delegate NpgsqlCommand ProjectToPostgres<T>(NpgsqlConnection connection, MessageConsumeContext<T> consumeContext) where T : class;
 
-public delegate ValueTask<NpgsqlCommand> ProjectToPostgresAsync<T>(NpgsqlConnection connection, MessageConsumeContext<T> consumeContext)
-    where T : class;
+public delegate ValueTask<NpgsqlCommand> ProjectToPostgresAsync<T>(NpgsqlConnection connection, MessageConsumeContext<T> consumeContext) where T : class;

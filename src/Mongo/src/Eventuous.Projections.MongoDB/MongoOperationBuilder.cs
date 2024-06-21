@@ -45,14 +45,11 @@ public partial class MongoOperationBuilder<TEvent, T>
 
         public Func<IMessageConsumeContext<TEvent>, FilterDefinition<T>> GetFilter => Ensure.NotNull(_filterFunc, "Filter function");
 
-        public void Filter(BuildFilter<TEvent, T> buildFilter)
-            => _filterFunc = evt => buildFilter(evt, Builders<T>.Filter);
+        public void Filter(BuildFilter<TEvent, T> buildFilter) => _filterFunc = evt => buildFilter(evt, Builders<T>.Filter);
 
-        public void Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter)
-            => _filterFunc = evt => new ExpressionFilterDefinition<T>(x => filter(evt, x));
+        public void Filter(Func<IMessageConsumeContext<TEvent>, T, bool> filter) => _filterFunc = evt => new ExpressionFilterDefinition<T>(x => filter(evt, x));
 
-        public void Id(GetDocumentIdFromContext<TEvent> getId)
-            => Filter((ctx, filter) => filter.Eq(x => x.Id, getId(ctx)));
+        public void Id(GetDocumentIdFromContext<TEvent> getId) => Filter((ctx, filter) => filter.Eq(x => x.Id, getId(ctx)));
     }
 
     static ProjectTypedEvent<T, TEvent> GetHandler(Func<MessageConsumeContext<TEvent>, IMongoCollection<T>, CancellationToken, Task> handler) {

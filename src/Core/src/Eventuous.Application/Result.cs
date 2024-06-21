@@ -5,45 +5,14 @@ using System.Text.Json.Serialization;
 
 namespace Eventuous;
 
-[PublicAPI]
 public record struct Change(object Event, string EventType);
 
-[PublicAPI]
-public record Result
-{
-    // Ignore. Only to support custom return type.
-    public Result() { }
+public abstract record Result<TState>(TState? State, bool Success, IEnumerable<Change>? Changes = null) where TState : new();
 
-    public Result(object? state, bool success, IEnumerable<Change>? changes = null) {
-        State = state;
-        Success = success;
-        Changes = changes;
-    }
-
-    public object? State { get; init; }
-
-    public bool Success { get; init; }
-
-    public IEnumerable<Change>? Changes { get; init; }
-}
-
-[PublicAPI]
-public record OkResult(object State, IEnumerable<Change>? Changes = null) : Result(State, true, Changes);
-
-[PublicAPI]
-public record ErrorResult(string Message, [property: JsonIgnore] Exception? Exception) : Result(null, false) {
-    public string ErrorMessage => Exception?.Message ?? "Unknown error";
-}
-
-[PublicAPI]
-public abstract record Result<TState>(TState? State, bool Success, IEnumerable<Change>? Changes = null)
-    where TState : new();
-
-[PublicAPI]
+// ReSharper disable once NotAccessedPositionalProperty.Global
 public record OkResult<TState>(TState State, IEnumerable<Change> Changes, ulong StreamPosition)
     : Result<TState>(State, true, Changes) where TState : State<TState>, new();
 
-[PublicAPI]
 public record ErrorResult<TState> : Result<TState> where TState : State<TState>, new() {
     public ErrorResult(string message, Exception? exception) : base(null, false) {
         Message   = message;

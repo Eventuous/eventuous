@@ -1,4 +1,3 @@
-using Bogus;
 using Eventuous.Postgresql;
 using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Subscriptions;
@@ -25,7 +24,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     where TSubscription : PostgresSubscriptionBase<TSubscriptionOptions>
     where TSubscriptionOptions : PostgresSubscriptionBaseOptions
     where TEventHandler : class, IEventHandler {
-    protected internal readonly string SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    protected internal readonly string SchemaName = GetSchemaName();
 
     readonly ITestOutputHelper _outputHelper = outputHelper;
 

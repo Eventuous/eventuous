@@ -117,7 +117,7 @@ public static class StoreFunctions {
 
                 if (events.Length < pageSize) break;
 
-                position = new StreamReadPosition(position.Value + events.Length);
+                position = new(position.Value + events.Length);
             }
         } catch (StreamNotFound) when (!failIfNotFound) {
             return [];

@@ -37,18 +37,14 @@ public class PersistenceEventSource : EventSource {
     }
 
     [Event(UnableToAppendEventsId, Message = "Unable to append events to {0}: {1}", Level = EventLevel.Error)]
-    void UnableToAppendEvents(string stream, string exception)
-        => WriteEvent(UnableToAppendEventsId, stream, exception);
+    void UnableToAppendEvents(string stream, string exception) => WriteEvent(UnableToAppendEventsId, stream, exception);
 
     [Event(UnableToStoreAggregateId, Message = "Unable to store aggregate {0} to stream {2}: {3}", Level = EventLevel.Warning)]
-    void UnableToStoreAggregate(string type, string stream, string exception)
-        => WriteEvent(UnableToStoreAggregateId, type, stream, exception);
+    void UnableToStoreAggregate(string type, string stream, string exception) => WriteEvent(UnableToStoreAggregateId, type, stream, exception);
 
     [Event(UnableToReadAggregateId, Message = "Unable to read aggregate {0} with from stream {1}: {2}", Level = EventLevel.Warning)]
-    void UnableToLoadAggregate(string type, string stream, string exception)
-        => WriteEvent(UnableToReadAggregateId, type, stream, exception);
+    void UnableToLoadAggregate(string type, string stream, string exception) => WriteEvent(UnableToReadAggregateId, type, stream, exception);
 
     [Event(UnableToLoadStreamId, Message = "Unable to load stream {0}: {1}", Level = EventLevel.Warning)]
-    void UnableToLoadStream(string stream, string exception)
-        => WriteEvent(UnableToLoadStreamId, stream, exception);
+    void UnableToLoadStream(string stream, string exception) => WriteEvent(UnableToLoadStreamId, stream, exception);
 }

@@ -1,4 +1,3 @@
-using Bogus;
 using Eventuous.Postgresql;
 using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Sql.Base.Producers;
@@ -11,7 +10,7 @@ namespace Eventuous.Tests.Postgres.Metrics;
 
 public class MetricsFixture
     : MetricsSubscriptionFixtureBase<PostgreSqlContainer, UniversalProducer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions> {
-    readonly string _schemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    readonly string _schemaName = GetSchemaName();
 
     protected override PostgreSqlContainer CreateContainer() => PostgresContainer.Create();
 

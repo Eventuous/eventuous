@@ -10,8 +10,7 @@ using Tools;
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class UpdateOneBuilder : UpdateBuilder<UpdateOneBuilder>, IMongoProjectorBuilder, IMongoBulkBuilderFactory {
         [PublicAPI]
-        public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId)
-            => Id(x => getId(x.Stream));
+        public UpdateOneBuilder IdFromStream(GetDocumentIdFromStream getId) => Id(x => getId(x.Stream));
 
         public UpdateOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
             FilterBuilder.Id(getId);
@@ -19,8 +18,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return this;
         }
 
-        public UpdateOneBuilder DefaultId()
-            => IdFromStream(streamName => streamName.GetId());
+        public UpdateOneBuilder DefaultId() => IdFromStream(streamName => streamName.GetId());
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
@@ -74,10 +72,8 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
     public abstract class UpdateBuilder<TBuilder> where TBuilder : UpdateBuilder<TBuilder> {
         protected readonly FilterBuilder FilterBuilder = new();
         Action<UpdateOptions>?           _configureOptions;
-
-        BuildUpdateAsync<TEvent, T>? _buildUpdate;
-
-        BuildUpdateAsync<TEvent, T> GetUpdate => Ensure.NotNull(_buildUpdate, "Update function");
+        BuildUpdateAsync<TEvent, T>?     _buildUpdate;
+        BuildUpdateAsync<TEvent, T>      GetUpdate => Ensure.NotNull(_buildUpdate, "Update function");
 
         static UpdateOptions DefaultOptions => new() { IsUpsert = true };
 
@@ -108,13 +104,13 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         }
 
         public TBuilder UpdateFromContext(BuildUpdate<TEvent, T> buildUpdate) {
-            _buildUpdate = (ctx, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(ctx, update));
+            _buildUpdate = (ctx, update) => new(buildUpdate(ctx, update));
 
             return Self;
         }
 
         public TBuilder Update(BuildUpdateFromEvent<TEvent, T> buildUpdate) {
-            _buildUpdate = (ctx, update) => new ValueTask<UpdateDefinition<T>>(buildUpdate(ctx.Message, update));
+            _buildUpdate = (ctx, update) => new(buildUpdate(ctx.Message, update));
 
             return Self;
         }
@@ -132,11 +128,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             var options = Options<UpdateOptions>.DefaultIfNotConfigured(_configureOptions, () => DefaultOptions);
             var update  = await GetUpdate(ctx, Builders<T>.Update).NoContext();
 
-            return (
-                update
-                    .Set(x => x.StreamPosition, ctx.StreamPosition)
-                    .Set(x => x.Position, ctx.GlobalPosition),
-                options);
+            return (update.Set(x => x.StreamPosition, ctx.StreamPosition).Set(x => x.Position, ctx.GlobalPosition), options);
         }
     }
 }

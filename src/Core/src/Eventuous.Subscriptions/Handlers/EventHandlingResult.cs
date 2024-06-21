@@ -31,8 +31,6 @@ public class HandlingResults {
 
     public IEnumerable<EventHandlingResult> GetResultsOf(EventHandlingStatus status) => _results.Where(x => x.Status == status);
 
-    public bool ReportedBy(string handlerType) => _results.Any(x => x.HandlerType == handlerType);
-
     public EventHandlingStatus GetFailureStatus() => _handlingStatus & EventHandlingStatus.Handled;
 
     public EventHandlingStatus GetIgnoreStatus() => _handlingStatus & EventHandlingStatus.Ignored;

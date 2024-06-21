@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 // ReSharper disable InvertIf
 
@@ -16,16 +17,14 @@ using static TypeMapEventSource;
 public static class TypeMap {
     public static readonly TypeMapper Instance = new();
 
-    public static string GetTypeName(object o, bool fail = true)
-        => Instance.GetTypeName(o, fail);
+    public static string GetTypeName(object o, bool fail = true) => Instance.GetTypeName(o, fail);
 
     /// <summary>
     /// Registers all event types, which are decorated with <see cref="EventTypeAttribute"/>.
     /// </summary>
     /// <param name="assemblies">Zero or more assemblies that contain event classes to scan.
     /// If omitted, all the assemblies of the current <seealso cref="AppDomain"/> will be scanned.</param>
-    public static void RegisterKnownEventTypes(params Assembly[] assemblies)
-        => Instance.RegisterKnownEventTypes(assemblies);
+    public static void RegisterKnownEventTypes(params Assembly[] assemblies) => Instance.RegisterKnownEventTypes(assemblies);
 }
 
 /// <summary>
@@ -35,6 +34,7 @@ public class TypeMapper {
     readonly Dictionary<string, Type> _reverseMap = new();
     readonly Dictionary<Type, string> _map        = new();
 
+    // ReSharper disable once UnusedMember.Global
     public IReadOnlyDictionary<Type, string> Map        => _map;
     public IReadOnlyDictionary<string, Type> ReverseMap => _reverseMap;
 
@@ -80,65 +80,52 @@ public class TypeMapper {
         return type;
     }
 
-    public bool TryGetType(string typeName, [NotNullWhen(true)] out Type? type)
-        => _reverseMap.TryGetValue(typeName, out type);
+    public bool TryGetType(string typeName, [NotNullWhen(true)] out Type? type) => _reverseMap.TryGetValue(typeName, out type);
 
-    public void AddType<T>(string name)
-        => AddType(typeof(T), name);
-
-    readonly object _lock = new();
+    public void AddType<T>(string name) => AddType(typeof(T), name);
 
     [PublicAPI]
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public void AddType(Type type, string name) {
-        lock (_lock) {
-            if (_map.TryGetValue(type, out var registeredName)) {
-                if (registeredName != name) {
-                    throw new ArgumentException($"Type {type.FullName} is already registered with a different name {registeredName}", nameof(name));
-                }
-
-                Log.TypeAlreadyRegistered(type.Name, name);
-
-                return;
+        if (_map.TryGetValue(type, out var registeredName)) {
+            if (registeredName != name) {
+                throw new ArgumentException($"Type {type.FullName} is already registered with a different name {registeredName}", nameof(name));
             }
 
-            _reverseMap[name] = type;
-            _map[type]        = name;
+            Log.TypeAlreadyRegistered(type.Name, name);
+
+            return;
         }
+
+        _reverseMap[name] = type;
+        _map[type]        = name;
 
         Log.TypeMapRegistered(type.Name, name);
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public void RemoveType<T>() {
         var name = GetTypeName<T>();
 
-        lock (_lock) {
-            _reverseMap.Remove(name);
-            _map.Remove(typeof(T));
-        }
+        _reverseMap.Remove(name);
+        _map.Remove(typeof(T));
     }
 
-    public bool IsTypeRegistered<T>()
-        => _map.ContainsKey(typeof(T));
+    public bool IsTypeRegistered<T>() => _map.ContainsKey(typeof(T));
 
     public void RegisterKnownEventTypes(params Assembly[] assembliesWithEvents) {
-        var assembliesToScan = assembliesWithEvents.Length == 0
-            ? GetDefaultAssemblies()
-            : assembliesWithEvents;
+        var assembliesToScan = assembliesWithEvents.Length == 0 ? GetDefaultAssemblies() : assembliesWithEvents;
 
         foreach (var assembly in assembliesToScan) {
             RegisterAssemblyEventTypes(assembly);
         }
 
-        Assembly[] GetDefaultAssemblies() {
-            var firstLevel = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(x => !x.IsDynamic && NamePredicate(x.GetName()))
-                .ToArray();
+        return;
 
-            return firstLevel
-                .SelectMany(Get)
-                .Concat(firstLevel)
-                .Distinct()
-                .ToArray();
+        Assembly[] GetDefaultAssemblies() {
+            var firstLevel = AppDomain.CurrentDomain.GetAssemblies().Where(x => !x.IsDynamic && NamePredicate(x.GetName())).ToArray();
+
+            return firstLevel.SelectMany(Get).Concat(firstLevel).Distinct().ToArray();
 
             IEnumerable<Assembly> Get(Assembly assembly) {
                 // ReSharper disable once ConvertClosureToMethodGroup
@@ -159,9 +146,7 @@ public class TypeMapper {
     static readonly Type AttributeType = typeof(EventTypeAttribute);
 
     void RegisterAssemblyEventTypes(Assembly assembly) {
-        var decoratedTypes = assembly.DefinedTypes.Where(
-            x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == AttributeType)
-        );
+        var decoratedTypes = assembly.DefinedTypes.Where(x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == AttributeType));
 
         foreach (var type in decoratedTypes) {
             var attr = type.GetAttribute<EventTypeAttribute>()!;
@@ -183,9 +168,7 @@ public class EventTypeAttribute(string eventType) : Attribute {
 
 public class UnregisteredTypeException : Exception {
     // ReSharper disable once SuggestBaseTypeForParameterInConstructor
-    public UnregisteredTypeException(Type type)
-        : base($"Type {type.Name} is not registered in the type map") { }
+    public UnregisteredTypeException(Type type) : base($"Type {type.Name} is not registered in the type map") { }
 
-    public UnregisteredTypeException(string type)
-        : base($"Type name {type} is not registered in the type map") { }
+    public UnregisteredTypeException(string type) : base($"Type name {type} is not registered in the type map") { }
 }

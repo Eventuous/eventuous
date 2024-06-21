@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using static Eventuous.Sut.App.Commands;
+using static Eventuous.Sut.AspNetCore.BookingApi;
 
 namespace Eventuous.Tests.AspNetCore.Web;
 
-using Sut.App;
 using TestHelpers;
 using Fixture;
 using static SutBookingCommands;
@@ -13,9 +14,7 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
 
     public ControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper output) {
         var commandMap = new MessageMap()
-            .Add<BookingApi.RegisterPaymentHttp, Commands.RecordPayment>(
-                x => new(new(x.BookingId), x.PaymentId, new Money(x.Amount), x.PaidAt)
-            );
+            .Add<RegisterPaymentHttp, RecordPayment>(x => new(new(x.BookingId), x.PaymentId, new(x.Amount), x.PaidAt));
 
         _fixture = new(
             factory,
@@ -44,10 +43,10 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
 
         await client.PostJsonAsync("/book", bookRoom);
 
-        var registerPayment = new BookingApi.RegisterPaymentHttp(bookRoom.BookingId, bookRoom.RoomId, 100, DateTimeOffset.Now);
+        var registerPayment = new RegisterPaymentHttp(bookRoom.BookingId, bookRoom.RoomId, 100, DateTimeOffset.Now);
 
         var request  = new RestRequest("/v2/pay").AddJsonBody(registerPayment);
-        var response = await client.ExecutePostAsync<OkResult>(request);
+        var response = await client.ExecutePostAsync<OkResult<BookingState>>(request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var expected = new BookingEvents.BookingFullyPaid(registerPayment.PaidAt);
@@ -57,8 +56,5 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
         last.Payload.Should().BeEquivalentTo(expected);
     }
 
-    public void Dispose() {
-        // _fixture.Dispose();
-        _listener.Dispose();
-    }
+    public void Dispose() => _listener.Dispose();
 }

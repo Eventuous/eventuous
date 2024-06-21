@@ -9,6 +9,5 @@ namespace Eventuous;
 static class ExceptionMessages {
     static readonly ResourceManager Resources = new("Eventuous.ExceptionMessages", Assembly.GetExecutingAssembly());
 
-    internal static string DuplicateTypeKey<T>()
-        => string.Format(Resources.GetString("DuplicateTypeKey")!, typeof(T).Name);
+    internal static string DuplicateTypeKey<T>() => string.Format(Resources.GetString("DuplicateTypeKey")!, typeof(T).Name);
 }

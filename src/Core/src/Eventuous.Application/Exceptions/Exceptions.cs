@@ -8,8 +8,6 @@ using static ExceptionMessages;
 public static class Exceptions {
     public class CommandHandlerNotFound(Type type) : Exception(MissingCommandHandler(type));
 
-    public class UnableToResolveAggregateId(Type type) : Exception($"Unable to resolve aggregate id from command {type.Name}");
-
     public class CommandHandlerNotFound<T>() : CommandHandlerNotFound(typeof(T));
 
     public class CommandHandlerAlreadyRegistered<T>() : Exception(DuplicateCommandHandler<T>());

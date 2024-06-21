@@ -17,19 +17,18 @@ public record SqlServerStoreOptions {
 
 public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
     readonly GetSqlServerConnection _getConnection;
-    
+
     public Schema Schema { get; }
 
     public SqlServerStore(SqlServerStoreOptions options, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
         : base(serializer, metaSerializer) {
         var connectionString = Ensure.NotEmptyString(options.ConnectionString);
         _getConnection = ct => ConnectionFactory.GetConnection(connectionString, ct);
-        Schema        = new Schema(options.Schema);
+        Schema         = new Schema(options.Schema);
     }
 
-    protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken) {
-        return await _getConnection(cancellationToken).NoContext();
-    }
+    protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken)
+        => await _getConnection(cancellationToken).NoContext();
 
     protected override DbCommand GetReadCommand(SqlConnection connection, StreamName stream, StreamReadPosition start, int count)
         => connection
@@ -62,6 +61,5 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
     protected override bool IsConflict(Exception exception) => exception is SqlException { Number: 50000 };
 
     protected override DbCommand GetStreamExistsCommand(SqlConnection connection, StreamName stream)
-        => connection.GetTextCommand(Schema.StreamExists)
-            .Add("@name", SqlDbType.NVarChar, stream.ToString());
+        => connection.GetTextCommand(Schema.StreamExists).Add("@name", SqlDbType.NVarChar, stream.ToString());
 }

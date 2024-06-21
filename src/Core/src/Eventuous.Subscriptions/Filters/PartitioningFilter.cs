@@ -13,11 +13,7 @@ public sealed class PartitioningFilter : ConsumeFilter<AsyncConsumeContext>, IAs
     readonly AsyncHandlingFilter[] _filters;
     readonly int                   _partitionCount;
 
-    public PartitioningFilter(
-            int               partitionCount,
-            GetPartitionKey?  partitioner = null,
-            GetPartitionHash? getHash     = null
-        ) {
+    public PartitioningFilter(int partitionCount, GetPartitionKey? partitioner = null, GetPartitionHash? getHash = null) {
         if (partitionCount <= 0) throw new ArgumentOutOfRangeException(nameof(partitionCount), "Partition count must be greater than zero");
 
         _getHash        = getHash ?? MurmurHash3.Hash;

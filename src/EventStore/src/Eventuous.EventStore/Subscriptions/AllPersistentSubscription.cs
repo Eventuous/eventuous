@@ -47,7 +47,7 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
         )
         : this(
             eventStoreClient,
-            new AllPersistentSubscriptionOptions {
+            new() {
                 SubscriptionId     = subscriptionId,
                 EventSerializer    = eventSerializer,
                 MetadataSerializer = metaSerializer,

@@ -89,7 +89,7 @@ public class EsdbEventStore : IEventStore {
                 );
             },
             stream,
-            () => new ErrorInfo("Unable to appends events to {Stream}", stream),
+            () => new("Unable to appends events to {Stream}", stream),
             (s, ex) => {
                 Log.UnableToAppendEvents(stream, ex);
                 return new AppendToStreamException(s, ex);
@@ -99,7 +99,7 @@ public class EsdbEventStore : IEventStore {
         EventData ToEventData(StreamEvent streamEvent) {
             var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
-            return new EventData(
+            return new(
                 Uuid.FromGuid(streamEvent.Id),
                 eventType,
                 payload,
@@ -119,7 +119,7 @@ public class EsdbEventStore : IEventStore {
                 return ToStreamEvents(resolvedEvents);
             },
             stream,
-            () => new ErrorInfo("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream),
+            () => new("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream),
             (s, ex) => new ReadFromStreamException(s, ex)
         );
     }
@@ -184,7 +184,7 @@ public class EsdbEventStore : IEventStore {
                 )
             ),
             stream,
-            () => new ErrorInfo("Unable to delete stream {Stream}", stream),
+            () => new("Unable to delete stream {Stream}", stream),
             (s, ex) => new DeleteStreamException(s, ex)
         );
 

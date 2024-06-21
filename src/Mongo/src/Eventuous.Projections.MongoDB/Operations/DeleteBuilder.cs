@@ -9,8 +9,7 @@ using Tools;
 
 public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocument where TEvent : class {
     public class DeleteOneBuilder : DeleteBuilder<DeleteOneBuilder>, IMongoProjectorBuilder {
-        public DeleteOneBuilder Id(GetDocumentIdFromStream getId)
-            => Id(x => getId(x.Stream));
+        public DeleteOneBuilder Id(GetDocumentIdFromStream getId) => Id(x => getId(x.Stream));
 
         public DeleteOneBuilder Id(GetDocumentIdFromContext<TEvent> getId) {
             FilterBuilder.Id(getId);
@@ -18,8 +17,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
             return this;
         }
 
-        public DeleteOneBuilder DefaultId()
-            => Id(x => x.GetId());
+        public DeleteOneBuilder DefaultId() => Id(x => x.GetId());
 
         ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build()
             => GetHandler(
@@ -69,7 +67,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => ctx => {
             var options = Options<DeleteOptions>.New(ConfigureOptions);
 
-            return new ValueTask<WriteModel<T>>(
+            return new(
                 new DeleteOneModel<T>(FilterBuilder.GetFilter(ctx)) {
                     Collation = options.Collation,
                     Hint      = options.Hint

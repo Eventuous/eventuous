@@ -42,8 +42,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
                 }
             );
 
-        BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => ctx
-            => new ValueTask<WriteModel<T>>(new InsertOneModel<T>(GetDocument(ctx)));
+        BuildWriteModel<T, TEvent> IMongoBulkBuilderFactory.GetBuilder() => ctx => new(new InsertOneModel<T>(GetDocument(ctx)));
     }
 
     public class InsertManyBuilder : IMongoProjectorBuilder {
@@ -52,8 +51,7 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
 
         Func<MessageConsumeContext<TEvent>, IEnumerable<T>> GetDocuments => Ensure.NotNull(_getDocuments, "Get documents function");
 
-        public InsertManyBuilder Documents(Func<TEvent, IEnumerable<T>> getDocuments)
-            => Documents(ctx => getDocuments(ctx.Message));
+        public InsertManyBuilder Documents(Func<TEvent, IEnumerable<T>> getDocuments) => Documents(ctx => getDocuments(ctx.Message));
 
         public InsertManyBuilder Documents(Func<MessageConsumeContext<TEvent>, IEnumerable<T>> getDocuments) {
             _getDocuments = ctx => getDocuments(ctx)

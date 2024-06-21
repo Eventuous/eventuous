@@ -31,7 +31,7 @@ public class StateStore(IEventReader eventReader, IEventSerializer? serializer =
 
             if (events.Length < pageSize) break;
 
-            position = new StreamReadPosition(position.Value + events.Length);
+            position = new(position.Value + events.Length);
         }
 
         return state;

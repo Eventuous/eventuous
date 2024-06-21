@@ -7,12 +7,12 @@ namespace Eventuous;
 public class Metadata : Dictionary<string, object?> {
     public Metadata() { }
 
-    public static Metadata FromMeta(Metadata? metadata) => metadata == null ? new Metadata() : new Metadata(metadata);
+    public static Metadata FromMeta(Metadata? metadata) => metadata == null ? new Metadata() : new(metadata);
 
     public Metadata(IDictionary<string, object?> dictionary) : base(dictionary) { }
 
     public static Metadata FromHeaders(Dictionary<string, string?>? headers)
-        => headers == null ? new Metadata() : new Metadata(headers.ToDictionary(x => x.Key, x => (object?)x.Value));
+        => headers == null ? new Metadata() : new(headers.ToDictionary(x => x.Key, x => (object?)x.Value));
 
     public Dictionary<string, string?> ToHeaders() => this.ToDictionary(x => x.Key, x => x.Value?.ToString());
 

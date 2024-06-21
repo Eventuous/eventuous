@@ -5,8 +5,7 @@ namespace Eventuous;
 
 [Obsolete("Use Id instead")]
 public abstract record AggregateId : Id {
-    protected AggregateId(string value)
-        : base(value) { }
+    protected AggregateId(string value) : base(value) { }
 }
 
 [PublicAPI]

@@ -22,11 +22,8 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
     /// <param name="eventStoreClient">EventStoreDB gRPC client</param>
     /// <param name="serializer">Optional: event serializer instance</param>
     /// <param name="metaSerializer">Optional: metadata serializer instance</param>
-    public EventStoreProducer(
-        EventStoreClient     eventStoreClient,
-        IEventSerializer?    serializer     = null,
-        IMetadataSerializer? metaSerializer = null
-    ) : base(TracingOptions) {
+    public EventStoreProducer(EventStoreClient eventStoreClient, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
+        : base(TracingOptions) {
         _client         = Ensure.NotNull(eventStoreClient);
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
@@ -38,11 +35,8 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
     /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
     /// <param name="serializer">Optional: event serializer instance</param>
     /// <param name="metaSerializer">Optional: metadata serializer instance</param>
-    public EventStoreProducer(
-        EventStoreClientSettings clientSettings,
-        IEventSerializer?        serializer     = null,
-        IMetadataSerializer?     metaSerializer = null
-    ) : this(new EventStoreClient(Ensure.NotNull(clientSettings)), serializer, metaSerializer) { }
+    public EventStoreProducer(EventStoreClientSettings clientSettings, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
+        : this(new EventStoreClient(Ensure.NotNull(clientSettings)), serializer, metaSerializer) { }
 
     static readonly ProducerTracingOptions TracingOptions = new() {
         DestinationKind  = "stream",
@@ -58,11 +52,11 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
     /// <param name="produceOptions">Options for the produce operation</param>
     /// <param name="cancellationToken"></param>
     protected override async Task ProduceMessages(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        EventStoreProduceOptions?    produceOptions,
-        CancellationToken            cancellationToken = default
-    ) {
+            StreamName                   stream,
+            IEnumerable<ProducedMessage> messages,
+            EventStoreProduceOptions?    produceOptions,
+            CancellationToken            cancellationToken = default
+        ) {
         var options = produceOptions ?? EventStoreProduceOptions.Default;
 
         foreach (var chunk in Ensure.NotNull(messages).Chunks(options.MaxAppendEventsCount)) {
@@ -82,8 +76,7 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
                     .NoContext();
 
                 await chunkMessages.Select(x => x.Ack<EventStoreProducer>()).WhenAll().NoContext();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 await chunkMessages
                     .Select(x => x.Nack<EventStoreProducer>("Unable to produce to EventStoreDB", e))
                     .WhenAll()
@@ -98,6 +91,6 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         message.Metadata!.Remove(MetaTags.MessageId);
         var metaBytes = _metaSerializer.Serialize(message.Metadata);
 
-        return new EventData(Uuid.FromGuid(message.MessageId), eventType, payload, metaBytes, contentType);
+        return new(Uuid.FromGuid(message.MessageId), eventType, payload, metaBytes, contentType);
     }
 }

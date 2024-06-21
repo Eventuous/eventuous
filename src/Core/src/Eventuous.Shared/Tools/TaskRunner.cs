@@ -41,7 +41,7 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
             }
 
             // ReSharper disable once RedundantAssignment
-            registration = new CancellationTokenRegistration();
+            registration = new();
             _runner      = null;
         }
     }

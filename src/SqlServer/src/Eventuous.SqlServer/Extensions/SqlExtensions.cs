@@ -27,22 +27,10 @@ static class SqlExtensions {
     }
 
     internal static SqlParameter AddOutputParameter(this SqlCommand command, string parameterName, SqlDbType sqlDbType)
-        => command.Parameters.Add(
-            new SqlParameter {
-                ParameterName = parameterName,
-                SqlDbType     = sqlDbType,
-                Direction     = ParameterDirection.Output
-            }
-        );
+        => command.Parameters.Add(new() { ParameterName = parameterName, SqlDbType = sqlDbType, Direction = ParameterDirection.Output });
 
     internal static SqlCommand AddOutput(this SqlCommand command, string parameterName, SqlDbType sqlDbType) {
-        command.Parameters.Add(
-            new SqlParameter {
-                ParameterName = parameterName,
-                SqlDbType     = sqlDbType,
-                Direction     = ParameterDirection.Output
-            }
-        );
+        command.Parameters.Add(new() { ParameterName = parameterName, SqlDbType = sqlDbType, Direction = ParameterDirection.Output });
 
         return command;
     }
@@ -50,6 +38,7 @@ static class SqlExtensions {
     internal static SqlCommand Add(this SqlCommand command, string parameterName, SqlDbType sqlDbType, object value) {
         var param = command.Parameters.AddWithValue(parameterName, value);
         param.SqlDbType = sqlDbType;
+
         return command;
     }
 
@@ -57,6 +46,7 @@ static class SqlExtensions {
         var cmd = connection.CreateCommand();
         cmd.CommandType = CommandType.Text;
         cmd.CommandText = sql;
+
         return cmd;
     }
 
@@ -65,6 +55,7 @@ static class SqlExtensions {
         cmd.CommandType = CommandType.StoredProcedure;
         cmd.CommandText = storedProcName;
         if (transaction != null) cmd.Transaction = transaction;
+
         return cmd;
     }
 }

@@ -37,7 +37,7 @@ public record PubSubSubscriptionOptions : SubscriptionOptions {
     public HandleEventProcessingFailure? FailureHandler { get; set; }
 
     /// <summary>
-    /// A function to customise the subscription options when the subscription is created
+    /// A function to customize the subscription options when the subscription is created
     /// </summary>
     public Action<Subscription>? ConfigureSubscription { get; set; }
 

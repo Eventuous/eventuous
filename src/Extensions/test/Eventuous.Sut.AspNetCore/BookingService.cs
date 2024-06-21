@@ -14,29 +14,13 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
 
         On<BookRoom>()
             .InState(ExpectedState.New)
-            .GetId(cmd => new BookingId(cmd.BookingId))
-            .Act(
-                (booking, cmd)
-                    => booking.BookRoom(
-                        cmd.RoomId,
-                        new StayPeriod(cmd.CheckIn, cmd.CheckOut),
-                        new Money(cmd.Price),
-                        cmd.GuestId
-                    )
-            );
+            .GetId(cmd => new(cmd.BookingId))
+            .Act((booking, cmd) => booking.BookRoom(cmd.RoomId, new(cmd.CheckIn, cmd.CheckOut), new(cmd.Price), cmd.GuestId));
 
         On<NestedCommands.NestedBookRoom>()
             .InState(ExpectedState.New)
-            .GetId(cmd => new BookingId(cmd.BookingId))
-            .Act(
-                (booking, cmd)
-                    => booking.BookRoom(
-                        cmd.RoomId,
-                        new StayPeriod(cmd.CheckIn, cmd.CheckOut),
-                        new Money(cmd.Price),
-                        cmd.GuestId
-                    )
-            );
+            .GetId(cmd => new(cmd.BookingId))
+            .Act((booking, cmd) => booking.BookRoom(cmd.RoomId, new(cmd.CheckIn, cmd.CheckOut), new(cmd.Price), cmd.GuestId));
 
         On<Commands.RecordPayment>()
             .InState(ExpectedState.Existing)

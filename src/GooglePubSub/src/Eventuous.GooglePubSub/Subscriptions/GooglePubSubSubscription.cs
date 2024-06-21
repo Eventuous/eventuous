@@ -47,7 +47,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
             Action<SubscriberClientBuilder>? configureClient = null
         )
         : this(
-            new PubSubSubscriptionOptions {
+            new() {
                 SubscriptionId         = subscriptionId,
                 ProjectId              = projectId,
                 TopicId                = topicId,

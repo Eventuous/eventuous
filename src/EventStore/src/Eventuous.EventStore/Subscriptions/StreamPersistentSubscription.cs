@@ -46,7 +46,7 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
             ILoggerFactory?      loggerFactory   = null
         ) : this(
         eventStoreClient,
-        new StreamPersistentSubscriptionOptions {
+        new() {
             StreamName         = streamName,
             SubscriptionId     = subscriptionId,
             EventSerializer    = eventSerializer,

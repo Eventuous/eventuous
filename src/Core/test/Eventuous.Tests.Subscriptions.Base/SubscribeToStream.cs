@@ -37,7 +37,6 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
 
         outputHelper.WriteLine("Resetting handler");
         fixture.Handler.Reset();
-        // await InitializeAsync();
 
         outputHelper.WriteLine("Phase two");
         await TestConsumptionOfProducedEvents();

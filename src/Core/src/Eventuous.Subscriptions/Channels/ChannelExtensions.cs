@@ -22,7 +22,13 @@ static class ChannelExtensions {
         }
     }
 
-    public static async Task ReadBatches<T>(this Channel<T> channel, ProcessElement<T[]> process, int maxCount, TimeSpan maxTime, CancellationToken cancellationToken) {
+    public static async Task ReadBatches<T>(
+            this Channel<T>     channel,
+            ProcessElement<T[]> process,
+            int                 maxCount,
+            TimeSpan            maxTime,
+            CancellationToken   cancellationToken
+        ) {
         await foreach (var batch in channel.Reader.ReadAllBatches(maxCount, maxTime, cancellationToken).NoContext(cancellationToken)) {
             await process(batch, cancellationToken).NoContext();
         }

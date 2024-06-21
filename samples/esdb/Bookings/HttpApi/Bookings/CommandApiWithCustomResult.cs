@@ -5,6 +5,7 @@ using Eventuous.AspNetCore.Web;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using static Bookings.Application.BookingCommands;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Bookings.HttpApi.Bookings;
 
@@ -38,7 +39,7 @@ public class CommandApiWithCustomResult(ICommandService<BookingState> service) :
         };
 
     static BadRequestObjectResult MapValidationExceptionAsValidationProblemDetails(ErrorResult<BookingState> error) {
-        if (error?.Exception is not ValidationException exception) {
+        if (error.Exception is not ValidationException exception) {
             throw new ArgumentNullException(nameof(error), "Exception in result is not of the type `ValidationException`. Unable to map validation result.");
         }
 

@@ -50,7 +50,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
 
     async Task<List<TestEvent>> Seed(IServiceProvider provider, int count) {
         TypeMap.Instance.AddType<TestEvent>(TestEvent.TypeName);
-        var producer = provider.GetRequiredService<IEventProducer>();
+        var producer = provider.GetRequiredService<IProducer>();
 
         Output?.WriteLine("Producing events...");
 

@@ -27,7 +27,7 @@ public abstract class CommandHttpApiBase<TState, TResult>(ICommandService<TState
     /// <param name="command">Command instance</param>
     /// <param name="cancellationToken">Request cancellation token</param>
     /// <typeparam name="TCommand">Command type</typeparam>
-    /// <returns>A custom result class that inherits from <see cref="Result"/>.</returns>
+    /// <returns>A custom result class that inherits from <see cref="Result{TState}"/>.</returns>
     protected virtual async Task<ActionResult<TResult>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class {
         var result = await service.Handle(command, cancellationToken);
@@ -43,7 +43,7 @@ public abstract class CommandHttpApiBase<TState, TResult>(ICommandService<TState
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="TContract">HTTP command type</typeparam>
     /// <typeparam name="TCommand">Domain command type</typeparam>
-    /// <returns>A custom result class that inherits from <see cref="Result"/>.</returns>
+    /// <returns>A custom result class that inherits from <see cref="Result{TState}"/>.</returns>
     /// <exception cref="InvalidOperationException">Throws if the command map hasn't been configured</exception>
     protected virtual async Task<ActionResult<TResult>> Handle<TContract, TCommand>(TContract httpCommand, CancellationToken cancellationToken)
         where TContract : class where TCommand : class {

@@ -65,16 +65,13 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         var duration   = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Processing duration, milliseconds");
         var errorCount = _meter.CreateCounter<long>(ErrorCountName, "events", "Number of event processing failures");
 
-        _listener = new MetricsListener<SubscriptionMetricsContext>(ListenerName, duration, errorCount, GetTags);
+        _listener = new(ListenerName, duration, errorCount, GetTags);
 
         return;
 
         IEnumerable<Measurement<double>> ObserveTimeValues()
             => streams.Values.Select(
-                x => Measure(
-                    Math.Round((_checkpointMetrics.GetLastTimestamp(x.SubscriptionId) - x.Timestamp).TotalSeconds),
-                    x.SubscriptionId
-                )
+                x => Measure(Math.Round((_checkpointMetrics.GetLastTimestamp(x.SubscriptionId) - x.Timestamp).TotalSeconds), x.SubscriptionId)
             );
 
         IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionEndOfStream[] getEndOfStreams)
@@ -85,12 +82,12 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
         Measurement<T> Measure<T>(T value, string subscriptionId) where T : struct {
             if (_customTags.Length == 0) {
-                return new Measurement<T>(value, SubTag(subscriptionId));
+                return new(value, SubTag(subscriptionId));
             }
 
             var tags = new List<KeyValuePair<string, object?>>(_customTags) { SubTag(subscriptionId) };
 
-            return new Measurement<T>(value, tags);
+            return new(value, tags);
         }
 
         TagList GetTags(SubscriptionMetricsContext ctx) {

@@ -7,7 +7,7 @@ using Testcontainers.SqlEdge;
 namespace Eventuous.Tests.SqlServer.Store;
 
 public sealed class StoreFixture : StoreFixtureBase<SqlEdgeContainer> {
-    readonly string _schemaName = Faker.Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    readonly string _schemaName = GetSchemaName();
 
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousSqlServer(Container.GetConnectionString(), _schemaName, true);

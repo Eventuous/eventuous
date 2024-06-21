@@ -1,4 +1,3 @@
-using Bogus;
 using Eventuous.SqlServer;
 using Eventuous.SqlServer.Subscriptions;
 using Eventuous.Subscriptions;
@@ -24,7 +23,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     where TSubscription : SqlServerSubscriptionBase<TSubscriptionOptions>
     where TSubscriptionOptions : SqlServerSubscriptionBaseOptions
     where TEventHandler : class, IEventHandler {
-    protected internal readonly string SchemaName = new Faker().Internet.UserName().Replace(".", "_").Replace("-", "").Replace(" ", "").ToLower();
+    protected internal readonly string SchemaName = GetSchemaName();
 
     readonly ITestOutputHelper _outputHelper = outputHelper;
 

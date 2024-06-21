@@ -39,7 +39,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
         ILoggerFactory?      loggerFactory   = null
     ) : this(
         eventStoreClient,
-        new AllStreamSubscriptionOptions {
+        new() {
             SubscriptionId     = subscriptionId,
             EventSerializer    = eventSerializer,
             MetadataSerializer = metaSerializer,

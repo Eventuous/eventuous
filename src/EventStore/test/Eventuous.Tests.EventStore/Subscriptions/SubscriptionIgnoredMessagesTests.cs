@@ -14,7 +14,7 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
     ICheckpointStore    _checkpointStore = null!;
     readonly string     _subscriptionId  = $"test-{Guid.NewGuid():N}";
     readonly StreamName _stream          = new($"test-{Guid.NewGuid():N}");
-    IEventProducer      _producer        = null!;
+    IProducer      _producer        = null!;
     TestEventHandler    _handler         = null!;
 
     public SubscriptionIgnoredMessagesTests(ITestOutputHelper output) {
@@ -70,7 +70,7 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
 
     protected override void GetDependencies(IServiceProvider provider) {
         base.GetDependencies(provider);
-        _producer        = provider.GetRequiredService<IEventProducer>();
+        _producer        = provider.GetRequiredService<IProducer>();
         _checkpointStore = provider.GetRequiredKeyedService<TestCheckpointStore>(_subscriptionId);
         _handler         = provider.GetRequiredKeyedService<TestEventHandler>(_subscriptionId);
     }

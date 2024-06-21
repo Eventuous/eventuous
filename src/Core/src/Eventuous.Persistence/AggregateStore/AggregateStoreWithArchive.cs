@@ -62,10 +62,8 @@ public class AggregateStore<TReader>(
     static readonly StreamEventPositionComparer Comparer = new();
 
     class StreamEventPositionComparer : IEqualityComparer<StreamEvent> {
-        public bool Equals(StreamEvent x, StreamEvent y)
-            => x.Position == y.Position;
+        public bool Equals(StreamEvent x, StreamEvent y) => x.Position == y.Position;
 
-        public int GetHashCode(StreamEvent obj)
-            => obj.Position.GetHashCode();
+        public int GetHashCode(StreamEvent obj) => obj.Position.GetHashCode();
     }
 }

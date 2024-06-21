@@ -124,7 +124,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             re.Event.EventNumber
         );
 
-        return new MessageConsumeContext(
+        return new(
             re.Event.EventId.ToString(),
             re.Event.EventType,
             re.Event.ContentType,
