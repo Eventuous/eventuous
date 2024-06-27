@@ -1,12 +1,11 @@
 using System.Diagnostics;
-using System.Text.Json;
 using EventStore.Client;
 using Eventuous.Diagnostics;
 using Eventuous.EventStore;
+using Eventuous.TestHelpers;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime.Serialization.SystemTextJson;
 using Testcontainers.EventStoreDb;
 
 namespace Eventuous.Tests.EventStore.Fixtures;
@@ -20,9 +19,7 @@ public class StoreFixture : StoreFixtureBase<EventStoreDbContainer> {
         AppContext.SetSwitch("System.Net.SocketsHttpHandler.Http2FlowControl.DisableDynamicWindowSizing", true);
     }
 
-    IEventSerializer Serializer { get; } = new DefaultEventSerializer(
-        new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-    );
+    IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
 
     public StoreFixture() {
         DefaultEventSerializer.SetDefaultSerializer(Serializer);

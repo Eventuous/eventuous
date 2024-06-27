@@ -10,4 +10,7 @@
     <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     <PackageReference Include="Testcontainers" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
+  </ItemGroup>
 </Project>

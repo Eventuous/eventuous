@@ -27,6 +27,21 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
         : base(eventStoreClient, options, consumePipe, loggerFactory) { }
 
     /// <summary>
+    /// Persistent subscription for EventStoreDB, for $all stream
+    /// </summary>
+    /// <param name="eventStoreClient">EventStoreDB persistent subscription client instance</param>
+    /// <param name="options">Persistent subscription options</param>
+    /// <param name="consumePipe">Consume pipe, usually provided by the builder</param>
+    /// <param name="loggerFactory">Optional logger factory</param>
+    public AllPersistentSubscription(
+            EventStorePersistentSubscriptionsClient eventStoreClient,
+            AllPersistentSubscriptionOptions        options,
+            ConsumePipe                             consumePipe,
+            ILoggerFactory?                         loggerFactory
+        )
+        : base(eventStoreClient, options, consumePipe, loggerFactory) { }
+
+    /// <summary>
     /// Creates EventStoreDB persistent subscription service for a given stream
     /// </summary>
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>

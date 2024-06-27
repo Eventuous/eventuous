@@ -3,7 +3,7 @@ using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Tests.Subscriptions.Base;
 
-namespace Eventuous.Tests.EventStore.Subscriptions;
+namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
 public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
     static LegacySubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
@@ -42,7 +42,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
 
     public async Task InitializeAsync() {
         await StoreFixture.InitializeAsync();
-        Producer = new EventStoreProducer(StoreFixture.Client);
+        Producer = new(StoreFixture.Client);
 
         var subscriptionId = $"test-{Guid.NewGuid():N}";
         var pipe           = new ConsumePipe();

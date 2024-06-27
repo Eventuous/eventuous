@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Producers;
 using Eventuous.TestHelpers;
-using Eventuous.Tests.EventStore.Subscriptions;
+using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.EventStore;

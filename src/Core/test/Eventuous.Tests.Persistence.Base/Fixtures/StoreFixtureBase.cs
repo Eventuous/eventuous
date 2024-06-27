@@ -1,15 +1,13 @@
 // Copyright (C) Ubiquitous AS.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Bogus;
 using DotNet.Testcontainers.Containers;
+using Eventuous.TestHelpers;
 using MicroElements.AutoFixture.NodaTime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
-using NodaTime.Serialization.SystemTextJson;
 
 namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
@@ -24,8 +22,7 @@ public abstract class StoreFixtureBase {
 }
 
 public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncLifetime where TContainer : DockerContainer {
-    IEventSerializer Serializer { get; } =
-        new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+    IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
 
     public virtual async Task InitializeAsync() {
         Container = CreateContainer();
@@ -80,7 +77,7 @@ public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, I
 
     protected virtual void GetDependencies(IServiceProvider provider) { }
 
-    protected TContainer Container { get; private set; } = null!;
+    public TContainer Container { get; private set; } = null!;
 
     bool _disposed;
 

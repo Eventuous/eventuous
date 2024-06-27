@@ -33,12 +33,7 @@ public static class SubscriptionRegistrationExtensions {
             .AddSubscriptionBuilder(builder)
             .AddSingleton(sp => GetBuilder(sp).ResolveSubscription(sp))
             .AddSingleton<IHostedService, SubscriptionHostedService>(
-                sp =>
-                    new SubscriptionHostedService(
-                        GetBuilder(sp).ResolveSubscription(sp),
-                        sp.GetService<ISubscriptionHealth>(),
-                        sp.GetService<ILoggerFactory>()
-                    )
+                sp => new(GetBuilder(sp).ResolveSubscription(sp), sp.GetService<ISubscriptionHealth>(), sp.GetService<ILoggerFactory>())
             );
 
         SubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp) => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);

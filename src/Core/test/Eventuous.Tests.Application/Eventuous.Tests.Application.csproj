@@ -4,6 +4,6 @@
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
-      <ProjectReference Include="..\..\..\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
+      <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
     </ItemGroup>
 </Project>

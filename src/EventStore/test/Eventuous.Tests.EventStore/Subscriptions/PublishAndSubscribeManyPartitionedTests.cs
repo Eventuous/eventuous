@@ -1,4 +1,5 @@
 using Eventuous.Producers;
+using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;

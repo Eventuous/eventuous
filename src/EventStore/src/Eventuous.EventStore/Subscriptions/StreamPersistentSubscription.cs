@@ -27,6 +27,21 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
         => Ensure.NotEmptyString(options.StreamName);
 
     /// <summary>
+    /// EventStoreDB persistent subscription service for a given stream
+    /// </summary>
+    /// <param name="eventStoreClient">EventStoreDB persistent subscription client instance</param>
+    /// <param name="options">Persistent subscription options <see cref="StreamPersistentSubscriptionOptions"/></param>
+    /// <param name="consumePipe">Consume pipe, provided automatically</param>
+    /// <param name="loggerFactory">Optional logger factory</param>
+    public StreamPersistentSubscription(
+            EventStorePersistentSubscriptionsClient eventStoreClient,
+            StreamPersistentSubscriptionOptions     options,
+            ConsumePipe                             consumePipe,
+            ILoggerFactory?                         loggerFactory
+        ) : base(eventStoreClient, options, consumePipe, loggerFactory)
+        => Ensure.NotEmptyString(options.StreamName);
+
+    /// <summary>
     /// Creates EventStoreDB persistent subscription service for a given stream without using the options object
     /// </summary>
     /// <param name="eventStoreClient">EventStoreDB gRPC client instance</param>
@@ -57,10 +72,7 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
     ) { }
 
     /// <inheritdoc/>
-    protected override Task CreatePersistentSubscription(
-            PersistentSubscriptionSettings settings,
-            CancellationToken              cancellationToken
-        )
+    protected override Task CreatePersistentSubscription(PersistentSubscriptionSettings settings, CancellationToken cancellationToken)
         => SubscriptionClient.CreateToStreamAsync(
             Options.StreamName,
             Options.SubscriptionId,

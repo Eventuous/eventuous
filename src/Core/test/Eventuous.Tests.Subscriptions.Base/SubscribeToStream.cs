@@ -68,7 +68,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
 
         await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
         Logger.ConfigureIfNull(fixture.SubscriptionId, fixture.LoggerFactory);
-        await fixture.CheckpointStore.StoreCheckpoint(new Checkpoint(fixture.SubscriptionId, 9), true, default);
+        await fixture.CheckpointStore.StoreCheckpoint(new(fixture.SubscriptionId, 9), true, default);
 
         await fixture.StartSubscription();
         await Task.Delay(TimeSpan.FromSeconds(1));
@@ -88,7 +88,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
             .ToList();
 
         var events       = commands.Select(ToEvent).ToList();
-        var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
+        var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new(), "", 0));
         await fixture.EventStore.AppendEvents(streamName, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
 
         return events;
