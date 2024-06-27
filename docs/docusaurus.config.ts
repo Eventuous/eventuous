@@ -98,7 +98,7 @@ const config: Config = {
                         },
                         {
                             label: 'Connector',
-                            href: "https://connector.eventuous.dev"
+                            href: "https://connect.eventuous.dev"
                         },
                     ],
                 },
