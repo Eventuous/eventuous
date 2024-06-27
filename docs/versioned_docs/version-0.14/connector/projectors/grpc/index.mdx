@@ -1,0 +1,65 @@
+---
+title: "gRPC sidecar"
+description: "Aggregate events to state using gRPC sidecar"
+---
+
+import ThemedImage from '@theme/ThemedImage';
+import dpLight from './images/connector-grpc-concept.png';
+import dpDark from './images/connector-grpc-concept-dark.png';
+
+As described in the [Connector concept](../../#projector-mode) section, you can project events to state-oriented databases like MS SQL Server or MongoDB using the Connector running in Projector mode.
+
+As the Connector doesn't know how to project different event types to a document or a table, you need to have a supporting application that would do that kind of work. The Connector itself would be responsible for projecting events to whatever target it supports, maintaining the checkpoint, partitioning projections if necessary, etc.
+
+Here's the diagram from the Concept page:
+
+<ThemedImage
+    alt="Using a gRPC service for reduce functions"
+    sources={{
+        light: dpLight,
+        dark: dpDark
+    }}
+/>
+
+The sidecar application must implement a gRPC server with bidirectional streaming that has to run in a separate process. It should be accessible by the Connector via HTTP/2.
+
+Each target needs to support its own response types. See the target documentation for more details.
+
+The Connector would send requests to the sidecar as described in the following Proto file:
+
+```proto
+syntax = "proto3";
+
+package projection;
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+
+service Projection {
+  rpc Project (stream ProjectionRequest) returns (stream ProjectionResponse);
+}
+
+message ProjectionRequest {
+  string eventType = 1;
+  string eventId = 2;
+  string stream = 3;
+  google.protobuf.Struct eventPayload = 4;
+  map<string, string> metadata = 5;
+}
+
+message ProjectionResponse {
+  string eventId = 1;
+  google.protobuf.Any operation = 2;
+  map<string, string> metadata = 3;
+}
+
+message Ignore {}
+```
+
+The sidecar receives the `ProjectionRequest` message that contains the necessary details about the event to project. It then needs to respond with the `ProjectionResponse` message that contains the `operation` property with one of the supported response, which is target-specific. You _must_ pass the event id over in the response, so the Connector can match requests and responses and project events in the correct order.
+
+The `Ignore` message is the only response message that is common for all the targets. You can respond with the `Ignore` message if you need to ignore some events, so they won't get projected.
+
+## More details
+
+Check the documentation for available targets to see how to implement a sidecar for each of them.
+

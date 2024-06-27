@@ -1,0 +1,8 @@
+{
+  "label": "Sinks",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Available Connector sinks"
+  }
+}
