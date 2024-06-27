@@ -2,8 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Text.Json;
+using Eventuous.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
-using NodaTime.Serialization.SystemTextJson;
 using RestSharp.Serializers.Json;
 
 namespace Eventuous.Tests.AspNetCore.Web.Fixture;
@@ -37,7 +37,7 @@ public class ServerFixture {
         _app = builder;
     }
 
-    readonly JsonSerializerOptions          _options = new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+    readonly JsonSerializerOptions          _options = TestPrimitives.DefaultOptions;
     readonly WebApplicationFactory<Program> _app;
 
     public RestClient GetClient() {

@@ -5,7 +5,7 @@ using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.EventStoreDb;
 
-namespace Eventuous.Tests.EventStore.Subscriptions;
+namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
 public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHandler>(
         Action<TSubscriptionOptions> configureOptions,
@@ -65,7 +65,7 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
     // ReSharper disable once StaticMemberInGenericType
     static readonly string[] Categories = [
         // "EventStore.Client.SharingProvider",
-        // "Grpc.Net.Client.Internal.GrpcCall"
+        "Grpc.Net.Client.Internal.GrpcCall"
     ];
 
     readonly ITestOutputHelper _outputHelper = outputHelper;

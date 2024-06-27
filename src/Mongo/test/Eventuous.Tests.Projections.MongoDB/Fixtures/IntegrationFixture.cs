@@ -1,10 +1,8 @@
-using System.Text.Json;
 using EventStore.Client;
 using Eventuous.EventStore;
+using Eventuous.TestHelpers;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Driver;
-using NodaTime;
-using NodaTime.Serialization.SystemTextJson;
 using Testcontainers.EventStoreDb;
 using Testcontainers.MongoDb;
 
@@ -16,16 +14,13 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     public IMongoDatabase   Mongo      { get; private set; } = null!;
     public Fixture          Auto       { get; }              = new();
 
-    static IEventSerializer Serializer { get; } = new DefaultEventSerializer(
-        new JsonSerializerOptions(JsonSerializerDefaults.Web)
-            .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-    );
+    static IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
 
     public Task<AppendEventsResult> AppendEvent(StreamName streamName, object evt, ExpectedStreamVersion? version = null)
         => EventStore.AppendEvents(
             streamName,
             version ?? ExpectedStreamVersion.Any,
-            new[] { new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "application/json", 0) },
+            [new(Guid.NewGuid(), evt, new(), "application/json", 0)],
             CancellationToken.None
         );
 
@@ -41,7 +36,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         _esdbContainer = new EventStoreDbBuilder().Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
-        Client          = new EventStoreClient(settings);
+        Client          = new(settings);
         EventStore      = new EsdbEventStore(Client);
         _mongoContainer = new MongoDbBuilder().Build();
         await _mongoContainer.StartAsync();

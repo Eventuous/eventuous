@@ -11,10 +11,10 @@ namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
 public class SubscriptionIgnoredMessagesTests : StoreFixture {
-    ICheckpointStore    _checkpointStore = null!;
     readonly string     _subscriptionId  = $"test-{Guid.NewGuid():N}";
     readonly StreamName _stream          = new($"test-{Guid.NewGuid():N}");
-    IProducer      _producer        = null!;
+    IProducer           _producer        = null!;
+    ICheckpointStore    _checkpointStore = null!;
     TestEventHandler    _handler         = null!;
 
     public SubscriptionIgnoredMessagesTests(ITestOutputHelper output) {

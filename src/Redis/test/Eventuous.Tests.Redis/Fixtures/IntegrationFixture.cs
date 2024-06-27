@@ -1,10 +1,8 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Eventuous.Diagnostics;
-using NodaTime;
-using NodaTime.Serialization.SystemTextJson;
 using StackExchange.Redis;
 using Eventuous.Redis;
+using Eventuous.TestHelpers;
 using Testcontainers.Redis;
 
 namespace Eventuous.Tests.Redis.Fixtures;
@@ -17,10 +15,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     readonly ActivityListener _listener       = DummyActivityListener.Create();
     RedisContainer            _redisContainer = null!;
 
-    IEventSerializer Serializer { get; } = new DefaultEventSerializer(
-        new JsonSerializerOptions(JsonSerializerDefaults.Web)
-            .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-    );
+    IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
 
     public IntegrationFixture() {
         DefaultEventSerializer.SetDefaultSerializer(Serializer);

@@ -6,8 +6,8 @@ using System.Reflection;
 namespace Eventuous.EventStore.Subscriptions; 
 
 static class EventStoreExtensions {
-    public static EventStoreClientSettings GetSettings(this EventStoreClient client) {
-        var prop = typeof(EventStoreClient).GetProperty("Settings", BindingFlags.NonPublic | BindingFlags.Instance);
+    public static EventStoreClientSettings GetSettings(this EventStoreClientBase client) {
+        var prop = typeof(EventStoreClientBase).GetProperty("Settings", BindingFlags.NonPublic | BindingFlags.Instance);
 
         var getter = prop!.GetGetMethod(true);
         return (EventStoreClientSettings) getter!.Invoke(client, null)!;

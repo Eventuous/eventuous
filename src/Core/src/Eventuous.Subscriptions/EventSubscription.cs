@@ -27,7 +27,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     internal  ConsumePipe             Pipe            { get; }
     protected ILoggerFactory?         LoggerFactory   { get; }
     protected LogContext              Log             { get; }
-    protected CancellationTokenSource Stopping        { get; } = new();
+    protected CancellationTokenSource Stopping        { get; set; } = new();
 
     protected ulong Sequence;
 
@@ -47,11 +47,13 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     public string SubscriptionId => Options.SubscriptionId;
 
     public async ValueTask Subscribe(OnSubscribed onSubscribed, OnDropped onDropped, CancellationToken cancellationToken) {
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, Stopping.Token);
+        if (IsRunning) return;
+
+        Stopping = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         _onSubscribed = onSubscribed;
         _onDropped    = onDropped;
-        await Subscribe(cts.Token).NoContext();
+        await Subscribe(Stopping.Token).NoContext();
         IsRunning = true;
         Log.SubscriptionStarted();
         onSubscribed(Options.SubscriptionId);
@@ -64,6 +66,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         onUnsubscribed(Options.SubscriptionId);
         await Finalize(cancellationToken);
         Sequence = 0;
+        Stopping.Dispose();
     }
 
     protected virtual ValueTask Finalize(CancellationToken cancellationToken) => default;

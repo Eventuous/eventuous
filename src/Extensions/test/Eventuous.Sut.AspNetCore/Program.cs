@@ -1,20 +1,16 @@
-using System.Text.Json;
 using Eventuous.Sut.AspNetCore;
 using Eventuous.Sut.Domain;
+using Eventuous.TestHelpers;
 using Eventuous.Testing;
 using Microsoft.AspNetCore.Http.Json;
-using NodaTime;
-using NodaTime.Serialization.SystemTextJson;
 using BookingService = Eventuous.Sut.AspNetCore.BookingService;
 
-DefaultEventSerializer.SetDefaultSerializer(
-    new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
-);
+DefaultEventSerializer.SetDefaultSerializer(new DefaultEventSerializer(TestPrimitives.DefaultOptions));
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCommandService<BookingService, BookingState>();
 builder.Services.AddAggregateStore<InMemoryEventStore>();
-builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForTests());
 
 var app = builder.Build();
 
