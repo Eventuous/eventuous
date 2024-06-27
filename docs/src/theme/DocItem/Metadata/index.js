@@ -18,9 +18,7 @@ export default function MetadataWrapper(props) {
             const category = sb[0];
             const page = sb[sb.length - 1];
             const location = useLocation();
-            const area = page.docId === undefined
-                ? page.href.includes('/connector/') ? 'Connector' : 'Core'
-                : page.docId.startsWith('connector') ? 'Connector' : 'Core';
+            const area = "Core";
             if (window.analytics) {
                 setTimeout(() => window.analytics.page(page.label, {
                     category: category.label,

@@ -63,7 +63,7 @@ Eventuous has a feature to store historical events in a separate store, called t
 
 ### Archive in real-time
 
-The connector is running continuously, and it copies all the events from the hot store to the archive store. It subscribes to the hot store using a catch-up subscription to the global log, and copies all the events from there to the archive. In this example, we use the [Elastic Connector](../../connector/sinks/elasticsearch) in `producer` mode to replicate events from the hot store to archive store.
+The connector is running continuously, and it copies all the events from the hot store to the archive store. It subscribes to the hot store using a catch-up subscription to the global log, and copies all the events from there to the archive. In this example, we use the [Elastic Connector](https://connector.eventuous.dev) in `producer` mode to replicate events from the hot store to archive store.
 
 <ThemedImage
     alt="Replication process"
@@ -73,11 +73,11 @@ The connector is running continuously, and it copies all the events from the hot
     }}
 />
 
-As the connector replicate all the events, there's no need to perform an explicit archive action when storing the events normally using the regular event store. 
+As the connector replicates all the events, there's no need to perform an explicit archive action when storing the events normally using the regular event store.
 
 ### Delete events from the hot store
 
-Then, to ensure that old events get removed from the hot store, you need to do so on the infrastructure level. For example, you can use the EventStoreDB feature to define the [stream TTL](https://developers.eventstore.com/server/v21.10/streams.html#stream-metadata) (time to live), after which the events are removed from the hot store during the [scavenge](https://developers.eventstore.com/server/v21.10/operations.html#scavenging-events) process.
+Then, to ensure that old events get removed from the hot store, you need to do so on the infrastructure level. For example, you can use the EventStoreDB feature to define the [stream TTL](https://developers.eventstore.com/server/v21.10/streams.html#stream-metadata) (time to live), after which the events are removed from the hot store during the [scavenging](https://developers.eventstore.com/server/v21.10/operations.html#scavenging-events) process.
 
 > Right now, there's no built-in support for setting the stream metadata using Eventuous, but it is [being built](https://github.com/Eventuous/eventuous/issues/85).
 

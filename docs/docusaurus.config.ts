@@ -32,7 +32,7 @@ const config: Config = {
         {
             docs: {
                 sidebarPath: require.resolve('./sidebars.js'),
-                editUrl: "https://github.com/eventuous/docs/edit/master"
+                editUrl: "https://github.com/eventuous/eventuous/docs/edit/master"
             },
             blog: {
                 showReadingTime: true,
@@ -63,12 +63,6 @@ const config: Config = {
                     docId: 'intro',
                     position: 'left',
                     label: 'Documentation',
-                },
-                {
-                    type: 'docSidebar',
-                    sidebarId: 'connectorSidebar',
-                    position: 'left',
-                    label: 'Connector',
                 },
                 {
                     type: 'docsVersionDropdown',
@@ -104,7 +98,7 @@ const config: Config = {
                         },
                         {
                             label: 'Connector',
-                            to: '/docs/connector/index',
+                            href: "https://connector.eventuous.dev"
                         },
                     ],
                 },

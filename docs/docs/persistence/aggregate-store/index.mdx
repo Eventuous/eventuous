@@ -63,7 +63,7 @@ Eventuous has a feature to store historical events in a separate store, called t
 
 ### Archive in real-time
 
-The connector is running continuously, and it copies all the events from the hot store to the archive store. It subscribes to the hot store using a catch-up subscription to the global log, and copies all the events from there to the archive. In this example, we use the [Elastic Connector](../../connector/sinks/elasticsearch) in `producer` mode to replicate events from the hot store to archive store.
+The connector is running continuously, and it copies all the events from the hot store to the archive store. It subscribes to the hot store using a catch-up subscription to the global log, and copies all the events from there to the archive. In this example, we use the [Elastic Connector](https://connector.eventuous.dev) in `producer` mode to replicate events from the hot store to archive store.
 
 <ThemedImage
     alt="Replication process"
@@ -73,7 +73,7 @@ The connector is running continuously, and it copies all the events from the hot
     }}
 />
 
-As the connector replicate all the events, there's no need to perform an explicit archive action when storing the events normally using the regular event store. 
+As the connector replicates all the events, there's no need to perform an explicit archive action when storing the events normally using the regular event store.
 
 ### Delete events from the hot store
 

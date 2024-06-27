@@ -13,9 +13,9 @@ import pfDark from './images/partitioning-filter-dark.png';
 
 ## Pipes and filters
 
-When a subscription gets a message from the transport, it will create a consume context with the message itself, and some contextual information like message id, message type, subscription id, etc. Then, it will pass it over to the consume pipe. A pipe is a set of filters, which are executed sequentially, like middlewares. Each filter can do something with the context, and then calls the next filter. The process continues until there are no filters left. By that time, the message is considered consumed, and the pipe finishes.
+When a subscription gets a message from the transport, it will create a consume context with the message itself, and some contextual information like a message id, message type, subscription id, etc. Then, it will pass it over to the consume pipe. A pipe is a set of filters, which are executed sequentially, like middlewares. Each filter can do something with the context, and then calls the next filter. The process continues until there are no filters left. By that time, the message is considered consumed, and the pipe finishes.
 
-Eventuous consume pipe can be customised by adding filters to it, but normally you'd use the default pipe, which can be visualized like this:
+Eventuous consume pipe can be customized by adding filters to it, but normally you'd use the default pipe, which can be visualized like this:
 
 <ThemedImage
     alt="Default consume pipeline"

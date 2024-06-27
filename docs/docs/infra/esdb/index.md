@@ -47,10 +47,10 @@ EventStoreDB supports multiple [subscription](../../subscriptions/subs-concept) 
 Subscribing to all events in the store is extremely valuable. This way, you can build comprehensive read models, which consolidate information from multiple aggregates. You can also use such a subscription for integration purposes, to convert and publish integration events.
 
 :::note
-[Read more](https://zimarev.com/blog/event-sourcing/all-stream/) about benefits of using the global event stream.
+[Read more](https://zimarev.com/blog/event-sourcing/all-stream/) about the benefits of using the global event stream.
 :::
 
-For registering a subscription to `$all` stream, use `AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions> as shown below:
+For registering a subscription to `$all` stream, use `AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>` as shown below:
 
 ```csharp
 builder.Services.AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
@@ -132,7 +132,7 @@ Another scenario is to subscribe to an integration stream, when you use EventSto
 
 For that purpose you can use the `StreamSubscription` class.
 
-For registering a subscription to a single stream, use `AddSubscription<StreamSubscription, StreamSubscriptionOptions> as shown below:
+For registering a subscription to a single stream, use `AddSubscription<StreamSubscription, StreamSubscriptionOptions>` as shown below:
 
 ```csharp
 builder.Services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
