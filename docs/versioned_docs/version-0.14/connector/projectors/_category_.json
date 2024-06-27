@@ -1,0 +1,8 @@
+{
+  "label": "Projectors",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Connector in Projector mode."
+  }
+}
