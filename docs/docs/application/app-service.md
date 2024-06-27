@@ -4,10 +4,6 @@ description: "Command service and unit of work for aggregates"
 sidebar_position: 1
 ---
 
-:::note
-The Command Service base class is **optional**, it just makes your life a bit easier.
-:::
-
 ## Concept
 
 The command service itself performs the following operations when handling one command:
@@ -49,70 +45,67 @@ Eventuous provides a base class for you to build command services. It is a gener
 
 ### Handling commands
 
-The base class has six methods, which you call in your class constructor to register the command handlers:
+The base class has one function that must be used in the service class constructor to define how the service will handle commands. The function is called `On<TCommand>` where `TCommand` is the command type. You can add as many command handlers as you need. The `On` function composes a command handler builder that allows to chain further details to describe how the command needs to be processed.
 
-| Function          | What's it for                                                                                                                                                                                                                                                       |
-|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `OnNew`           | Registers the handler, which expects no instance aggregate to exist (create, register, initialise, etc). It will get a new aggregate instance. The operation will fail when it will try storing the aggregate state due to version mismatch.                        |
-| `OnNewAsync`      | The same as `OnNew` but expect an asynchronous command handler.                                                                                                                                                                                                     |
-| `OnExisting`      | Registers the handler, which expect an aggregate instance to exist. You need to provide a function to extract the aggregate id from the command. The handler will get the aggregate instance loaded from the store, and will throw if there's no aggregate to load. |
-| `OnExistingAsync` | The same as `OnExisting` but expect an asynchronous command handler.                                                                                                                                                                                                |
-| `OnAny`           | Used for handlers, which can operate both on new and existing aggregate instances. The command service will _try_ to load the aggregate, but won't throw if the load fails, and will pass a new instance instead.                                                   |
-| `OnAnyAsync`      | The same as `OnAny` but expect an asynchronous command handler.                                                                                                                                                                                                     |
+After calling `On`, add two more calls to the builder:
+* `InState(ExpectedState)` to specify what is the expected aggregate state is. For example, if the `BookRoom` command expects that no booking exists with a given identity, you'd specify `InState(ExpectedState.New)`. There are three possible states: `New`, `Existing`, and `Any`.
+* `GetId(Func<TCommand, TId>)` to explain the service how to use one or more properties of `TCommand` type to compose an identity object for loading and storing the aggregate state.
+
+After that, use one of the `Act` functions to specify the business logic of the command handler. There are two available functions for it: `Act` and `ActAsync`.
 
 Here is an example of a command service form our test project:
 
 ```csharp title="BookingService.cs"
-public class BookingService
-  : CommandService<Booking, BookingState, BookingId> {
-    public BookingService(IAggregateStore store) : base(store) {
-        OnNew<Commands.BookRoom>(
-            cmd => new BookingId(cmd.BookingId),
-            (booking, cmd)
-                => booking.BookRoom(
-                    cmd.RoomId,
-                    new StayPeriod(cmd.CheckIn, cmd.CheckOut),
-                    cmd.Price,
-                    cmd.BookedBy,
-                    cmd.BookedAt
-                )
-        );
+public class BookingsCommandService 
+    : CommandService<Booking, BookingState, BookingId> {
+    public BookingsCommandService(
+        IAggregateStore store, 
+        Services.IsRoomAvailable isRoomAvailable
+    ) : base(store) {
+        On<BookRoom>()
+            .InState(ExpectedState.New)
+            .GetId(cmd => new BookingId(cmd.BookingId))
+            .ActAsync(
+                (booking, cmd, _) => {
+                    var period = new StayPeriod(
+                        LocalDate.FromDateTime(cmd.CheckInDate), 
+                        LocalDate.FromDateTime(cmd.CheckOutDate)
+                    ),
+                    booking.BookRoom(
+                        cmd.GuestId,
+                        new RoomId(cmd.RoomId),
+                        stayPeriod,
+                        new Money(cmd.BookingPrice, cmd.Currency),
+                        new Money(cmd.PrepaidAmount, cmd.Currency),
+                        DateTimeOffset.Now,
+                        isRoomAvailable
+                    );
+                }
+            );
 
-        OnAny<Commands.ImportBooking>(
-            cmd => new BookingId(cmd.BookingId),
-            (booking, cmd)
-                => booking.Import(
-                    cmd.RoomId,
-                    new StayPeriod(cmd.CheckIn, cmd.CheckOut)
-                )
-        );
+        On<RecordPayment>()
+            .InState(ExpectedState.Existing)
+            .GetId(cmd => new BookingId(cmd.BookingId))
+            .Act((booking, cmd) => 
+                booking.RecordPayment(
+                    new Money(cmd.PaidAmount, cmd.Currency), 
+                    cmd.PaymentId, 
+                    cmd.PaidBy, 
+                    DateTimeOffset.Now
+                ));
     }
 }
 ```
-
-You pass the command handler as a function to one of those methods. The function can be inline, like in the example, or it could be a method in the command service class.
-
-In addition, you need to specify a function, which extracts the aggregate id from the command, as both of those methods will try loading the aggregate instance from the store.
 
 :::caution Stream name
 Check the [stream name](../persistence/aggregate-stream#stream-name) documentation if you need to use custom stream names.
 :::
 
-#### Async command handlers
-
-If you need to get outside your process boundary when handling a command, you most probably would need to execute an asynchronous call to something like an external HTTP API or a database. For those cases you need to use async overloads:
-
-- `OnNewAsync`
-- `OnExistingAsync`
-- `OnAnyAsync`
-
-These overloads are identical to sync functions, but the command handler function needs to return `Task`, so it can be awaited.
-
 ### Result
 
-The command service will return an instance of `Result`.
+The command service will return an instance of `Result<TState>`.
 
-It could be an `OkResult`, which contains the new aggregate state and the list of new events. You use the data in the result to pass it over to the caller, if needed.
+It could be an `OkResult<TState>`, which contains the new aggregate state and the list of new events. You use the data in the result to pass it over to the caller, if needed.
 
 If the operation was not successful, the command service will return an instance of `ErrorResult` that contains the error message and the exception details.
 
@@ -121,10 +114,10 @@ If the operation was not successful, the command service will return an instance
 If you registered the `EsdbEventStore` and the `AggregateStore` in your `Startup` as described on the [Aggregate store](../persistence/aggregate-store) page, you can also register the command service:
 
 ```csharp title="Program.cs"
-builder.Services.AddCommandService<BookingCommandService, Booking>();
+builder.Services.AddCommandService<BookingCommandService, BookingState>();
 ```
 
-The `AddCommandService` extension will register the `BookingService`, and also as `ICommandService<Booking>`, as a singleton. Remember that all the DI extensions are part of the `Eventuous.AspNetCore` NuGet package.
+The `AddCommandService` extension will register the `BookingService`, and also as `ICommandService<BookingState>`, as a singleton. Remember that all the DI extensions are part of the `Eventuous.Extensions.DependencyInjection` NuGet package.
 
 When you also use `AddControllers`, you get the command service injected to your controllers.
 

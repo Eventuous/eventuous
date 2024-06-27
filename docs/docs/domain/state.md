@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## Event-sourced state
 
-Eventuous has an abstraction for event-sourced state. The state can be used both as an aggregate state, or independently when using functions to handle commands and produce new events using the [functional service](../application/func-service.md). Moving along, we consider event-based state transitions as part of the state handling. Therefore, the state objects needs to expose an API to receive events and produce a new instance of itself (remember that the state is immutable).
+Eventuous has an abstraction for event-sourced state. The state can be used both as an aggregate state, or independently when using functions to handle commands and produce new events using the [functional service](../application/func-service.md). Moving along, we consider event-based state transitions as part of the state handling. Therefore, the state object needs to expose an API to receive events and produce a new instance of itself (remember that the state is immutable).
 
 To support state immutability, `State` is an abstract _record_, not class. Therefore, it supports immutability out of the box and supports `with` syntax to make state transitions easier.
 
@@ -94,3 +94,22 @@ As you can see, state is immutable, and the `On` function registers a handler fo
 
 The sample code also shows that the state class can have some query logic, which is not related to the event handling. It can be useful to encapsulate queries in the state class so the domain logic gets only focused on making decisions based on the state.
 
+### State with typed identity
+
+Normally, you won't be interested to know what state object identity is as you'd operate within an enclosed boundary of an aggregate or a stream. For that reason, you won't need to add the identity value to the events. The identity of an object can always be derived from the stream name, as it contains the object type and the identity already.
+
+If you find it necessary to know what identity is assigned to the state object, you can use the identity-aware state, derived from `State<TId>` abstract record. The `TId` type there is a child type of the `Id` abstract record.
+
+For example, you can declare an identity-aware state type like this:
+
+```csharp
+public record BookingId(string Value) : Id(Value);
+
+public record BookingState<BookingId> {
+    public BookingState() {
+        On<RoomBooked>(...); // skipped for brevity
+    }
+}
+```
+
+The `BookingState` type will have a property named `Id` of type `BookingId`. You don't need to set it manually as it will be provided when the state object is recreated from events by the [command service](../application/app-service.md).

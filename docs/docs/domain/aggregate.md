@@ -60,50 +60,37 @@ Eventuous provides three abstract classes for the `Aggregate` pattern, which are
 
 ### Aggregate
 
-The `Aggregate` abstract class is quite technical and provides very little out of the box.
+The `Aggregate` abstract class is quite technical and provides very little out of the box. Unconditionally, since version 0.15 Eventuous only supports `Aggregate<TState>` type, where `TState` is the aggregate state type. Traditionally, we consider the state as part of the aggregate. However, state is the only part of the aggregate that gets mutated. The pattern used by Eventuous is to separate state from the behaviour by splitting them into two distinct objects. 
 
-| Member            | Kind                 | What it's for                                                    |
-|-------------------|----------------------|------------------------------------------------------------------|
-| `Original`        | Read-only collection | Events that were loaded from the aggregate stream                |
-| `Changes`         | Read-only collection | Events, which represent new state changes, get added here        |
-| `Current`         | Read-only collection | The collection of the historical and new events                  |
-| `ClearChanges`    | Method               | Clears the changes collection                                    |
-| `OriginalVersion` | Property, `int`      | Original aggregate version at which it was loaded from the store |
-| `Version`         | Property, `int`      | Current aggregate version after new events were applied          |
-| `AddChange`       | Method               | Adds an event to the list of changes                             |
-
-It also has two helpful methods, which aren't related to Event Sourcing:
-- `EnsureExists` - throws if `Version` is `-1`
-- `EnsureDoesntExist` - throws if `Version` is not `-1`
-
-All other members are methods. You either need to implement them, or use one of the derived classes (see below).
-
-| Member  | What it's for                                                                                                                                                                       |
-|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Load`  | Given the list of previously stored events, restores the aggregate state. Normally, it's used for synchronous load, when all the stored events come from event store at once.       |
-| `Fold`  | Applies a single state transition event to the aggregate state and increases the version. Normally, it's used for asynchronous loads, when events come from event store one by one. |
-
-When building an application, you'd not need to use the `Aggregate` abstract class as-is. You still might want to use it to implement some advanced scenarios.
-
-### Aggregate with state
-
-Inherited from `Aggregate`, the `Aggregate<T>` adds a separate concept of the aggregate state. Traditionally, we consider state as part of the aggregate. However, state is the only part of the aggregate that mutated. The primary pattern in Eventuous is to separate state from the behaviour by splitting them into two distinct objects.
+The aggregate state in Eventuous is _immutable_. When applying an event to it, we get a new state.
 
 :::tip Event-sourced state
 The `State` abstraction is described on the [State](state) page.
 :::
 
-The aggregate state in Eventuous is _immutable_. When applying an event to it, we get a new state.
+Here are the `Aggregate` class members:
+
+| Member            | Kind                 | What it's for                                                                                                                                                                                            |
+|-------------------|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Original`        | Read-only collection | Events that were loaded from the aggregate stream                                                                                                                                                        |
+| `Changes`         | Read-only collection | Events, which represent new state changes, get added here                                                                                                                                                |
+| `Current`         | Read-only collection | The collection of the historical and new events                                                                                                                                                          |
+| `ClearChanges`    | Method               | Clears the changes collection                                                                                                                                                                            |
+| `OriginalVersion` | Property, `int`      | Original aggregate version at which it was loaded from the store                                                                                                                                         |
+| `Version`         | Property, `int`      | Current aggregate version after new events were applied                                                                                                                                                  |
+| `AddChange`       | Method               | Adds an event to the list of changes                                                                                                                                                                     |
+| `Load`            | Method               | Given the list of previously stored events, restores the aggregate state. Normally, it's used for synchronous load, when all the stored events come from event store at once.                            |
+| `Apply`           | Method               | Given a domain event, applies it to the state. Replaces the current state with the new version. Adds the event to the list of changes. Returns a tuple with the previous and the current state versions. |
+| `State`           | Property             | Returns the current aggregate state.                                                                                                                                                                     |
+| `Current`         | Property             | Returns the collection of events loaded from the stream. If it's a new aggregate, it returns an empty list.                                                                                              |
+
+It also has two helpful methods, which aren't related to Event Sourcing:
+- `EnsureExists` - throws if `Version` is `-1`
+- `EnsureDoesntExist` - throws if `Version` is not `-1`
 
 The stateful aggregate class implements most of the abstract members of the original `Aggregate`. It exposes an API, which allows you to use the stateful aggregate base class directly.
 
-| Member    | Kind     | What it's for                                                                                                                                                                                            |
-|-----------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Apply`   | Method   | Given a domain event, applies it to the state. Replaces the current state with the new version. Adds the event to the list of changes. Returns a tuple with the previous and the current state versions. |
-| `State`   | Property | Returns the current aggregate state.                                                                                                                                                                     |
-| `Current` | Property | Returns the collection of events loaded from the stream. If it's a new aggregate, it returns an empty list.                                                                                              |
-
-Here's an example of a stateful aggregate:
+Here's an example of an aggregate:
 
 ```csharp title="Booking.cs"
 public class Booking : Aggregate<BookingState> {
@@ -146,21 +133,21 @@ public class Booking : Aggregate<BookingState> {
     // check if the payment was already recorded. You can do the same using the state.
     public bool HasPaymentRecord(string paymentId)
         => Current.OfType<BookingPaymentRegistered>().Any(x => x.PaymentId == paymentId);
-
 }
 ```
 
 ### Aggregate identity
 
-Use the `AggregateId` abstract record, which needs a string value for its constructor:
+Eventuous `Aggregate` abstraction doesn't have an identity property. It is, however, possible to use identity-aware state types.
+The identity type must inherit from the `Id` abstract record, which needs a string value for its constructor:
 
 ```csharp title="BookingId.cs"
-public record BookingId(string Value) : AggregateId(Value);
+public record BookingId(string Value) : Id(Value);
 ```
 
 The abstract record overrides its `ToString` to return the string value as-is. It also has an implicit conversion operator, which allows you to use a string value without explicitly instantiating the identity record. However, we still recommend instantiating the identity explicitly to benefit from type safety.
 
-The aggregate identity type is only used by the [command service](../application/app-service.md) and for calculating the [stream name](../persistence/aggregate-stream.md) for loading and saving events.
+The aggregate identity type is only used by the [command service](../application/app-service.md) and for calculating the [stream name](../persistence/aggregate-stream.md) for loading and saving events. When the command service loads an aggregate with identity, it sets the state identity to a value derived from the stream name. For example, when loading events from a stream `Order-123` for an aggregate type declared as `Order : Aggregate<OrderState<OrderId>>`, the `OrderId` value will be set to `123`. 
 
 ## Aggregate factory
 
@@ -169,13 +156,13 @@ Eventuous needs to instantiate your aggregates when it loads them from the store
 The `AggregateFactory` is a simple function:
 
 ```csharp
-public delegate T AggregateFactory<out T>() where T : Aggregate;
+public delegate T AggregateFactory<out T, TState>() where T : Aggregate<TState>;
 ```
 
 The registry allows you to add custom factory for a particular aggregate type. The registry itself is a singleton, accessible by `AggregateFactoryRegistry.Instance`. You can register your custom factory by using the `CreateAggregateUsing<T>` method of the registry:
 
 ```csharp title="Program.cs"
-AggregateFactoryRegistry.CreateAggregateUsing(() => new Booking(availabilityService));
+AggregateFactoryRegistry.CreateAggregateUsing<Booking, BookingState>(() => new Booking(availabilityService));
 ```
 
 By default, when there's no custom factory registered in the registry for a particular aggregate type, Eventuous will create new aggregate instances by using reflections. It will only work when the aggregate class has a parameterless constructor (it's provided by the `Aggregate` base class).
@@ -184,11 +171,11 @@ It's not a requirement to use the default factory registry singleton. Both `Comm
 
 ### Dependency injection
 
-The aggregate factory can inject registered dependencies to aggregates when constructing them. For this to work, you need to tell Eventuous that the aggregate needs to be constructed using the container. To do so, use the `AddAggregate<T>` service collection extension:
+The aggregate factory can inject registered dependencies to newly created aggregate instances when constructing them. For this to work, you need to tell Eventuous that the aggregate needs to be constructed using the container. To do so, use the `AddAggregate<T, TState>` service collection extension:
 
 ```csharp title="Program.cs"
-builder.Services.AddAggregate<Booking>();
-builder.Services.AddAggregate<Payment>(
+builder.Services.AddAggregate<Booking, BookingState>();
+builder.Services.AddAggregate<Payment, PaymentState>(
     sp => new Payment(sp.GetRequiredService<PaymentProcessor>, otherService)
 );
 ```
@@ -199,4 +186,4 @@ When that's done, you also need to tell the host to use the registered factories
 app.UseAggregateFactory();
 ```
 
-These extensions are available in the `Eventuous.AspNetCore` (DI extensions and `IApplicationBuilder` extensions) and `Eventuous.AspNetCore.Web` (`IHost` extensions).
+These extensions are available in the `Eventuous.Extensions.DependencyInjection` package.
