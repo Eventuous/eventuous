@@ -1,0 +1,124 @@
+---
+sidebar_position: 2
+---
+
+# What's new in 0.15
+
+Eventuous v0.15 includes a number of changes and bug fixes, where some of the previous version public APIs are deprecated. Where possible, we made those APIs obsolete and embedded polyfills to make them work, but some APIs are gone for good as it wasn't possible to translate the old API to the new one. Those changes are listed below.
+
+## Breaking changes
+
+### .NET SDK targets
+
+Eventuous 0.15 adds support for .NET 8 and removes support for .NET 7. Currently supported SDKs are .NET 6 and .NET 8.
+
+### Packages
+
+* `Eventuous.AspNetCore` is renamed to `Eventuous.Extensions.DependencyInjection`.
+
+### Domain abstractions
+
+* Aggregate base type without state is removed. The only remaining abstraction is `Aggregate<TState>`. Removal of non-generic `Aggregate` base class triggered a chain of changes for command services and registrations.
+* Aggregate factory extensions require specifying `TState` now. So, use `AddAggregate<T, TState>` instead of `AddAggregate<T>`.
+
+### Command services
+
+* Non-generic `ICommandService` interface is removed.
+* `IStateCommandService<TState>` is replaced by `ICommandService<TState>`. Both aggregate-based and functional command services implement that interface.
+* Non-generic `Result`, `OkResult` and `ErrorResult` types are removed. Only generic `Result<TState>` and its derivatives are supported.
+* Service registration extension replaced by `AddCommandService<TService, TState>`:
+    * `AddCommandService<TService, TAggregate>`
+    * `AddCommandService<TService, TAggtegate, TId>`
+    * `AddFunctionalService<TState>`
+
+### HTTP API extensions
+
+* Controller base class requires `TState` generic argument instead of `TAggregate`, so the new definition is `CommandHttpApiBase<TState>`. Therefore, it can be used with both aggregate-based and functional command services. It takes `ICommandService<TState>` as a dependency.
+* `CommandHttpApiBaseFunc` base class is removed because it's no longer required. Use `CommandHttpApiBase<TState>` instead.
+* Controller methods need to return `ActionResult<Result<TState>>`. That's what the command service returns by default.
+* `AggregateCommands<TAggregate>` attribute is gone, use `StateCommands<TState>` instead. It supports both aggregate-based and functional services.
+* `HttpCommand<TAggregate>` attribute is gone, use `HttpCommand<TState>` instead. It supports both aggregate-based and functional services.
+* `MapAggregateCommands<TAggregate>` is replaced with `MapCommands<TState>`.
+* `MapDiscoveredCommands<TAggregate>` is replaced with `MapDiscoveredCommands<TState>`.
+* `MapCommand<TAggregate, TCommand>` is replaced by `MapCommand<TState, TCommand>`.
+* `MapCommand<TAggregate, TCommand, TResult>` is gone as custom results aren't supported in command mapping. Use `MapCommand<TState, TCommand>` and `Result<TState>` instead.
+* The same applies to command mappings with external-internal command conversion. Aggregate constraint is replaced by state type constraint, and a custom result type is no longer supported in favour of `Result<TState>`.
+
+### Subscriptions
+
+Subscriptions are now being registered in the DI container using keyed dependencies. It requires to use `Microsoft.Extensions.DependencyInjection` version 8 and higher. If you use ASP.NET Core DI container in combination with another container like Autofac, make sure you use the version that supports keyed registrations in ASP.NET Core services collection.
+
+### Producers
+
+* `IEventProducer` was already marked obsolete, and it's now gone. the `IProducer` interface is 100% compatible, so you can need to rename the usages.
+* Producers without options are no longer supported.
+
+### Postgres
+
+* Postgres store options now include connection string, schema name and initialize properties.
+* Postgres store now uses `NpgsqlDataSource`.
+* Calling `AddEventuousPostgres` registers `NpgsqlDataSource` in the container using the provided options.
+* Loading `PostgresStoreOptions` from the configuration is now supported.
+* Postgres subscriptions use `NpgsqlDataSource` as well, but registering a subscription doesn't add the data source as subscription options don't have the connection string. You can either register the data source manually using `Npgsql` own extensions, or use `AddEventuousPostgres`.
+
+### SQL Server
+
+* SQL Server store options now include connection string, schema name and initialize properties.
+* Calling `AddEventuousSqlServer` registers the connection factory, which then is used by the store.
+* SQL Server subscription options class also has the connection string property, so if your service only implements subscriptions, you don't need to call `AddEventuousSqlServer`. However, subscriptions don't initialize the schema.
+
+## New things
+
+There are many small improvements in 0.15, here you can find the list of most important improvements.
+
+### Services
+
+As it becomes clear from breaking changes, Eventuous doesn't distinct aggregate-based and functional services when services are being used in public APIs. Both service flavours now implement a single interface `ICommandService<TState>`, which greatly simplified all downstream APIs like command-handling controllers and minimal API command handlers. You can now decide to move from one flavour to another and only reimplement the service itself without changing the rest of the application.
+
+Command services how can resolve the store based on command payload. It can be useful, for example, in multitenant environments where the command contains information about the tenant, so you can resolve a different store for each tenant for data isolation.
+
+### Gateways
+
+Using keyed dependencies for registering subscription allows using the same event handler for multiple subscriptions. It is also supported in gateways. Previously, multiple gateways would reuse the same transformation function or class, even if you explicitly provide different implementations for different gateways. Not every gateway registration is able to distinct transformations between them, so use one of those:
+
+```csharp
+IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions, TTransform>
+```
+
+```csharp
+static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions>(
+    this IServiceCollection            services,
+    string                             subscriptionId,
+    RouteAndTransform<TProduceOptions> routeAndTransform
+)
+```
+
+### Relational databases
+
+Both Postgres and SQL Server libraries now use the same base implementation. It's now possible to add support for other relational databases using the same abstraction, if someone is willing to experiment or contribute.
+
+Both Postgres and SQL Server libraries got simple projector implementations as well as checkpoint stores.
+
+TODO: Add docs links
+
+Postgres library supports Postgres 7+ with the latest version of `Npgsql` and uses `NpgsqlDataSource`.
+
+All RDBMS-based subscriptions use frequent polling with backpressure. It means that when the polling query doesn't return new events, the subscription will start increasing the polling interval. It allows decreasing the number of empty queries to the database when the system is not under load.
+
+Check the relevant RDBMS-based implementation documentation for more details.
+
+Subscriptions now provide lag metrics and health checks.
+
+Subscriptions now handle transient errors and support retries. Each RDBMS-based implementation has its own logic for that.
+
+### MongoDB
+
+MongoDB projections now support bulk operations.
+
+### Redis
+
+Experimental support for Redis event store and subscriptions added as a separate package.
+
+### Testing
+
+A simple testing library `Eventuous.Testing` now allows creating test specs for aggregates. Eventuous uses it internally in tests.

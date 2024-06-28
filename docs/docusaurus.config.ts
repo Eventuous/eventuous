@@ -32,7 +32,8 @@ const config: Config = {
         {
             docs: {
                 sidebarPath: require.resolve('./sidebars.js'),
-                editUrl: "https://github.com/eventuous/eventuous/docs/edit/master"
+                editUrl: "https://github.com/eventuous/eventuous/docs/edit/master",
+                includeCurrentVersion: false
             },
             blog: {
                 showReadingTime: true,
@@ -66,7 +67,7 @@ const config: Config = {
                 },
                 {
                     type: 'docsVersionDropdown',
-                    position: 'right'
+                    position: 'right',
                 },
                 {
                     href: 'https://github.com/sponsors/Eventuous',

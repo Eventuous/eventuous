@@ -80,10 +80,12 @@ public abstract class Aggregate<T> where T : State<T>, new() {
 
     public void Load(IEnumerable<object?> events) {
         Original = events.Where(x => x != null).ToArray()!;
-        State = Original.Aggregate(State, Fold);
-    }
+        State    = Original.Aggregate(State, Fold);
 
-    static T Fold(T state, object evt) => state.When(evt);
+        return;
+
+        static T Fold(T state, object evt) => state.When(evt);
+    }
 
     /// <summary>
     /// Returns the current aggregate state. Cannot be mutated from the outside.

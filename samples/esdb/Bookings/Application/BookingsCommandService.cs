@@ -3,6 +3,7 @@ using Bookings.Domain.Bookings;
 using Eventuous;
 using NodaTime;
 using static Bookings.Application.BookingCommands;
+// ReSharper disable ArrangeObjectCreationWhenTypeNotEvident
 
 namespace Bookings.Application;
 
@@ -14,7 +15,7 @@ public class BookingsCommandService : CommandService<Booking, BookingState, Book
             .ActAsync(
                 (booking, cmd, _) => booking.BookRoom(
                     cmd.GuestId,
-                    new RoomId(cmd.RoomId),
+                    new(cmd.RoomId),
                     new StayPeriod(LocalDate.FromDateTime(cmd.CheckInDate), LocalDate.FromDateTime(cmd.CheckOutDate)),
                     new Money(cmd.BookingPrice, cmd.Currency),
                     new Money(cmd.PrepaidAmount, cmd.Currency),

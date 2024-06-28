@@ -1,6 +1,7 @@
 const sidebars = {
     docsSidebar: [
         "intro",
+        "whats-new",
         {
             type: "category",
             label: "Prologue",
