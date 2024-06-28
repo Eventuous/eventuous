@@ -1,10 +1,12 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 namespace Eventuous;
 
+[StructLayout(LayoutKind.Auto)]
 public record struct Change(object Event, string EventType);
 
 public abstract record Result<TState>(TState? State, bool Success, IEnumerable<Change>? Changes = null) where TState : new();

@@ -27,11 +27,11 @@ public record struct StreamName {
         return new($"{stateName}-{Ensure.NotEmptyString(entityId)}");
     }
 
-    public string GetId() => Value[(Value.IndexOf('-') + 1)..];
+    public readonly string GetId() => Value[(Value.IndexOf('-') + 1)..];
 
     public static implicit operator string(StreamName streamName) => streamName.Value;
 
-    public override string ToString() => Value;
+    public override readonly string ToString() => Value;
 
     static readonly int SuffixLength = "State".Length;
 }

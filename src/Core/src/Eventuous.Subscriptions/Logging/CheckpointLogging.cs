@@ -3,17 +3,18 @@
 
 // ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
 
+using System.Runtime.CompilerServices;
+
 namespace Eventuous.Subscriptions.Logging;
 
 using Checkpoints;
 
 public static class CheckpointLogging {
-    const int BaseEventId        = 15000;
-    const int PositionReceivedId = BaseEventId + 1;
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void PositionReceived(this LogContext log, CommitPosition checkpoint)
         => log.TraceLog?.Log("Received checkpoint: {Position}", checkpoint);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CommittingPosition(this LogContext log, CommitPosition position)
         => log.DebugLog?.Log("Committing position {Position}", position);
 
@@ -23,6 +24,7 @@ public static class CheckpointLogging {
     public static void CheckpointLoaded(this LogContext? log, ICheckpointStore store, Checkpoint checkpoint)
         => log?.InfoLog?.Log("Loaded checkpoint {CheckpointId} from {Store}: {Position}", checkpoint.Id, store.GetType().Name, checkpoint);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CheckpointStored(this LogContext? log, ICheckpointStore store, Checkpoint checkpoint, bool force) {
         if (log == null) return;
 

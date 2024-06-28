@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 namespace Eventuous.Sql.Base;
 
@@ -9,7 +10,8 @@ namespace Eventuous.Sql.Base;
 /// Represents an event as stored in a relational database.
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-public record struct PersistedEvent(
+[StructLayout(LayoutKind.Auto)]
+public readonly record struct PersistedEvent(
     Guid     MessageId,
     string   MessageType,
     int      StreamPosition,

@@ -82,12 +82,11 @@ Command services how can resolve the store based on command payload. It can be u
 Using keyed dependencies for registering subscription allows using the same event handler for multiple subscriptions. It is also supported in gateways. Previously, multiple gateways would reuse the same transformation function or class, even if you explicitly provide different implementations for different gateways. Not every gateway registration is able to distinct transformations between them, so use one of those:
 
 ```csharp
-IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions, TTransform>
+AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions, TTransform>()
 ```
 
 ```csharp
-static IServiceCollection AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions>(
-    this IServiceCollection            services,
+AddGateway<TSubscription, TSubscriptionOptions, TProducer, TProduceOptions>(
     string                             subscriptionId,
     RouteAndTransform<TProduceOptions> routeAndTransform
 )

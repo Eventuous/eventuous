@@ -3,7 +3,7 @@
 
 namespace Eventuous.Subscriptions.Diagnostics;
 
-record struct HealthReport {
+readonly record struct HealthReport {
     HealthReport(bool isHealthy, Exception? lastException) {
         IsHealthy     = isHealthy;
         LastException = lastException;

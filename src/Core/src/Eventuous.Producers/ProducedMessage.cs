@@ -1,10 +1,13 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.InteropServices;
+
 namespace Eventuous.Producers;
 
 using Diagnostics;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly record struct ProducedMessage {
     public ProducedMessage(object message, Metadata? metadata, Metadata? additionalHeaders = null, Guid? messageId = null) {
         Message           = message;

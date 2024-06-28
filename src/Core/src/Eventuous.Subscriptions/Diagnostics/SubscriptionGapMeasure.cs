@@ -9,6 +9,6 @@ public delegate ValueTask<EndOfStream> GetSubscriptionEndOfStream(CancellationTo
 
 [PublicAPI]
 [StructLayout(LayoutKind.Auto)]
-public record struct EndOfStream(string SubscriptionId, ulong Position, DateTime Timestamp) {
+public readonly record struct EndOfStream(string SubscriptionId, ulong Position, DateTime Timestamp) {
     public static readonly EndOfStream Invalid = new("error", 0, DateTime.MinValue);
 }

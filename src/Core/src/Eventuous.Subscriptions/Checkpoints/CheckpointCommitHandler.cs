@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
@@ -144,6 +145,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     }
 }
 
+[StructLayout(LayoutKind.Auto)]
 public readonly record struct CommitPosition(ulong Position, ulong Sequence, DateTime Timestamp) {
     public bool Valid { get; private init; } = true;
 

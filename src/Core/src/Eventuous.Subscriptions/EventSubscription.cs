@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Tracing;
 using Microsoft.Extensions.Logging;
@@ -227,7 +228,8 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     }
 }
 
-public record struct EventPosition(ulong? Position, DateTime Created) {
+[StructLayout(LayoutKind.Auto)]
+public readonly record struct EventPosition(ulong? Position, DateTime Created) {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static EventPosition FromContext(IMessageConsumeContext context) => new(context.StreamPosition, context.Created);
 

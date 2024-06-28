@@ -67,7 +67,7 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
         return _worker.Write(new(context, next), context.CancellationToken);
     }
 
-    record struct WorkerTask(AsyncConsumeContext Context, LinkedListNode<IConsumeFilter> Filter);
+    readonly record struct WorkerTask(AsyncConsumeContext Context, LinkedListNode<IConsumeFilter> Filter);
 
     public ValueTask DisposeAsync() {
         // Logger.Configure(_subscriptionId, _loggerFactory);

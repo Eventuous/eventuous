@@ -3,6 +3,7 @@
 
 using System.Data;
 using System.Data.Common;
+using System.Runtime.InteropServices;
 using System.Text;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
@@ -228,7 +229,8 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     const string ContentType = "application/json";
 
-    record struct PollingResult(bool Continue, bool Retry, int ReceivedEvents);
+    [StructLayout(LayoutKind.Auto)]
+    readonly record struct PollingResult(bool Continue, bool Retry, int ReceivedEvents);
 
     GetSubscriptionEndOfStream IMeasuredSubscription.GetMeasure() => GetSubscriptionEndOfStream;
 

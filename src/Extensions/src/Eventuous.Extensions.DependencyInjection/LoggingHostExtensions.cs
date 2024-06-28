@@ -35,8 +35,7 @@ public static class LoggingAppBuilderExtensions {
     public static void AddEventuousLogs(this IServiceProvider provider, EventLevel level = EventLevel.Verbose, EventKeywords keywords = EventKeywords.All) {
         var factory = provider.GetService<ILoggerFactory>();
 
-        if (factory != null)
-            listener ??= new LoggingEventListener(factory, level: level, keywords: keywords);
+        if (factory != null) listener ??= new(factory, level: level, keywords: keywords);
     }
 
     static LoggingEventListener? listener;

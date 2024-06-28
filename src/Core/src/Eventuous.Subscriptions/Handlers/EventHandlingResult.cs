@@ -2,9 +2,11 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 
 namespace Eventuous.Subscriptions;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly record struct EventHandlingResult(EventHandlingStatus Status, string HandlerType, Exception? Exception = null) {
     public static EventHandlingResult Succeeded(string handlerType) => new(EventHandlingStatus.Success, handlerType);
 
