@@ -14,7 +14,7 @@ public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions option
     readonly string _connectionString = Ensure.NotEmptyString(options.ConnectionString);
 
     protected void On<T>(ProjectToSqlServer<T> handler) where T : class {
-        base.On<T>(async ctx => await Handle(ctx, GetCommand).ConfigureAwait(false));
+        base.On<T>(async ctx => await Handle(ctx, GetCommand).NoContext());
 
         return;
 
@@ -27,7 +27,7 @@ public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions option
     /// <param name="handler">Function to project the event to a read model in SQL Server.</param>
     /// <typeparam name="T"></typeparam>
     protected void On<T>(ProjectToSqlServerAsync<T> handler) where T : class
-        => base.On<T>(async ctx => await Handle(ctx, handler).ConfigureAwait(false));
+        => base.On<T>(async ctx => await Handle(ctx, handler).NoContext());
 
     async Task Handle<T>(MessageConsumeContext<T> context, ProjectToSqlServerAsync<T> handler) where T : class {
         await using var connection = await ConnectionFactory.GetConnection(_connectionString, context.CancellationToken);

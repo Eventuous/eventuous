@@ -31,4 +31,8 @@ public abstract class PostgresSubscriptionBase<T>(
     protected override string GetEndOfAll    { get; } = $"select max(global_position) from {options.Schema}.messages";
 }
 
-public abstract record PostgresSubscriptionBaseOptions : SqlSubscriptionOptionsBase;
+public abstract record PostgresSubscriptionBaseOptions : SqlSubscriptionOptionsBase {
+    protected PostgresSubscriptionBaseOptions() {
+        Schema = Postgresql.Schema.DefaultSchema;
+    }
+}

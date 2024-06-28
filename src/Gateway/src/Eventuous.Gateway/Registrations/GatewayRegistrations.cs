@@ -105,7 +105,7 @@ public static class GatewayRegistrations {
             var transform = sp.GetRequiredService<RouteAndTransform<TProduceOptions>>();
             var producer  = sp.GetRequiredService<TProducer>();
 
-            return new GatewayHandler<TProduceOptions>(new GatewayProducer<TProduceOptions>(producer), transform, awaitProduce);
+            return new(new GatewayProducer<TProduceOptions>(producer), transform, awaitProduce);
         }
     }
 
@@ -155,7 +155,7 @@ public static class GatewayRegistrations {
             var transform = sp.GetRequiredService<TTransform>();
             var producer  = sp.GetRequiredService<TProducer>();
 
-            return new GatewayHandler<TTransform, TProduceOptions>(new GatewayProducer<TProduceOptions>(producer), transform, awaitProduce);
+            return new(new GatewayProducer<TProduceOptions>(producer), transform, awaitProduce);
         }
     }
 }

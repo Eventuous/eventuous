@@ -38,7 +38,7 @@ public class PostgresStore : SqlEventStoreBase<NpgsqlConnection, NpgsqlTransacti
             IMetadataSerializer?  metaSerializer = null
         ) : base(serializer, metaSerializer) {
         var pgOptions = options ?? new PostgresStoreOptions();
-        Schema      = new Schema(pgOptions.Schema);
+        Schema      = new(pgOptions.Schema);
         _dataSource = Ensure.NotNull(dataSource, "Data Source");
     }
 

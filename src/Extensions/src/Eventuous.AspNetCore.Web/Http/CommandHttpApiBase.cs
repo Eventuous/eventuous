@@ -12,7 +12,7 @@ public abstract class CommandHttpApiBase<TState>(ICommandService<TState> service
     : CommandHttpApiBase<TState, Result<TState>>(service, commandMap) where TState : State<TState>, new();
 
 /// <summary>
-/// Base class for exposing commands via Web API using a controller returning custom result type.
+/// Base class for exposing commands via Web API using a controller returning a custom result type.
 /// </summary>
 /// <param name="service">Command service</param>
 /// <param name="commandMap">Optional: Map between external and internal commands</param>

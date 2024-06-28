@@ -20,7 +20,7 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
             SubscriptionKind kind,
             ILoggerFactory?  loggerFactory
         ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory) {
-        Schema            = new Schema(options.Schema);
+        Schema            = new(options.Schema);
         _connectionString = Ensure.NotEmptyString(Options.ConnectionString);
         GetEndOfStream    = $"SELECT MAX(StreamPosition) FROM {options.Schema}.Messages";
         GetEndOfAll       = $"SELECT MAX(GlobalPosition) FROM {options.Schema}.Messages";
@@ -48,5 +48,6 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
 }
 
 public abstract record SqlServerSubscriptionBaseOptions : SqlSubscriptionOptionsBase {
+    protected SqlServerSubscriptionBaseOptions() => Schema = SqlServer.Schema.DefaultSchema;
     public string? ConnectionString { get; set; }
 }
