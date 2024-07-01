@@ -42,7 +42,7 @@ static class Ensure {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string NotEmptyString(string? value, [CallerArgumentExpression("value")] string? name = default) {
 #if NET8_0_OR_GREATER
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(value, name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(value, name);
         return value;
 #else
         return !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentNullException(name);

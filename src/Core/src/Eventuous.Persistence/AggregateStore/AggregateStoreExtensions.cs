@@ -15,9 +15,11 @@ public static class AggregateStoreExtensions {
     /// <typeparam name="TState">State type</typeparam>
     /// <typeparam name="TId">Aggregate id type</typeparam>
     /// <returns></returns>
+    [Obsolete("Use IEventReader.LoadAggregates instead.")]
     public static async Task<T> Load<T, TState, TId>(this IAggregateStore store, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
         where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
         var aggregate = await store.Load<T, TState>(streamNameMap.GetStreamName<T, TState, TId>(id), cancellationToken).NoContext();
+
         return aggregate.WithId<T, TState, TId>(id);
     }
 
@@ -29,18 +31,25 @@ public static class AggregateStoreExtensions {
     /// <param name="streamNameMap">Stream name map</param>
     /// <param name="id">Aggregate id</param>
     /// <param name="cancellationToken"></param>
-    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <typeparam name="TState">State type</typeparam>
     /// <typeparam name="TId">Aggregate id type</typeparam>
     /// <returns></returns>
-    public static async Task<T> LoadOrNew<T, TState, TId>(this IAggregateStore store, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
-        var aggregate = await store.LoadOrNew<T, TState>(streamNameMap.GetStreamName<T, TState, TId>(id), cancellationToken).NoContext();
-        return aggregate.WithId<T, TState, TId>(id);
+    [Obsolete("Use IEventReader.LoadAggregates instead.")]
+    public static async Task<TAggregate> LoadOrNew<TAggregate, TState, TId>(
+            this IAggregateStore store,
+            StreamNameMap        streamNameMap,
+            TId                  id,
+            CancellationToken    cancellationToken
+        )
+        where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
+        var aggregate = await store.LoadOrNew<TAggregate, TState>(streamNameMap.GetStreamName<TAggregate, TState, TId>(id), cancellationToken).NoContext();
+
+        return aggregate.WithId<TAggregate, TState, TId>(id);
     }
 
-    internal static T WithId<T, TState, TId>(this T aggregate, TId id)
-        where T : Aggregate<TState>
+    internal static TAggregate WithId<TAggregate, TState, TId>(this TAggregate aggregate, TId id)
+        where TAggregate : Aggregate<TState>
         where TState : State<TState>, new()
         where TId : Id {
         if (aggregate.State is State<TState, TId> stateWithId) {

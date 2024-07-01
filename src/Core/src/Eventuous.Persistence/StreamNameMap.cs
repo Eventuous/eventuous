@@ -15,8 +15,5 @@ public class StreamNameMap {
         => _typeMap.TryGetValue<TId>(out var map) ? map(aggregateId) : StreamNameFactory.For<T, TState, TId>(aggregateId);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public StreamName GetStreamName<TId>(TId id) where TId : Id
-        => _typeMap.TryGetValue<TId>(out var map) ? map(id) : throw new StreamNameMapNotFound<TId>(id);
+    public StreamName GetStreamName<TId>(TId id) where TId : Id => _typeMap.TryGetValue<TId>(out var map) ? map(id) : StreamNameFactory.For(id);
 }
-
-public class StreamNameMapNotFound<TId>(TId id) : Exception($"No stream name map found for {typeof(TId).Name} with value {id}") where TId : Id;

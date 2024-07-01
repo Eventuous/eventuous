@@ -14,7 +14,7 @@ public interface IEventStore : IEventReader, IEventWriter {
     /// <param name="stream">Stream name</param>
     /// <param name="cancellationToken"></param>
     /// <returns>True of stream exists</returns>
-    Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken);
+    Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Truncate a stream at a given position
@@ -24,7 +24,7 @@ public interface IEventStore : IEventReader, IEventWriter {
     /// <param name="expectedVersion">Expected stream version (could be Any)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
-    Task TruncateStream(StreamName stream, StreamTruncatePosition truncatePosition, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken);
+    Task TruncateStream(StreamName stream, StreamTruncatePosition truncatePosition, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Delete a stream
@@ -33,5 +33,5 @@ public interface IEventStore : IEventReader, IEventWriter {
     /// <param name="expectedVersion">Expected stream version (could be Any)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
-    Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken);
+    Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken = default);
 }

@@ -17,8 +17,12 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
             Func<TAggregate, TCommand, CancellationToken, Task> action,
             Func<TCommand, IEventStore>?                        resolveStore = null
         ) where TCommand : class {
-        var builder = On<TCommand>().InState(ExpectedState.New).GetId(getId).ActAsync(action);
-        if (resolveStore != null) builder.ResolveStore(resolveStore);
+        if (resolveStore != null) {
+            On<TCommand>().InState(ExpectedState.New).GetId(getId).ResolveStore(resolveStore).ActAsync(action);
+        }
+        else {
+            On<TCommand>().InState(ExpectedState.New).GetId(getId).ActAsync(action);
+        }
     }
 
     /// <summary>
@@ -35,8 +39,12 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
             Func<TAggregate, TCommand, CancellationToken, Task> action,
             Func<TCommand, IEventStore>?                        resolveStore = null
         ) where TCommand : class {
-        var builder = On<TCommand>().InState(ExpectedState.Existing).GetId(getId).ActAsync(action);
-        if (resolveStore != null) builder.ResolveStore(resolveStore);
+        if (resolveStore != null) {
+            On<TCommand>().InState(ExpectedState.Existing).GetId(getId).ResolveStore(resolveStore).ActAsync(action);
+        }
+        else {
+            On<TCommand>().InState(ExpectedState.Existing).GetId(getId).ActAsync(action);
+        }
     }
 
     /// <summary>
@@ -53,8 +61,12 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
             Func<TAggregate, TCommand, CancellationToken, Task> action,
             Func<TCommand, IEventStore>?                        resolveStore = null
         ) where TCommand : class {
-        var builder = On<TCommand>().InState(ExpectedState.Existing).GetIdAsync(getId).ActAsync(action);
-        if (resolveStore != null) builder.ResolveStore(resolveStore);
+        if (resolveStore != null) {
+            On<TCommand>().InState(ExpectedState.Existing).GetIdAsync(getId).ResolveStore(resolveStore).ActAsync(action);
+        }
+        else {
+            On<TCommand>().InState(ExpectedState.Existing).GetIdAsync(getId).ActAsync(action);
+        }
     }
 
     /// <summary>
@@ -71,8 +83,12 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
             Func<TAggregate, TCommand, CancellationToken, Task> action,
             Func<TCommand, IEventStore>?                        resolveStore = null
         ) where TCommand : class {
-        var builder = On<TCommand>().InState(ExpectedState.Any).GetId(getId).ActAsync(action);
-        if (resolveStore != null) builder.ResolveStore(resolveStore);
+        if (resolveStore != null) {
+            On<TCommand>().InState(ExpectedState.Any).GetId(getId).ResolveStore(resolveStore).ActAsync(action);
+        }
+        else {
+            On<TCommand>().InState(ExpectedState.Any).GetId(getId).ActAsync(action);
+        }
     }
 
     /// <summary>
@@ -89,7 +105,11 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
             Func<TAggregate, TCommand, CancellationToken, Task> action,
             Func<TCommand, IEventStore>?                        resolveStore = null
         ) where TCommand : class {
-        var builder = On<TCommand>().InState(ExpectedState.Any).GetIdAsync(getId).ActAsync(action);
-        if (resolveStore != null) builder.ResolveStore(resolveStore);
+        if (resolveStore != null) {
+            On<TCommand>().InState(ExpectedState.Any).GetIdAsync(getId).ResolveStore(resolveStore).ActAsync(action);
+        }
+        else {
+            On<TCommand>().InState(ExpectedState.Any).GetIdAsync(getId).ActAsync(action);
+        }
     }
 }

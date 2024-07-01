@@ -16,7 +16,7 @@ public class AggregateStore<TReader>(
     /// <inheritdoc/>
     public Task<AppendEventsResult> Store<TAggregate, TState>(StreamName streamName, TAggregate aggregate, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new()
-        => eventStore.Store<TAggregate, TState>(streamName, aggregate, amendEvent, cancellationToken);
+        => eventStore.StoreAggregate<TAggregate, TState>(streamName, aggregate, amendEvent, cancellationToken);
 
     /// <inheritdoc/>
     public Task<TAggregate> Load<TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken) where TAggregate : Aggregate<TState> where TState : State<TState>, new()

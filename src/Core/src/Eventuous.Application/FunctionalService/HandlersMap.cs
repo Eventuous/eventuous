@@ -7,13 +7,13 @@ using static Eventuous.FuncServiceDelegates;
 
 namespace Eventuous;
 
-record RegisteredHandler<T>(
+record RegisteredHandler<TState>(
         ExpectedState                   ExpectedState,
         GetStreamNameFromUntypedCommand GetStream,
-        ExecuteUntypedCommand<T>        Handler,
+        ExecuteUntypedCommand<TState>   Handler,
         ResolveReaderFromCommand        ResolveReaderFromCommand,
         ResolveWriterFromCommand        ResolveWriterFromCommand
-    ) where T : State<T>;
+    ) where TState : State<TState>;
 
 class HandlersMap<TState> where TState : State<TState> {
     readonly TypeMap<RegisteredHandler<TState>> _typeMap = new();

@@ -17,8 +17,12 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
             Action<TAggregate, TCommand> action,
             Func<TCommand, IEventStore>? resolveStore = null
         ) where TCommand : class {
-        var builder = On<TCommand>().InState(ExpectedState.New).GetId(getId).Act(action);
-        if (resolveStore != null) builder.ResolveStore(resolveStore);
+        if (resolveStore != null) {
+            On<TCommand>().InState(ExpectedState.New).GetId(getId).ResolveStore(resolveStore).Act(action);
+        }
+        else {
+            On<TCommand>().InState(ExpectedState.New).GetId(getId).Act(action);
+        }
     }
 
     /// <summary>
@@ -34,8 +38,12 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
             Action<TAggregate, TCommand> action,
             Func<TCommand, IEventStore>? resolveStore = null
         ) where TCommand : class {
-        var builder = On<TCommand>().InState(ExpectedState.Existing).GetId(getId).Act(action);
-        if (resolveStore != null) builder.ResolveStore(resolveStore);
+        if (resolveStore != null) {
+            On<TCommand>().InState(ExpectedState.Existing).GetId(getId).ResolveStore(resolveStore).Act(action);
+        }
+        else {
+            On<TCommand>().InState(ExpectedState.Existing).GetId(getId).Act(action);
+        }
     }
 
     /// <summary>
@@ -51,7 +59,11 @@ public abstract partial class CommandService<TAggregate, TState, TId> {
             Action<TAggregate, TCommand> action,
             Func<TCommand, IEventStore>? resolveStore = null
         ) where TCommand : class {
-        var builder = On<TCommand>().InState(ExpectedState.Any).GetId(getId).Act(action);
-        if (resolveStore != null) builder.ResolveStore(resolveStore);
+        if (resolveStore != null) {
+            On<TCommand>().InState(ExpectedState.Any).GetId(getId).ResolveStore(resolveStore).Act(action);
+        }
+        else {
+            On<TCommand>().InState(ExpectedState.Any).GetId(getId).Act(action);
+        }
     }
 }

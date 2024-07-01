@@ -1,8 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.CompilerServices;
-
 namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
@@ -22,7 +20,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         TypeMapper?               typeMap         = null
     )
     : ICommandService<TAggregate, TState, TId>
-    where TAggregate : Aggregate<TState>, new()
+    where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id {
     protected CommandService(
@@ -43,19 +41,13 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
     readonly StreamNameMap                        _streamNameMap   = streamNameMap   ?? new StreamNameMap();
     readonly TypeMapper                           _typeMap         = typeMap         ?? TypeMap.Instance;
 
-    bool _initialized;
-
     /// <summary>
     /// Returns the command handler builder for the specified command type.
     /// </summary>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
-    protected CommandHandlerBuilder<TCommand, TAggregate, TState, TId> On<TCommand>() where TCommand : class {
-        var builder = new CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(Reader, Writer);
-        _builders.Add(typeof(TCommand), builder);
-
-        return builder;
-    }
+    protected IDefineExpectedState<TCommand, TAggregate, TState, TId> On<TCommand>() where TCommand : class
+        => new CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(this, Reader, Writer);
 
     /// <summary>
     /// The command handler. Call this function from your edge (API).
@@ -65,8 +57,6 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
     /// <returns><see cref="Result{TState}"/> of the execution</returns>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
-        if (!_initialized) BuildHandlers();
-
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();
             var exception = new Exceptions.CommandHandlerNotFound(command.GetType());
@@ -80,11 +70,15 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
 
         try {
             var aggregate = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await reader.LoadAggregate<TAggregate, TState>(stream, false, _factoryRegistry, cancellationToken).NoContext(),
-                ExpectedState.Existing => await reader.LoadAggregate<TAggregate, TState>(stream, true, _factoryRegistry, cancellationToken).NoContext(),
-                ExpectedState.New      => Create(aggregateId),
-                ExpectedState.Unknown  => default,
-                _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
+                ExpectedState.Any => await reader
+                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, false, _factoryRegistry, cancellationToken)
+                    .NoContext(),
+                ExpectedState.Existing => await reader
+                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, true, _factoryRegistry, cancellationToken)
+                    .NoContext(),
+                ExpectedState.New     => Create(aggregateId),
+                ExpectedState.Unknown => default,
+                _                     => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
             var result = await registeredHandler
@@ -95,7 +89,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
             var writer      = registeredHandler.ResolveWriter(command);
-            var storeResult = await writer.Store<TAggregate, TState>(stream, result, Amend, cancellationToken).NoContext();
+            var storeResult = await writer.StoreAggregate<TAggregate, TState>(stream, result, Amend, cancellationToken).NoContext();
             var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
@@ -111,18 +105,6 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         StreamEvent Amend(StreamEvent streamEvent) => registeredHandler.AmendEvent?.Invoke(streamEvent, command) ?? streamEvent;
     }
 
-    readonly Dictionary<Type, CommandHandlerBuilder<TAggregate, TState, TId>> _builders = new();
-
-    [MethodImpl(MethodImplOptions.Synchronized)]
-    void BuildHandlers() {
-        if (_initialized) return;
-
-        foreach (var commandType in _builders.Keys) {
-            var builder = _builders[commandType];
-            var handler = builder.Build();
-            _handlers.AddHandlerUntyped(commandType, handler);
-        }
-
-        _initialized = true;
-    }
+    internal void AddHandler<TCommand>(RegisteredHandler<TAggregate, TState, TId> handler) where TCommand : class
+        => _handlers.AddHandlerUntyped(typeof(TCommand), handler);
 }

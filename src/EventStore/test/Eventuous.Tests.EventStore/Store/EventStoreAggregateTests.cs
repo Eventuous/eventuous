@@ -4,30 +4,36 @@ using static Eventuous.AggregateFactoryRegistry;
 
 namespace Eventuous.Tests.EventStore.Store;
 
-public class AggregateStoreTests : IClassFixture<StoreFixture> {
+public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable {
     readonly StoreFixture                 _fixture;
     readonly ILogger<AggregateStoreTests> _log;
+    readonly ILoggerFactory               _loggerFactory;
 
-    public AggregateStoreTests(StoreFixture fixture, ITestOutputHelper output) {
+    public EventStoreAggregateTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
         TypeMap.Instance.AddType<TestEvent>("testEvent");
-        var loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug));
-        _log = loggerFactory.CreateLogger<AggregateStoreTests>();
+        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug));
+        _log           = _loggerFactory.CreateLogger<AggregateStoreTests>();
     }
 
     [Fact]
     [Trait("Category", "Store")]
-    [Obsolete("Obsolete")]
     public async Task AppendedEventShouldBeTraced() {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, CancellationToken.None);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id);
+
+        var streamName = StreamNameFactory.For<TestAggregate, TestState, TestId>(id);
+        var events     = await _fixture.EventStore.ReadStream(streamName, StreamReadPosition.Start);
+        var first      = events[0];
+
+        first.Metadata["trace-id"].Should().NotBeNull();
+        first.Metadata["span-id"].Should().NotBeNull();
     }
 
     [Fact]
     [Trait("Category", "Store")]
-    [Obsolete("Obsolete")]
     public async Task ShouldReadLongAggregateStream() {
         const int count = 9000;
 
@@ -43,15 +49,15 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
             if (counter != 1000) continue;
 
             _log.LogInformation("Storing batch of events..");
-            await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, CancellationToken.None);
-            aggregate = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, CancellationToken.None);
+            await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id);
+            aggregate = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id);
             counter   = 0;
         }
 
-        await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, CancellationToken.None);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id);
 
         _log.LogInformation("Loading large aggregate stream..");
-        var restored = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, CancellationToken.None);
+        var restored = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id);
 
         restored.State.Values.Count.Should().Be(count);
         restored.State.Values.Should().BeEquivalentTo(aggregate.State.Values);
@@ -59,17 +65,16 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
 
     [Fact]
     [Trait("Category", "Store")]
-    [Obsolete("Obsolete")]
     public async Task ShouldReadAggregateStreamManyTimes() {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, default);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id);
 
         const int numberOfReads = 100;
 
         foreach (var unused in Enumerable.Range(0, numberOfReads)) {
-            var read = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, default);
+            var read = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id);
             read.State.Should().BeEquivalentTo(aggregate.State);
         }
     }
@@ -88,4 +93,6 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     }
 
     record TestEvent(string Data);
+
+    public void Dispose() => _loggerFactory.Dispose();
 }

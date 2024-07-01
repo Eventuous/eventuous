@@ -7,6 +7,7 @@ namespace Eventuous;
 /// Aggregate state persistent store
 /// </summary>
 [PublicAPI]
+[Obsolete("Use extensions of IEventReader and IEventWriter to load and store aggregates")]
 public interface IAggregateStore {
     /// <summary>
     /// Store the new or updated aggregate state
@@ -14,13 +15,14 @@ public interface IAggregateStore {
     /// <param name="aggregate">Aggregate instance, which needs to be persisted</param>
     /// <param name="id">Aggregate id</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
-    /// <returns></returns>
-    public Task<AppendEventsResult> Store<T, TState, TId>(T aggregate, TId id, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TId : Id where TState : State<TState>, new()
-        => Store<T, TState>(StreamNameFactory.For<T, TState, TId>(id), aggregate, cancellationToken);
+    /// <returns>Result of the append operation</returns>
+    [Obsolete("Use IEventWriter.StoreAggregate<TAggregate, TState> instead.")]
+    public Task<AppendEventsResult> Store<TAggregate, TState, TId>(TAggregate aggregate, TId id, CancellationToken cancellationToken)
+        where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new()
+        => Store<TAggregate, TState>(StreamNameFactory.For<TAggregate, TState, TId>(id), aggregate, cancellationToken);
 
     /// <summary>
     /// Store the new or updated aggregate state
@@ -28,33 +30,38 @@ public interface IAggregateStore {
     /// <param name="streamName"></param>
     /// <param name="aggregate">Aggregate instance, which needs to be persisted</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
-    /// <returns></returns>
-    Task<AppendEventsResult> Store<T, TState>(StreamName streamName, T aggregate, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TState : State<TState>, new();
+    /// <returns>Result of the append operation</returns>
+    [Obsolete("Use IEventWriter.StoreAggregate<TAggregate, TState> instead.")]
+    Task<AppendEventsResult> Store<TAggregate, TState>(StreamName streamName, TAggregate aggregate, CancellationToken cancellationToken)
+        where TAggregate : Aggregate<TState> where TState : State<TState>, new();
 
     /// <summary>
     /// Load the aggregate from the store for a given id
     /// </summary>
     /// <param name="id">Aggregate id</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
-    /// <returns></returns>
-    public Task<T> Load<T, TState, TId>(TId id, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() => Load<T, TState>(StreamNameFactory.For<T, TState, TId>(id), cancellationToken);
+    /// <returns>Aggregate instance</returns>
+    [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
+    public Task<TAggregate> Load<TAggregate, TState, TId>(TId id, CancellationToken cancellationToken)
+        where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new()
+        => Load<TAggregate, TState>(StreamNameFactory.For<TAggregate, TState, TId>(id), cancellationToken);
 
     /// <summary>
     /// Load the aggregate from the store for a given id
     /// </summary>
     /// <param name="streamName"></param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
-    /// <returns></returns>
-    Task<T> Load<T, TState>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate<TState> where TState : State<TState>, new();
+    /// <returns>Aggregate instance</returns>
+    [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
+    Task<TAggregate> Load<TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
+        where TAggregate : Aggregate<TState> where TState : State<TState>, new();
 
     /// <summary>
     /// Attempts to load the aggregate from the store for a given id. If the aggregate is not found,
@@ -62,13 +69,14 @@ public interface IAggregateStore {
     /// </summary>
     /// <param name="id">Aggregate id as string</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
-    /// <returns></returns>
-    public Task<T> LoadOrNew<T, TState, TId>(TId id, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TId : Id where TState : State<TState>, new()
-        => LoadOrNew<T, TState>(StreamNameFactory.For<T, TState, TId>(id), cancellationToken);
+    /// <returns>Aggregate instance</returns>
+    [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
+    public Task<TAggregate> LoadOrNew<TAggregate, TState, TId>(TId id, CancellationToken cancellationToken)
+        where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new()
+        => LoadOrNew<TAggregate, TState>(StreamNameFactory.For<TAggregate, TState, TId>(id), cancellationToken);
 
     /// <summary>
     /// Attempts to load the aggregate from the store for a given id. If the aggregate is not found,
@@ -76,8 +84,10 @@ public interface IAggregateStore {
     /// </summary>
     /// <param name="streamName">Name of the aggregate stream</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <typeparam name="T">Aggregate type</typeparam>
+    /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
-    /// <returns></returns>
-    Task<T> LoadOrNew<T, TState>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate<TState> where TState : State<TState>, new();
+    /// <returns>Aggregate instance</returns>
+    [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
+    Task<TAggregate> LoadOrNew<TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
+        where TAggregate : Aggregate<TState> where TState : State<TState>, new();
 }

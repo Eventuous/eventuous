@@ -5,5 +5,8 @@ namespace Eventuous.Diagnostics;
 
 public static class DummyActivityListener {
     public static ActivityListener Create()
-        => new() { ShouldListenTo  = x => x.Name.StartsWith(EventuousDiagnostics.InstrumentationName) };
+        => new() {
+            ShouldListenTo  = x => x.Name.StartsWith(EventuousDiagnostics.InstrumentationName), 
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData
+        };
 }

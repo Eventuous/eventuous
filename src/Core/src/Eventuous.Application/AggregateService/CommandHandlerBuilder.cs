@@ -5,12 +5,117 @@ using static Eventuous.CommandServiceDelegates;
 
 namespace Eventuous;
 
-public abstract class CommandHandlerBuilder<TAggregate, TState, TId>
+public interface IDefineExpectedState<out TCommand, TAggregate, out TState, TId>
     where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
-    where TId : Id {
-    internal abstract RegisteredHandler<TAggregate, TState, TId> Build();
+    where TId : Id
+    where TCommand : class {
+    /// <summary>
+    /// Defines the expected stream state for handling the command.
+    /// </summary>
+    /// <param name="expectedState">Expected stream state</param>
+    /// <returns></returns>
+    IDefineIdentity<TCommand, TAggregate, TState, TId> InState(ExpectedState expectedState);
 }
+
+public interface IDefineIdentity<out TCommand, TAggregate, out TState, TId>
+    where TAggregate : Aggregate<TState>
+    where TState : State<TState>, new()
+    where TId : Id
+    where TCommand : class {
+    /// <summary>
+    /// Defines how the aggregate id is extracted from the command.
+    /// </summary>
+    /// <param name="getId">A function to get the aggregate id from the command.</param>
+    /// <returns></returns>
+    ICommandHandlerBuilder<TCommand, TAggregate, TState, TId> GetId(Func<TCommand, TId> getId);
+
+    /// <summary>
+    /// Defines how the aggregate id is extracted from the command, asynchronously.
+    /// </summary>
+    /// <param name="getId">A function to get the aggregate id from the command.</param>
+    /// <returns></returns>
+    ICommandHandlerBuilder<TCommand, TAggregate, TState, TId> GetIdAsync(Func<TCommand, CancellationToken, ValueTask<TId>> getId);
+}
+
+public interface IDefineStore<out TCommand, out TAggregate, out TState, TId>
+    where TAggregate : Aggregate<TState>
+    where TState : State<TState>, new()
+    where TId : Id
+    where TCommand : class {
+    /// <summary>
+    /// Defines how to resolve the event store from the command. It assigns both reader and writer.
+    /// If not defined, the reader and writer provided by the functional service will be used.
+    /// </summary>
+    /// <param name="resolveStore">Function to resolve the event writer</param>
+    /// <returns></returns>
+    IDefineExecution<TCommand, TAggregate, TState, TId> ResolveStore(Func<TCommand, IEventStore> resolveStore);
+}
+
+public interface IDefineReader<out TCommand, out TAggregate, out TState, TId>
+    where TAggregate : Aggregate<TState>
+    where TState : State<TState>, new()
+    where TId : Id
+    where TCommand : class {
+    /// <summary>
+    /// Defines how to resolve the event reader from the command.
+    /// If not defined, the reader provided by the functional service will be used.
+    /// </summary>
+    /// <param name="resolveReader">Function to resolve the event reader</param>
+    /// <returns></returns>
+    IDefineWriter<TCommand, TAggregate, TState, TId> ResolveReader(Func<TCommand, IEventReader> resolveReader);
+}
+
+public interface IDefineWriter<out TCommand, out TAggregate, out TState, TId>
+    where TAggregate : Aggregate<TState>
+    where TState : State<TState>, new()
+    where TId : Id
+    where TCommand : class {
+    /// <summary>
+    /// Defines how to resolve the event writer from the command.
+    /// If not defined, the writer provided by the functional service will be used.
+    /// </summary>
+    /// <param name="resolveWriter">Function to resolve the event writer</param>
+    /// <returns></returns>
+    IDefineExecution<TCommand, TAggregate, TState, TId> ResolveWriter(Func<TCommand, IEventWriter> resolveWriter);
+}
+
+public interface IDefineStoreOrReader<out TCommand, out TAggregate, out TState, TId>
+    : IDefineStore<TCommand, TAggregate, TState, TId>, IDefineReader<TCommand, TAggregate, TState, TId>
+    where TAggregate : Aggregate<TState>
+    where TState : State<TState>, new()
+    where TId : Id
+    where TCommand : class;
+
+public interface IDefineExecution<out TCommand, out TAggregate, out TState, TId>
+    where TAggregate : Aggregate<TState>
+    where TState : State<TState>, new()
+    where TId : Id
+    where TCommand : class {
+    /// <summary>
+    /// Defines how the command that acts on the aggregate.
+    /// </summary>
+    /// <param name="action">A function that executes an operation on an aggregate</param>
+    /// <returns></returns>
+    void Act(Action<TAggregate, TCommand> action);
+
+    /// <summary>
+    /// Defines how the command that acts on the aggregate.
+    /// </summary>
+    /// <param name="action">A function that executes an asynchronous operation on an aggregate</param>
+    /// <returns></returns>
+    void ActAsync(Func<TAggregate, TCommand, CancellationToken, Task> action);
+}
+
+public interface ICommandHandlerBuilder<out TCommand, TAggregate, out TState, TId>
+    : IDefineStore<TCommand, TAggregate, TState, TId>,
+        IDefineReader<TCommand, TAggregate, TState, TId>,
+        IDefineWriter<TCommand, TAggregate, TState, TId>,
+        IDefineExecution<TCommand, TAggregate, TState, TId>
+    where TAggregate : Aggregate<TState>
+    where TState : State<TState>, new()
+    where TId : Id
+    where TCommand : class;
 
 /// <summary>
 /// Builds a command handler for a specific command type. You would not need to instantiate this class directly,
@@ -22,10 +127,16 @@ public abstract class CommandHandlerBuilder<TAggregate, TState, TId>
 /// <typeparam name="TAggregate">Aggregate type</typeparam>
 /// <typeparam name="TState">State of the aggregate type</typeparam>
 /// <typeparam name="TId">Identity of the aggregate type</typeparam>
-public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IEventReader? reader, IEventWriter? writer)
-    : CommandHandlerBuilder<TAggregate, TState, TId>
+public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(
+        CommandService<TAggregate, TState, TId> service,
+        IEventReader?                           reader,
+        IEventWriter?                           writer
+    )
+    : IDefineExpectedState<TCommand, TAggregate, TState, TId>,
+        IDefineIdentity<TCommand, TAggregate, TState, TId>,
+        ICommandHandlerBuilder<TCommand, TAggregate, TState, TId>
     where TCommand : class
-    where TAggregate : Aggregate<TState>, new()
+    where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id {
     GetIdFromUntypedCommand<TId>?             _getId;
@@ -35,81 +146,63 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IEventRead
     AmendEvent<TCommand>?                     _amendEvent;
     ExpectedState                             _expectedState = ExpectedState.Any;
 
-    /// <summary>
-    /// Set the expected aggregate state for the command handler.
-    /// If the aggregate isn't in the expected state, the command handler will return an error.
-    /// The default is <see cref="ExpectedState.Any" />.
-    /// </summary>
-    /// <param name="expectedState">Expected aggregate state</param>
-    /// <returns></returns>
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> InState(ExpectedState expectedState) {
+    IDefineIdentity<TCommand, TAggregate, TState, TId> IDefineExpectedState<TCommand, TAggregate, TState, TId>.InState(ExpectedState expectedState) {
         _expectedState = expectedState;
 
         return this;
     }
 
-    /// <summary>
-    /// Defines how the aggregate id is extracted from the command.
-    /// </summary>
-    /// <param name="getId">A function to get the aggregate id from the command.</param>
-    /// <returns></returns>
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> GetId(Func<TCommand, TId> getId) {
+    public ICommandHandlerBuilder<TCommand, TAggregate, TState, TId> GetId(Func<TCommand, TId> getId) {
         _getId = (cmd, _) => ValueTask.FromResult(getId((TCommand)cmd));
 
         return this;
     }
 
-    /// <summary>
-    /// Defines how the aggregate id is extracted from the command, asynchronously.
-    /// </summary>
-    /// <param name="getId">A function to get the aggregate id from the command.</param>
-    /// <returns></returns>
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> GetIdAsync(Func<TCommand, CancellationToken, ValueTask<TId>> getId) {
+    ICommandHandlerBuilder<TCommand, TAggregate, TState, TId> IDefineIdentity<TCommand, TAggregate, TState, TId>.GetIdAsync(
+            Func<TCommand, CancellationToken, ValueTask<TId>> getId
+        ) {
         _getId = (cmd, token) => getId((TCommand)cmd, token);
 
         return this;
     }
 
-    /// <summary>
-    /// Defines how the aggregate is acted upon by the command.
-    /// </summary>
-    /// <param name="action">A function that executes an operation on an aggregate</param>
-    /// <returns></returns>
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> Act(Action<TAggregate, TCommand> action) {
+    void IDefineExecution<TCommand, TAggregate, TState, TId>.Act(Action<TAggregate, TCommand> action) {
         _action = (aggregate, cmd, _) => {
             action(aggregate, (TCommand)cmd);
 
             return ValueTask.FromResult(aggregate);
         };
-
-        return this;
+        service.AddHandler<TCommand>(Build());
     }
 
-    /// <summary>
-    /// Defines how the aggregate is acted upon by the command, asynchronously.
-    /// </summary>
-    /// <param name="action">A function that executes an asynchronous operation on an aggregate</param>
-    /// <returns></returns>
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> ActAsync(Func<TAggregate, TCommand, CancellationToken, Task> action) {
+    void IDefineExecution<TCommand, TAggregate, TState, TId>.ActAsync(Func<TAggregate, TCommand, CancellationToken, Task> action) {
         _action = async (aggregate, cmd, token) => {
-            await action(aggregate, (TCommand)cmd, token);
+            await action(aggregate, (TCommand)cmd, token).NoContext();
 
             return aggregate;
         };
+        service.AddHandler<TCommand>(Build());
+    }
+
+    IDefineExecution<TCommand, TAggregate, TState, TId> IDefineStore<TCommand, TAggregate, TState, TId>.ResolveStore(Func<TCommand, IEventStore> resolveStore) {
+        Ensure.NotNull(resolveStore, nameof(resolveStore));
+        _reader = resolveStore;
+        _writer = resolveStore;
 
         return this;
     }
 
-    /// <summary>
-    /// Defines how the aggregate store is resolved from the command. It is optional. If not defined, the default
-    /// aggregate store of the command service will be used.
-    /// </summary>
-    /// <param name="resolveStore"></param>
-    /// <returns></returns>
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> ResolveStore(Func<TCommand, IEventStore> resolveStore) {
-        Ensure.NotNull(resolveStore, nameof(resolveStore));
-        _reader ??= resolveStore;
-        _writer ??= resolveStore;
+    IDefineWriter<TCommand, TAggregate, TState, TId> IDefineReader<TCommand, TAggregate, TState, TId>.
+        ResolveReader(Func<TCommand, IEventReader> resolveReader) {
+        _reader = resolveReader;
+
+        return this;
+    }
+
+    IDefineExecution<TCommand, TAggregate, TState, TId> IDefineWriter<TCommand, TAggregate, TState, TId>.ResolveWriter(
+            Func<TCommand, IEventWriter> resolveWriter
+        ) {
+        _writer = resolveWriter;
 
         return this;
     }
@@ -120,7 +213,7 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IEventRead
         return this;
     }
 
-    internal override RegisteredHandler<TAggregate, TState, TId> Build() {
+    RegisteredHandler<TAggregate, TState, TId> Build() {
         return new(
             _expectedState,
             Ensure.NotNull(_getId, $"Function to get the aggregate id from {typeof(TCommand).Name} is not defined"),
@@ -130,16 +223,10 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(IEventRead
             _amendEvent?.AsAmendEvent()
         );
 
-        Func<TCommand, IEventWriter> DefaultResolveWriter() {
-            ArgumentNullException.ThrowIfNull(writer, nameof(writer));
+        Func<TCommand, IEventWriter> DefaultResolveWriter() 
+            => _ => Ensure.NotNull(writer, $"Function to resolve event writer from {typeof(TCommand).Name} is not defined and no default writer is set");
 
-            return _ => writer;
-        }
-
-        Func<TCommand, IEventReader> DefaultResolveReader() {
-            ArgumentNullException.ThrowIfNull(reader, nameof(reader));
-
-            return _ => reader;
-        }
+        Func<TCommand, IEventReader> DefaultResolveReader()
+            => _ => Ensure.NotNull(reader, $"Function to resolve event reader from {typeof(TCommand).Name} is not defined and no default reader is set");
     }
 }

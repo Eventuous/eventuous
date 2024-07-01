@@ -23,8 +23,7 @@ public class StateWithIdTests {
         // Ensure that the id was set when the aggregate was created
         state.State!.Id.Should().Be(bookingId);
 
-        var stream   = map.GetStreamName<Booking, BookingState, BookingId>(bookingId);
-        var instance = await _store.LoadAggregate<Booking, BookingState>(stream, true);
+        var instance = await _store.LoadAggregate<Booking, BookingState, BookingId>(bookingId, map, true);
 
         // Ensure that the id was set when the aggregate was loaded
         instance.State.Id.Should().Be(bookingId);

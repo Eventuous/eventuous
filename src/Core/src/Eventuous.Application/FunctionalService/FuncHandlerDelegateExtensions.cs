@@ -4,9 +4,9 @@
 namespace Eventuous;
 
 public static partial class FuncServiceDelegates {
-    internal static ExecuteUntypedCommand<TState> AsExecute<TCommand, TState>(this Func<TCommand, Task<IEnumerable<object>>> execute)
+    internal static ExecuteUntypedCommand<TState> AsExecute<TCommand, TState>(this Func<TCommand, CancellationToken, Task<IEnumerable<object>>> execute)
         where TState : State<TState> where TCommand : class
-        => async (_, _, command, _) => await execute((TCommand)command);
+        => async (_, _, command, token) => await execute((TCommand)command, token).NoContext();
 
     internal static ResolveReaderFromCommand AsResolveReader<TCommand>(this Func<TCommand, IEventReader> resolveReader) where TCommand : class
         => cmd => resolveReader((TCommand)cmd);

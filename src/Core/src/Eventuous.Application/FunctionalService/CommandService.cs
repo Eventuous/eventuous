@@ -40,8 +40,6 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     readonly TypeMapper          _typeMap  = typeMap ?? TypeMap.Instance;
     readonly HandlersMap<TState> _handlers = new();
 
-    bool _initialized;
-
     /// <summary>
     /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
     /// </summary>
@@ -49,20 +47,14 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     /// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
     /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
     // ReSharper disable once UnusedMember.Global
-    protected CommandService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
-        : this(store, store, typeMap, amendEvent) { }
+    protected CommandService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null) : this(store, store, typeMap, amendEvent) { }
 
     /// <summary>
     /// Returns the command handler builder for the specified command type.
     /// </summary>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
-    protected CommandHandlerBuilder<TCommand, TState> On<TCommand>() where TCommand : class {
-        var builder = new CommandHandlerBuilder<TCommand, TState>(reader, writer);
-        _builders.Add(typeof(TCommand), builder);
-
-        return builder;
-    }
+    protected IDefineExpectedState<TCommand, TState> On<TCommand>() where TCommand : class => new CommandHandlerBuilder<TCommand, TState>(this, reader, writer);
 
     /// <summary>
     /// Function to handle a command and return the resulting state and changes.
@@ -73,7 +65,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     /// <returns><seealso cref="Result{TState}"/> instance</returns>
     /// <exception cref="ArgumentOutOfRangeException">Throws when there's no command handler was registered for the command type</exception>
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
-        if (!_initialized) BuildHandlers();
+        // if (!_initialized) BuildHandlers();
 
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();
@@ -88,8 +80,8 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await resolvedReader.LoadStateOrNew<TState>(streamName, cancellationToken).NoContext(),
-                ExpectedState.Existing => await resolvedReader.LoadState<TState>(streamName, cancellationToken).NoContext(),
+                ExpectedState.Any      => await resolvedReader.LoadState<TState>(streamName, false, cancellationToken).NoContext(),
+                ExpectedState.Existing => await resolvedReader.LoadState<TState>(streamName, true, cancellationToken).NoContext(),
                 ExpectedState.New      => new(streamName, ExpectedStreamVersion.NoStream, []),
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
@@ -104,7 +96,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<TState>(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await resolvedWriter.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, amendEvent, cancellationToken)
+            var storeResult = await resolvedWriter.Store(streamName, loadedState.StreamVersion, newEvents, amendEvent, cancellationToken)
                 .NoContext();
             var changes = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
@@ -119,18 +111,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
 
     protected static StreamName GetStream(string id) => StreamName.ForState<TState>(id);
 
-    readonly Dictionary<Type, CommandHandlerBuilder<TState>> _builders     = new();
-    readonly object                                          _handlersLock = new();
-
-    void BuildHandlers() {
-        lock (_handlersLock) {
-            foreach (var commandType in _builders.Keys) {
-                var builder = _builders[commandType];
-                var handler = builder.Build();
-                _handlers.AddHandlerUntyped(commandType, handler);
-            }
-
-            _initialized = true;
-        }
+    internal void AddHandler<TCommand>(RegisteredHandler<TState> handler) where TCommand : class {
+        _handlers.AddHandlerUntyped(typeof(TCommand), handler);
     }
 }
