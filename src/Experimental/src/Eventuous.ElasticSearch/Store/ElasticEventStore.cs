@@ -3,15 +3,15 @@
 
 namespace Eventuous.ElasticSearch.Store;
 
-public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? options = null) : IEventReader, IEventWriter {
+public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? options = null) : IEventStore {
     readonly ElasticEventStoreOptions _options = options ?? new ElasticEventStoreOptions();
 
     public async Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    ) {
+            StreamName                       stream,
+            ExpectedStreamVersion            expectedVersion,
+            IReadOnlyCollection<StreamEvent> events,
+            CancellationToken                cancellationToken
+        ) {
         var streamName = stream.ToString();
         var documents  = events.Select(AsDocument).ToArray();
         var bulk       = new BulkDescriptor(_options.IndexName).CreateMany(documents).Refresh(Refresh.WaitFor);
@@ -36,11 +36,11 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
     }
 
     public async Task<StreamEvent[]> ReadEvents(
-        StreamName         stream,
-        StreamReadPosition start,
-        int                count,
-        CancellationToken  cancellationToken
-    ) {
+            StreamName         stream,
+            StreamReadPosition start,
+            int                count,
+            CancellationToken  cancellationToken
+        ) {
         var response = await client.SearchAsync<PersistedEvent>(
             d => d
                 .Index(_options.IndexName)
@@ -85,6 +85,18 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
     }
 
     public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
+        => throw new NotImplementedException();
+
+    public Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    public Task TruncateStream(
+            StreamName             stream,
+            StreamTruncatePosition truncatePosition,
+            ExpectedStreamVersion  expectedVersion,
+            CancellationToken      cancellationToken
+        ) => throw new NotImplementedException();
+
+    public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken)
         => throw new NotImplementedException();
 }
 

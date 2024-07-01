@@ -10,10 +10,8 @@ using static Sut.Domain.BookingEvents;
 [Obsolete("Obsolete")]
 public class BookingFuncService : FunctionalCommandService<BookingState> {
     public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null) : base(store, typeMap, amendEvent) {
-#pragma warning disable CS0618
         // Keep it for tests until the old API is gone
         OnNew<BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);
-#pragma warning restore CS0618
         On<RecordPayment>().InState(ExpectedState.Existing).GetStream(cmd => GetStream(cmd.BookingId)).Act(RecordPayment);
         On<ImportBooking>().InState(ExpectedState.Any).GetStream(cmd => GetStream(cmd.BookingId)).Act(ImportBooking);
 

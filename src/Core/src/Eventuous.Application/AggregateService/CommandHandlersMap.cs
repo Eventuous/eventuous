@@ -3,17 +3,20 @@
 
 using System.Reflection;
 using static Eventuous.CommandServiceDelegates;
+using static Eventuous.FuncServiceDelegates;
 
 namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
 
-record RegisteredHandler<T, TState, TId>(
-        ExpectedState                   ExpectedState,
-        GetIdFromUntypedCommand<TId>    GetId,
-        HandleUntypedCommand<T, TState> Handler,
-        ResolveStoreFromCommand         ResolveStore
-    ) where T : Aggregate<TState> where TId : Id where TState : State<TState>, new();
+record RegisteredHandler<TAggregate, TState, TId>(
+        ExpectedState                            ExpectedState,
+        GetIdFromUntypedCommand<TId>             GetId,
+        HandleUntypedCommand<TAggregate, TState> Handler,
+        ResolveReaderFromCommand                 ResolveReader,
+        ResolveWriterFromCommand                 ResolveWriter,
+        AmendEventFromCommand?                   AmendEvent
+    ) where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new();
 
 class HandlersMap<TAggregate, TState, TId> where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
     readonly TypeMap<RegisteredHandler<TAggregate, TState, TId>> _typeMap = new();

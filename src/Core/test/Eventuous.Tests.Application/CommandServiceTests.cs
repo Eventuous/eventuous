@@ -6,7 +6,7 @@ using NodaTime;
 namespace Eventuous.Tests.Application;
 
 public class CommandServiceTests {
-    readonly AggregateStore _aggregateStore = new(new InMemoryEventStore());
+    readonly InMemoryEventStore _store = new();
 
     static CommandServiceTests() => TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.RoomBooked).Assembly);
 
@@ -14,7 +14,7 @@ public class CommandServiceTests {
     public async Task HandleFirstCommandThreadSafe() {
         const int threadCount = 3;
 
-        var service = new BookingService(_aggregateStore);
+        var service = new BookingService(_store);
         var tasks = Enumerable
             .Range(1, threadCount)
             .Select(bookingId => Task.Run(() => service.Handle(GetBookRoom(bookingId.ToString()), default)))

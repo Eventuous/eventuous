@@ -76,7 +76,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
             .Select(_ => DomainFixture.CreateImportBooking(fixture.Auto))
             .ToList();
 
-        var service = new BookingService(fixture.AggregateStore);
+        var service = new BookingService(fixture.EventStore);
 
         foreach (var cmd in commands) {
             var result = await service.Handle(cmd, default);

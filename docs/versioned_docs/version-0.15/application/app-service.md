@@ -43,6 +43,8 @@ The last point above translates to: the command service **does not throw excepti
 
 Eventuous provides a base class for you to build command services. It is a generic abstract class, which is typed to the aggregate type. You should create your own implementation of a command service for each aggregate type. As command execution is transactional, it can only operate on a single aggregate instance, and, logically, only one aggregate type.
 
+The base class for aggregate-based command services is `CommandService<TAggregate, TState, TId>`.
+
 ### Handling commands
 
 The base class has one function that must be used in the service class constructor to define how the service will handle commands. The function is called `On<TCommand>` where `TCommand` is the command type. You can add as many command handlers as you need. The `On` function composes a command handler builder that allows to chain further details to describe how the command needs to be processed.

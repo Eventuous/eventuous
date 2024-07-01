@@ -1,8 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using static Eventuous.FuncServiceDelegates;
-
 namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
@@ -14,15 +12,17 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
         : this(store, store, typeMap, amendEvent) { }
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.New).GetStream(...).Act(...) instead")]
-    protected void OnNew<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, Func<TCommand, IEnumerable<object>> action) where TCommand : class
+    protected void OnNew<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TCommand, IEnumerable<object>> action) where TCommand : class
         => On<TCommand>().InState(ExpectedState.New).GetStream(getStreamName).Act(action);
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Existing).GetStream(...).Act(...) instead")]
-    protected void OnExisting<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, ExecuteCommand<TState, TCommand> action) where TCommand : class
+    protected void OnExisting<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TState, object[], TCommand, IEnumerable<object>> action)
+        where TCommand : class
         => On<TCommand>().InState(ExpectedState.Existing).GetStream(getStreamName).Act(action);
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Any).GetStream(...).Act(...) instead")]
-    protected void OnAny<TCommand>(GetStreamNameFromCommand<TCommand> getStreamName, ExecuteCommand<TState, TCommand> action) where TCommand : class
+    protected void OnAny<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TState, object[], TCommand, IEnumerable<object>> action)
+        where TCommand : class
         => On<TCommand>().InState(ExpectedState.Any).GetStream(getStreamName).Act(action);
 }
 
@@ -101,7 +101,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
             var newEvents = result.ToArray();
             var newState  = newEvents.Aggregate(loadedState.State, (current, evt) => current.When(evt));
 
-            // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
+            // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (newEvents.Length == 0) return new OkResult<TState>(newState, Array.Empty<Change>(), 0);
 
             var storeResult = await resolvedWriter.Store(streamName, (int)loadedState.StreamVersion.Value, newEvents, amendEvent, cancellationToken)

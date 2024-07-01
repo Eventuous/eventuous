@@ -15,7 +15,8 @@ using static Diagnostics.ApplicationEventSource;
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 // [PublicAPI]
 public abstract partial class CommandService<TAggregate, TState, TId>(
-        IAggregateStore?          store,
+        IEventReader?             reader,
+        IEventWriter?             writer,
         AggregateFactoryRegistry? factoryRegistry = null,
         StreamNameMap?            streamNameMap   = null,
         TypeMapper?               typeMap         = null
@@ -24,13 +25,23 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
     where TAggregate : Aggregate<TState>, new()
     where TState : State<TState>, new()
     where TId : Id {
+    protected CommandService(
+            IEventStore               store,
+            AggregateFactoryRegistry? factoryRegistry = null,
+            StreamNameMap?            streamNameMap   = null,
+            TypeMapper?               typeMap         = null
+        )
+        : this(store, store, factoryRegistry, streamNameMap, typeMap) { }
+
     [PublicAPI]
-    protected IAggregateStore? Store { get; } = store;
+    protected IEventReader? Reader { get; } = reader;
+    [PublicAPI]
+    protected IEventWriter? Writer { get; } = writer;
 
     readonly HandlersMap<TAggregate, TState, TId> _handlers        = new();
-    readonly AggregateFactoryRegistry     _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
-    readonly StreamNameMap                _streamNameMap   = streamNameMap   ?? new StreamNameMap();
-    readonly TypeMapper                   _typeMap         = typeMap         ?? TypeMap.Instance;
+    readonly AggregateFactoryRegistry             _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
+    readonly StreamNameMap                        _streamNameMap   = streamNameMap   ?? new StreamNameMap();
+    readonly TypeMapper                           _typeMap         = typeMap         ?? TypeMap.Instance;
 
     bool _initialized;
 
@@ -40,7 +51,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
     protected CommandHandlerBuilder<TCommand, TAggregate, TState, TId> On<TCommand>() where TCommand : class {
-        var builder = new CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(Store);
+        var builder = new CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(Reader, Writer);
         _builders.Add(typeof(TCommand), builder);
 
         return builder;
@@ -64,12 +75,13 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         }
 
         var aggregateId = await registeredHandler.GetId(command, cancellationToken).NoContext();
-        var store       = registeredHandler.ResolveStore(command);
+        var reader      = registeredHandler.ResolveReader(command);
+        var stream      = _streamNameMap.GetStreamName<TAggregate, TState, TId>(aggregateId);
 
         try {
             var aggregate = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await store.LoadOrNew<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
-                ExpectedState.Existing => await store.Load<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
+                ExpectedState.Any      => await reader.LoadAggregate<TAggregate, TState>(stream, false, _factoryRegistry, cancellationToken).NoContext(),
+                ExpectedState.Existing => await reader.LoadAggregate<TAggregate, TState>(stream, true, _factoryRegistry, cancellationToken).NoContext(),
                 ExpectedState.New      => Create(aggregateId),
                 ExpectedState.Unknown  => default,
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
@@ -79,10 +91,11 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
                 .Handler(aggregate!, command, cancellationToken)
                 .NoContext();
 
-            // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
+            // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
 
-            var storeResult = await store.Store<TAggregate, TState>(GetAggregateStreamName(), result, cancellationToken).NoContext();
+            var writer      = registeredHandler.ResolveWriter(command);
+            var storeResult = await writer.Store<TAggregate, TState>(stream, result, Amend, cancellationToken).NoContext();
             var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
@@ -95,7 +108,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
 
         TAggregate Create(TId id) => _factoryRegistry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
 
-        StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TState, TId>(aggregateId);
+        StreamEvent Amend(StreamEvent streamEvent) => registeredHandler.AmendEvent?.Invoke(streamEvent, command) ?? streamEvent;
     }
 
     readonly Dictionary<Type, CommandHandlerBuilder<TAggregate, TState, TId>> _builders = new();

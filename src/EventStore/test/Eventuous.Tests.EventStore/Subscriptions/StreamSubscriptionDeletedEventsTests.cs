@@ -25,7 +25,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
     [Fact]
     [Trait("Category", "Special cases")]
     public async Task StreamSubscriptionGetsDeletedEvents() {
-        var    service        = new BookingService(_fixture.AggregateStore);
+        var    service        = new BookingService(_fixture.EventStore);
         var    categoryStream = new StreamName("$ce-Booking");
         ulong? startPosition  = null;
 

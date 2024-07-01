@@ -5,14 +5,14 @@ namespace Eventuous.Diagnostics;
 
 using Metrics;
 
-public abstract class GenericListener {
+public abstract class GenericListener : IObserver<KeyValuePair<string, object?>> {
     readonly IDisposable? _listenerSubscription;
     readonly object       _allListeners = new();
 
     IDisposable? _networkSubscription;
 
     protected GenericListener(string name) {
-        var observer = new GenericObserver<KeyValuePair<string, object?>>(OnEvent);
+        var observer = this;
 
         var newListenerObserver = new GenericObserver<DiagnosticListener>((Action<DiagnosticListener>)OnNewListener);
 
@@ -37,4 +37,10 @@ public abstract class GenericListener {
         _networkSubscription?.Dispose();
         _listenerSubscription?.Dispose();
     }
+
+    void IObserver<KeyValuePair<string, object?>>.OnCompleted() { }
+
+    void IObserver<KeyValuePair<string, object?>>.OnError(Exception error) { }
+
+    void IObserver<KeyValuePair<string, object?>>.OnNext(KeyValuePair<string, object?> value) => OnEvent(value);
 }

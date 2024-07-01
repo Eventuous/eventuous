@@ -57,8 +57,8 @@ The base class has three methods, which you call in your class constructor to re
 Here is an example of a functional command service form our test project:
 
 ```csharp title="BookingFuncService.cs"
-public class BookingFuncService : FunctionalCommandService<BookingState> {
-    public BookingFuncService(IEventStore store, TypeMapper? typeMap = null) : base(store, typeMap) {
+public class BookingFuncService : CommandService<BookingState> {
+    public BookingFuncService(IEventStore store) : base(store) {
         // Register command handlers
         OnNew<BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);
         OnExisting<RecordPayment>(cmd => GetStream(cmd.BookingId), RecordPayment);

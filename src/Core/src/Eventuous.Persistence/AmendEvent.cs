@@ -7,3 +7,5 @@ namespace Eventuous;
 /// Function to add additional information to the event before it's stored.
 /// </summary>
 public delegate StreamEvent AmendEvent(StreamEvent originalEvent);
+
+public delegate StreamEvent AmendEvent<in T>(StreamEvent originalEvent, T context);

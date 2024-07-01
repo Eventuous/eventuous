@@ -10,7 +10,7 @@ public class StoringEventsWithCustomStream : NaiveFixture {
     public StoringEventsWithCustomStream() {
         var streamNameMap = new StreamNameMap();
         streamNameMap.Register<BookingId>(GetStreamName);
-        Service = new(AggregateStore, streamNameMap);
+        Service = new(EventStore, streamNameMap);
         TypeMap.RegisterKnownEventTypes();
     }
 

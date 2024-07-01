@@ -155,7 +155,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
         _meter.Dispose();
     }
 
-    internal readonly record struct SubscriptionMetricsContext(string EventHandler, IMessageConsumeContext Context);
+    internal record SubscriptionMetricsContext(string EventHandler, IMessageConsumeContext Context);
 
     delegate IEnumerable<Measurement<T>> ObserveMetric<T>() where T : struct;
 }

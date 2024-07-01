@@ -3,7 +3,7 @@ using Eventuous.Tests.Fixtures;
 namespace Eventuous.Tests;
 
 public class ForgotToSetId : NaiveFixture {
-    public ForgotToSetId() => Service = new(this.AggregateStore);
+    public ForgotToSetId() => Service = new(this.EventStore);
 
     [Fact]
     public async Task ShouldFailWithNoId() {
@@ -15,7 +15,7 @@ public class ForgotToSetId : NaiveFixture {
     TestService Service { get; }
 
     class TestService : CommandService<TestAggregate, TestState, TestId> {
-        public TestService(IAggregateStore store) : base(store)
+        public TestService(IEventStore store) : base(store)
             => On<DoIt>().InState(ExpectedState.New).GetId(cmd => new(cmd.Id)).Act((test, _) => test.Process());
     }
 

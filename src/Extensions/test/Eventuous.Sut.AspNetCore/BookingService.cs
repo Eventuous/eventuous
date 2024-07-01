@@ -8,7 +8,7 @@ namespace Eventuous.Sut.AspNetCore;
 using static SutBookingCommands;
 
 public class BookingService : CommandService<Booking, BookingState, BookingId> {
-    public BookingService(IAggregateStore store, ILogger<BookingService> log, StreamNameMap? streamNameMap = null)
+    public BookingService(IEventStore store, ILogger<BookingService> log, StreamNameMap? streamNameMap = null)
         : base(store, streamNameMap: streamNameMap) {
         log.LogInformation("Instantiating Booking service");
 

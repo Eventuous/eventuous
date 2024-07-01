@@ -8,7 +8,7 @@ using Sut.Domain;
 
 public class StoringEvents : NaiveFixture {
     public StoringEvents() {
-        Service = new(AggregateStore);
+        Service = new(EventStore);
         TypeMap.RegisterKnownEventTypes();
     }
 
