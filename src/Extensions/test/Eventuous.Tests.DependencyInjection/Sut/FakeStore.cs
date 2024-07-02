@@ -17,7 +17,7 @@ public class FakeStore : IEventStore {
             CancellationToken  cancellationToken
         ) => default!;
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) => default!;
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) => default!;
 
     public Task TruncateStream(
             StreamName             stream,

@@ -1,5 +1,6 @@
 create or replace function __schema__.read_stream_backwards(
     _stream_name varchar(1000),
+    _from_position integer,
     _count integer
 )
 returns table (
@@ -13,9 +14,10 @@ returns table (
 )
 as $$
 declare
+    _current_version integer;
     _stream_id integer;
 begin
-    select s.stream_id into _stream_id
+    select s.stream_id into _current_version, _stream_id
     from __schema__.streams s
     where s.stream_name = _stream_name;
     
@@ -23,10 +25,14 @@ begin
         raise exception 'StreamNotFound';
     end if;
     
+    if _current_version < _from_position + _count then
+        return;
+    end if;
+
     return query select m.message_id, m.message_type, m.stream_position, m.global_position,
                         m.json_data, m.json_metadata, m.created
         from __schema__.messages m 
-        where m.stream_id = _stream_id
+        where m.stream_id = _stream_id and m.stream_position <= _from_position
         order by m.stream_position desc
         limit _count;
 end;

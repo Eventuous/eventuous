@@ -24,7 +24,7 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
         : base(serializer, metaSerializer) {
         var connectionString = Ensure.NotEmptyString(options.ConnectionString);
         _getConnection = ct => ConnectionFactory.GetConnection(connectionString, ct);
-        Schema         = new Schema(options.Schema);
+        Schema         = new(options.Schema);
     }
 
     protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken)
@@ -37,10 +37,11 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
             .Add("@from_position", SqlDbType.Int, start.Value)
             .Add("@count", SqlDbType.Int, count);
 
-    protected override DbCommand GetReadBackwardsCommand(SqlConnection connection, StreamName stream, int count)
+    protected override DbCommand GetReadBackwardsCommand(SqlConnection connection, StreamName stream, StreamReadPosition start, int count)
         => connection
-            .GetStoredProcCommand(Schema.ReadStreamForwards)
+            .GetStoredProcCommand(Schema.ReadStreamBackwards)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
+            .Add("@from_position", SqlDbType.Int, start.Value)
             .Add("@count", SqlDbType.Int, count);
 
     protected override bool IsStreamNotFound(Exception exception) => exception is SqlException e && e.Message.StartsWith("StreamNotFound");
@@ -62,4 +63,15 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
 
     protected override DbCommand GetStreamExistsCommand(SqlConnection connection, StreamName stream)
         => connection.GetTextCommand(Schema.StreamExists).Add("@name", SqlDbType.NVarChar, stream.ToString());
+
+    protected override DbCommand GetTruncateCommand(
+            SqlConnection          connection,
+            StreamName             stream,
+            ExpectedStreamVersion  expectedVersion,
+            StreamTruncatePosition position
+        )
+        => connection.GetStoredProcCommand(Schema.TruncateStream)
+            .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
+            .Add("@expected_version", SqlDbType.Int, expectedVersion.Value)
+            .Add("@position", SqlDbType.Int, position.Value);
 }

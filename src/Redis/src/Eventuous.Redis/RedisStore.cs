@@ -46,7 +46,7 @@ public class RedisStore : IEventReader, IEventWriter {
         }
     }
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => throw new NotImplementedException();
 
     public async Task<AppendEventsResult> AppendEvents(

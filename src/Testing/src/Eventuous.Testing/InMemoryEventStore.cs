@@ -32,8 +32,8 @@ public class InMemoryEventStore : IEventStore {
         => Task.FromResult(FindStream(stream).GetEvents(start, count).ToArray());
 
     /// <inheritdoc />
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
-        => Task.FromResult(FindStream(stream).GetEventsBackwards(count).ToArray());
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
+        => Task.FromResult(FindStream(stream).GetEventsBackwards(start, count).ToArray());
 
     /// <inheritdoc />
     public Task TruncateStream(
@@ -81,16 +81,15 @@ class InMemoryStream(StreamName name) {
     }
 
     public IEnumerable<StreamEvent> GetEvents(StreamReadPosition from, int count) {
-        var selected = _events
-            .SkipWhile(x => x.Position < from.Value);
+        var selected = _events.SkipWhile(x => x.Position < from.Value);
 
         if (count > 0) selected = selected.Take(count);
 
         return selected.Select(x => x.Event with { Position = x.Position });
     }
 
-    public IEnumerable<StreamEvent> GetEventsBackwards(int count) {
-        var position = _events.Count - 1;
+    public IEnumerable<StreamEvent> GetEventsBackwards(StreamReadPosition from, int count) {
+        var position = (int)from.Value;
 
         while (count-- > 0) {
             yield return _events[position--].Event;

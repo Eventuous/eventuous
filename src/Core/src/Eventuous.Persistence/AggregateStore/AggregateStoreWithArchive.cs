@@ -3,15 +3,15 @@
 
 namespace Eventuous;
 
-using static Diagnostics.PersistenceEventSource;
-
+[Obsolete("Use TieredEventStore instead")]
 public class AggregateStore<TReader>(
         IEventStore               eventStore,
         TReader                   archiveReader,
         AmendEvent?               amendEvent      = null,
         AggregateFactoryRegistry? factoryRegistry = null
     ) : IAggregateStore where TReader : class, IEventReader {
-    readonly AggregateFactoryRegistry _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
+    readonly AggregateFactoryRegistry _factoryRegistry  = factoryRegistry ?? AggregateFactoryRegistry.Instance;
+    readonly TieredEventStore         _tieredEventStore = new(eventStore, archiveReader);
 
     /// <inheritdoc/>
     public Task<AppendEventsResult> Store<TAggregate, TState>(StreamName streamName, TAggregate aggregate, CancellationToken cancellationToken)
@@ -19,52 +19,12 @@ public class AggregateStore<TReader>(
         => eventStore.StoreAggregate<TAggregate, TState>(streamName, aggregate, amendEvent, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<TAggregate> Load<TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken) where TAggregate : Aggregate<TState> where TState : State<TState>, new()
-        => LoadInternal<TAggregate, TState>(streamName, true, cancellationToken);
+    public Task<TAggregate> Load<TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
+        where TAggregate : Aggregate<TState> where TState : State<TState>, new()
+        => _tieredEventStore.LoadAggregate<TAggregate, TState>(streamName, true, _factoryRegistry, cancellationToken);
 
     /// <inheritdoc/>
     public Task<TAggregate> LoadOrNew<TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
-        where TAggregate : Aggregate<TState> where TState : State<TState>, new() => LoadInternal<TAggregate, TState>(streamName, false, cancellationToken);
-
-    async Task<TAggregate> LoadInternal<TAggregate, TState>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken)
-        where TAggregate : Aggregate<TState> where TState : State<TState>, new() {
-        var aggregate = _factoryRegistry.CreateInstance<TAggregate, TState>();
-
-        var hotEvents = await LoadStreamEvents(eventStore, StreamReadPosition.Start).NoContext();
-
-        var archivedEvents =
-            hotEvents.Length == 0 || hotEvents[0].Position > 0
-                ? await LoadStreamEvents(archiveReader, StreamReadPosition.Start).NoContext()
-                : Enumerable.Empty<StreamEvent>();
-
-        var streamEvents = hotEvents.Concat(archivedEvents).Distinct(Comparer).ToArray();
-
-        if (streamEvents.Length == 0 && failIfNotFound) {
-            throw new AggregateNotFoundException<TAggregate, TState>(streamName, new StreamNotFound(streamName));
-        }
-
-        aggregate.Load(streamEvents.Select(x => x.Payload));
-
-        return aggregate;
-
-        async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition start) {
-            try {
-                return await reader.ReadStream(streamName, start, failIfNotFound, cancellationToken).NoContext();
-            } catch (StreamNotFound) {
-                return [];
-            } catch (Exception e) {
-                Log.UnableToLoadAggregate<TAggregate, TState>(streamName, e);
-
-                throw;
-            }
-        }
-    }
-
-    static readonly StreamEventPositionComparer Comparer = new();
-
-    class StreamEventPositionComparer : IEqualityComparer<StreamEvent> {
-        public bool Equals(StreamEvent x, StreamEvent y) => x.Position == y.Position;
-
-        public int GetHashCode(StreamEvent obj) => obj.Position.GetHashCode();
-    }
+        where TAggregate : Aggregate<TState> where TState : State<TState>, new() 
+        => _tieredEventStore.LoadAggregate<TAggregate, TState>(streamName, false, _factoryRegistry, cancellationToken);
 }

@@ -19,6 +19,7 @@
         <EmbeddedResource Include="Scripts\5_ReadStreamBackwards.sql" />
         <EmbeddedResource Include="Scripts\6_ReadStreamForwards.sql"/>
         <EmbeddedResource Include="Scripts\7_ReadStreamSub.sql"/>
+        <EmbeddedResource Include="Scripts\8_TruncateStream.sql" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">

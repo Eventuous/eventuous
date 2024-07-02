@@ -11,16 +11,16 @@ using static Eventuous.Sut.App.Commands;
 namespace ElasticPlayground;
 
 public class ConnectorAndArchive {
-    readonly EsdbEventStore                    _esdbEventStore;
-    readonly ElasticEventStore                 _elasticEventStore;
-    readonly TieredEventReader                 _tieredReader;
+    readonly EsdbEventStore    _esdbEventStore;
+    readonly ElasticEventStore _elasticEventStore;
+    readonly TieredEventStore  _tieredStore;
 
     static readonly Fixture Fixture = new();
 
     public ConnectorAndArchive(IElasticClient elasticClient, EventStoreClient eventStoreClient) {
-        _elasticEventStore = new ElasticEventStore(elasticClient);
+        _elasticEventStore = new(elasticClient);
         _esdbEventStore    = new(eventStoreClient);
-        _tieredReader      = new(_esdbEventStore, _elasticEventStore);
+        _tieredStore       = new(_esdbEventStore, _elasticEventStore);
     }
 
     public async Task Execute() {
@@ -41,7 +41,7 @@ public class ConnectorAndArchive {
             default
         );
 
-        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_tieredReader, _esdbEventStore));
+        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_tieredStore));
 
         var cmd = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
 

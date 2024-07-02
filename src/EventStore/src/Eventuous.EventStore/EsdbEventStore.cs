@@ -128,11 +128,11 @@ public class EsdbEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken = default) {
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
             stream,
-            StreamPosition.End,
+            start.AsStreamPosition(),
             count,
             resolveLinkTos: true,
             cancellationToken: cancellationToken
