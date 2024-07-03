@@ -1,6 +1,6 @@
 ---
-title: "Aggregate stream"
-description: "Aggregate as a stream of events"
+title: "Entity stream"
+description: "State as a stream of events"
 sidebar_position: 1
 ---
 
@@ -14,20 +14,20 @@ When appending events to a stream, the append operation for a single stream must
 
 ## Stream name
 
-By default, Eventuous uses the `AggregateType.Name` combined with the aggregate id as the stream name. For example, the `Booking` aggregate with id `1` has a stream name `Booking-1`. That's what `StreamName.For<Booking>(1)` returns.
+As a stream is a boundary for a single entity state, its name must be unique per entity. Therefore, the stream name usually consists of an identifiable class name associated with the entity state (aggregate type name, state type name) without suffixes like `Aggregate`, `Entity` or `State`, combined with the entity id. Eventuous uses a convention to separate those two with a dash.
 
-However, you might want to have more fine-grained control over the stream name. For example, you might want to include the tenant id in the stream name. It's possible to override the default convention by configuring the stream name mapping. The stream map contains a mapping between the aggregate identity type (derived from `AggregateId`) and the stream name generation function. Therefore, any additional property of the aggregate identity type can be used to generate the stream name.
+For example, for an entity called `Booking` where it might be represented as a `Booking` aggregate or `BookingState` state record, the stream name will start with `Booking-` followed by the entity id. So, a booking with id `123` will have a stream name `Booking-123`.
+
+### Aggregate streams
+
+For aggregates, Eventuous uses the `AggregateType.Name` combined with the aggregate id as the stream name. For example, the `Booking` aggregate with id `1` has a stream name `Booking-1`. That's what `StreamName.For<Booking>(1)` returns.
+
+However, you might want to have more fine-grained control over the stream name. For example, you might want to include the tenant id in the stream name. It's possible to override the default convention by configuring the stream name mapping. The stream map contains a mapping between the aggregate identity type (derived from `Id`) and the stream name generation function. Therefore, any additional property of the aggregate identity type can be used to generate the stream name.
 
 For example, the following code registers a stream name mapping for the `Booking` aggregate:
 
 ```csharp title="BookingId.cs"
-public record BookingId : AggregateId {
-    public BookingId(string id, string tenantId) : base(id) {
-        TenantId = tenantId;
-    }
-
-    public string TenantId { get; }
-}
+public record BookingId(string Value, string Tenant) : Id(Value);
 ```
 
 Create a `StreamNameMap` and register in the container:
@@ -35,24 +35,33 @@ Create a `StreamNameMap` and register in the container:
 ```csharp title="Program.cs"
 var streamNameMap = new StreamNameMap();
 streamNameMap.Register<BookingId>(
-    id => new StreamName($"Booking-{id.TenantId}:{id.Value}") // Split in example with : if you use a Guid as identifier.
+    id => new StreamName($"Booking-{id.Tenant}:{id.Value}") 
 );
 builder.Services.AddSingleton(streamNameMap);
-builder.Services.AddCommandService<BookingService, Booking>();
+builder.Services.AddCommandService<BookingService, BookingState>();
 ```
 
 Then, use the registered `StreamNameMap` in the `CommandService`:
 
 ```csharp title="BookingService.cs"
+// Aggregate service
 public class BookingService : CommandService<Booking, BookingState, BookingId> {
-    public BookingService(IAggregateStore store, StreamNameMap streamNameMap)
+    public BookingService(IEventStore store, StreamNameMap streamNameMap)
+        : base(store, streamNameMap: streamNameMap) {
+        // command handlers registered here
+    }
+}
+
+// Functional service
+public class BookingService : CommandService<BookingState> {
+    public BookingService(IEventStore store, StreamNameMap streamNameMap)
         : base(store, streamNameMap: streamNameMap) {
         // command handlers registered here
     }
 }
 ```
 
-In your projections you can retrieve the `Id` and `TenantId` from the `StreamName` in the `IMessageConsumeContext<out T>`:
+In your projections you can retrieve the `Id` and `TenantId` from the `StreamName` in the `IMessageConsumeContext<T>`:
 
 ```csharp title="BookingStateProjection.cs"
 static UpdateDefinition<BookingDocument> HandleRoomBooked(
@@ -79,26 +88,23 @@ static UpdateDefinition<BookingDocument> HandleRoomBooked(
 The snippet above uses the following extension method to extract the `Id` and `TenantId` from the `StreamName`:
 
 ```csharp title="StreamNameExtensions.cs"
-public static class StreamNameExtensions
+/// <summary>
+/// Split the StreamName into multiple parts for multi tenant stream id.
+/// </summary>
+/// <param name="stream">The streamname</param>
+/// <param name="separator">The seperator for splitting. Default is ':'.</param>
+/// <returns>A tuple with TenantId and Id property.</returns>
+/// <exception cref="InvalidStreamName">When stream id can't be split in 2 sections.</exception>
+public static (string TenantId, string Id) ExtractMultiTenantIds(this StreamName stream, char separator = ':')
 {
-    /// <summary>
-    /// Split the StreamName into multiple parts for multi tenant stream id.
-    /// </summary>
-    /// <param name="stream">The streamname</param>
-    /// <param name="separator">The seperator for splitting. Default is ':'.</param>
-    /// <returns>A tuple with TenantId and Id property.</returns>
-    /// <exception cref="InvalidStreamName">When stream id can't be split in 2 sections.</exception>
-    public static (string TenantId, string Id) ExtractMultiTenantIds(this StreamName stream, char separator = ':')
+    string streamId = stream.GetId();
+    var streamIdParts = streamId.Split(separator);
+
+    if (streamIdParts.Length != 2)
     {
-    	string streamId = stream.GetId();
-    	var streamIdParts = streamId.Split(separator);
-    
-    	if (streamIdParts.Length != 2)
-    	{
-            throw new InvalidStreamName(streamId);
-    	}
-    
-    	return (streamIdParts[0], streamIdParts[1]);
+        throw new InvalidStreamName(streamId);
     }
+
+    return (streamIdParts[0], streamIdParts[1]);
 }
 ```

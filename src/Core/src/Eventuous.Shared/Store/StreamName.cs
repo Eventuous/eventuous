@@ -16,7 +16,7 @@ public record struct StreamName {
     public static StreamName For<T>(string entityId) => new($"{typeof(T).Name}-{Ensure.NotEmptyString(entityId)}");
 
     public static StreamName ForState<TState>(string entityId) {
-        var id            = Ensure.NotEmptyString(entityId);
+        var id            = Ensure.NotEmptyString(entityId).Trim();
         var stateName     = typeof(TState).Name;
         var stateNameSpan = stateName.AsSpan();
 
