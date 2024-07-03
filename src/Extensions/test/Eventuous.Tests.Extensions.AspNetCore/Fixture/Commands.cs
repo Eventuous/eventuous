@@ -1,6 +1,4 @@
-using Eventuous.Extensions.AspNetCore;
-
-namespace Eventuous.Tests.AspNetCore.Web.Fixture;
+namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 
 public static class TestCommands {
     public const string ImportRoute = "import";

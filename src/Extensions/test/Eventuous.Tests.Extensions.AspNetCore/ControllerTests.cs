@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.AspNetCore.BookingApi;
 
-namespace Eventuous.Tests.AspNetCore.Web;
+namespace Eventuous.Tests.Extensions.AspNetCore;
 
 using TestHelpers;
 using Fixture;

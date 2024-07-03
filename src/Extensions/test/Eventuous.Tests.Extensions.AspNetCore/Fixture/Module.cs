@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using VerifyTests.DiffPlex;
 
-namespace Eventuous.Tests.AspNetCore.Web.Fixture;
+namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 
 public static class ModuleInitializer {
     [ModuleInitializer]

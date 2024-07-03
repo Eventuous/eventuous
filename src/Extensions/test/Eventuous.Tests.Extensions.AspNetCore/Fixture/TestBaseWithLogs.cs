@@ -1,6 +1,6 @@
 using Eventuous.TestHelpers;
 
-namespace Eventuous.Tests.AspNetCore.Web.Fixture;
+namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 
 public abstract class TestBaseWithLogs(ITestOutputHelper output) : IDisposable {
     readonly TestEventListener _listener = new(output);

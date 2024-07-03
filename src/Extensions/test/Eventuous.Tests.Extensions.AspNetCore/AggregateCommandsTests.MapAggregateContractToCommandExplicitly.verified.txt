@@ -1,5 +1,4 @@
 ﻿{
-  streamPosition: 0,
   state: {
     price: {
       amount: 100,
@@ -13,17 +12,16 @@
       value: Guid_1
     }
   },
-  success: true,
   changes: [
     {
       event: {
         roomId: Guid_2,
-        checkIn: 2023-10-01,
-        checkOut: 2023-10-02,
         price: 100,
-        guestId: test guest
+        checkIn: 2023-10-01,
+        checkOut: 2023-10-02
       },
-      eventType: RoomBooked
+      eventType: V1.BookingImported
     }
-  ]
+  ],
+  streamPosition: 0
 }

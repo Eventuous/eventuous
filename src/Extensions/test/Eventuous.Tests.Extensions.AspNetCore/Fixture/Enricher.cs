@@ -1,4 +1,4 @@
-namespace Eventuous.Tests.AspNetCore.Web.Fixture;
+namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 
 public static class Enricher {
     internal static SutBookingCommands.ImportBooking EnrichCommand(TestCommands.ImportBookingHttp command, HttpContext _)

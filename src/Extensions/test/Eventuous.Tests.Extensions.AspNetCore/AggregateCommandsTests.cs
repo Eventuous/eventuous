@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Eventuous.Tests.AspNetCore.Web;
+namespace Eventuous.Tests.Extensions.AspNetCore;
 
 using Fixture;
 using static SutBookingCommands;

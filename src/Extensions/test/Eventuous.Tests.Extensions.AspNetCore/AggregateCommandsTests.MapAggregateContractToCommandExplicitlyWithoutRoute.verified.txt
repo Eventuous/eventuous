@@ -1,5 +1,4 @@
 ﻿{
-  streamPosition: 0,
   state: {
     price: {
       amount: 100,
@@ -13,7 +12,6 @@
       value: Guid_1
     }
   },
-  success: true,
   changes: [
     {
       event: {
@@ -24,5 +22,6 @@
       },
       eventType: V1.BookingImported
     }
-  ]
+  ],
+  streamPosition: 0
 }

@@ -107,7 +107,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElasticPlayground", "src\Ex
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.DependencyInjection", "src\Extensions\test\Eventuous.Tests.DependencyInjection\Eventuous.Tests.DependencyInjection.csproj", "{152E27CE-35F1-4F65-B53A-C7B710F1B310}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.AspNetCore.Web", "src\Extensions\test\Eventuous.Tests.AspNetCore.Web\Eventuous.Tests.AspNetCore.Web.csproj", "{B3F782EE-FBEF-47E2-8379-8A91B11363B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.Extensions.AspNetCore", "src\Extensions\test\Eventuous.Tests.Extensions.AspNetCore\Eventuous.Tests.Extensions.AspNetCore.csproj", "{B3F782EE-FBEF-47E2-8379-8A91B11363B8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Sut.AspNetCore", "src\Extensions\test\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj", "{1C1033D6-059B-4CEE-A7D8-9EE470053145}"
 EndProject

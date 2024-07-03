@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using static Eventuous.Sut.AspNetCore.SutBookingCommands.NestedCommands;
 
-namespace Eventuous.Tests.AspNetCore.Web;
+namespace Eventuous.Tests.Extensions.AspNetCore;
 
 using static SutBookingCommands;
 using Fixture;

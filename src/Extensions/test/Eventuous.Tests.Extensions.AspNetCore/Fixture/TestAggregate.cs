@@ -1,4 +1,4 @@
-namespace Eventuous.Tests.AspNetCore.Web.Fixture;
+namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 
 class Brooking : Aggregate<BrookingState>;
 

@@ -4,7 +4,7 @@
         <IncludeTestHelpers>true</IncludeTestHelpers>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj"/>
     </ItemGroup>
     <ItemGroup>
@@ -17,7 +17,7 @@
     </ItemGroup>
     <ItemGroup>
         <Using Include="Eventuous.Sut.AspNetCore"/>
-        <Using Include="Eventuous.AspNetCore.Web"/>
+        <Using Include="Eventuous.Extensions.AspNetCore"/>
         <Using Include="Eventuous.Sut.Domain"/>
         <Using Include="System.Net"/>
         <Using Include="RestSharp"/>

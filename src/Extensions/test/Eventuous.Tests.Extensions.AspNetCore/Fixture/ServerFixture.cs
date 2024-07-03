@@ -6,7 +6,7 @@ using Eventuous.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RestSharp.Serializers.Json;
 
-namespace Eventuous.Tests.AspNetCore.Web.Fixture;
+namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 
 using static SutBookingCommands;
 
