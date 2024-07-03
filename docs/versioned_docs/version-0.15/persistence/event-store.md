@@ -4,7 +4,7 @@ description: "Event store infrastructure"
 sidebar_position: 2
 ---
 
-In order to isolate the core library from a particular way of storing events, Eventuous uses the `IEventStore` abstraction. Whilst it's used by `AggregateStore`, you can also use it in a more generic way, when you need to persist or read events without having an aggregate.
+In order to isolate the core library from a particular way of storing events, Eventuous uses the `IEventStore` abstraction.
 
 The `IEventStore` interface inherits from `IEventReader` and `IEventWriter` interfaces. Each of those interfaces is focused on one specific task - reading events from streams, and appending events to streams. This separation is necessary for scenarios when you only need, for example, to read events from a specific store, but not to append them. In such case, you'd want to use the `IEventReader` interface only.
 
@@ -45,3 +45,6 @@ If you use one of the implementations provided, you won't need to know about the
 Preferring EventStoreDB will save you lots of time!
 Remember to check [Event Store Cloud](https://www.eventstore.com/event-store-cloud).
 :::
+
+## Event store with archive
+

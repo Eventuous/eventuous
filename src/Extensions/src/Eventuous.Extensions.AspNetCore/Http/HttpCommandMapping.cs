@@ -2,8 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Reflection;
-using Eventuous.AspNetCore.Web;
-using Eventuous.AspNetCore.Web.Diagnostics;
+using Eventuous.Extensions.AspNetCore;
+using Eventuous.Extensions.AspNetCore.Diagnostics;
 using static Microsoft.AspNetCore.Http.StatusCodes;
 
 // ReSharper disable CheckNamespace
@@ -58,7 +58,7 @@ public static partial class RouteBuilderExtensions {
         => MapInternal<TState, TCommand, TCommand>(
             builder,
             route,
-            enrichCommand != null ? (command, context) => enrichCommand(command, context) : (command, _) => command,
+            enrichCommand != null ? (command, context) => enrichCommand(command, context) : null,
             policyName
         );
 
@@ -112,7 +112,7 @@ public static partial class RouteBuilderExtensions {
     }
 
     /// <summary>
-    /// Maps commands that are annotated either with <seealso cref="StateCommandsAttribute"/> and/or
+    /// Maps commands that are annotated either with <seealso cref="HttpCommandsAttribute"/> and/or
     /// <seealso cref="HttpCommandAttribute"/> in given assemblies. Will use assemblies of the current
     /// application domain if no assembly is specified explicitly.
     /// </summary>
@@ -139,7 +139,7 @@ public static partial class RouteBuilderExtensions {
 
             foreach (var type in decoratedTypes) {
                 var attr            = type.GetAttribute<HttpCommandAttribute>()!;
-                var parentAttribute = type.DeclaringType?.GetAttribute<StateCommandsAttribute>();
+                var parentAttribute = type.DeclaringType?.GetAttribute<HttpCommandsAttribute>();
 
                 var stateType = parentAttribute?.StateType ?? attr.StateType;
 
@@ -215,7 +215,7 @@ public static partial class RouteBuilderExtensions {
             string Generate() {
                 var gen = typeof(TCommand).Name;
 
-                return char.ToLowerInvariant(gen[0]) + gen[1..];
+                return $"{char.ToLowerInvariant(gen[0])}{gen[1..]}";
             }
         }
     }

@@ -36,7 +36,7 @@ Further, you need to tell Eventuous to use the `EsdbEventStore` for its aggregat
 services.AddAggregateStore<EsdbEventStore>();
 ```
 
-When that's done, Eventuous would persist aggregates using EventStoreDB when you use the [command service](../../application/app-service).
+When that's done, Eventuous would persist aggregates using EventStoreDB when you use the [command service](../../application/app-service.mdx).
 
 ## Subscriptions
 

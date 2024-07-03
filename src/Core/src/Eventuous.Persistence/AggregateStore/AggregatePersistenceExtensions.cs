@@ -108,7 +108,7 @@ public static class AggregatePersistenceExtensions {
     /// <typeparam name="TAggregate">Aggregate type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns>Aggregate instance</returns>
-    /// <exception cref="AggregateNotFoundException{T,TState}">If <see cref="failIfNotFound"/> set to true, this exception is thrown if there's no stream</exception>
+    /// <exception cref="AggregateNotFoundException{T,TState}">If failIfNotFound set to true, this exception is thrown if there's no stream</exception>
     /// <exception cref="Exception"></exception>
     public static async Task<TAggregate> LoadAggregate<TAggregate, TState>(
             this IEventReader         eventReader,
@@ -147,7 +147,7 @@ public static class AggregatePersistenceExtensions {
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns>Aggregate instance</returns>
-    /// <exception cref="AggregateNotFoundException{T,TState}">If <see cref="failIfNotFound"/> set to true, this exception is thrown if there's no stream</exception>
+    /// <exception cref="AggregateNotFoundException{T,TState}">If failIfNotFound set to true, this exception is thrown if there's no stream</exception>
     /// <exception cref="Exception"></exception>
     public static async Task<TAggregate> LoadAggregate<TAggregate, TState, TId>(
             this IEventReader         eventReader,

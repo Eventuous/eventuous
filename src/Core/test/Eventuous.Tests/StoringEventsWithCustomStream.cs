@@ -24,12 +24,12 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
         var result = await Service.Handle(cmd, default);
 
-        result.Success.Should().BeTrue();
-        result.Changes.Should().BeEquivalentTo(expected);
+        result.TryGet(out var ok).Should().BeTrue();
+        ok!.Changes.Should().BeEquivalentTo(expected);
 
         var evt = await EventStore.ReadEvents(GetStreamName(new(cmd.BookingId)), StreamReadPosition.Start, 1, CancellationToken.None);
 
-        evt[0].Payload.Should().BeEquivalentTo(result.Changes!.First().Event);
+        evt[0].Payload.Should().BeEquivalentTo(ok.Changes.First().Event);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
         await Service.Handle(cmd, default);
 
-        var secondCmd = new Commands.RecordPayment(new(cmd.BookingId), Auto.Create<string>(), new(cmd.Price), DateTimeOffset.Now);
+        var secondCmd = new Commands.RecordPayment(new(cmd.BookingId), Auto.Create<string>(), new(cmd.Price), DateTimeOffset.Now, "");
 
         var expected = new Change[] {
             new(new BookingPaymentRegistered(secondCmd.PaymentId, secondCmd.Amount.Amount), "PaymentRegistered"),
@@ -48,8 +48,8 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
         var result = await Service.Handle(secondCmd, default);
 
-        result.Success.Should().BeTrue();
-        result.Changes.Should().BeEquivalentTo(expected);
+        result.TryGet(out var ok).Should().BeTrue();
+        ok!.Changes.Should().BeEquivalentTo(expected);
 
         var evt = await EventStore.ReadEvents(GetStreamName(new(cmd.BookingId)), StreamReadPosition.Start, 100, CancellationToken.None);
 

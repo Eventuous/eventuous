@@ -1,4 +1,4 @@
-using Eventuous.AspNetCore.Web;
+using Eventuous.Extensions.AspNetCore;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using NodaTime;
@@ -50,7 +50,7 @@ public static class SutBookingCommands {
 
     public record ImportBooking(BookingId BookingId, string RoomId, StayPeriod Period, Money Price);
 
-    [StateCommands<BookingState>]
+    [HttpCommands<BookingState>]
     public static class NestedCommands {
         [HttpCommand(Route = NestedBookRoute)]
         public record NestedBookRoom(

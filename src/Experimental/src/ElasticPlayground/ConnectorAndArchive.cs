@@ -41,7 +41,7 @@ public class ConnectorAndArchive {
             default
         );
 
-        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_tieredStore));
+        var service = new ThrowingCommandService<BookingState>(new BookingService(_tieredStore));
 
         var cmd = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
 
@@ -51,7 +51,7 @@ public class ConnectorAndArchive {
     }
 
     static async Task Seed(IEventStore store, BookRoom bookRoom) {
-        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(store));
+        var service = new ThrowingCommandService<BookingState>(new BookingService(store));
 
         await service.Handle(bookRoom, default);
 

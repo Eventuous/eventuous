@@ -19,4 +19,7 @@
             <Link>Diagnostics\DiagnosticName.cs</Link>
         </Compile>
     </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Benchmarks" />
+    </ItemGroup>
 </Project>

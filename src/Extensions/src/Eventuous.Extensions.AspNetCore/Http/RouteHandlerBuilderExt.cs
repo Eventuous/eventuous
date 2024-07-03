@@ -4,7 +4,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-namespace Eventuous.AspNetCore.Web;
+namespace Eventuous.Extensions.AspNetCore;
 
 static class RouteHandlerBuilderExt {
     public static RouteHandlerBuilder ProducesValidationProblemDetails(this RouteHandlerBuilder builder, int statusCode)
@@ -13,12 +13,13 @@ static class RouteHandlerBuilderExt {
     public static RouteHandlerBuilder ProducesProblemDetails(this RouteHandlerBuilder builder, int statusCode)
         => builder.Produces<ProblemDetails>(statusCode, ContentTypes.ProblemDetails);
 
-    public static RouteHandlerBuilder ProducesOk(this RouteHandlerBuilder builder, Type resultType)
+    static RouteHandlerBuilder ProducesOk(this RouteHandlerBuilder builder, Type resultType)
         => builder.Produces(StatusCodes.Status200OK, resultType, ContentTypes.Json);
 
-    public static RouteHandlerBuilder ProducesOk<TState>(this RouteHandlerBuilder builder) where TState : new() => builder.ProducesOk(typeof(Result<TState>));
+    public static RouteHandlerBuilder ProducesOk<TState>(this RouteHandlerBuilder builder) where TState : class, new() 
+        => builder.ProducesOk(typeof(Result<TState>.Ok));
 
-    public static RouteHandlerBuilder Accepts(this RouteHandlerBuilder builder, Type commandType) => builder.Accepts(commandType, false, ContentTypes.Json);
+    static RouteHandlerBuilder Accepts(this RouteHandlerBuilder builder, Type commandType) => builder.Accepts(commandType, false, ContentTypes.Json);
 
     public static RouteHandlerBuilder Accepts<T>(this RouteHandlerBuilder builder) => builder.Accepts(typeof(T));
 }

@@ -80,12 +80,12 @@ public static class ProducerExtensions {
         )
         => messages.Select(x => new ProducedMessage(x, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack });
 
-    static IEnumerable<ProducedMessage> ConvertOne(
+    static ProducedMessage[] ConvertOne(
             object               message,
             Metadata?            metadata,
             Metadata?            additionalHeaders,
             AcknowledgeProduce?  onAck,
             ReportFailedProduce? onNack
         )
-        => new[] { new ProducedMessage(message, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack } };
+        => [new ProducedMessage(message, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack }];
 }

@@ -12,16 +12,16 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
         : this(store, store, typeMap, amendEvent) { }
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.New).GetStream(...).Act(...) instead")]
-    protected void OnNew<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TCommand, IEnumerable<object>> action) where TCommand : class
+    protected void OnNew<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TCommand, NewEvents> action) where TCommand : class
         => On<TCommand>().InState(ExpectedState.New).GetStream(getStreamName).Act(action);
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Existing).GetStream(...).Act(...) instead")]
-    protected void OnExisting<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TState, object[], TCommand, IEnumerable<object>> action)
+    protected void OnExisting<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TState, object[], TCommand, NewEvents> action)
         where TCommand : class
         => On<TCommand>().InState(ExpectedState.Existing).GetStream(getStreamName).Act(action);
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.Any).GetStream(...).Act(...) instead")]
-    protected void OnAny<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TState, object[], TCommand, IEnumerable<object>> action)
+    protected void OnAny<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TState, object[], TCommand, NewEvents> action)
         where TCommand : class
         => On<TCommand>().InState(ExpectedState.Any).GetStream(getStreamName).Act(action);
 }
@@ -65,13 +65,11 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     /// <returns><seealso cref="Result{TState}"/> instance</returns>
     /// <exception cref="ArgumentOutOfRangeException">Throws when there's no command handler was registered for the command type</exception>
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
-        // if (!_initialized) BuildHandlers();
-
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();
             var exception = new Exceptions.CommandHandlerNotFound<TCommand>();
 
-            return new ErrorResult<TState>(exception);
+            return Result<TState>.FromError(exception);
         }
 
         var streamName     = await registeredHandler.GetStream(command, cancellationToken).NoContext();
@@ -94,18 +92,18 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
             var newState  = newEvents.Aggregate(loadedState.State, (current, evt) => current.When(evt));
 
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
-            if (newEvents.Length == 0) return new OkResult<TState>(newState, Array.Empty<Change>(), 0);
+            if (newEvents.Length == 0) return Result<TState>.FromSuccess(newState, Array.Empty<Change>(), 0);
 
             var storeResult = await resolvedWriter.Store(streamName, loadedState.StreamVersion, newEvents, amendEvent, cancellationToken)
                 .NoContext();
             var changes = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
-            return new OkResult<TState>(newState, changes, storeResult.GlobalPosition);
+            return Result<TState>.FromSuccess(newState, changes, storeResult.GlobalPosition);
         } catch (Exception e) {
             Log.ErrorHandlingCommand<TCommand>(e);
 
-            return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
+            return Result<TState>.FromError(e, $"Error handling command {typeof(TCommand).Name}");
         }
     }
 

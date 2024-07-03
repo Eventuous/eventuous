@@ -6,7 +6,6 @@ namespace Eventuous.Diagnostics;
 using static DiagnosticTags;
 
 public static class MetadataExtensions {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Metadata AddActivityTags(this Metadata metadata, Activity? activity) {
         if (activity == null) return metadata;
 

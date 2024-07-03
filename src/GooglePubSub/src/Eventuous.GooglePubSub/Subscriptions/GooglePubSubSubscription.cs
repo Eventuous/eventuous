@@ -1,7 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -90,7 +89,6 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
         return;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
             var eventType   = msg.Attributes[Options.Attributes.EventType];
             var contentType = msg.Attributes[Options.Attributes.ContentType];
@@ -122,7 +120,6 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
             } catch (Exception ex) { return await _failureHandler(_client, msg, ex).NoContext(); }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
     }
 

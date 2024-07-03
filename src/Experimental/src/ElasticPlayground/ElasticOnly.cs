@@ -8,13 +8,13 @@ using NodaTime;
 namespace ElasticPlayground;
 
 public class ElasticOnly {
-    readonly ICommandService<Booking, BookingState, BookingId> _service;
+    readonly ICommandService<BookingState> _service;
 
     static readonly Fixture Fixture = new();
 
     public ElasticOnly(IElasticClient client) {
         var eventStore = new ElasticEventStore(client);
-        _service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(eventStore));
+        _service = new ThrowingCommandService<BookingState>(new BookingService(eventStore));
     }
 
     public async Task Execute() {

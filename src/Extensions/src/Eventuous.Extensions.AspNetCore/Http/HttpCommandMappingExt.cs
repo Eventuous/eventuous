@@ -1,7 +1,9 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.AspNetCore.Web;
+// ReSharper disable once CheckNamespace
+
+using Eventuous.Extensions.AspNetCore;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.AspNetCore.Routing;

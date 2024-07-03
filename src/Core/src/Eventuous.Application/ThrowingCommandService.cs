@@ -1,24 +1,20 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.ExceptionServices;
 namespace Eventuous;
 
-public class ThrowingCommandService<T, TState, TId>(ICommandService<T, TState, TId> inner) : ICommandService<T, TState, TId>
-    where T : Aggregate<TState>
-    where TState : State<TState>, new()
-    where TId : Id {
-    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
-        where TCommand : class {
+/// <summary>
+/// Command service wrapper that throws an exception if the actual service returned an error result.
+/// </summary>
+/// <param name="inner">The actual command service.</param>
+/// <typeparam name="TState"></typeparam>
+public class ThrowingCommandService<TState>(ICommandService<TState> inner) : ICommandService<TState>
+    where TState : State<TState>, new() {
+    public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
         var result = await inner.Handle(command, cancellationToken);
 
-        if (result is ErrorResult<TState> error) {
-            if (error.Exception is not null) {
-                ExceptionDispatchInfo.Throw(error.Exception);
-            }
-            throw new ApplicationException($"Error handling command {command}");
-        }
+        result.ThrowIfError();
 
-        return result;
+        throw new ApplicationException($"Error handling command {command}");
     }
 }

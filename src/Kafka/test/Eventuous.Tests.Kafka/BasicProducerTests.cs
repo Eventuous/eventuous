@@ -5,6 +5,7 @@ using Eventuous.Producers;
 using Eventuous.Tests.Subscriptions.Base;
 using Eventuous.Tools;
 using static System.String;
+using static Eventuous.DeserializationResult;
 
 namespace Eventuous.Tests.Kafka;
 
@@ -39,10 +40,10 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
 
         async Task Produce() {
             await using var producer = new KafkaBasicProducer(
-                new KafkaProducerOptions(new ProducerConfig { BootstrapServers = _fixture.BootstrapServers })
+                new KafkaProducerOptions(new() { BootstrapServers = _fixture.BootstrapServers })
             );
             await producer.StartAsync(default);
-            await producer.Produce(new StreamName(topicName), events, new Metadata(), new KafkaProduceOptions("test"));
+            await producer.Produce(new(topicName), events, new(), new("test"));
         }
 
         async Task ExecuteConsume() {
@@ -103,18 +104,14 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
             )
             .SetPartitionsRevokedHandler(
                 (c, partitions) => {
-                    var remaining = c.Assignment.Where(
-                        atp => partitions.All(rtp => rtp.TopicPartition != atp)
-                    );
+                    var remaining = c.Assignment.Where(atp => partitions.All(rtp => rtp.TopicPartition != atp));
 
                     _output.WriteLine(
                         $"Partitions incrementally revoked: [{Join(',', partitions.Select(p => p.Partition.Value))}], remaining: [{Join(',', remaining.Select(p => p.Partition.Value))}]"
                     );
                 }
             )
-            .SetPartitionsLostHandler(
-                (_, partitions) => _output.WriteLine($"Partitions were lost: [{Join(", ", partitions)}]")
-            )
+            .SetPartitionsLostHandler((_, partitions) => _output.WriteLine($"Partitions were lost: [{Join(", ", partitions)}]"))
             .Build();
     }
 }

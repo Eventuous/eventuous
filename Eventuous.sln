@@ -93,7 +93,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.Projections
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{CCD807D2-F4F2-4EC2-A03D-8943F73993A6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.AspNetCore.Web", "src\Extensions\src\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj", "{E387CC89-42B6-40BD-800B-C369AE971FCC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Extensions.AspNetCore", "src\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj", "{E387CC89-42B6-40BD-800B-C369AE971FCC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Experimental", "Experimental", "{B64D59D5-7935-4DFC-8D90-D6EF3D6F2ABA}"
 EndProject

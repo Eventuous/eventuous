@@ -2,6 +2,8 @@ using Eventuous.Sut.Domain;
 
 namespace Eventuous.Tests;
 
+using static Fixtures.IdGenerator;
+
 public class StreamNameMapTests {
     readonly StreamNameMap _sut = new();
 
@@ -20,13 +22,4 @@ public class StreamNameMapTests {
         var streamName = _sut.GetStreamName(id);
         streamName.ToString().Should().Be($"Booking-{idString}");
     }
-
-    [Fact]
-    public void Should_get_stream_name_for_state() {
-        var idString   = GetId();
-        var streamName = StreamName.ForState<BookingState>(idString);
-        streamName.ToString().Should().Be($"Booking-{idString}");
-    }
-    
-    static string GetId() => Guid.NewGuid().ToString("N");
 }

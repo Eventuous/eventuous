@@ -15,7 +15,7 @@ public static class StateStoreFunctions {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <typeparam name="TState">State object type</typeparam>
     /// <returns>Instance of <seealso cref="FoldedEventStream{T}"/> containing events and folded state</returns>
-    /// <exception cref="StreamNotFound">Thrown if there's no stream and <see cref="failIfNotFound"/> is true</exception>
+    /// <exception cref="StreamNotFound">Thrown if there's no stream and failIfNotFound is true</exception>
     public static async Task<FoldedEventStream<TState>> LoadState<TState>(
             this IEventReader reader,
             StreamName        streamName,

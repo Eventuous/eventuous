@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Eventuous.Tools;
+using static Eventuous.DeserializationResult;
 using static Eventuous.Diagnostics.PersistenceEventSource;
 
 namespace Eventuous.EventStore;
@@ -184,7 +185,6 @@ public class EsdbEventStore : IEventStore {
             (s, ex) => new DeleteStreamException(s, ex)
         );
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     async Task<T> TryExecute<T>(
             Func<Task<T>>                      func,
             string                             stream,
@@ -226,7 +226,6 @@ public class EsdbEventStore : IEventStore {
             _ => throw new SerializationException("Unknown deserialization result")
         };
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Metadata? DeserializeMetadata() {
             var meta = resolvedEvent.Event.Metadata.Span;
 
@@ -244,7 +243,6 @@ public class EsdbEventStore : IEventStore {
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         StreamEvent AsStreamEvent(object payload)
             => new(
                 resolvedEvent.Event.EventId.ToGuid(),
@@ -255,10 +253,9 @@ public class EsdbEventStore : IEventStore {
             );
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents
-            .Where(x => !x.Event.EventType.StartsWith("$"))
+            .Where(x => !x.Event.EventType.StartsWith('$'))
             // ReSharper disable once ConvertClosureToMethodGroup
             .Select(e => ToStreamEvent(e))
             .ToArray();

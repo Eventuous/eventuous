@@ -62,32 +62,32 @@ public interface IDefineWriter<out TCommand, out TState> where TState : State<TS
 
 public interface IDefineExecution<out TCommand, out TState> where TState : State<TState> where TCommand : class {
     /// <summary>
-    /// Defines the action to take on the stream for the command.
+    /// Defines the action to take on the stream for the command. The expected state should be New for this to work.
     /// </summary>
     /// <param name="executeCommand">Function to be executed on the stream for the command</param>
     /// <returns></returns>
-    void Act(Func<TCommand, IEnumerable<object>> executeCommand);
+    void Act(Func<TCommand, NewEvents> executeCommand);
+
+    /// <summary>
+    /// Defines the action to take on the stream for the command. The expected state should be New for this to work.
+    /// </summary>
+    /// <param name="executeCommand">Function to be executed on a new stream for the command</param>
+    /// <returns></returns>
+    void ActAsync(Func<TCommand, CancellationToken, Task<NewEvents>> executeCommand);
 
     /// <summary>
     /// Defines the action to take on the stream for the command, asynchronously.
     /// </summary>
-    /// <param name="executeCommand">Function to be executed on the stream for the command</param>
+    /// <param name="executeCommand">Function to be executed on a stream for the command</param>
     /// <returns></returns>
-    void ActAsync(Func<TCommand, CancellationToken, Task<IEnumerable<object>>> executeCommand);
-
-    /// <summary>
-    /// Defines the action to take on the new stream for the command.
-    /// </summary>
-    /// <param name="executeCommand">Function to be executed on a new stream for the command</param>
-    /// <returns></returns>
-    void Act(Func<TState, object[], TCommand, IEnumerable<object>> executeCommand);
+    void Act(Func<TState, object[], TCommand, NewEvents> executeCommand);
 
     /// <summary>
     /// Defines the action to take on the new stream for the command, asynchronously.
     /// </summary>
-    /// <param name="executeCommand">Function to be executed on a new stream for the command</param>
+    /// <param name="executeCommand">Function to be executed on a stream for the command</param>
     /// <returns></returns>
-    void ActAsync(Func<TState, object[], TCommand, CancellationToken, Task<IEnumerable<object>>> executeCommand);
+    void ActAsync(Func<TState, object[], TCommand, CancellationToken, Task<NewEvents>> executeCommand);
 }
 
 public interface ICommandHandlerBuilder<out TCommand, out TState>
@@ -123,18 +123,17 @@ public class CommandHandlerBuilder<TCommand, TState>(CommandService<TState> serv
         return this;
     }
 
-    void IDefineExecution<TCommand, TState>.Act(Func<TState, object[], TCommand, IEnumerable<object>> executeCommand) {
+    void IDefineExecution<TCommand, TState>.Act(Func<TState, object[], TCommand, NewEvents> executeCommand) {
         _execute = (state, events, command, _) => ValueTask.FromResult(executeCommand(state, events, (TCommand)command));
         service.AddHandler<TCommand>(Build());
     }
 
-    void IDefineExecution<TCommand, TState>.ActAsync(Func<TState, object[], TCommand, CancellationToken, Task<IEnumerable<object>>> executeCommand) {
+    void IDefineExecution<TCommand, TState>.ActAsync(Func<TState, object[], TCommand, CancellationToken, Task<NewEvents>> executeCommand) {
         _execute = async (state, events, cmd, token) => await executeCommand(state, events, (TCommand)cmd, token).NoContext();
         service.AddHandler<TCommand>(Build());
     }
 
-    void IDefineExecution<TCommand, TState>.Act(Func<TCommand, IEnumerable<object>> executeCommand) {
-        // This is not ideal as we can return more specific interface depending on the expected state, but it would do for now.
+    void IDefineExecution<TCommand, TState>.Act(Func<TCommand, NewEvents> executeCommand) {
         if (_expectedState != ExpectedState.New) {
             throw new InvalidOperationException("Action without state is only allowed for new streams");
         }
@@ -143,8 +142,7 @@ public class CommandHandlerBuilder<TCommand, TState>(CommandService<TState> serv
         service.AddHandler<TCommand>(Build());
     }
 
-    void IDefineExecution<TCommand, TState>.ActAsync(Func<TCommand, CancellationToken, Task<IEnumerable<object>>> executeCommand) {
-        // This is not ideal as we can return more specific interface depending on the expected state, but it would do for now.
+    void IDefineExecution<TCommand, TState>.ActAsync(Func<TCommand, CancellationToken, Task<NewEvents>> executeCommand) {
         if (_expectedState != ExpectedState.New) {
             throw new InvalidOperationException("Action without state is only allowed for new streams");
         }

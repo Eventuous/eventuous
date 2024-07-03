@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Runtime.Serialization;
 using System.Text;
 using Eventuous.Diagnostics;
+using static Eventuous.DeserializationResult;
 
 namespace Eventuous.Sql.Base;
 

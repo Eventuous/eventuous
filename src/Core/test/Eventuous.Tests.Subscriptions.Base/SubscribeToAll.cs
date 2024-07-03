@@ -2,7 +2,6 @@ using DotNet.Testcontainers.Containers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.App;
-using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
@@ -80,10 +79,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
 
         foreach (var cmd in commands) {
             var result = await service.Handle(cmd, default);
-
-            if (result is ErrorResult<BookingState> error) {
-                throw error.Exception ?? new Exception(error.Message);
-            }
+            result.ThrowIfError();
         }
 
         return commands;

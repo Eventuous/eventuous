@@ -79,7 +79,6 @@ public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typ
     protected void OnAsync<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdateAsync<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Filter(getFilter).UpdateFromContext(getUpdate));
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     ValueTask<MongoProjectOperation<T>> HandleInternal<TEvent>(IMessageConsumeContext context, ProjectTypedEvent<T, TEvent> handler)
         where TEvent : class {
         return context.Message is not TEvent ? NoHandler() : HandleTypedEvent();

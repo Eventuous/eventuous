@@ -4,7 +4,7 @@
         <IncludeTestHelpers>true</IncludeTestHelpers>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj"/>
+        <ProjectReference Include="..\..\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj"/>
     </ItemGroup>
     <ItemGroup>

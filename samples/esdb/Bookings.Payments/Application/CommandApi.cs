@@ -1,6 +1,5 @@
 using Bookings.Payments.Domain;
 using Eventuous;
-using Eventuous.AspNetCore.Web;
 using Microsoft.AspNetCore.Mvc;
 using static Bookings.Payments.Application.PaymentCommands;
 

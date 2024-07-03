@@ -8,7 +8,16 @@ import replLightUrl from "./images/replication.png";
 import readingDarkUrl from "./images/reading-dark.png";
 import readingLightUrl from "./images/reading.png";
 
-:::info
+:::info Deprecation notice
+Since version **0.15**, Eventuous doesn't use _Aggregate store_ internally. All persistence operations in command services are using [Event store](../event-store.md). The following elements are marked obsolete:
+
+- `IAggregateStore` interface
+- `AggregateStore` class
+- `AggregateStore<TArchive>` class
+- Dependency injection registration methods for Aggregate store
+:::
+
+:::note
 Eventuous does not have a concept of Repository. Find out why [on this page](../../persistence).
 :::
 
@@ -24,8 +33,6 @@ The `AggregateStore` constructor needs two arguments:
 - [Event store](../event-store.md) (`IEventStore`)
 - [Event serializer](../serialisation.md) (`IEventSerializer`)
 
-Our [`CommandService`](../../application/app-service.md) uses the `AggregateStore` in its command-handling flow.
-
 ## Using EventStoreDB
 
 Eventuous supports [EventStoreDB](https://eventstore.com) out of the box, but only v20+ with gRPC protocol.
@@ -33,16 +40,15 @@ Eventuous supports [EventStoreDB](https://eventstore.com) out of the box, but on
 Using this pre-made event persistence is easy. You can register the necessary dependencies in your startup code:
 
 ```csharp title="Program.cs"
-var esdbSettings = EventStoreClientSettings.Create(connectionString);
 builder.Services
-    .AddSingleton(new EventStoreClient(esdbSettings))
+    .AddEventStoreClient(connectionString)
     .AddAggregateStore<EsdbEventStore>();
 ```
 
-The `AddAggregateStore` extension is available in the `Eventuous.AspNetCore` NuGet package.
+The `AddAggregateStore` extension is available in the `Eventuous.Extensions.DependencyInjection` NuGet package.
 
 :::note
-Make sure to read about [events serialisation](../serialisation.md).
+Make sure to read about [events serialization](../serialisation.md).
 :::
 
 ## Bring your own event store
@@ -51,11 +57,15 @@ You can build your own event store, if you want to use a different database. If 
 
 ```csharp title="Program.cs"
 builder.Services
-    .AddSingleton<IEventStore>(new MyEventStore(...))
+    .AddEventStore(new MyEventStore(...))
     .AddAggregateStore<MyEventStore>();
 ```
 
 ## Multi-tier store
+
+:::info Deprecation notice
+Since version **0.15**, aggregate store with archive is superseded by [tiered event store](../event-store.md#event-store-with-archive).
+:::
 
 When you have an event-sourced system in production for a while, you might collect a lot of historical events. Some event streams might be as old, as they won't be frequently accessed, but when using a single event store, you'd have to store all those events in a hot store, as it's the only one you have. It might create an issue of misusing the hot store, as those historical events are expensive to keep.
 

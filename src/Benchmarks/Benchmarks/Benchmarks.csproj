@@ -10,4 +10,8 @@
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet"/>
     </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="GapDetectionBenchmarks.cs" />
+      <Compile Remove="TypeMapBenchmark.cs" />
+    </ItemGroup>
 </Project>

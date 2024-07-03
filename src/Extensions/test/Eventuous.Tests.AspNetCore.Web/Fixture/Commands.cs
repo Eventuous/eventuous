@@ -1,3 +1,5 @@
+using Eventuous.Extensions.AspNetCore;
+
 namespace Eventuous.Tests.AspNetCore.Web.Fixture;
 
 public static class TestCommands {

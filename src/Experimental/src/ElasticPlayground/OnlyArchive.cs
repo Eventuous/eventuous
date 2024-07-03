@@ -23,7 +23,7 @@ public class OnlyArchive {
     public async Task Execute() {
         const string bookingId = "deea3663-17c0-45a6-86b2-70c66fd407fd";
 
-        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_tieredEventStore));
+        var service = new ThrowingCommandService<BookingState>(new BookingService(_tieredEventStore));
 
         var cmd = new RecordPayment(new(bookingId), Fixture.Create<string>(), new Money(10), DateTimeOffset.Now);
 

@@ -37,7 +37,7 @@ public class CombinedStore {
 
         await _esdbEventStore.TruncateStream(StreamName.For<Booking>(bookRoom.BookingId), new(1), ExpectedStreamVersion.Any, default);
 
-        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_store, _esdbEventStore));
+        var service = new ThrowingCommandService<BookingState>(new BookingService(_store, _esdbEventStore));
 
         var cmd = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
 
@@ -47,7 +47,7 @@ public class CombinedStore {
     }
 
     static async Task Seed(IEventStore store, BookRoom bookRoom) {
-        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(store));
+        var service = new ThrowingCommandService<BookingState>(new BookingService(store));
 
         await service.Handle(bookRoom, default);
 

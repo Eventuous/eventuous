@@ -50,14 +50,14 @@ public static class BookingEvents {
 }
 ```
 
-Oh, that's it? A record? Yes, a record. Domain events are property bags. Their only purpose is to convey the state transition using the language of your domain. Technically, a domain event should just be an object, which can be serialised and deserialized for the purpose of persistence.
-
 Eventuous do's and dont's:
-- **Do** make sure your domain events can be serialised to a commonly understood format, like JSON.
+- **Do** make sure your domain events can be serialized to a commonly understood format, like JSON.
 - **Do** make domain events immutable.
 - **Do** implement equality by value for domain events.
 - **Don't** apply things like marker interfaces (or any interfaces) to domain events.
 - **Don't** use constructor logic, which can prevent domain events from deserializing.
 - **Don't** use value objects in your domain events.
 
-The last point might require some elaboration. The `Value Object` pattern in DDD doesn't only require for those objects to be immutable and implement equality by value. The main attribute of a value object is that it must be _correct_. It means that you can try instantiating a value object with invalid arguments, but it will deny them. This characteristic along forbids value objects from being used in domain events, as events must be _unconditionally deserializable_. No matter what logic your current domain model has, events from the past are equally valid today. By bringing value objects to domain events you make them prone to failure when their validity rules change, which might prevent them from being deserialized. As a result, your aggregates won't be able to restore their state from previously persistent events and nothing will work.
+Some of those points look like limitations, and they are. For example, avoiding value objects inside domain events primarily caused by lack of separation between domain events and persisted (stored in an [event store](../persistence/event-store.md)) events. It creates a requirement for the domain events to be fully (de)serializable, and it's not always possible when using value objects with their explicit validation rules. You also cannot use standard types like immutable arrays or lists as they cannot be deserialized.
+
+It's a technical limitation which will be addressed soon.

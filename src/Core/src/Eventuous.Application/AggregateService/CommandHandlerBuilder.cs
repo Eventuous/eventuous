@@ -121,6 +121,7 @@ public interface ICommandHandlerBuilder<out TCommand, TAggregate, out TState, TI
 /// Builds a command handler for a specific command type. You would not need to instantiate this class directly,
 /// use <see cref="CommandService{TAggregate,TState,TId}.On{TCommand}" /> function.
 /// </summary>
+/// <param name="service">Parent command service</param>
 /// <param name="reader">Default event reader instance for the command service</param>
 /// <param name="writer">Default event writer instance for the command service</param>
 /// <typeparam name="TCommand">Command type</typeparam>
@@ -223,7 +224,7 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(
             _amendEvent?.AsAmendEvent()
         );
 
-        Func<TCommand, IEventWriter> DefaultResolveWriter() 
+        Func<TCommand, IEventWriter> DefaultResolveWriter()
             => _ => Ensure.NotNull(writer, $"Function to resolve event writer from {typeof(TCommand).Name} is not defined and no default writer is set");
 
         Func<TCommand, IEventReader> DefaultResolveReader()

@@ -64,7 +64,7 @@ builder.Services.Configure<PostgresStoreOptions>(
 );
 ```
 
-When that's done, Eventuous would persist aggregates in Postgres when you use the [command service](../../application/app-service).
+When that's done, Eventuous would persist aggregates in Postgres when you use the [command service](../../application/app-service.mdx).
 
 At this moment, the Postgres event store implementation doesn't support stream truncation.
 

@@ -16,6 +16,12 @@ public static class RegistrationExtensions {
         services.AddProducer(producer);
     }
 
+    /// <summary>
+    /// Register a producer in the DI container as IProducer using a pre-instantiated instance.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="producer">Producer instance</param>
+    /// <typeparam name="T">Producer implementation type</typeparam>
     public static void AddProducer<T>(this IServiceCollection services, T producer) where T : class, IProducer {
         services.TryAddSingleton(producer);
         services.TryAddSingleton<IProducer>(sp => sp.GetRequiredService<T>());
@@ -30,6 +36,12 @@ public static class RegistrationExtensions {
         services.AddProducer(getProducer);
     }
 
+    /// <summary>
+    /// Register a producer in the DI container as IProducer using a factory function.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="getProducer">Function to resolve the producer from the service provider</param>
+    /// <typeparam name="T">Producer implementation type</typeparam>
     public static void AddProducer<T>(this IServiceCollection services, Func<IServiceProvider, T> getProducer) where T : class, IProducer {
         services.TryAddSingleton(getProducer);
         AddCommon<T>(services);
@@ -40,6 +52,11 @@ public static class RegistrationExtensions {
         services.AddProducer<T>();
     }
 
+    /// <summary>
+    /// Register a producer in the DI container as IProducer using the default constructor.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <typeparam name="T">Producer implementation type</typeparam>
     public static void AddProducer<T>(this IServiceCollection services) where T : class, IProducer {
         services.TryAddSingleton<T>();
         AddCommon<T>(services);

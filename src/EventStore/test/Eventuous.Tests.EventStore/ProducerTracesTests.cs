@@ -28,10 +28,10 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler>, IDisposable
 
     [Fact]
     [Trait("Category", "Diagnostics")]
-    public async Task ShouldPropagateRemoveContext() {
+    public async Task ShouldPropagateRemoteContext() {
         var testEvent = Auto.Create<TestEvent>();
 
-        await Producer.Produce(Stream, testEvent, new Metadata());
+        await Producer.Produce(Stream, testEvent, new());
 
         await Start();
 

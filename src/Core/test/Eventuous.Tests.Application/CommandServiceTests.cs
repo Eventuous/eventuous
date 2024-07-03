@@ -25,8 +25,8 @@ public class CommandServiceTests {
         foreach (var task in tasks) {
             var result = await task;
 
-            result.Success.Should().BeTrue();
-            result.Changes.Should().HaveCount(1);
+            result.TryGet(out var ok).Should().BeTrue();
+            ok!.Changes.Should().HaveCount(1);
         }
     }
 

@@ -1,4 +1,5 @@
 using NodaTime;
+
 #pragma warning disable CS0618 // Type or member is obsolete
 
 namespace Eventuous.Tests.Application;
@@ -38,7 +39,7 @@ public class FunctionalServiceTests : IDisposable {
     public async Task ExecuteOnExistingStream() {
         var bookRoom    = await Seed();
         var paymentTime = DateTimeOffset.Now;
-        var cmd         = new Commands.RecordPayment(new BookingId(bookRoom.BookingId), "444", new Money(bookRoom.Price), paymentTime);
+        var cmd         = new Commands.RecordPayment(new(bookRoom.BookingId), "444", new Money(bookRoom.Price), paymentTime, "");
 
         var result = await _service.Handle(cmd, default);
 
@@ -47,8 +48,9 @@ public class FunctionalServiceTests : IDisposable {
             new BookingEvents.BookingFullyPaid(paymentTime)
         };
 
-        result.Changes.Should().HaveCount(2);
-        var newEvents = result.Changes!.Select(x => x.Event);
+        result.TryGet(out var okResult).Should().BeTrue();
+        okResult!.Changes.Should().HaveCount(2);
+        var newEvents = okResult.Changes.Select(x => x.Event);
         newEvents.Should().BeEquivalentTo(expectedResult);
     }
 
@@ -64,8 +66,8 @@ public class FunctionalServiceTests : IDisposable {
             RoomId    = bookRoom.RoomId
         };
         var result = await _service.Handle(cmd, default);
-        result.Success.Should().BeTrue();
-        result.Changes.Should().HaveCount(1);
+        result.TryGet(out var okResult).Should().BeTrue();
+        okResult!.Changes.Should().HaveCount(1);
     }
 
     [Fact]
@@ -75,12 +77,12 @@ public class FunctionalServiceTests : IDisposable {
 
         await service.Handle(cmd, default);
 
-        var stream = await _store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, true, default);
+        var stream = await _store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start);
         stream[0].Metadata["foo"].Should().Be("bar");
 
         return;
 
-        StreamEvent AddMeta(StreamEvent evt) => evt with { Metadata = new Metadata { ["foo"] = "bar" } };
+        StreamEvent AddMeta(StreamEvent evt) => evt with { Metadata = new() { ["foo"] = "bar" } };
     }
 
     static Commands.BookRoom GetBookRoom() {

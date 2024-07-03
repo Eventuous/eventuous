@@ -47,17 +47,17 @@ public static class ActivityExtensions {
         if (exception == null) return activity;
 
         var tags = new ActivityTagsCollection(
-            new KeyValuePair<string, object?>[] {
+            [
                 new(TelemetryTags.Exception.Type, exception.GetType().Name),
                 new(TelemetryTags.Exception.Message, $"{exception.Message} {exception.InnerException?.Message}"),
                 new(TelemetryTags.Exception.Stacktrace, exception.StackTrace)
-            }
+            ]
         );
 
         foreach (var (key, value) in tags) {
             activity.SetTag(key, value);
         }
 
-        return activity.AddEvent(new ActivityEvent(TelemetryTags.Exception.EventName, DateTimeOffset.Now, tags));
+        return activity.AddEvent(new(TelemetryTags.Exception.EventName, DateTimeOffset.Now, tags));
     }
 }

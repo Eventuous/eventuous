@@ -61,7 +61,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             Log.CommandHandlerNotFound<TCommand>();
             var exception = new Exceptions.CommandHandlerNotFound(command.GetType());
 
-            return new ErrorResult<TState>(exception);
+            return Result<TState>.FromError(exception);
         }
 
         var aggregateId = await registeredHandler.GetId(command, cancellationToken).NoContext();
@@ -86,18 +86,18 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
                 .NoContext();
 
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
-            if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
+            if (result.Changes.Count == 0) return Result<TState>.FromSuccess(result.State, Array.Empty<Change>(), 0);
 
             var writer      = registeredHandler.ResolveWriter(command);
             var storeResult = await writer.StoreAggregate<TAggregate, TState>(stream, result, Amend, cancellationToken).NoContext();
             var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
-            return new OkResult<TState>(result.State, changes, storeResult.GlobalPosition);
+            return Result<TState>.FromSuccess(result.State, changes, storeResult.GlobalPosition);
         } catch (Exception e) {
             Log.ErrorHandlingCommand<TCommand>(e);
 
-            return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
+            return Result<TState>.FromError(e, $"Error handling command {typeof(TCommand).Name}");
         }
 
         TAggregate Create(TId id) => _factoryRegistry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);

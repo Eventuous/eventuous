@@ -4,7 +4,7 @@
 using System.Diagnostics.Tracing;
 using Eventuous.Diagnostics;
 
-namespace Eventuous.AspNetCore.Web.Diagnostics;
+namespace Eventuous.Extensions.AspNetCore.Diagnostics;
 
 [EventSource(Name = $"{DiagnosticName.BaseName}.aspnetcore")]
 public class ExtensionsEventSource : EventSource {

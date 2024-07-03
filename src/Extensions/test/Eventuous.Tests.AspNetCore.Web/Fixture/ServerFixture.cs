@@ -71,7 +71,7 @@ public class ServerFixture {
         using var client = GetClient();
 
         var request  = new RestRequest(route).AddJsonBody(cmd);
-        var response = await client.ExecutePostAsync<OkResult<TResult>>(request);
+        var response = await client.ExecutePostAsync<Result<TResult>.Ok>(request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         return response.Content!;

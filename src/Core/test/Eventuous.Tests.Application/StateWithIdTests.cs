@@ -16,12 +16,13 @@ public class StateWithIdTests {
     public async Task ShouldGetIdForNew() {
         var map   = new StreamNameMap();
         var id    = Guid.NewGuid().ToString();
-        var state = await Seed(id);
+        var result = await Seed(id);
 
         var bookingId = new BookingId(id);
 
         // Ensure that the id was set when the aggregate was created
-        state.State!.Id.Should().Be(bookingId);
+        result.TryGet(out var ok).Should().BeTrue();
+        ok!.State.Id.Should().Be(bookingId);
 
         var instance = await _store.LoadAggregate<Booking, BookingState, BookingId>(bookingId, map, true);
 

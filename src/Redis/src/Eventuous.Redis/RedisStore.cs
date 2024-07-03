@@ -4,6 +4,7 @@
 using System.Globalization;
 using System.Runtime.Serialization;
 using System.Text;
+using static Eventuous.DeserializationResult;
 using static Eventuous.Diagnostics.PersistenceEventSource;
 using static Eventuous.Redis.EventuousRedisKeys;
 

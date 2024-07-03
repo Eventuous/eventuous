@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Eventuous.Extensions.AspNetCore;
 
 // ReSharper disable InvertIf
 

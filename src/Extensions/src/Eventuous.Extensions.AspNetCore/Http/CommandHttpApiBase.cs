@@ -1,15 +1,17 @@
 // Copyright (C) Ubiquitous AS.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-namespace Eventuous.AspNetCore.Web;
+using Microsoft.AspNetCore.Http;
+
+namespace Eventuous.Extensions.AspNetCore;
 
 /// <summary>
 /// Base class for exposing commands via Web API using a controller that returns the default result.
 /// </summary>
 /// <typeparam name="TState">State type</typeparam>
 [PublicAPI]
-public abstract class CommandHttpApiBase<TState>(ICommandService<TState> service, MessageMap? commandMap = null)
-    : CommandHttpApiBase<TState, Result<TState>>(service, commandMap) where TState : State<TState>, new();
+public abstract class CommandHttpApiBase<TState>(ICommandService<TState> service, CommandMap<HttpContext>? commandMap = null)
+    : CommandHttpApiBase<TState, Result<TState>.Ok>(service, commandMap) where TState : State<TState>, new();
 
 /// <summary>
 /// Base class for exposing commands via Web API using a controller returning a custom result type.
@@ -19,7 +21,7 @@ public abstract class CommandHttpApiBase<TState>(ICommandService<TState> service
 /// <typeparam name="TState">State type</typeparam>
 /// <typeparam name="TResult">Custom result type</typeparam>
 [PublicAPI]
-public abstract class CommandHttpApiBase<TState, TResult>(ICommandService<TState> service, MessageMap? commandMap = null) : ControllerBase
+public abstract class CommandHttpApiBase<TState, TResult>(ICommandService<TState> service, CommandMap<HttpContext>? commandMap = null) : ControllerBase
     where TState : State<TState>, new() {
     /// <summary>
     /// Call this method from your HTTP endpoints to handle commands and wrap the result properly.
@@ -49,7 +51,7 @@ public abstract class CommandHttpApiBase<TState, TResult>(ICommandService<TState
         where TContract : class where TCommand : class {
         if (commandMap == null) throw new InvalidOperationException("Command map is not configured");
 
-        var command = commandMap.Convert<TContract, TCommand>(httpCommand);
+        var command = commandMap.Convert<TContract, TCommand>(httpCommand, HttpContext);
         var result  = await service.Handle(command, cancellationToken);
 
         return AsActionResult(result);

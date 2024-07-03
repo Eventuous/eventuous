@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 using Bookings.Payments.Domain;
 using Eventuous;
-using Eventuous.AspNetCore.Web;
 
 namespace Bookings.Payments.Application;
 

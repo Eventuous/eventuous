@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Tracing;
 using Microsoft.Extensions.Logging;
+using static Eventuous.DeserializationResult;
 
 namespace Eventuous.Subscriptions;
 
@@ -150,7 +151,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
             return result switch {
                 SuccessfullyDeserialized success => success.Payload,
                 FailedToDeserialize failed       => LogAndReturnNull(failed.Error),
-                _                                => throw new ApplicationException($"Unknown result {result}")
+                _                                                      => throw new ApplicationException($"Unknown result {result}")
             };
         } catch (Exception e) {
             var exception = new DeserializationException(stream, eventType, position, e);

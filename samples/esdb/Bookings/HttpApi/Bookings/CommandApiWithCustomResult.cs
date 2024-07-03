@@ -1,7 +1,6 @@
 using Bookings.Domain;
 using Bookings.Domain.Bookings;
 using Eventuous;
-using Eventuous.AspNetCore.Web;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using static Bookings.Application.BookingCommands;

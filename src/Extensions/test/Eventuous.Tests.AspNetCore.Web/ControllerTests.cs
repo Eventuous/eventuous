@@ -13,8 +13,8 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
     readonly TestEventListener _listener;
 
     public ControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper output) {
-        var commandMap = new MessageMap()
-            .Add<RegisterPaymentHttp, RecordPayment>(x => new(new(x.BookingId), x.PaymentId, new(x.Amount), x.PaidAt));
+        var commandMap = new CommandMap<HttpContext>()
+            .Add<RegisterPaymentHttp, RecordPayment>((x, ctx) => new(new(x.BookingId), x.PaymentId, new(x.Amount), x.PaidAt, ctx.User.Identity?.Name));
 
         _fixture = new(
             factory,
@@ -25,10 +25,7 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
             },
             app => {
                 app.MapControllers();
-
-                app
-                    .MapCommands<BookingState>()
-                    .MapCommand<BookRoom>();
+                app.MapCommands<BookingState>().MapCommand<BookRoom>();
             }
         );
 
@@ -46,7 +43,7 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
         var registerPayment = new RegisterPaymentHttp(bookRoom.BookingId, bookRoom.RoomId, 100, DateTimeOffset.Now);
 
         var request  = new RestRequest("/v2/pay").AddJsonBody(registerPayment);
-        var response = await client.ExecutePostAsync<OkResult<BookingState>>(request);
+        var response = await client.ExecutePostAsync<Result<BookingState>.Ok>(request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var expected = new BookingEvents.BookingFullyPaid(registerPayment.PaidAt);
