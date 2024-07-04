@@ -14,12 +14,12 @@ public class StreamNameTests {
 
     [Fact]
     public void Should_fail_when_id_is_null() {
-         Assert.Throws<ArgumentNullException>(() => _ = StreamName.For<BookingState>(null!));
+         Assert.Throws<ArgumentException>(() => _ = StreamName.For<BookingState>(null!));
     }
     
     [Fact]
     public void Should_fail_when_id_is_empty() {
-         Assert.Throws<ArgumentNullException>(() => _ = StreamName.For<BookingState>("  "));
+         Assert.Throws<ArgumentException>(() => _ = StreamName.For<BookingState>("  "));
     }
 
     [Fact]

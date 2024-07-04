@@ -46,7 +46,7 @@ static class Ensure {
 
         return value;
 #else
-        return !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentNullException(name);
+        return !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentException(name);
 #endif
     }
 
