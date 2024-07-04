@@ -42,7 +42,7 @@
       "items": [
         "persistence/aggregate-stream",
         "persistence/event-store",
-        "persistence/aggregate-store/index",
+        "persistence/aggregate-store",
         "persistence/serialisation"
       ]
     },

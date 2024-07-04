@@ -58,7 +58,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
                 b => b
                     .InsertOne
                     .Document(
-                        (stream, e) => new BookingDocument(stream.GetId()) {
+                        (stream, e) => new(stream.GetId()) {
                             RoomId       = e.RoomId,
                             CheckInDate  = e.CheckIn,
                             CheckOutDate = e.CheckOut,
@@ -72,7 +72,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper ou
                 b => b
                     .InsertOne
                     .Document(
-                        ctx => new BookingDocument(ctx.Stream.GetId()) {
+                        ctx => new(ctx.Stream.GetId()) {
                             BookingPrice = ctx.Message.Price,
                             Outstanding  = ctx.Message.Price
                         }

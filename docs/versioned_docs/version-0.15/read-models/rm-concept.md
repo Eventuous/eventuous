@@ -5,7 +5,7 @@ description: "The concept of read models"
 
 ## Queries in event-sourced systems
 
-As described [previously](../domain/aggregate.md), the domain model is using [events](../domain/domain-events.md) as the _source of truth_. These events represent individual and atomic state transitions of the system. We add events to [event store](../persistence/event-store.md) one by one, in append-only fashion. When restoring the state of an aggregate, we read all the events from a single stream, and apply those events to the aggregate state. When all events are applied, the state is fully restored. This process takes nanoseconds to complete, so it's not really a burden.
+As described [previously](../domain/aggregate.md), the domain model is using [events](../domain/domain-events.md) as the _source of truth_. These events represent individual and atomic state transitions of the system. We add events to [event store](../persistence/event-store.mdx) one by one, in append-only fashion. When restoring the state of an aggregate, we read all the events from a single stream, and apply those events to the aggregate state. When all events are applied, the state is fully restored. This process takes nanoseconds to complete, so it's not really a burden.
 
 However, when all you have in your database is events, you can hardly query the system state for more than one object at a time. The only query that the event store supports is to get one event stream using the aggregate id. In many cases, though, we need to query using some other attribute of the aggregate state, and we expect more than one result. Many see it as a major downside of Event Sourcing, but, in fact, it's not a big problem.
 

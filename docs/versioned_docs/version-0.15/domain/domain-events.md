@@ -58,6 +58,6 @@ Eventuous do's and dont's:
 - **Don't** use constructor logic, which can prevent domain events from deserializing.
 - **Don't** use value objects in your domain events.
 
-Some of those points look like limitations, and they are. For example, avoiding value objects inside domain events primarily caused by lack of separation between domain events and persisted (stored in an [event store](../persistence/event-store.md)) events. It creates a requirement for the domain events to be fully (de)serializable, and it's not always possible when using value objects with their explicit validation rules. You also cannot use standard types like immutable arrays or lists as they cannot be deserialized.
+Some of those points look like limitations, and they are. For example, avoiding value objects inside domain events primarily caused by lack of separation between domain events and persisted (stored in an [event store](../persistence/event-store.mdx)) events. It creates a requirement for the domain events to be fully (de)serializable, and it's not always possible when using value objects with their explicit validation rules. You also cannot use standard types like immutable arrays or lists as they cannot be deserialized.
 
 It's a technical limitation which will be addressed soon.
