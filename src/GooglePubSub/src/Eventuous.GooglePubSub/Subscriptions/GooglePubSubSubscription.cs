@@ -30,7 +30,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// Creates a Google PubSub subscription service
     /// </summary>
     /// <param name="projectId">GCP project ID</param>
-    /// <param name="topicId">Topic where the subscription receives messages rom</param>
+    /// <param name="topicId">Topic where the subscription receives messages from</param>
     /// <param name="subscriptionId">Google PubSub subscription ID (within the project), which must already exist</param>
     /// <param name="consumePipe">Consumer pipeline</param>
     /// <param name="loggerFactory">Logger factory instance</param>
@@ -50,11 +50,11 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
                 SubscriptionId         = subscriptionId,
                 ProjectId              = projectId,
                 TopicId                = topicId,
-                EventSerializer        = eventSerializer,
                 ConfigureClientBuilder = configureClient
             },
             consumePipe,
-            loggerFactory
+            loggerFactory,
+            eventSerializer
         ) { }
 
     /// <summary>
@@ -63,8 +63,14 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
     /// <param name="consumePipe">Consumer pipeline</param>
     /// <param name="loggerFactory">Logger factory instance</param>
-    public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
-        : base(options, consumePipe, loggerFactory) {
+    /// <param name="eventSerializer">Event serializer</param>
+    public GooglePubSubSubscription(
+            PubSubSubscriptionOptions options,
+            ConsumePipe               consumePipe,
+            ILoggerFactory?           loggerFactory,
+            IEventSerializer?         eventSerializer
+        )
+        : base(options, consumePipe, loggerFactory, eventSerializer) {
         _failureHandler   = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
         _subscriptionName = SubscriptionName.FromProjectSubscription(Ensure.NotEmptyString(options.ProjectId), Ensure.NotEmptyString(options.SubscriptionId));
         _topicName        = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));

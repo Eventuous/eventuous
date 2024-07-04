@@ -29,25 +29,25 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
     /// <param name="eventFilter">Optional: server-side event filter</param>
     /// <param name="loggerFactory"></param>
     public AllStreamSubscription(
-        EventStoreClient     eventStoreClient,
-        string               subscriptionId,
-        ICheckpointStore     checkpointStore,
-        ConsumePipe          consumePipe,
-        IEventSerializer?    eventSerializer = null,
-        IMetadataSerializer? metaSerializer  = null,
-        IEventFilter?        eventFilter     = null,
-        ILoggerFactory?      loggerFactory   = null
-    ) : this(
+            EventStoreClient     eventStoreClient,
+            string               subscriptionId,
+            ICheckpointStore     checkpointStore,
+            ConsumePipe          consumePipe,
+            IEventSerializer?    eventSerializer = null,
+            IMetadataSerializer? metaSerializer  = null,
+            IEventFilter?        eventFilter     = null,
+            ILoggerFactory?      loggerFactory   = null
+        ) : this(
         eventStoreClient,
         new() {
-            SubscriptionId     = subscriptionId,
-            EventSerializer    = eventSerializer,
-            MetadataSerializer = metaSerializer,
-            EventFilter        = eventFilter
+            SubscriptionId = subscriptionId,
+            EventFilter    = eventFilter
         },
         checkpointStore,
         consumePipe,
-        loggerFactory
+        loggerFactory,
+        eventSerializer,
+        metaSerializer
     ) { }
 
     /// <summary>
@@ -58,13 +58,17 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
     /// <param name="checkpointStore">Checkpoint store instance</param>
     /// <param name="consumePipe"></param>
     /// <param name="loggerFactory"></param>
+    /// <param name="eventSerializer">Event serializer</param>
+    /// <param name="metaSerializer">Metadata serializer</param>
     public AllStreamSubscription(
-        EventStoreClient             eventStoreClient,
-        AllStreamSubscriptionOptions options,
-        ICheckpointStore             checkpointStore,
-        ConsumePipe                  consumePipe,
-        ILoggerFactory?              loggerFactory
-    ) : base(eventStoreClient, options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory) { }
+            EventStoreClient             eventStoreClient,
+            AllStreamSubscriptionOptions options,
+            ICheckpointStore             checkpointStore,
+            ConsumePipe                  consumePipe,
+            ILoggerFactory?              loggerFactory   = null,
+            IEventSerializer?            eventSerializer = null,
+            IMetadataSerializer?         metaSerializer  = null
+        ) : base(eventStoreClient, options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory, eventSerializer, metaSerializer) { }
 
     /// <summary>
     /// Starts the subscription
@@ -100,7 +104,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
-    IMessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
+    MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -109,7 +113,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             re.Event.EventNumber
         );
 
-        return new MessageConsumeContext(
+        return new(
             re.Event.EventId.ToString(),
             re.Event.EventType,
             re.Event.ContentType,
@@ -120,7 +124,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             Sequence++,
             re.Event.Created,
             evt,
-            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId),
+            MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId),
             SubscriptionId,
             cancellationToken
         );

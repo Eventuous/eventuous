@@ -14,7 +14,6 @@ public abstract class PersistentSubscriptionFixture<TSubscription, TOptions, THa
     where THandler : class, IEventHandler
     where TSubscription : PersistentSubscriptionBase<TOptions>
     where TOptions : PersistentSubscriptionOptions {
-    static PersistentSubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     protected readonly Fixture Auto = new();
 
@@ -34,6 +33,7 @@ public abstract class PersistentSubscriptionFixture<TSubscription, TOptions, THa
     protected abstract TSubscription CreateSubscription(string id, ILoggerFactory loggerFactory);
 
     public async Task InitializeAsync() {
+        Fixture.TypeMapper.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
         await Fixture.InitializeAsync();
         Producer = new(Fixture.Client);
         var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);

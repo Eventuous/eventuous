@@ -133,13 +133,13 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
     }
 
     class TestSub(TestOptions options, ConsumePipe consumePipe)
-        : EventSubscription<TestOptions>(options, consumePipe, NullLoggerFactory.Instance), IMeasuredSubscription {
+        : EventSubscription<TestOptions>(options, consumePipe, NullLoggerFactory.Instance, null), IMeasuredSubscription {
         protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
 
         public GetSubscriptionEndOfStream GetMeasure()
-            => _ => new ValueTask<EndOfStream>(new EndOfStream(SubscriptionId, 0, DateTime.UtcNow));
+            => _ => new(new EndOfStream(SubscriptionId, 0, DateTime.UtcNow));
     }
 
     abstract class BaseTestHandler(TestHandlerLogger logger) : BaseEventHandler {

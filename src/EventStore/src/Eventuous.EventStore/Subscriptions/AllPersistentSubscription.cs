@@ -18,13 +18,17 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
     /// <param name="options">Persistent subscription options</param>
     /// <param name="consumePipe">Consume pipe, usually provided by the builder</param>
     /// <param name="loggerFactory">Optional logger factory</param>
+    /// <param name="eventSerializer">Event payload serializer</param>
+    /// <param name="metaSerializer">Metadata serializer</param>
     public AllPersistentSubscription(
             EventStoreClient                 eventStoreClient,
             AllPersistentSubscriptionOptions options,
             ConsumePipe                      consumePipe,
-            ILoggerFactory?                  loggerFactory
+            ILoggerFactory?                  loggerFactory   = null,
+            IEventSerializer?                eventSerializer = null,
+            IMetadataSerializer?             metaSerializer  = null
         )
-        : base(eventStoreClient, options, consumePipe, loggerFactory) { }
+        : base(eventStoreClient, options, consumePipe, loggerFactory, eventSerializer, metaSerializer) { }
 
     /// <summary>
     /// Persistent subscription for EventStoreDB, for $all stream
@@ -33,13 +37,17 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
     /// <param name="options">Persistent subscription options</param>
     /// <param name="consumePipe">Consume pipe, usually provided by the builder</param>
     /// <param name="loggerFactory">Optional logger factory</param>
+    /// <param name="eventSerializer">Event payload serializer</param>
+    /// <param name="metaSerializer">Metadata serializer</param>
     public AllPersistentSubscription(
             EventStorePersistentSubscriptionsClient eventStoreClient,
             AllPersistentSubscriptionOptions        options,
             ConsumePipe                             consumePipe,
-            ILoggerFactory?                         loggerFactory
+            ILoggerFactory?                         loggerFactory   = null,
+            IEventSerializer?                       eventSerializer = null,
+            IMetadataSerializer?                    metaSerializer  = null
         )
-        : base(eventStoreClient, options, consumePipe, loggerFactory) { }
+        : base(eventStoreClient, options, consumePipe, loggerFactory, eventSerializer, metaSerializer) { }
 
     /// <summary>
     /// Creates EventStoreDB persistent subscription service for a given stream
@@ -63,13 +71,13 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
         : this(
             eventStoreClient,
             new() {
-                SubscriptionId     = subscriptionId,
-                EventSerializer    = eventSerializer,
-                MetadataSerializer = metaSerializer,
-                EventFilter        = eventFilter
+                SubscriptionId = subscriptionId,
+                EventFilter    = eventFilter
             },
             consumerPipe,
-            loggerFactory
+            loggerFactory,
+            eventSerializer,
+            metaSerializer
         ) { }
 
     /// <summary>

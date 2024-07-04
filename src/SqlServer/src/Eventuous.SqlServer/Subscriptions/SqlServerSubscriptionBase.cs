@@ -14,12 +14,14 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
     readonly  string _connectionString;
 
     protected SqlServerSubscriptionBase(
-            T                options,
-            ICheckpointStore checkpointStore,
-            ConsumePipe      consumePipe,
-            SubscriptionKind kind,
-            ILoggerFactory?  loggerFactory
-        ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory) {
+            T                    options,
+            ICheckpointStore     checkpointStore,
+            ConsumePipe          consumePipe,
+            SubscriptionKind     kind,
+            ILoggerFactory?      loggerFactory,
+            IEventSerializer?    eventSerializer,
+            IMetadataSerializer? metaSerializer
+        ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory, eventSerializer, metaSerializer) {
         Schema            = new(options.Schema);
         _connectionString = Ensure.NotEmptyString(Options.ConnectionString);
         GetEndOfStream    = $"SELECT MAX(StreamPosition) FROM {options.Schema}.Messages";

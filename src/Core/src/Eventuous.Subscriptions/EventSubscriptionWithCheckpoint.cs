@@ -17,14 +17,17 @@ public enum SubscriptionKind {
 }
 
 public abstract class EventSubscriptionWithCheckpoint<T>(
-        T                options,
-        ICheckpointStore checkpointStore,
-        ConsumePipe      consumePipe,
-        int              concurrencyLimit,
-        SubscriptionKind kind,
-        ILoggerFactory?  loggerFactory
+        T                    options,
+        ICheckpointStore     checkpointStore,
+        ConsumePipe          consumePipe,
+        int                  concurrencyLimit,
+        SubscriptionKind     kind,
+        ILoggerFactory?      loggerFactory,
+        IEventSerializer?    eventSerializer,
+        IMetadataSerializer? metadataSerializer
     )
-    : EventSubscription<T>(Ensure.NotNull(options), ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory) where T : SubscriptionWithCheckpointOptions {
+    : EventSubscription<T>(Ensure.NotNull(options), ConfigurePipe(consumePipe, concurrencyLimit), loggerFactory, eventSerializer)
+    where T : SubscriptionWithCheckpointOptions {
     static bool PipelineIsAsync(ConsumePipe pipe) => pipe.RegisteredFilters.Any(x => x is AsyncHandlingFilter);
 
     // It's not ideal, but for now if there's any filter added on top of the default one,
@@ -37,6 +40,8 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     ICheckpointStore         CheckpointStore         { get; } = Ensure.NotNull(checkpointStore);
 
     protected SubscriptionKind Kind { get; } = kind;
+    
+    protected IMetadataSerializer MetadataSerializer { get; } = metadataSerializer ?? DefaultMetadataSerializer.Instance;
 
     EventPosition GetPositionFromContext(IMessageConsumeContext context)
 #pragma warning disable CS8524

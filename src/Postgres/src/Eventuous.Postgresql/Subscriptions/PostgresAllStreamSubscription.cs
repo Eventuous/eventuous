@@ -18,9 +18,20 @@ public class PostgresAllStreamSubscription(
         PostgresAllStreamSubscriptionOptions options,
         ICheckpointStore                     checkpointStore,
         ConsumePipe                          consumePipe,
-        ILoggerFactory?                      loggerFactory
+        ILoggerFactory?                      loggerFactory   = null,
+        IEventSerializer?                    eventSerializer = null,
+        IMetadataSerializer?                 metaSerializer  = null
     )
-    : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions>(dataSource, options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory) {
+    : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions>(
+        dataSource,
+        options,
+        checkpointStore,
+        consumePipe,
+        SubscriptionKind.All,
+        loggerFactory,
+        eventSerializer,
+        metaSerializer
+    ) {
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadAllForwards)
             .Add("_from_position", NpgsqlDbType.Bigint, start + 1)

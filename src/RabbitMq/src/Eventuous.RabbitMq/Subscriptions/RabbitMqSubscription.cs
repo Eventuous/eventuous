@@ -24,34 +24,39 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     /// <summary>
     /// Creates RabbitMQ subscription service instance
     /// </summary>
-    /// <param name="connectionFactory"></param>
-    /// <param name="options"></param>
-    /// <param name="consumePipe"></param>
-    /// <param name="loggerFactory"></param>
+    /// <param name="connectionFactory">RabbitMQ connection factory</param>
+    /// <param name="options">Subscription options</param>
+    /// <param name="consumePipe">Pre-constructed consume pipe</param>
+    /// <param name="loggerFactory">Logger factory</param>
+    /// <param name="eventSerializer">Event serializer</param>
     public RabbitMqSubscription(
             ConnectionFactory                     connectionFactory,
             IOptions<RabbitMqSubscriptionOptions> options,
             ConsumePipe                           consumePipe,
-            ILoggerFactory?                       loggerFactory
-        ) : this(connectionFactory, options.Value, consumePipe, loggerFactory) { }
+            ILoggerFactory?                       loggerFactory,
+            IEventSerializer?                     eventSerializer = null
+        ) : this(connectionFactory, options.Value, consumePipe, loggerFactory, eventSerializer) { }
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
     /// </summary>
-    /// <param name="connectionFactory"></param>
+    /// <param name="connectionFactory">RabbitMQ connection factory</param>
     /// <param name="options"></param>
     /// <param name="consumePipe"></param>
     /// <param name="loggerFactory"></param>
+    /// <param name="eventSerializer"></param>
     public RabbitMqSubscription(
             ConnectionFactory           connectionFactory,
             RabbitMqSubscriptionOptions options,
             ConsumePipe                 consumePipe,
-            ILoggerFactory?             loggerFactory
+            ILoggerFactory?             loggerFactory,
+            IEventSerializer?           eventSerializer = null
         )
         : base(
             Ensure.NotNull(options),
             consumePipe.AddFilterFirst(new AsyncHandlingFilter(options.ConcurrencyLimit * 10)),
-            loggerFactory
+            loggerFactory,
+            eventSerializer
         ) {
         _failureHandler = options.FailureHandler ?? DefaultEventFailureHandler;
         _connection     = Ensure.NotNull(connectionFactory).CreateConnection();
@@ -82,9 +87,10 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             IEventSerializer? eventSerializer = null
         ) : this(
         connectionFactory,
-        new RabbitMqSubscriptionOptions { Exchange = exchange, SubscriptionId = subscriptionId, EventSerializer = eventSerializer },
+        new RabbitMqSubscriptionOptions { Exchange = exchange, SubscriptionId = subscriptionId },
         consumePipe,
-        loggerFactory
+        loggerFactory,
+        eventSerializer
     ) { }
 
     protected override ValueTask Subscribe(CancellationToken cancellationToken) {

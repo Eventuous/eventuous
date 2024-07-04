@@ -12,14 +12,25 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Redis.Subscriptions;
 
 public abstract class RedisSubscriptionBase<T>(
-        GetRedisDatabase getDatabase,
-        T                options,
-        ICheckpointStore checkpointStore,
-        ConsumePipe      consumePipe,
-        SubscriptionKind kind,
-        ILoggerFactory?  loggerFactory
+        GetRedisDatabase     getDatabase,
+        T                    options,
+        ICheckpointStore     checkpointStore,
+        ConsumePipe          consumePipe,
+        SubscriptionKind     kind,
+        ILoggerFactory?      loggerFactory      = null,
+        IEventSerializer?    eventSerializer    = null,
+        IMetadataSerializer? metadataSerializer = null
     )
-    : EventSubscriptionWithCheckpoint<T>(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory)
+    : EventSubscriptionWithCheckpoint<T>(
+        options,
+        checkpointStore,
+        consumePipe,
+        options.ConcurrencyLimit,
+        kind,
+        loggerFactory,
+        eventSerializer,
+        metadataSerializer
+    )
     where T : RedisSubscriptionBaseOptions {
     readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 

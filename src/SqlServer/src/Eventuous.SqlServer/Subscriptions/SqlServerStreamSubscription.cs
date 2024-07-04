@@ -17,9 +17,19 @@ public class SqlServerStreamSubscription(
         SqlServerStreamSubscriptionOptions options,
         ICheckpointStore                   checkpointStore,
         ConsumePipe                        consumePipe,
-        ILoggerFactory?                    loggerFactory = null
+        ILoggerFactory?                    loggerFactory   = null,
+        IEventSerializer?                  eventSerializer = null,
+        IMetadataSerializer?               metaSerializer  = null
     )
-    : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions>(options, checkpointStore, consumePipe, SubscriptionKind.Stream, loggerFactory) {
+    : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions>(
+        options,
+        checkpointStore,
+        consumePipe,
+        SubscriptionKind.Stream,
+        loggerFactory,
+        eventSerializer,
+        metaSerializer
+    ) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadStreamSub)
             .Add("@stream_id", SqlDbType.Int, _streamId)
@@ -42,6 +52,6 @@ public class SqlServerStreamSubscription(
     }
 
     int _streamId;
-    
+
     readonly string _streamName = options.Stream.ToString();
 }

@@ -23,34 +23,34 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
     /// <param name="streamName">Name of the stream to receive events from</param>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="checkpointStore">Checkpoint store instance</param>
-    /// <param name="consumerPipe"></param>
+    /// <param name="consumerPipe">Consumer pipe instance</param>
     /// <param name="eventSerializer">Event serializer instance</param>
-    /// <param name="metaSerializer"></param>
-    /// <param name="throwOnError"></param>
-    /// <param name="loggerFactory"></param>
+    /// <param name="metaSerializer">Metadata serializer</param>
+    /// <param name="throwOnError">Either the subscription should throw an exception if an event handling fails</param>
+    /// <param name="loggerFactory">Logger factory</param>
     public StreamSubscription(
             EventStoreClient     eventStoreClient,
             StreamName           streamName,
             string               subscriptionId,
             ICheckpointStore     checkpointStore,
             ConsumePipe          consumerPipe,
-            IEventSerializer?    eventSerializer = null,
-            IMetadataSerializer? metaSerializer  = null,
             bool                 throwOnError    = false,
-            ILoggerFactory?      loggerFactory   = null
+            ILoggerFactory?      loggerFactory   = null,
+            IEventSerializer?    eventSerializer = null,
+            IMetadataSerializer? metaSerializer  = null
         )
         : this(
             eventStoreClient,
-            new StreamSubscriptionOptions {
-                StreamName         = streamName,
-                SubscriptionId     = subscriptionId,
-                ThrowOnError       = throwOnError,
-                EventSerializer    = eventSerializer,
-                MetadataSerializer = metaSerializer
+            new() {
+                StreamName     = streamName,
+                SubscriptionId = subscriptionId,
+                ThrowOnError   = throwOnError
             },
             checkpointStore,
             consumerPipe,
-            loggerFactory
+            loggerFactory,
+            eventSerializer,
+            metaSerializer
         ) { }
 
     /// <summary>
@@ -60,14 +60,18 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
     /// <param name="checkpointStore">Checkpoint store instance</param>
     /// <param name="options">Subscription options</param>
     /// <param name="consumePipe"></param>
+    /// <param name="eventSerializer">Event serializer instance</param>
+    /// <param name="metaSerializer">Metadata serializer</param>
     /// <param name="loggerFactory"></param>
     public StreamSubscription(
             EventStoreClient          client,
             StreamSubscriptionOptions options,
             ICheckpointStore          checkpointStore,
             ConsumePipe               consumePipe,
-            ILoggerFactory?           loggerFactory = null
-        ) : base(client, options, checkpointStore, consumePipe, SubscriptionKind.Stream, loggerFactory)
+            ILoggerFactory?           loggerFactory   = null,
+            IEventSerializer?         eventSerializer = null,
+            IMetadataSerializer?      metaSerializer  = null
+        ) : base(client, options, checkpointStore, consumePipe, SubscriptionKind.Stream, loggerFactory, eventSerializer, metaSerializer)
         => Ensure.NotEmptyString(options.StreamName);
 
     /// <summary>
@@ -117,7 +121,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             re.Event.EventNumber
         );
 
-        var meta = Options.MetadataSerializer.DeserializeMeta(
+        var meta = MetadataSerializer.DeserializeMeta(
             Options,
             re.Event.Metadata,
             re.Event.EventStreamId,

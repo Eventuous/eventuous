@@ -20,6 +20,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
         _fixture       = fixture;
         _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug));
         _listener      = new(_loggerFactory);
+        _fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
     }
 
     [Fact]
@@ -54,13 +55,14 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
         var subscription = new StreamSubscription(
             _fixture.Client,
             new() {
-                StreamName     = categoryStream,
-                SubscriptionId = subscriptionId,
-                ResolveLinkTos = true,
-                ThrowOnError   = true
+                StreamName      = categoryStream,
+                SubscriptionId  = subscriptionId,
+                ResolveLinkTos  = true,
+                ThrowOnError    = true,
             },
             new NoOpCheckpointStore(startPosition),
-            new ConsumePipe().AddSystemEventsFilter().AddDefaultConsumer(handler)
+            new ConsumePipe().AddSystemEventsFilter().AddDefaultConsumer(handler),
+            eventSerializer: _fixture.Serializer
         );
 
         var log = _loggerFactory.CreateLogger("Test");

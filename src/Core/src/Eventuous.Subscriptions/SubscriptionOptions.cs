@@ -14,11 +14,6 @@ public abstract record SubscriptionOptions {
     /// Set to true if you want the subscription to fail and stop if anything goes wrong.
     /// </summary>
     public bool ThrowOnError { get; set; }
-
-    /// <summary>
-    /// Custom event serializer. If not assigned, the default serializer will be used.
-    /// </summary>
-    public IEventSerializer? EventSerializer { get; set; }
 }
 
 public abstract record SubscriptionWithCheckpointOptions : SubscriptionOptions {

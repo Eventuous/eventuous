@@ -32,7 +32,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
 
     protected TieredStoreTestsBase(StoreFixtureBase<TContainer> storeFixture) {
         _storeFixture = storeFixture;
-        TypeMap.Instance.AddType<TestEventForTiers>(TestEventForTiers.TypeName);
+        _storeFixture.TypeMapper.AddType<TestEventForTiers>(TestEventForTiers.TypeName);
     }
 
     class ArchiveStore(IEventStore original) : IEventReader, IEventWriter {

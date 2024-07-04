@@ -36,6 +36,6 @@ public static class Helpers {
         ) {
         var streamEvent = new StreamEvent(Guid.NewGuid(), evt, metadata ?? new Metadata(), "", 0);
 
-        return fixture.EventStore.AppendEvents(stream, version, new[] { streamEvent }, default);
+        return fixture.EventStore.AppendEvents(stream, version, [streamEvent], default);
     }
 }

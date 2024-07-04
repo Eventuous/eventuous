@@ -27,14 +27,17 @@ namespace Eventuous.Sql.Base.Subscriptions;
 /// <typeparam name="TOptions"></typeparam>
 /// <typeparam name="TConnection"></typeparam>
 public abstract class SqlSubscriptionBase<TOptions, TConnection>(
-        TOptions         options,
-        ICheckpointStore checkpointStore,
-        ConsumePipe      consumePipe,
-        int              concurrencyLimit,
-        SubscriptionKind kind,
-        ILoggerFactory?  loggerFactory
+        TOptions             options,
+        ICheckpointStore     checkpointStore,
+        ConsumePipe          consumePipe,
+        int                  concurrencyLimit,
+        SubscriptionKind     kind,
+        ILoggerFactory?      loggerFactory,
+        IEventSerializer?    eventSerializer,
+        IMetadataSerializer? metaSerializer
     )
-    : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, kind, loggerFactory), IMeasuredSubscription
+    : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, kind, loggerFactory, eventSerializer, metaSerializer),
+        IMeasuredSubscription
     where TOptions : SqlSubscriptionOptionsBase where TConnection : DbConnection {
     readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
 
@@ -261,6 +264,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
             return new(SubscriptionId, (ulong)position, DateTime.UtcNow);
         } catch (Exception) {
             Log.WarnLog?.Log("Failed to get end of stream");
+
             return EndOfStream.Invalid;
         }
     }

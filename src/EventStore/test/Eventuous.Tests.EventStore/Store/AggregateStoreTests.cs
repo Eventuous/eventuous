@@ -10,7 +10,7 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
 
     public AggregateStoreTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
-        TypeMap.Instance.AddType<TestEvent>("testEvent");
+        _fixture.TypeMapper.AddType<TestAggregateEvent>("testAggregateEvent");
         var loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug));
         _log = loggerFactory.CreateLogger<AggregateStoreTests>();
     }
@@ -32,7 +32,7 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
         const int count = 9000;
 
         var id        = new TestId(Guid.NewGuid().ToString("N"));
-        var initial   = Enumerable.Range(1, count).Select(x => new TestEvent(x.ToString())).ToArray();
+        var initial   = Enumerable.Range(1, count).Select(x => new TestAggregateEvent(x.ToString())).ToArray();
         var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         var counter   = 0;
 
@@ -77,15 +77,15 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     record TestId(string Value) : Id(Value);
 
     record TestState : State<TestState> {
-        public TestState() => On<TestEvent>((state, evt) => state with { Values = state.Values.Add(evt.Data) });
+        public TestState() => On<TestAggregateEvent>((state, evt) => state with { Values = state.Values.Add(evt.Data) });
 
         public ImmutableList<string> Values { get; init; } = ImmutableList<string>.Empty;
     }
 
     [UsedImplicitly]
     class TestAggregate : Aggregate<TestState> {
-        public void DoIt(string data) => Apply(new TestEvent(data));
+        public void DoIt(string data) => Apply(new TestAggregateEvent(data));
     }
 
-    record TestEvent(string Data);
+    record TestAggregateEvent(string Data);
 }

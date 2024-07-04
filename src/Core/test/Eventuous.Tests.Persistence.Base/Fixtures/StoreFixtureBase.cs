@@ -12,17 +12,16 @@ using Microsoft.Extensions.Hosting;
 namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
 public abstract class StoreFixtureBase {
-    public           IEventStore        EventStore     { get; protected private set; } = null!;
-    public           IFixture           Auto           { get; }                        = new Fixture().Customize(new NodaTimeCustomization());
-    protected static Faker              Faker          { get; }                        = new();
-    protected        ServiceProvider    Provider       { get; set; }                   = null!;
-    protected        bool               AutoStart      { get; init; }                  = true;
-    public           ITestOutputHelper? Output         { get; set; }
+    public           IEventStore        EventStore { get; protected private set; } = null!;
+    public           IFixture           Auto       { get; }                        = new Fixture().Customize(new NodaTimeCustomization());
+    protected static Faker              Faker      { get; }                        = new();
+    protected        ServiceProvider    Provider   { get; set; }                   = null!;
+    protected        bool               AutoStart  { get; init; }                  = true;
+    public           ITestOutputHelper? Output     { get; set; }
+    public           TypeMapper         TypeMapper { get; } = new();
 }
 
 public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncLifetime where TContainer : DockerContainer {
-    IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
-
     public virtual async Task InitializeAsync() {
         Container = CreateContainer();
         await Container.StartAsync();
@@ -34,12 +33,13 @@ public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, I
             services.AddLogging(cfg => cfg.AddXunit(Output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug));
         }
 
+        Serializer = new DefaultEventSerializer(TestPrimitives.DefaultOptions, TypeMapper);
+        services.AddSingleton(Serializer);
+        services.AddSingleton(TypeMapper);
         SetupServices(services);
 
-        Provider = services.BuildServiceProvider();
-
-        DefaultEventSerializer.SetDefaultSerializer(Serializer);
-        EventStore     = Provider.GetRequiredService<IEventStore>();
+        Provider   = services.BuildServiceProvider();
+        EventStore = Provider.GetRequiredService<IEventStore>();
         GetDependencies(Provider);
 
         if (AutoStart) {
@@ -76,6 +76,8 @@ public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, I
     protected virtual void GetDependencies(IServiceProvider provider) { }
 
     public TContainer Container { get; private set; } = null!;
+
+    public IEventSerializer Serializer { get; private set; } = null!;
 
     bool _disposed;
 

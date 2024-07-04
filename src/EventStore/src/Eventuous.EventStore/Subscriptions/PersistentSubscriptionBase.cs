@@ -30,10 +30,16 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// EventStoreDB persistent subscription client instance.
     /// </summary>
     protected EventStorePersistentSubscriptionsClient SubscriptionClient { get; }
+
     /// <summary>
     /// EventStoreDB client instance. It's used for custom NACK behavior as well as for measuring the subscription gap. 
     /// </summary>
     protected EventStoreClient EventStoreClient { get; }
+
+    /// <summary>
+    /// Metadata serializer instance.
+    /// </summary>
+    protected IMetadataSerializer MetadataSerializer { get; }
 
     readonly HandleEventProcessingFailure _handleEventProcessingFailure;
 
@@ -46,9 +52,19 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// <param name="options">Subscription options</param>
     /// <param name="consumePipe">Consume pipe instance, provided automatically</param>
     /// <param name="loggerFactory">Optional logger factory</param>
-    protected PersistentSubscriptionBase(EventStoreClient eventStoreClient, T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
-        : base(options, consumePipe, loggerFactory) {
-        EventStoreClient = eventStoreClient;
+    /// <param name="eventSerializer">Event payload serializer</param>
+    /// <param name="metaSerializer">Metadata serializer</param>
+    protected PersistentSubscriptionBase(
+            EventStoreClient     eventStoreClient,
+            T                    options,
+            ConsumePipe          consumePipe,
+            ILoggerFactory?      loggerFactory,
+            IEventSerializer?    eventSerializer,
+            IMetadataSerializer? metaSerializer
+        )
+        : base(options, consumePipe, loggerFactory, eventSerializer) {
+        EventStoreClient   = eventStoreClient;
+        MetadataSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         var settings   = eventStoreClient.GetSettings().Copy();
         var opSettings = settings.OperationOptions.Clone();
         settings.OperationOptions     = opSettings;
@@ -64,14 +80,19 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// <param name="options">Subscription options</param>
     /// <param name="consumePipe">Consume pipe instance, provided automatically</param>
     /// <param name="loggerFactory">Optional logger factory</param>
+    /// <param name="eventSerializer"></param>
+    /// <param name="metaSerializer">Metadata serializer</param>
     protected PersistentSubscriptionBase(
             EventStorePersistentSubscriptionsClient eventStoreClient,
             T                                       options,
             ConsumePipe                             consumePipe,
-            ILoggerFactory?                         loggerFactory
+            ILoggerFactory?                         loggerFactory,
+            IEventSerializer?                       eventSerializer,
+            IMetadataSerializer?                    metaSerializer
         )
-        : base(options, consumePipe, loggerFactory) {
+        : base(options, consumePipe, loggerFactory, eventSerializer) {
         SubscriptionClient = eventStoreClient;
+        MetadataSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         var settings   = eventStoreClient.GetSettings().Copy();
         var opSettings = settings.OperationOptions.Clone();
         settings.OperationOptions     = opSettings;
@@ -201,7 +222,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             Sequence++,
             re.Event.Created,
             evt,
-            Options.MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId, re.Event.EventNumber),
+            MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId, re.Event.EventNumber),
             SubscriptionId,
             cancellationToken
         );

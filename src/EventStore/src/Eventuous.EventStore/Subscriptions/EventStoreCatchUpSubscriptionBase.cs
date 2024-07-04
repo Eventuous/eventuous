@@ -21,15 +21,19 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWi
     /// <param name="consumePipe">Consume pipe, usually provided by the subscription builder</param>
     /// <param name="kind">Subscription kind: global log or a particular stream</param>
     /// <param name="loggerFactory">Optional logger factory</param>
+    /// <param name="eventSerializer">Optional: event serializer instance</param>
+    /// <param name="metaSerializer">Optional: metadata serializer instance</param>
     protected EventStoreCatchUpSubscriptionBase(
-            EventStoreClient eventStoreClient,
-            T                options,
-            ICheckpointStore checkpointStore,
-            ConsumePipe      consumePipe,
-            SubscriptionKind kind,
-            ILoggerFactory?  loggerFactory
+            EventStoreClient     eventStoreClient,
+            T                    options,
+            ICheckpointStore     checkpointStore,
+            ConsumePipe          consumePipe,
+            SubscriptionKind     kind,
+            ILoggerFactory?      loggerFactory,
+            IEventSerializer?    eventSerializer,
+            IMetadataSerializer? metaSerializer
         )
-        : base(Ensure.NotNull(options), checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory)
+        : base(Ensure.NotNull(options), checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory, eventSerializer, metaSerializer)
         => EventStoreClient = eventStoreClient;
 
     /// <summary>

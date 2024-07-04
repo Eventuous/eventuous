@@ -11,7 +11,7 @@ public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable
 
     public EventStoreAggregateTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
-        TypeMap.Instance.AddType<TestEvent>("testEvent");
+        _fixture.TypeMapper.AddType<TestEvent>("testEvent");
         _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug));
         _log           = _loggerFactory.CreateLogger<AggregateStoreTests>();
     }

@@ -17,9 +17,19 @@ public class SqlServerAllStreamSubscription(
         SqlServerAllStreamSubscriptionOptions options,
         ICheckpointStore                      checkpointStore,
         ConsumePipe                           consumePipe,
-        ILoggerFactory?                       loggerFactory = null
+        ILoggerFactory?                       loggerFactory   = null,
+        IEventSerializer?                     eventSerializer = null,
+        IMetadataSerializer?                  metaSerializer  = null
     )
-    : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions>(options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory) {
+    : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions>(
+        options,
+        checkpointStore,
+        consumePipe,
+        SubscriptionKind.All,
+        loggerFactory,
+        eventSerializer,
+        metaSerializer
+    ) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadAllForwards)
             .Add("@from_position", SqlDbType.BigInt, start + 1)
