@@ -3,6 +3,7 @@
 
 namespace Eventuous;
 
+[Obsolete("Use IEventStore instead")]
 public class AggregateStore : IAggregateStore {
     readonly AmendEvent               _amendEvent;
     readonly AggregateFactoryRegistry _factoryRegistry;
@@ -27,15 +28,6 @@ public class AggregateStore : IAggregateStore {
         _eventReader     = Ensure.NotNull(reader);
         _eventWriter     = Ensure.NotNull(writer);
     }
-
-    /// <summary>
-    /// Creates a new instance of the default aggregate store
-    /// </summary>
-    /// <param name="eventStore">Event store implementation</param>
-    /// <param name="amendEvent"></param>
-    /// <param name="factoryRegistry"></param>
-    public AggregateStore(IEventStore eventStore, AmendEvent? amendEvent = null, AggregateFactoryRegistry? factoryRegistry = null)
-        : this(eventStore, eventStore, amendEvent, factoryRegistry) { }
 
     /// <inheritdoc/>
     [Obsolete("Use IEventWriter.StoreAggregate<TAggregate, TState> instead.")]

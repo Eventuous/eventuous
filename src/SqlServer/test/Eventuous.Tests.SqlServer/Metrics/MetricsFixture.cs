@@ -22,7 +22,7 @@ public class MetricsFixture
 
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousSqlServer(Container.GetConnectionString(), _schemaName, true);
-        services.AddAggregateStore<SqlServerStore>();
+        services.AddEventStore<SqlServerStore>();
         base.SetupServices(services);
     }
 }

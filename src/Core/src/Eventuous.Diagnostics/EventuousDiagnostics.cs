@@ -41,6 +41,8 @@ public static class EventuousDiagnostics {
     /// Allows disabling the diagnostics from code. Normally, you disable it by setting the environment variable EVENTUOUS_DISABLE_DIAGS=1
     /// </summary>
     public static void Disable() => Enabled = false;
+    
+    public static void Enable() => Enabled = true;
 
     public static ActivitySource ActivitySource {
         get {

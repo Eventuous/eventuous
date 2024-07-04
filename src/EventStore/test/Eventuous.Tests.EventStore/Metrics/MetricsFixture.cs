@@ -15,6 +15,6 @@ public class MetricsFixture : MetricsSubscriptionFixtureBase<EventStoreDbContain
     protected override void SetupServices(IServiceCollection services) {
         base.SetupServices(services);
         services.AddEventStoreClient(Container.GetConnectionString());
-        services.AddAggregateStore<EsdbEventStore>();
+        services.AddEventStore<EsdbEventStore>();
     }
 }

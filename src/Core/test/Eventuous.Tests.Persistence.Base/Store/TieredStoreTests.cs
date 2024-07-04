@@ -4,13 +4,12 @@ using JetBrains.Annotations;
 
 namespace Eventuous.Tests.Persistence.Base.Store;
 
-public abstract class TieredStoreTestsBase<TContainer>(StoreFixtureBase<TContainer> storeFixture) where TContainer : DockerContainer {
-    [Fact]
-    public async Task Should_load_hot_and_archive() {
+public abstract class TieredStoreTestsBase<TContainer> where TContainer : DockerContainer {
+    protected async Task Should_load_hot_and_archive() {
         const int count = 100;
 
-        var store      = storeFixture.EventStore;
-        var archive    = new ArchiveStore(storeFixture.EventStore);
+        var store      = _storeFixture.EventStore;
+        var archive    = new ArchiveStore(_storeFixture.EventStore);
         var testEvents = _fixture.CreateMany<TestEvent>(count).ToList();
         var stream     = new StreamName($"Test-{Guid.NewGuid():N}");
 
@@ -28,9 +27,13 @@ public abstract class TieredStoreTestsBase<TContainer>(StoreFixtureBase<TContain
         loaded.Skip(50).Select(x => x.FromArchive).Should().AllSatisfy(x => x.Should().BeTrue());
     }
 
-    readonly Fixture _fixture = new();
+    readonly Fixture                      _fixture = new();
+    readonly StoreFixtureBase<TContainer> _storeFixture;
 
-    static TieredStoreTestsBase() => TypeMap.Instance.AddType<TestEvent>("TestEvent");
+    protected TieredStoreTestsBase(StoreFixtureBase<TContainer> storeFixture) {
+        _storeFixture = storeFixture;
+        TypeMap.Instance.AddType<TestEvent>("TestEvent1");
+    }
 
     class ArchiveStore(IEventStore original) : IEventReader, IEventWriter {
         public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)

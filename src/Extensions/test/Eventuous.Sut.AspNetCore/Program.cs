@@ -9,7 +9,7 @@ DefaultEventSerializer.SetDefaultSerializer(new DefaultEventSerializer(TestPrimi
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCommandService<BookingService, BookingState>();
-builder.Services.AddAggregateStore<InMemoryEventStore>();
+builder.Services.AddEventStore<InMemoryEventStore>();
 builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForTests());
 
 var app = builder.Build();

@@ -1,4 +1,5 @@
-﻿using Eventuous.SqlServer;
+﻿using Eventuous.Diagnostics.Tracing;
+using Eventuous.SqlServer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,13 +16,15 @@ public class RegistrationTests {
 
         builder.ConfigureServices(
             services => {
-                services.AddAggregateStore<SqlServerStore>();
+                services.AddEventStore<SqlServerStore>();
                 services.AddSingleton(new SqlServerStoreOptions { ConnectionString = ConnectionString });
             }
         );
         var app            = builder.Build();
-        var aggregateStore = app.Services.GetRequiredService<IAggregateStore>();
-        aggregateStore.Should().NotBeNull();
+        var aggregateStore = app.Services.GetRequiredService<IEventStore>();
+        aggregateStore.Should().BeOfType<TracedEventStore>();
+        var innerStore = ((TracedEventStore)aggregateStore).Inner;
+        innerStore.Should().BeOfType<SqlServerStore>();
     }
 
     [Fact]

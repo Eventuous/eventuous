@@ -42,7 +42,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         base.SetupServices(services);
         services.AddSingleton(new SchemaInfo(SchemaName));
         services.AddEventuousPostgres(Container.GetConnectionString(), SchemaName, true);
-        services.AddAggregateStore<PostgresStore>();
+        services.AddEventStore<PostgresStore>();
         services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
         configureServices?.Invoke(services);
     }

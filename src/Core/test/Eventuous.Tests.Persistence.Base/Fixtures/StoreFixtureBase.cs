@@ -13,7 +13,6 @@ namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
 public abstract class StoreFixtureBase {
     public           IEventStore        EventStore     { get; protected private set; } = null!;
-    public           IAggregateStore    AggregateStore { get; protected private set; } = null!;
     public           IFixture           Auto           { get; }                        = new Fixture().Customize(new NodaTimeCustomization());
     protected static Faker              Faker          { get; }                        = new();
     protected        ServiceProvider    Provider       { get; set; }                   = null!;
@@ -41,7 +40,6 @@ public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, I
 
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
         EventStore     = Provider.GetRequiredService<IEventStore>();
-        AggregateStore = Provider.GetRequiredService<IAggregateStore>();
         GetDependencies(Provider);
 
         if (AutoStart) {

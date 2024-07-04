@@ -40,7 +40,7 @@ public class AggregateFactoryRegistrationTests {
 
     static WebApplicationBuilder BuildHost() {
         var builder = WebApplication.CreateBuilder();
-        builder.Services.AddAggregateStore<FakeStore>();
+        builder.Services.AddEventStore<FakeStore>();
         builder.Services.AddSingleton<TestDependency>();
         builder.Services.AddAggregate<TestAggregate, TestState>(sp => new(sp.GetRequiredService<TestDependency>()));
         builder.Services.AddAggregate<AnotherTestAggregate, TestState>();

@@ -72,6 +72,6 @@ public abstract class StoreReadTests<T>(T fixture) : IClassFixture<T> where T : 
         result[0]
             .Metadata.ToDictionary(m => m.Key, m => ((JsonElement)m.Value!).GetString())
             .Should()
-            .BeEquivalentTo(new Metadata { { "Key1", "Value1" }, { "Key2", "Value2" } });
+            .Contain([new("Key1", "Value1"), new("Key2", "Value2")]);
     }
 }
