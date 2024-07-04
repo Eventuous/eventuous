@@ -4,7 +4,7 @@ description: "How aggregates are stored in an event store"
 ---
 
 :::info Deprecation notice
-Since version **0.15**, Eventuous doesn't use _Aggregate store_ internally. All persistence operations in command services are using [Event store](../event-store.md). The following elements are marked obsolete:
+Since version **0.15**, Eventuous doesn't use _Aggregate store_ internally. All persistence operations in command services are using [Event store](./event-store.mdx). The following elements are marked obsolete:
 
 - `IAggregateStore` interface
 - `AggregateStore` class
@@ -15,7 +15,7 @@ Look in the previous version documentation to learn about `IAggregateStore` and 
 :::
 
 :::note
-Eventuous does not have a concept of Repository. Find out why [on this page](../../persistence).
+Eventuous does not have a concept of Repository. Find out why [on this page](./index.mdx).
 :::
 
 Eventuous provides a number of extensions for `IEventReader` and `IEventWriter` interfaces for aggregate persistence.
@@ -58,13 +58,13 @@ Task<AppendEventsResult> IEventWriter.StoreAggregate<TAggregate, TState, TId>(
 )
 ```
 
-| Parameter           | Type                             | Description                                                                         |
-|---------------------|----------------------------------|-------------------------------------------------------------------------------------|
-| `aggregate`         | `TAggregate<TState>`             | Aggregate instance                                                                  |
-| `id`                | `TId`                            | Aggregate identity                                                                  |
-| `streamNameMap`     | `StreamNameMap`                  | [Map](../aggregate-stream.md#aggregate-streams) between identities and stream names |
-| `amendEvent`        | `Func<StreamEvent, StreamEvent>` | Function that allows adding things like custom metadata                             |
-| `cancellationToken` | `CancellationToken`              | Cancellation token                                                                  |
+| Parameter           | Type                             | Description                                                                        |
+|---------------------|----------------------------------|------------------------------------------------------------------------------------|
+| `aggregate`         | `TAggregate<TState>`             | Aggregate instance                                                                 |
+| `id`                | `TId`                            | Aggregate identity                                                                 |
+| `streamNameMap`     | `StreamNameMap`                  | [Map](./aggregate-stream.md#aggregate-streams) between identities and stream names |
+| `amendEvent`        | `Func<StreamEvent, StreamEvent>` | Function that allows adding things like custom metadata                            |
+| `cancellationToken` | `CancellationToken`              | Cancellation token                                                                 |
 
 ### Using aggregate identity from state
 
@@ -79,12 +79,12 @@ Task<AppendEventsResult> IEventWriter.StoreAggregate<TAggregate, TState, TId>(
 )
 ```
 
-| Parameter           | Type                             | Description                                                                         |
-|---------------------|----------------------------------|-------------------------------------------------------------------------------------|
-| `aggregate`         | `TAggregate<TState, TId>`        | Aggregate instance                                                                  |
-| `streamNameMap`     | `StreamNameMap`                  | [Map](../aggregate-stream.md#aggregate-streams) between identities and stream names |
-| `amendEvent`        | `Func<StreamEvent, StreamEvent>` | Function that allows adding things like custom metadata                             |
-| `cancellationToken` | `CancellationToken`              | Cancellation token                                                                  |
+| Parameter           | Type                             | Description                                                                        |
+|---------------------|----------------------------------|------------------------------------------------------------------------------------|
+| `aggregate`         | `TAggregate<TState, TId>`        | Aggregate instance                                                                 |
+| `streamNameMap`     | `StreamNameMap`                  | [Map](./aggregate-stream.md#aggregate-streams) between identities and stream names |
+| `amendEvent`        | `Func<StreamEvent, StreamEvent>` | Function that allows adding things like custom metadata                            |
+| `cancellationToken` | `CancellationToken`              | Cancellation token                                                                 |
 
 ## Loading aggregates
 
@@ -127,7 +127,7 @@ Task<TAggregate> IEventWriter.LoadAggregate<TAggregate, TState, TId>(
 | Parameter           | Type                       | Description                                                                                                                                                     |
 |---------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `id`                | `TId`                      | Aggregate identity                                                                                                                                              |
-| `streamNameMap`     | `StreamNameMap`            | [Map](../aggregate-stream.md#aggregate-streams) between identities and stream names                                                                             |
+| `streamNameMap`     | `StreamNameMap`            | [Map](./aggregate-stream.md#aggregate-streams) between identities and stream names                                                                              |
 | `failIfNotFound`    | `bool`                     | When set to `true`, the function will throw an `AggregateNotFound` exception if the stream cannot be found. Otherwise, it will return a new aggregate instance. |
 | `factoryRegistry`   | `AggregateFactoryRegistry` | Optional aggregate factory registry, which is used to create new aggregate instances. If not supplied, the default registry is used.                            |
 | `cancellationToken` | `CancellationToken`        | Cancellation token                                                                                                                                              |

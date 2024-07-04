@@ -148,7 +148,7 @@ As the result, the load operation would be as fast as it would be with the hot s
 There is a drawback to this approach. As events disappear from the hot store, you won't be able to replay them when you create new subscriptions that need to process all the historical events. However, you need to carefully examine if this is a problem in your application.
 :::
 
-In many cases, replaying the full history is the opposite of what you want. If you add a new subscription to host a new [read model](../../read-models), that new read model might only need to process the latest events, and processing the full history would just trigger useless database operations.
+In many cases, replaying the full history is the opposite of what you want. If you add a new subscription to host a new [read model](../read-models), that new read model might only need to process the latest events, and processing the full history would just trigger useless database operations.
 
 For example, if you add an _Upcoming check-ins_ read model, it would need to process events from reservations during the booking period that hasn't completed yet. It's not often that you have reservations that are made five years back, in many cases it's just impossible as hotels set their prices only a year or so upfront. Therefore, projecting the full history of reservations would trigger adding and removing thousands of records to the database, which is not what you want. In fact, if you have only reservation events for the past year, and the rest in the archive, you will have the new read model rebuilt much faster, and the fact that all the historical events are archived won't be noticeable.
 
