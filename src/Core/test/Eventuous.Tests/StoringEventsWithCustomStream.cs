@@ -38,7 +38,7 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
         await Service.Handle(cmd, default);
 
-        var secondCmd = new Commands.RecordPayment(new(cmd.BookingId), Auto.Create<string>(), new(cmd.Price), DateTimeOffset.Now, "");
+        var secondCmd = new Commands.RecordPayment(new(cmd.BookingId), Auto.Create<string>(), new(cmd.Price), DateTimeOffset.Now);
 
         var expected = new Change[] {
             new(new BookingPaymentRegistered(secondCmd.PaymentId, secondCmd.Amount.Amount), "PaymentRegistered"),

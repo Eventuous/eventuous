@@ -39,7 +39,7 @@ public class FunctionalServiceTests : IDisposable {
     public async Task ExecuteOnExistingStream() {
         var bookRoom    = await Seed();
         var paymentTime = DateTimeOffset.Now;
-        var cmd         = new Commands.RecordPayment(new(bookRoom.BookingId), "444", new Money(bookRoom.Price), paymentTime, "");
+        var cmd         = new Commands.RecordPayment(new(bookRoom.BookingId), "444", new(bookRoom.Price), paymentTime);
 
         var result = await _service.Handle(cmd, default);
 

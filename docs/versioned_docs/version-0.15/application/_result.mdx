@@ -2,14 +2,16 @@
 
 The command service will return an instance of `Result<TState>`. It can be inspected using the following members:
 
-| Signature                                                    | Description                                                                                                                                                                                       |
-|--------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `bool TryGet(out Result<TState>.Ok ok)`                      | Returns `true` if the result is successful and also returns `Result<TState>.Ok` as the `out` variable.                                                                                            |
-| `bool TryGetError(out Result<TState>.Error error)`           | Returns `true` if there was an error. The `error` then gets assigned to an instance of `Error` that contains more details about what went wrong.                                                  |
-| `bool Success`                                               | Returns `true` if the result is successful.                                                                                                                                                       |
-| `Exception? Exception { get; }`                              | Returns an exception instance if there was an error, or `null` if there was no exception.                                                                                                         |
-| `void ThrowIfError()`                                        | Throws the recorded exception if there was an error, does nothing otherwise.                                                                                                                      |
-| `T Match<T>(Func<Ok, T> matchOk, Func<Error, T> matchError)` | Function that can be used for pattern matching success and error if the output has the same type. Eventuous uses this function for producing `IResult` and `ActionResult` in HTTP API extensions. |
+| Signature                                                                  | Description                                                                                                                                                                         |
+|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `bool TryGet(out Result<TState>.Ok ok)`                                    | Returns `true` if the result is successful and also returns `Result<TState>.Ok` as the `out` variable.                                                                              |
+| `bool TryGetError(out Result<TState>.Error error)`                         | Returns `true` if there was an error. The `error` then gets assigned to an instance of `Error` that contains more details about what went wrong.                                    |
+| `bool Success`                                                             | Returns `true` if the result is successful.                                                                                                                                         |
+| `Exception? Exception { get; }`                                            | Returns an exception instance if there was an error, or `null` if there was no exception.                                                                                           |
+| `void ThrowIfError()`                                                      | Throws the recorded exception if there was an error, does nothing otherwise.                                                                                                        |
+| `T Match<T>(Func<Ok, T> matchOk, Func<Error, T> matchError)`               | Can be used for pattern matching success and error if the output has the same type. Eventuous uses this function for producing `IResult` and `ActionResult` in HTTP API extensions. |
+| `void Match<T>(Action<Ok> matchOk, Action<Error> matchError)`              | Allows to execute code branches based on the result success.                                                                                                                        |
+| `Task MatchAsync<T>(Func<Ok, Task> matchOk, Func<Error, Task> matchError)` | Allows to execute async code branches based on the result success.                                                                                                                  |
 
 When using `TryGet`, you get the `Ok` instance back, which contains the following properties:
 

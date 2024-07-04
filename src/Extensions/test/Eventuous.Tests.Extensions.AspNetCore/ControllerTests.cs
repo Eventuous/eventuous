@@ -14,7 +14,9 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
 
     public ControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper output) {
         var commandMap = new CommandMap<HttpContext>()
-            .Add<RegisterPaymentHttp, RecordPayment>((x, ctx) => new(new(x.BookingId), x.PaymentId, new(x.Amount), x.PaidAt, ctx.User.Identity?.Name));
+            .Add<RegisterPaymentHttp, RecordPayment>(
+                (x, ctx) => new(new(x.BookingId), x.PaymentId, new(x.Amount), x.PaidAt) { PaidBy = ctx.User.Identity?.Name }
+            );
 
         _fixture = new(
             factory,

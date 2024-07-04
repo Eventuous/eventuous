@@ -22,6 +22,16 @@ For example, for an entity called `Booking` where it might be represented as a `
 
 For aggregates, Eventuous uses the `AggregateType.Name` combined with the aggregate id as the stream name. For example, the `Booking` aggregate with id `1` has a stream name `Booking-1`. That's what `StreamName.For<Booking>(1)` returns.
 
+Aggregate-based command services rely on this convention but allow overrides (see [below](#custom-stream-names)).
+
+### State streams
+
+State streams and aggregate streams are essentially the same. Aggregates don't persist anything else than their state. The difference from the API perspective is in how stream names are resolved by command services.
+
+While aggregate-based services calculate stream names using the aggregate type name and aggregate identity, functional services expect you to specify a function to retrieve the stream name from a command when you defined the command handler.
+
+### Custom stream names
+
 However, you might want to have more fine-grained control over the stream name. For example, you might want to include the tenant id in the stream name. It's possible to override the default convention by configuring the stream name mapping. The stream map contains a mapping between the aggregate identity type (derived from `Id`) and the stream name generation function. Therefore, any additional property of the aggregate identity type can be used to generate the stream name.
 
 For example, the following code registers a stream name mapping for the `Booking` aggregate:
