@@ -10,7 +10,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
 
         var store      = _storeFixture.EventStore;
         var archive    = new ArchiveStore(_storeFixture.EventStore);
-        var testEvents = _fixture.CreateMany<TestEvent>(count).ToList();
+        var testEvents = _fixture.CreateMany<TestEventForTiers>(count).ToList();
         var stream     = new StreamName($"Test-{Guid.NewGuid():N}");
 
         await store.Store(stream, ExpectedStreamVersion.NoStream, testEvents);
@@ -20,7 +20,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
         var combined = new TieredEventReader(store, archive);
         var loaded   = (await combined.ReadStream(stream, StreamReadPosition.Start)).ToArray();
 
-        var actual = loaded.Select(x => (TestEvent)x.Payload!).ToArray();
+        var actual = loaded.Select(x => (TestEventForTiers)x.Payload!).ToArray();
         actual.Should().BeEquivalentTo(testEvents);
 
         loaded.Take(50).Select(x => x.FromArchive).Should().AllSatisfy(x => x.Should().BeFalse());
@@ -32,7 +32,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
 
     protected TieredStoreTestsBase(StoreFixtureBase<TContainer> storeFixture) {
         _storeFixture = storeFixture;
-        TypeMap.Instance.AddType<TestEvent>("TestEvent1");
+        TypeMap.Instance.AddType<TestEventForTiers>("TestEvent1");
     }
 
     class ArchiveStore(IEventStore original) : IEventReader, IEventWriter {
@@ -52,10 +52,10 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
             )
             => original.AppendEvents(GetArchiveStreamName(stream), expectedVersion, events, cancellationToken);
     }
+}
 
-    [EventType(TypeName)]
-    [UsedImplicitly]
-    record TestEvent(string Data, int Number) {
-        const string TypeName = "test-event";
-    }
+[EventType(TypeName)]
+[UsedImplicitly]
+record TestEventForTiers(string Data, int Number) {
+    const string TypeName = "test-event";
 }
