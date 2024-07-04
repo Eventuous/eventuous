@@ -120,7 +120,7 @@ public class TypeMapper {
         _reverseMap[eventTypeName] = type;
         _map[type]                 = eventTypeName;
 
-        Log.TypeMapRegistered(type.Name, name);
+        Log.TypeMapRegistered(type.Name, eventTypeName);
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]

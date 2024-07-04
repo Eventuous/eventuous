@@ -24,7 +24,9 @@ namespace Eventuous.Sql.Base.Subscriptions;
 /// <param name="concurrencyLimit">Limit the number of concurrent consumers</param>
 /// <param name="kind">All or Stream</param>
 /// <param name="loggerFactory">Logger factory (optional)</param>
-/// <typeparam name="TOptions"></typeparam>
+/// <param name="eventSerializer">Event serializer (optional)</param>
+/// <param name="metaSerializer">Metadata serializer (optional)</param>
+/// <typeparam name="TOptions">Subscription options type</typeparam>
 /// <typeparam name="TConnection"></typeparam>
 public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         TOptions             options,
