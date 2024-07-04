@@ -60,6 +60,8 @@ Current APIs for working with HTTP is [documented here](./application/command-ap
 
 Subscriptions are now being registered in the DI container using keyed dependencies. It requires to use `Microsoft.Extensions.DependencyInjection` version 8 and higher. If you use ASP.NET Core DI container in combination with another container like Autofac, make sure you use the version that supports keyed registrations in ASP.NET Core services collection.
 
+Subscriptions also got `IEventSerializer` (all of them) and `IMetadataSerializer` (EventStoreDB, Postgres and SQL Server) as dependencies, and subscription option properties holding those are removed. The reason is that serializers can now play nicely with dependency injection, which is particularly relevant to event serializers as they depend on `TypeMapper`. It is now easier to use separated type maps. One case for that is Eventuous tests where the global type map created issues with conflicting type registrations.
+
 ### Producers
 
 * `IEventProducer` was already marked obsolete, and it's now gone. the `IProducer` interface is 100% compatible, so you can need to rename the usages.
