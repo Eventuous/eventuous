@@ -24,7 +24,7 @@ public class RegistrationTests {
             }
         );
         var app            = builder.Build();
-        var aggregateStore = app.Services.GetRequiredService<IAggregateStore>();
+        var aggregateStore = app.Services.GetRequiredService<IEventStore>();
         aggregateStore.Should().NotBeNull();
     }
 

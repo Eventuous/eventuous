@@ -56,5 +56,5 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
 
 [UsedImplicitly]
 record TestEventForTiers(string Data, int Number) {
-    public const string TypeName = "test-event";
+    public const string TypeName = "test-event-tiers";
 }

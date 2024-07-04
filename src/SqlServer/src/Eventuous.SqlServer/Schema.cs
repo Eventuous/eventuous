@@ -22,6 +22,8 @@ public class Schema(string schema = Schema.DefaultSchema) {
     public readonly string UpdateCheckpointSql = $"UPDATE {schema}.Checkpoints set Position=(@position) where Id=(@checkpointId)";
 
     static readonly Assembly Assembly = typeof(Schema).Assembly;
+    
+    public string SchemaName => schema;
 
     [PublicAPI]
     public async Task CreateSchema(string connectionString, ILogger<Schema>? log, CancellationToken cancellationToken) {

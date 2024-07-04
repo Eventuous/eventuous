@@ -20,10 +20,10 @@ public class RegistrationTests {
                 services.AddSingleton(new SqlServerStoreOptions { ConnectionString = ConnectionString });
             }
         );
-        var app            = builder.Build();
-        var aggregateStore = app.Services.GetRequiredService<IEventStore>();
-        aggregateStore.Should().BeOfType<TracedEventStore>();
-        var innerStore = ((TracedEventStore)aggregateStore).Inner;
+        var app   = builder.Build();
+        var store = app.Services.GetRequiredService<IEventStore>();
+        store.Should().BeOfType<TracedEventStore>();
+        var innerStore = ((TracedEventStore)store).Inner;
         innerStore.Should().BeOfType<SqlServerStore>();
     }
 
@@ -40,18 +40,15 @@ public class RegistrationTests {
 
         builder.ConfigureServices(
             (ctx, services) => {
-                services.AddAggregateStore<SqlServerStore>();
+                services.AddEventStore<SqlServerStore>();
                 services.AddEventuousSqlServer(ctx.Configuration.GetSection("sqlserver"));
             }
         );
         var app            = builder.Build();
-        var aggregateStore = app.Services.GetService<IAggregateStore>();
-        aggregateStore.Should().NotBeNull();
-        var reader = app.Services.GetService<IEventStore>();
-
-        // 'TracedEventStore.Inner' is inaccessible due to its protection level...
-        //var store = ((reader as TracedEventStore)!).Inner as SqlServerStore;
-        //store.Should().NotBeNull();
-        //store!.Schema.Should().Be("test");
+        var store = app.Services.GetService<IEventStore>();
+        store.Should().NotBeNull();
+        var inner = ((store as TracedEventStore)!).Inner as SqlServerStore;
+        inner.Should().NotBeNull();
+        inner!.Schema.SchemaName.Should().Be("test");
     }
 }
