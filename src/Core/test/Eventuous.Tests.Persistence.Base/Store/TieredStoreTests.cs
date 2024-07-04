@@ -32,7 +32,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
 
     protected TieredStoreTestsBase(StoreFixtureBase<TContainer> storeFixture) {
         _storeFixture = storeFixture;
-        TypeMap.Instance.AddType<TestEventForTiers>("TestEvent1");
+        TypeMap.Instance.AddType<TestEventForTiers>(TestEventForTiers.TypeName);
     }
 
     class ArchiveStore(IEventStore original) : IEventReader, IEventWriter {
@@ -54,8 +54,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
     }
 }
 
-[EventType(TypeName)]
 [UsedImplicitly]
 record TestEventForTiers(string Data, int Number) {
-    const string TypeName = "test-event";
+    public const string TypeName = "test-event";
 }
