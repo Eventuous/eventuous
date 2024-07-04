@@ -3,7 +3,7 @@ using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Tests.Subscriptions.Base;
 
-namespace Eventuous.Tests.EventStore.Subscriptions;
+namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
 public abstract class PersistentSubscriptionFixture<TSubscription, TOptions, THandler>(
         ITestOutputHelper outputHelper,
