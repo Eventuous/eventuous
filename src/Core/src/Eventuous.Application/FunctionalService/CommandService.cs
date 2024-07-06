@@ -94,7 +94,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (newEvents.Length == 0) return Result<TState>.FromSuccess(newState, Array.Empty<Change>(), 0);
 
-            var storeResult = await resolvedWriter.Store(streamName, loadedState.StreamVersion, newEvents, amendEvent, cancellationToken)
+            var storeResult = await resolvedWriter.Store(streamName, loadedState.StreamVersion, newEvents, Amend, cancellationToken)
                 .NoContext();
             var changes = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
@@ -104,6 +104,11 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
             Log.ErrorHandlingCommand<TCommand>(e);
 
             return Result<TState>.FromError(e, $"Error handling command {typeof(TCommand).Name}");
+        }
+        
+        NewStreamEvent Amend(NewStreamEvent streamEvent) {
+            var evt = registeredHandler.AmendEvent?.Invoke(streamEvent, command) ?? streamEvent;
+            return amendEvent?.Invoke(evt) ?? evt;
         }
     }
 

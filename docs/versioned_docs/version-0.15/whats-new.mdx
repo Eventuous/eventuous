@@ -26,6 +26,7 @@ Eventuous 0.15 adds support for .NET 8 and removes support for .NET 7. Currently
 
 * Aggregate store is no longer used by command services. Its interface, implementation, and registration extensions are marked obsolete. You can still use it outside command services but the whole thing might be removed in the future.
 * `IEventStore` got extensions to work with aggregates, which allowed to avoid using `IAggregateStore`.
+* `IEventWriter.AppendEvents` now needs a collection of `NewStreamEvents` instead of `StreamEvent` as the `StreamEvent` struct has properties that are irrelevant for new events (position, content type, etc).
 
 ### Command services
 

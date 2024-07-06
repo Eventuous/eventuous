@@ -12,10 +12,10 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
     public static IEventWriter Trace(IEventWriter writer) => new TracedEventWriter(writer);
 
     public async Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         ) {
         using var activity = StartActivity(stream, Operations.AppendEvents);
 

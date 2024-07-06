@@ -5,9 +5,13 @@ namespace Eventuous.Sut.App;
 using static Commands;
 
 public class BookingService : CommandService<Booking, BookingState, BookingId> {
-    public BookingService(IEventStore eventStore, StreamNameMap? streamNameMap = null) : this(eventStore, eventStore, streamNameMap) { }
-
-    public BookingService(IEventReader reader, IEventWriter writer, StreamNameMap? streamNameMap = null) : base(reader, writer, streamNameMap: streamNameMap) {
+    public BookingService(
+            IEventStore    eventStore,
+            StreamNameMap? streamNameMap = null,
+            TypeMapper?    typeMapper    = null,
+            AmendEvent?    amendEvent    = null
+        )
+        : base(eventStore, streamNameMap: streamNameMap, typeMap: typeMapper, amendEvent: amendEvent) {
         On<BookRoom>()
             .InState(ExpectedState.New)
             .GetId(cmd => new(cmd.BookingId))

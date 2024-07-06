@@ -56,6 +56,36 @@ Preferring EventStoreDB will save you lots of time!
 Remember to check [Event Store Cloud](https://www.eventstore.com/event-store-cloud).
 :::
 
+## Aggregate persistence
+
+As Eventuous 0.15 stopped using the `IAggregateStore` abstraction, and all related API is marked obsolete.
+
+Aggregate persistence is now supported by a few functions extending the `IEventReader` and `IEventWriter` interfaces, described on the [Aggregate store](./aggregate-store.mdx) page.
+
+## State persistence
+
+The vent store interfaces are quite low-level, which allows supporting various underlying databases with relatively small amount of code. However, for higher-level persistence operations, this core API isn't very practical. This usability gap is covered by additional functions that extend code event store interfaces, providing easier to use API for application developers. Most of those functions are also used by Eventuous, particularly in command services.
+
+### Storing state updates
+
+Persisting state updates is done by appending events to the entity stream. The low-level API for that is the `AppendEvents` function. The `IEventWriter` operation also has one higher-level function to do that easier.
+
+#### Store events
+
+```csharp
+Task<AppendEventsResult> IEventWriter.Store(
+    StreamName                  streamName,
+    ExpectedStreamVersion       expectedStreamVersion,
+    IReadOnlyCollection<object> changes,
+    AmendEvent?                 amendEvent        = null,
+    CancellationToken           cancellationToken = default
+) {
+```
+
+The `Store` function will take the list of new events from the `changes` collection, and then try to call the `AppendEvents` core function. If `AppendEvents` throw an exception with "wrong expected version" message, it will throw the `OptimisticConcurrencyException`.
+
+It's possible to make some changes in events before they get persisted using the `AmendEvent` function provided as `amendEvent` argument. The `AmendEvent` type is equivalent to `Func<NewStreamEvent, NewStreamEvent>`.
+
 ## Event store with archive
 
 Sometimes, you need to keep historical data but want to keep the operational store small for optimized performance. Eventuous supports using two stores and combine them to one, tiered store. There are two classes that support this:

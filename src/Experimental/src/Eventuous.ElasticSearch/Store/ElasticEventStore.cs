@@ -7,13 +7,13 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
     readonly ElasticEventStoreOptions _options = options ?? new ElasticEventStoreOptions();
 
     public async Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         ) {
         var streamName = stream.ToString();
-        var documents  = events.Select(AsDocument).ToArray();
+        var documents  = events.Select((@event, i) => AsDocument(@event, i + expectedVersion.Value)).ToArray();
         var bulk       = new BulkDescriptor(_options.IndexName).CreateMany(documents).Refresh(Refresh.WaitFor);
         var result     = await client.BulkAsync(bulk, cancellationToken);
 
@@ -21,14 +21,14 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
             ? new AppendEventsResult(0, documents.Last().StreamPosition + 1)
             : throw new ApplicationException($"Unable to add events: {result.DebugInformation}");
 
-        PersistedEvent AsDocument(StreamEvent evt)
+        PersistedEvent AsDocument(NewStreamEvent evt, long position)
             => new(
                 evt.Id.ToString(),
                 TypeMap.Instance.GetTypeName(evt.Payload!),
-                evt.Position + 1,
-                evt.ContentType,
+                position + 1,
+                "application/json",
                 streamName,
-                (ulong)evt.Position + 1,
+                (ulong)position + 1,
                 evt.Payload,
                 evt.Metadata.ToHeaders(),
                 DateTime.Now
@@ -71,6 +71,7 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
             1,
             cancellationToken
         );
+
         return response.Length == 1;
     }
 

@@ -66,10 +66,10 @@ public class EsdbEventStore : IEventStore {
 
     /// <inheritdoc/>
     public Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken = default
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken = default
         ) {
         var proposedEvents = events.Select(ToEventData);
 
@@ -99,7 +99,7 @@ public class EsdbEventStore : IEventStore {
             }
         );
 
-        EventData ToEventData(StreamEvent streamEvent) {
+        EventData ToEventData(NewStreamEvent streamEvent) {
             var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
             return new(

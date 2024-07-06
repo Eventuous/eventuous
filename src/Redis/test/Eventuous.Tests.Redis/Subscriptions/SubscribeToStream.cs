@@ -62,8 +62,7 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
         Handler.Count.Should().Be(0);
     }
 
-    static BookingImported ToEvent(ImportBooking cmd)
-        => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
+    static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable
@@ -71,31 +70,19 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
             .Select(_ => DomainFixture.CreateImportBooking())
             .ToList();
 
-        var events = commands.Select(ToEvent).ToList();
+        var events       = commands.Select(ToEvent).ToList();
+        var streamEvents = events.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
-        var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
-
-        await IntegrationFixture.EventWriter.AppendEvents(
-            Stream,
-            ExpectedStreamVersion.Any,
-            streamEvents.ToArray(),
-            default
-        );
+        await IntegrationFixture.EventWriter.AppendEvents(Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
 
         return events;
     }
 
     async Task<long> GetStreamPosition(int count) {
-        var readEvents = await IntegrationFixture.EventReader.ReadEvents(
-            Stream,
-            StreamReadPosition.Start,
-            count,
-            default
-        );
+        var readEvents = await IntegrationFixture.EventReader.ReadEvents(Stream, StreamReadPosition.Start, count, default);
 
         return readEvents.Last().Position;
     }
 
-    protected override TestEventHandler GetHandler()
-        => new();
+    protected override TestEventHandler GetHandler() => new();
 }

@@ -17,19 +17,20 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         IEventWriter?             writer,
         AggregateFactoryRegistry? factoryRegistry = null,
         StreamNameMap?            streamNameMap   = null,
-        TypeMapper?               typeMap         = null
+        TypeMapper?               typeMap         = null,
+        AmendEvent?               amendEvent      = null
     )
     : ICommandService<TAggregate, TState, TId>
     where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id {
     protected CommandService(
-            IEventStore               store,
+            IEventStore?              store,
             AggregateFactoryRegistry? factoryRegistry = null,
             StreamNameMap?            streamNameMap   = null,
-            TypeMapper?               typeMap         = null
-        )
-        : this(store, store, factoryRegistry, streamNameMap, typeMap) { }
+            TypeMapper?               typeMap         = null,
+            AmendEvent?               amendEvent      = null
+        ) : this(store, store, factoryRegistry, streamNameMap, typeMap, amendEvent) { }
 
     [PublicAPI]
     protected IEventReader? Reader { get; } = reader;
@@ -81,9 +82,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
                 _                     => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
-            var result = await registeredHandler
-                .Handler(aggregate!, command, cancellationToken)
-                .NoContext();
+            var result = await registeredHandler.Handler(aggregate!, command, cancellationToken).NoContext();
 
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (result.Changes.Count == 0) return Result<TState>.FromSuccess(result.State, Array.Empty<Change>(), 0);
@@ -102,7 +101,11 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
 
         TAggregate Create(TId id) => _factoryRegistry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
 
-        StreamEvent Amend(StreamEvent streamEvent) => registeredHandler.AmendEvent?.Invoke(streamEvent, command) ?? streamEvent;
+        NewStreamEvent Amend(NewStreamEvent streamEvent) {
+            var evt = registeredHandler.AmendEvent?.Invoke(streamEvent, command) ?? streamEvent;
+
+            return amendEvent?.Invoke(evt) ?? evt;
+        }
     }
 
     internal void AddHandler<TCommand>(RegisteredHandler<TAggregate, TState, TId> handler) where TCommand : class

@@ -12,7 +12,8 @@ record RegisteredHandler<TState>(
         GetStreamNameFromUntypedCommand GetStream,
         ExecuteUntypedCommand<TState>   Handler,
         ResolveReaderFromCommand        ResolveReaderFromCommand,
-        ResolveWriterFromCommand        ResolveWriterFromCommand
+        ResolveWriterFromCommand        ResolveWriterFromCommand,
+        AmendEventFromCommand?          AmendEvent
     ) where TState : State<TState>;
 
 class HandlersMap<TState> where TState : State<TState> {

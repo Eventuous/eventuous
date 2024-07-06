@@ -45,10 +45,10 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
         static StreamName GetArchiveStreamName(string streamName) => new($"Archive-{streamName}");
 
         public Task<AppendEventsResult> AppendEvents(
-                StreamName                       stream,
-                ExpectedStreamVersion            expectedVersion,
-                IReadOnlyCollection<StreamEvent> events,
-                CancellationToken                cancellationToken
+                StreamName                          stream,
+                ExpectedStreamVersion               expectedVersion,
+                IReadOnlyCollection<NewStreamEvent> events,
+                CancellationToken                   cancellationToken
             )
             => original.AppendEvents(GetArchiveStreamName(stream), expectedVersion, events, cancellationToken);
     }

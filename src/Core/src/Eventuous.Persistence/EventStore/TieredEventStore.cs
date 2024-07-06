@@ -21,15 +21,16 @@ public class TieredEventStore(IEventStore hotStore, IEventReader archiveReader) 
         => _tieredReader.ReadEventsBackwards(stream, start, count, cancellationToken);
 
     public Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         ) => hotStore.AppendEvents(stream, expectedVersion, events, cancellationToken);
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken = default) {
-        var hotExists = await hotStore.StreamExists(stream, cancellationToken);
+        var hotExists     = await hotStore.StreamExists(stream, cancellationToken);
         var archiveExists = archiveReader is IEventStore store && await store.StreamExists(stream, cancellationToken);
+
         return hotExists && archiveExists;
     }
 

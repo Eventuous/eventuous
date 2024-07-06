@@ -40,6 +40,10 @@ public class BookingFuncService : CommandService<BookingState> {
 
             var newState = state.When(registered);
 
+            if (state.AmountPaid != newState.AmountPaid) {
+                yield return (new BookingOutstandingAmountChanged((state.Price - newState.AmountPaid).Amount));
+            }
+
             if (newState.IsFullyPaid()) yield return new BookingFullyPaid(cmd.PaidAt);
             if (newState.IsOverpaid()) yield return new BookingOverpaid((state.AmountPaid - state.Price).Amount);
         }

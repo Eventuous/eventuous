@@ -32,7 +32,7 @@ public static class StoreFunctions {
             var result = await eventWriter.AppendEvents(
                     streamName,
                     expectedStreamVersion,
-                    changes.Select((o, i) => ToStreamEvent(o, i + expectedStreamVersion.Value)).ToArray(),
+                    changes.Select(ToStreamEvent).ToArray(),
                     cancellationToken
                 )
                 .NoContext();
@@ -44,8 +44,8 @@ public static class StoreFunctions {
                 : e;
         }
 
-        StreamEvent ToStreamEvent(object evt, long position) {
-            var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", position);
+        NewStreamEvent ToStreamEvent(object evt) {
+            var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, new());
 
             return amendEvent?.Invoke(streamEvent) ?? streamEvent;
         }

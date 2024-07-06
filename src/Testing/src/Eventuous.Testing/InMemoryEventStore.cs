@@ -15,14 +15,14 @@ public class InMemoryEventStore : IEventStore {
 
     /// <inheritdoc />
     public Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         ) {
-        var existing = _storage.GetOrAdd(stream, s => new InMemoryStream(s));
+        var existing = _storage.GetOrAdd(stream, s => new(s));
         existing.AppendEvents(expectedVersion, events);
-        _global.AddRange(events);
+        _global.AddRange(events.Select((x, i) => new StreamEvent(x.Id, x.Payload, x.Metadata, "application/json", _global.Count + i)));
 
         return Task.FromResult(new AppendEventsResult((ulong)(_global.Count - 1), existing.Version));
     }
@@ -72,11 +72,13 @@ class InMemoryStream(StreamName name) {
         if (expectedVersion.Value != Version) throw new WrongVersion(expectedVersion, Version);
     }
 
-    public void AppendEvents(ExpectedStreamVersion expectedVersion, IReadOnlyCollection<StreamEvent> events) {
+    public void AppendEvents(ExpectedStreamVersion expectedVersion, IReadOnlyCollection<NewStreamEvent> events) {
         CheckVersion(expectedVersion);
 
-        foreach (var streamEvent in events) {
-            _events.Add(new(streamEvent, ++Version));
+        foreach (var newEvent in events) {
+            var version     = ++Version;
+            var streamEvent = new StreamEvent(newEvent.Id, newEvent.Payload, newEvent.Metadata, "application/json", version);
+            _events.Add(new(streamEvent, version));
         }
     }
 

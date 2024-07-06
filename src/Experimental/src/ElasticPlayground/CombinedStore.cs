@@ -11,7 +11,7 @@ using static Eventuous.Sut.App.Commands;
 namespace ElasticPlayground;
 
 public class CombinedStore {
-    readonly TieredEventReader _store;
+    readonly TieredEventStore  _store;
     readonly EsdbEventStore    _esdbEventStore;
     readonly ElasticEventStore _elasticEventStore;
 
@@ -37,7 +37,7 @@ public class CombinedStore {
 
         await _esdbEventStore.TruncateStream(StreamName.For<Booking>(bookRoom.BookingId), new(1), ExpectedStreamVersion.Any, default);
 
-        var service = new ThrowingCommandService<BookingState>(new BookingService(_store, _esdbEventStore));
+        var service = new ThrowingCommandService<BookingState>(new BookingService(_store));
 
         var cmd = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
 

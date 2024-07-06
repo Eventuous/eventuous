@@ -60,6 +60,17 @@ public interface IDefineWriter<out TCommand, out TState> where TState : State<TS
     IDefineExecution<TCommand, TState> ResolveWriter(Func<TCommand, IEventWriter> resolveWriter);
 }
 
+public interface IDefineEventAmendment<out TCommand, out TState>
+    where TState : State<TState>
+    where TCommand : class {
+    /// <summary>
+    /// Amends the event before it gets stored.
+    /// </summary>
+    /// <param name="amendEvent">A function to amend the event</param>
+    /// <returns></returns>
+    IDefineStoreOrExecution<TCommand, TState> AmendEvent(AmendEvent<TCommand> amendEvent);
+}
+
 public interface IDefineExecution<out TCommand, out TState> where TState : State<TState> where TCommand : class {
     /// <summary>
     /// Defines the action to take on the stream for the command. The expected state should be New for this to work.
@@ -90,18 +101,33 @@ public interface IDefineExecution<out TCommand, out TState> where TState : State
     void ActAsync(Func<TState, object[], TCommand, CancellationToken, Task<NewEvents>> executeCommand);
 }
 
+public interface IDefineStoreOrExecution<out TCommand, out TState>
+    : IDefineStore<TCommand, TState>,
+        IDefineReader<TCommand, TState>,
+        IDefineWriter<TCommand, TState>,
+        IDefineExecution<TCommand, TState>
+    where TState : State<TState> where TCommand : class;
+
 public interface ICommandHandlerBuilder<out TCommand, out TState>
-    : IDefineStore<TCommand, TState>, IDefineReader<TCommand, TState>, IDefineWriter<TCommand, TState>, IDefineExecution<TCommand, TState>
+    : IDefineStore<TCommand, TState>,
+        IDefineReader<TCommand, TState>,
+        IDefineWriter<TCommand, TState>,
+        IDefineExecution<TCommand, TState>,
+        IDefineEventAmendment<TCommand, TState>
     where TState : State<TState> where TCommand : class;
 
 public class CommandHandlerBuilder<TCommand, TState>(CommandService<TState> service, IEventReader? reader, IEventWriter? writer)
-    : IDefineExpectedState<TCommand, TState>, IDefineStreamName<TCommand, TState>, ICommandHandlerBuilder<TCommand, TState>
+    : IDefineExpectedState<TCommand, TState>,
+        IDefineStreamName<TCommand, TState>,
+        IDefineStoreOrExecution<TCommand, TState>,
+        ICommandHandlerBuilder<TCommand, TState>
     where TState : State<TState>, new() where TCommand : class {
     ExpectedState                    _expectedState = ExpectedState.Any;
     GetStreamNameFromUntypedCommand? _getStream;
     ExecuteUntypedCommand<TState>?   _execute;
     Func<TCommand, IEventReader>?    _reader;
     Func<TCommand, IEventWriter>?    _writer;
+    AmendEvent<TCommand>?            _amendEvent;
 
     IDefineStreamName<TCommand, TState> IDefineExpectedState<TCommand, TState>.InState(ExpectedState expectedState) {
         _expectedState = expectedState;
@@ -171,13 +197,20 @@ public class CommandHandlerBuilder<TCommand, TState>(CommandService<TState> serv
         return this;
     }
 
+    IDefineStoreOrExecution<TCommand, TState> IDefineEventAmendment<TCommand, TState>.AmendEvent(AmendEvent<TCommand> amendEvent) {
+        _amendEvent = amendEvent;
+
+        return this;
+    }
+
     RegisteredHandler<TState> Build() {
         return new(
             _expectedState,
             Ensure.NotNull(_getStream, $"Function to get the stream id from {typeof(TCommand).Name} is not defined"),
             Ensure.NotNull(_execute, $"Function to act on the stream for command {typeof(TCommand).Name} is not defined"),
             (_reader ?? DefaultResolveReader()).AsResolveReader(),
-            (_writer ?? DefaultResolveWriter()).AsResolveWriter()
+            (_writer ?? DefaultResolveWriter()).AsResolveWriter(),
+            _amendEvent == null ? null : (evt, cmd) => _amendEvent(evt, (TCommand)cmd)
         );
 
         Func<TCommand, IEventWriter> DefaultResolveWriter() {

@@ -42,7 +42,8 @@ public class RedisStore : IEventReader, IEventWriter {
             if (result == null) throw new StreamNotFound(stream);
 
             return result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer)).ToArray();
-        } catch (InvalidOperationException e) when (e.Message.Contains("Reading is not allowed after reader was completed") || cancellationToken.IsCancellationRequested) {
+        } catch (InvalidOperationException e) when (e.Message.Contains("Reading is not allowed after reader was completed") ||
+                                                    cancellationToken.IsCancellationRequested) {
             throw new OperationCanceledException("Redis read operation terminated", e, cancellationToken);
         }
     }
@@ -51,10 +52,10 @@ public class RedisStore : IEventReader, IEventWriter {
         => throw new NotImplementedException();
 
     public async Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         ) {
         var keys = new object[] {
             "append_events",
@@ -81,14 +82,14 @@ public class RedisStore : IEventReader, IEventWriter {
             var globalPositionString = Ensure.NotNull(response?[1]).ToString();
             var globalPosition       = globalPositionString.AsSpan().ToULong();
 
-            return new AppendEventsResult(globalPosition, streamPosition);
+            return new(globalPosition, streamPosition);
         } catch (Exception e) when (e.Message.Contains("WrongExpectedVersion")) {
             Log.UnableToAppendEvents(stream, e);
 
             throw new AppendToStreamException(stream, e);
         }
 
-        object[] ConvertStreamEvent(StreamEvent evt) {
+        object[] ConvertStreamEvent(NewStreamEvent evt) {
             var data = _serializer.SerializeEvent(evt.Payload!);
             var meta = _metaSerializer.Serialize(evt.Metadata);
 
@@ -113,16 +114,14 @@ public class RedisStore : IEventReader, IEventWriter {
             ContentType
         );
 
-        var meta = (string?)evt[JsonMetadata] == null
-            ? new Metadata()
-            : metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt[JsonMetadata]!));
+        var meta = (string?)evt[JsonMetadata] == null ? new() : metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt[JsonMetadata]!));
 
         return deserialized switch {
             SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
             FailedToDeserialize failed => throw new SerializationException(
                 $"Can't deserialize {evt[MessageType]}: {failed.Error}"
             ),
-            _ => throw new Exception("Unknown deserialization result")
+            _ => throw new("Unknown deserialization result")
         };
 
         StreamEvent AsStreamEvent(object payload)

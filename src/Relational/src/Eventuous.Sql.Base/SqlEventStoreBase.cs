@@ -133,10 +133,10 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
 
     /// <inheritdoc />
     public async Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         ) {
         var persistedEvents = events.Where(x => x.Payload != null).Select(Convert).ToArray();
 
@@ -162,7 +162,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
             throw IsConflict(e) ? new AppendToStreamException(stream, e) : e;
         }
 
-        NewPersistedEvent Convert(StreamEvent evt) {
+        NewPersistedEvent Convert(NewStreamEvent evt) {
             var data = _serializer.SerializeEvent(evt.Payload!);
             var meta = _metaSerializer.Serialize(evt.Metadata);
 

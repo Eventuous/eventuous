@@ -17,12 +17,6 @@ public class UniversalProducer(IEventStore store) : IProducer {
 
         return;
 
-        StreamEvent ToStreamEvent(ProducedMessage message) => new(
-            Guid.NewGuid(), 
-            message.Message,
-            message.Metadata ?? new Metadata(),
-            "application/json",
-            0
-        );
+        NewStreamEvent ToStreamEvent(ProducedMessage message) => new(Guid.NewGuid(), message.Message, message.Metadata ?? new Metadata());
     }
 }

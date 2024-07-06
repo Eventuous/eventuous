@@ -19,10 +19,10 @@ public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore 
         => Trace(stream, Operations.StreamExists, () => Inner.StreamExists(stream, cancellationToken));
 
     public Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         )
         => Writer.AppendEvents(stream, expectedVersion, events, cancellationToken);
 

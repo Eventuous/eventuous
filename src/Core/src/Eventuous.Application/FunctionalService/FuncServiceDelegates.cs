@@ -14,5 +14,5 @@ public static partial class FuncServiceDelegates {
 
     internal delegate IEventWriter ResolveWriterFromCommand(object command);
 
-    internal delegate StreamEvent AmendEventFromCommand(StreamEvent streamEvent, object command);
+    internal delegate NewStreamEvent AmendEventFromCommand(NewStreamEvent streamEvent, object command);
 }

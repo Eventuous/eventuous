@@ -5,7 +5,7 @@ using static Eventuous.CommandServiceDelegates;
 
 namespace Eventuous;
 
-public interface IDefineExpectedState<out TCommand, TAggregate, out TState, TId>
+public interface IDefineExpectedState<out TCommand, out TAggregate, out TState, TId>
     where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id
@@ -18,7 +18,7 @@ public interface IDefineExpectedState<out TCommand, TAggregate, out TState, TId>
     IDefineIdentity<TCommand, TAggregate, TState, TId> InState(ExpectedState expectedState);
 }
 
-public interface IDefineIdentity<out TCommand, TAggregate, out TState, TId>
+public interface IDefineIdentity<out TCommand, out TAggregate, out TState, TId>
     where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id
@@ -80,12 +80,18 @@ public interface IDefineWriter<out TCommand, out TAggregate, out TState, TId>
     IDefineExecution<TCommand, TAggregate, TState, TId> ResolveWriter(Func<TCommand, IEventWriter> resolveWriter);
 }
 
-public interface IDefineStoreOrReader<out TCommand, out TAggregate, out TState, TId>
-    : IDefineStore<TCommand, TAggregate, TState, TId>, IDefineReader<TCommand, TAggregate, TState, TId>
+public interface IDefineEventAmendment<out TCommand, out TAggregate, out TState, TId>
     where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id
-    where TCommand : class;
+    where TCommand : class {
+    /// <summary>
+    /// Amends the event before it gets stored.
+    /// </summary>
+    /// <param name="amendEvent">A function to amend the event</param>
+    /// <returns></returns>
+    IDefineStoreOrExecution<TCommand, TAggregate, TState, TId> AmendEvent(AmendEvent<TCommand> amendEvent);
+}
 
 public interface IDefineExecution<out TCommand, out TAggregate, out TState, TId>
     where TAggregate : Aggregate<TState>
@@ -107,11 +113,22 @@ public interface IDefineExecution<out TCommand, out TAggregate, out TState, TId>
     void ActAsync(Func<TAggregate, TCommand, CancellationToken, Task> action);
 }
 
-public interface ICommandHandlerBuilder<out TCommand, TAggregate, out TState, TId>
+public interface IDefineStoreOrExecution<out TCommand, out TAggregate, out TState, TId>
     : IDefineStore<TCommand, TAggregate, TState, TId>,
         IDefineReader<TCommand, TAggregate, TState, TId>,
         IDefineWriter<TCommand, TAggregate, TState, TId>,
         IDefineExecution<TCommand, TAggregate, TState, TId>
+    where TAggregate : Aggregate<TState>
+    where TState : State<TState>, new()
+    where TId : Id
+    where TCommand : class;
+
+public interface ICommandHandlerBuilder<out TCommand, out TAggregate, out TState, TId>
+    : IDefineStore<TCommand, TAggregate, TState, TId>,
+        IDefineReader<TCommand, TAggregate, TState, TId>,
+        IDefineWriter<TCommand, TAggregate, TState, TId>,
+        IDefineExecution<TCommand, TAggregate, TState, TId>,
+        IDefineEventAmendment<TCommand, TAggregate, TState, TId>
     where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id
@@ -135,6 +152,7 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(
     )
     : IDefineExpectedState<TCommand, TAggregate, TState, TId>,
         IDefineIdentity<TCommand, TAggregate, TState, TId>,
+        IDefineStoreOrExecution<TCommand, TAggregate, TState, TId>,
         ICommandHandlerBuilder<TCommand, TAggregate, TState, TId>
     where TCommand : class
     where TAggregate : Aggregate<TState>
@@ -153,15 +171,13 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(
         return this;
     }
 
-    public ICommandHandlerBuilder<TCommand, TAggregate, TState, TId> GetId(Func<TCommand, TId> getId) {
+    ICommandHandlerBuilder<TCommand, TAggregate, TState, TId> IDefineIdentity<TCommand, TAggregate, TState, TId>.GetId(Func<TCommand, TId> getId) {
         _getId = (cmd, _) => ValueTask.FromResult(getId((TCommand)cmd));
 
         return this;
     }
 
-    ICommandHandlerBuilder<TCommand, TAggregate, TState, TId> IDefineIdentity<TCommand, TAggregate, TState, TId>.GetIdAsync(
-            Func<TCommand, CancellationToken, ValueTask<TId>> getId
-        ) {
+    ICommandHandlerBuilder<TCommand, TAggregate, TState, TId> IDefineIdentity<TCommand, TAggregate, TState, TId>.GetIdAsync(Func<TCommand, CancellationToken, ValueTask<TId>> getId) {
         _getId = (cmd, token) => getId((TCommand)cmd, token);
 
         return this;
@@ -193,22 +209,19 @@ public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(
         return this;
     }
 
-    IDefineWriter<TCommand, TAggregate, TState, TId> IDefineReader<TCommand, TAggregate, TState, TId>.
-        ResolveReader(Func<TCommand, IEventReader> resolveReader) {
+    IDefineWriter<TCommand, TAggregate, TState, TId> IDefineReader<TCommand, TAggregate, TState, TId>.ResolveReader(Func<TCommand, IEventReader> resolveReader) {
         _reader = resolveReader;
 
         return this;
     }
 
-    IDefineExecution<TCommand, TAggregate, TState, TId> IDefineWriter<TCommand, TAggregate, TState, TId>.ResolveWriter(
-            Func<TCommand, IEventWriter> resolveWriter
-        ) {
+    IDefineExecution<TCommand, TAggregate, TState, TId> IDefineWriter<TCommand, TAggregate, TState, TId>.ResolveWriter(Func<TCommand, IEventWriter> resolveWriter) {
         _writer = resolveWriter;
 
         return this;
     }
 
-    public CommandHandlerBuilder<TCommand, TAggregate, TState, TId> AmendEvent(AmendEvent<TCommand> amendEvent) {
+    IDefineStoreOrExecution<TCommand, TAggregate, TState, TId> IDefineEventAmendment<TCommand, TAggregate, TState, TId>.AmendEvent(AmendEvent<TCommand> amendEvent) {
         _amendEvent = amendEvent;
 
         return this;
