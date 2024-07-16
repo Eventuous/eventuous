@@ -41,18 +41,19 @@ public record RabbitMqSubscriptionOptions : SubscriptionOptions {
     /// <summary>
     /// Number of concurrent consumers, default is one.
     /// </summary>
-    public uint   ConcurrencyLimit { get; set; } = 1;
+    public uint ConcurrencyLimit { get; set; } = 1;
 
     /// <summary>
     /// Number of messages to prefetch.
     /// </summary>
-    public ushort PrefetchCount    { get; set; }
+    public ushort PrefetchCount { get; set; }
 
     [PublicAPI]
     public record RabbitMqQueueOptions {
-        public bool Durable    { get; set; } = true;
-        public bool Exclusive  { get; set; }
-        public bool AutoDelete { get; set; }
+        public string? Queue      { get; set; }
+        public bool    Durable    { get; set; } = true;
+        public bool    Exclusive  { get; set; }
+        public bool    AutoDelete { get; set; }
 
         public IDictionary<string, object>? Arguments { get; set; }
     }

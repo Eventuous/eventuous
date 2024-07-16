@@ -54,7 +54,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         )
         : base(
             Ensure.NotNull(options),
-            consumePipe.AddFilterFirst(new AsyncHandlingFilter(options.ConcurrencyLimit * 10)),
+            consumePipe.AddFilterFirst(new AsyncHandlingFilter(options.ConcurrencyLimit)),
             loggerFactory,
             eventSerializer
         ) {
@@ -62,7 +62,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         _connection     = Ensure.NotNull(connectionFactory).CreateConnection();
         _channel        = _connection.CreateModel();
 
-        var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount : Options.ConcurrencyLimit * 2;
+        var prefetch = options.PrefetchCount > 0 ? options.PrefetchCount : options.ConcurrencyLimit * 2;
 
         _channel.BasicQos(0, (ushort)prefetch, false);
 
@@ -98,6 +98,10 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
 
         Log.InfoLog?.Log("Ensuring exchange {Exchange}", exchange);
 
+        if (string.IsNullOrWhiteSpace(Options.BindingOptions.RoutingKey) && Options.ExchangeOptions.Type == ExchangeType.Fanout) {
+            Log.WarnLog?.Log("Fan-out exchange doesn't support routing keys");
+        }
+
         _channel.ExchangeDeclare(
             exchange,
             Options.ExchangeOptions.Type,
@@ -106,10 +110,11 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.ExchangeOptions.Arguments
         );
 
-        Log.InfoLog?.Log("Ensuring queue {Queue}", Options.SubscriptionId);
+        var queue = Options.QueueOptions.Queue ?? Options.SubscriptionId;
+        Log.InfoLog?.Log("Ensuring queue {Queue}", queue);
 
         _channel.QueueDeclare(
-            Options.SubscriptionId,
+            queue,
             Options.QueueOptions.Durable,
             Options.QueueOptions.Exclusive,
             Options.QueueOptions.AutoDelete,
