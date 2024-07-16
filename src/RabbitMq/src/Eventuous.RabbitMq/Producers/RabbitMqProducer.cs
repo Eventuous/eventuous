@@ -32,11 +32,11 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
     /// <param name="log">Optional logger</param>
     /// <param name="options">Optional additional configuration for the exchange</param>
     public RabbitMqProducer(
-        ConnectionFactory          connectionFactory,
-        IEventSerializer?          serializer = null,
-        ILogger<RabbitMqProducer>? log        = null,
-        RabbitMqExchangeOptions?   options    = null
-    )
+            ConnectionFactory          connectionFactory,
+            IEventSerializer?          serializer = null,
+            ILogger<RabbitMqProducer>? log        = null,
+            RabbitMqExchangeOptions?   options    = null
+        )
         : base(TracingOptions) {
         _log               = log;
         _options           = options;
@@ -50,6 +50,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
         _channel    = _connection.CreateModel();
         _channel.ConfirmSelect();
         Ready = true;
+
         return Task.CompletedTask;
     }
 
@@ -60,11 +61,11 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
     };
 
     protected override async Task ProduceMessages(
-        StreamName                   stream,
-        IEnumerable<ProducedMessage> messages,
-        RabbitMqProduceOptions?      options,
-        CancellationToken            cancellationToken = default
-    ) {
+            StreamName                   stream,
+            IEnumerable<ProducedMessage> messages,
+            RabbitMqProduceOptions?      options,
+            CancellationToken            cancellationToken = default
+        ) {
         EnsureExchange(stream);
         var produced = new List<ProducedMessage>();
         var failed   = new List<(ProducedMessage Msg, Exception Ex)>();
@@ -77,8 +78,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
             try {
                 Publish(stream, message, options);
                 produced.Add(message);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _log?.LogError(e, "Failed to produce message to RabbitMQ");
                 failed.Add((message, e));
             }
@@ -102,7 +102,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
 
         var prop = _channel.CreateBasicProperties();
         prop.ContentType   = contentType;
-        prop.DeliveryMode  = options?.DeliveryMode ?? RabbitMqProduceOptions.DefaultDeliveryMode;
+        prop.Persistent    = options?.Persisted != false;
         prop.Type          = eventType;
         prop.CorrelationId = metadata!.GetCorrelationId();
         prop.MessageId     = message.MessageId.ToString();
@@ -111,8 +111,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
         prop.Headers = metadata.ToDictionary(x => x.Key, x => x.Value);
 
         if (options != null) {
-            prop.Expiration = options.Expiration;
-            prop.Persistent = options.Persisted;
+            prop.Expiration = options.Expiration?.ToString();
             prop.Priority   = options.Priority;
             prop.AppId      = options.AppId;
             prop.ReplyTo    = options.ReplyTo;
