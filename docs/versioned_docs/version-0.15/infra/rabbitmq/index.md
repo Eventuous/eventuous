@@ -10,7 +10,7 @@ RabbitMQ is a popular message broker, and it can serve as a great integration in
 between services. Eventuous supports using RabbitMQ messaging with [producers](../../producers) for producing messages 
 and [subscriptions](../../subscriptions) for consuming messages.
 
-Eventuous producer for RabbitMQ publishes messages to _exchanges_. An exchanges can be considered similar to topics in other message brokers like Kafka or Google Pub/Sub, but, unlike topics, those messages are not persistent. Messages published to an exchange are distributed to queues that _bound_ (subscribed) to the exchange. When an exchange doesn't have any bindings, all the messages publishes to that exchange disappear.
+Eventuous producer for RabbitMQ publishes messages to _exchanges_. An exchanges can be considered similar to topics in other message brokers like Kafka or Google Pub/Sub, but, unlike topics, those messages are not persistent. Messages published to an exchange are distributed to queues that _bound_ (subscribed) to the exchange. When an exchange doesn't have any bindings, all the messages published to that exchange disappear.
 
 For making RabbitMQ messaging work, you need to have exchanges and queues that bind to those exchanges. Eventuous creates an exchange by default if it doesn't exist when producing and consuming messages.
 
