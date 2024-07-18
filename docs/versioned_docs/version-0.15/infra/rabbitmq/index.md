@@ -134,7 +134,7 @@ If you set the routing key for the binding but the exchange is configured as fan
 
 ### Error handling
 
-Eventuous subscriptions don't throw exceptions when message handler fails. This behaviour can be changed by changing the `ThrowOnError` subscription option. For RabbitMQ subscriptions, this behaviour is extended by using the requeue feature of the broker. Therefore, by default if the message handler throws an exception, the message will be put back in the queue and consumer again later. It helps to deal with transient failures in the message handler, but also severely impacts message processing order as the retried message is put at the end of the queue.
+Eventuous subscriptions don't throw exceptions when message handler fails. This behaviour can be changed by changing the `ThrowOnError` subscription option. For RabbitMQ subscriptions, this behaviour is extended by using the requeue feature of the broker. Therefore, by default if the message handler throws an exception, the message will be put back in the queue and consumed again later. This helps to deal with transient failures in the message handler, but also severely impacts message processing order as the retried message is put at the end of the queue.
 
 If you want to ensure that messages are consumed in relative order, you'd need to make sure that message processing is retried inside the handler. Still, if the error doesn't get resolved by retries, the consumer will eventually time out and the message will be put back in the queue. If the message is causing the consumer to fail unconditionally, it is a _poison message_, and it can take put the system into an endless retry loop.
 
