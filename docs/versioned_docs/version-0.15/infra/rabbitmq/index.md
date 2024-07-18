@@ -138,7 +138,7 @@ Eventuous subscriptions don't throw exceptions when message handler fails. This 
 
 If you want to ensure that messages are consumed in relative order, you'd need to make sure that message processing is retried inside the handler. Still, if the error doesn't get resolved by retries, the consumer will eventually time out and the message will be put back in the queue. If the message is causing the consumer to fail unconditionally, it is a _poison message_, and it can take put the system into an endless retry loop.
 
-The requeue behaviour is provided by the default failure handler. It's possible to override it by setting the `FaulreHandler` property of the subscription options.
+The requeue behaviour is provided by the default failure handler. It's possible to override it by setting the `FailureHandler` property of the subscription options.
 
 ## Other messaging frameworks
 
