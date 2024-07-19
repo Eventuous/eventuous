@@ -6,15 +6,37 @@
 
 namespace Eventuous.RabbitMq.Producers;
 
+/// <summary>
+/// Options for producing a message to RabbitMQ
+/// </summary>
 public class RabbitMqProduceOptions {
-    public string? RoutingKey   { get; init; }
-    public string? AppId        { get; init; }
+    /// <summary>
+    /// Optional routing key that only works with direct and topic exchanges
+    /// </summary>
+    public string? RoutingKey { get; init; }
+
+    /// <summary>
+    /// Optional application name that helps to identify consumers in RabbitMQ management UI and API
+    /// </summary>
+    public string? AppId { get; init; }
 
     /// <summary>
     /// Message time-to-live in milliseconds
     /// </summary>
-    public int?    Expiration   { get; init; }
-    public byte    Priority     { get; init; }
-    public string? ReplyTo      { get; init; }
-    public bool    Persisted    { get; init; } = true;
+    public int? Expiration { get; init; }
+
+    /// <summary>
+    /// Message priority from 0 to 9
+    /// </summary>
+    public byte Priority { get; init; }
+
+    /// <summary>
+    /// Optional reply address. Eventuous doesn't support replies, so you'd normally not use this property
+    /// </summary>
+    public string? ReplyTo { get; init; }
+
+    /// <summary>
+    /// Whether the message persisted or not. Leave it as <code>true</code> default value for durable messaging.
+    /// </summary>
+    public bool Persisted { get; init; } = true;
 }

@@ -3,6 +3,7 @@
 
 using System.Data.Common;
 using Eventuous.Postgresql;
+using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Sql.Base;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -28,7 +29,7 @@ public static class ServiceCollectionExtensions {
     public static IServiceCollection AddEventuousPostgres(
             this IServiceCollection                            services,
             string                                             connectionString,
-            string                                             schema,
+            string                                             schema             = Schema.DefaultSchema,
             bool                                               initializeDatabase = false,
             Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureBuilder   = null,
             ServiceLifetime                                    connectionLifetime = ServiceLifetime.Transient,
@@ -119,5 +120,23 @@ public static class ServiceCollectionExtensions {
         );
         services.TryAdd(new ServiceDescriptor(typeof(DbDataSource), sp => sp.GetRequiredService<NpgsqlDataSource>(), dataSourceLifetime));
         services.TryAdd(new ServiceDescriptor(typeof(DbConnection), sp => sp.GetRequiredService<NpgsqlConnection>(), connectionLifetime));
+    }
+
+    public static IServiceCollection AddPostgresCheckpointStore(this IServiceCollection services) {
+        return services.AddCheckpointStore<PostgresCheckpointStore>(
+            sp => {
+                var ds                     = sp.GetRequiredService<NpgsqlDataSource>();
+                var loggerFactory          = sp.GetService<ILoggerFactory>();
+                var storeOptions           = sp.GetService<PostgresStoreOptions>();
+                var checkpointStoreOptions = sp.GetService<IOptions<PostgresCheckpointStoreOptions>>();
+
+                var schema = storeOptions?.Schema is not null and not Schema.DefaultSchema
+                 && checkpointStoreOptions?.Value.Schema == Schema.DefaultSchema
+                        ? storeOptions.Schema
+                        : checkpointStoreOptions?.Value.Schema ?? Schema.DefaultSchema;
+
+                return new(ds, schema, loggerFactory);
+            }
+        );
     }
 }

@@ -10,14 +10,15 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.Postgresql.Subscriptions;
 
 public abstract class PostgresSubscriptionBase<T>(
-        NpgsqlDataSource     dataSource,
-        T                    options,
-        ICheckpointStore     checkpointStore,
-        ConsumePipe          consumePipe,
-        SubscriptionKind     kind,
-        ILoggerFactory?      loggerFactory,
-        IEventSerializer?    eventSerializer,
-        IMetadataSerializer? metaSerializer
+        NpgsqlDataSource      dataSource,
+        T                     options,
+        ICheckpointStore      checkpointStore,
+        ConsumePipe           consumePipe,
+        SubscriptionKind      kind,
+        ILoggerFactory?       loggerFactory,
+        IEventSerializer?     eventSerializer,
+        IMetadataSerializer?  metaSerializer,
+        PostgresStoreOptions? storeOptions
     )
     : SqlSubscriptionBase<T, NpgsqlConnection>(
         options,
@@ -30,7 +31,12 @@ public abstract class PostgresSubscriptionBase<T>(
         metaSerializer
     )
     where T : PostgresSubscriptionBaseOptions {
-    protected Schema           Schema     { get; } = new(options.Schema);
+    protected Schema Schema { get; } = new(
+        storeOptions?.Schema is not null and not Schema.DefaultSchema
+            ? storeOptions.Schema
+            : options.Schema
+    );
+
     protected NpgsqlDataSource DataSource { get; } = dataSource;
 
     protected override async ValueTask<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken)

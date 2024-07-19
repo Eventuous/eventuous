@@ -34,19 +34,20 @@ public class PostgresCheckpointStore : ICheckpointStore {
     readonly string           _addCheckpointSql;
     readonly string           _storeCheckpointSql;
 
-    public PostgresCheckpointStore(NpgsqlDataSource dataSource, string schema, ILoggerFactory? loggerFactory) {
+    public PostgresCheckpointStore(NpgsqlDataSource dataSource, string schemaName, ILoggerFactory? loggerFactory) {
         _dataSource    = dataSource;
         _loggerFactory = loggerFactory;
-        var sch = new Schema(schema);
-        _getCheckpointSql   = sch.GetCheckpointSql;
-        _addCheckpointSql   = sch.AddCheckpointSql;
-        _storeCheckpointSql = sch.UpdateCheckpointSql;
+        var schema = new Schema(schemaName);
+        _getCheckpointSql   = schema.GetCheckpointSql;
+        _addCheckpointSql   = schema.AddCheckpointSql;
+        _storeCheckpointSql = schema.UpdateCheckpointSql;
     }
 
     [PublicAPI]
     public PostgresCheckpointStore(NpgsqlDataSource dataSource, IOptions<PostgresCheckpointStoreOptions>? options, ILoggerFactory? loggerFactory)
         : this(dataSource, options?.Value.Schema ?? Schema.DefaultSchema, loggerFactory) { }
 
+    /// <inheritdoc />
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, _loggerFactory);
 
@@ -76,6 +77,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
         }
     }
 
+    /// <inheritdoc />
     public async ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
         if (checkpoint.Position == null) return checkpoint;
 

@@ -14,7 +14,7 @@ public abstract record SqlSubscriptionOptionsBase : SubscriptionWithCheckpointOp
     /// </summary>
     public string Schema { get; set; } = "eventuous";
     /// <summary>
-    /// How many consumers can process messages concurrently. Default is 1.
+    /// Define the number of consumers than process messages concurrently. Default is 1.
     /// </summary>
     public int ConcurrencyLimit { get; set; } = 1;
     /// <summary>

@@ -20,7 +20,8 @@ public class PostgresAllStreamSubscription(
         ConsumePipe                          consumePipe,
         ILoggerFactory?                      loggerFactory   = null,
         IEventSerializer?                    eventSerializer = null,
-        IMetadataSerializer?                 metaSerializer  = null
+        IMetadataSerializer?                 metaSerializer  = null,
+        PostgresStoreOptions?                storeOptions    = null
     )
     : PostgresSubscriptionBase<PostgresAllStreamSubscriptionOptions>(
         dataSource,
@@ -30,7 +31,8 @@ public class PostgresAllStreamSubscription(
         SubscriptionKind.All,
         loggerFactory,
         eventSerializer,
-        metaSerializer
+        metaSerializer,
+        storeOptions
     ) {
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadAllForwards)

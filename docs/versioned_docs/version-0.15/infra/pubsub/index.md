@@ -10,7 +10,7 @@ Eventuous supports producing and consuming messages using Google Pub/Sub. Use th
 
 ## Producer
 
-The `GooglePubSubProducer` class allows you to produce messages to any topic in a GCP project. When creating an instance of the producer you need to provide the project id and, optionally, configure the client using the `ConfigureClient` delegate. 
+The `GooglePubSubProducer` class allows you to produce messages to any topic in a GCP project. When creating an instance of the producer, you need to provide the project id and, optionally, configure the client using the `ConfigureClient` delegate. 
 
 The `CreateTopic` option tells the producer to create a topic if it does not exist. Creating a topic is a one-time operation, so you can set this option to `false` after the topic is created. Often, you would have a separate process that creates topics and subscriptions, so the `CreateTopic` option is set to `false` by default.
 
@@ -27,7 +27,7 @@ var producer = new GooglePubSubProducer(
 
 You can register the producer in the service collection using the `AddProducer` extension method. It's recommended to go that way because Google Pub/Sub producer needs to be started and shut down following the application lifecycle, which is done automatically when you use the `AddProducer` registration helper.
 
-Behind the scenes, the producer will create a separate Pub/Sub client instance per topic, as the Pub/Sub API only allows to use one client to work with a single topic. The producer will cache the client instances, so you don't need to worry about creating too many clients.
+Behind the scenes, the producer will create a separate Pub/Sub client instance per topic, as the Pub/Sub API only allows using one client to work with a single topic. The producer will cache the client instances, so you don't need to worry about creating too many clients.
 
 Producing messages is done using the `Produce` method. You can produce a single message or a batch of messages. The `Produce` method returns a `Task` that completes when the message is produced.
 

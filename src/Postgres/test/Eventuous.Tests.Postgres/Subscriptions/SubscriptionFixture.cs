@@ -31,7 +31,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     protected override PostgreSqlContainer CreateContainer() => PostgresContainer.Create();
 
     protected override PostgresCheckpointStore GetCheckpointStore(IServiceProvider sp)
-        => new(sp.GetRequiredService<NpgsqlDataSource>(), SchemaName, sp.GetService<ILoggerFactory>());
+        => sp.GetRequiredService<PostgresCheckpointStore>();
 
     protected override void ConfigureSubscription(TSubscriptionOptions options) {
         options.Schema = SchemaName;
@@ -44,6 +44,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         services.AddEventuousPostgres(Container.GetConnectionString(), SchemaName, true);
         services.AddEventStore<PostgresStore>();
         services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
+        services.AddPostgresCheckpointStore();
         configureServices?.Invoke(services);
     }
 

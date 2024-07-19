@@ -11,7 +11,7 @@ namespace Eventuous.Postgresql.Subscriptions;
 using Extensions;
 
 /// <summary>
-/// Subscription for events in a single stream in PostgreSQL event store.
+/// Subscription for events in a single stream in the PostgreSQL event store.
 /// </summary>
 public class PostgresStreamSubscription(
         NpgsqlDataSource                  dataSource,
@@ -20,7 +20,8 @@ public class PostgresStreamSubscription(
         ConsumePipe                       consumePipe,
         ILoggerFactory?                   loggerFactory   = null,
         IEventSerializer?                 eventSerializer = null,
-        IMetadataSerializer?              metaSerializer  = null
+        IMetadataSerializer?              metaSerializer  = null,
+        PostgresStoreOptions?             storeOptions    = null
     ) : PostgresSubscriptionBase<PostgresStreamSubscriptionOptions>(
     dataSource,
     options,
@@ -29,7 +30,8 @@ public class PostgresStreamSubscription(
     SubscriptionKind.Stream,
     loggerFactory,
     eventSerializer,
-    metaSerializer
+    metaSerializer,
+    storeOptions
 ) {
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadStreamSub)

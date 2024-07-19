@@ -1,7 +1,6 @@
 ﻿// Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.SqlServer.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using EventHandler = Eventuous.Subscriptions.EventHandler;
 
@@ -10,9 +9,14 @@ namespace Eventuous.SqlServer.Projections;
 /// <summary>
 /// Base class for projectors that store read models in SQL Server.
 /// </summary>
-public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions options, TypeMapper? mapper = null) : EventHandler(mapper) {
+public abstract class SqlServerProjector(SqlServerConnectionOptions options, TypeMapper? mapper = null) : EventHandler(mapper) {
     readonly string _connectionString = Ensure.NotEmptyString(options.ConnectionString);
 
+    /// <summary>
+    /// Define how an event is converted to an SQL Server command to update the read model using event data.
+    /// </summary>
+    /// <param name="handler">Function to synchronously create an SQL Server command from the event context.</param>
+    /// <typeparam name="T"></typeparam>
     protected void On<T>(ProjectToSqlServer<T> handler) where T : class {
         base.On<T>(async ctx => await Handle(ctx, GetCommand).NoContext());
 
@@ -22,9 +26,9 @@ public abstract class SqlServerProjector(SqlServerSubscriptionBaseOptions option
     }
 
     /// <summary>
-    /// Define what happens when a message is received.
+    /// Define how an event is converted to an SQL Server command to update the read model using event data.
     /// </summary>
-    /// <param name="handler">Function to project the event to a read model in SQL Server.</param>
+    /// <param name="handler">Function to asynchronously create an SQL Server command from the event context.</param>
     /// <typeparam name="T"></typeparam>
     protected void On<T>(ProjectToSqlServerAsync<T> handler) where T : class
         => base.On<T>(async ctx => await Handle(ctx, handler).NoContext());

@@ -43,6 +43,10 @@ Here are the operations supported by event stores:
 | `TruncateStream`      | `IEventStore`  | Removes all events from the stream from the stream start up to a given truncation position.     |
 | `DeleteStream`        | `IEventStore`  | Deletes the stream. This operation could behave differently on different store implementations. |
 
+
+
+### Available adapters
+
 Eventuous has several implementations of the event store: 
  * [EventStoreDB](../infra/esdb)
  * [PostgreSQL](../infra/postgres)
@@ -84,7 +88,7 @@ Task<AppendEventsResult> IEventWriter.Store(
 
 The `Store` function will take the list of new events from the `changes` collection, and then try to call the `AppendEvents` core function. If `AppendEvents` throw an exception with "wrong expected version" message, it will throw the `OptimisticConcurrencyException`.
 
-It's possible to make some changes in events before they get persisted using the `AmendEvent` function provided as `amendEvent` argument. The `AmendEvent` type is equivalent to `Func<NewStreamEvent, NewStreamEvent>`.
+It's possible to make some changes in events before they get persisted using the `AmendEvent` function provided as `amendEvent` argument. The `AmendEvent` type is equivalent to `Func<NewStreamEvent, NewStreamEvent>`. Since `AmendEvent` function deals with the `NewStreamEvent` instance, it allows adding metadata to the events before persisting them.
 
 ## Event store with archive
 

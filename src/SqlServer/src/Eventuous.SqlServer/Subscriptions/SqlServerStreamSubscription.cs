@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Eventuous.SqlServer.Projections;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
@@ -11,15 +12,16 @@ namespace Eventuous.SqlServer.Subscriptions;
 using Extensions;
 
 /// <summary>
-/// Subscription for events in a single stream in SQL Server event store.
+/// Subscription for events in a single stream in the SQL Server event store.
 /// </summary>
 public class SqlServerStreamSubscription(
         SqlServerStreamSubscriptionOptions options,
         ICheckpointStore                   checkpointStore,
         ConsumePipe                        consumePipe,
-        ILoggerFactory?                    loggerFactory   = null,
-        IEventSerializer?                  eventSerializer = null,
-        IMetadataSerializer?               metaSerializer  = null
+        ILoggerFactory?                    loggerFactory     = null,
+        IEventSerializer?                  eventSerializer   = null,
+        IMetadataSerializer?               metaSerializer    = null,
+        SqlServerConnectionOptions?        connectionOptions = null
     )
     : SqlServerSubscriptionBase<SqlServerStreamSubscriptionOptions>(
         options,
@@ -28,7 +30,8 @@ public class SqlServerStreamSubscription(
         SubscriptionKind.Stream,
         loggerFactory,
         eventSerializer,
-        metaSerializer
+        metaSerializer,
+        connectionOptions
     ) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadStreamSub)

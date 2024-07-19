@@ -133,7 +133,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.Received += HandleReceived;
 
-        _channel.BasicConsume(consumer, Options.SubscriptionId);
+        _channel.BasicConsume(consumer, queue);
 
         return default;
     }

@@ -86,8 +86,12 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
 }
 
 public class TestProjector : SqlServerProjector {
-    public TestProjector(SubscriptionOptions options, SchemaInfo schemaInfo) : base(options) {
-        var insert = $"INSERT INTO {schemaInfo.Schema}.Bookings (BookingId, CheckinDate, Price) values (@BookingId, @CheckinDate, @Price)";
+    public TestProjector(SqlServerConnectionOptions options, SchemaInfo schemaInfo) : base(options) {
+        var insert = $"""
+                      INSERT INTO {schemaInfo.Schema}.Bookings 
+                      (BookingId, CheckinDate, Price) 
+                      values (@BookingId, @CheckinDate, @Price)
+                      """;
 
         On<BookingEvents.BookingImported>(
             (connection, ctx) =>

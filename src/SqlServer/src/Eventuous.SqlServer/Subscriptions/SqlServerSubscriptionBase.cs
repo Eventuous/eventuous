@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Sql.Base.Subscriptions;
+using Eventuous.SqlServer.Projections;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
@@ -14,15 +15,20 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
     readonly  string _connectionString;
 
     protected SqlServerSubscriptionBase(
-            T                    options,
-            ICheckpointStore     checkpointStore,
-            ConsumePipe          consumePipe,
-            SubscriptionKind     kind,
-            ILoggerFactory?      loggerFactory,
-            IEventSerializer?    eventSerializer,
-            IMetadataSerializer? metaSerializer
+            T                           options,
+            ICheckpointStore            checkpointStore,
+            ConsumePipe                 consumePipe,
+            SubscriptionKind            kind,
+            ILoggerFactory?             loggerFactory,
+            IEventSerializer?           eventSerializer,
+            IMetadataSerializer?        metaSerializer,
+            SqlServerConnectionOptions? connectionOptions
         ) : base(options, checkpointStore, consumePipe, options.ConcurrencyLimit, kind, loggerFactory, eventSerializer, metaSerializer) {
-        Schema            = new(options.Schema);
+        Schema = new(
+            connectionOptions?.Schema is not null and not Schema.DefaultSchema
+                ? connectionOptions.Schema
+                : options.Schema
+        );
         _connectionString = Ensure.NotEmptyString(Options.ConnectionString);
         GetEndOfStream    = $"SELECT MAX(StreamPosition) FROM {options.Schema}.Messages";
         GetEndOfAll       = $"SELECT MAX(GlobalPosition) FROM {options.Schema}.Messages";
