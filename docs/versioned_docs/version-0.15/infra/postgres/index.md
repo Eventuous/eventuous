@@ -71,10 +71,6 @@ builder.Services.AddEventStore<PostgresStore>();
 
 When that's done, Eventuous will use Postgres for persistence in command services.
 
-:::note
-At this moment, the Postgres event store implementation doesn't support stream truncation.
-:::
-
 ## Subscriptions
 
 Eventuous supports two types of subscriptions to Postgres: global and stream. The global subscription is a catch-up subscription, which means that it reads all events from the beginning of the event log. The stream subscription is also a catch-up subscription, but it only reads events from a specific stream.
