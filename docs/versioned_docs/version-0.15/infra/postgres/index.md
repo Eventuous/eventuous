@@ -70,13 +70,6 @@ builder.Services.AddEventStore<PostgresStore>();
 ```
 
 When that's done, Eventuous will use Postgres for persistence in command services.
-<<<<<<< HEAD
-=======
-
-:::note
-At this moment, the Postgres event store implementation doesn't support stream truncation.
-:::
->>>>>>> refs/heads/further-cleanup-services
 
 ## Subscriptions
 
@@ -180,49 +173,4 @@ builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStrea
 You only need to explicitly specify the subscription checkpoint store with `UseCheckpointStore` if your application uses different checkpoint stores for different subscriptions.
 At this moment, there is no way to use different checkpoint store options for each subscription in the same application, they will all use the same `PostgresCheckpointStoreOptions`.
 :::
-Eventuous supports Postgres as an event store and also allows subscribing to the global event log and to individual streams using catch-up subscriptions.
-Before using Postgres as an event store, you need to register the Postgres-based event store implementation.
-For that to work, you'd also need to register a Postgres data source, which is used to create connections to the database.
-Eventuous provides a few overloads for `AddEventuousPostgres` registration extension to do that.
 
-One way to register the data source is to provide a connection string and, optionally, the schema name:
-builder.Services.AddEventuousPostgres(connectionString, "mySchema");
-If the schema name is not provided, the default schema name (`eventuous`) will be used.
-Another way to register the data source is by using configuration options. For example, you can add the following to the settings file:
-```json title="appSettings.json"
-    "Schema": "mySchema",
-    "ConnectionString": "Host=localhost;Username=postgres;Password=secret;Database=mydb;",
-    "InitializeDatabase": true
-
-Then, use the configuration section to register the data source:
-builder.Services.AddEventuousPostgres(
-The `InitializeDatabase` setting tells Eventuous if it needs to create the schema. If you create the schema in a separate migration application, set this setting to `false`. If the schema cannot be found, and the `InitializeDatabase` setting is set to `false`, the application will fail to start.
-
-Next, you need to register the Postgres event store:
-```csharp
-builder.Services.AddEventStore<PostgresStore>();
-```
-
-When that's done, Eventuous will use Postgres for persistence in command services.
-
-:::note
-At this moment, the Postgres event store implementation doesn't support stream truncation.
-:::
-Both subscription types use continuous polling to check for new events. We don't use the notification feature of Postgres.
-As subscriptions use a Postgres data source for opening the connection, there's no need to register additional dependencies apart from calling `AddEventuousPostgres` as described in [event persistence](#event-persistence) section above.
-
-When using the Postgres checkpoint store, you can register it using a dedicated extension function:
-
-```csharp
-builder.Services.AddPostgresCheckpointStore();
-```
-
-This registration function will use the schema name provided when you register the data source using `AddEventuousPostgres`.
-
-
-:::note
-You only need to explicitly specify the subscription checkpoint store with `UseCheckpointStore` if your application uses different checkpoint stores for different subscriptions.
-At this moment, there is no way to use different checkpoint store options for each subscription in the same application, they will all use the same `PostgresCheckpointStoreOptions`.
-:::
-
-Note that the `insert` operation in the projection is not idempotent, so if the event is processed twice because there was a failure, the projector will throw an exception. It would not be an issue when the subscription uses the default setting that tells it not to stop when the handler fails. If you want to ensure that failures force the subscription to throw, you can change the subscription option `ThroOnError` to `true`, and make the operation idempotent by using "insert or update".
