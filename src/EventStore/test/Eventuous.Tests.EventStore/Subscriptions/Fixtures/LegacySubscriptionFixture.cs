@@ -6,8 +6,6 @@ using Eventuous.Tests.Subscriptions.Base;
 namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
 public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
-    static LegacySubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
-
     protected readonly Fixture Auto = new();
 
     protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
@@ -31,6 +29,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
         LoggerFactory = TestHelpers.Logging.GetLoggerFactory(output, logLevel);
         Handler       = handler;
         Log           = LoggerFactory.CreateLogger(GetType());
+        StoreFixture.TypeMapper.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
     }
 
     protected ValueTask Start() => Subscription.SubscribeWithLog(Log);

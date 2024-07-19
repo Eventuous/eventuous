@@ -20,7 +20,7 @@ public static class ProducerExtensions {
     /// <typeparam name="TMessage">Message typ</typeparam>
     /// <returns></returns>
     public static Task Produce<TMessage>(
-            this IProducer  producer,
+            this IProducer       producer,
             StreamName           stream,
             TMessage             message,
             Metadata?            metadata,
@@ -55,14 +55,14 @@ public static class ProducerExtensions {
     /// <returns></returns>
     public static Task Produce<TProduceOptions, TMessage>(
             this IProducer<TProduceOptions> producer,
-            StreamName                           stream,
-            TMessage                             message,
-            Metadata?                            metadata,
-            TProduceOptions?                     options           = null,
-            Metadata?                            additionalHeaders = null,
-            AcknowledgeProduce?                  onAck             = null,
-            ReportFailedProduce?                 onNack            = null,
-            CancellationToken                    cancellationToken = default
+            StreamName                      stream,
+            TMessage                        message,
+            Metadata?                       metadata,
+            TProduceOptions?                options           = null,
+            Metadata?                       additionalHeaders = null,
+            AcknowledgeProduce?             onAck             = null,
+            ReportFailedProduce?            onNack            = null,
+            CancellationToken               cancellationToken = default
         ) where TMessage : class where TProduceOptions : class {
         var producedMessages = Ensure.NotNull(message) is IEnumerable<object> collection
             ? ConvertMany(collection, metadata, additionalHeaders, onAck, onNack)
@@ -80,12 +80,12 @@ public static class ProducerExtensions {
         )
         => messages.Select(x => new ProducedMessage(x, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack });
 
-    static IEnumerable<ProducedMessage> ConvertOne(
+    static ProducedMessage[] ConvertOne(
             object               message,
             Metadata?            metadata,
             Metadata?            additionalHeaders,
             AcknowledgeProduce?  onAck,
             ReportFailedProduce? onNack
         )
-        => new[] { new ProducedMessage(message, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack } };
+        => [new ProducedMessage(message, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack }];
 }

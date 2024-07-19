@@ -11,61 +11,6 @@ namespace Microsoft.Extensions.DependencyInjection;
 [PublicAPI]
 public static partial class ServiceCollectionExtensions {
     /// <summary>
-    /// Registers the aggregate store using the supplied <see cref="IEventStore"/> type
-    /// </summary>
-    /// <param name="services"></param>
-    /// <typeparam name="T">Implementation of <see cref="IEventStore"/></typeparam>
-    /// <returns></returns>
-    public static IServiceCollection AddAggregateStore<T>(this IServiceCollection services) where T : class, IEventStore {
-        services.TryAddSingleton<AggregateFactoryRegistry>();
-        services.TryAddSingleton<T>();
-
-        if (EventuousDiagnostics.Enabled) { services.TryAddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>())); }
-        else { services.TryAddSingleton<IEventStore>(sp => sp.GetRequiredService<T>()); }
-
-        services.AddSingleton<IAggregateStore, AggregateStore>();
-
-        return services;
-    }
-
-    /// <summary>
-    /// Registers the aggregate store using the supplied <see cref="IEventStore"/> type
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="getService">Function to create an instance of <see cref="IEventStore"/></param>
-    /// <typeparam name="T">Implementation of <see cref="IEventStore"/></typeparam>
-    /// <returns></returns>
-    public static IServiceCollection AddAggregateStore<T>(this IServiceCollection services, Func<IServiceProvider, T> getService) where T : class, IEventStore {
-        services.TryAddSingleton<AggregateFactoryRegistry>();
-
-        if (EventuousDiagnostics.Enabled) {
-            services.TryAddSingleton(getService);
-            services.TryAddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>()));
-        }
-        else { services.TryAddSingleton<IEventStore>(getService); }
-
-        services.AddSingleton<IAggregateStore, AggregateStore>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddAggregateStore<T, TArchive>(this IServiceCollection services)
-        where T : class, IEventStore where TArchive : class, IEventReader {
-        services.TryAddSingleton<AggregateFactoryRegistry>();
-
-        if (EventuousDiagnostics.Enabled) {
-            services.TryAddSingleton<T>();
-            services.TryAddSingleton(sp => TracedEventStore.Trace(sp.GetRequiredService<T>()));
-        }
-        else { services.TryAddSingleton<IEventStore, T>(); }
-
-        services.TryAddSingleton<TArchive>();
-        services.AddSingleton<IAggregateStore, AggregateStore<TArchive>>();
-
-        return services;
-    }
-
-    /// <summary>
     /// Registers the event reader
     /// </summary>
     /// <param name="services"></param>
@@ -169,6 +114,53 @@ public static partial class ServiceCollectionExtensions {
         else {
             services.TryAddSingleton<IEventWriter>(getService);
             services.TryAddSingleton<IEventReader>(getService);
+        }
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers an event store service as reader, writer, and event store
+    /// </summary>
+    /// <param name="services"></param>
+    /// <typeparam name="T">Implementation of <see cref="IEventStore"/> </typeparam>
+    /// <returns></returns>
+    public static IServiceCollection AddEventStore<T>(this IServiceCollection services) where T : class, IEventStore {
+        if (EventuousDiagnostics.Enabled) {
+            services.TryAddSingleton<T>();
+            services.AddSingleton(sp => new TracedEventStore(sp.GetRequiredService<T>()));
+            services.AddSingleton<IEventStore>(sp => sp.GetRequiredService<TracedEventStore>());
+            services.AddSingleton<IEventReader>(sp => sp.GetRequiredService<TracedEventStore>());
+            services.AddSingleton<IEventWriter>(sp => sp.GetRequiredService<TracedEventStore>());
+        }
+        else {
+            services.TryAddSingleton<IEventReader, T>();
+            services.TryAddSingleton<IEventWriter, T>();
+            services.TryAddSingleton<IEventStore, T>();
+        }
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers an event store service as reader, writer, and event store
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="getService">Function to create an instance of the class, which implements <see cref="IEventStore"/></param>
+    /// <typeparam name="T">Implementation of <see cref="IEventStore"/></typeparam>
+    /// <returns></returns>
+    public static IServiceCollection AddEventStore<T>(this IServiceCollection services, Func<IServiceProvider, T> getService) where T : class, IEventStore {
+        if (EventuousDiagnostics.Enabled) {
+            services.TryAddSingleton(getService);
+            services.AddSingleton(sp => new TracedEventStore(sp.GetRequiredService<T>()));
+            services.AddSingleton<IEventStore>(sp => sp.GetRequiredService<TracedEventStore>());
+            services.AddSingleton<IEventReader>(sp => sp.GetRequiredService<TracedEventStore>());
+            services.AddSingleton<IEventWriter>(sp => sp.GetRequiredService<TracedEventStore>());
+        }
+        else {
+            services.TryAddSingleton<IEventWriter>(getService);
+            services.TryAddSingleton<IEventReader>(getService);
+            services.TryAddSingleton<IEventStore>(getService);
         }
 
         return services;

@@ -6,13 +6,17 @@ sidebar_position: 2
 
 ## Event-sourced state
 
-Eventuous has an abstraction for event-sourced state. The state can be used both as an aggregate state, or independently when using functions to handle commands and produce new events using the [functional service](../application/func-service.md). Moving along, we consider event-based state transitions as part of the state handling. Therefore, the state object needs to expose an API to receive events and produce a new instance of itself (remember that the state is immutable).
+Eventuous has an abstraction for event-sourced state. The state can be used both as an aggregate state, or independently when using functions to handle commands and produce new events using the [functional service](../application/func-service.mdx). Moving along, we consider event-based state transitions as part of the state handling. Therefore, the state object needs to expose an API to receive events and produce a new instance of itself (remember that the state is immutable).
 
 To support state immutability, `State` is an abstract _record_, not class. Therefore, it supports immutability out of the box and supports `with` syntax to make state transitions easier.
 
 A record, which inherits from `State` needs to implement a single function called `When`. It gets an event as an argument and returns the new state instance. There are two ways to define how events mutate the state, described below.
 
 ### Using pattern matching
+
+:::tip Use explicit handlers
+Eventuous performs additional checks if event types, which are handled by the `When` function, are registered in the type map. If you use pattern matching, the check is impossible to perform, and the application can crash if the event is not registered in the type map. Therefore, we advise to use explicit handlers as described [below](#using-explicit-handlers).
+:::
 
 Using pattern matching, you can define how events mutate the state with functions that return the new `State` instance.
 
@@ -37,13 +41,9 @@ Although it is possible to use pattern matching, we recommend using explicit han
 
 ### Using explicit handlers
 
-:::tip Use explicit handlers
-Eventuous performs additional checks if event types, which are handled by the `When` function, are registered in the type map. If you use pattern matching, the check is impossible to perform, and the application can crash if the event is not registered in the type map.
-:::
-
 You can also use explicit event handlers, where you define one function per event, and register them in the constructor. In that case, there's no need to override the `When` function.
 
-The syntax is similar to registered command handlers for the [command service](../application):
+The syntax is simple, allowing you to add separate functions for applying each event type to the state:
 
 ```csharp title="BookingState.cs"
 public record BookingState : State<BookingState> {
@@ -65,26 +65,23 @@ public record BookingState : State<BookingState> {
         On<BookingPaymentRegistered>(
             (state, paid) => state with {
                 AmountPaid = state.AmountPaid + new Money(paid.AmountPaid),
-                _registeredPayments = state._registeredPayments.Add(
+                _payments = state._payments.Add(
                     new Payment(paid.PaymentId, new Money(paid.AmountPaid))
                 )
             }
         );
     }
 
-    ImmutableArray<Payment> _registeredPayments = ImmutableArray<Payment>.Empty;
+    ImmutableArray<Payment> _payments = ImmutableArray<Payment>.Empty;
 
     public Money Price      { get; private init; }
     public Money AmountPaid { get; private init; }
 
-    public bool IsFullyPaid()
-        => AmountPaid.Amount >= Price.Amount;
+    public bool IsFullyPaid() => AmountPaid.Amount >= Price.Amount;
 
-    public bool IsOverpaid()
-        => AmountPaid.Amount > Price.Amount;
+    public bool IsOverpaid() => AmountPaid.Amount > Price.Amount;
 
-    public bool HasPayment(string paymentId)
-        => _registeredPayments.Any(p => p.PaymentId == paymentId);
+    public bool HasPayment(string paymentId) => _payments.Any(p => p.PaymentId == paymentId);
 
     record Payment(string PaymentId, Money Amount);
 }
@@ -112,4 +109,4 @@ public record BookingState<BookingId> {
 }
 ```
 
-The `BookingState` type will have a property named `Id` of type `BookingId`. You don't need to set it manually as it will be provided when the state object is recreated from events by the [command service](../application/app-service.md).
+The `BookingState` type will have a property named `Id` of type `BookingId`. You don't need to set it manually as it will be provided when the state object is recreated from events by the command service.

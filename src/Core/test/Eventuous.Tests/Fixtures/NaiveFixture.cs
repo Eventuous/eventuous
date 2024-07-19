@@ -4,14 +4,8 @@ using Sut.App;
 using Testing;
 
 public class NaiveFixture {
-    protected IEventStore     EventStore     { get; }
-    protected IAggregateStore AggregateStore { get; }
-    protected Fixture         Auto           { get; } = new();
-
-    protected NaiveFixture() {
-        EventStore     = new InMemoryEventStore();
-        AggregateStore = new AggregateStore(EventStore);
-    }
+    protected IEventStore EventStore { get; } = new InMemoryEventStore();
+    protected Fixture     Auto       { get; } = new();
 
     protected Commands.BookRoom CreateBookRoomCommand() => new(
         Auto.Create<string>(),

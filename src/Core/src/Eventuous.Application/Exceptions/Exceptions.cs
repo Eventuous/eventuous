@@ -14,5 +14,5 @@ public static class Exceptions {
 
     public class DuplicateTypeException<T>() : ArgumentException(DuplicateTypeKey<T>(), typeof(T).FullName);
 
-    public class CommandMappingException<TIn, TOut>() : Exception(MissingCommandMap<TIn, TOut>());
+    public class MessageMappingException<TIn, TOut>() : Exception(MissingCommandMap<TIn, TOut>());
 }

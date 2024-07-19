@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Runtime.Serialization;
 using System.Text;
 using Eventuous.Diagnostics;
+using static Eventuous.DeserializationResult;
 
 namespace Eventuous.Sql.Base;
 
@@ -44,9 +45,10 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     /// </summary>
     /// <param name="connection">Pre-opened connection</param>
     /// <param name="stream">Stream name</param>
+    /// <param name="start">Starting position to read from</param>
     /// <param name="count">Number of events to read</param>
     /// <returns></returns>
-    protected abstract DbCommand GetReadBackwardsCommand(TConnection connection, StreamName stream, int count);
+    protected abstract DbCommand GetReadBackwardsCommand(TConnection connection, StreamName stream, StreamReadPosition start, int count);
 
     /// <summary>
     /// Get command to append events to the stream
@@ -73,6 +75,20 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     /// <returns>true if stream exists, otherwise false</returns>
     protected abstract DbCommand GetStreamExistsCommand(TConnection connection, StreamName stream);
 
+    /// <summary>
+    /// Get command to truncate stream at a given position
+    /// </summary>
+    /// <param name="connection">Pre-opened connection</param>
+    /// <param name="stream">Stream name</param>
+    /// <param name="expectedVersion">Expected current stream version</param>
+    /// <param name="position">Truncation position</param>
+    protected abstract DbCommand GetTruncateCommand(
+            TConnection            connection,
+            StreamName             stream,
+            ExpectedStreamVersion  expectedVersion,
+            StreamTruncatePosition position
+        );
+
     /// <inheritdoc />
     public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
@@ -82,9 +98,9 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     }
 
     /// <inheritdoc />
-    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
-        await using var cmd        = GetReadBackwardsCommand(connection, stream, count);
+        await using var cmd        = GetReadBackwardsCommand(connection, stream, start, count);
 
         return await ReadInternal(cmd, stream, cancellationToken).NoContext();
     }
@@ -109,7 +125,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         return deserialized switch {
             SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
             FailedToDeserialize failed       => throw new SerializationException($"Can't deserialize {evt.MessageType}: {failed.Error}"),
-            _                                => throw new Exception("Unknown deserialization result")
+            _                                => throw new("Unknown deserialization result")
         };
 
         StreamEvent AsStreamEvent(object payload) => new(evt.MessageId, payload, meta ?? new Metadata(), ContentType, evt.StreamPosition);
@@ -117,15 +133,12 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
 
     /// <inheritdoc />
     public async Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         ) {
-        var persistedEvents = events
-            .Where(x => x.Payload != null)
-            .Select(Convert)
-            .ToArray();
+        var persistedEvents = events.Where(x => x.Payload != null).Select(Convert).ToArray();
 
         await using var connection  = await OpenConnection(cancellationToken).NoContext();
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken).NoContext();
@@ -136,7 +149,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
 
             await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext()) {
                 await reader.ReadAsync(cancellationToken).NoContext();
-                result = new AppendEventsResult((ulong)reader.GetInt64(1), reader.GetInt32(0));
+                result = new((ulong)reader.GetInt64(1), reader.GetInt32(0));
             }
 
             await transaction.CommitAsync(cancellationToken).NoContext();
@@ -149,11 +162,11 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
             throw IsConflict(e) ? new AppendToStreamException(stream, e) : e;
         }
 
-        NewPersistedEvent Convert(StreamEvent evt) {
+        NewPersistedEvent Convert(NewStreamEvent evt) {
             var data = _serializer.SerializeEvent(evt.Payload!);
             var meta = _metaSerializer.Serialize(evt.Metadata);
 
-            return new NewPersistedEvent(evt.Id, data.EventType, AsString(data.Payload), AsString(meta));
+            return new(evt.Id, data.EventType, AsString(data.Payload), AsString(meta));
         }
 
         string AsString(ReadOnlySpan<byte> bytes) => Encoding.UTF8.GetString(bytes);
@@ -189,13 +202,16 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     protected abstract bool IsConflict(Exception exception);
 
     /// <inheritdoc />
-    public Task TruncateStream(
+    public async Task TruncateStream(
             StreamName             stream,
             StreamTruncatePosition truncatePosition,
             ExpectedStreamVersion  expectedVersion,
             CancellationToken      cancellationToken
         ) {
-        throw new NotImplementedException();
+        await using var connection = await OpenConnection(cancellationToken).NoContext();
+        await using var cmd        = GetTruncateCommand(connection, stream, expectedVersion, truncatePosition);
+
+        await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
     }
 }
 

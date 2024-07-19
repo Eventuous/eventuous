@@ -1,7 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
@@ -31,7 +30,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// Creates a Google PubSub subscription service
     /// </summary>
     /// <param name="projectId">GCP project ID</param>
-    /// <param name="topicId">Topic where the subscription receives messages rom</param>
+    /// <param name="topicId">Topic where the subscription receives messages from</param>
     /// <param name="subscriptionId">Google PubSub subscription ID (within the project), which must already exist</param>
     /// <param name="consumePipe">Consumer pipeline</param>
     /// <param name="loggerFactory">Logger factory instance</param>
@@ -51,11 +50,11 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
                 SubscriptionId         = subscriptionId,
                 ProjectId              = projectId,
                 TopicId                = topicId,
-                EventSerializer        = eventSerializer,
                 ConfigureClientBuilder = configureClient
             },
             consumePipe,
-            loggerFactory
+            loggerFactory,
+            eventSerializer
         ) { }
 
     /// <summary>
@@ -64,8 +63,14 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     /// <param name="options">Subscription options <see cref="PubSubSubscriptionOptions"/></param>
     /// <param name="consumePipe">Consumer pipeline</param>
     /// <param name="loggerFactory">Logger factory instance</param>
-    public GooglePubSubSubscription(PubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
-        : base(options, consumePipe, loggerFactory) {
+    /// <param name="eventSerializer">Event serializer</param>
+    public GooglePubSubSubscription(
+            PubSubSubscriptionOptions options,
+            ConsumePipe               consumePipe,
+            ILoggerFactory?           loggerFactory,
+            IEventSerializer?         eventSerializer
+        )
+        : base(options, consumePipe, loggerFactory, eventSerializer) {
         _failureHandler   = Ensure.NotNull(options).FailureHandler ?? DefaultEventProcessingErrorHandler;
         _subscriptionName = SubscriptionName.FromProjectSubscription(Ensure.NotEmptyString(options.ProjectId), Ensure.NotEmptyString(options.SubscriptionId));
         _topicName        = TopicName.FromProjectTopic(options.ProjectId, Ensure.NotEmptyString(options.TopicId));
@@ -90,7 +95,6 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
         return;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         async Task<Reply> Handle(PubsubMessage msg, CancellationToken ct) {
             var eventType   = msg.Attributes[Options.Attributes.EventType];
             var contentType = msg.Attributes[Options.Attributes.ContentType];
@@ -122,7 +126,6 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
             } catch (Exception ex) { return await _failureHandler(_client, msg, ex).NoContext(); }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
     }
 

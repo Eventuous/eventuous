@@ -5,7 +5,7 @@ description: "The concept of read models"
 
 ## Queries in event-sourced systems
 
-As described [previously](../domain/aggregate.md), the domain model is using [events](../domain/domain-events.md) as the _source of truth_. These events represent individual and atomic state transitions of the system. We add events to [event store](../persistence/event-store.md) one by one, in append-only fashion. When restoring the state of an aggregate, we read all the events from a single stream, and apply those events to the aggregate state. When all events are applied, the state is fully restored. This process takes nanoseconds to complete, so it's not really a burden.
+As described [previously](../domain/aggregate.md), the domain model is using [events](../domain/domain-events.md) as the _source of truth_. These events represent individual and atomic state transitions of the system. We add events to [event store](../persistence/event-store.mdx) one by one, in append-only fashion. When restoring the state of an aggregate, we read all the events from a single stream, and apply those events to the aggregate state. When all events are applied, the state is fully restored. This process takes nanoseconds to complete, so it's not really a burden.
 
 However, when all you have in your database is events, you can hardly query the system state for more than one object at a time. The only query that the event store supports is to get one event stream using the aggregate id. In many cases, though, we need to query using some other attribute of the aggregate state, and we expect more than one result. Many see it as a major downside of Event Sourcing, but, in fact, it's not a big problem.
 
@@ -123,7 +123,7 @@ In some cases, you have a requirement that the query model needs to be updated _
 
 ### Stop forgetting things
 
-Not all user interfaces are built stateless. With the rise of single-page application frameworks such as React and VueJS, the user's browser holds quite a lot of state. That state can be used for remembering things. Think about that form again, haven't you got the [new entity state](../application/app-service.md#result) from Eventuous after calling the HTTP API? Why can't it be used to update the existing client-side application state instead of querying it from the server again? When using state management tools like Redux or VueX you can even propagate events received in the `Result` object to the client-side application state using the store reducers (which are, effectively, event handlers). This way, you can even improve the cohesiveness of the whole system by letting its front- and back-end to use the same events, using the same Ubiquitous Language.
+Not all user interfaces are built stateless. With the rise of single-page application frameworks such as React and VueJS, the user's browser holds quite a lot of state. That state can be used for remembering things. Think about that form again, haven't you got the [new entity state](../application/app-service.mdx#result) from Eventuous after calling the HTTP API? Why can't it be used to update the existing client-side application state instead of querying it from the server again? When using state management tools like Redux or VueX you can even propagate events received in the `Result` object to the client-side application state using the store reducers (which are, effectively, event handlers). This way, you can even improve the cohesiveness of the whole system by letting its front- and back-end to use the same events, using the same Ubiquitous Language.
 
 ### Wait
 

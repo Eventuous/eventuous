@@ -1,24 +1,32 @@
+using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 
 namespace Eventuous.Tests.Persistence.Base.Store;
 
-public abstract class StoreOtherOpsTests<T>(T fixture) : IClassFixture<T> where T : StoreFixtureBase {
+public abstract class StoreOtherOpsTests<T> : IClassFixture<T> where T : StoreFixtureBase {
+    readonly T _fixture;
+
+    protected StoreOtherOpsTests(T fixture) {
+        _fixture = fixture;
+        fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
+    }
+
     [Fact]
     [Trait("Category", "Store")]
     public async Task StreamShouldExist() {
-        var evt        = fixture.CreateEvent();
-        var streamName = fixture.GetStreamName();
-        await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
+        var evt        = _fixture.CreateEvent();
+        var streamName = _fixture.GetStreamName();
+        await _fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
-        var exists = await fixture.EventStore.StreamExists(streamName, default);
+        var exists = await _fixture.EventStore.StreamExists(streamName, default);
         exists.Should().BeTrue();
     }
 
     [Fact]
     [Trait("Category", "Store")]
     public async Task StreamShouldNotExist() {
-        var streamName = fixture.GetStreamName();
-        var exists     = await fixture.EventStore.StreamExists(streamName, default);
+        var streamName = _fixture.GetStreamName();
+        var exists     = await _fixture.EventStore.StreamExists(streamName, default);
         exists.Should().BeFalse();
     }
 }

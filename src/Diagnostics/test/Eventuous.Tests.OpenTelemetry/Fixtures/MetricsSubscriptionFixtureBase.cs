@@ -22,8 +22,11 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     // ReSharper disable once StaticMemberInGenericType
     static readonly KeyValuePair<string, string> DefaultTag = new("test", "foo");
 
+    protected MetricsSubscriptionFixtureBase() {
+        TypeMapper.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    }
+
     static MetricsSubscriptionFixtureBase() {
-        TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
         EventuousDiagnostics.AddDefaultTag(DefaultTag.Key, DefaultTag.Value);
     }
 

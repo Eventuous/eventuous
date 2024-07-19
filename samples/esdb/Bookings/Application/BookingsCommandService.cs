@@ -8,7 +8,7 @@ using static Bookings.Application.BookingCommands;
 namespace Bookings.Application;
 
 public class BookingsCommandService : CommandService<Booking, BookingState, BookingId> {
-    public BookingsCommandService(IAggregateStore store, Services.IsRoomAvailable isRoomAvailable) : base(store) {
+    public BookingsCommandService(IEventStore store, Services.IsRoomAvailable isRoomAvailable) : base(store) {
         On<BookRoom>()
             .InState(ExpectedState.New)
             .GetId(cmd => new BookingId(cmd.BookingId))

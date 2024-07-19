@@ -1,7 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.CompilerServices;
 using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Gateway;
@@ -43,7 +42,6 @@ class GatewayHandler<TProduceOptions>(
 
         return awaitProduce ? EventHandlingStatus.Success : EventHandlingStatus.Pending;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Task ProduceToStream(StreamName streamName, IEnumerable<GatewayMessage<TProduceOptions>> toProduce)
             => toProduce.Select(
                     x => producer.Produce(

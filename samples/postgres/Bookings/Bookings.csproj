@@ -24,7 +24,7 @@
     <ProjectReference Include="$(SrcRoot)\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
     <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
     <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj" />
+    <ProjectReference Include="..\..\..\src\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
     <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
     <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
     <ProjectReference Include="$(SrcRoot)\Postgres\src\Eventuous.Postgresql\Eventuous.Postgresql.csproj" />

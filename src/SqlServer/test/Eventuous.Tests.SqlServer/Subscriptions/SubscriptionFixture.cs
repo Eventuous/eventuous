@@ -1,4 +1,5 @@
 using Eventuous.SqlServer;
+using Eventuous.SqlServer.Projections;
 using Eventuous.SqlServer.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Tests.SqlServer.Fixtures;
@@ -30,7 +31,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();
 
     protected override SqlServerCheckpointStore GetCheckpointStore(IServiceProvider sp)
-        => new(sp.GetRequiredService<SqlServerCheckpointStoreOptions>());
+        => sp.GetRequiredService<SqlServerCheckpointStore>();
 
     protected override void ConfigureSubscription(TSubscriptionOptions options) {
         options.Schema           = SchemaName;
@@ -41,23 +42,22 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     protected override void SetupServices(IServiceCollection services) {
         base.SetupServices(services);
         services.AddSingleton(new SchemaInfo(SchemaName));
-        services.AddSingleton(new SubscriptionOptions { ConnectionString = Container.GetConnectionString() });
         services.AddEventuousSqlServer(Container.GetConnectionString(), SchemaName, true);
-        services.AddAggregateStore<SqlServerStore>();
-        services.AddSingleton(new SqlServerCheckpointStoreOptions { Schema = SchemaName, ConnectionString = Container.GetConnectionString() });
+        services.AddEventStore<SqlServerStore>();
+        services.AddSqlServerCheckpointStore();
         services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
         configureServices?.Invoke(services);
     }
 
     protected override void GetDependencies(IServiceProvider provider) {
         base.GetDependencies(provider);
-        SubscriptionOptions = provider.GetRequiredService<SubscriptionOptions>();
+        ConnectionOptions = provider.GetRequiredService<SqlServerConnectionOptions>();
 
-        if (SubscriptionOptions is null) {
+        if (ConnectionOptions is null) {
             throw new InvalidOperationException("Subscription options not found");
         }
 
-        ConnectionString = SubscriptionOptions.ConnectionString ?? throw new InvalidOperationException("Connection string not found");
+        ConnectionString = ConnectionOptions.ConnectionString ?? throw new InvalidOperationException("Connection string not found");
     }
 
     public override async Task<ulong> GetLastPosition() {
@@ -69,11 +69,9 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         return (ulong)(result is DBNull ? 0 : (long)result!);
     }
 
-    public SubscriptionOptions SubscriptionOptions { get; private set; } = null!;
+    SqlServerConnectionOptions ConnectionOptions { get; set; } = null!;
 
     public string ConnectionString { get; private set; } = null!;
 }
 
 public record SchemaInfo(string Schema);
-
-public record SubscriptionOptions : SqlServerSubscriptionBaseOptions;

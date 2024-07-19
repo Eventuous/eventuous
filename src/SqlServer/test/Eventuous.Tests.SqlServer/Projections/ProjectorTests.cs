@@ -52,7 +52,6 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
             await reader.ReadAsync();
             reader["CheckinDate"].Should().Be(command.CheckIn.ToDateTimeUnspecified());
             reader["Price"].Should().Be(command.Price);
-            
         }
     }
 
@@ -72,21 +71,14 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
 
         foreach (var command in commands) {
             var evt         = ToEvent(command);
-            var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
-
-            await _fixture.EventStore.AppendEvents(
-                StreamName.For<Booking>(command.BookingId),
-                ExpectedStreamVersion.NoStream,
-                [ streamEvent ],
-                default
-            );
+            var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, new());
+            await _fixture.EventStore.AppendEvents(StreamName.For<Booking>(command.BookingId), ExpectedStreamVersion.NoStream, [streamEvent], default);
         }
 
         return commands;
     }
 
-    static BookingEvents.BookingImported ToEvent(Commands.ImportBooking cmd)
-        => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
+    static BookingEvents.BookingImported ToEvent(Commands.ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     public Task InitializeAsync() => _fixture.InitializeAsync();
 
@@ -94,8 +86,12 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
 }
 
 public class TestProjector : SqlServerProjector {
-    public TestProjector(SubscriptionOptions options, SchemaInfo schemaInfo) : base(options) {
-        var insert = $"INSERT INTO {schemaInfo.Schema}.Bookings (BookingId, CheckinDate, Price) values (@BookingId, @CheckinDate, @Price)";
+    public TestProjector(SqlServerConnectionOptions options, SchemaInfo schemaInfo) : base(options) {
+        var insert = $"""
+                      INSERT INTO {schemaInfo.Schema}.Bookings 
+                      (BookingId, CheckinDate, Price) 
+                      values (@BookingId, @CheckinDate, @Price)
+                      """;
 
         On<BookingEvents.BookingImported>(
             (connection, ctx) =>

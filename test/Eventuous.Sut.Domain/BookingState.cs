@@ -5,13 +5,14 @@ namespace Eventuous.Sut.Domain;
 
 public record BookingState : State<BookingState, BookingId> {
     public BookingState() {
-        On<RoomBooked>((state,      booked) => state with { Price = new Money(booked.Price), AmountPaid = new Money(0) });
-        On<BookingImported>((state, imported) => state with { Price = new Money(imported.Price), AmountPaid = new Money(0) });
+        On<RoomBooked>((state, booked) => state with { Price = new(booked.Price), AmountPaid = new(0) });
+
+        On<BookingImported>((state, imported) => state with { Price = new(imported.Price), AmountPaid = new(0) });
 
         On<BookingPaymentRegistered>(
             (state, paid) => state with {
                 AmountPaid = state.AmountPaid + new Money(paid.AmountPaid),
-                _registeredPayments = state._registeredPayments.Add(new Payment(paid.PaymentId, new Money(paid.AmountPaid)))
+                _registeredPayments = state._registeredPayments.Add(new(paid.PaymentId, new Money(paid.AmountPaid)))
             }
         );
     }

@@ -1,10 +1,11 @@
 using Bookings.Domain;
 using Bookings.Domain.Bookings;
 using Eventuous;
-using Eventuous.AspNetCore.Web;
+using Eventuous.Extensions.AspNetCore;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using static Bookings.Application.BookingCommands;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Bookings.HttpApi.Bookings;
@@ -21,24 +22,23 @@ public class CommandApiWithCustomResult(ICommandService<BookingState> service) :
         => Handle(cmd, cancellationToken);
 
     protected override ActionResult AsActionResult(Result<BookingState> result)
-        => result switch {
-            ErrorResult<BookingState> error => error.Exception switch {
-                ValidationException => MapValidationExceptionAsValidationProblemDetails(error),
-                _                   => base.AsActionResult(result)
-            },
-            OkResult<BookingState> { State: not null } okResult => new OkObjectResult(
+        => result.Match(
+            ok => new OkObjectResult(
                 new CustomBookingResult {
-                    GuestId         = okResult.State.GuestId,
-                    RoomId          = okResult.State.RoomId,
+                    GuestId         = ok.State.GuestId,
+                    RoomId          = ok.State.RoomId,
                     CustomPropertyA = "Some custom property",
                     CustomPropertyB = "Another custom property",
                     CustomPropertyC = "Yet another custom property"
                 }
             ),
-            _ => base.AsActionResult(result)
-        };
+            error => error.Exception switch {
+                ValidationException => MapValidationExceptionAsValidationProblemDetails(error),
+                _                   => base.AsActionResult(result)
+            }
+        );
 
-    static BadRequestObjectResult MapValidationExceptionAsValidationProblemDetails(ErrorResult<BookingState> error) {
+    static BadRequestObjectResult MapValidationExceptionAsValidationProblemDetails(Result<BookingState>.Error error) {
         if (error.Exception is not ValidationException exception) {
             throw new ArgumentNullException(nameof(error), "Exception in result is not of the type `ValidationException`. Unable to map validation result.");
         }

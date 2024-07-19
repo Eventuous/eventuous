@@ -18,12 +18,16 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
     /// <param name="options">Persistent subscription options <see cref="StreamPersistentSubscriptionOptions"/></param>
     /// <param name="consumePipe">Consume pipe, provided automatically</param>
     /// <param name="loggerFactory">Optional logger factory</param>
+    /// <param name="eventSerializer">Event serializer</param>
+    /// <param name="metaSerializer">Metadata serializer</param>
     public StreamPersistentSubscription(
             EventStoreClient                    eventStoreClient,
             StreamPersistentSubscriptionOptions options,
             ConsumePipe                         consumePipe,
-            ILoggerFactory?                     loggerFactory
-        ) : base(eventStoreClient, options, consumePipe, loggerFactory)
+            ILoggerFactory?                     loggerFactory = null,
+            IEventSerializer?                   eventSerializer = null,
+            IMetadataSerializer?                metaSerializer = null
+        ) : base(eventStoreClient, options, consumePipe, loggerFactory, eventSerializer, metaSerializer)
         => Ensure.NotEmptyString(options.StreamName);
 
     /// <summary>
@@ -33,12 +37,16 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
     /// <param name="options">Persistent subscription options <see cref="StreamPersistentSubscriptionOptions"/></param>
     /// <param name="consumePipe">Consume pipe, provided automatically</param>
     /// <param name="loggerFactory">Optional logger factory</param>
+    /// <param name="eventSerializer">Event serializer</param>
+    /// <param name="metaSerializer">Metadata serializer</param>
     public StreamPersistentSubscription(
             EventStorePersistentSubscriptionsClient eventStoreClient,
             StreamPersistentSubscriptionOptions     options,
             ConsumePipe                             consumePipe,
-            ILoggerFactory?                         loggerFactory
-        ) : base(eventStoreClient, options, consumePipe, loggerFactory)
+            ILoggerFactory?                         loggerFactory = null,
+            IEventSerializer?                       eventSerializer = null,
+            IMetadataSerializer?                    metaSerializer = null
+        ) : base(eventStoreClient, options, consumePipe, loggerFactory, eventSerializer, metaSerializer)
         => Ensure.NotEmptyString(options.StreamName);
 
     /// <summary>
@@ -62,13 +70,13 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
         ) : this(
         eventStoreClient,
         new() {
-            StreamName         = streamName,
-            SubscriptionId     = subscriptionId,
-            EventSerializer    = eventSerializer,
-            MetadataSerializer = metaSerializer
+            StreamName     = streamName,
+            SubscriptionId = subscriptionId
         },
         consumerPipe,
-        loggerFactory
+        loggerFactory,
+        eventSerializer,
+        metaSerializer
     ) { }
 
     /// <inheritdoc/>

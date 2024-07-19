@@ -8,11 +8,14 @@ using Testcontainers.EventStoreDb;
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
-public class SubscribeToAll(ITestOutputHelper outputHelper)
-    : SubscribeToAllBase<EventStoreDbContainer, AllStreamSubscription, AllStreamSubscriptionOptions, TestCheckpointStore>(
-        outputHelper,
-        new CatchUpSubscriptionFixture<AllStreamSubscription, AllStreamSubscriptionOptions, TestEventHandler>(_ => { }, outputHelper, new("$all"), false)
-    ) {
+public class SubscribeToAll : SubscribeToAllBase<EventStoreDbContainer, AllStreamSubscription, AllStreamSubscriptionOptions, TestCheckpointStore> {
+    public SubscribeToAll(ITestOutputHelper outputHelper)
+        : base(
+            outputHelper,
+            new CatchUpSubscriptionFixture<AllStreamSubscription, AllStreamSubscriptionOptions, TestEventHandler>(_ => { }, outputHelper, new("$all"), false)
+        ) {
+    }
+
     [Fact]
     public async Task Esdb_ShouldConsumeProducedEvents() {
         await ShouldConsumeProducedEvents();

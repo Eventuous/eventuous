@@ -20,12 +20,13 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
         _fixture       = fixture;
         _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug));
         _listener      = new(_loggerFactory);
+        _fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
     }
 
     [Fact]
     [Trait("Category", "Special cases")]
     public async Task StreamSubscriptionGetsDeletedEvents() {
-        var    service        = new BookingService(_fixture.AggregateStore);
+        var    service        = new BookingService(_fixture.EventStore);
         var    categoryStream = new StreamName("$ce-Booking");
         ulong? startPosition  = null;
 
@@ -54,13 +55,14 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
         var subscription = new StreamSubscription(
             _fixture.Client,
             new() {
-                StreamName     = categoryStream,
-                SubscriptionId = subscriptionId,
-                ResolveLinkTos = true,
-                ThrowOnError   = true
+                StreamName      = categoryStream,
+                SubscriptionId  = subscriptionId,
+                ResolveLinkTos  = true,
+                ThrowOnError    = true,
             },
             new NoOpCheckpointStore(startPosition),
-            new ConsumePipe().AddSystemEventsFilter().AddDefaultConsumer(handler)
+            new ConsumePipe().AddSystemEventsFilter().AddDefaultConsumer(handler),
+            eventSerializer: _fixture.Serializer
         );
 
         var log = _loggerFactory.CreateLogger("Test");

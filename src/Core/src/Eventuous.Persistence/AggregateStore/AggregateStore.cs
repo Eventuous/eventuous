@@ -3,8 +3,7 @@
 
 namespace Eventuous;
 
-using static Diagnostics.PersistenceEventSource;
-
+[Obsolete("Use IEventStore instead")]
 public class AggregateStore : IAggregateStore {
     readonly AmendEvent               _amendEvent;
     readonly AggregateFactoryRegistry _factoryRegistry;
@@ -30,42 +29,20 @@ public class AggregateStore : IAggregateStore {
         _eventWriter     = Ensure.NotNull(writer);
     }
 
-    /// <summary>
-    /// Creates a new instance of the default aggregate store
-    /// </summary>
-    /// <param name="eventStore">Event store implementation</param>
-    /// <param name="amendEvent"></param>
-    /// <param name="factoryRegistry"></param>
-    public AggregateStore(IEventStore eventStore, AmendEvent? amendEvent = null, AggregateFactoryRegistry? factoryRegistry = null)
-        : this(eventStore, eventStore, amendEvent, factoryRegistry) { }
+    /// <inheritdoc/>
+    [Obsolete("Use IEventWriter.StoreAggregate<TAggregate, TState> instead.")]
+    public Task<AppendEventsResult> Store<TAggregate, TState>(StreamName streamName, TAggregate aggregate, CancellationToken cancellationToken)
+        where TAggregate : Aggregate<TState> where TState : State<TState>, new()
+        => _eventWriter.StoreAggregate<TAggregate, TState>(streamName, aggregate, _amendEvent, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<AppendEventsResult> Store<T, TState>(StreamName streamName, T aggregate, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TState : State<TState>, new() => _eventWriter.Store<T, TState>(streamName, aggregate, _amendEvent, cancellationToken);
-
-    /// <inheritdoc/>
+    [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
     public Task<T> Load<T, TState>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate<TState> where TState : State<TState>, new()
-        => LoadInternal<T, TState>(streamName, true, cancellationToken);
+        => _eventReader.LoadAggregate<T, TState>(streamName, true, _factoryRegistry, cancellationToken);
 
     /// <inheritdoc/>
+    [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
     public Task<T> LoadOrNew<T, TState>(StreamName streamName, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TState : State<TState>, new() => LoadInternal<T, TState>(streamName, false, cancellationToken);
-
-    async Task<T> LoadInternal<T, TState>(StreamName streamName, bool failIfNotFound, CancellationToken cancellationToken)
-        where T : Aggregate<TState> where TState : State<TState>, new() {
-        var aggregate = _factoryRegistry.CreateInstance<T, TState>();
-
-        try {
-            var events = await _eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken);
-            aggregate.Load(events.Select(x => x.Payload));
-        } catch (StreamNotFound) when (!failIfNotFound) {
-            return aggregate;
-        } catch (Exception e) {
-            Log.UnableToLoadAggregate<T, TState>(streamName, e);
-
-            throw e is StreamNotFound ? new AggregateNotFoundException<T, TState>(streamName, e) : e;
-        }
-
-        return aggregate;
-    }
+        where T : Aggregate<TState> where TState : State<TState>, new()
+        => _eventReader.LoadAggregate<T, TState>(streamName, false, _factoryRegistry, cancellationToken);
 }

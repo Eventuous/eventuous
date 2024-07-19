@@ -29,13 +29,13 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
 
         var testEvents = Generate().ToList();
 
-        TypeMap.Instance.AddType<TestEvent>(TestEvent.TypeName);
-        TypeMap.Instance.AddType<UnknownEvent>("ignored");
+        TypeMapper.AddType<TestEvent>(TestEvent.TypeName);
+        TypeMapper.AddType<UnknownEvent>("ignored");
         Output?.WriteLine($"Producing to {_stream}");
         await _producer.Produce(_stream, testEvents, new Metadata());
         Output?.WriteLine("Produce complete");
 
-        TypeMap.Instance.RemoveType<UnknownEvent>();
+        TypeMapper.RemoveType<UnknownEvent>();
 
         var expected = testEvents.Where(x => x.GetType() == typeof(TestEvent)).ToList();
         await Start();

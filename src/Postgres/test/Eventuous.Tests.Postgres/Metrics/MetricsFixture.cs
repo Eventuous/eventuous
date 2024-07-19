@@ -21,7 +21,7 @@ public class MetricsFixture
 
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousPostgres(Container.GetConnectionString(), _schemaName, true);
-        services.AddAggregateStore<PostgresStore>();
+        services.AddEventStore<PostgresStore>();
         base.SetupServices(services);
     }
 }

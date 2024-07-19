@@ -18,7 +18,7 @@ public static class Registrations {
         };
         services.AddSingleton(connectionFactory);
         services.AddEventuousPostgres(configuration.GetSection("Postgres"));
-        services.AddAggregateStore<PostgresStore>();
+        services.AddEventStore<PostgresStore>();
         services.AddCommandService<CommandService, PaymentState>();
         services.AddSingleton(Mongo.ConfigureMongo(configuration));
         services.AddCheckpointStore<MongoCheckpointStore>();

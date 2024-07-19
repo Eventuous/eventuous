@@ -11,7 +11,7 @@ public sealed class StoreFixture : StoreFixtureBase<SqlEdgeContainer> {
 
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousSqlServer(Container.GetConnectionString(), _schemaName, true);
-        services.AddAggregateStore<SqlServerStore>();
+        services.AddEventStore<SqlServerStore>();
     }
 
     protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();

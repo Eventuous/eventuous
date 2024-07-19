@@ -24,40 +24,45 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     /// <summary>
     /// Creates RabbitMQ subscription service instance
     /// </summary>
-    /// <param name="connectionFactory"></param>
-    /// <param name="options"></param>
-    /// <param name="consumePipe"></param>
-    /// <param name="loggerFactory"></param>
+    /// <param name="connectionFactory">RabbitMQ connection factory</param>
+    /// <param name="options">Subscription options</param>
+    /// <param name="consumePipe">Pre-constructed consume pipe</param>
+    /// <param name="loggerFactory">Logger factory</param>
+    /// <param name="eventSerializer">Event serializer</param>
     public RabbitMqSubscription(
             ConnectionFactory                     connectionFactory,
             IOptions<RabbitMqSubscriptionOptions> options,
             ConsumePipe                           consumePipe,
-            ILoggerFactory?                       loggerFactory
-        ) : this(connectionFactory, options.Value, consumePipe, loggerFactory) { }
+            ILoggerFactory?                       loggerFactory,
+            IEventSerializer?                     eventSerializer = null
+        ) : this(connectionFactory, options.Value, consumePipe, loggerFactory, eventSerializer) { }
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
     /// </summary>
-    /// <param name="connectionFactory"></param>
+    /// <param name="connectionFactory">RabbitMQ connection factory</param>
     /// <param name="options"></param>
     /// <param name="consumePipe"></param>
     /// <param name="loggerFactory"></param>
+    /// <param name="eventSerializer"></param>
     public RabbitMqSubscription(
             ConnectionFactory           connectionFactory,
             RabbitMqSubscriptionOptions options,
             ConsumePipe                 consumePipe,
-            ILoggerFactory?             loggerFactory
+            ILoggerFactory?             loggerFactory,
+            IEventSerializer?           eventSerializer = null
         )
         : base(
             Ensure.NotNull(options),
-            consumePipe.AddFilterFirst(new AsyncHandlingFilter(options.ConcurrencyLimit * 10)),
-            loggerFactory
+            consumePipe.AddFilterFirst(new AsyncHandlingFilter(options.ConcurrencyLimit)),
+            loggerFactory,
+            eventSerializer
         ) {
         _failureHandler = options.FailureHandler ?? DefaultEventFailureHandler;
         _connection     = Ensure.NotNull(connectionFactory).CreateConnection();
         _channel        = _connection.CreateModel();
 
-        var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount : Options.ConcurrencyLimit * 2;
+        var prefetch = options.PrefetchCount > 0 ? options.PrefetchCount : options.ConcurrencyLimit * 2;
 
         _channel.BasicQos(0, (ushort)prefetch, false);
 
@@ -82,15 +87,20 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             IEventSerializer? eventSerializer = null
         ) : this(
         connectionFactory,
-        new RabbitMqSubscriptionOptions { Exchange = exchange, SubscriptionId = subscriptionId, EventSerializer = eventSerializer },
+        new RabbitMqSubscriptionOptions { Exchange = exchange, SubscriptionId = subscriptionId },
         consumePipe,
-        loggerFactory
+        loggerFactory,
+        eventSerializer
     ) { }
 
     protected override ValueTask Subscribe(CancellationToken cancellationToken) {
         var exchange = Ensure.NotEmptyString(Options.Exchange);
 
         Log.InfoLog?.Log("Ensuring exchange {Exchange}", exchange);
+
+        if (string.IsNullOrWhiteSpace(Options.BindingOptions.RoutingKey) && Options.ExchangeOptions.Type == ExchangeType.Fanout) {
+            Log.WarnLog?.Log("Fan-out exchange doesn't support routing keys");
+        }
 
         _channel.ExchangeDeclare(
             exchange,
@@ -100,10 +110,11 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.ExchangeOptions.Arguments
         );
 
-        Log.InfoLog?.Log("Ensuring queue {Queue}", Options.SubscriptionId);
+        var queue = Options.QueueOptions.Queue ?? Options.SubscriptionId;
+        Log.InfoLog?.Log("Ensuring queue {Queue}", queue);
 
         _channel.QueueDeclare(
-            Options.SubscriptionId,
+            queue,
             Options.QueueOptions.Durable,
             Options.QueueOptions.Exclusive,
             Options.QueueOptions.AutoDelete,
@@ -122,7 +133,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.Received += HandleReceived;
 
-        _channel.BasicConsume(consumer, Options.SubscriptionId);
+        _channel.BasicConsume(consumer, queue);
 
         return default;
     }

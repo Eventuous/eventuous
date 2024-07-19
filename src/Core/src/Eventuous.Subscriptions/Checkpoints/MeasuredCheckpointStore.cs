@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Eventuous.Diagnostics;
 
 namespace Eventuous.Subscriptions.Checkpoints;
@@ -31,7 +30,6 @@ public class MeasuredCheckpointStore(ICheckpointStore checkpointStore) : ICheckp
         return checkpoint;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public async ValueTask<Checkpoint> StoreCheckpoint(Checkpoint checkpoint, bool force, CancellationToken cancellationToken) {
         using var activity = EventuousDiagnostics.ActivitySource.CreateActivity(
                 WriteOperationName,

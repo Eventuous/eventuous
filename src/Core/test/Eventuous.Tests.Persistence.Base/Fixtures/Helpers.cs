@@ -22,7 +22,7 @@ public static class Helpers {
             object[]              evt,
             ExpectedStreamVersion version
         ) {
-        var streamEvents = evt.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
+        var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
         return fixture.EventStore.AppendEvents(stream, version, streamEvents.ToArray(), default);
     }
@@ -34,8 +34,8 @@ public static class Helpers {
             ExpectedStreamVersion version,
             Metadata?             metadata = null
         ) {
-        var streamEvent = new StreamEvent(Guid.NewGuid(), evt, metadata ?? new Metadata(), "", 0);
+        var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, metadata ?? new Metadata());
 
-        return fixture.EventStore.AppendEvents(stream, version, new[] { streamEvent }, default);
+        return fixture.EventStore.AppendEvents(stream, version, [streamEvent], default);
     }
 }

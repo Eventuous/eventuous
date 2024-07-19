@@ -5,8 +5,13 @@ namespace Eventuous.Sut.App;
 using static Commands;
 
 public class BookingService : CommandService<Booking, BookingState, BookingId> {
-    public BookingService(IAggregateStore store, StreamNameMap? streamNameMap = null)
-        : base(store, streamNameMap: streamNameMap) {
+    public BookingService(
+            IEventStore    eventStore,
+            StreamNameMap? streamNameMap = null,
+            TypeMapper?    typeMapper    = null,
+            AmendEvent?    amendEvent    = null
+        )
+        : base(eventStore, streamNameMap: streamNameMap, typeMap: typeMapper, amendEvent: amendEvent) {
         On<BookRoom>()
             .InState(ExpectedState.New)
             .GetId(cmd => new(cmd.BookingId))
@@ -20,7 +25,7 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
 
         On<ImportBooking>()
             .InState(ExpectedState.New)
-            .GetId(cmd => new BookingId(cmd.BookingId))
+            .GetId(cmd => new(cmd.BookingId))
             .Act((booking, cmd) => booking.Import(cmd.RoomId, new(cmd.CheckIn, cmd.CheckOut), new(cmd.Price)));
 
         On<RecordPayment>()

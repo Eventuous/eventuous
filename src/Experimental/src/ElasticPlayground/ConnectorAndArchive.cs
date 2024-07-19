@@ -11,17 +11,16 @@ using static Eventuous.Sut.App.Commands;
 namespace ElasticPlayground;
 
 public class ConnectorAndArchive {
-    readonly AggregateStore                    _esdbStore;
-    readonly AggregateStore<ElasticEventStore> _store;
-    readonly EsdbEventStore                    _esdbEventStore;
+    readonly EsdbEventStore    _esdbEventStore;
+    readonly ElasticEventStore _elasticEventStore;
+    readonly TieredEventStore  _tieredStore;
 
     static readonly Fixture Fixture = new();
 
     public ConnectorAndArchive(IElasticClient elasticClient, EventStoreClient eventStoreClient) {
-        var elasticEventStore = new ElasticEventStore(elasticClient);
-        _esdbEventStore = new EsdbEventStore(eventStoreClient);
-        _esdbStore      = new AggregateStore(_esdbEventStore);
-        _store          = new AggregateStore<ElasticEventStore>(_esdbEventStore, elasticEventStore);
+        _elasticEventStore = new(elasticClient);
+        _esdbEventStore    = new(eventStoreClient);
+        _tieredStore       = new(_esdbEventStore, _elasticEventStore);
     }
 
     public async Task Execute() {
@@ -33,16 +32,16 @@ public class ConnectorAndArchive {
             100
         );
 
-        await Seed(_esdbStore, bookRoom);
+        await Seed(_elasticEventStore, bookRoom);
 
         await _esdbEventStore.TruncateStream(
             StreamName.For<Booking>(bookRoom.BookingId),
-            new StreamTruncatePosition(1),
+            new(1),
             ExpectedStreamVersion.Any,
             default
         );
 
-        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(_store));
+        var service = new ThrowingCommandService<BookingState>(new BookingService(_tieredStore));
 
         var cmd = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
 
@@ -51,8 +50,8 @@ public class ConnectorAndArchive {
         result.Dump();
     }
 
-    static async Task Seed(IAggregateStore store, BookRoom bookRoom) {
-        var service = new ThrowingCommandService<Booking, BookingState, BookingId>(new BookingService(store));
+    static async Task Seed(IEventStore store, BookRoom bookRoom) {
+        var service = new ThrowingCommandService<BookingState>(new BookingService(store));
 
         await service.Handle(bookRoom, default);
 

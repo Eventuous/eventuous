@@ -3,15 +3,13 @@
 
 namespace Eventuous;
 
-using static Diagnostics.PersistenceEventSource;
-
 public static class StoreFunctions {
     /// <summary>
     /// Stores a collection of events to the event store
     /// </summary>
     /// <param name="eventWriter">Event writer or event store</param>
     /// <param name="streamName">Name of the stream where events will be appended to</param>
-    /// <param name="originalVersion">Expected version of the stream in the event store</param>
+    /// <param name="expectedStreamVersion">Expected version of the stream in the event store</param>
     /// <param name="changes">Collection of events to store</param>
     /// <param name="amendEvent">Optional: function to add extra information to an event before it gets stored</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -21,22 +19,20 @@ public static class StoreFunctions {
     public static async Task<AppendEventsResult> Store(
             this IEventWriter           eventWriter,
             StreamName                  streamName,
-            int                         originalVersion,
+            ExpectedStreamVersion       expectedStreamVersion,
             IReadOnlyCollection<object> changes,
-            AmendEvent?                 amendEvent,
-            CancellationToken           cancellationToken
+            AmendEvent?                 amendEvent        = null,
+            CancellationToken           cancellationToken = default
         ) {
         Ensure.NotNull(changes);
 
         if (changes.Count == 0) return AppendEventsResult.NoOp;
 
-        var expectedVersion = new ExpectedStreamVersion(originalVersion);
-
         try {
             var result = await eventWriter.AppendEvents(
                     streamName,
-                    expectedVersion,
-                    changes.Select((o, i) => ToStreamEvent(o, i + originalVersion)).ToArray(),
+                    expectedStreamVersion,
+                    changes.Select(ToStreamEvent).ToArray(),
                     cancellationToken
                 )
                 .NoContext();
@@ -48,42 +44,10 @@ public static class StoreFunctions {
                 : e;
         }
 
-        StreamEvent ToStreamEvent(object evt, int position) {
-            var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", position);
+        NewStreamEvent ToStreamEvent(object evt) {
+            var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, new());
 
             return amendEvent?.Invoke(streamEvent) ?? streamEvent;
-        }
-    }
-
-    /// <summary>
-    /// Store aggregate changes to the event store
-    /// </summary>
-    /// <param name="eventWriter">Event writer or event store</param>
-    /// <param name="streamName">Stream name for the aggregate</param>
-    /// <param name="aggregate">Aggregate instance</param>
-    /// <param name="amendEvent">Optional: function to add extra information to the event before it gets stored</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <typeparam name="T">Aggregate type</typeparam>
-    /// <typeparam name="TState">Aggregate state type</typeparam>
-    /// <returns>Append event result</returns>
-    /// <exception cref="OptimisticConcurrencyException{T, TState}">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
-    public static async Task<AppendEventsResult> Store<T, TState>(
-            this IEventWriter eventWriter,
-            StreamName        streamName,
-            T                 aggregate,
-            AmendEvent?       amendEvent,
-            CancellationToken cancellationToken
-        ) where T : Aggregate<TState> where TState : State<TState>, new() {
-        Ensure.NotNull(aggregate);
-
-        try {
-            return await eventWriter.Store(streamName, aggregate.OriginalVersion, aggregate.Changes, amendEvent, cancellationToken).NoContext();
-        } catch (OptimisticConcurrencyException e) {
-            Log.UnableToStoreAggregate<T, TState>(streamName, e);
-
-            throw e.InnerException is null
-                ? new OptimisticConcurrencyException<T, TState>(streamName, e)
-                : new OptimisticConcurrencyException<T, TState>(streamName, e.InnerException);
         }
     }
 
@@ -101,8 +65,8 @@ public static class StoreFunctions {
             this IEventReader  eventReader,
             StreamName         streamName,
             StreamReadPosition start,
-            bool               failIfNotFound,
-            CancellationToken  cancellationToken
+            bool               failIfNotFound    = true,
+            CancellationToken  cancellationToken = default
         ) {
         const int pageSize = 500;
 

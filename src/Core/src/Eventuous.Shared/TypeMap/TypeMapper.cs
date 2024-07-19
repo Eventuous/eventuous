@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Eventuous.Extensions.AspNetCore;
 
 // ReSharper disable InvertIf
 
@@ -82,11 +83,22 @@ public class TypeMapper {
 
     public bool TryGetType(string typeName, [NotNullWhen(true)] out Type? type) => _reverseMap.TryGetValue(typeName, out type);
 
-    public void AddType<T>(string name) => AddType(typeof(T), name);
+    /// <summary>
+    /// Adds a message type to the map.
+    /// </summary>
+    /// <param name="name">Message type name. It can be omitted if the message is decorated with <see cref="EventTypeAttribute"/></param>
+    /// <exception cref="ArgumentException">Thrown if there's no name provided and there's no event type attribute</exception>
+    public void AddType<T>(string? name = null) => AddType(typeof(T), name);
 
+    /// <summary>
+    /// Adds a message type to the map.
+    /// </summary>
+    /// <param name="type">Message type</param>
+    /// <param name="name">Message type name. It can be omitted if the message is decorated with <see cref="EventTypeAttribute"/></param>
+    /// <exception cref="ArgumentException">Thrown if there's no name provided and there's no event type attribute</exception>
     [PublicAPI]
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public void AddType(Type type, string name) {
+    public void AddType(Type type, string? name = null) {
         if (_map.TryGetValue(type, out var registeredName)) {
             if (registeredName != name) {
                 throw new ArgumentException($"Type {type.FullName} is already registered with a different name {registeredName}", nameof(name));
@@ -97,10 +109,18 @@ public class TypeMapper {
             return;
         }
 
-        _reverseMap[name] = type;
-        _map[type]        = name;
+        var attr = type.GetAttribute<EventTypeAttribute>();
 
-        Log.TypeMapRegistered(type.Name, name);
+        if (attr == null && name == null) {
+            throw new ArgumentException($"Type {type.FullName} is not decorated with {nameof(EventTypeAttribute)} and name is not provided", nameof(name));
+        }
+
+        var eventTypeName = name ?? attr!.EventType;
+
+        _reverseMap[eventTypeName] = type;
+        _map[type]                 = eventTypeName;
+
+        Log.TypeMapRegistered(type.Name, eventTypeName);
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]

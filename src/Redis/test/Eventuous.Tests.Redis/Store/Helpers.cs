@@ -26,14 +26,14 @@ public static class Helpers {
             object[]                evt,
             ExpectedStreamVersion   version
         ) {
-        var streamEvents = evt.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
+        var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
         return fixture.EventWriter.AppendEvents(stream, version, streamEvents.ToArray(), default);
     }
 
     public static Task<AppendEventsResult> AppendEvent(this IntegrationFixture fixture, StreamName stream, object evt, ExpectedStreamVersion version) {
-        var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
+        var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, new());
 
-        return fixture.EventWriter.AppendEvents(stream, version, new[] { streamEvent }, default);
+        return fixture.EventWriter.AppendEvents(stream, version, [streamEvent], default);
     }
 }

@@ -3,7 +3,7 @@
 
 namespace Eventuous;
 
-public record struct ExpectedStreamVersion(long Value) {
+public readonly record struct ExpectedStreamVersion(long Value) {
     public static readonly ExpectedStreamVersion NoStream = new(-1);
     public static readonly ExpectedStreamVersion Any      = new(-2);
 }

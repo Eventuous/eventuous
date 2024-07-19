@@ -8,8 +8,7 @@ using Google.Api.Gax;
 namespace Eventuous.Tests.GooglePubSub;
 
 public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
-    static PubSubTests()
-        => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     static readonly Fixture Auto = new();
 
@@ -25,18 +24,18 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
         var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
 
         _log                = loggerFactory.CreateLogger<PubSubTests>();
-        _pubsubTopic        = new StreamName($"test-{Guid.NewGuid():N}");
+        _pubsubTopic        = new($"test-{Guid.NewGuid():N}");
         _pubsubSubscription = $"test-{Guid.NewGuid():N}";
 
-        _handler = new TestEventHandler();
+        _handler = new();
 
-        _producer = new GooglePubSubProducer(
+        _producer = new(
             PubSubFixture.PubsubProjectId,
             log: loggerFactory.CreateLogger<GooglePubSubProducer>(),
             configureClient: b => b.EmulatorDetection = EmulatorDetection.EmulatorOnly
         );
 
-        _subscription = new GooglePubSubSubscription(
+        _subscription = new(
             PubSubFixture.PubsubProjectId,
             _pubsubTopic,
             _pubsubSubscription,

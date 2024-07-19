@@ -70,20 +70,12 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
             .Select(_ => DomainFixture.CreateImportBooking())
             .ToList();
 
-        var events = commands.Select(ToEvent).ToList();
-
-        var streamEvents = events.Select(x => new StreamEvent(Guid.NewGuid(), x, new Metadata(), "", 0));
-
-        var result = await IntegrationFixture.EventWriter.AppendEvents(
-            Stream,
-            ExpectedStreamVersion.Any,
-            streamEvents.ToArray(),
-            default
-        );
+        var events       = commands.Select(ToEvent).ToList();
+        var streamEvents = events.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
+        var result       = await IntegrationFixture.EventWriter.AppendEvents(Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
 
         return (events, result);
     }
 
-    protected override TestEventHandler GetHandler()
-        => new();
+    protected override TestEventHandler GetHandler() => new();
 }

@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Eventuous.Tools;
+using static Eventuous.DeserializationResult;
 using static Eventuous.Diagnostics.PersistenceEventSource;
 
 namespace Eventuous.EventStore;
@@ -27,11 +28,11 @@ public class EsdbEventStore : IEventStore {
     /// <param name="metaSerializer">Optional metadata serializer. When not provided, the default serializer will be used.</param>
     /// <param name="logger">Optional logger</param>
     public EsdbEventStore(
-        EventStoreClient         client,
-        IEventSerializer?        serializer     = null,
-        IMetadataSerializer?     metaSerializer = null,
-        ILogger<EsdbEventStore>? logger         = null
-    ) {
+            EventStoreClient         client,
+            IEventSerializer?        serializer     = null,
+            IMetadataSerializer?     metaSerializer = null,
+            ILogger<EsdbEventStore>? logger         = null
+        ) {
         _logger         = logger;
         _client         = Ensure.NotNull(client);
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
@@ -46,29 +47,30 @@ public class EsdbEventStore : IEventStore {
     /// <param name="metaSerializer">Optional metadata serializer. When not provided, the default serializer will be used.</param>
     /// <param name="logger">Optional logger</param>
     public EsdbEventStore(
-        EventStoreClientSettings clientSettings,
-        IEventSerializer?        serializer     = null,
-        IMetadataSerializer?     metaSerializer = null,
-        ILogger<EsdbEventStore>? logger         = null
-    ) : this(new EventStoreClient(Ensure.NotNull(clientSettings)), serializer, metaSerializer, logger) { }
+            EventStoreClientSettings clientSettings,
+            IEventSerializer?        serializer     = null,
+            IMetadataSerializer?     metaSerializer = null,
+            ILogger<EsdbEventStore>? logger         = null
+        ) : this(new EventStoreClient(Ensure.NotNull(clientSettings)), serializer, metaSerializer, logger) { }
 
     /// <inheritdoc/>
-    public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
+    public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 1, cancellationToken: cancellationToken);
 
         using var readState = read.ReadState;
 
         var state = await readState.NoContext();
+
         return state == ReadState.Ok;
     }
 
     /// <inheritdoc/>
     public Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    ) {
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken = default
+        ) {
         var proposedEvents = events.Select(ToEventData);
 
         var resultTask = expectedVersion == ExpectedStreamVersion.NoStream
@@ -92,11 +94,12 @@ public class EsdbEventStore : IEventStore {
             () => new("Unable to appends events to {Stream}", stream),
             (s, ex) => {
                 Log.UnableToAppendEvents(stream, ex);
+
                 return new AppendToStreamException(s, ex);
             }
         );
 
-        EventData ToEventData(StreamEvent streamEvent) {
+        EventData ToEventData(NewStreamEvent streamEvent) {
             var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
             return new(
@@ -110,12 +113,13 @@ public class EsdbEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken);
 
         return TryExecute(
             async () => {
                 var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
+
                 return ToStreamEvents(resolvedEvents);
             },
             stream,
@@ -125,11 +129,11 @@ public class EsdbEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
             stream,
-            StreamPosition.End,
+            start.AsStreamPosition(),
             count,
             resolveLinkTos: true,
             cancellationToken: cancellationToken
@@ -138,21 +142,22 @@ public class EsdbEventStore : IEventStore {
         return TryExecute(
             async () => {
                 var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
+
                 return ToStreamEvents(resolvedEvents);
             },
             stream,
-            () => new ErrorInfo("Unable to read {Count} events backwards from {Stream}", count, stream),
+            () => new("Unable to read {Count} events backwards from {Stream}", count, stream),
             (s, ex) => new ReadFromStreamException(s, ex)
         );
     }
 
     /// <inheritdoc/>
     public Task TruncateStream(
-        StreamName             stream,
-        StreamTruncatePosition truncatePosition,
-        ExpectedStreamVersion  expectedVersion,
-        CancellationToken      cancellationToken
-    ) {
+            StreamName             stream,
+            StreamTruncatePosition truncatePosition,
+            ExpectedStreamVersion  expectedVersion,
+            CancellationToken      cancellationToken
+        ) {
         var meta = new StreamMetadata(truncateBefore: truncatePosition.AsStreamPosition());
 
         return TryExecute(
@@ -168,44 +173,35 @@ public class EsdbEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken)
+    public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken = default)
         => TryExecute(
             () => AnyOrNot(
                 expectedVersion,
-                () => _client.DeleteAsync(
-                    stream,
-                    StreamState.Any,
-                    cancellationToken: cancellationToken
-                ),
-                () => _client.DeleteAsync(
-                    stream,
-                    expectedVersion.AsStreamRevision(),
-                    cancellationToken: cancellationToken
-                )
+                () => _client.DeleteAsync(stream, StreamState.Any, cancellationToken: cancellationToken),
+                () => _client.DeleteAsync(stream, expectedVersion.AsStreamRevision(), cancellationToken: cancellationToken)
             ),
             stream,
             () => new("Unable to delete stream {Stream}", stream),
             (s, ex) => new DeleteStreamException(s, ex)
         );
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     async Task<T> TryExecute<T>(
-        Func<Task<T>>                      func,
-        string                             stream,
-        Func<ErrorInfo>                    getError,
-        Func<string, Exception, Exception> getException
-    ) {
+            Func<Task<T>>                      func,
+            string                             stream,
+            Func<ErrorInfo>                    getError,
+            Func<string, Exception, Exception> getException
+        ) {
         try {
             return await func().NoContext();
-        }
-        catch (StreamNotFoundException) {
+        } catch (StreamNotFoundException) {
             _logger?.LogWarning("Stream {Stream} not found", stream);
+
             throw new StreamNotFound(stream);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             var (message, args) = getError();
             // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             _logger?.LogWarning(ex, message, args);
+
             throw getException(stream, ex);
         }
     }
@@ -230,14 +226,12 @@ public class EsdbEventStore : IEventStore {
             _ => throw new SerializationException("Unknown deserialization result")
         };
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Metadata? DeserializeMetadata() {
             var meta = resolvedEvent.Event.Metadata.Span;
 
             try {
                 return meta.Length == 0 ? null : _metaSerializer.Deserialize(meta);
-            }
-            catch (MetadataDeserializationException e) {
+            } catch (MetadataDeserializationException e) {
                 _logger?.LogWarning(
                     e,
                     "Failed to deserialize metadata at {Stream}:{Position}",
@@ -249,7 +243,6 @@ public class EsdbEventStore : IEventStore {
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         StreamEvent AsStreamEvent(object payload)
             => new(
                 resolvedEvent.Event.EventId.ToGuid(),
@@ -260,10 +253,9 @@ public class EsdbEventStore : IEventStore {
             );
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents
-            .Where(x => !x.Event.EventType.StartsWith("$"))
+            .Where(x => !x.Event.EventType.StartsWith('$'))
             // ReSharper disable once ConvertClosureToMethodGroup
             .Select(e => ToStreamEvent(e))
             .ToArray();

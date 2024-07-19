@@ -1,6 +1,7 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Eventuous.SqlServer.Projections;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
@@ -17,9 +18,21 @@ public class SqlServerAllStreamSubscription(
         SqlServerAllStreamSubscriptionOptions options,
         ICheckpointStore                      checkpointStore,
         ConsumePipe                           consumePipe,
-        ILoggerFactory?                       loggerFactory = null
+        ILoggerFactory?                       loggerFactory     = null,
+        IEventSerializer?                     eventSerializer   = null,
+        IMetadataSerializer?                  metaSerializer    = null,
+        SqlServerConnectionOptions?           connectionOptions = null
     )
-    : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions>(options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory) {
+    : SqlServerSubscriptionBase<SqlServerAllStreamSubscriptionOptions>(
+        options,
+        checkpointStore,
+        consumePipe,
+        SubscriptionKind.All,
+        loggerFactory,
+        eventSerializer,
+        metaSerializer,
+        connectionOptions
+    ) {
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadAllForwards)
             .Add("@from_position", SqlDbType.BigInt, start + 1)

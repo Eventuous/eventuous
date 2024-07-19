@@ -15,7 +15,7 @@ public partial class StoreFixture : StoreFixtureBase<PostgreSqlContainer> {
 
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousPostgres(Container.GetConnectionString(), _schemaName, true);
-        services.AddAggregateStore<PostgresStore>();
+        services.AddEventStore<PostgresStore>();
     }
 
     protected override void GetDependencies(IServiceProvider provider) {

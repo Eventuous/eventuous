@@ -16,5 +16,7 @@ public static class Commands {
         public float     Price     { get; init; }
     }
 
-    public record RecordPayment(BookingId BookingId, string PaymentId, Money Amount, DateTimeOffset PaidAt);
+    public record RecordPayment(BookingId BookingId, string PaymentId, Money Amount, DateTimeOffset PaidAt) {
+        public string? PaidBy { get; init; }
+    };
 }

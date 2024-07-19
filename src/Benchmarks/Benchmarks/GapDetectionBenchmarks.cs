@@ -1,6 +1,3 @@
-// Copyright (C) Ubiquitous AS. All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using BenchmarkDotNet.Attributes;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
@@ -17,7 +14,7 @@ public class GapDetectionBenchmarks {
 
     [GlobalSetup]
     public void Setup() {
-        _store = new NoOpCheckpointStore();
+        _store = new();
 
         _store.CheckpointStored += (_, checkpoint) => Console.WriteLine(checkpoint);
 
@@ -25,12 +22,12 @@ public class GapDetectionBenchmarks {
         numbers.RemoveAll(x => x % 10 == 0);
         _numbers = numbers.ToArray();
 
-        _log = new LogContext("test", new NullLoggerFactory());
+        _log = new("test", new NullLoggerFactory());
     }
 
     [IterationSetup]
     public void IterationSetup() {
-        _cch = new CheckpointCommitHandler("test", _store, TimeSpan.FromMilliseconds(1000), 10);
+        _cch = new("test", _store, TimeSpan.FromMilliseconds(1000), 10);
     }
 
     [IterationCleanup]

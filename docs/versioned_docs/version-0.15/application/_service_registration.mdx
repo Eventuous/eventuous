@@ -1,0 +1,13 @@
+## Bootstrap
+
+If you registered an implementation of  `IEventStore` in the DI container, you can also register the command service:
+
+```csharp title="Program.cs"
+builder.Services.AddCommandService<BookingCommandService, BookingState>();
+```
+
+The `AddCommandService` extension will register the `BookingService`, and also as `ICommandService<BookingState>`, as a singleton. Remember that all the DI extensions are part of the `Eventuous.Extensions.DependencyInjection` NuGet package.
+
+When you also use `AddControllers`, you get the command service injected to your controllers.
+
+You can simplify your application and avoid creating HTTP endpoints explicitly (as controllers or minimal API endpoints) if you use the [command API feature](command-api.md).

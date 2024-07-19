@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Tracing;
 using Microsoft.Extensions.Logging;
+using static Eventuous.DeserializationResult;
 
 namespace Eventuous.Subscriptions;
 
@@ -32,12 +33,17 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
     protected ulong Sequence;
 
-    protected EventSubscription(T options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory) {
+    protected EventSubscription(
+            T                    options,
+            ConsumePipe          consumePipe,
+            ILoggerFactory?      loggerFactory,
+            IEventSerializer?    eventSerializer
+        ) {
         Ensure.NotEmptyString(options.SubscriptionId);
 
         LoggerFactory   = loggerFactory;
         Pipe            = Ensure.NotNull(consumePipe);
-        EventSerializer = options.EventSerializer ?? DefaultEventSerializer.Instance;
+        EventSerializer = eventSerializer ?? DefaultEventSerializer.Instance;
         Options         = options;
         Log             = Logger.CreateContext(options.SubscriptionId, loggerFactory);
     }

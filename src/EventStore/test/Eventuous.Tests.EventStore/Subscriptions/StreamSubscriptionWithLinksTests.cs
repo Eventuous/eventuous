@@ -13,12 +13,13 @@ namespace Eventuous.Tests.EventStore.Subscriptions;
 public class StreamSubscriptionWithLinksTests : StoreFixture {
     const string SubId = "Test";
 
-    readonly List<Checkpoint>  _checkpoints = [];
-    readonly string            _prefix      = $"{Faker.Commerce.ProductAdjective()}{Faker.Commerce.Product()}";
+    readonly List<Checkpoint> _checkpoints = [];
+    readonly string           _prefix      = $"{Faker.Commerce.ProductAdjective()}{Faker.Commerce.Product()}";
 
     public StreamSubscriptionWithLinksTests(ITestOutputHelper output) {
-        Output   = output;
+        Output    = output;
         AutoStart = false;
+        TypeMapper.AddType<TestEvent>(TestEvent.TypeName);
     }
 
     [Fact]
@@ -55,6 +56,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
         Output?.WriteLine("Producing events...");
 
         var events = new List<TestEvent>();
+
         for (var i = 0; i < count; i++) {
             var evt    = new TestEvent(Guid.NewGuid().ToString(), i);
             var stream = new StreamName($"{_prefix}-{Auto.Create<string>()}");
@@ -70,6 +72,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
     void ValidateProcessed(IServiceProvider provider, IEnumerable<TestEvent> events) {
         var handler = provider.GetRequiredKeyedService<TestHandler>(SubId);
         Output?.WriteLine($"Processed {handler.Handled.Count} events");
+
         foreach (var evt in events) {
             handler.Handled.Should().Contain(evt);
         }

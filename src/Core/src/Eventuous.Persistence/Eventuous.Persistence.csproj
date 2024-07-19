@@ -22,6 +22,7 @@
         <InternalsVisibleTo Include="Eventuous.Application"/>
         <InternalsVisibleTo Include="Eventuous.Testing"/>
         <InternalsVisibleTo Include="Eventuous.Tests.Postgres"/>
+        <InternalsVisibleTo Include="Eventuous.Tests.SqlServer"/>
     </ItemGroup>
     <ItemGroup>
         <None Remove="Eventuous.Persistence.csproj.DotSettings"/>

@@ -35,10 +35,10 @@ public static class Registrations {
         services.AddSingleton(connectionFactory);
 
         services.AddEventuousPostgres(configuration.GetSection("Postgres"));
-        services.AddAggregateStore<PostgresStore>();
+        services.AddEventStore<PostgresStore>();
         services.AddCommandService<BookingsCommandService, BookingState>();
 
-        services.AddSingleton<Services.IsRoomAvailable>((id, period) => new ValueTask<bool>(true));
+        services.AddSingleton<Services.IsRoomAvailable>((id, period) => new(true));
 
         services.AddSingleton<Services.ConvertCurrency>(
             (from, currency) => new Money(from.Amount * 2, currency)

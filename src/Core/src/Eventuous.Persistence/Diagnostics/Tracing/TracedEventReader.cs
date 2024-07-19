@@ -16,6 +16,6 @@ public class TracedEventReader(IEventReader reader) : BaseTracer, IEventReader {
     public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => Trace(stream, Operations.ReadEvents, () => Inner.ReadEvents(stream, start, count, cancellationToken));
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
-        => Trace(stream, Operations.ReadEvents, () => Inner.ReadEventsBackwards(stream, count, cancellationToken));
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
+        => Trace(stream, Operations.ReadEvents, () => Inner.ReadEventsBackwards(stream, start, count, cancellationToken));
 }

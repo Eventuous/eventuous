@@ -4,11 +4,8 @@ using Eventuous.Tests.Persistence.Base.Store;
 
 namespace Eventuous.Tests.EventStore.Store;
 
-[Collection("Database")]
 public class Append(StoreFixture fixture) : StoreAppendTests<StoreFixture>(fixture);
 
-[Collection("Database")]
 public class Read(StoreFixture fixture) : StoreReadTests<StoreFixture>(fixture);
 
-[Collection("Database")]
 public class OtherMethods(StoreFixture fixture) : StoreOtherOpsTests<StoreFixture>(fixture);

@@ -1,4 +1,4 @@
-using Eventuous.AspNetCore.Web;
+using Eventuous.Extensions.AspNetCore;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using NodaTime;
@@ -8,7 +8,7 @@ namespace Eventuous.Sut.AspNetCore;
 using static SutBookingCommands;
 
 public class BookingService : CommandService<Booking, BookingState, BookingId> {
-    public BookingService(IAggregateStore store, ILogger<BookingService> log, StreamNameMap? streamNameMap = null)
+    public BookingService(IEventStore store, ILogger<BookingService> log, StreamNameMap? streamNameMap = null)
         : base(store, streamNameMap: streamNameMap) {
         log.LogInformation("Instantiating Booking service");
 
@@ -50,7 +50,7 @@ public static class SutBookingCommands {
 
     public record ImportBooking(BookingId BookingId, string RoomId, StayPeriod Period, Money Price);
 
-    [StateCommands<BookingState>]
+    [HttpCommands<BookingState>]
     public static class NestedCommands {
         [HttpCommand(Route = NestedBookRoute)]
         public record NestedBookRoom(

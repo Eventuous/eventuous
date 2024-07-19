@@ -1,0 +1,139 @@
+---
+title: "Aggregate store"
+description: "How aggregates are stored in an event store"
+---
+
+:::info Deprecation notice
+Since version **0.15**, Eventuous doesn't use _Aggregate store_ internally. All persistence operations in command services are using [Event store](./event-store.mdx). The following elements are marked obsolete:
+
+- `IAggregateStore` interface
+- `AggregateStore` class
+- `AggregateStore<TArchive>` class
+- Dependency injection registration methods for Aggregate store
+
+Look in the previous version documentation to learn about `IAggregateStore` and its usage.
+:::
+
+:::note
+Eventuous does not have a concept of Repository. Find out why [on this page](./index.mdx).
+:::
+
+Eventuous provides a number of extensions for `IEventReader` and `IEventWriter` interfaces for aggregate persistence.
+
+## Storing aggregates
+
+Storing an aggregate instance implies appending new events from the list of changes to the [aggregate stream](./aggregate-stream.md). Functions that allow that are listed below. All those are extensions to `IEventWriter` interface.
+
+### Using stream name
+
+This function requires a pre-calculated stream name to be provided, so it doesn't use any convention for resolving stream names. It uses the provided stream name as-is.
+
+```csharp
+Task<AppendEventsResult> IEventWriter.StoreAggregate<TAggregate, TState>(
+    StreamName        streamName,
+    TAggregate        aggregate,
+    AmendEvent?       amendEvent        = null,
+    CancellationToken cancellationToken = default
+)
+```
+
+| Parameter           | Type                             | Description                                             |
+|---------------------|----------------------------------|---------------------------------------------------------|
+| `streamName`        | `StreamName`                     | Aggregate stream name                                   |
+| `aggregate`         | `TAggregate<TState>`             | Aggregate instance                                      |
+| `amendEvent`        | `Func<StreamEvent, StreamEvent>` | Function that allows adding things like custom metadata |
+| `cancellationToken` | `CancellationToken`              | Cancellation token                                      |
+
+### Using explicit aggregate id
+
+This function uses the stream name map to convert the provided aggregate identity to a stream name. If the stream name map is not supplied, it will use the default, convention-based calculation (`TypeName-Id`).
+
+```csharp
+Task<AppendEventsResult> IEventWriter.StoreAggregate<TAggregate, TState, TId>(
+    TAggregate        aggregate,
+    TId               id,
+    StreamNameMap?    streamNameMap     = null,
+    AmendEvent?       amendEvent        = null,
+    CancellationToken cancellationToken = default
+)
+```
+
+| Parameter           | Type                             | Description                                                                        |
+|---------------------|----------------------------------|------------------------------------------------------------------------------------|
+| `aggregate`         | `TAggregate<TState>`             | Aggregate instance                                                                 |
+| `id`                | `TId`                            | Aggregate identity                                                                 |
+| `streamNameMap`     | `StreamNameMap`                  | [Map](./aggregate-stream.md#aggregate-streams) between identities and stream names |
+| `amendEvent`        | `Func<StreamEvent, StreamEvent>` | Function that allows adding things like custom metadata                            |
+| `cancellationToken` | `CancellationToken`              | Cancellation token                                                                 |
+
+### Using aggregate identity from state
+
+This function supports storing aggregates with identity-aware state (`State<TId>`) and uses the aggregate `State.Id` property combined with the stream name map to resolve the stream name. If the stream name map is not supplied, it will use convention-based stream name calculation.
+
+```csharp
+Task<AppendEventsResult> IEventWriter.StoreAggregate<TAggregate, TState, TId>(
+    TAggregate        aggregate,
+    StreamNameMap?    streamNameMap     = null,
+    AmendEvent?       amendEvent        = null,
+    CancellationToken cancellationToken = default
+)
+```
+
+| Parameter           | Type                             | Description                                                                        |
+|---------------------|----------------------------------|------------------------------------------------------------------------------------|
+| `aggregate`         | `TAggregate<TState, TId>`        | Aggregate instance                                                                 |
+| `streamNameMap`     | `StreamNameMap`                  | [Map](./aggregate-stream.md#aggregate-streams) between identities and stream names |
+| `amendEvent`        | `Func<StreamEvent, StreamEvent>` | Function that allows adding things like custom metadata                            |
+| `cancellationToken` | `CancellationToken`              | Cancellation token                                                                 |
+
+## Loading aggregates
+
+Several extensions for `IEventReader` interface allow loading aggregates from an event store.
+
+### Using stream name
+
+This function requires a pre-calculated stream name to be provided, so it doesn't use any convention for resolving stream names. It uses the provided stream name as-is.
+
+```csharp
+Task<TAggregate> LoadAggregate<TAggregate, TState>(
+    StreamName                streamName,
+    bool                      failIfNotFound    = true,
+    AggregateFactoryRegistry? factoryRegistry   = null,
+    CancellationToken         cancellationToken = default
+)
+```
+
+| Parameter           | Type                       | Description                                                                                                                                                     |
+|---------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `streamName`        | `StreamName`               | Aggregate stream name                                                                                                                                           |
+| `failIfNotFound`    | `bool`                     | When set to `true`, the function will throw an `AggregateNotFound` exception if the stream cannot be found. Otherwise, it will return a new aggregate instance. |
+| `factoryRegistry`   | `AggregateFactoryRegistry` | Optional aggregate factory registry, which is used to create new aggregate instances. If not supplied, the default registry is used.                            |
+| `cancellationToken` | `CancellationToken`        | Cancellation token                                                                                                                                              |
+
+### Using aggregate id
+
+This function uses the stream name map to convert the provided aggregate identity to a stream name. If the stream name map is not supplied, it will use the default, convention-based calculation (`TypeName-Id`).
+
+```csharp
+Task<TAggregate> IEventWriter.LoadAggregate<TAggregate, TState, TId>(
+    TId                       aggregateId,
+    StreamNameMap?            streamNameMap     = null,
+    bool                      failIfNotFound    = true,
+    AggregateFactoryRegistry? factoryRegistry   = null,
+    CancellationToken         cancellationToken = default
+)
+```
+
+| Parameter           | Type                       | Description                                                                                                                                                     |
+|---------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`                | `TId`                      | Aggregate identity                                                                                                                                              |
+| `streamNameMap`     | `StreamNameMap`            | [Map](./aggregate-stream.md#aggregate-streams) between identities and stream names                                                                              |
+| `failIfNotFound`    | `bool`                     | When set to `true`, the function will throw an `AggregateNotFound` exception if the stream cannot be found. Otherwise, it will return a new aggregate instance. |
+| `factoryRegistry`   | `AggregateFactoryRegistry` | Optional aggregate factory registry, which is used to create new aggregate instances. If not supplied, the default registry is used.                            |
+| `cancellationToken` | `CancellationToken`        | Cancellation token                                                                                                                                              |
+
+## Multi-tier store
+
+:::info Deprecation notice
+Since version **0.15**, aggregate store with archive is superseded by [tiered event store](./event-store.mdx#event-store-with-archive).
+:::

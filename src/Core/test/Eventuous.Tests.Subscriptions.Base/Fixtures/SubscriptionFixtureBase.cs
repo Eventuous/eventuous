@@ -1,24 +1,34 @@
 using DotNet.Testcontainers.Containers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Tests.Subscriptions.Base;
 
-public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TEventHandler>(
-        ITestOutputHelper outputHelper,
-        bool              autoStart = true,
-        LogLevel          logLevel  = LogLevel.Trace
-    )
+public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TEventHandler>
     : StoreFixtureBase<TContainer>
     where TEventHandler : class, IEventHandler
     where TContainer : DockerContainer
     where TCheckpointStore : class, ICheckpointStore
     where TSubscription : EventSubscription<TSubscriptionOptions>
     where TSubscriptionOptions : SubscriptionOptions {
-    static SubscriptionFixtureBase() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
+    readonly ITestOutputHelper _outputHelper;
+    readonly bool              _autoStart;
+    readonly LogLevel          _logLevel;
+
+    protected SubscriptionFixtureBase(
+            ITestOutputHelper outputHelper,
+            bool              autoStart = true,
+            LogLevel          logLevel  = LogLevel.Trace
+        ) {
+        _outputHelper = outputHelper;
+        _autoStart    = autoStart;
+        _logLevel     = logLevel;
+        TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
+    }
 
     protected internal TEventHandler    Handler         { get; private set; } = null!;
     protected          ILogger          Log             { get; set; }         = null!;
@@ -53,7 +63,7 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
 
         var host = services.First(x => !x.IsKeyedService && x.ImplementationFactory?.GetType() == typeof(Func<IServiceProvider, SubscriptionHostedService>));
         services.Remove(host);
-        services.AddLogging(b => ConfigureLogging(b.AddXunit(outputHelper, logLevel).SetMinimumLevel(logLevel)));
+        services.AddLogging(b => ConfigureLogging(b.AddXunit(_outputHelper, _logLevel).SetMinimumLevel(_logLevel)));
     }
 
     protected override void GetDependencies(IServiceProvider provider) {
@@ -72,11 +82,11 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
 
     public override async Task InitializeAsync() {
         await base.InitializeAsync();
-        if (autoStart) await StartSubscription();
+        if (_autoStart) await StartSubscription();
     }
 
     public override async Task DisposeAsync() {
-        if (autoStart) await StopSubscription();
+        if (_autoStart) await StopSubscription();
         await base.DisposeAsync();
     }
 }

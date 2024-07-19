@@ -3,6 +3,10 @@
 
 namespace Eventuous;
 
+/// <summary>
+/// Read stream result, which includes stream events and the state instance built from those events.
+/// </summary>
+/// <typeparam name="T">State type</typeparam>
 public record FoldedEventStream<T> where T : State<T>, new() {
     public FoldedEventStream(StreamName streamName, ExpectedStreamVersion streamVersion, object[] events) {
         StreamName    = streamName;

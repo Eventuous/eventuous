@@ -19,18 +19,18 @@ public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore 
         => Trace(stream, Operations.StreamExists, () => Inner.StreamExists(stream, cancellationToken));
 
     public Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         )
         => Writer.AppendEvents(stream, expectedVersion, events, cancellationToken);
 
     public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => Reader.ReadEvents(stream, start, count, cancellationToken);
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
-        => Reader.ReadEventsBackwards(stream, count, cancellationToken);
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
+        => Reader.ReadEventsBackwards(stream, start, count, cancellationToken);
 
     public Task TruncateStream(
             StreamName             stream,

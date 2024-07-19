@@ -1,8 +1,6 @@
 // Copyright (C) Ubiquitous AS. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.CompilerServices;
-
 namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
@@ -15,36 +13,42 @@ using static Diagnostics.ApplicationEventSource;
 /// <typeparam name="TId">The aggregate identity type</typeparam>
 // [PublicAPI]
 public abstract partial class CommandService<TAggregate, TState, TId>(
-        IAggregateStore?          store,
+        IEventReader?             reader,
+        IEventWriter?             writer,
         AggregateFactoryRegistry? factoryRegistry = null,
         StreamNameMap?            streamNameMap   = null,
-        TypeMapper?               typeMap         = null
+        TypeMapper?               typeMap         = null,
+        AmendEvent?               amendEvent      = null
     )
     : ICommandService<TAggregate, TState, TId>
-    where TAggregate : Aggregate<TState>, new()
+    where TAggregate : Aggregate<TState>
     where TState : State<TState>, new()
     where TId : Id {
+    protected CommandService(
+            IEventStore?              store,
+            AggregateFactoryRegistry? factoryRegistry = null,
+            StreamNameMap?            streamNameMap   = null,
+            TypeMapper?               typeMap         = null,
+            AmendEvent?               amendEvent      = null
+        ) : this(store, store, factoryRegistry, streamNameMap, typeMap, amendEvent) { }
+
     [PublicAPI]
-    protected IAggregateStore? Store { get; } = store;
+    protected IEventReader? Reader { get; } = reader;
+    [PublicAPI]
+    protected IEventWriter? Writer { get; } = writer;
 
     readonly HandlersMap<TAggregate, TState, TId> _handlers        = new();
-    readonly AggregateFactoryRegistry     _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
-    readonly StreamNameMap                _streamNameMap   = streamNameMap   ?? new StreamNameMap();
-    readonly TypeMapper                   _typeMap         = typeMap         ?? TypeMap.Instance;
-
-    bool _initialized;
+    readonly AggregateFactoryRegistry             _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
+    readonly StreamNameMap                        _streamNameMap   = streamNameMap   ?? new StreamNameMap();
+    readonly TypeMapper                           _typeMap         = typeMap         ?? TypeMap.Instance;
 
     /// <summary>
     /// Returns the command handler builder for the specified command type.
     /// </summary>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
-    protected CommandHandlerBuilder<TCommand, TAggregate, TState, TId> On<TCommand>() where TCommand : class {
-        var builder = new CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(Store);
-        _builders.Add(typeof(TCommand), builder);
-
-        return builder;
-    }
+    protected IDefineExpectedState<TCommand, TAggregate, TState, TId> On<TCommand>() where TCommand : class
+        => new CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(this, Reader, Writer);
 
     /// <summary>
     /// The command handler. Call this function from your edge (API).
@@ -54,62 +58,56 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
     /// <returns><see cref="Result{TState}"/> of the execution</returns>
     /// <exception cref="Exceptions.CommandHandlerNotFound{TCommand}"></exception>
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
-        if (!_initialized) BuildHandlers();
-
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();
             var exception = new Exceptions.CommandHandlerNotFound(command.GetType());
 
-            return new ErrorResult<TState>(exception);
+            return Result<TState>.FromError(exception);
         }
 
         var aggregateId = await registeredHandler.GetId(command, cancellationToken).NoContext();
-        var store       = registeredHandler.ResolveStore(command);
+        var reader      = registeredHandler.ResolveReader(command);
+        var stream      = _streamNameMap.GetStreamName<TAggregate, TState, TId>(aggregateId);
 
         try {
             var aggregate = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await store.LoadOrNew<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
-                ExpectedState.Existing => await store.Load<TAggregate, TState, TId>(_streamNameMap, aggregateId, cancellationToken).NoContext(),
-                ExpectedState.New      => Create(aggregateId),
-                ExpectedState.Unknown  => default,
-                _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
+                ExpectedState.Any => await reader
+                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, false, _factoryRegistry, cancellationToken)
+                    .NoContext(),
+                ExpectedState.Existing => await reader
+                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, true, _factoryRegistry, cancellationToken)
+                    .NoContext(),
+                ExpectedState.New     => Create(aggregateId),
+                ExpectedState.Unknown => default,
+                _                     => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
-            var result = await registeredHandler
-                .Handler(aggregate!, command, cancellationToken)
-                .NoContext();
+            var result = await registeredHandler.Handler(aggregate!, command, cancellationToken).NoContext();
 
-            // Zero in the global position would mean nothing, so the receiver need to check the Changes.Length
-            if (result.Changes.Count == 0) return new OkResult<TState>(result.State, Array.Empty<Change>(), 0);
+            // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
+            if (result.Changes.Count == 0) return Result<TState>.FromSuccess(result.State, Array.Empty<Change>(), 0);
 
-            var storeResult = await store.Store<TAggregate, TState>(GetAggregateStreamName(), result, cancellationToken).NoContext();
+            var writer      = registeredHandler.ResolveWriter(command);
+            var storeResult = await writer.StoreAggregate<TAggregate, TState>(stream, result, Amend, cancellationToken).NoContext();
             var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
             Log.CommandHandled<TCommand>();
 
-            return new OkResult<TState>(result.State, changes, storeResult.GlobalPosition);
+            return Result<TState>.FromSuccess(result.State, changes, storeResult.GlobalPosition);
         } catch (Exception e) {
             Log.ErrorHandlingCommand<TCommand>(e);
 
-            return new ErrorResult<TState>($"Error handling command {typeof(TCommand).Name}", e);
+            return Result<TState>.FromError(e, $"Error handling command {typeof(TCommand).Name}");
         }
 
         TAggregate Create(TId id) => _factoryRegistry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
 
-        StreamName GetAggregateStreamName() => _streamNameMap.GetStreamName<TAggregate, TState, TId>(aggregateId);
-    }
+        NewStreamEvent Amend(NewStreamEvent streamEvent) {
+            var evt = registeredHandler.AmendEvent?.Invoke(streamEvent, command) ?? streamEvent;
 
-    readonly Dictionary<Type, CommandHandlerBuilder<TAggregate, TState, TId>> _builders = new();
-
-    [MethodImpl(MethodImplOptions.Synchronized)]
-    void BuildHandlers() {
-        if (_initialized) return;
-
-        foreach (var commandType in _builders.Keys) {
-            var builder = _builders[commandType];
-            var handler = builder.Build();
-            _handlers.AddHandlerUntyped(commandType, handler);
+            return amendEvent?.Invoke(evt) ?? evt;
         }
-
-        _initialized = true;
     }
+
+    internal void AddHandler<TCommand>(RegisteredHandler<TAggregate, TState, TId> handler) where TCommand : class
+        => _handlers.AddHandlerUntyped(typeof(TCommand), handler);
 }

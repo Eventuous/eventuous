@@ -31,18 +31,16 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
 
     public string SubscriptionId { get; }
 
-    protected ValueTask Start()
-        => Subscription.SubscribeWithLog(Log);
+    protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
 
-    protected ValueTask Stop()
-        => Subscription.UnsubscribeWithLog(Log);
+    protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
 
     readonly bool                 _subscribeToAll;
     readonly bool                 _autoStart;
     readonly LoggingEventListener _listener;
 
     public async Task InitializeAsync() {
-        IntegrationFixture = new IntegrationFixture();
+        IntegrationFixture = new();
         await IntegrationFixture.InitializeAsync();
         Handler         = GetHandler();
         CheckpointStore = new RedisCheckpointStore(IntegrationFixture.GetDatabase, LoggerFactory);

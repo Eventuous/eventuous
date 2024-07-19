@@ -5,7 +5,11 @@ sidebar_position: 1
 ---
 
 :::info
-From version 0.14.0 using aggregates is **optional**. You can define your domain logic using [functional services](../application/func-service.md) instead.
+From version **0.14.0** using aggregates is **optional**. You can define your domain logic using [functional services](../application/func-service.mdx) instead.
+:::
+
+:::info
+From version **0.15.0**, non-generic `Aggregate` abstraction is gone, so you have to use `Aggregate<TState>`.
 :::
 
 ## Concept
@@ -147,7 +151,7 @@ public record BookingId(string Value) : Id(Value);
 
 The abstract record overrides its `ToString` to return the string value as-is. It also has an implicit conversion operator, which allows you to use a string value without explicitly instantiating the identity record. However, we still recommend instantiating the identity explicitly to benefit from type safety.
 
-The aggregate identity type is only used by the [command service](../application/app-service.md) and for calculating the [stream name](../persistence/aggregate-stream.md) for loading and saving events. When the command service loads an aggregate with identity, it sets the state identity to a value derived from the stream name. For example, when loading events from a stream `Order-123` for an aggregate type declared as `Order : Aggregate<OrderState<OrderId>>`, the `OrderId` value will be set to `123`. 
+The aggregate identity type is only used by the [command service](../application/app-service.mdx) and for calculating the [stream name](../persistence/aggregate-stream.md) for loading and saving events. When the command service loads an aggregate with identity, it sets the state identity to a value derived from the stream name. For example, when loading events from a stream `Order-123` for an aggregate type declared as `Order : Aggregate<OrderState<OrderId>>`, the `OrderId` value will be set to `123`. 
 
 ## Aggregate factory
 
@@ -162,7 +166,9 @@ public delegate T AggregateFactory<out T, TState>() where T : Aggregate<TState>;
 The registry allows you to add custom factory for a particular aggregate type. The registry itself is a singleton, accessible by `AggregateFactoryRegistry.Instance`. You can register your custom factory by using the `CreateAggregateUsing<T>` method of the registry:
 
 ```csharp title="Program.cs"
-AggregateFactoryRegistry.CreateAggregateUsing<Booking, BookingState>(() => new Booking(availabilityService));
+AggregateFactoryRegistry.CreateAggregateUsing<Booking, BookingState>(
+    () => new Booking(availabilityService)
+);
 ```
 
 By default, when there's no custom factory registered in the registry for a particular aggregate type, Eventuous will create new aggregate instances by using reflections. It will only work when the aggregate class has a parameterless constructor (it's provided by the `Aggregate` base class).
@@ -170,6 +176,10 @@ By default, when there's no custom factory registered in the registry for a part
 It's not a requirement to use the default factory registry singleton. Both `CommandService` and `AggregateStore` have an optional parameter that allows you to provide the registry as a dependency. When not provided, the default instance will be used. If you use a custom registry, you can add it to the DI container as singleton.
 
 ### Dependency injection
+
+:::note
+Install the `Eventuous.Extensions.DependencyInjection` package to use the API described below.
+:::
 
 The aggregate factory can inject registered dependencies to newly created aggregate instances when constructing them. For this to work, you need to tell Eventuous that the aggregate needs to be constructed using the container. To do so, use the `AddAggregate<T, TState>` service collection extension:
 
@@ -186,4 +196,3 @@ When that's done, you also need to tell the host to use the registered factories
 app.UseAggregateFactory();
 ```
 
-These extensions are available in the `Eventuous.Extensions.DependencyInjection` package.

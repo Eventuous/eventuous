@@ -93,7 +93,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.Projections
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{CCD807D2-F4F2-4EC2-A03D-8943F73993A6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.AspNetCore.Web", "src\Extensions\src\Eventuous.AspNetCore.Web\Eventuous.AspNetCore.Web.csproj", "{E387CC89-42B6-40BD-800B-C369AE971FCC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Extensions.AspNetCore", "src\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj", "{E387CC89-42B6-40BD-800B-C369AE971FCC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Experimental", "Experimental", "{B64D59D5-7935-4DFC-8D90-D6EF3D6F2ABA}"
 EndProject
@@ -107,7 +107,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElasticPlayground", "src\Ex
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.DependencyInjection", "src\Extensions\test\Eventuous.Tests.DependencyInjection\Eventuous.Tests.DependencyInjection.csproj", "{152E27CE-35F1-4F65-B53A-C7B710F1B310}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.AspNetCore.Web", "src\Extensions\test\Eventuous.Tests.AspNetCore.Web\Eventuous.Tests.AspNetCore.Web.csproj", "{B3F782EE-FBEF-47E2-8379-8A91B11363B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Tests.Extensions.AspNetCore", "src\Extensions\test\Eventuous.Tests.Extensions.AspNetCore\Eventuous.Tests.Extensions.AspNetCore.csproj", "{B3F782EE-FBEF-47E2-8379-8A91B11363B8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventuous.Sut.AspNetCore", "src\Extensions\test\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj", "{1C1033D6-059B-4CEE-A7D8-9EE470053145}"
 EndProject
@@ -212,6 +212,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookings.Payments", "samples\esdb\Bookings.Payments\Bookings.Payments.csproj", "{7D24DAB3-FD49-443C-811A-96F0CA6A6F9A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookings", "samples\esdb\Bookings\Bookings.csproj", "{C666D8E7-FB55-4435-A8D4-CF9815660E85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.Persistence", "src\Core\test\Eventuous.Tests.Persistence\Eventuous.Tests.Persistence.csproj", "{F24F066B-FC7A-4298-B007-19CC86BB31E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -533,27 +535,27 @@ Global
 		{17EC98BE-0738-4F65-8ACD-39150BB134ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{17EC98BE-0738-4F65-8ACD-39150BB134ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17EC98BE-0738-4F65-8ACD-39150BB134ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{17EC98BE-0738-4F65-8ACD-39150BB134ED}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
 		{4020E68A-B17C-4FFA-9687-C189F5D2851C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4020E68A-B17C-4FFA-9687-C189F5D2851C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4020E68A-B17C-4FFA-9687-C189F5D2851C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4020E68A-B17C-4FFA-9687-C189F5D2851C}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
 		{246E53C4-BF6B-4B7E-8C45-788B31EFC0A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{246E53C4-BF6B-4B7E-8C45-788B31EFC0A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{246E53C4-BF6B-4B7E-8C45-788B31EFC0A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{246E53C4-BF6B-4B7E-8C45-788B31EFC0A2}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
 		{7D86A33D-7C1A-45F7-BEFF-1B95525716D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7D86A33D-7C1A-45F7-BEFF-1B95525716D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D86A33D-7C1A-45F7-BEFF-1B95525716D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7D86A33D-7C1A-45F7-BEFF-1B95525716D6}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
 		{7D24DAB3-FD49-443C-811A-96F0CA6A6F9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7D24DAB3-FD49-443C-811A-96F0CA6A6F9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D24DAB3-FD49-443C-811A-96F0CA6A6F9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7D24DAB3-FD49-443C-811A-96F0CA6A6F9A}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
 		{C666D8E7-FB55-4435-A8D4-CF9815660E85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C666D8E7-FB55-4435-A8D4-CF9815660E85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C666D8E7-FB55-4435-A8D4-CF9815660E85}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C666D8E7-FB55-4435-A8D4-CF9815660E85}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
+		{F24F066B-FC7A-4298-B007-19CC86BB31E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F24F066B-FC7A-4298-B007-19CC86BB31E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F24F066B-FC7A-4298-B007-19CC86BB31E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F24F066B-FC7A-4298-B007-19CC86BB31E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F24F066B-FC7A-4298-B007-19CC86BB31E1}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
+		{F24F066B-FC7A-4298-B007-19CC86BB31E1}.Debug CI|Any CPU.Build.0 = Debug CI|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -649,6 +651,7 @@ Global
 		{7D86A33D-7C1A-45F7-BEFF-1B95525716D6} = {75F337AF-7E15-4ED1-8E4F-A582DABEA373}
 		{7D24DAB3-FD49-443C-811A-96F0CA6A6F9A} = {75F337AF-7E15-4ED1-8E4F-A582DABEA373}
 		{C666D8E7-FB55-4435-A8D4-CF9815660E85} = {75F337AF-7E15-4ED1-8E4F-A582DABEA373}
+		{F24F066B-FC7A-4298-B007-19CC86BB31E1} = {0ED6785B-60EF-46B4-B938-EF04189FC8BC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0691467B-C257-46DB-BC4F-88EB7CD615B8}

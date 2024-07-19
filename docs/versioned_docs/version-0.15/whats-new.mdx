@@ -15,17 +15,25 @@ Eventuous 0.15 adds support for .NET 8 and removes support for .NET 7. Currently
 ### Packages
 
 * `Eventuous.AspNetCore` is renamed to `Eventuous.Extensions.DependencyInjection`.
+* `Eventuous.AspNetCore.Web` is renamed to `Eventuous.Extensions.AspNetCore`.
 
 ### Domain abstractions
 
 * Aggregate base type without state is removed. The only remaining abstraction is `Aggregate<TState>`. Removal of non-generic `Aggregate` base class triggered a chain of changes for command services and registrations.
 * Aggregate factory extensions require specifying `TState` now. So, use `AddAggregate<T, TState>` instead of `AddAggregate<T>`.
 
+### Persistence
+
+* Aggregate store is no longer used by command services. Its interface, implementation, and registration extensions are marked obsolete. You can still use it outside command services but the whole thing might be removed in the future.
+* `IEventStore` got extensions to work with aggregates, which allowed to avoid using `IAggregateStore`.
+* `IEventWriter.AppendEvents` now needs a collection of `NewStreamEvents` instead of `StreamEvent` as the `StreamEvent` struct has properties that are irrelevant for new events (position, content type, etc).
+
 ### Command services
 
 * Non-generic `ICommandService` interface is removed.
 * `IStateCommandService<TState>` is replaced by `ICommandService<TState>`. Both aggregate-based and functional command services implement that interface.
-* Non-generic `Result`, `OkResult` and `ErrorResult` types are removed. Only generic `Result<TState>` and its derivatives are supported.
+* Command services no longer use `IAggregateStore`, so it doesn't need to be registered in the DI container. Replace `AddAggregateStore` by `AddEventStore`.
+* Non-generic `Result`, `OkResult` and `ErrorResult` types are removed. Only generic `Result<TState>` is supported. Read more [here](./application/app-service.mdx#result).
 * Service registration extension replaced by `AddCommandService<TService, TState>`:
     * `AddCommandService<TService, TAggregate>`
     * `AddCommandService<TService, TAggtegate, TId>`
@@ -35,8 +43,9 @@ Eventuous 0.15 adds support for .NET 8 and removes support for .NET 7. Currently
 
 * Controller base class requires `TState` generic argument instead of `TAggregate`, so the new definition is `CommandHttpApiBase<TState>`. Therefore, it can be used with both aggregate-based and functional command services. It takes `ICommandService<TState>` as a dependency.
 * `CommandHttpApiBaseFunc` base class is removed because it's no longer required. Use `CommandHttpApiBase<TState>` instead.
-* Controller methods need to return `ActionResult<Result<TState>>`. That's what the command service returns by default.
-* `AggregateCommands<TAggregate>` attribute is gone, use `StateCommands<TState>` instead. It supports both aggregate-based and functional services.
+* Controller methods need to return `ActionResult<Result<TState>.Ok>`.
+* `MessageMap` optional dependency for controllers is replaced by `CommandMap<HttpContext>`, so it's now possible to populate additional command properties from the HTTP context.
+* `AggregateCommands<TAggregate>` attribute is gone, use `HttpCommands<TState>` instead. It supports both aggregate-based and functional services.
 * `HttpCommand<TAggregate>` attribute is gone, use `HttpCommand<TState>` instead. It supports both aggregate-based and functional services.
 * `MapAggregateCommands<TAggregate>` is replaced with `MapCommands<TState>`.
 * `MapDiscoveredCommands<TAggregate>` is replaced with `MapDiscoveredCommands<TState>`.
@@ -44,9 +53,15 @@ Eventuous 0.15 adds support for .NET 8 and removes support for .NET 7. Currently
 * `MapCommand<TAggregate, TCommand, TResult>` is gone as custom results aren't supported in command mapping. Use `MapCommand<TState, TCommand>` and `Result<TState>` instead.
 * The same applies to command mappings with external-internal command conversion. Aggregate constraint is replaced by state type constraint, and a custom result type is no longer supported in favour of `Result<TState>`.
 
+:::note
+Current APIs for working with HTTP is [documented here](./application/command-api.md).
+:::
+
 ### Subscriptions
 
 Subscriptions are now being registered in the DI container using keyed dependencies. It requires to use `Microsoft.Extensions.DependencyInjection` version 8 and higher. If you use ASP.NET Core DI container in combination with another container like Autofac, make sure you use the version that supports keyed registrations in ASP.NET Core services collection.
+
+Subscriptions also got `IEventSerializer` (all of them) and `IMetadataSerializer` (EventStoreDB, Postgres and SQL Server) as dependencies, and subscription option properties holding those are removed. The reason is that serializers can now play nicely with dependency injection, which is particularly relevant to event serializers as they depend on `TypeMapper`. It is now easier to use separated type maps. One case for that is Eventuous tests where the global type map created issues with conflicting type registrations.
 
 ### Producers
 

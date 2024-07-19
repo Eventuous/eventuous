@@ -7,15 +7,22 @@ using Sut.Domain;
 using static Sut.App.Commands;
 using static Sut.Domain.BookingEvents;
 
-[Obsolete("Obsolete")]
-public class BookingFuncService : FunctionalCommandService<BookingState> {
+public class BookingFuncService : CommandService<BookingState> {
     public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null) : base(store, typeMap, amendEvent) {
-#pragma warning disable CS0618
-        // Keep it for tests until the old API is gone
-        OnNew<BookRoom>(cmd => GetStream(cmd.BookingId), BookRoom);
-#pragma warning restore CS0618
-        On<RecordPayment>().InState(ExpectedState.Existing).GetStream(cmd => GetStream(cmd.BookingId)).Act(RecordPayment);
-        On<ImportBooking>().InState(ExpectedState.Any).GetStream(cmd => GetStream(cmd.BookingId)).Act(ImportBooking);
+        On<BookRoom>()
+            .InState(ExpectedState.New)
+            .GetStream(cmd => GetStream(cmd.BookingId))
+            .Act(BookRoom);
+
+        On<RecordPayment>()
+            .InState(ExpectedState.Existing)
+            .GetStream(cmd => GetStream(cmd.BookingId))
+            .Act(RecordPayment);
+
+        On<ImportBooking>()
+            .InState(ExpectedState.Any)
+            .GetStream(cmd => GetStream(cmd.BookingId))
+            .Act(ImportBooking);
 
         return;
 
@@ -32,6 +39,10 @@ public class BookingFuncService : FunctionalCommandService<BookingState> {
             yield return registered;
 
             var newState = state.When(registered);
+
+            if (state.AmountPaid != newState.AmountPaid) {
+                yield return (new BookingOutstandingAmountChanged((state.Price - newState.AmountPaid).Amount));
+            }
 
             if (newState.IsFullyPaid()) yield return new BookingFullyPaid(cmd.PaidAt);
             if (newState.IsOverpaid()) yield return new BookingOverpaid((state.AmountPaid - state.Price).Amount);

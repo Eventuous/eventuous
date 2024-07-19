@@ -7,8 +7,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Kafka.Subscriptions;
 
-public class KafkaBasicSubscription(KafkaSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory)
-    : EventSubscription<KafkaSubscriptionOptions>(options, consumePipe, loggerFactory) {
+public class KafkaBasicSubscription(KafkaSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory, IEventSerializer? eventSerializer)
+    : EventSubscription<KafkaSubscriptionOptions>(options, consumePipe, loggerFactory, eventSerializer) {
     protected override ValueTask Subscribe(CancellationToken cancellationToken)
         => throw new NotImplementedException();
 

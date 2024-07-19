@@ -32,7 +32,7 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
     protected override void SetupServices(IServiceCollection services) {
         base.SetupServices(services);
         services.AddEventStoreClient(Container.GetConnectionString());
-        services.AddAggregateStore<EsdbEventStore>();
+        services.AddEventStore<EsdbEventStore>();
         services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
         configureServices?.Invoke(services);
     }

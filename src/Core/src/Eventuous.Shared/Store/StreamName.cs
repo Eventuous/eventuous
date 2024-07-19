@@ -16,15 +16,15 @@ public record struct StreamName {
     public static StreamName For<T>(string entityId) => new($"{typeof(T).Name}-{Ensure.NotEmptyString(entityId)}");
 
     public static StreamName ForState<TState>(string entityId) {
-        var stateName = typeof(TState).Name;
+        var id            = Ensure.NotEmptyString(entityId).Trim();
+        var stateName     = typeof(TState).Name;
+        var stateNameSpan = stateName.AsSpan();
 
-        if (stateName.EndsWith("State")) {
-            stateName = stateName[..^SuffixLength];
+        if (stateNameSpan.EndsWith("State")) {
+            stateNameSpan = stateNameSpan[..^SuffixLength];
         }
 
-        stateName = stateName.Length > 0 ? stateName : typeof(TState).Name;
-
-        return new($"{stateName}-{Ensure.NotEmptyString(entityId)}");
+        return stateNameSpan.Length > 0 ? new($"{stateNameSpan}-{id}") : new($"{stateName}-{id}");
     }
 
     public readonly string GetId() => Value[(Value.IndexOf('-') + 1)..];

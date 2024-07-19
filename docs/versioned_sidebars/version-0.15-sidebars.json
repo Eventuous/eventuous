@@ -42,7 +42,7 @@
       "items": [
         "persistence/aggregate-stream",
         "persistence/event-store",
-        "persistence/aggregate-store/index",
+        "persistence/aggregate-store",
         "persistence/serialisation"
       ]
     },
@@ -56,8 +56,7 @@
       "items": [
         "application/app-service",
         "application/func-service",
-        "application/command-api",
-        "application/command-map"
+        "application/command-api"
       ]
     },
     {

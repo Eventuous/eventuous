@@ -4,10 +4,18 @@ using Eventuous.TestHelpers;
 
 namespace Eventuous.Tests.EventStore;
 
-public class AppServiceTests(StoreFixture fixture, ITestOutputHelper output) : IClassFixture<StoreFixture>, IDisposable {
-    readonly TestEventListener _listener = new(output);
+public class AppServiceTests : IClassFixture<StoreFixture>, IDisposable {
+    readonly TestEventListener _listener;
+    readonly StoreFixture      _fixture;
 
-    BookingService Service { get; } = new(fixture.AggregateStore);
+    public AppServiceTests(StoreFixture fixture, ITestOutputHelper output) {
+        _fixture  = fixture;
+        _listener = new(output);
+        Service   = new(fixture.EventStore);
+        _fixture.TypeMapper.AddType<BookingEvents.BookingImported>();
+    }
+
+    BookingService Service { get; }
 
     [Fact]
     [Trait("Category", "Application")]
@@ -19,7 +27,7 @@ public class AppServiceTests(StoreFixture fixture, ITestOutputHelper output) : I
         var handlingResult = await Service.Handle(cmd, default);
         handlingResult.Success.Should().BeTrue();
 
-        var events = await fixture.EventStore.ReadEvents(
+        var events = await _fixture.EventStore.ReadEvents(
             StreamName.For<Booking>(cmd.BookingId),
             StreamReadPosition.Start,
             int.MaxValue,

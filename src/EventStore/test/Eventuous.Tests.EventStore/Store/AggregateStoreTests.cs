@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using JetBrains.Annotations;
+using static Eventuous.AggregateFactoryRegistry;
 
 namespace Eventuous.Tests.EventStore.Store;
 
@@ -8,39 +10,31 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
 
     public AggregateStoreTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
-        TypeMap.Instance.AddType<TestEvent>("testEvent");
-
-        var loggerFactory = LoggerFactory.Create(
-            cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug)
-        );
-
+        _fixture.TypeMapper.AddType<TestAggregateEvent>("testAggregateEvent");
+        var loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug));
         _log = loggerFactory.CreateLogger<AggregateStoreTests>();
     }
 
     [Fact]
     [Trait("Category", "Store")]
+    [Obsolete("Obsolete")]
     public async Task AppendedEventShouldBeTraced() {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
-        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate, TestState>();
+        var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
         await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, CancellationToken.None);
     }
 
     [Fact]
     [Trait("Category", "Store")]
+    [Obsolete("Obsolete")]
     public async Task ShouldReadLongAggregateStream() {
         const int count = 9000;
 
-        var id = new TestId(Guid.NewGuid().ToString("N"));
-
-        var initial = Enumerable
-            .Range(1, count)
-            .Select(x => new TestEvent(x.ToString()))
-            .ToArray();
-
-        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate, TestState>();
-
-        var counter = 0;
+        var id        = new TestId(Guid.NewGuid().ToString("N"));
+        var initial   = Enumerable.Range(1, count).Select(x => new TestAggregateEvent(x.ToString())).ToArray();
+        var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
+        var counter   = 0;
 
         foreach (var data in initial) {
             aggregate.DoIt(data.Data);
@@ -65,9 +59,10 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
 
     [Fact]
     [Trait("Category", "Store")]
+    [Obsolete("Obsolete")]
     public async Task ShouldReadAggregateStreamManyTimes() {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
-        var aggregate = AggregateFactoryRegistry.Instance.CreateInstance<TestAggregate, TestState>();
+        var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
         await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, default);
 
@@ -82,14 +77,15 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     record TestId(string Value) : Id(Value);
 
     record TestState : State<TestState> {
-        public TestState() => On<TestEvent>((state, evt) => state with { Values = state.Values.Add(evt.Data) });
+        public TestState() => On<TestAggregateEvent>((state, evt) => state with { Values = state.Values.Add(evt.Data) });
 
         public ImmutableList<string> Values { get; init; } = ImmutableList<string>.Empty;
     }
 
+    [UsedImplicitly]
     class TestAggregate : Aggregate<TestState> {
-        public void DoIt(string data) => Apply(new TestEvent(data));
+        public void DoIt(string data) => Apply(new TestAggregateEvent(data));
     }
 
-    record TestEvent(string Data);
+    record TestAggregateEvent(string Data);
 }

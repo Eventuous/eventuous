@@ -29,10 +29,9 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         await Module.LoadModule(GetDb);
 
         GetDatabase = GetDb;
-        var store = new RedisStore(GetDb, new RedisStoreOptions(), Serializer);
+        var store = new RedisStore(GetDb, new(), Serializer);
         EventWriter = store;
         EventReader = store;
-        _           = new AggregateStore(store, store);
 
         return;
 

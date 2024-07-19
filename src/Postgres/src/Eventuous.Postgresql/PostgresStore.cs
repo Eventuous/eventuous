@@ -5,6 +5,8 @@ using System.Data.Common;
 using Eventuous.Postgresql.Extensions;
 using Eventuous.Sql.Base;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+
 namespace Eventuous.Postgresql;
 
 public class PostgresStoreOptions(string schema) {
@@ -51,9 +53,10 @@ public class PostgresStore : SqlEventStoreBase<NpgsqlConnection, NpgsqlTransacti
             .Add("_from_position", NpgsqlDbType.Integer, start.Value)
             .Add("_count", NpgsqlDbType.Integer, count);
 
-    protected override DbCommand GetReadBackwardsCommand(NpgsqlConnection connection, StreamName stream, int count) 
+    protected override DbCommand GetReadBackwardsCommand(NpgsqlConnection connection, StreamName stream, StreamReadPosition start, int count)
         => connection.GetCommand(Schema.ReadStreamBackwards)
             .Add("_stream_name", NpgsqlDbType.Varchar, stream.ToString())
+            .Add("_from_position", NpgsqlDbType.Integer, start.Value)
             .Add("_count", NpgsqlDbType.Integer, count);
 
     protected override bool IsStreamNotFound(Exception exception)
@@ -76,4 +79,15 @@ public class PostgresStore : SqlEventStoreBase<NpgsqlConnection, NpgsqlTransacti
 
     protected override DbCommand GetStreamExistsCommand(NpgsqlConnection connection, StreamName stream)
         => connection.GetCommand(Schema.StreamExists).Add("name", NpgsqlDbType.Varchar, stream.ToString());
+
+    protected override DbCommand GetTruncateCommand(
+            NpgsqlConnection       connection,
+            StreamName             stream,
+            ExpectedStreamVersion  expectedVersion,
+            StreamTruncatePosition position
+        )
+        => connection.GetCommand(Schema.TruncateStream)
+            .Add("_stream_name", NpgsqlDbType.Varchar, stream.ToString())
+            .Add("_expected_version", NpgsqlDbType.Integer, expectedVersion.Value)
+            .Add("_position", NpgsqlDbType.Integer, position.Value);
 }

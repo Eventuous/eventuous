@@ -8,25 +8,23 @@ using Testing;
 
 public class StateWithIdTests {
     readonly BookingService _service;
-    readonly AggregateStore _aggregateStore;
+    readonly IEventStore    _store = new InMemoryEventStore();
 
-    public StateWithIdTests() {
-        _aggregateStore = new(new InMemoryEventStore());
-        _service        = new(_aggregateStore);
-    }
+    public StateWithIdTests() => _service = new(_store);
 
     [Fact]
     public async Task ShouldGetIdForNew() {
         var map   = new StreamNameMap();
         var id    = Guid.NewGuid().ToString();
-        var state = await Seed(id);
+        var result = await Seed(id);
 
         var bookingId = new BookingId(id);
 
         // Ensure that the id was set when the aggregate was created
-        state.State!.Id.Should().Be(bookingId);
+        result.TryGet(out var ok).Should().BeTrue();
+        ok!.State.Id.Should().Be(bookingId);
 
-        var instance = await _aggregateStore.Load<Booking, BookingState, BookingId>(map, bookingId, default);
+        var instance = await _store.LoadAggregate<Booking, BookingState, BookingId>(bookingId, map, true);
 
         // Ensure that the id was set when the aggregate was loaded
         instance.State.Id.Should().Be(bookingId);

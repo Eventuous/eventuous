@@ -6,7 +6,7 @@ namespace Eventuous.Tests.EventStore.Subscriptions;
 
 [Collection("Database")]
 public class PublishAndSubscribeOneTests(ITestOutputHelper output)
-    : LegacySubscriptionFixture<TestEventHandler>(output, new(new(null, output)), false, logLevel: LogLevel.Trace) {
+    : LegacySubscriptionFixture<TestEventHandler>(output, new(new(null, output)), false, logLevel: LogLevel.Debug) {
     [Fact]
     [Trait("Category", "Stream catch-up subscription")]
     public async Task SubscribeAndProduce() {

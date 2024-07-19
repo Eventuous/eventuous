@@ -60,14 +60,9 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
 
         foreach (var command in commands) {
             var evt         = ToEvent(command);
-            var streamEvent = new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "", 0);
+            var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, new());
 
-            await _fixture.EventStore.AppendEvents(
-                StreamName.For<Booking>(command.BookingId),
-                ExpectedStreamVersion.NoStream,
-                new[] { streamEvent },
-                default
-            );
+            await _fixture.EventStore.AppendEvents(StreamName.For<Booking>(command.BookingId), ExpectedStreamVersion.NoStream, [streamEvent], default);
         }
 
         return commands;

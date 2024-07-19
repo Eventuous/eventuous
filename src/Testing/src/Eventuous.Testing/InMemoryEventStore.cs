@@ -15,14 +15,14 @@ public class InMemoryEventStore : IEventStore {
 
     /// <inheritdoc />
     public Task<AppendEventsResult> AppendEvents(
-            StreamName                       stream,
-            ExpectedStreamVersion            expectedVersion,
-            IReadOnlyCollection<StreamEvent> events,
-            CancellationToken                cancellationToken
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
         ) {
-        var existing = _storage.GetOrAdd(stream, s => new InMemoryStream(s));
+        var existing = _storage.GetOrAdd(stream, s => new(s));
         existing.AppendEvents(expectedVersion, events);
-        _global.AddRange(events);
+        _global.AddRange(events.Select((x, i) => new StreamEvent(x.Id, x.Payload, x.Metadata, "application/json", _global.Count + i)));
 
         return Task.FromResult(new AppendEventsResult((ulong)(_global.Count - 1), existing.Version));
     }
@@ -32,8 +32,8 @@ public class InMemoryEventStore : IEventStore {
         => Task.FromResult(FindStream(stream).GetEvents(start, count).ToArray());
 
     /// <inheritdoc />
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken)
-        => Task.FromResult(FindStream(stream).GetEventsBackwards(count).ToArray());
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
+        => Task.FromResult(FindStream(stream).GetEventsBackwards(start, count).ToArray());
 
     /// <inheritdoc />
     public Task TruncateStream(
@@ -72,25 +72,26 @@ class InMemoryStream(StreamName name) {
         if (expectedVersion.Value != Version) throw new WrongVersion(expectedVersion, Version);
     }
 
-    public void AppendEvents(ExpectedStreamVersion expectedVersion, IReadOnlyCollection<StreamEvent> events) {
+    public void AppendEvents(ExpectedStreamVersion expectedVersion, IReadOnlyCollection<NewStreamEvent> events) {
         CheckVersion(expectedVersion);
 
-        foreach (var streamEvent in events) {
-            _events.Add(new(streamEvent, ++Version));
+        foreach (var newEvent in events) {
+            var version     = ++Version;
+            var streamEvent = new StreamEvent(newEvent.Id, newEvent.Payload, newEvent.Metadata, "application/json", version);
+            _events.Add(new(streamEvent, version));
         }
     }
 
     public IEnumerable<StreamEvent> GetEvents(StreamReadPosition from, int count) {
-        var selected = _events
-            .SkipWhile(x => x.Position < from.Value);
+        var selected = _events.SkipWhile(x => x.Position < from.Value);
 
         if (count > 0) selected = selected.Take(count);
 
         return selected.Select(x => x.Event with { Position = x.Position });
     }
 
-    public IEnumerable<StreamEvent> GetEventsBackwards(int count) {
-        var position = _events.Count - 1;
+    public IEnumerable<StreamEvent> GetEventsBackwards(StreamReadPosition from, int count) {
+        var position = (int)from.Value;
 
         while (count-- > 0) {
             yield return _events[position--].Event;

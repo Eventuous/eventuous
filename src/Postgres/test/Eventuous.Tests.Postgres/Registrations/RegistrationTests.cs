@@ -18,13 +18,13 @@ public class RegistrationTests {
 
         builder.ConfigureServices(
             services => {
-                services.AddAggregateStore<PostgresStore>();
+                services.AddEventStore<PostgresStore>();
                 services.AddSingleton(ds);
                 services.AddSingleton(new PostgresStoreOptions());
             }
         );
         var app            = builder.Build();
-        var aggregateStore = app.Services.GetRequiredService<IAggregateStore>();
+        var aggregateStore = app.Services.GetRequiredService<IEventStore>();
         aggregateStore.Should().NotBeNull();
     }
 
@@ -40,13 +40,11 @@ public class RegistrationTests {
 
         builder.ConfigureServices(
             (ctx, services) => {
-                services.AddAggregateStore<PostgresStore>();
+                services.AddEventStore<PostgresStore>();
                 services.AddEventuousPostgres(ctx.Configuration.GetSection("postgres"));
             }
         );
         var app            = builder.Build();
-        var aggregateStore = app.Services.GetService<IAggregateStore>();
-        aggregateStore.Should().NotBeNull();
         var reader       = app.Services.GetService<IEventStore>();
         var npgSqlReader = ((reader as TracedEventStore)!).Inner as PostgresStore;
         npgSqlReader.Should().NotBeNull();

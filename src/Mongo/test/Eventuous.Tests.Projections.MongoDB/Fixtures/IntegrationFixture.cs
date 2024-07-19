@@ -20,7 +20,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         => EventStore.AppendEvents(
             streamName,
             version ?? ExpectedStreamVersion.Any,
-            [new(Guid.NewGuid(), evt, new(), "application/json", 0)],
+            [new(Guid.NewGuid(), evt, new())],
             CancellationToken.None
         );
 

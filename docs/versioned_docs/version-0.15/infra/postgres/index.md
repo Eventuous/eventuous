@@ -6,7 +6,7 @@ sidebar_position: 3
 
 PostgreSQL is a powerful, open source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance. [source](https://www.postgresql.org/).
 
-Eventuous supports Postgres as an event store, and also allows subscribing to the global event log and to individual streams using catch-up subscriptions.
+Eventuous supports Postgres as an event store and also allows subscribing to the global event log and to individual streams using catch-up subscriptions.
 
 ## Data model
 
@@ -29,50 +29,57 @@ For subscriptions, Eventuous adds a table called `checkpoints` that stores the l
 
 ## Event persistence
 
-Usually, you just need to register the aggregate store that uses the Postgres event store. For that to work, you'd also need to register a Postgres connection factory, which is used to create connections to the database.
+Before using Postgres as an event store, you need to register the Postgres-based event store implementation.
+For that to work, you'd also need to register a Postgres data source, which is used to create connections to the database.
+Eventuous provides a few overloads for `AddEventuousPostgres` registration extension to do that.
+
+One way to register the data source is to provide a connection string and, optionally, the schema name:
 
 ```csharp titlle="Program.cs"
-// Local connection factory function
-NpgsqlConnection GetConnection() => new(connectionString);
-
-builder.Services.AddSingleton((GetPostgresConnection)GetConnection);
-builder.Services.AddAggregateStore<PostgresStore>();
+builder.Services.AddEventuousPostgres(connectionString, "mySchema");
 ```
 
-For the newer NpgSql driver (v7+), you can use the `NpgsqlDataSourceBuilder`:
+If the schema name is not provided, the default schema name (`eventuous`) will be used.
 
-```csharp titlle="Program.cs"
-var ds = new NpgsqlDataSourceBuilder(connectionString).Build();
-NpgsqlConnection GetConnection() => ds.CreateConnection();
-builder.Services.AddSingleton(GetConnection());
-builder.Services.AddAggregateStore<PostgresStore>();
-```
+Another way to register the data source is by using configuration options. For example, you can add the following to the settings file:
 
-You can also override the default schema by configuring the store options:
-
-```json title="appsettings.json"
+```json title="appSettings.json"
 {
   "PostgresStore": {
-    "Schema": "my-schema"
+    "Schema": "mySchema",
+    "ConnectionString": "Host=localhost;Username=postgres;Password=secret;Database=mydb;",
+    "InitializeDatabase": true
   }
 }
 ```
 
+Then, use the configuration section to register the data source:
+
 ```csharp titlle="Program.cs"
-builder.Services.Configure<PostgresStoreOptions>(
+builder.Services.AddEventuousPostgres(
     builder.Configuration.GetSection("PostgresStore")
 );
 ```
 
-When that's done, Eventuous would persist aggregates in Postgres when you use the [command service](../../application/app-service).
+The `InitializeDatabase` setting tells Eventuous if it needs to create the schema. If you create the schema in a separate migration application, set this setting to `false`. If the schema cannot be found, and the `InitializeDatabase` setting is set to `false`, the application will fail to start.
 
+Next, you need to register the Postgres event store:
+
+```csharp
+builder.Services.AddEventStore<PostgresStore>();
+```
+
+When that's done, Eventuous will use Postgres for persistence in command services.
+
+:::note
 At this moment, the Postgres event store implementation doesn't support stream truncation.
+:::
 
 ## Subscriptions
 
 Eventuous supports two types of subscriptions to Postgres: global and stream. The global subscription is a catch-up subscription, which means that it reads all events from the beginning of the event log. The stream subscription is also a catch-up subscription, but it only reads events from a specific stream.
 
-Both subscription types use continuous polling to check for new events. We don't use the notifications feature of Postgres database.
+Both subscription types use continuous polling to check for new events. We don't use the notification feature of Postgres.
 
 ### Registering subscriptions
 
@@ -98,11 +105,21 @@ builder.Services.AddSubscription<PostgresStreamSubscription, PostgresStreamSubsc
 );
 ```
 
+As subscriptions use a Postgres data source for opening the connection, there's no need to register additional dependencies apart from calling `AddEventuousPostgres` as described in [event persistence](#event-persistence) section above.
+
 ### Checkpoint store
 
 Catch-up subscriptions need a [checkpoint](../../subscriptions/checkpoint). You can register the checkpoint store using `AddCheckpointStore<T>`, and it will be used for all subscriptions in the application.
 
 Remember to store the checkpoint in the same database as the read model. For example, if you use Postgres as an event store, and project events to read models in MongoDB, you need to use the `MongoCheckpointStore`. Eventuous also has a checkpoint store implementation for Postgres (`PostgresCheckpointStore`), which you can use if you project events to Postgres.
+
+When using the Postgres checkpoint store, you can register it using a dedicated extension function:
+
+```csharp
+builder.Services.AddPostgresCheckpointStore();
+```
+
+This registration function will use the schema name provided when you register the data source using `AddEventuousPostgres`.
 
 ### Projections
 
@@ -124,7 +141,7 @@ You can project the `BookingImported` event to this table using a simple project
 
 ```csharp title="ImportingBookingsProjector.cs"
 public class ImportingBookingsProjector : PostgresProjector {
-    public ImportingBookingsProjector(GetPostgresConnection getConnection) : base(getConnection) {
+    public ImportingBookingsProjector(NpgsqlDataSource dataSource) : base(dataSource) {
         const string insert = @"insert into myschema.bookings 
             (booking_id, checkin_date, price) 
             values (@booking_id, @checkin_date, @price)";
@@ -143,7 +160,7 @@ public class ImportingBookingsProjector : PostgresProjector {
 }
 ```
 
-There, `Project` is a small helper function that creates a command from a given connection, sets the command type to `Text`, assigns the given SQL statement, and adds the given parameters to the command. It then returns the command, so it can be executed by the projector.
+There, `Project` is a small helper function that creates a command from a given connection, sets the command type to `Text`, assigns the given SQL statement, and adds parameters to the command. It then returns the command, so it can be executed by the projector.
 
 You can then register the projector as a subscription handler:
 
@@ -155,5 +172,10 @@ builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStrea
         .AddEventHandler<ImportingBookingsProjector>();
 );
 ```
+
+:::note
+You only need to explicitly specify the subscription checkpoint store with `UseCheckpointStore` if your application uses different checkpoint stores for different subscriptions.
+At this moment, there is no way to use different checkpoint store options for each subscription in the same application, they will all use the same `PostgresCheckpointStoreOptions`.
+:::
 
 Note that the `insert` operation in the projection is not idempotent, so if the event is processed twice because there was a failure, the projector will throw an exception. It would not be an issue when the subscription uses the default setting that tells it not to stop when the handler fails. If you want to ensure that failures force the subscription to throw, you can change the subscription option `ThroOnError` to `true`, and make the operation idempotent by using "insert or update".

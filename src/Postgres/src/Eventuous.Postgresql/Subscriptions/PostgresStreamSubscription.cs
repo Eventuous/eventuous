@@ -11,15 +11,28 @@ namespace Eventuous.Postgresql.Subscriptions;
 using Extensions;
 
 /// <summary>
-/// Subscription for events in a single stream in PostgreSQL event store.
+/// Subscription for events in a single stream in the PostgreSQL event store.
 /// </summary>
 public class PostgresStreamSubscription(
         NpgsqlDataSource                  dataSource,
         PostgresStreamSubscriptionOptions options,
         ICheckpointStore                  checkpointStore,
         ConsumePipe                       consumePipe,
-        ILoggerFactory?                   loggerFactory = null
-    ) : PostgresSubscriptionBase<PostgresStreamSubscriptionOptions>(dataSource, options, checkpointStore, consumePipe, SubscriptionKind.Stream, loggerFactory) {
+        ILoggerFactory?                   loggerFactory   = null,
+        IEventSerializer?                 eventSerializer = null,
+        IMetadataSerializer?              metaSerializer  = null,
+        PostgresStoreOptions?             storeOptions    = null
+    ) : PostgresSubscriptionBase<PostgresStreamSubscriptionOptions>(
+    dataSource,
+    options,
+    checkpointStore,
+    consumePipe,
+    SubscriptionKind.Stream,
+    loggerFactory,
+    eventSerializer,
+    metaSerializer,
+    storeOptions
+) {
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadStreamSub)
             .Add("_stream_id", NpgsqlDbType.Integer, _streamId)

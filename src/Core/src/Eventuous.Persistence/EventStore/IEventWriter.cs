@@ -14,9 +14,9 @@ public interface IEventWriter {
     /// <returns>Append result, which contains the global position of the last written event,
     /// as well as the next stream version</returns>
     Task<AppendEventsResult> AppendEvents(
-        StreamName                       stream,
-        ExpectedStreamVersion            expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
-        CancellationToken                cancellationToken
-    );
+            StreamName                          stream,
+            ExpectedStreamVersion               expectedVersion,
+            IReadOnlyCollection<NewStreamEvent> events,
+            CancellationToken                   cancellationToken
+        );
 }
