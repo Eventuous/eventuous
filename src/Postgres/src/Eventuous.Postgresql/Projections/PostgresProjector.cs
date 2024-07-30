@@ -10,7 +10,7 @@ namespace Eventuous.Postgresql.Projections;
 /// <summary>
 /// Base class for projectors that store read models in PostgreSQL.
 /// </summary>
-public abstract class PostgresProjector(NpgsqlDataSource dataSource, TypeMapper? mapper = null) : EventHandler(mapper) {
+public abstract class PostgresProjector(NpgsqlDataSource dataSource, ITypeMapper? mapper = null) : EventHandler(mapper) {
     protected void On<T>(ProjectToPostgres<T> handler) where T : class {
         base.On<T>(async ctx => await Handle(ctx, GetCommand).NoContext());
 

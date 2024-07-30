@@ -7,10 +7,10 @@ using static Eventuous.DeserializationResult;
 namespace Eventuous;
 
 [PublicAPI]
-public class DefaultEventSerializer(JsonSerializerOptions options, TypeMapper? typeMapper = null) : IEventSerializer {
+public class DefaultEventSerializer(JsonSerializerOptions options, ITypeMapper? typeMapper = null) : IEventSerializer {
     public static IEventSerializer Instance { get; private set; } = new DefaultEventSerializer(new(JsonSerializerDefaults.Web));
 
-    readonly TypeMapper _typeMapper = typeMapper ?? TypeMap.Instance;
+    readonly ITypeMapper _typeMapper = typeMapper ?? TypeMap.Instance;
 
     public static void SetDefaultSerializer(IEventSerializer serializer) => Instance = serializer;
 

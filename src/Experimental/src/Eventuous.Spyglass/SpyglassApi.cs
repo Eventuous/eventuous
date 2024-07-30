@@ -34,10 +34,12 @@ public static class SpyglassApi {
 
         builder.MapGet(
                 "/spyglass/events",
-                (HttpRequest request, [FromServices] TypeMapper? typeMapper) => {
+                (HttpRequest request, [FromServices] ITypeMapper? typeMapper) => {
                     var typeMap = typeMapper ?? TypeMap.Instance;
 
-                    return CheckAndReturn(request, () => typeMap.ReverseMap.Select(x => x.Key));
+                    return typeMap is not ITypeMapperExt typeMapExt
+                        ? Results.Problem("Type mapper doesn't support listing registered types", statusCode: 500)
+                        : CheckAndReturn(request, () => typeMapExt.GetRegisteredTypes());
                 }
             )
             .ExcludeFromDescription();

@@ -17,7 +17,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
         IEventWriter?             writer,
         AggregateFactoryRegistry? factoryRegistry = null,
         StreamNameMap?            streamNameMap   = null,
-        TypeMapper?               typeMap         = null,
+        ITypeMapper?              typeMap         = null,
         AmendEvent?               amendEvent      = null
     )
     : ICommandService<TAggregate, TState, TId>
@@ -28,7 +28,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             IEventStore?              store,
             AggregateFactoryRegistry? factoryRegistry = null,
             StreamNameMap?            streamNameMap   = null,
-            TypeMapper?               typeMap         = null,
+            ITypeMapper?              typeMap         = null,
             AmendEvent?               amendEvent      = null
         ) : this(store, store, factoryRegistry, streamNameMap, typeMap, amendEvent) { }
 
@@ -40,7 +40,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
     readonly HandlersMap<TAggregate, TState, TId> _handlers        = new();
     readonly AggregateFactoryRegistry             _factoryRegistry = factoryRegistry ?? AggregateFactoryRegistry.Instance;
     readonly StreamNameMap                        _streamNameMap   = streamNameMap   ?? new StreamNameMap();
-    readonly TypeMapper                           _typeMap         = typeMap         ?? TypeMap.Instance;
+    readonly ITypeMapper                          _typeMap         = typeMap         ?? TypeMap.Instance;
 
     /// <summary>
     /// Returns the command handler builder for the specified command type.
@@ -89,7 +89,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
 
             var writer      = registeredHandler.ResolveWriter(command);
             var storeResult = await writer.StoreAggregate<TAggregate, TState>(stream, result, Amend, cancellationToken).NoContext();
-            var changes     = result.Changes.Select(x => new Change(x, _typeMap.GetTypeName(x)));
+            var changes     = result.Changes.Select(x => Change.FromEvent(x, _typeMap));
             Log.CommandHandled<TCommand>();
 
             return Result<TState>.FromSuccess(result.State, changes, storeResult.GlobalPosition);

@@ -6,9 +6,9 @@ namespace Eventuous;
 using static Diagnostics.ApplicationEventSource;
 
 [Obsolete("Use CommandService<TState>")]
-public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
+public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null)
     : CommandService<TState>(reader, writer, typeMap, amendEvent) where TState : State<TState>, new() {
-    protected FunctionalCommandService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
+    protected FunctionalCommandService(IEventStore store, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null)
         : this(store, store, typeMap, amendEvent) { }
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.New).GetStream(...).Act(...) instead")]
@@ -32,22 +32,22 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
 /// </summary>
 /// <param name="reader">Event reader or event store</param>
 /// <param name="writer">Event writer or event store</param>
-/// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
+/// <param name="typeMap"><seealso cref="ITypeMapper"/> instance or null to use the default type mapper</param>
 /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
 /// <typeparam name="TState">State object type</typeparam>
-public abstract class CommandService<TState>(IEventReader reader, IEventWriter writer, TypeMapper? typeMap = null, AmendEvent? amendEvent = null)
+public abstract class CommandService<TState>(IEventReader reader, IEventWriter writer, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null)
     : ICommandService<TState> where TState : State<TState>, new() {
-    readonly TypeMapper          _typeMap  = typeMap ?? TypeMap.Instance;
+    readonly ITypeMapper         _typeMap  = typeMap ?? TypeMap.Instance;
     readonly HandlersMap<TState> _handlers = new();
 
     /// <summary>
     /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
     /// </summary>
     /// <param name="store">Event store</param>
-    /// <param name="typeMap"><seealso cref="TypeMapper"/> instance or null to use the default type mapper</param>
+    /// <param name="typeMap"><seealso cref="ITypeMapper"/> instance or null to use the default type mapper</param>
     /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
     // ReSharper disable once UnusedMember.Global
-    protected CommandService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null) : this(store, store, typeMap, amendEvent) { }
+    protected CommandService(IEventStore store, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null) : this(store, store, typeMap, amendEvent) { }
 
     /// <summary>
     /// Returns the command handler builder for the specified command type.
@@ -96,7 +96,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
 
             var storeResult = await resolvedWriter.Store(streamName, loadedState.StreamVersion, newEvents, Amend, cancellationToken)
                 .NoContext();
-            var changes = newEvents.Select(x => new Change(x, _typeMap.GetTypeName(x)));
+            var changes = newEvents.Select(x => Change.FromEvent(x, _typeMap));
             Log.CommandHandled<TCommand>();
 
             return Result<TState>.FromSuccess(newState, changes, storeResult.GlobalPosition);
@@ -105,9 +105,10 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
 
             return Result<TState>.FromError(e, $"Error handling command {typeof(TCommand).Name}");
         }
-        
+
         NewStreamEvent Amend(NewStreamEvent streamEvent) {
             var evt = registeredHandler.AmendEvent?.Invoke(streamEvent, command) ?? streamEvent;
+
             return amendEvent?.Invoke(evt) ?? evt;
         }
     }

@@ -8,11 +8,11 @@ using static Sut.App.Commands;
 using static Sut.Domain.BookingEvents;
 
 public class BookingFuncService : CommandService<BookingState> {
-    public BookingFuncService(IEventStore store, TypeMapper? typeMap = null, AmendEvent? amendEvent = null) : base(store, typeMap, amendEvent) {
+    public BookingFuncService(IEventStore store, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null) : base(store, typeMap, amendEvent) {
         On<BookRoom>()
             .InState(ExpectedState.New)
             .GetStream(cmd => GetStream(cmd.BookingId))
-            .Act(BookRoom);
+            .Act(cmd => [new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price)]);
 
         On<RecordPayment>()
             .InState(ExpectedState.Existing)
@@ -22,14 +22,14 @@ public class BookingFuncService : CommandService<BookingState> {
         On<ImportBooking>()
             .InState(ExpectedState.Any)
             .GetStream(cmd => GetStream(cmd.BookingId))
-            .Act(ImportBooking);
+            .Act((_, _, cmd) => [new BookingImported(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut)]);
+
+        On<CancelBooking>()
+            .InState(ExpectedState.Any)
+            .GetStream(cmd => GetStream(cmd.BookingId))
+            .Act((_, _, _) => [new BookingCancelled()]);
 
         return;
-
-        static IEnumerable<object> BookRoom(BookRoom cmd) => [new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price)];
-
-        static IEnumerable<object> ImportBooking(BookingState state, object[] events, ImportBooking cmd)
-            => [new BookingImported(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut)];
 
         static IEnumerable<object> RecordPayment(BookingState state, object[] originalEvents, RecordPayment cmd) {
             if (state.HasPayment(cmd.PaymentId)) yield break;

@@ -15,7 +15,7 @@ public class FunctionalServiceTests(ITestOutputHelper output) : ServiceTestBase(
     class ExtendedService : BookingFuncService {
         public ExtendedService(
                 IEventStore                store,
-                TypeMapper?                typeMap,
+                ITypeMapper?               typeMap,
                 AmendEvent<ImportBooking>? amendEvent = null,
                 AmendEvent?                amendAll   = null
             ) : base(store, typeMap, amendAll) {

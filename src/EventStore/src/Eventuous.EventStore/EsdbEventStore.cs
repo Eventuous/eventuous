@@ -85,10 +85,7 @@ public class EsdbEventStore : IEventStore {
             async () => {
                 var result = await resultTask.NoContext();
 
-                return new AppendEventsResult(
-                    result.LogPosition.CommitPosition,
-                    result.NextExpectedStreamRevision.ToInt64()
-                );
+                return new AppendEventsResult(result.LogPosition.CommitPosition, result.NextExpectedStreamRevision.ToInt64());
             },
             stream,
             () => new("Unable to appends events to {Stream}", stream),

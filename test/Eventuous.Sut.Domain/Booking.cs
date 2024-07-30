@@ -15,6 +15,8 @@ public class Booking : Aggregate<BookingState> {
         Apply(new BookingImported(roomId, price.Amount, period.CheckIn, period.CheckOut));
     }
 
+    public void Cancel() => Apply(new BookingCancelled());
+
     public void RecordPayment(string paymentId, Money amount, DateTimeOffset paidAt) {
         EnsureExists();
 

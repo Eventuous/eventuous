@@ -14,7 +14,7 @@ public class CommandServiceTests(ITestOutputHelper output) : ServiceTestBase(out
     class ExtendedService : BookingService {
         public ExtendedService(
                 IEventStore                store,
-                TypeMapper                 typeMap,
+                ITypeMapper                typeMap,
                 AmendEvent<ImportBooking>? amendEvent = null,
                 AmendEvent?                amendAll   = null
             ) : base(store, typeMapper: typeMap, amendEvent: amendAll) {

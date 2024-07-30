@@ -9,7 +9,7 @@ namespace Eventuous.SqlServer.Projections;
 /// <summary>
 /// Base class for projectors that store read models in SQL Server.
 /// </summary>
-public abstract class SqlServerProjector(SqlServerConnectionOptions options, TypeMapper? mapper = null) : EventHandler(mapper) {
+public abstract class SqlServerProjector(SqlServerConnectionOptions options, ITypeMapper? mapper = null) : EventHandler(mapper) {
     readonly string _connectionString = Ensure.NotEmptyString(options.ConnectionString);
 
     /// <summary>
