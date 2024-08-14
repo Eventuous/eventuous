@@ -253,8 +253,7 @@ public class EsdbEventStore : IEventStore {
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents
             .Where(x => !x.Event.EventType.StartsWith('$'))
-            // ReSharper disable once ConvertClosureToMethodGroup
-            .Select(e => ToStreamEvent(e))
+            .Select(ToStreamEvent)
             .ToArray();
 
     record ErrorInfo(string Message, params object[] Args);
