@@ -1,4 +1,5 @@
 global using NodaTime;
+using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests;
 
@@ -24,7 +25,7 @@ public class StoringEvents : NaiveFixture {
             Auto.Create<float>()
         );
 
-        Change[] expected = [new(new BookingEvents.RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), "RoomBooked")];
+        Change[] expected = [new(new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), TypeNames.RoomBooked)];
 
         var result = await Service.Handle(cmd, default);
 
