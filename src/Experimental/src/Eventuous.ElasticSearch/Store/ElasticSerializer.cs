@@ -5,10 +5,10 @@ using System.Text.Json;
 
 namespace Eventuous.ElasticSearch.Store;
 
-public class ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerOptions? options, TypeMapper? typeMapper = null)
+public class ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerOptions? options, ITypeMapper? typeMapper = null)
     : IElasticsearchSerializer {
     readonly JsonSerializerOptions _options    = options    ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
-    readonly TypeMapper            _typeMapper = typeMapper ?? TypeMap.Instance;
+    readonly ITypeMapper           _typeMapper = typeMapper ?? TypeMap.Instance;
 
     public object Deserialize(Type type, Stream stream) {
         var reader = new BinaryReader(stream);

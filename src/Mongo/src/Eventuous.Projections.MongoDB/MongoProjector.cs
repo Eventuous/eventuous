@@ -11,7 +11,7 @@ namespace Eventuous.Projections.MongoDB;
 using Tools;
 
 [Obsolete("Use MongoProjector instead")]
-public abstract class MongoProjection<T>(IMongoDatabase database, TypeMapper? typeMap = null) : MongoProjector<T>(database, typeMap)
+public abstract class MongoProjection<T>(IMongoDatabase database, ITypeMapper? typeMap = null) : MongoProjector<T>(database, typeMap)
     where T : ProjectedDocument;
 
 /// <summary>
@@ -19,12 +19,12 @@ public abstract class MongoProjection<T>(IMongoDatabase database, TypeMapper? ty
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [UsedImplicitly]
-public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typeMap = null) : BaseEventHandler where T : ProjectedDocument {
+public abstract class MongoProjector<T>(IMongoDatabase database, ITypeMapper? typeMap = null) : BaseEventHandler where T : ProjectedDocument {
     [PublicAPI]
     protected IMongoCollection<T> Collection { get; } = Ensure.NotNull<IMongoDatabase>(database).GetDocumentCollection<T>();
 
     readonly Dictionary<Type, ProjectUntypedEvent> _handlers = new();
-    readonly TypeMapper                            _map      = typeMap ?? TypeMap.Instance;
+    readonly ITypeMapper                           _map      = typeMap ?? TypeMap.Instance;
 
     /// <summary>
     /// Register a handler for a particular event type
@@ -38,7 +38,7 @@ public abstract class MongoProjector<T>(IMongoDatabase database, TypeMapper? typ
             throw new ArgumentException($"Type {typeof(TEvent).Name} already has a handler");
         }
 
-        if (!_map.IsTypeRegistered<TEvent>()) {
+        if (!_map.TryGetTypeName<TEvent>(out _)) {
             Log.MessageTypeNotRegistered<TEvent>();
         }
     }

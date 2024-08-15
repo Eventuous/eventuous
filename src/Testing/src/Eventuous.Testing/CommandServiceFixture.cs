@@ -13,7 +13,7 @@ public static class CommandServiceFixture {
     /// <param name="store">Event store used by the service</param>
     /// <typeparam name="TState">State on which the service operates</typeparam>
     /// <returns></returns>
-    public static IServiceFixtureGiven<TState> ForService<TState>(Func<ICommandService<TState>> serviceFactory, IEventStore store) where TState : State<TState>, new() 
+    public static IServiceFixtureGiven<TState> ForService<TState>(Func<ICommandService<TState>> serviceFactory, IEventStore store) where TState : State<TState>, new()
         => new CommandServiceFixture<TState>(serviceFactory, store);
 }
 
@@ -64,7 +64,7 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
     Task<Result<TState>>? _result;
     long                  _nextExpectedVersion = ExpectedStreamVersion.NoStream.Value;
 
-    public CommandServiceFixture(Func<IEventStore, TypeMapper, ICommandService<TState>> serviceFactory) {
+    public CommandServiceFixture(Func<IEventStore, ITypeMapper, ICommandService<TState>> serviceFactory) {
         _store = new InMemoryEventStore();
         TypeMapper typeMap = new();
         _service = serviceFactory(_store, typeMap);
@@ -135,27 +135,39 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         }
 
         /// <summary>
-        /// Asserts if the result is Ok
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="ShouldAssertException">Thrown if the result is not ok</exception>
-        public FixtureResult ResultIsOk() {
-            if (Result)
-                return this;
-
-            throw new ShouldAssertException($"Expected the result to be Ok, but it was {Result}");
-        }
-
-        /// <summary>
         /// Asserts if the result is Ok and executes the provided assertions
         /// </summary>
         /// <param name="assert">Assertion function for successful result</param>
         /// <returns></returns>
         /// <exception cref="ShouldAssertException">Thrown if the result is not ok</exception>
-        public FixtureResult ResultIsOk(Action<Result<TState>.Ok> assert) {
-            if (!Result.TryGet(out var ok)) throw new ShouldAssertException("Expected the result to be Ok, but it was not");
+        public FixtureResult ResultIsOk(Action<Result<TState>.Ok>? assert = null) {
+            if (!Result.TryGet(out var ok)) {
+                throw new ShouldAssertException("Expected the result to be Ok, but it was not");
+            }
 
-            assert(ok);
+            assert?.Invoke(ok);
+
+            return this;
+        }
+
+        public FixtureResult ResultIsError(Action<Result<TState>.Error>? assert = null) {
+            if (!Result.TryGetError(out var error)) {
+                throw new ShouldAssertException("Expected the result to be Error, but it was Ok");
+            }
+
+            assert?.Invoke(error);
+
+            return this;
+        }
+
+        public FixtureResult ResultIsError<T>(Action<T>? assert = null) where T : Exception {
+            if (!Result.TryGetError(out var error)) {
+                throw new ShouldAssertException("Expected the result to be Error, but it was Ok");
+            }
+            
+            error.Exception.ShouldBeOfType<T>();
+            
+            assert?.Invoke((T)error.Exception);
 
             return this;
         }

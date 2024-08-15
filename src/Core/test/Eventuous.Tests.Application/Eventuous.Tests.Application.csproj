@@ -6,4 +6,9 @@
     <ItemGroup>
       <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <Compile Update="ServiceTestBase.OnNew.cs">
+        <DependentUpon>ServiceTestBase.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
 </Project>

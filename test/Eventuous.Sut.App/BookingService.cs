@@ -8,7 +8,7 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
     public BookingService(
             IEventStore    eventStore,
             StreamNameMap? streamNameMap = null,
-            TypeMapper?    typeMapper    = null,
+            ITypeMapper?   typeMapper    = null,
             AmendEvent?    amendEvent    = null
         )
         : base(eventStore, streamNameMap: streamNameMap, typeMap: typeMapper, amendEvent: amendEvent) {
@@ -32,5 +32,10 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
             .InState(ExpectedState.Existing)
             .GetId(cmd => cmd.BookingId)
             .Act((booking, cmd) => booking.RecordPayment(cmd.PaymentId, cmd.Amount, cmd.PaidAt));
+
+        On<CancelBooking>()
+            .InState(ExpectedState.Any)
+            .GetId(cmd => cmd.BookingId)
+            .Act((booking, _) => booking.Cancel());
     }
 }

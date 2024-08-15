@@ -5,31 +5,35 @@ using NodaTime;
 namespace Eventuous.Sut.Domain;
 
 public static class BookingEvents {
-    [EventType("RoomBooked")]
+    [EventType(TypeNames.RoomBooked)]
     public record RoomBooked(string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price, string? GuestId = null);
 
-    [EventType("PaymentRegistered")]
+    [EventType(TypeNames.PaymentRegistered)]
     public record BookingPaymentRegistered(string PaymentId, float AmountPaid);
 
-    [EventType("OutstandingAmountChanged")]
+    [EventType(TypeNames.OutstandingAmountChanged)]
     public record BookingOutstandingAmountChanged(float OutstandingAmount);
 
-    [EventType("BookingFullyPaid")]
+    [EventType(TypeNames.BookingFullyPaid)]
     public record BookingFullyPaid(DateTimeOffset PaidAt);
 
-    [EventType("BookingOverpaid")]
+    [EventType(TypeNames.BookingOverpaid)]
     public record BookingOverpaid(float OverpaidAmount);
 
     [EventType(TypeNames.BookingCancelled)]
     public record BookingCancelled;
 
-    [EventType("V1.BookingImported")]
+    [EventType(TypeNames.BookingImported)]
     public record BookingImported(string RoomId, float Price, LocalDate CheckIn, LocalDate CheckOut);
 
     // These constants are for test purpose, use inline names in real apps
     public static class TypeNames {
-        public const string BookingCancelled = "V1.BookingCancelled";
+        public const string BookingCancelled         = "V1.BookingCancelled";
+        public const string BookingImported          = "V1.BookingImported";
+        public const string RoomBooked               = "V1.RoomBooked";
+        public const string PaymentRegistered        = "V1.PaymentRegistered";
+        public const string OutstandingAmountChanged = "V1.OutstandingAmountChanged";
+        public const string BookingFullyPaid         = "V1.BookingFullyPaid";
+        public const string BookingOverpaid          = "V1.BookingOverpaid";
     }
-
-    public static void MapBookingEvents() => TypeMap.RegisterKnownEventTypes();
 }

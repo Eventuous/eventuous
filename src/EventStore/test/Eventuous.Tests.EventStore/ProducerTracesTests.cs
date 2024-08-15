@@ -10,6 +10,8 @@ namespace Eventuous.Tests.EventStore;
 public class TracesTests : LegacySubscriptionFixture<TracedHandler>, IDisposable {
     readonly ActivityListener _listener;
 
+    static TracesTests() => TypeMap.Instance.AddType<TestEvent>(TestEvent.TypeName);
+
     public TracesTests(ITestOutputHelper output) : base(output, new(), false) {
         _listener = new() {
             ShouldListenTo = _ => true,

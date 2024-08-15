@@ -25,63 +25,27 @@ public static class TypeMap {
     /// </summary>
     /// <param name="assemblies">Zero or more assemblies that contain event classes to scan.
     /// If omitted, all the assemblies of the current <seealso cref="AppDomain"/> will be scanned.</param>
-    public static void RegisterKnownEventTypes(params Assembly[] assemblies) => Instance.RegisterKnownEventTypes(assemblies);
+    public static void RegisterKnownEventTypes(params Assembly[] assemblies) {
+        Instance.RegisterKnownEventTypes(assemblies);
+    }
 }
 
 /// <summary>
 /// The actual mapper behind static <see cref="TypeMap"/>.
 /// </summary>
-public class TypeMapper {
+public class TypeMapper : ITypeMapperExt {
     readonly Dictionary<string, Type> _reverseMap = new();
     readonly Dictionary<Type, string> _map        = new();
 
-    // ReSharper disable once UnusedMember.Global
-    public IReadOnlyDictionary<Type, string> Map        => _map;
     public IReadOnlyDictionary<string, Type> ReverseMap => _reverseMap;
 
-    [PublicAPI]
-    public string GetTypeName<T>() {
-        if (!_map.TryGetValue(typeof(T), out var name)) {
-            Log.TypeNotMappedToName(typeof(T));
+    /// <inheritdoc />>
+    public bool TryGetTypeName(Type type, [NotNullWhen(true)] out string? typeName) => _map.TryGetValue(type, out typeName);
 
-            throw new UnregisteredTypeException(typeof(T));
-        }
-
-        return name;
-    }
-
-    public string GetTypeName(object o, bool fail = true) {
-        if (_map.TryGetValue(o.GetType(), out var name)) return name;
-
-        if (!fail) return "unknown";
-
-        Log.TypeNotMappedToName(o.GetType());
-
-        throw new UnregisteredTypeException(o.GetType());
-    }
-
-    [PublicAPI]
-    public string GetTypeNameByType(Type type) {
-        if (!_map.TryGetValue(type, out var name)) {
-            Log.TypeNotMappedToName(type);
-
-            throw new UnregisteredTypeException(type);
-        }
-
-        return name;
-    }
-
-    public Type GetType(string typeName) {
-        if (!_reverseMap.TryGetValue(typeName, out var type)) {
-            Log.TypeNameNotMappedToType(typeName);
-
-            throw new UnregisteredTypeException(typeName);
-        }
-
-        return type;
-    }
-
+    /// <inheritdoc />>
     public bool TryGetType(string typeName, [NotNullWhen(true)] out Type? type) => _reverseMap.TryGetValue(typeName, out type);
+
+    public IEnumerable<(string TypeName, Type Type)> GetRegisteredTypes() => _reverseMap.Select(x => (x.Key, x.Value));
 
     /// <summary>
     /// Adds a message type to the map.
@@ -125,13 +89,11 @@ public class TypeMapper {
 
     [MethodImpl(MethodImplOptions.Synchronized)]
     public void RemoveType<T>() {
-        var name = GetTypeName<T>();
+        var name = this.GetTypeName<T>();
 
         _reverseMap.Remove(name);
         _map.Remove(typeof(T));
     }
-
-    public bool IsTypeRegistered<T>() => _map.ContainsKey(typeof(T));
 
     public void RegisterKnownEventTypes(params Assembly[] assembliesWithEvents) {
         var assembliesToScan = assembliesWithEvents.Length == 0 ? GetDefaultAssemblies() : assembliesWithEvents;
@@ -171,12 +133,6 @@ public class TypeMapper {
         foreach (var type in decoratedTypes) {
             var attr = type.GetAttribute<EventTypeAttribute>()!;
             AddType(type, attr.EventType);
-        }
-    }
-
-    public void EnsureTypesRegistered(IEnumerable<Type> types) {
-        foreach (var type in types) {
-            GetTypeNameByType(type);
         }
     }
 }

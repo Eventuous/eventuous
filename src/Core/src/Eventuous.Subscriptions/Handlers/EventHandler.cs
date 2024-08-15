@@ -14,12 +14,12 @@ using Logging;
 /// Base class for event handlers, which allows registering typed handlers for different event types
 /// </summary>
 [PublicAPI]
-public abstract class EventHandler(TypeMapper? mapper = null) : BaseEventHandler {
+public abstract class EventHandler(ITypeMapper? mapper = null) : BaseEventHandler {
     readonly Dictionary<Type, HandleUntypedEvent> _handlersMap = new();
 
     static readonly ValueTask<EventHandlingStatus> Ignored = new(EventHandlingStatus.Ignored);
 
-    readonly TypeMapper _typeMapper = mapper ?? TypeMap.Instance;
+    readonly ITypeMapper _typeMapper = mapper ?? TypeMap.Instance;
 
     /// <summary>
     /// Register a handler for a particular event type
@@ -32,7 +32,7 @@ public abstract class EventHandler(TypeMapper? mapper = null) : BaseEventHandler
             throw new ArgumentException($"Type {typeof(T).Name} already has a handler");
         }
 
-        if (!_typeMapper.IsTypeRegistered<T>()) {
+        if (!_typeMapper.TryGetTypeName<T>(out _)) {
             SubscriptionsEventSource.Log.MessageTypeNotRegistered<T>();
         }
 
