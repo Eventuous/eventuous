@@ -62,12 +62,14 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         foreach (var chunk in Ensure.NotNull(messages).Chunks(options.MaxAppendEventsCount)) {
             var chunkMessages = chunk.ToArray();
 
+            var setMessageType = chunkMessages.Length == 1;
+
             try {
                 await _client.AppendToStreamAsync(
                         stream,
                         options.ExpectedState,
                         // ReSharper disable once ConvertClosureToMethodGroup
-                        chunkMessages.Select(message => CreateMessage(message)),
+                        chunkMessages.Select(message => CreateMessage(message, setMessageType)),
                         null,
                         options.Deadline,
                         options.Credentials,
@@ -85,10 +87,14 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         }
     }
 
-    EventData CreateMessage(ProducedMessage message) {
+    EventData CreateMessage(ProducedMessage message, bool setMessageType) {
         var msg = Ensure.NotNull(message.Message);
         var (eventType, contentType, payload) = _serializer.SerializeEvent(msg);
         message.Metadata!.Remove(MetaTags.MessageId);
+
+        if (setMessageType) {
+            SetActivityMessageType(eventType);
+        }
         var metaBytes = _metaSerializer.Serialize(message.Metadata);
 
         return new(Uuid.FromGuid(message.MessageId), eventType, payload, metaBytes, contentType);
