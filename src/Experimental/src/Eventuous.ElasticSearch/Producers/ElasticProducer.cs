@@ -24,7 +24,7 @@ public class ElasticProducer(IElasticClient elasticClient, ILogger<ElasticProduc
         var documents    = messagesList.Select(x => x.Message);
         var mode         = options?.ProduceMode ?? ProduceMode.Create;
 
-        var bulk   = GetOp(new BulkDescriptor(stream.ToString()));
+        var bulk   = GetOp(new(stream.ToString()));
         var result = await elasticClient.BulkAsync(bulk, cancellationToken);
 
         if (!result.IsValid) {
@@ -47,6 +47,8 @@ public class ElasticProducer(IElasticClient elasticClient, ILogger<ElasticProduc
         }
 
         await Task.WhenAll(messagesList.Select(x => x.Ack<ElasticProducer>().AsTask())).NoContext();
+
+        return;
 
         BulkDescriptor GetOp(BulkDescriptor descriptor)
             => mode switch {

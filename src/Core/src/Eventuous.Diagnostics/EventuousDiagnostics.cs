@@ -48,7 +48,7 @@ public static class EventuousDiagnostics {
         get {
             if (activitySource != null) return activitySource;
 
-            activitySource = new ActivitySource(InstrumentationName, Version?.ToString());
+            activitySource = new(InstrumentationName, Version?.ToString());
 
             listener = DummyActivityListener.Create();
             ActivitySource.AddActivityListener(listener);

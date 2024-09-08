@@ -14,7 +14,6 @@ public static class ProducerActivity {
         var messageId = message.MessageId.ToString();
 
         activity?
-            .SetTag(TelemetryTags.Message.Type, message.MessageType)
             .SetTag(TelemetryTags.Message.Id, messageId)
             .SetTag(TelemetryTags.Messaging.MessageId, messageId)
             .CopyParentTag(TelemetryTags.Messaging.ConversationId)
