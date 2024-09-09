@@ -25,7 +25,6 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
     public async Task ShouldProduceAndWait() {
         var topicName = Auto.Create<string>();
         _output.WriteLine($"Topic: {topicName}");
-        var producerLock = new ReaderWriterLockSlim();
 
         var events = Auto.CreateMany<TestEvent>().ToArray();
 
@@ -39,9 +38,7 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
         return;
 
         async Task Produce() {
-            await using var producer = new KafkaBasicProducer(
-                new KafkaProducerOptions(new() { BootstrapServers = _fixture.BootstrapServers })
-            );
+            await using var producer = new KafkaBasicProducer(new(new() { BootstrapServers = _fixture.BootstrapServers }));
             await producer.StartAsync(default);
             await producer.Produce(new(topicName), events, new(), new("test"));
         }

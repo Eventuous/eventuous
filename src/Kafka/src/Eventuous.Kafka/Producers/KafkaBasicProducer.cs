@@ -78,7 +78,7 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
     }
 
     public Task StartAsync(CancellationToken cancellationToken) {
-        Ready    = true;
+        Ready = true;
 
         return Task.CompletedTask;
     }
