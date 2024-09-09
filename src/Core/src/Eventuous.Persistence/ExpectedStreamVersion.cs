@@ -10,6 +10,7 @@ public readonly record struct ExpectedStreamVersion(long Value) {
 
 public record struct StreamReadPosition(long Value) {
     public static readonly StreamReadPosition Start = new(0L);
+    public static readonly StreamReadPosition End   = new(long.MaxValue);
 }
 
 public record struct StreamTruncatePosition(long Value);

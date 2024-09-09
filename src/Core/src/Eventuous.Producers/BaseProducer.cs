@@ -20,6 +20,8 @@ public abstract class BaseProducer<TProduceOptions> : IProducer<TProduceOptions>
 
     protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
 
+    protected void SetActivityMessageType(string messageType) => Activity.Current?.SetTag(Message.Type, messageType);
+
     public Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default)
         => Produce(stream, messages, null, cancellationToken);
 

@@ -42,6 +42,7 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
                 .AddHeader(KafkaHeaderKeys.MessageTypeHeader, serialized.EventType)
                 .AddHeader(KafkaHeaderKeys.ContentTypeHeader, serialized.ContentType);
 
+            SetActivityMessageType(serialized.EventType);
             await ProduceLocal();
 
             continue;

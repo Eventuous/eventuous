@@ -100,6 +100,7 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
         var (msg, metadata)                   = (message.Message, message.Metadata);
         var (eventType, contentType, payload) = _serializer.SerializeEvent(msg);
 
+        SetActivityMessageType(eventType);
         var prop = _channel.CreateBasicProperties();
         prop.ContentType   = contentType;
         prop.Persistent    = options?.Persisted != false;
