@@ -67,4 +67,19 @@ public abstract class StoreAppendTests<T> : IClassFixture<T> where T : StoreFixt
         var task = () => _fixture.AppendEvent(stream, evt, new(3));
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
+    
+
+    [Fact]
+    [Trait("Category", "Store")]
+    public async Task ShouldFailOnWrongVersionWithOptimisticConcurrencyException() {
+        var evt    = _fixture.CreateEvent();
+        var stream = _fixture.GetStreamName();
+
+        await _fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+
+        evt = _fixture.CreateEvent();
+
+        var task = () => _fixture.StoreChanges(stream, evt, new(3));
+        await task.Should().ThrowAsync<OptimisticConcurrencyException>();
+    }
 }
