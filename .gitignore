@@ -309,3 +309,8 @@ version.txt
 /nuget/
 *.trx
 *.received
+
+/test-results/
+/docs/.docusaurus/
+/docs/build/
+/docs/.yarn/
