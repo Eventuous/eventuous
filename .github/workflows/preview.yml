@@ -32,7 +32,7 @@ jobs:
         run: dotnet test --framework net8.0
       -  
         name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        uses: EnricoMi/publish-unit-test-result-action/linux@v2
         if: always()
         with:
           files: |
