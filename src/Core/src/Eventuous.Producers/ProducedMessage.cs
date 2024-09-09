@@ -14,14 +14,12 @@ public readonly record struct ProducedMessage {
         Metadata          = metadata;
         AdditionalHeaders = additionalHeaders;
         MessageId         = messageId ?? Guid.NewGuid();
-        MessageType       = TypeMap.GetTypeName(message, false);
     }
 
     public object               Message           { get; }
     public Metadata?            Metadata          { get; init; }
     public Metadata?            AdditionalHeaders { get; }
     public Guid                 MessageId         { get; }
-    public string               MessageType       { get; }
     public AcknowledgeProduce?  OnAck             { get; init; }
     public ReportFailedProduce? OnNack            { get; init; }
 

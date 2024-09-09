@@ -23,5 +23,5 @@ public static class StreamRevisionExtensions {
     /// </summary>
     /// <param name="position">Position for stream reads</param>
     /// <returns></returns>
-    public static StreamPosition AsStreamPosition(this StreamReadPosition position) => StreamPosition.FromInt64(position.Value);
+    public static StreamPosition AsStreamPosition(this StreamReadPosition position) => position == StreamReadPosition.End ? StreamPosition.End : StreamPosition.FromInt64(position.Value);
 }

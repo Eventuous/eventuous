@@ -8,13 +8,11 @@ namespace Eventuous.Producers.Diagnostics;
 
 public static class ProducerActivity {
     public static (Activity? act, ProducedMessage msgs) Start(ProducedMessage message, IEnumerable<KeyValuePair<string, object?>>? tags) {
-        var activity = GetActivity(tags);
-
+        var activity  = GetActivity(tags);
         var meta      = GetMeta(message.Metadata);
         var messageId = message.MessageId.ToString();
 
         activity?
-            .SetTag(TelemetryTags.Message.Type, message.MessageType)
             .SetTag(TelemetryTags.Message.Id, messageId)
             .SetTag(TelemetryTags.Messaging.MessageId, messageId)
             .CopyParentTag(TelemetryTags.Messaging.ConversationId)
@@ -32,9 +30,9 @@ public static class ProducerActivity {
     }
 
     public static (Activity? act, IEnumerable<ProducedMessage> msgs) Start(
-        IEnumerable<ProducedMessage>                messages,
-        IEnumerable<KeyValuePair<string, object?>>? tags
-    ) {
+            IEnumerable<ProducedMessage>                messages,
+            IEnumerable<KeyValuePair<string, object?>>? tags
+        ) {
         var activity = GetActivity(tags);
 
         activity?
