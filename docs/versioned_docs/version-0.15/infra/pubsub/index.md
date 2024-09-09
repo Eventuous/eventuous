@@ -4,7 +4,7 @@ description: "Producers and subscriptions for Google Pub/Sub"
 sidebar_position: 6
 ---
 
-Pub/Sub is an asynchronous and scalable messaging service that decouples services producing messages from services processing those messages. [source](https://cloud.google.com/pubsub/docs/overview).
+Pub/Sub is an asynchronous and scalable messaging service that decouples services producing messages from services processing those messages. Learn more about Pub/Sub in GCP [documentation](https://cloud.google.com/pubsub/docs/overview).
 
 Eventuous supports producing and consuming messages using Google Pub/Sub. Use the `Eventuous.GooglePubSub` NuGet package to get started.
 
