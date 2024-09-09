@@ -41,6 +41,10 @@ const config: Config = {
             theme: {
                 customCss: require.resolve('./src/css/custom.css'),
             },
+            sitemap: {
+                lastmod: 'date',
+                changefreq: 'weekly',
+            }
         } satisfies Preset.Options,
     ]],
 

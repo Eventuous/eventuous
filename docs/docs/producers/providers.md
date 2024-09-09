@@ -5,8 +5,8 @@ description: "List of producers available in Eventuous"
 
 Eventuous supports the following producers:
 
-- [RabbitMQ](../infra/rabbitmq)
-- [EventStoreDB](../infra/esdb/#producer)
-- [Google PubSub](../infra/pubsub)
-- [Apache Kafka](../infra/kafka)
-- [Elasticsearch](../infra/elastic)
+- [EventStoreDB](../infra/esdb/index.md#producer)
+- [Apache Kafka](../infra/kafka/index.md#producer)
+- [RabbitMQ](../infra/rabbitmq/index.md#producer)
+- [Google PubSub](../infra/pubsub/index.md#producer)
+- [Elasticsearch](../infra/elastic/index.md)
