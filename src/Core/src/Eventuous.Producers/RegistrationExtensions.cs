@@ -69,7 +69,10 @@ public static class RegistrationExtensions {
 
     public static void AddHostedServiceIfSupported<T>(this IServiceCollection services) where T : class {
         if (typeof(T).GetInterfaces().Contains(typeof(IHostedService))) {
-            services.TryAddSingleton(sp => (sp.GetRequiredService<T>() as IHostedService)!);
+            // ReSharper disable once ConvertToLocalFunction
+            Func<IServiceProvider, T> factory = sp => sp.GetRequiredService<T>();
+            var descriptor = ServiceDescriptor.Describe(typeof(IHostedService), factory, ServiceLifetime.Singleton);
+            services.TryAddEnumerable(descriptor);
         }
     }
 }

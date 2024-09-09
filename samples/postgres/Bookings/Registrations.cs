@@ -20,15 +20,11 @@ namespace Bookings;
 public static class Registrations {
     public static void AddEventuous(this IServiceCollection services, IConfiguration configuration) {
         DefaultEventSerializer.SetDefaultSerializer(
-            new DefaultEventSerializer(
-                new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(
-                    DateTimeZoneProviders.Tzdb
-                )
-            )
+            new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
         );
 
         var connectionFactory = new ConnectionFactory {
-            Uri                    = new Uri(configuration["RabbitMq:ConnectionString"]!),
+            Uri                    = new(configuration["RabbitMq:ConnectionString"]!),
             DispatchConsumersAsync = true
         };
 

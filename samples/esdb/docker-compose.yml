@@ -4,8 +4,8 @@ services:
 
   esdb:
     container_name: esdemo-esdb
-    image: ghcr.io/eventstore/eventstore:21.10.0-alpha-arm64v8
-#    image: eventstore/eventstore:latest #20.10.2-buster-slim
+    image: eventstore/eventstore:23.10.2-alpha-arm64v8
+    #    image: eventstore/eventstore:latest #23.10.2-buster-slim
     ports:
       - '2113:2113'
       - '1113:1113'

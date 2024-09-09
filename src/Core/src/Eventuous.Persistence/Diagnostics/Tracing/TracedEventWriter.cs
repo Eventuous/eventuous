@@ -10,6 +10,8 @@ using static Constants;
 
 public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
     public static IEventWriter Trace(IEventWriter writer) => new TracedEventWriter(writer);
+    
+    readonly string _componentName = writer.GetType().Name;
 
     public async Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
@@ -19,7 +21,7 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
         ) {
         using var activity = StartActivity(stream, Operations.AppendEvents);
 
-        using var measure = Measure.Start(MetricsSource, new EventStoreMetricsContext(Operations.AppendEvents));
+        using var measure = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, Operations.AppendEvents));
 
         var tracedEvents = events
             .Select(x => x with { Metadata = x.Metadata.AddActivityTags(activity) })
@@ -37,4 +39,7 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
             throw;
         }
     }
+
+    // ReSharper disable once ConvertToAutoProperty
+    protected override string ComponentName => _componentName;
 }

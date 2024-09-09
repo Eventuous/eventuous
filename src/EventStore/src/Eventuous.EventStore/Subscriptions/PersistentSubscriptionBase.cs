@@ -172,20 +172,9 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     ConcurrentQueue<ResolvedEvent> AckQueue { get; } = new();
 
     async ValueTask Ack(IMessageConsumeContext ctx) {
-        var re = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
-        AckQueue.Enqueue(re);
-
-        if (AckQueue.Count < Options.BufferSize) return;
-
+        var re           = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
         var subscription = ctx.Items.GetItem<PersistentSubscription>(SubscriptionKey)!;
-
-        var toAck = new List<ResolvedEvent>();
-
-        for (var i = 0; i < Options.BufferSize; i++) {
-            if (AckQueue.TryDequeue(out var evt)) toAck.Add(evt);
-        }
-
-        await subscription.Ack(toAck).NoContext();
+        await subscription.Ack(re).NoContext();
     }
 
     async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {

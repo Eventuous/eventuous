@@ -41,17 +41,9 @@ services:
       MONGO_INITDB_ROOT_USERNAME: mongoadmin
       MONGO_INITDB_ROOT_PASSWORD: secret
 
-  zipkin-storage:
-    image: ghcr.io/openzipkin/zipkin-elasticsearch7:${TAG:-latest}
-    container_name: evt_pgsql_zipkin-mysql
-    
   zipkin:
-    image: ghcr.io/openzipkin/zipkin-slim:${TAG:-latest}
+    image: openzipkin/zipkin
     container_name: evt_pgsql_zipkin
-    environment:
-      - STORAGE_TYPE=elasticsearch
-      - ES_HOSTS=zipkin-storage:9200
-      - JAVA_OPTS=-Xms128m -Xmx128m -XX:+ExitOnOutOfMemoryError
     ports:
       - "9411:9411"
 

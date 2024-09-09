@@ -16,7 +16,7 @@ using Context;
 using static SubscriptionsEventSource;
 
 public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
-    const string MetricPrefix = "eventuous";
+    const string MetricPrefix = DiagnosticName.BaseName;
     const string Category     = "subscription";
 
     public static readonly string MeterName = EventuousDiagnostics.GetMeterName(Category);

@@ -12,9 +12,13 @@ using static Tracing.Constants.Components;
 public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
     public static readonly string MeterName = EventuousDiagnostics.GetMeterName(Category);
 
-    public const string ListenerName = $"{DiagnosticName.BaseName}.{Category}";
+    const string MetricPrefix = DiagnosticName.BaseName;
+    const string Category     = "application";
 
-    const string Category      = "application";
+    public const string ListenerName       = $"{MetricPrefix}.{Category}";
+    public const string ProcessingRateName = $"{MetricPrefix}.{CommandService}.duration";
+    public const string ErrorCountName     = $"{MetricPrefix}.{CommandService}.errors.count";
+
     const string AppServiceTag = "command-service";
     const string CommandTag    = "command-type";
 
@@ -26,8 +30,8 @@ public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
     public CommandServiceMetrics() {
         _meter = EventuousDiagnostics.GetMeter(MeterName);
 
-        var duration   = _meter.CreateHistogram<double>(CommandService, "ms", "Command execution duration, milliseconds");
-        var errorCount = _meter.CreateCounter<long>($"{CommandService}.errors", "errors", "Number of failed commands");
+        var duration   = _meter.CreateHistogram<double>(ProcessingRateName, "ms", "Command execution duration, milliseconds");
+        var errorCount = _meter.CreateCounter<long>(ErrorCountName, "errors", "Number of failed commands");
         _listener = new(ListenerName, duration, errorCount, GetTags);
 
         return;

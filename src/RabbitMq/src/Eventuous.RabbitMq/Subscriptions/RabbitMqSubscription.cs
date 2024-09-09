@@ -175,7 +175,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             ? new Metadata(received.BasicProperties.Headers.ToDictionary(x => x.Key, x => x.Value)!)
             : null;
 
-        return new MessageConsumeContext(
+        return new(
             received.BasicProperties.MessageId,
             received.BasicProperties.Type,
             received.BasicProperties.ContentType,

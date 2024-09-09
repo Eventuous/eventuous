@@ -23,7 +23,8 @@ static class CommandServiceActivity {
 
         try {
             var result = await handleCommand(command, cancellationToken).NoContext();
-            activity?.SetActivityStatus(result ? ActivityStatus.Ok() : ActivityStatus.Error(result.Exception));
+            activity?.SetActivityStatus(result is { Success: true } ? ActivityStatus.Ok() : ActivityStatus.Error(result.Exception));
+            if (!result.Success) measure.SetError();
 
             return result;
         } catch (Exception e) {

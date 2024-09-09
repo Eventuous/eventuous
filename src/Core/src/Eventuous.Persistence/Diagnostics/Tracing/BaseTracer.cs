@@ -7,44 +7,49 @@ using Eventuous.Diagnostics.Metrics;
 namespace Eventuous.Diagnostics.Tracing;
 
 public abstract class BaseTracer {
-    protected readonly DiagnosticSource MetricsSource = new DiagnosticListener(PersistenceMetrics.ListenerName);
+    protected static readonly DiagnosticSource MetricsSource = new DiagnosticListener(PersistenceMetrics.ListenerName);
+
+    protected abstract string ComponentName { get; }
 
     static readonly KeyValuePair<string, object?>[] DefaultTags = EventuousDiagnostics.Tags
-        .Concat(new KeyValuePair<string, object?>[] { new(TelemetryTags.Db.System, "eventstore") })
+        .Concat([new(TelemetryTags.Db.System, "eventstore")])
         .ToArray();
-
+    
     protected async Task<T> Trace<T>(StreamName stream, string operation, Func<Task<T>> task) {
         using var activity = StartActivity(stream, operation);
-        using var measure  = Measure.Start(MetricsSource, new EventStoreMetricsContext(operation));
+        using var measure  = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, operation));
 
         try {
             var result = await task().NoContext();
             activity?.SetActivityStatus(ActivityStatus.Ok());
+
             return result;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
             measure.SetError();
+
             throw;
         }
     }
 
     protected async Task Trace(StreamName stream, string operation, Func<Task> task) {
         using var activity = StartActivity(stream, operation);
-        using var measure  = Measure.Start(MetricsSource, new EventStoreMetricsContext(operation));
+        using var measure  = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, operation));
 
         try {
             await task().NoContext();
             activity?.SetActivityStatus(ActivityStatus.Ok());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
             measure.SetError();
+
             throw;
         }
     }
 
     protected static Activity? StartActivity(StreamName stream, string operationName) {
+        if (!EventuousDiagnostics.Enabled) return null;
+
         var streamName = stream.ToString();
 
         var activity = EventuousDiagnostics.ActivitySource.CreateActivity(

@@ -9,7 +9,7 @@ public abstract class GenericListener : IObserver<KeyValuePair<string, object?>>
     readonly IDisposable? _listenerSubscription;
     readonly object       _allListeners = new();
 
-    IDisposable? _networkSubscription;
+    IDisposable? _subscription;
 
     protected GenericListener(string name) {
         var observer = this;
@@ -24,9 +24,8 @@ public abstract class GenericListener : IObserver<KeyValuePair<string, object?>>
             if (listener.Name != name) return;
 
             lock (_allListeners) {
-                _networkSubscription?.Dispose();
-
-                _networkSubscription = listener.Subscribe(observer);
+                _subscription?.Dispose();
+                _subscription = listener.Subscribe(observer);
             }
         }
     }
@@ -34,7 +33,7 @@ public abstract class GenericListener : IObserver<KeyValuePair<string, object?>>
     protected abstract void OnEvent(KeyValuePair<string, object?> obj);
 
     public void Dispose() {
-        _networkSubscription?.Dispose();
+        _subscription?.Dispose();
         _listenerSubscription?.Dispose();
     }
 

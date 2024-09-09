@@ -30,7 +30,7 @@ public static class Telemetry {
                         .AddAspNetCoreInstrumentation()
                         .AddEventuousTracing()
                         .AddNpgsql()
-                        .SetSampler(new PostgresPollingSampler());
+                        .AddMongoDBInstrumentation();
 
                     if (otelEnabled)
                         builder.AddOtlpExporter();
@@ -38,17 +38,5 @@ public static class Telemetry {
                         builder.AddZipkinExporter();
                 }
             );
-    }
-}
-
-class PostgresPollingSampler : Sampler {
-    public override SamplingResult ShouldSample(in SamplingParameters samplingParameters) {
-        if (samplingParameters.Tags == null) return new SamplingResult(SamplingDecision.RecordAndSample);
-
-        return samplingParameters.Tags.Any(
-            t => t.Key == "db.statement" && t.Value is string str && str.Contains("read_all_forwards")
-        )
-            ? new SamplingResult(SamplingDecision.Drop)
-            : new SamplingResult(SamplingDecision.RecordAndSample);
     }
 }

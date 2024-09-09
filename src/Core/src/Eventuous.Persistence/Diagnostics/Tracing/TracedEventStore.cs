@@ -9,6 +9,8 @@ using static Constants;
 
 public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore {
     public static IEventStore Trace(IEventStore eventStore) => new TracedEventStore(eventStore);
+    
+    readonly string _componentName = eventStore.GetType().Name;
 
     internal IEventStore Inner { get; } = eventStore;
 
@@ -42,4 +44,7 @@ public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore 
 
     public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken)
         => Trace(stream, Operations.DeleteStream, () => Inner.DeleteStream(stream, expectedVersion, cancellationToken));
+
+    // ReSharper disable once ConvertToAutoProperty
+    protected override string ComponentName => _componentName;
 }

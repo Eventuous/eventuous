@@ -6,4 +6,4 @@ It's possible to expose those messages into the logs by using the logging event 
 ## Usage
 
 Normally, you'd not need to use the logging listener directly. 
-The `Eventuous.AspNetCore` package contains extensions for `IApplicationBuilder` and `IHost` to connect Eventuous diagnostic events to the logging system of .NET.
+The `Eventuous.Extensions.DependencyInjection` package contains extensions for `IApplicationBuilder` and `IHost` to connect Eventuous diagnostic events to the logging system of .NET.

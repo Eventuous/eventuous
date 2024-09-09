@@ -13,10 +13,13 @@ public class InsidePeek {
     readonly ILogger                  _log;
     readonly AggregateFactoryRegistry _registry;
 
-    public InsidePeek(AggregateFactoryRegistry? registry, IEventStore eventStore, ILogger<InsidePeek> log) {
+    [PublicAPI]
+    public InsidePeek(IEventStore eventStore, ILogger<InsidePeek> log) : this(AggregateFactoryRegistry.Instance, eventStore, log) { }
+
+    public InsidePeek(AggregateFactoryRegistry registry, IEventStore eventStore, ILogger<InsidePeek> log) {
         _eventStore = eventStore;
         _log        = log;
-        _registry   = registry ?? AggregateFactoryRegistry.Instance;
+        _registry   = registry;
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
         foreach (var assembly in assemblies) {
