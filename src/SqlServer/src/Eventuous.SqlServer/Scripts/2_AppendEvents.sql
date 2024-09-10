@@ -7,7 +7,11 @@ AS
 BEGIN
     DECLARE @current_version INT,
         @stream_id INT,
-        @position BIGINT
+        @position BIGINT,
+        @customErrorMessage NVARCHAR(200),
+        @newMessagesCount INT,
+        @expected_StreamVersionAfterUpdate INT,
+        @actual_StreamVersionAfterUpdate INT
 
     if @created is null
         BEGIN
