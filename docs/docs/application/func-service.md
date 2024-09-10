@@ -1,7 +1,6 @@
 ---
 title: "Functional service"
 description: "Functional command service and unit of work without aggregates"
-keywords: [eventuous, command service, unit of work, decider, event sourcing, ddd]
 sidebar_position: 3
 ---
 

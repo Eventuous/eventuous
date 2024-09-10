@@ -52,7 +52,7 @@ public record ProducedMessage {
 
 The `Message` property represents the actual message payload. Producers typically use an `IEventSerializer` instance to serialize the message payload. However, in certain situations, producers may need to comply with their supporting infrastructure and use a different method for serializing the message payload. In such cases, the `MessageType property can be included in the produced message body or header, allowing for proper deserialization by subscribers.
 
-As base producer is responsible for tracing, it creates the produce span and set some tags for it. Learn more on the [Diagnostics](../diagnostics/details.md) page. The base producer is unaware of the message type, and if the producer implementation wants to set the message type as a span tag, it should call the `SetActivityMessageType` method of the base class. All bundled producers do that except Elasticsearch producer.
+As base producer is responsible for tracing, it creates the produce span and set some tags for it. Learn more on the [Diagnostics](../diagnostics/traces.md) page. The base producer is unaware of the message type, and if the producer implementation wants to set the message type as a span tag, it should call the `SetActivityMessageType` method of the base class. All bundled producers do that except Elasticsearch producer.
 
 ## Registration
 

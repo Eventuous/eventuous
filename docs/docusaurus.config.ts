@@ -56,6 +56,10 @@ const config: Config = {
             apiKey: 'd62759f3b1948de19fea5476182dbd66',
             indexName: 'eventuous',
         },
+        colorMode: {
+            defaultMode: "dark",
+            respectPrefersColorScheme: true,
+        },
         navbar: {
             title: 'Eventuous',
             logo: {

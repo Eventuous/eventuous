@@ -18,7 +18,9 @@
     "@docusaurus/core": "^3.5.2",
     "@docusaurus/preset-classic": "^3.5.2",
     "@docusaurus/theme-mermaid": "^3.5.2",
+    "@docusaurus/theme-common": "^3.5.2",
     "@mdx-js/react": "^3.0.1",
+    "@types/react": "^18.3.5",
     "add": "^2.0.6",
     "clsx": "^2.1.1",
     "prism-react-renderer": "^2.4.0",
@@ -27,8 +29,8 @@
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.5.2",
+    "@docusaurus/types": "^3.5.2",
     "@tsconfig/docusaurus": "^2.0.3",
-    "express": "^4.20.0",
     "typescript": "^5.5.2"
   },
   "browserslist": {
@@ -46,5 +48,5 @@
   "engines": {
     "node": ">=16.14"
   },
-  "packageManager": "yarn@4.4.1"
+  "packageManager": "pnpm@9.10.0"
 }

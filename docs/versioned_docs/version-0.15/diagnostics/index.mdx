@@ -1,0 +1,32 @@
+---
+title: "Observability"
+weight: 300
+description: >
+  Observability of applications build with Eventuous.
+---
+import DocCardList from '@theme/DocCardList';
+
+Observability is useful everywhere, but absolutely crucial for distributed systems where information is passed between components asynchronously and where multiple independent components might call each other or have other types of interactions.
+
+Even when you have a single application, it's important to have a good observability strategy in place. It helps you to understand what's going on in your application, to detect and diagnose problems, and to monitor the performance of your application.
+
+Event-sourced systems benefit from observability in a number of ways. For example, you can see how commands are processed, what events are added to streams, and how downstream applications like read-model projections or reactors consume those events.
+
+## Observability features
+
+Eventuous provides built-in metrics and traces for:
+- Event store
+- Subscriptions, consumers, and event handlers
+- Command services
+- Producers
+
+The built-in diagnostics integrate with [OpenTelemetry](https://opentelemetry.io/) using [OpenTelemetry .NET](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-with-otel).
+
+## Enabling diagnostics
+
+Diagnostic instrumentation is enabled by default. You can disable it by setting the `EVENTUOUS_DISABLE_DIAGS` environment variable to any value except `1`. It is also possible to disable diagnostics at runtime by calling `EventuousDiagnostics.Disable()` static function.
+
+When diagnostics are enabled, registering different Eventuous elements will wrap them in diagnostic decorators. The decorators collect metrics and traces for the registered elements. For example, when registering an event reader using `AddEventReader` extension, the provided event reader type will be used by `TracedEventReader` decorator, which collects metrics and traces for the event reader.
+Eventuous offers a number of features to help you with observability, click on the links below to learn more:
+
+<DocCardList/>
