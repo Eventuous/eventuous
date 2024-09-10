@@ -1,6 +1,7 @@
 ---
 title: "Domain events"
 description: "Domain events: persisted behaviour"
+keywords: [eventuous, domain events, aggregate, event sourcing, ddd]
 sidebar_position: 3
 ---
 

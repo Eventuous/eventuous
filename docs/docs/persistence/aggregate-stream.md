@@ -1,6 +1,7 @@
 ---
 title: "Aggregate stream"
 description: "Aggregate as a stream of events"
+keywords: [eventuous, event store, aggregate store, repository, event sourcing, ddd]
 sidebar_position: 1
 ---
 

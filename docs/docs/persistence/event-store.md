@@ -1,6 +1,7 @@
 ---
 title: "Event store"
 description: "Event store infrastructure"
+keywords: [eventuous, event store, event sourcing, ddd]
 sidebar_position: 2
 ---
 

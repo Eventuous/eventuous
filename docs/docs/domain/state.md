@@ -1,6 +1,7 @@
 ---
 title: "State"
 description: "Event-sourced immutable state"
+keywords: [eventuous, domain events, state, event sourcing]
 sidebar_position: 2
 ---
 

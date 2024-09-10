@@ -1,6 +1,7 @@
 ---
 title: "Command service"
 description: "Command service and unit of work for aggregates"
+keywords: [eventuous, command service, unit of work, aggregate, event sourcing, ddd]
 sidebar_position: 1
 ---
 

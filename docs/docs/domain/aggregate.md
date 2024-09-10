@@ -1,6 +1,7 @@
 ---
 title: "Aggregate"
 description: "Aggregate: consistency boundaries"
+keywords: [eventuous, unit of work, aggregate, event sourcing, ddd]
 sidebar_position: 1
 ---
 

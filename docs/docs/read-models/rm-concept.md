@@ -1,6 +1,7 @@
 ---
 title: "Concept"
 description: "The concept of read models"
+keywords: [eventuous, read models, cqrs, event sourcing, ddd]
 ---
 
 ## Queries in event-sourced systems
