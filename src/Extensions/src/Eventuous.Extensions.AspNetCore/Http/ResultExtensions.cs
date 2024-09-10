@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Http;
 using static Microsoft.AspNetCore.Http.StatusCodes;
 
+// ReSharper disable once CheckNamespace
 namespace Eventuous.Extensions.AspNetCore;
 
 static class ResultExtensions {
@@ -37,22 +38,16 @@ static class ResultExtensions {
                 }
         );
 
-        static ActionResult AsProblem(Result<TState>.Error error, int statusCode) => new ObjectResult(CreateResult(error, new ProblemDetails(), statusCode));
+        static ActionResult AsProblem(Result<TState>.Error error, int statusCode) => CreateResult(error, new ProblemDetails(), statusCode);
 
         static ActionResult AsValidationProblem(Result<TState>.Error error, int statusCode)
             => CreateResult(error, new ValidationProblemDetails(error.AsErrors()), statusCode);
 
-        static ActionResult CreateResult<T>(Result<TState>.Error error, T details, int statusCode) where T : ProblemDetails {
-            details.Status = statusCode;
-            details.Title  = error.ErrorMessage;
-            details.Detail = error.Exception?.ToString();
-            details.Type   = error.Exception?.GetType().Name;
-
-            return new ObjectResult(details) {
-                StatusCode   = Status400BadRequest,
+        static ActionResult CreateResult<T>(Result<TState>.Error error, T details, int statusCode) where T : ProblemDetails
+            => new ObjectResult(PopulateDetails(details, error, statusCode)) {
+                StatusCode   = statusCode,
                 ContentTypes = [ContentTypes.ProblemDetails]
             };
-        }
     }
 
     static T PopulateDetails<T, TState>(T details, Result<TState>.Error error, int statusCode) where T : ProblemDetails where TState : State<TState>, new() {
