@@ -2,6 +2,8 @@
     <PropertyGroup>
         <IncludeTestHelpers>true</IncludeTestHelpers>
         <IncludeSutApp>true</IncludeSutApp>
+        <OutputType>Exe</OutputType>
+        <IsTestProject>true</IsTestProject>
     </PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />

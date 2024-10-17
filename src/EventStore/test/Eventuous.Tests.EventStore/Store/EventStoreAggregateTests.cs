@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
+using Eventuous.TestHelpers.Logging;
 using JetBrains.Annotations;
 using static Eventuous.AggregateFactoryRegistry;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.EventStore.Store;
 
@@ -12,7 +14,7 @@ public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable
     public EventStoreAggregateTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
         _fixture.TypeMapper.AddType<TestEvent>("testEvent");
-        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug));
+        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXUnit(output).SetMinimumLevel(LogLevel.Debug));
         _log           = _loggerFactory.CreateLogger<AggregateStoreTests>();
     }
 
@@ -22,10 +24,10 @@ public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: Current.CancellationToken);
 
         var streamName = StreamNameFactory.For<TestAggregate, TestState, TestId>(id);
-        var events     = await _fixture.EventStore.ReadStream(streamName, StreamReadPosition.Start);
+        var events     = await _fixture.EventStore.ReadStream(streamName, StreamReadPosition.Start, cancellationToken: Current.CancellationToken);
         var first      = events[0];
 
         first.Metadata["trace-id"].Should().NotBeNull();
@@ -49,15 +51,15 @@ public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable
             if (counter != 1000) continue;
 
             _log.LogInformation("Storing batch of events..");
-            await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id);
-            aggregate = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id);
+            await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: Current.CancellationToken);
+            aggregate = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: Current.CancellationToken);
             counter   = 0;
         }
 
-        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: Current.CancellationToken);
 
         _log.LogInformation("Loading large aggregate stream..");
-        var restored = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id);
+        var restored = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: Current.CancellationToken);
 
         restored.State.Values.Count.Should().Be(count);
         restored.State.Values.Should().BeEquivalentTo(aggregate.State.Values);
@@ -69,12 +71,12 @@ public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: Current.CancellationToken);
 
         const int numberOfReads = 100;
 
         foreach (var unused in Enumerable.Range(0, numberOfReads)) {
-            var read = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id);
+            var read = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: Current.CancellationToken);
             read.State.Should().BeEquivalentTo(aggregate.State);
         }
     }

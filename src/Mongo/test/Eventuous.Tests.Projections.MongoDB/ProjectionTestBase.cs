@@ -2,6 +2,7 @@ using Eventuous.EventStore.Subscriptions;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.TestHelpers.Logging;
 using Eventuous.Tests.Projections.MongoDB.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,11 +17,11 @@ public class ProjectionTestBase<TProjection> : IClassFixture<IntegrationFixture>
         Fixture = fixture;
 
         var builder = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
-            .ConfigureLogging(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Trace))
+            .ConfigureLogging(cfg => cfg.AddXUnit(output).SetMinimumLevel(LogLevel.Trace))
             .ConfigureServices(collection => ConfigureServices(collection, id));
 
         Host = builder.Build();
-        Host.UseEventuousLogs();
+        Host.Services.AddEventuousLogs();
     }
 
     void ConfigureServices(IServiceCollection services, string id)
@@ -48,9 +49,7 @@ public class ProjectionTestBase<TProjection> : IClassFixture<IntegrationFixture>
         }
     }
 
-    public Task InitializeAsync()
-        => Host.StartAsync();
+    public async ValueTask InitializeAsync() => await Host.StartAsync();
 
-    public Task DisposeAsync()
-        => Host.StopAsync();
+    public async ValueTask DisposeAsync() => await Host.StopAsync();
 }

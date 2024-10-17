@@ -2,6 +2,7 @@ using Eventuous.Diagnostics.Logging;
 using Eventuous.Redis.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.TestHelpers.Logging;
 using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.Redis.Fixtures;
@@ -21,7 +22,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
         _subscribeToAll = subscribeToAll;
         _autoStart      = autoStart;
         Stream          = new StreamName(SharedAutoFixture.Auto.Create<string>());
-        LoggerFactory   = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
+        LoggerFactory   = LoggingExtensions.GetLoggerFactory(outputHelper, logLevel);
         SubscriptionId  = $"test-{Guid.NewGuid():N}";
         Log             = LoggerFactory.CreateLogger(GetType());
         _listener       = new LoggingEventListener(LoggerFactory);
@@ -39,7 +40,7 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
     readonly bool                 _autoStart;
     readonly LoggingEventListener _listener;
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         IntegrationFixture = new();
         await IntegrationFixture.InitializeAsync();
         Handler         = GetHandler();
@@ -67,14 +68,14 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
         if (_autoStart) await Start();
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         if (_autoStart) await Stop();
-        await FlushDB();
+        await FlushDb();
         _listener.Dispose();
         await IntegrationFixture.DisposeAsync();
     }
 
-    async Task FlushDB() {
+    async Task FlushDb() {
         var database = IntegrationFixture.GetDatabase();
         await database.ExecuteAsync("FLUSHDB");
     }

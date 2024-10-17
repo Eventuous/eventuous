@@ -5,7 +5,9 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
+using Eventuous.TestHelpers.Logging;
 using Eventuous.Tests.Subscriptions.Base;
+using static Xunit.TestContext;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
@@ -18,7 +20,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
 
     public StreamSubscriptionDeletedEventsTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture       = fixture;
-        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug));
+        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXUnit(output).SetMinimumLevel(LogLevel.Debug));
         _listener      = new(_loggerFactory);
         _fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
     }
@@ -31,7 +33,8 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
         ulong? startPosition  = null;
 
         try {
-            var last = await _fixture.Client.ReadStreamAsync(Direction.Backwards, categoryStream, StreamPosition.End, 1).ToArrayAsync();
+            var last = await _fixture.Client.ReadStreamAsync(Direction.Backwards, categoryStream, StreamPosition.End, 1, cancellationToken: Current.CancellationToken)
+                .ToArrayAsync(Current.CancellationToken);
             startPosition = last[0].OriginalEventNumber;
         } catch (StreamNotFoundException) { }
 
@@ -40,7 +43,9 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
 
         var commands = Enumerable.Range(0, produceCount).Select(_ => DomainFixture.CreateImportBooking()).ToArray();
 
-        await Task.WhenAll(commands.Select(x => service.Handle(x, CancellationToken.None)));
+        foreach (var command in commands) {
+            await service.Handle(command, CancellationToken.None);
+        }
 
         var delete = Enumerable.Range(5, deleteCount).Select(x => commands[x]).ToList();
 
@@ -55,10 +60,10 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
         var subscription = new StreamSubscription(
             _fixture.Client,
             new() {
-                StreamName      = categoryStream,
-                SubscriptionId  = subscriptionId,
-                ResolveLinkTos  = true,
-                ThrowOnError    = true,
+                StreamName     = categoryStream,
+                SubscriptionId = subscriptionId,
+                ResolveLinkTos = true,
+                ThrowOnError   = true,
             },
             new NoOpCheckpointStore(startPosition),
             new ConsumePipe().AddSystemEventsFilter().AddDefaultConsumer(handler),

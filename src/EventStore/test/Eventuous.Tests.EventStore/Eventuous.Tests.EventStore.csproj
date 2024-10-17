@@ -3,6 +3,7 @@
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeTestHelpers>true</IncludeTestHelpers>
         <IncludeSutApp>true</IncludeSutApp>
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>

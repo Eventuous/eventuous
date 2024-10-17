@@ -79,7 +79,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     [PublicAPI]
     public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken) {
         if (Diagnostic.IsEnabled(CommitOperation)) Diagnostic.Write(CommitOperation, new CommitEvent(_subscriptionId, position, _positions.Min));
-        position.LogContext.PositionReceived(position);
+        position.LogContext?.PositionReceived(position);
 
         return _worker.Write(position, cancellationToken);
     }
@@ -124,7 +124,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
                 return;
             }
 
-            position.LogContext.CommittingPosition(position);
+            position.LogContext?.CommittingPosition(position);
             await _commitCheckpoint(new(_subscriptionId, position.Position), force, cancellationToken).NoContext();
             _lastCommit = position;
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
@@ -132,7 +132,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
             await _commitCheckpoint(new(_subscriptionId, position.Position), true, default).NoContext();
             _positions.RemoveWhere(x => x.Sequence <= position.Sequence);
         } catch (Exception e) {
-            position.LogContext.UnableToCommitPosition(position, e);
+            position.LogContext?.UnableToCommitPosition(position, e);
         }
     }
 
@@ -149,7 +149,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 public readonly record struct CommitPosition(ulong Position, ulong Sequence, DateTime Timestamp) {
     public bool Valid { get; private init; } = true;
 
-    public LogContext LogContext { get; init; }
+    public LogContext? LogContext { get; init; }
 
     public static readonly CommitPosition None = new(0, 0, DateTime.MinValue) { Valid = false };
 

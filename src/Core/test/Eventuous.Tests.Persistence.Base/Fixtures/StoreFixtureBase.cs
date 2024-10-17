@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Bogus;
 using DotNet.Testcontainers.Containers;
 using Eventuous.TestHelpers;
+using Eventuous.TestHelpers.Logging;
 using MicroElements.AutoFixture.NodaTime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,7 +23,7 @@ public abstract class StoreFixtureBase {
 }
 
 public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncLifetime where TContainer : DockerContainer {
-    public virtual async Task InitializeAsync() {
+    public virtual async ValueTask InitializeAsync() {
         Container = CreateContainer();
         await Container.StartAsync();
 
@@ -30,7 +31,7 @@ public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, I
 
         if (Output != null) {
             services.AddSingleton(Output);
-            services.AddLogging(cfg => cfg.AddXunit(Output, LogLevel.Debug).SetMinimumLevel(LogLevel.Debug));
+            services.AddLogging(cfg => cfg.AddXUnit(Output).SetMinimumLevel(LogLevel.Debug));
         }
 
         Serializer = new DefaultEventSerializer(TestPrimitives.DefaultOptions, TypeMapper);
@@ -55,7 +56,7 @@ public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, I
         }
     }
 
-    public virtual async Task DisposeAsync() {
+    public virtual async ValueTask DisposeAsync() {
         if (_disposed) return;
 
         _disposed = true;

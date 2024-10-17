@@ -12,6 +12,15 @@ public class AggregateFactoryRegistry {
     /// Aggregate factory registry singleton instance 
     /// </summary>
     public static readonly AggregateFactoryRegistry Instance = new();
+    
+    private AggregateFactoryRegistry() { }
+
+    [UsedImplicitly]
+    public AggregateFactoryRegistry(IServiceProvider sp, IEnumerable<ResolveAggregateFactory> resolvers) {
+        foreach (var resolver in resolvers) {
+            UnsafeCreateAggregateUsing(resolver.Type, () => resolver.CreateInstance(sp));
+        }
+    }
 
     internal readonly Dictionary<Type, Func<object>> Registry = new();
 
@@ -39,3 +48,5 @@ public class AggregateFactoryRegistry {
 }
 
 public delegate T AggregateFactory<out T, TState>() where T : Aggregate<TState> where TState : State<TState>, new();
+
+public record ResolveAggregateFactory(Type Type, Func<IServiceProvider, object> CreateInstance);

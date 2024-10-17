@@ -23,7 +23,7 @@ public class PubSubFixture : IAsyncLifetime {
 
     IContainer _container = null!;
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         const int port = 8085;
 
         _container = new ContainerBuilder()
@@ -38,7 +38,7 @@ public class PubSubFixture : IAsyncLifetime {
         Environment.SetEnvironmentVariable("PUBSUB_PROJECT_ID", PubsubProjectId);
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         await _container.StopAsync();
     }
 }

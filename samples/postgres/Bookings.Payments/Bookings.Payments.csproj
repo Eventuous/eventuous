@@ -5,7 +5,8 @@
     <ItemGroup>
         <PackageReference Include="MongoDb.Bson.NodaTime"/>
         <PackageReference Include="MongoDB.Driver"/>
-        <PackageReference Include="MongoDB.Driver.Core.Extensions.OpenTelemetry"/>
+        <PackageReference Include="MongoDB.Driver.Core"/>
+        <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources"/>
         <PackageReference Include="Npgsql"/>
         <PackageReference Include="Npgsql.OpenTelemetry"/>
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
@@ -33,7 +34,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
-        <ProjectReference Include="..\..\..\src\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
+        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj"/>

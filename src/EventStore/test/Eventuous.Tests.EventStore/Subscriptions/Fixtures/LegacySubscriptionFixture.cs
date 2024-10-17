@@ -2,6 +2,7 @@ using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Tests.Subscriptions.Base;
+using LoggingExtensions = Eventuous.TestHelpers.Logging.LoggingExtensions;
 
 namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
@@ -26,7 +27,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
         _autoStart = autoStart;
         if (stream is { } s) Stream = s;
 
-        LoggerFactory = TestHelpers.Logging.GetLoggerFactory(output, logLevel);
+        LoggerFactory = LoggingExtensions.GetLoggerFactory(output, logLevel);
         Handler       = handler;
         Log           = LoggerFactory.CreateLogger(GetType());
         StoreFixture.TypeMapper.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
@@ -39,7 +40,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
 
     readonly bool _autoStart;
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         await StoreFixture.InitializeAsync();
         Producer = new(StoreFixture.Client);
 
@@ -61,7 +62,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
         if (_autoStart) await Start();
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         if (_autoStart) await Stop();
         await StoreFixture.DisposeAsync();
     }

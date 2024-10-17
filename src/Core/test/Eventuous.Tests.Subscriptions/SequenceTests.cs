@@ -1,14 +1,14 @@
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.TestHelpers.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Xunit.Extensions.Logging;
 
 namespace Eventuous.Tests.Subscriptions;
 
 public class SequenceTests {
     public SequenceTests(ITestOutputHelper output) {
         var factory = new LoggerFactory();
-        factory.AddProvider(new XunitLoggerProvider(output, (_, _) => true));
+        factory.AddProvider(new XUnitLoggerProvider(output));
         var services = new ServiceCollection();
         services.AddSingleton<ILoggerFactory>(factory);
         var provider = services.BuildServiceProvider();

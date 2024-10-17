@@ -1,6 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeTestHost>true</IncludeTestHost>
-        <IncludeTestHelpers>true</IncludeTestHelpers>
-    </PropertyGroup>
-</Project>

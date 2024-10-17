@@ -21,7 +21,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         DefaultEventSerializer.SetDefaultSerializer(Serializer);
     }
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         _redisContainer = new RedisBuilder().WithImage("redis:7.0.12-alpine").Build();
 
         await _redisContainer.StartAsync();
@@ -42,7 +42,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         }
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         await _redisContainer.DisposeAsync();
         _listener.Dispose();
     }

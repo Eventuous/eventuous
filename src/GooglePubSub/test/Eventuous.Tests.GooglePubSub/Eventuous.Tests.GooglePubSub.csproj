@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.GooglePubSub\Eventuous.GooglePubSub.csproj" />
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />

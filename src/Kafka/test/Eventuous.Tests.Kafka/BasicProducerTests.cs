@@ -6,6 +6,7 @@ using Eventuous.Tests.Subscriptions.Base;
 using Eventuous.Tools;
 using static System.String;
 using static Eventuous.DeserializationResult;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Kafka;
 
@@ -39,8 +40,8 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
 
         async Task Produce() {
             await using var producer = new KafkaBasicProducer(new(new() { BootstrapServers = _fixture.BootstrapServers }));
-            await producer.StartAsync(default);
-            await producer.Produce(new(topicName), events, new(), new("test"));
+            await producer.StartAsync(Current.CancellationToken);
+            await producer.Produce(new(topicName), events, new(), new("test"), cancellationToken: Current.CancellationToken);
         }
 
         async Task ExecuteConsume() {

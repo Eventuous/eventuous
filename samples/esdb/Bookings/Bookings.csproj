@@ -1,39 +1,39 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <Configurations>Debug;Release</Configurations>
-    <Platforms>AnyCPU</Platforms>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="FluentValidation" />
-    <PackageReference Include="MongoDb.Bson.NodaTime" />
-    <PackageReference Include="MongoDB.Driver.Core.Extensions.OpenTelemetry" />
-    <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
-    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
-    <PackageReference Include="OpenTelemetry.Exporter.Zipkin" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient" />
-    <PackageReference Include="Serilog.AspNetCore" />
-    <PackageReference Include="Serilog.Sinks.Console" />
-    <PackageReference Include="Serilog.Sinks.Seq" />
-    <PackageReference Include="Swashbuckle.AspNetCore" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
-    <ProjectReference Include="$(SrcRoot)\EventStore\src\Eventuous.EventStore\Eventuous.EventStore.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Experimental\src\Eventuous.Spyglass\Eventuous.Spyglass.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
-    <ProjectReference Include="..\..\..\src\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
-    <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Update="Properties\launchSettings.json">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <PropertyGroup>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <Configurations>Debug;Release</Configurations>
+        <Platforms>AnyCPU</Platforms>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="FluentValidation"/>
+        <PackageReference Include="MongoDb.Bson.NodaTime"/>
+        <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Zipkin"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient"/>
+        <PackageReference Include="Serilog.AspNetCore"/>
+        <PackageReference Include="Serilog.Sinks.Console"/>
+        <PackageReference Include="Serilog.Sinks.Seq"/>
+        <PackageReference Include="Swashbuckle.AspNetCore"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\EventStore\src\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Experimental\src\Eventuous.Spyglass\Eventuous.Spyglass.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
+        <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Content Update="Properties\launchSettings.json">
+            <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 </Project>

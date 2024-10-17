@@ -1,3 +1,4 @@
+using TUnit.Assertions.Extensions.Generic;
 using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests;
@@ -7,9 +8,9 @@ public class TypeRegistrationTests {
 
     public TypeRegistrationTests() => _typeMapper.RegisterKnownEventTypes(typeof(BookingCancelled).Assembly);
 
-    [Fact]
-    public void ShouldResolveDecoratedEvent() {
-        _typeMapper.GetTypeName<BookingCancelled>().Should().Be(TypeNames.BookingCancelled);
-        _typeMapper.GetType(TypeNames.BookingCancelled).Should().Be<BookingCancelled>();
+    [Test]
+    public async Task ShouldResolveDecoratedEvent() {
+        await Assert.That(_typeMapper.GetTypeName<BookingCancelled>()).IsEqualTo(TypeNames.BookingCancelled);
+        await Assert.That(_typeMapper.GetType(TypeNames.BookingCancelled)).IsEqualTo(typeof(BookingCancelled));
     }
 }

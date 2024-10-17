@@ -43,5 +43,3 @@ public static class AggregateFactoryContainerExtensions {
         return services.AddSingleton(new ResolveAggregateFactory(typeof(T), createInstance));
     }
 }
-
-record ResolveAggregateFactory(Type Type, Func<IServiceProvider, object> CreateInstance);

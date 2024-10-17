@@ -1,16 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <IncludeSutApp>true</IncludeSutApp>
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
-        <ItemGroup>
-            <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
-            <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
-            <PackageReference Include="StackExchange.Redis" />
-            <PackageReference Include="Testcontainers.Redis" />
+    <ItemGroup>
+        <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="StackExchange.Redis"/>
+        <PackageReference Include="Testcontainers.Redis"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Redis\Eventuous.Redis.csproj" />
-        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
-        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Redis\Eventuous.Redis.csproj"/>
+        <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
+        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
     </ItemGroup>
 </Project>

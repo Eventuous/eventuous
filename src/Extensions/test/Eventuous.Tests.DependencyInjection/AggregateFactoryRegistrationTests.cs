@@ -1,7 +1,6 @@
 ﻿using Eventuous.Tests.AspNetCore.Sut;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Tests.AspNetCore;
 
@@ -10,8 +9,8 @@ public class AggregateFactoryRegistrationTests {
 
     public AggregateFactoryRegistrationTests() {
         var host = BuildHost();
+        host.Services.AddAggregate<TestAggregate, TestState>();
         var app  = host.Build();
-        app.UseAggregateFactory();
         _registry = app.Services.GetRequiredService<AggregateFactoryRegistry>();
     }
 

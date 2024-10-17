@@ -94,7 +94,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
         return events;
     }
 
-    public Task InitializeAsync() => fixture.InitializeAsync();
+    public async ValueTask InitializeAsync() => await fixture.InitializeAsync();
 
-    public Task DisposeAsync() => fixture.DisposeAsync();
+    public async ValueTask DisposeAsync() => await fixture.DisposeAsync();
 }

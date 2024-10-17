@@ -4,6 +4,7 @@ using Eventuous.TestHelpers;
 using Eventuous.Testing;
 using NodaTime;
 using static Eventuous.Sut.Domain.BookingEvents;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Application;
 
@@ -16,7 +17,7 @@ public abstract partial class ServiceTestBase : IDisposable {
 
         var tasks = Enumerable
             .Range(1, threadCount)
-            .Select(bookingId => Task.Run(() => service.Handle(Helpers.GetBookRoom(bookingId.ToString()), default)))
+            .Select(bookingId => Task.Run(() => service.Handle(Helpers.GetBookRoom(bookingId.ToString()), Current.CancellationToken)))
             .ToList();
 
         await Task.WhenAll(tasks);

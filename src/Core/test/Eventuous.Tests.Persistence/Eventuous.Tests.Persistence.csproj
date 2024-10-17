@@ -1,9 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <IncludeTestHelpers>true</IncludeTestHelpers>
-        <IncludeSutApp>true</IncludeSutApp>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
-    </ItemGroup>
-</Project>

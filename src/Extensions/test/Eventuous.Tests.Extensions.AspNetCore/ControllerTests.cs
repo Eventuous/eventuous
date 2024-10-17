@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.AspNetCore.BookingApi;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Extensions.AspNetCore;
 
@@ -40,12 +41,12 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
 
         var bookRoom = _fixture.GetBookRoom();
 
-        await client.PostJsonAsync("/book", bookRoom);
+        await client.PostJsonAsync("/book", bookRoom, cancellationToken: Current.CancellationToken);
 
         var registerPayment = new RegisterPaymentHttp(bookRoom.BookingId, bookRoom.RoomId, 100, DateTimeOffset.Now);
 
         var request  = new RestRequest("/v2/pay").AddJsonBody(registerPayment);
-        var response = await client.ExecutePostAsync<Result<BookingState>.Ok>(request);
+        var response = await client.ExecutePostAsync<Result<BookingState>.Ok>(request, cancellationToken: Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var expected = new BookingEvents.BookingFullyPaid(registerPayment.PaidAt);

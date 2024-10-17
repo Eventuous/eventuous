@@ -1,5 +1,6 @@
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Persistence.Base.Store;
 
@@ -18,7 +19,7 @@ public abstract class StoreOtherOpsTests<T> : IClassFixture<T> where T : StoreFi
         var streamName = _fixture.GetStreamName();
         await _fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
-        var exists = await _fixture.EventStore.StreamExists(streamName, default);
+        var exists = await _fixture.EventStore.StreamExists(streamName, Current.CancellationToken);
         exists.Should().BeTrue();
     }
 
@@ -26,7 +27,7 @@ public abstract class StoreOtherOpsTests<T> : IClassFixture<T> where T : StoreFi
     [Trait("Category", "Store")]
     public async Task StreamShouldNotExist() {
         var streamName = _fixture.GetStreamName();
-        var exists     = await _fixture.EventStore.StreamExists(streamName, default);
+        var exists     = await _fixture.EventStore.StreamExists(streamName, Current.CancellationToken);
         exists.Should().BeFalse();
     }
 }

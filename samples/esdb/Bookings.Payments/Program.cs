@@ -19,7 +19,7 @@ builder.Services.AddServices(builder.Configuration);
 builder.Host.UseSerilog();
 
 var app = builder.Build();
-app.UseEventuousLogs();
+app.Services.AddEventuousLogs();
 
 app.UseSwagger();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();

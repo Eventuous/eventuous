@@ -12,5 +12,6 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Hypothesist"/>
+        <PackageReference Remove="xunit.v3"/>
     </ItemGroup>
 </Project>

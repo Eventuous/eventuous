@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Diagnostics\src\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
+  </ItemGroup>
+</Project>

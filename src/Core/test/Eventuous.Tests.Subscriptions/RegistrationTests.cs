@@ -3,14 +3,14 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.Subscriptions.Logging;
-using Eventuous.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
+using static Xunit.TestContext;
+using LoggingExtensions = Eventuous.TestHelpers.Logging.LoggingExtensions;
 
 // ReSharper disable ClassNeverInstantiated.Local
 
@@ -19,7 +19,7 @@ namespace Eventuous.Tests.Subscriptions;
 public class RegistrationTests(ITestOutputHelper outputHelper) {
     readonly TestServer     _server = new(BuildHost());
     readonly Fixture        _auto   = new();
-    readonly ILoggerFactory _logger = Logging.GetLoggerFactory(outputHelper);
+    readonly ILoggerFactory _logger = LoggingExtensions.GetLoggerFactory(outputHelper);
 
     [Fact]
     public void ShouldBeSingletons() {
@@ -64,7 +64,7 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
             new Metadata(),
             current.SubscriptionId,
             default
-        ) { LogContext = new LogContext(current.SubscriptionId, _logger) };
+        ) { LogContext = new(current.SubscriptionId, _logger) };
         await current.Pipe.Send(ctx);
 
         var handled = logger.Records.Where(x => x.Context.SubscriptionId == current.SubscriptionId).ToArray();
@@ -93,7 +93,7 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
         subs.Should().AllSatisfy(x => x.IsRunning.Should().BeTrue());
 
         health.Should().NotBeNull();
-        var check = await health!.CheckHealthAsync(new HealthCheckContext());
+        var check = await health!.CheckHealthAsync(new(), Current.CancellationToken);
         check.Data["sub1"].Should().Be("Healthy");
         check.Data["sub2"].Should().Be("Healthy");
         check.Status.Should().Be(HealthStatus.Healthy);
@@ -138,8 +138,7 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
 
         protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
 
-        public GetSubscriptionEndOfStream GetMeasure()
-            => _ => new(new EndOfStream(SubscriptionId, 0, DateTime.UtcNow));
+        public GetSubscriptionEndOfStream GetMeasure() => _ => new(new EndOfStream(SubscriptionId, 0, DateTime.UtcNow));
     }
 
     abstract class BaseTestHandler(TestHandlerLogger logger) : BaseEventHandler {
@@ -155,7 +154,7 @@ public class RegistrationTests(ITestOutputHelper outputHelper) {
 
 class TestHandlerLogger {
     public ValueTask<EventHandlingStatus> EventReceived(Type handlerType, IMessageConsumeContext ctx) {
-        Records.Add(new TestHandlerLogRecord(handlerType, ctx));
+        Records.Add(new(handlerType, ctx));
 
         return ValueTask.FromResult(EventHandlingStatus.Success);
     }

@@ -2,8 +2,10 @@ using Eventuous.GooglePubSub.Producers;
 using Eventuous.GooglePubSub.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.TestHelpers.Logging;
 using Eventuous.Tests.Subscriptions.Base;
 using Google.Api.Gax;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.GooglePubSub;
 
@@ -21,7 +23,7 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
 
     // ReSharper disable once UnusedParameter.Local
     public PubSubTests(PubSubFixture _, ITestOutputHelper outputHelper) {
-        var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXunit(outputHelper));
+        var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXUnit(outputHelper));
 
         _log                = loggerFactory.CreateLogger<PubSubTests>();
         _pubsubTopic        = new($"test-{Guid.NewGuid():N}");
@@ -49,9 +51,9 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
     public async Task SubscribeAndProduce() {
         var testEvent = Auto.Create<TestEvent>();
 
-        await _producer.Produce(_pubsubTopic, testEvent, null);
+        await _producer.Produce(_pubsubTopic, testEvent, null, cancellationToken: Current.CancellationToken);
 
-        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate();
+        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate(Current.CancellationToken);
     }
 
     [Fact]
@@ -60,16 +62,16 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
 
-        await _producer.Produce(_pubsubTopic, testEvents, null);
-        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate();
+        await _producer.Produce(_pubsubTopic, testEvents, null, cancellationToken: Current.CancellationToken);
+        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate(Current.CancellationToken);
     }
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         await _producer.StartAsync();
         await _subscription.SubscribeWithLog(_log);
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         await _producer.StopAsync();
         await _subscription.UnsubscribeWithLog(_log);
 

@@ -4,7 +4,7 @@ using NodaTime;
 namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
 public static class DomainFixture {
-    static DomainFixture() => TypeMap.RegisterKnownEventTypes();
+    static DomainFixture() => TypeMap.RegisterKnownEventTypes(typeof(DomainFixture).Assembly);
 
     public static Commands.ImportBooking CreateImportBooking(IFixture auto) {
         var from = auto.Create<LocalDate>();

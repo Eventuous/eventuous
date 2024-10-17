@@ -8,6 +8,7 @@ using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Postgres.Subscriptions;
 using Npgsql;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Postgres.Projections;
 
@@ -28,17 +29,17 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
         await CreateSchema();
         var commands = await GenerateAndProduceEvents(100);
 
-        await Task.Delay(1000);
+        await Task.Delay(1000, Current.CancellationToken);
 
-        await using var connection = await _fixture.DataSource.OpenConnectionAsync();
+        await using var connection = await _fixture.DataSource.OpenConnectionAsync(Current.CancellationToken);
 
         var select = $"select * from {_fixture.SchemaName}.bookings where booking_id = @bookingId";
 
         foreach (var command in commands) {
             await using var cmd = new NpgsqlCommand(select, connection);
             cmd.Parameters.AddWithValue("@bookingId", command.BookingId);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            await reader.ReadAsync();
+            await using var reader = await cmd.ExecuteReaderAsync(Current.CancellationToken);
+            await reader.ReadAsync(Current.CancellationToken);
             reader["checkin_date"].Should().Be(command.CheckIn.ToDateTimeUnspecified());
             reader["price"].Should().Be(command.Price);
         }
@@ -71,9 +72,9 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
     static BookingEvents.BookingImported ToEvent(Commands.ImportBooking cmd)
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
-    public Task InitializeAsync() => _fixture.InitializeAsync();
+    public async ValueTask InitializeAsync() => await _fixture.InitializeAsync();
 
-    public Task DisposeAsync() => _fixture.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _fixture.DisposeAsync();
 }
 
 public class TestProjector : PostgresProjector {
