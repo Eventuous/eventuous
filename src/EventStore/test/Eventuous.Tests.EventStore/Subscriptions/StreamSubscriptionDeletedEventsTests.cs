@@ -1,4 +1,5 @@
-using EventStore.Client;
+// using EventStore.Client;
+
 using Eventuous.Diagnostics.Logging;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Context;
@@ -12,15 +13,14 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
-[Collection("Database")]
-public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFixture>, IDisposable {
+public sealed class StreamSubscriptionDeletedEventsTests : IAsyncLifetime {
     readonly StoreFixture         _fixture;
     readonly ILoggerFactory       _loggerFactory;
     readonly LoggingEventListener _listener;
 
-    public StreamSubscriptionDeletedEventsTests(StoreFixture fixture, ITestOutputHelper output) {
-        _fixture       = fixture;
-        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXUnit(output).SetMinimumLevel(LogLevel.Debug));
+    public StreamSubscriptionDeletedEventsTests(ITestOutputHelper output) {
+        _fixture       = new();
+        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXUnit(output).AddConsole().SetMinimumLevel(LogLevel.Debug));
         _listener      = new(_loggerFactory);
         _fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
     }
@@ -32,11 +32,11 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
         var    categoryStream = new StreamName("$ce-Booking");
         ulong? startPosition  = null;
 
-        try {
-            var last = await _fixture.Client.ReadStreamAsync(Direction.Backwards, categoryStream, StreamPosition.End, 1, cancellationToken: Current.CancellationToken)
-                .ToArrayAsync(Current.CancellationToken);
-            startPosition = last[0].OriginalEventNumber;
-        } catch (StreamNotFoundException) { }
+        // try {
+        //     var last = await _fixture.Client.ReadStreamAsync(Direction.Backwards, categoryStream, StreamPosition.End, 1, cancellationToken: Current.CancellationToken)
+        //         .ToArrayAsync(Current.CancellationToken);
+        //     startPosition = last[0].OriginalEventNumber;
+        // } catch (StreamNotFoundException) { }
 
         const int produceCount = 20;
         const int deleteCount  = 5;
@@ -70,9 +70,14 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
             eventSerializer: _fixture.Serializer
         );
 
-        var log = _loggerFactory.CreateLogger("Test");
+        var expected = commands.Except(delete).Select(x => x.BookingId);
+        var log      = _loggerFactory.CreateLogger("Test");
 
-        await subscription.SubscribeWithLog(log);
+        LogCollection("Produced", commands);
+        LogCollection("Deleted", delete);
+        LogCollection("Expected", commands.Except(delete));
+
+        await subscription.SubscribeWithLog(log, Current.CancellationToken);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(200));
 
@@ -80,10 +85,15 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
             await Task.Delay(100, cts.Token);
         }
 
-        await subscription.UnsubscribeWithLog(log);
+        await subscription.UnsubscribeWithLog(log, Current.CancellationToken);
 
         var actual = handler.Processed.Select(x => x.Stream.GetId()).ToList();
-        actual.Should().BeEquivalentTo(commands.Except(delete).Select(x => x.BookingId));
+        log.LogInformation("Actual:\n {Join}", string.Join("\n", actual));
+        actual.Should().BeEquivalentTo(expected);
+
+        return;
+
+        void LogCollection(string what, IEnumerable<Commands.ImportBooking> collection) => log.LogInformation("{What}:\n {Join}", what, string.Join("\n", collection.Select(x => x.BookingId)));
     }
 
     class TestHandler : BaseEventHandler {
@@ -102,8 +112,20 @@ public sealed class StreamSubscriptionDeletedEventsTests : IClassFixture<StoreFi
         }
     }
 
-    public void Dispose() {
-        _loggerFactory.Dispose();
-        _listener.Dispose();
+    public async ValueTask DisposeAsync() {
+        await _fixture.DisposeAsync();
+        await CastAndDispose(_loggerFactory);
+        await CastAndDispose(_listener);
+
+        return;
+
+        static async ValueTask CastAndDispose(IDisposable resource) {
+            if (resource is IAsyncDisposable resourceAsyncDisposable)
+                await resourceAsyncDisposable.DisposeAsync();
+            else
+                resource.Dispose();
+        }
     }
+
+    public ValueTask InitializeAsync() => _fixture.InitializeAsync();
 }

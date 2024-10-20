@@ -18,6 +18,7 @@
         <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Testcontainers.EventStoreDb"/>
+        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>

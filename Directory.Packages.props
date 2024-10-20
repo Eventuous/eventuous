@@ -52,6 +52,7 @@
         <PackageVersion Include="StackExchange.Redis" Version="2.8.16"/>
         <PackageVersion Include="TUnit" Version="0.1.1051"/>
         <PackageVersion Include="xunit.v3.assert" Version="0.4.0-pre.20"/>
+        <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.4.1"/>
     </ItemGroup>
     <ItemGroup Label="Testcontainers">
         <PackageVersion Include="Testcontainers" Version="$(TestcontainersVersion)"/>

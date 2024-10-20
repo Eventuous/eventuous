@@ -20,7 +20,7 @@ public class ProducerEventSource<T> : EventSource where T : class {
     [NonEvent]
     public void ProduceAcknowledged(ProducedMessage message) {
         if (IsEnabled(EventLevel.Verbose, EventKeywords.All)) {
-            ProduceAcknowledged(ProducerName, message);
+            ProduceAcknowledged(ProducerName, message.GetType().Name);
         }
     }
 
@@ -29,14 +29,14 @@ public class ProducerEventSource<T> : EventSource where T : class {
         if (!IsEnabled(EventLevel.Verbose, EventKeywords.All)) return;
 
         var errorMessage = $"{error} {e?.Message}";
-        ProduceNotAcknowledged(ProducerName, message, errorMessage);
+        ProduceNotAcknowledged(ProducerName, message.GetType().Name, errorMessage);
     }
 
     [Event(ProduceAcknowledgedId, Level = EventLevel.Verbose, Message = "[{0}] Produce acknowledged: {1}")]
-    void ProduceAcknowledged(string producer, object message)
-        => WriteEvent(ProduceAcknowledgedId, producer, message.GetType().Name);
+    void ProduceAcknowledged(string producer, string messageType)
+        => WriteEvent(ProduceAcknowledgedId, producer, messageType);
 
     [Event(ProduceNotAcknowledgedId, Level = EventLevel.Verbose, Message = "[{0}] Produce not acknowledged: {1} {2}")]
-    void ProduceNotAcknowledged(string producer, object message, string error)
-        => WriteEvent(ProduceNotAcknowledgedId, producer, message.GetType().Name, error);
+    void ProduceNotAcknowledged(string producer, string messageType, string error)
+        => WriteEvent(ProduceNotAcknowledgedId, producer, messageType, error);
 }

@@ -30,6 +30,8 @@
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
         <EnableMSTestRunner>true</EnableMSTestRunner>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+        <TestingPlatformCommandLineArguments>--report-trx</TestingPlatformCommandLineArguments>
+        <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
     </PropertyGroup>
     <PropertyGroup Condition="!($(MSBuildProjectName.StartsWith('Eventuous.Tests')))">
         <IsPackable>true</IsPackable>
@@ -66,6 +68,7 @@
         <PackageReference Include="FluentAssertions"/>
         <PackageReference Include="xunit.v3"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
         <Using Include="AutoFixture"/>
         <Using Include="FluentAssertions"/>
         <Using Include="FluentAssertions.Extensions"/>
