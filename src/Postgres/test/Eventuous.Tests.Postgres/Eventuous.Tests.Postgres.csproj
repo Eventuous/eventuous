@@ -3,6 +3,7 @@
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeTestHost>true</IncludeTestHost>
         <InvariantGlobalization>true</InvariantGlobalization>
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>

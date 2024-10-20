@@ -59,7 +59,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         await fixture.CheckpointStore.StoreCheckpoint(new(fixture.SubscriptionId, last), true, default);
         
         var l = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
-        outputHelper.WriteLine("Last checkpoint: {0}", l.Position);
+        outputHelper.WriteLine("Last checkpoint: {0}", l.Position!);
 
         await fixture.StartSubscription();
         await Task.Delay(TimeSpan.FromSeconds(1));
@@ -85,7 +85,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         return commands;
     }
 
-    public Task InitializeAsync() => fixture.InitializeAsync();
+    public async ValueTask InitializeAsync() => await fixture.InitializeAsync();
 
-    public Task DisposeAsync() => fixture.DisposeAsync();
+    public async ValueTask DisposeAsync() => await fixture.DisposeAsync();
 }

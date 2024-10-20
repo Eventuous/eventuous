@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ 'net6.0', 'net8.0' ]
+        dotnet: [ 'net9.0', 'net8.0' ]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
       TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
@@ -32,7 +32,8 @@ jobs:
         name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0'
+          dotnet-version: '9.0'
+          dotnet-quality: 'preview'
       -  
         name: Build
         run: |

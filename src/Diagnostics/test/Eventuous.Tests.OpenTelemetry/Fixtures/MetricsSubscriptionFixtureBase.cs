@@ -70,7 +70,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     public MessageCounter Counter  { get; private set; } = null!;
     public TestExporter   Exporter { get; }              = new();
 
-    public override async Task DisposeAsync() {
+    public override async ValueTask DisposeAsync() {
         await base.DisposeAsync();
         Exporter.Dispose();
         _listener?.Dispose();

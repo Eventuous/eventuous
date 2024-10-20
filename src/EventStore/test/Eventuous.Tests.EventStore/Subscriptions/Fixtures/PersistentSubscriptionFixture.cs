@@ -2,6 +2,7 @@ using Eventuous.Diagnostics.Logging;
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Tests.Subscriptions.Base;
+using LoggingExtensions = Eventuous.TestHelpers.Logging.LoggingExtensions;
 
 namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
@@ -32,11 +33,11 @@ public abstract class PersistentSubscriptionFixture<TSubscription, TOptions, THa
 
     protected abstract TSubscription CreateSubscription(string id, ILoggerFactory loggerFactory);
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         Fixture.TypeMapper.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
         await Fixture.InitializeAsync();
         Producer = new(Fixture.Client);
-        var loggerFactory  = TestHelpers.Logging.GetLoggerFactory(outputHelper, logLevel);
+        var loggerFactory  = LoggingExtensions.GetLoggerFactory(outputHelper, logLevel);
         var subscriptionId = $"test-{Guid.NewGuid():N}";
         Log = loggerFactory.CreateLogger(GetType());
 
@@ -46,7 +47,7 @@ public abstract class PersistentSubscriptionFixture<TSubscription, TOptions, THa
         if (autoStart) await Start();
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         if (autoStart) await Stop();
         _listener.Dispose();
     }

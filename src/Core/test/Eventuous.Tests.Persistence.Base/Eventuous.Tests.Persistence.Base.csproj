@@ -1,16 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <IncludeSutApp>true</IncludeSutApp>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" />
-    <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
-    <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
-    <PackageReference Include="Testcontainers" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <IncludeSutApp>true</IncludeSutApp>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations"/>
+        <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="Testcontainers"/>
+        <PackageReference Remove="xunit.v3"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
+    </ItemGroup>
 </Project>

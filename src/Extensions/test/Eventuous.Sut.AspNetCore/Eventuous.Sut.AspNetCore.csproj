@@ -12,7 +12,6 @@
     </ItemGroup>
     <ItemGroup>
         <Using Include="Eventuous"/>
-        <InternalsVisibleTo Include="Eventuous.Tests.AspNetCore.Web"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>

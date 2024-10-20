@@ -20,7 +20,7 @@ builder.Services.AddEventuous(builder.Configuration);
 
 var app = builder.Build();
 
-app.UseEventuousLogs();
+app.Services.AddEventuousLogs();
 app.UseSwagger().UseSwaggerUI();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 

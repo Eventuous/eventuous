@@ -1,4 +1,5 @@
 using NodaTime;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Application;
 
@@ -24,7 +25,7 @@ public class StateWithIdTests {
         result.TryGet(out var ok).Should().BeTrue();
         ok!.State.Id.Should().Be(bookingId);
 
-        var instance = await _store.LoadAggregate<Booking, BookingState, BookingId>(bookingId, map, true);
+        var instance = await _store.LoadAggregate<Booking, BookingState, BookingId>(bookingId, map, true, cancellationToken: Current.CancellationToken);
 
         // Ensure that the id was set when the aggregate was loaded
         instance.State.Id.Should().Be(bookingId);

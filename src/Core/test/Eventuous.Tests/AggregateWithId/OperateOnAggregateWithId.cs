@@ -9,10 +9,10 @@ public class OperateOnAggregateWithId : AggregateWithIdSpec<TestAggregate, TestS
 
     protected override TestId? Id { get; } = new(IdValue);
 
-    [Fact]
+    [Test]
     public void should_emit_event() => Emitted(new TestEvent());
 
-    [Fact]
+    [Test]
     public void should_set_id() => Then().State.Id.Value.Should().Be(IdValue);
 }
 

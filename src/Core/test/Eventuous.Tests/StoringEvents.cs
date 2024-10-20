@@ -1,5 +1,6 @@
 global using NodaTime;
 using static Eventuous.Sut.Domain.BookingEvents;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests;
 
@@ -15,7 +16,7 @@ public class StoringEvents : NaiveFixture {
 
     BookingService Service { get; }
 
-    [Fact]
+    [Test]
     public async Task StoreInitial() {
         var cmd = new Commands.BookRoom(
             Auto.Create<string>(),
@@ -27,7 +28,7 @@ public class StoringEvents : NaiveFixture {
 
         Change[] expected = [new(new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), TypeNames.RoomBooked)];
 
-        var result = await Service.Handle(cmd, default);
+        var result = await Service.Handle(cmd, Current.CancellationToken);
 
         result.TryGet(out var ok).Should().BeTrue();
         ok!.Changes.Should().BeEquivalentTo(expected);

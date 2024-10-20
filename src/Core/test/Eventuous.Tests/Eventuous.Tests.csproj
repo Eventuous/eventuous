@@ -2,13 +2,23 @@
     <PropertyGroup>
         <IncludeSutApp>true</IncludeSutApp>
         <IncludeTestHelpers>true</IncludeTestHelpers>
+        <OutputType>Exe</OutputType>
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+        <IsTestProject>true</IsTestProject>
+        <EnableMSTestRunner>true</EnableMSTestRunner>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" />
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+        <PackageReference Include="JetBrains.Annotations"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="TUnit"/>
+        <PackageReference Remove="xunit.v3"/>
+        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Application\Eventuous.Application.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Using Remove="Xunit"/>
     </ItemGroup>
 </Project>

@@ -1,9 +1,9 @@
-using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.Tests.Redis.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Redis.Subscriptions;
 
@@ -15,7 +15,7 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
         var testEvents = await GenerateAndProduceEvents(count);
 
         await Start();
-        await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
+        await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate(Current.CancellationToken);
         await Stop();
 
         Handler.Count.Should().Be(10);
@@ -38,7 +38,7 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
             var testEvents = await GenerateAndProduceEvents(count);
 
             await Start();
-            await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
+            await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate(Current.CancellationToken);
             await Stop();
 
             Handler.Count.Should().Be(10);
@@ -51,13 +51,13 @@ public class SubscribeToStream(ITestOutputHelper outputHelper) : SubscriptionFix
 
         await GenerateAndProduceEvents(count);
 
-        await CheckpointStore.GetLastCheckpoint(SubscriptionId, default);
+        await CheckpointStore.GetLastCheckpoint(SubscriptionId, Current.CancellationToken);
         var streamPosition = await GetStreamPosition(count);
         Logger.ConfigureIfNull(SubscriptionId, LoggerFactory);
-        await CheckpointStore.StoreCheckpoint(new Checkpoint(SubscriptionId, (ulong)streamPosition), true, default);
+        await CheckpointStore.StoreCheckpoint(new(SubscriptionId, (ulong)streamPosition), true, Current.CancellationToken);
 
         await Start();
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(1), Current.CancellationToken);
         await Stop();
         Handler.Count.Should().Be(0);
     }

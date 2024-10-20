@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
         <LangVersion>preview</LangVersion>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
         <Nullable>enable</Nullable>
@@ -21,11 +21,17 @@
         <DebugSymbols Condition=" '$(DebugSymbols)' == '' ">true</DebugSymbols>
         <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     </PropertyGroup>
+    <Import Project="$(RepoRoot)\props\Common.props"/>
     <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Eventuous.Tests'))">
         <VSTestLogger>trx%3bLogFileName=$(MSBuildProjectName).trx</VSTestLogger>
         <VSTestResultsDirectory>$(RepoRoot)/test-results/$(TargetFramework)</VSTestResultsDirectory>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+        <EnableMSTestRunner>true</EnableMSTestRunner>
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+        <TestingPlatformCommandLineArguments>--report-trx</TestingPlatformCommandLineArguments>
+        <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
     </PropertyGroup>
     <PropertyGroup Condition="!($(MSBuildProjectName.StartsWith('Eventuous.Tests')))">
         <IsPackable>true</IsPackable>
@@ -56,21 +62,18 @@
         <Using Include="System.Diagnostics.CodeAnalysis"/>
     </ItemGroup>
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
-        <Content Include="$(RepoRoot)\test\xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
         <PackageReference Include="AutoFixture"/>
         <PackageReference Include="Bogus"/>
         <PackageReference Include="coverlet.collector"/>
         <PackageReference Include="FluentAssertions"/>
+        <PackageReference Include="xunit.v3"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-        <PackageReference Include="xunit"/>
-        <PackageReference Include="Xunit.Extensions.Logging"/>
-        <PackageReference Include="xunit.runner.visualstudio"/>
+        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
         <Using Include="AutoFixture"/>
         <Using Include="FluentAssertions"/>
         <Using Include="FluentAssertions.Extensions"/>
         <Using Include="Microsoft.Extensions.Logging"/>
         <Using Include="Xunit"/>
-        <Using Include="Xunit.Abstractions"/>
     </ItemGroup>
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
         <PackageReference Include="Microsoft.AspNetCore.TestHost"/>

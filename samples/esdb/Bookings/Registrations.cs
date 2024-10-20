@@ -11,6 +11,7 @@ using Eventuous.EventStore;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Subscriptions.Registrations;
+using MongoDB.Driver.Core.Extensions.DiagnosticSources;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using OpenTelemetry.Metrics;
@@ -76,7 +77,7 @@ public static class Registrations {
                         .AddAspNetCoreInstrumentation()
                         .AddGrpcClientInstrumentation()
                         .AddEventuousTracing()
-                        .AddMongoDBInstrumentation()
+                        .AddSource(typeof(DiagnosticsActivityEventSubscriber).Assembly.GetName().Name!)
                         .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("bookings"))
                         .SetSampler(new AlwaysOnSampler());
 

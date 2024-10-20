@@ -1,6 +1,7 @@
 using Eventuous.Producers;
 using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
@@ -15,8 +16,8 @@ public class PublishAndSubscribeManyTests(ITestOutputHelper output)
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
 
         await Start();
-        await Producer.Produce(Stream, testEvents, new());
-        await Handler.AssertCollection(10.Seconds(), [..testEvents]).Validate();
+        await Producer.Produce(Stream, testEvents, new(), cancellationToken: Current.CancellationToken);
+        await Handler.AssertCollection(10.Seconds(), [..testEvents]).Validate(Current.CancellationToken);
         await Stop();
 
         CheckpointStore.GetCheckpoint(Subscription.SubscriptionId).Should().Be(count - 1);

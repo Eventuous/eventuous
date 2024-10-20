@@ -20,22 +20,22 @@ public class TwoAggregateOpsSpec : AggregateSpec<Booking, BookingState> {
         booking.RecordPayment(_testData.PaymentId, amount, _testData.PaidAt);
     }
 
-    [Fact]
+    [Test]
     public void should_produce_fully_paid_event() => Emitted(new BookingFullyPaid(_testData.PaidAt));
 
-    [Fact]
+    [Test]
     public void should_produce_payment_registered() => Emitted(new BookingPaymentRegistered(_testData.PaymentId, _testData.Amount));
 
-    [Fact]
+    [Test]
     public void should_produce_outstanding_changed() => Emitted(new BookingOutstandingAmountChanged(0));
 
-    [Fact]
+    [Test]
     public void should_make_booking_fully_paid() => Then().State.IsFullyPaid().Should().BeTrue();
 
-    [Fact]
+    [Test]
     public void should_record_payment() => Then().HasPaymentRecord(_testData.PaymentId).Should().BeTrue();
 
-    [Fact]
+    [Test]
     public void should_not_be_overpaid() => Then().State.IsOverpaid().Should().BeFalse();
 
     readonly TestData _testData;

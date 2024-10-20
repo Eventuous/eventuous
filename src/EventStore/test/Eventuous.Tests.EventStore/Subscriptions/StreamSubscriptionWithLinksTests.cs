@@ -5,6 +5,7 @@ using Eventuous.Producers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
+using static Xunit.TestContext;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
@@ -36,7 +37,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
         const int expectedCount = count / 2;
 
         var checkpointStore = Provider.GetRequiredService<NoOpCheckpointStore>();
-        await checkpointStore.StoreCheckpoint(new(SubId, expectedCount - 1), true, default);
+        await checkpointStore.StoreCheckpoint(new(SubId, expectedCount - 1), true, Current.CancellationToken);
 
         await Start();
         await Execute(count, expectedCount);

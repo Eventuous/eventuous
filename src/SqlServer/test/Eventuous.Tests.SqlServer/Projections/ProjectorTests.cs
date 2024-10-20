@@ -9,6 +9,7 @@ using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.SqlServer.Subscriptions;
 using Microsoft.Data.SqlClient;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.SqlServer.Projections;
 
@@ -33,9 +34,9 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
         await CreateSchema();
         var commands = await GenerateAndProduceEvents(100);
 
-        await Task.Delay(1000);
+        await Task.Delay(1000, Current.CancellationToken);
 
-        await using var connection = await ConnectionFactory.GetConnection(_fixture.ConnectionString, default);
+        await using var connection = await ConnectionFactory.GetConnection(_fixture.ConnectionString, Current.CancellationToken);
 
         var select = $"SELECT * FROM {_fixture.SchemaName}.Bookings where BookingId = @BookingId";
 
@@ -48,8 +49,8 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
         async Task ValidateProjectedObject(SqlConnection conn, Commands.ImportBooking command) {
             await using var cmd = new SqlCommand(select, conn);
             cmd.Parameters.AddWithValue("@BookingId", command.BookingId);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            await reader.ReadAsync();
+            await using var reader = await cmd.ExecuteReaderAsync(Current.CancellationToken);
+            await reader.ReadAsync(Current.CancellationToken);
             reader["CheckinDate"].Should().Be(command.CheckIn.ToDateTimeUnspecified());
             reader["Price"].Should().Be(command.Price);
         }
@@ -80,9 +81,9 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
 
     static BookingEvents.BookingImported ToEvent(Commands.ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
-    public Task InitializeAsync() => _fixture.InitializeAsync();
+    public async ValueTask InitializeAsync() => await _fixture.InitializeAsync();
 
-    public Task DisposeAsync() => _fixture.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _fixture.DisposeAsync();
 }
 
 public class TestProjector : SqlServerProjector {

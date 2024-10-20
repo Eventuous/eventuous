@@ -10,4 +10,5 @@
         <SrcRoot>$(RepoRoot)\src</SrcRoot>
         <Configurations>Debug;Release</Configurations>
     </PropertyGroup>
+    <Import Project="$(RepoRoot)\props\Common.props"/>
 </Project>

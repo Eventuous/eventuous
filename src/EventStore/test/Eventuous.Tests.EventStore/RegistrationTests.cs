@@ -42,7 +42,7 @@ public class RegistrationTests(StoreFixture fixture) : IClassFixture<StoreFixtur
         store.Should().BeOfType<NoOpCheckpointStore>();
     }
 
-    public Task InitializeAsync() {
+    public ValueTask InitializeAsync() {
         var services = new ServiceCollection();
 
         services.AddSingleton(fixture.Client);
@@ -59,10 +59,10 @@ public class RegistrationTests(StoreFixture fixture) : IClassFixture<StoreFixtur
         Provider = services.BuildServiceProvider();
         Sub      = Provider.GetService<StreamSubscription>()!;
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 public class TestHandler : BaseEventHandler {

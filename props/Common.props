@@ -1,0 +1,11 @@
+<Project>
+    <ItemGroup>
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-5f2m-466j-3848"/>
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-x5qj-9vmx-7g6g"/>
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc"/>
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj"/>
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-8g4q-xg66-9fp4"/>
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57"/>
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-hh2w-p6rv-4g7w"/>
+    </ItemGroup>
+</Project>

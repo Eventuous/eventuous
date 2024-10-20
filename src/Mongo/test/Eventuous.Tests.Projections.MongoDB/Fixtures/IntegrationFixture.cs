@@ -32,7 +32,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     EventStoreDbContainer _esdbContainer  = null!;
     MongoDbContainer      _mongoContainer = null!;
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         _esdbContainer = new EventStoreDbBuilder().Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
@@ -44,7 +44,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
         Mongo = new MongoClient(mongoSettings).GetDatabase("bookings");
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         await Client.DisposeAsync();
         await _esdbContainer.DisposeAsync();
     }

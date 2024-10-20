@@ -1,5 +1,6 @@
 using Eventuous.Sut.Domain;
 using Eventuous.Testing;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Application;
 
@@ -9,9 +10,9 @@ public abstract partial class ServiceTestBase {
         var service = CreateService(amendEvent: AmendEvent);
         var cmd     = CreateCommand();
 
-        await service.Handle(cmd, default);
+        await service.Handle(cmd, Current.CancellationToken);
 
-        var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start);
+        var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: Current.CancellationToken);
         stream[0].Metadata["userId"].Should().Be(cmd.ImportedBy);
     }
 
@@ -31,9 +32,9 @@ public abstract partial class ServiceTestBase {
         var service = CreateService(amendEvent: AmendEvent, amendAll: AddMeta);
         var cmd     = CreateCommand();
 
-        await service.Handle(cmd, default);
+        await service.Handle(cmd, Current.CancellationToken);
 
-        var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start);
+        var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: Current.CancellationToken);
         stream[0].Metadata["userId"].Should().Be(cmd.ImportedBy);
         stream[0].Metadata["foo"].Should().Be("bar");
     }

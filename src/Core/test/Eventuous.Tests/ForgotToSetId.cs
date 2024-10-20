@@ -1,14 +1,15 @@
 using Eventuous.Tests.Fixtures;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests;
 
 public class ForgotToSetId : NaiveFixture {
     public ForgotToSetId() => Service = new(this.EventStore);
 
-    [Fact]
+    [Test]
     public async Task ShouldFailWithNoId() {
         var cmd    = new DoIt(Auto.Create<string>());
-        var result = await Service.Handle(cmd, default);
+        var result = await Service.Handle(cmd, Current.CancellationToken);
         result.Success.Should().BeTrue();
     }
 

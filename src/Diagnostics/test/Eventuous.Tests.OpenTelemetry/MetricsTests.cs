@@ -44,7 +44,7 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
     static MetricValue? GetValue(MetricValue[] values, string metric)
         => values.FirstOrDefault(x => x.Name == metric);
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         await Fixture.InitializeAsync();
         var testEvents = Fixture.Auto.CreateMany<TestEvent>(Fixture.Count).ToList();
         await Fixture.Producer.Produce(Fixture.Stream, testEvents, new Metadata());
@@ -61,7 +61,7 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
         }
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         await Fixture.DisposeAsync();
         _es.Dispose();
     }

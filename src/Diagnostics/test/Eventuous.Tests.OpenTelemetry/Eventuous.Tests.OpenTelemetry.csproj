@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <IsTestProject>false</IsTestProject>
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeTestHelpers>true</IncludeTestHelpers>
         <IncludeSutApp>true</IncludeSutApp>
@@ -13,6 +14,9 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="xunit.v3"/>
+        <PackageReference Include="xunit.v3.assert"/>
+        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>
@@ -30,5 +34,10 @@
         <Using Include="Microsoft.Extensions.DependencyInjection"/>
         <Using Include="OpenTelemetry"/>
         <Using Include="OpenTelemetry.Metrics"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Xunit"/>
+        <Using Include="FluentAssertions"/>
+        <Using Include="AutoFixture"/>
     </ItemGroup>
 </Project>

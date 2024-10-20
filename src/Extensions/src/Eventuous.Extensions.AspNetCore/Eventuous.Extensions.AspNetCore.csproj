@@ -2,6 +2,7 @@
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
+        <ProjectReference Include="..\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
         <Using Include="Eventuous"/>
         <Using Include="Microsoft.Extensions.DependencyInjection"/>
         <Using Include="Microsoft.AspNetCore.Mvc"/>

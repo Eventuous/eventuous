@@ -4,6 +4,7 @@ using Eventuous.Producers;
 using Eventuous.TestHelpers;
 using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -33,11 +34,11 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler>, IDisposable
     public async Task ShouldPropagateRemoteContext() {
         var testEvent = Auto.Create<TestEvent>();
 
-        await Producer.Produce(Stream, testEvent, new());
+        await Producer.Produce(Stream, testEvent, new(), cancellationToken: Current.CancellationToken);
 
         await Start();
 
-        var writtenEvent = (await StoreFixture.EventStore.ReadEvents(Stream, StreamReadPosition.Start, 1, default))[0];
+        var writtenEvent = (await StoreFixture.EventStore.ReadEvents(Stream, StreamReadPosition.Start, 1, Current.CancellationToken))[0];
 
         var meta = writtenEvent.Metadata;
         var (traceId, spanId, _) = meta.GetTracingMeta();
@@ -46,7 +47,7 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler>, IDisposable
         spanId.Should().NotBe(RecordedTrace.DefaultSpanId);
 
         while (Handler.Contexts.Count == 0) {
-            await Task.Delay(100);
+            await Task.Delay(100, Current.CancellationToken);
         }
 
         await Stop();

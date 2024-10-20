@@ -3,6 +3,7 @@
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeTestHelpers>true</IncludeTestHelpers>
         <IncludeSutApp>true</IncludeSutApp>
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
@@ -17,6 +18,7 @@
         <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Testcontainers.EventStoreDb"/>
+        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>

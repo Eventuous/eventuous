@@ -1,32 +1,32 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <Configurations>Debug;Release</Configurations>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="MongoDB.Driver.Core.Extensions.OpenTelemetry" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
-    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
-    <PackageReference Include="OpenTelemetry.Exporter.Zipkin" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient" />
-    <PackageReference Include="Serilog.Extensions.Hosting" />
-    <PackageReference Include="Serilog.Sinks.Console" />
-    <PackageReference Include="Swashbuckle.AspNetCore" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Update="Properties\launchSettings.json">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="$(SrcRoot)\EventStore\src\Eventuous.EventStore\Eventuous.EventStore.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
-    <ProjectReference Include="$(SrcRoot)\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <Configurations>Debug;Release</Configurations>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources"/>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Zipkin"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient"/>
+        <PackageReference Include="Serilog.Extensions.Hosting"/>
+        <PackageReference Include="Serilog.Sinks.Console"/>
+        <PackageReference Include="Swashbuckle.AspNetCore"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Content Update="Properties\launchSettings.json">
+            <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </Content>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\EventStore\src\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj"/>
+    </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@ using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
@@ -32,17 +33,17 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
         TypeMapper.AddType<TestEvent>(TestEvent.TypeName);
         TypeMapper.AddType<UnknownEvent>("ignored");
         Output?.WriteLine($"Producing to {_stream}");
-        await _producer.Produce(_stream, testEvents, new Metadata());
+        await _producer.Produce(_stream, testEvents, new Metadata(), cancellationToken: Current.CancellationToken);
         Output?.WriteLine("Produce complete");
 
         TypeMapper.RemoveType<UnknownEvent>();
 
         var expected = testEvents.Where(x => x.GetType() == typeof(TestEvent)).ToList();
         await Start();
-        await _handler.AssertCollection(5.Seconds(), expected).Validate();
+        await _handler.AssertCollection(5.Seconds(), expected).Validate(Current.CancellationToken);
         await DisposeAsync();
 
-        var last = await _checkpointStore.GetLastCheckpoint(_subscriptionId, default);
+        var last = await _checkpointStore.GetLastCheckpoint(_subscriptionId, Current.CancellationToken);
         last.Position.Should().Be((ulong)(testEvents.Count - 1));
 
         return;

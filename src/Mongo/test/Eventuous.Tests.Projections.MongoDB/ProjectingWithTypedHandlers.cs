@@ -4,6 +4,7 @@ using Eventuous.Sut.Domain;
 using Eventuous.Tests.Projections.MongoDB.Fixtures;
 using MongoDB.Driver;
 using static Eventuous.Sut.Domain.BookingEvents;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Projections.MongoDB;
 
@@ -29,7 +30,7 @@ public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture, ITes
             StreamPosition = (ulong)append.NextExpectedVersion
         };
 
-        var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(id.ToString());
+        var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(id.ToString(), cancellationToken: Current.CancellationToken);
         actual.Should().Be(expected);
     }
 

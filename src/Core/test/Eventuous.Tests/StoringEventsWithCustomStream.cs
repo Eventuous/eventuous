@@ -3,6 +3,7 @@ using Eventuous.Tests.Fixtures;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using static Eventuous.Sut.Domain.BookingEvents;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests;
 
@@ -16,13 +17,13 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
     BookingService Service { get; }
 
-    [Fact]
+    [Test]
     public async Task TestOnNew() {
         var cmd = CreateBookRoomCommand();
 
         Change[] expected = [new(new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), TypeNames.RoomBooked)];
 
-        var result = await Service.Handle(cmd, default);
+        var result = await Service.Handle(cmd, Current.CancellationToken);
 
         result.TryGet(out var ok).Should().BeTrue();
         ok!.Changes.Should().BeEquivalentTo(expected);
@@ -32,11 +33,11 @@ public class StoringEventsWithCustomStream : NaiveFixture {
         evt[0].Payload.Should().BeEquivalentTo(ok.Changes.First().Event);
     }
 
-    [Fact]
+    [Test]
     public async Task TestOnExisting() {
         var cmd = CreateBookRoomCommand();
 
-        await Service.Handle(cmd, default);
+        await Service.Handle(cmd, Current.CancellationToken);
 
         var secondCmd = new Commands.RecordPayment(new(cmd.BookingId), Auto.Create<string>(), new(cmd.Price), DateTimeOffset.Now);
 
@@ -46,7 +47,7 @@ public class StoringEventsWithCustomStream : NaiveFixture {
             new(new BookingFullyPaid(secondCmd.PaidAt), TypeNames.BookingFullyPaid)
         };
 
-        var result = await Service.Handle(secondCmd, default);
+        var result = await Service.Handle(secondCmd, Current.CancellationToken);
 
         result.TryGet(out var ok).Should().BeTrue();
         ok!.Changes.Should().BeEquivalentTo(expected);

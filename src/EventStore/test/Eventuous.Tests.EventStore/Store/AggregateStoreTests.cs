@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
+using Eventuous.TestHelpers.Logging;
 using JetBrains.Annotations;
 using static Eventuous.AggregateFactoryRegistry;
+using static Xunit.TestContext;
 
 namespace Eventuous.Tests.EventStore.Store;
 
@@ -11,7 +13,7 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
     public AggregateStoreTests(StoreFixture fixture, ITestOutputHelper output) {
         _fixture = fixture;
         _fixture.TypeMapper.AddType<TestAggregateEvent>("testAggregateEvent");
-        var loggerFactory = LoggerFactory.Create(cfg => cfg.AddXunit(output).SetMinimumLevel(LogLevel.Debug));
+        var loggerFactory = LoggerFactory.Create(cfg => cfg.AddXUnit(output).SetMinimumLevel(LogLevel.Debug));
         _log = loggerFactory.CreateLogger<AggregateStoreTests>();
     }
 
@@ -64,12 +66,12 @@ public class AggregateStoreTests : IClassFixture<StoreFixture> {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, default);
+        await _fixture.AggregateStore.Store<TestAggregate, TestState, TestId>(aggregate, id, Current.CancellationToken);
 
         const int numberOfReads = 100;
 
         foreach (var unused in Enumerable.Range(0, numberOfReads)) {
-            var read = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, default);
+            var read = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, Current.CancellationToken);
             read.State.Should().BeEquivalentTo(aggregate.State);
         }
     }

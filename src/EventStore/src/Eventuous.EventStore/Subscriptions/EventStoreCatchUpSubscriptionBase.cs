@@ -47,8 +47,8 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWi
     /// <param name="cancellationToken"></param>
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         try {
-            Subscription?.Dispose();
             Stopping.Cancel(false);
+            Subscription?.Dispose();
             await Task.Delay(100, cancellationToken);
         } catch (Exception) {
             // Nothing to see here

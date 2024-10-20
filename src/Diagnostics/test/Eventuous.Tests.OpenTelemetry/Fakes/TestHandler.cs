@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace Eventuous.Tests.OpenTelemetry.Fakes;
 
 class TestHandler(MessageCounter counter, ILogger<TestHandler> log) : BaseEventHandler {

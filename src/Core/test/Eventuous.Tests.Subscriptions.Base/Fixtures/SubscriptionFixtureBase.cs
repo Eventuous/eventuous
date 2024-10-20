@@ -2,6 +2,7 @@ using DotNet.Testcontainers.Containers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.Domain;
+using Eventuous.TestHelpers.Logging;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -63,7 +64,7 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
 
         var host = services.First(x => !x.IsKeyedService && x.ImplementationFactory?.GetType() == typeof(Func<IServiceProvider, SubscriptionHostedService>));
         services.Remove(host);
-        services.AddLogging(b => ConfigureLogging(b.AddXunit(_outputHelper, _logLevel).SetMinimumLevel(_logLevel)));
+        services.AddLogging(b => ConfigureLogging(b.AddXUnit(_outputHelper).SetMinimumLevel(_logLevel)));
     }
 
     protected override void GetDependencies(IServiceProvider provider) {
@@ -80,12 +81,12 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
 
     public abstract Task<ulong> GetLastPosition();
 
-    public override async Task InitializeAsync() {
+    public override async ValueTask InitializeAsync() {
         await base.InitializeAsync();
         if (_autoStart) await StartSubscription();
     }
 
-    public override async Task DisposeAsync() {
+    public override async ValueTask DisposeAsync() {
         if (_autoStart) await StopSubscription();
         await base.DisposeAsync();
     }

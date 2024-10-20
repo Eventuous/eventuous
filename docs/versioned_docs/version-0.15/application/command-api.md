@@ -24,7 +24,7 @@ Here is an example of a command API controller:
 
 ```csharp
 [Route("/booking")]
-public class CommandApi(ICommandService<Booking> service) 
+public class CommandApi(ICommandService<BookingState> service) 
     : CommandHttpApiBase<BookingState> {
     [HttpPost]
     [Route("book")]
