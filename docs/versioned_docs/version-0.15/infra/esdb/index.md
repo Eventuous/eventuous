@@ -55,7 +55,7 @@ For registering a subscription to `$all` stream, use `AddSubscription<AllStreamS
 ```csharp
 builder.Services.AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
     "BookingsProjections",
-    builder => builder
+    b => b
         .AddEventHandler<BookingStateProjection>()
         .AddEventHandler<MyBookingsProjection>()
 );
@@ -82,7 +82,7 @@ Subscription options for `AllStreamSubscription` are defined in `AllStreamSubscr
 ```csharp
 builder.Services.AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
     "BookingsProjections",
-    builder => builder
+    b => b
         .UseCheckpointStore<MongoCheckpointStore>()
         .AddEventHandler<BookingStateProjection>()
         .AddEventHandler<MyBookingsProjection>()
@@ -99,7 +99,7 @@ Here is an example of using `AllStreamSubscription` with `ConcurrencyLimit` and 
 var partitionCount = 2;
 builder.Services.AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
     "BookingsProjections",
-    builder => builder
+    b => b
         .Configure(cfg => cfg.ConcurrencyLimit = partitionCount)
         .AddEventHandler<BookingStateProjection>()
         .AddEventHandler<MyBookingsProjection>()
@@ -137,9 +137,9 @@ For registering a subscription to a single stream, use `AddSubscription<StreamSu
 ```csharp
 builder.Services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
     "BookingsStateProjections",
-    builder => builder
+    b => b
         .Configure(cfg => {
-            cfg.StreamName = "$ce-Booking";
+            cfg.StreamName = new StreamName("$ce-Booking");
             cfg.ResolveLinkTos = true;
         })
         .AddEventHandler<BookingStateProjection>()
@@ -203,7 +203,7 @@ Here's how you set up a persistent subscription to a single stream:
 ```csharp
 builder.Services.AddSubscription<StreamPersistentSubscription, StreamPersistentSubscriptionOptions>(
     "PaymentIntegration",
-    builder => builder
+    b => b
         .Configure(x => x.StreamName = PaymentsIntegrationHandler.Stream)
         .AddEventHandler<PaymentsIntegrationHandler>()
 );
@@ -214,7 +214,7 @@ When setting up a persistent subscription to the `$all` stream, you don't need t
 ```csharp
 builder.Services.AddSubscription<AllPersistentSubscription, AllPersistentSubscriptionOptions>(
     "CrossAggregateIntegration",
-    builder => builder.AddEventHandler<CrossAggregateIntegrationHandler>()
+    b=> b.AddEventHandler<CrossAggregateIntegrationHandler>()
 );
 ```
 

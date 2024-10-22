@@ -82,7 +82,7 @@ As any other subscription, it can be added to the Di container using `AddSubscri
 ```csharp
 builder.Services.AddSubscription<RabbitMqSubscription, RabbitMqSubscriptionOptions>(
     "PaymentsIntegration",
-    builder => builder
+    b => b
         .Configure(cfg => cfg.Exchange = "payments")
         .AddEventHandler<PaymentsHandler>()
 );

@@ -86,7 +86,7 @@ Registering a global log subscription is similar to [EventStoreDB](../esdb/index
 ```csharp titlle="Program.cs"
 builder.Services.AddSubscription<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions>(
     "BookingsProjections",
-    builder => builder
+    b => b
         .AddEventHandler<BookingStateProjection>()
         .AddEventHandler<MyBookingsProjection>();
 );
@@ -97,7 +97,7 @@ When you register a subscription to a single stream, you need to configure the s
 ```csharp titlle="Program.cs"
 builder.Services.AddSubscription<SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions>(
     "StreamSubscription",
-    builder => builder
+    b => b
         .Configure(x => x.StreamName = "my-stream")
         .AddEventHandler<StreamSubscriptionHander>()
 );
@@ -195,7 +195,7 @@ You can then register the projector as a subscription handler:
 ```csharp titlle="Program.cs"
 builder.Services.AddSubscription<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions>(
     "ImportedBookingsProjections",
-    builder => builder
+    b => b
         .UseCheckpointStore<SqlServerCheckpointStore>()
         .AddEventHandler<ImportingBookingsProjector>();
 );
