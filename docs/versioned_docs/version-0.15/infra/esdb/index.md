@@ -141,7 +141,7 @@ builder.Services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
         .Configure(cfg => {
             cfg.StreamName = "$ce-Booking";
             cfg.ResolveLinkTos = true;
-        )
+        })
         .AddEventHandler<BookingStateProjection>()
 );
 ```
