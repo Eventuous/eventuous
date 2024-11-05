@@ -42,8 +42,7 @@ public static class SubscriptionBuilderExtensions {
     /// <typeparam name="TOptions">Subscription options type</typeparam>
     /// <typeparam name="T">Checkpoint store type</typeparam>
     /// <returns></returns>
-    public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore
-        <TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
+    public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore<TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
         where T : class, ICheckpointStore
         where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
         where TOptions : SubscriptionWithCheckpointOptions {
