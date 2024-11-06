@@ -18,9 +18,6 @@ jobs:
   build-and-test:
     name: "Build and test"
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dotnet: [ 'net9.0', 'net8.0' ]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
       TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
@@ -32,12 +29,14 @@ jobs:
         name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0'
+          dotnet-version: |
+            '8.0'
+            '9.0'
           dotnet-quality: 'preview'
       -  
         name: Build
         run: |
-          dotnet build -c "Debug CI" -f ${{ matrix.dotnet }}
+          dotnet build -c "Debug CI"
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
@@ -45,7 +44,7 @@ jobs:
       -  
         name: Run tests
         run: |
-          dotnet test -c "Debug CI" --no-build -f ${{ matrix.dotnet }}
+          dotnet test -c "Debug CI" --no-build
       -  
         name: Upload Test Results
         if: always()
