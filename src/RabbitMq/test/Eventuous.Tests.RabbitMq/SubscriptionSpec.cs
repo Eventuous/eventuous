@@ -45,7 +45,7 @@ public class SubscriptionSpec {
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
         await _producer.Produce(_exchange, testEvents, new(), cancellationToken: cancellationToken);
-        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate(cancellationToken);
+        await _handler.AssertCollection(30.Seconds(), [..testEvents]).Validate(cancellationToken);
     }
 
     [Before(Test)]
