@@ -2,11 +2,12 @@ using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Tests.Subscriptions.Base;
-using LoggingExtensions = Eventuous.TestHelpers.Logging.LoggingExtensions;
+using TUnit.Core.Interfaces;
+using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 
 namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
-public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
+public abstract class LegacySubscriptionFixture<T>: IAsyncInitializer, IAsyncDisposable where T : class, IEventHandler {
     protected readonly Fixture Auto = new();
 
     protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
@@ -17,17 +18,10 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
     protected TestCheckpointStore CheckpointStore { get; }      = new();
     protected StreamSubscription  Subscription    { get; set; } = null!;
 
-    protected LegacySubscriptionFixture(
-            ITestOutputHelper output,
-            T                 handler,
-            bool              autoStart = true,
-            StreamName?       stream    = null,
-            LogLevel          logLevel  = LogLevel.Debug
-        ) {
-        _autoStart = autoStart;
+    protected LegacySubscriptionFixture(T handler, StreamName? stream = null, LogLevel logLevel = LogLevel.Debug) {
         if (stream is { } s) Stream = s;
 
-        LoggerFactory = LoggingExtensions.GetLoggerFactory(output, logLevel);
+        LoggerFactory = LoggingExtensions.GetLoggerFactory(logLevel);
         Handler       = handler;
         Log           = LoggerFactory.CreateLogger(GetType());
         StoreFixture.TypeMapper.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
@@ -38,9 +32,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
     protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
     ILoggerFactory LoggerFactory { get; }
 
-    readonly bool _autoStart;
-
-    public async ValueTask InitializeAsync() {
+    public async Task InitializeAsync() {
         await StoreFixture.InitializeAsync();
         Producer = new(StoreFixture.Client);
 
@@ -59,11 +51,23 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncLifetime where T : cl
             pipe,
             LoggerFactory
         );
-        if (_autoStart) await Start();
     }
 
     public async ValueTask DisposeAsync() {
-        if (_autoStart) await Stop();
         await StoreFixture.DisposeAsync();
+    }
+}
+
+public class LegacySubscriptionFixture(TimeSpan? timeout, bool autoStart = true, StreamName? stream = null, LogLevel logLevel = LogLevel.Debug)
+    : LegacySubscriptionFixture<TestEventHandler>(new(new(timeout)), stream, logLevel) {
+    [Before(Test)]
+    public async Task Setup() {
+        await InitializeAsync();
+        if (autoStart) await Start();
+    }
+
+    public async Task Teardown() {
+        if (autoStart) await Stop();
+        await DisposeAsync();
     }
 }

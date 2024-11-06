@@ -4,11 +4,14 @@ using Eventuous.Tests.Persistence.Base.Store;
 
 namespace Eventuous.Tests.Postgres.Store;
 
-[Collection("Database")]
+[InheritsTests]
+[ClassDataSource<StoreFixture>]
 public class Append(StoreFixture fixture) : StoreAppendTests<StoreFixture>(fixture);
 
-[Collection("Database")]
+[InheritsTests]
+[ClassDataSource<StoreFixture>]
 public class Read(StoreFixture fixture) : StoreReadTests<StoreFixture>(fixture);
 
-[Collection("Database")]
+[InheritsTests]
+[ClassDataSource<StoreFixture>]
 public class OtherMethods(StoreFixture fixture) : StoreOtherOpsTests<StoreFixture>(fixture);

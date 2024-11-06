@@ -6,28 +6,27 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers.Logging;
+using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.Subscriptions.Base;
-using static Xunit.TestContext;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
-public sealed class StreamSubscriptionDeletedEventsTests : IAsyncLifetime {
+public sealed class StreamSubscriptionDeletedEventsTests {
     readonly StoreFixture         _fixture;
     readonly ILoggerFactory       _loggerFactory;
     readonly LoggingEventListener _listener;
 
-    public StreamSubscriptionDeletedEventsTests(ITestOutputHelper output) {
+    public StreamSubscriptionDeletedEventsTests() {
         _fixture       = new();
-        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXUnit(output).AddConsole().SetMinimumLevel(LogLevel.Debug));
+        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddTUnit().AddConsole().SetMinimumLevel(LogLevel.Debug));
         _listener      = new(_loggerFactory);
         _fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
     }
 
-    [Fact]
-    [Trait("Category", "Special cases")]
-    public async Task StreamSubscriptionGetsDeletedEvents() {
+    [Test]
+    [Category("Special cases")]
+    public async Task StreamSubscriptionGetsDeletedEvents(CancellationToken cancellationToken) {
         var    service        = new BookingService(_fixture.EventStore);
         var    categoryStream = new StreamName("$ce-Booking");
         ulong? startPosition  = null;
@@ -77,7 +76,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IAsyncLifetime {
         LogCollection("Deleted", delete);
         LogCollection("Expected", commands.Except(delete));
 
-        await subscription.SubscribeWithLog(log, Current.CancellationToken);
+        await subscription.SubscribeWithLog(log, cancellationToken);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(200));
 
@@ -85,7 +84,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IAsyncLifetime {
             await Task.Delay(100, cts.Token);
         }
 
-        await subscription.UnsubscribeWithLog(log, Current.CancellationToken);
+        await subscription.UnsubscribeWithLog(log, cancellationToken);
 
         var actual = handler.Processed.Select(x => x.Stream.GetId()).ToList();
         log.LogInformation("Actual:\n {Join}", string.Join("\n", actual));
@@ -112,6 +111,7 @@ public sealed class StreamSubscriptionDeletedEventsTests : IAsyncLifetime {
         }
     }
 
+    [After(Test)]
     public async ValueTask DisposeAsync() {
         await _fixture.DisposeAsync();
         await CastAndDispose(_loggerFactory);
@@ -127,5 +127,6 @@ public sealed class StreamSubscriptionDeletedEventsTests : IAsyncLifetime {
         }
     }
 
-    public ValueTask InitializeAsync() => _fixture.InitializeAsync();
+    [Before(Test)]
+    public Task InitializeAsync() => _fixture.InitializeAsync();
 }

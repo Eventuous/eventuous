@@ -1,22 +1,21 @@
 using Eventuous.Sut.Domain;
 using Eventuous.Testing;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Application;
 
 public abstract partial class ServiceTestBase {
-    [Fact]
-    public async Task Should_amend_event_from_command() {
+    [Test]
+    public async Task Should_amend_event_from_command(CancellationToken cancellationToken) {
         var service = CreateService(amendEvent: AmendEvent);
         var cmd     = CreateCommand();
 
-        await service.Handle(cmd, Current.CancellationToken);
+        await service.Handle(cmd, cancellationToken);
 
-        var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: Current.CancellationToken);
+        var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: cancellationToken);
         stream[0].Metadata["userId"].Should().Be(cmd.ImportedBy);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_amend_event_with_static_meta() {
         var cmd = Helpers.GetBookRoom();
 
@@ -27,14 +26,14 @@ public abstract partial class ServiceTestBase {
             .Then(x => x.StreamIs(e => e[0].Metadata["foo"].Should().Be("bar")));
     }
 
-    [Fact]
-    public async Task Should_combine_amendments() {
+    [Test]
+    public async Task Should_combine_amendments(CancellationToken cancellationToken) {
         var service = CreateService(amendEvent: AmendEvent, amendAll: AddMeta);
         var cmd     = CreateCommand();
 
-        await service.Handle(cmd, Current.CancellationToken);
+        await service.Handle(cmd, cancellationToken);
 
-        var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: Current.CancellationToken);
+        var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: cancellationToken);
         stream[0].Metadata["userId"].Should().Be(cmd.ImportedBy);
         stream[0].Metadata["foo"].Should().Be("bar");
     }

@@ -13,11 +13,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Eventuous.Tests.Gateway;
 
-public class RegistrationTests : IDisposable {
-    readonly TestServer _host = new(BuildHost());
-
-    [Fact]
-    public void Test() { }
+public class RegistrationTests {
+    [Test]
+    public void Test() {
+       TestServer host = new(BuildHost()); 
+       host.Dispose();
+    }
 
     static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
 
@@ -50,11 +51,11 @@ public class RegistrationTests : IDisposable {
         public List<ProducedMessage> ProducedMessages { get; } = [];
 
         protected override Task ProduceMessages(
-            StreamName                   stream,
-            IEnumerable<ProducedMessage> messages,
-            TestProduceOptions?          options,
-            CancellationToken            cancellationToken = default
-        ) {
+                StreamName                   stream,
+                IEnumerable<ProducedMessage> messages,
+                TestProduceOptions?          options,
+                CancellationToken            cancellationToken = default
+            ) {
             ProducedMessages.AddRange(messages);
 
             return Task.CompletedTask;
@@ -62,6 +63,4 @@ public class RegistrationTests : IDisposable {
     }
 
     record TestProduceOptions;
-
-    public void Dispose() => _host.Dispose();
 }

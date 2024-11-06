@@ -1,7 +1,4 @@
-﻿// Copyright (C) Ubiquitous AS. All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
-using Eventuous.SqlServer;
+﻿using Eventuous.SqlServer;
 using Eventuous.SqlServer.Projections;
 using Eventuous.SqlServer.Subscriptions;
 using Eventuous.Sut.App;
@@ -9,14 +6,12 @@ using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.SqlServer.Subscriptions;
 using Microsoft.Data.SqlClient;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.SqlServer.Projections;
 
-[Collection("Database")]
-public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
+public class ProjectorTests() {
     readonly SubscriptionFixture<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, TestProjector> _fixture
-        = new(_ => { }, outputHelper);
+        = new(_ => { });
 
     const string Schema = """
                           IF OBJECT_ID('__schema__.Bookings', 'U') IS NULL
@@ -29,14 +24,14 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
                           END
                           """;
 
-    [Fact]
-    public async Task ProjectImportedBookingsToTable() {
+    [Test]
+    public async Task ProjectImportedBookingsToTable(CancellationToken cancellationToken) {
         await CreateSchema();
         var commands = await GenerateAndProduceEvents(100);
 
-        await Task.Delay(1000, Current.CancellationToken);
+        await Task.Delay(1000, cancellationToken);
 
-        await using var connection = await ConnectionFactory.GetConnection(_fixture.ConnectionString, Current.CancellationToken);
+        await using var connection = await ConnectionFactory.GetConnection(_fixture.ConnectionString, cancellationToken);
 
         var select = $"SELECT * FROM {_fixture.SchemaName}.Bookings where BookingId = @BookingId";
 
@@ -49,8 +44,8 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
         async Task ValidateProjectedObject(SqlConnection conn, Commands.ImportBooking command) {
             await using var cmd = new SqlCommand(select, conn);
             cmd.Parameters.AddWithValue("@BookingId", command.BookingId);
-            await using var reader = await cmd.ExecuteReaderAsync(Current.CancellationToken);
-            await reader.ReadAsync(Current.CancellationToken);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            await reader.ReadAsync(cancellationToken);
             reader["CheckinDate"].Should().Be(command.CheckIn.ToDateTimeUnspecified());
             reader["Price"].Should().Be(command.Price);
         }
@@ -81,8 +76,10 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
 
     static BookingEvents.BookingImported ToEvent(Commands.ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
+    [Before(Test)]
     public async ValueTask InitializeAsync() => await _fixture.InitializeAsync();
 
+    [After(Test)]
     public async ValueTask DisposeAsync() => await _fixture.DisposeAsync();
 }
 

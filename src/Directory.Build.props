@@ -30,7 +30,7 @@
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
         <EnableMSTestRunner>true</EnableMSTestRunner>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-        <TestingPlatformCommandLineArguments>--report-trx</TestingPlatformCommandLineArguments>
+        <TestingPlatformCommandLineArguments>--report-trx --results-directory $(RepoRoot)/test-results/$(TargetFramework)</TestingPlatformCommandLineArguments>
         <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
     </PropertyGroup>
     <PropertyGroup Condition="!($(MSBuildProjectName.StartsWith('Eventuous.Tests')))">
@@ -66,14 +66,12 @@
         <PackageReference Include="Bogus"/>
         <PackageReference Include="coverlet.collector"/>
         <PackageReference Include="FluentAssertions"/>
-        <PackageReference Include="xunit.v3"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
+        <PackageReference Include="TUnit"/>
         <Using Include="AutoFixture"/>
         <Using Include="FluentAssertions"/>
         <Using Include="FluentAssertions.Extensions"/>
         <Using Include="Microsoft.Extensions.Logging"/>
-        <Using Include="Xunit"/>
     </ItemGroup>
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">
         <PackageReference Include="Microsoft.AspNetCore.TestHost"/>

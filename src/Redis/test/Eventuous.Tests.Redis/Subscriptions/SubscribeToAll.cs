@@ -3,30 +3,43 @@ using Eventuous.Tests.Redis.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Redis.Subscriptions;
 
-public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixture<TestEventHandler>(outputHelper, true, false) {
-    [Fact]
-    public async Task ShouldConsumeProducedEvents() {
+public class SubscribeToAll() {
+    SubscriptionFixture<TestEventHandler> _fixture = null!;
+
+    [Before(Test)]
+    public async Task Setup() {
+        _fixture = new(true);
+        await _fixture.InitializeAsync();
+    }
+
+    [After(Test)]
+    public async Task TearDown() {
+        await _fixture.DisposeAsync();
+    }
+
+    [Test]
+    public async Task ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
         const int count = 10;
 
         var (testEvents, _) = await GenerateAndProduceEvents(count);
 
-        await Start();
-        await Handler.AssertThat().Timebox(2.Seconds()).Exactly(count).Match(x => testEvents.Contains(x)).Validate(Current.CancellationToken);
-        await Stop();
+        await _fixture.Start();
+        await _fixture.Handler.AssertThat().Timebox(2.Seconds()).Exactly(count).Match(x => testEvents.Contains(x)).Validate(cancellationToken);
+        await _fixture.Stop();
 
-        Handler.Count.Should().Be(10);
+        _fixture.Handler.Count.Should().Be(10);
     }
 
-    [Fact]
-    public async Task ShouldConsumeProducedEventsWhenRestarting() {
+    [Test]
+    public async Task ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
         await TestConsumptionOfProducedEvents();
 
-        Handler.Reset();
-        await InitializeAsync();
+        _fixture.Handler.Reset();
+
+        await _fixture.InitializeAsync();
 
         await TestConsumptionOfProducedEvents();
 
@@ -37,28 +50,28 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
 
             var (testEvents, _) = await GenerateAndProduceEvents(count);
 
-            await Start();
-            await Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate(Current.CancellationToken);
-            await Stop();
+            await _fixture.Start();
+            await _fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate(cancellationToken);
+            await _fixture.Stop();
 
-            Handler.Count.Should().Be(10);
+            _fixture.Handler.Count.Should().Be(10);
         }
     }
 
-    [Fact]
-    public async Task ShouldUseExistingCheckpoint() {
+    [Test]
+    public async Task ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
         const int count = 10;
 
         var (_, result) = await GenerateAndProduceEvents(count);
 
-        await CheckpointStore.GetLastCheckpoint(SubscriptionId, Current.CancellationToken);
-        Logger.ConfigureIfNull(SubscriptionId, LoggerFactory);
-        await CheckpointStore.StoreCheckpoint(new(SubscriptionId, result.GlobalPosition), true, Current.CancellationToken);
+        await _fixture.CheckpointStore.GetLastCheckpoint(_fixture.SubscriptionId, cancellationToken);
+        Logger.ConfigureIfNull(_fixture.SubscriptionId, _fixture.LoggerFactory);
+        await _fixture.CheckpointStore.StoreCheckpoint(new(_fixture.SubscriptionId, result.GlobalPosition), true, cancellationToken);
 
-        await Start();
-        await Task.Delay(TimeSpan.FromSeconds(1), Current.CancellationToken);
-        await Stop();
-        Handler.Count.Should().Be(0);
+        await _fixture.Start();
+        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+        await _fixture.Stop();
+        _fixture.Handler.Count.Should().Be(0);
     }
 
     static BookingImported ToEvent(ImportBooking cmd)
@@ -72,10 +85,8 @@ public class SubscribeToAll(ITestOutputHelper outputHelper) : SubscriptionFixtur
 
         var events       = commands.Select(ToEvent).ToList();
         var streamEvents = events.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
-        var result       = await IntegrationFixture.EventWriter.AppendEvents(Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
+        var result       = await _fixture.IntegrationFixture.EventWriter.AppendEvents(_fixture.Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
 
         return (events, result);
     }
-
-    protected override TestEventHandler GetHandler() => new();
 }

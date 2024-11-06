@@ -10,6 +10,7 @@
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Testcontainers"/>
         <PackageReference Include="Testcontainers.PostgreSql"/>
+        <PackageReference Remove="xunit.v3"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Postgresql\Eventuous.Postgresql.csproj"/>

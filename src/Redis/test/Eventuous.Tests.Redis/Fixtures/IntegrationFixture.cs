@@ -4,10 +4,11 @@ using StackExchange.Redis;
 using Eventuous.Redis;
 using Eventuous.TestHelpers;
 using Testcontainers.Redis;
+using TUnit.Core.Interfaces;
 
 namespace Eventuous.Tests.Redis.Fixtures;
 
-public sealed class IntegrationFixture : IAsyncLifetime {
+public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
     public IEventWriter     EventWriter { get; private set; } = null!;
     public IEventReader     EventReader { get; private set; } = null!;
     public GetRedisDatabase GetDatabase { get; private set; } = null!;
@@ -17,11 +18,9 @@ public sealed class IntegrationFixture : IAsyncLifetime {
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
 
-    public IntegrationFixture() {
-        DefaultEventSerializer.SetDefaultSerializer(Serializer);
-    }
+    public IntegrationFixture() => DefaultEventSerializer.SetDefaultSerializer(Serializer);
 
-    public async ValueTask InitializeAsync() {
+    public async Task InitializeAsync() {
         _redisContainer = new RedisBuilder().WithImage("redis:7.0.12-alpine").Build();
 
         await _redisContainer.StartAsync();

@@ -1,23 +1,22 @@
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers;
+using Eventuous.TestHelpers.TUnit;
 using Eventuous.Testing;
 using NodaTime;
 using static Eventuous.Sut.Domain.BookingEvents;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Application;
 
-public abstract partial class ServiceTestBase : IDisposable {
-    [Fact]
-    public async Task Ensure_builder_is_thread_safe() {
+public abstract partial class ServiceTestBase {
+    [Test]
+    public async Task Ensure_builder_is_thread_safe(CancellationToken cancellationToken) {
         const int threadCount = 3;
 
         var service = CreateService();
 
         var tasks = Enumerable
             .Range(1, threadCount)
-            .Select(bookingId => Task.Run(() => service.Handle(Helpers.GetBookRoom(bookingId.ToString()), Current.CancellationToken)))
+            .Select(bookingId => Task.Run(() => service.Handle(Helpers.GetBookRoom(bookingId.ToString()), cancellationToken)))
             .ToList();
 
         await Task.WhenAll(tasks);
@@ -43,8 +42,8 @@ public abstract partial class ServiceTestBase : IDisposable {
         return cmd;
     }
 
-    protected ServiceTestBase(ITestOutputHelper output) {
-        _listener = new(output);
+    protected ServiceTestBase() {
+        _listener = new();
         TypeMap.RegisterKnownEventTypes(typeof(RoomBooked).Assembly);
     }
 
@@ -67,5 +66,6 @@ public abstract partial class ServiceTestBase : IDisposable {
             string    ImportedBy
         );
 
+    [After(Test)]
     public void Dispose() => _listener.Dispose();
 }

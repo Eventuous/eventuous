@@ -11,12 +11,12 @@
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj"/>
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
-        <PackageReference Include="xunit.v3"/>
-        <PackageReference Include="xunit.v3.assert"/>
-        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="FluentAssertions"/>
+        <PackageReference Include="AutoFixture"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>
@@ -36,7 +36,6 @@
         <Using Include="OpenTelemetry.Metrics"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="Xunit"/>
         <Using Include="FluentAssertions"/>
         <Using Include="AutoFixture"/>
     </ItemGroup>

@@ -1,16 +1,12 @@
-// Copyright (C) Ubiquitous AS.All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
-using static Xunit.TestContext;
+// ReSharper disable MethodHasAsyncOverload
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
-[Collection("Database")]
 public class SubscriptionIgnoredMessagesTests : StoreFixture {
     readonly string     _subscriptionId  = $"test-{Guid.NewGuid():N}";
     readonly StreamName _stream          = new($"test-{Guid.NewGuid():N}");
@@ -18,32 +14,31 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
     ICheckpointStore    _checkpointStore = null!;
     TestEventHandler    _handler         = null!;
 
-    public SubscriptionIgnoredMessagesTests(ITestOutputHelper output) {
-        Output    = output;
+    public SubscriptionIgnoredMessagesTests() {
         AutoStart = false;
     }
 
-    [Fact]
-    [Trait("Category", "Special cases")]
-    public async Task SubscribeAndProduceManyWithIgnored() {
+    [Test]
+    [Category("Special cases")]
+    public async Task SubscribeAndProduceManyWithIgnored(CancellationToken cancellationToken) {
         const int count = 10;
 
         var testEvents = Generate().ToList();
 
         TypeMapper.AddType<TestEvent>(TestEvent.TypeName);
         TypeMapper.AddType<UnknownEvent>("ignored");
-        Output?.WriteLine($"Producing to {_stream}");
-        await _producer.Produce(_stream, testEvents, new Metadata(), cancellationToken: Current.CancellationToken);
-        Output?.WriteLine("Produce complete");
+        TestContext.Current?.OutputWriter.WriteLine($"Producing to {_stream}");
+        await _producer.Produce(_stream, testEvents, new Metadata(), cancellationToken: cancellationToken);
+        TestContext.Current?.OutputWriter.WriteLine("Produce complete");
 
         TypeMapper.RemoveType<UnknownEvent>();
 
         var expected = testEvents.Where(x => x.GetType() == typeof(TestEvent)).ToList();
         await Start();
-        await _handler.AssertCollection(5.Seconds(), expected).Validate(Current.CancellationToken);
+        await _handler.AssertCollection(5.Seconds(), expected).Validate(cancellationToken);
         await DisposeAsync();
 
-        var last = await _checkpointStore.GetLastCheckpoint(_subscriptionId, Current.CancellationToken);
+        var last = await _checkpointStore.GetLastCheckpoint(_subscriptionId, cancellationToken);
         last.Position.Should().Be((ulong)(testEvents.Count - 1));
 
         return;

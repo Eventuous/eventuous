@@ -24,16 +24,17 @@ public static class Helpers {
             this IntegrationFixture fixture,
             StreamName              stream,
             object[]                evt,
-            ExpectedStreamVersion   version
+            ExpectedStreamVersion   version,
+            CancellationToken       cancellationToken
         ) {
         var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
-        return fixture.EventWriter.AppendEvents(stream, version, streamEvents.ToArray(), default);
+        return fixture.EventWriter.AppendEvents(stream, version, streamEvents.ToArray(), cancellationToken);
     }
 
-    public static Task<AppendEventsResult> AppendEvent(this IntegrationFixture fixture, StreamName stream, object evt, ExpectedStreamVersion version) {
+    public static Task<AppendEventsResult> AppendEvent(this IntegrationFixture fixture, StreamName stream, object evt, ExpectedStreamVersion version, CancellationToken cancellationToken) {
         var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, new());
 
-        return fixture.EventWriter.AppendEvents(stream, version, [streamEvent], default);
+        return fixture.EventWriter.AppendEvents(stream, version, [streamEvent], cancellationToken);
     }
 }

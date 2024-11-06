@@ -1,3 +1,4 @@
+using AutoFixture;
 using Eventuous.Sut.App;
 using NodaTime;
 

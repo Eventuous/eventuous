@@ -6,81 +6,83 @@ using Eventuous.Tests.Persistence.Base.Fixtures;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 
+// ReSharper disable MethodHasAsyncOverload
+
 namespace Eventuous.Tests.Subscriptions.Base;
 
 public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TCheckpointStore>(
-        ITestOutputHelper                                                                          outputHelper,
         StreamName                                                                                 streamName,
         SubscriptionFixtureBase<TContainer, TSub, TSubOptions, TCheckpointStore, TestEventHandler> fixture
-    ) : IAsyncLifetime
+    ) : SubscriptionTestBase(fixture)
     where TContainer : DockerContainer
     where TSub : EventSubscription<TSubOptions>
     where TSubOptions : SubscriptionOptions
     where TCheckpointStore : class, ICheckpointStore {
-    protected async Task ShouldConsumeProducedEvents() {
-        const int count = 10;
+    protected async Task ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
+        const int   count    = 10;
+        const ulong expected = count - 1;
 
         var testEvents = await GenerateAndProduceEvents(count);
 
         await fixture.StartSubscription();
-        await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
+        await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [..testEvents]).Validate(cancellationToken);
         await fixture.StopSubscription();
-        fixture.Handler.Count.Should().Be(10);
+        await Assert.That(fixture.Handler.Count).IsEqualTo(10);
 
-        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
-        checkpoint.Position.Should().Be(count - 1);
+        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
+        await Assert.That(checkpoint.Position).IsEqualTo(expected);
     }
 
-    protected async Task ShouldConsumeProducedEventsWhenRestarting() {
-        outputHelper.WriteLine("Phase one");
+    protected async Task ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
+        TestContext.Current?.OutputWriter.WriteLine("Phase one");
         await TestConsumptionOfProducedEvents();
 
-        outputHelper.WriteLine("Resetting handler");
+        TestContext.Current?.OutputWriter.WriteLine("Resetting handler");
         fixture.Handler.Reset();
 
-        outputHelper.WriteLine("Phase two");
+        TestContext.Current?.OutputWriter.WriteLine("Phase two");
         await TestConsumptionOfProducedEvents();
 
-        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
-        checkpoint.Position.Should().Be(19);
+        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
+        await Assert.That(checkpoint.Position).IsEqualTo(19UL);
 
         return;
 
         async Task TestConsumptionOfProducedEvents() {
             const int count = 10;
 
-            outputHelper.WriteLine("Generating and producing events");
+            TestContext.Current?.OutputWriter.WriteLine("Generating and producing events");
             var testEvents = await GenerateAndProduceEvents(count);
 
-            outputHelper.WriteLine("Starting subscription");
+            TestContext.Current?.OutputWriter.WriteLine("Starting subscription");
             await fixture.StartSubscription();
-            await fixture.Handler.AssertCollection(2.Seconds(), [..testEvents]).Validate();
-            outputHelper.WriteLine("Stopping subscription");
+            await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [..testEvents]).Validate();
+            TestContext.Current?.OutputWriter.WriteLine("Stopping subscription");
             await fixture.StopSubscription();
-            fixture.Handler.Count.Should().Be(10);
+            await Assert.That(fixture.Handler.Count).IsEqualTo(10);
         }
     }
 
-    public async Task ShouldUseExistingCheckpoint() {
+    public async Task ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
         const int count = 10;
 
         await GenerateAndProduceEvents(count);
 
-        await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, default);
+        await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
         Logger.ConfigureIfNull(fixture.SubscriptionId, fixture.LoggerFactory);
-        await fixture.CheckpointStore.StoreCheckpoint(new(fixture.SubscriptionId, 9), true, default);
+        await fixture.CheckpointStore.StoreCheckpoint(new(fixture.SubscriptionId, 9), true, cancellationToken);
 
         await fixture.StartSubscription();
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
         await fixture.StopSubscription();
-        fixture.Handler.Count.Should().Be(0);
+        await Assert.That(fixture.Handler.Count).IsEqualTo(0);
     }
 
     static BookingImported ToEvent(ImportBooking cmd)
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
-        outputHelper.WriteLine($"Producing events to {streamName}");
+        await TestContext.Current!.OutputWriter.WriteLineAsync($"Producing events to {streamName}")!;
 
         var commands = Enumerable
             .Range(0, count)
@@ -94,7 +96,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
         return events;
     }
 
-    public async ValueTask InitializeAsync() => await fixture.InitializeAsync();
+    protected async Task InitializeAsync() => await fixture.InitializeAsync();
 
-    public async ValueTask DisposeAsync() => await fixture.DisposeAsync();
+    protected async Task DisposeAsync() => await fixture.DisposeAsync();
 }

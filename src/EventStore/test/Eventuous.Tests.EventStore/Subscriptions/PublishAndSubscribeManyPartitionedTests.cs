@@ -1,22 +1,18 @@
 using Eventuous.Producers;
 using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
-[Collection("Database")]
-public class PublishAndSubscribeManyPartitionedTests(ITestOutputHelper output)
-    : LegacySubscriptionFixture<TestEventHandler>(
-        output,
-        new(new(5.Milliseconds(), output)),
+public class PublishAndSubscribeManyPartitionedTests() : LegacySubscriptionFixture(
+        5.Milliseconds(),
         false,
         new StreamName(Guid.NewGuid().ToString("N")),
         logLevel: LogLevel.Trace
     ) {
-    [Fact]
-    [Trait("Category", "Stream catch-up subscription")]
-    public async Task SubscribeAndProduceMany() {
+    [Test]
+    [Category("Stream catch-up subscription")]
+    public async Task SubscribeAndProduceMany(CancellationToken cancellationToken) {
         const int count = 10;
 
         var testEvents = Enumerable.Range(1, count)
@@ -24,8 +20,8 @@ public class PublishAndSubscribeManyPartitionedTests(ITestOutputHelper output)
             .ToList();
 
         await Start();
-        await Producer.Produce(Stream, testEvents, new Metadata(), cancellationToken: Current.CancellationToken);
-        await Handler.AssertCollection(5.Seconds(), [..testEvents]).Validate(Current.CancellationToken);
+        await Producer.Produce(Stream, testEvents, new Metadata(), cancellationToken: cancellationToken);
+        await Handler.AssertCollection(5.Seconds(), [..testEvents]).Validate(cancellationToken);
         await Stop();
 
         CheckpointStore.GetCheckpoint(Subscription.SubscriptionId).Should().Be(count - 1);

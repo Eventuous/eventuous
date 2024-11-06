@@ -9,7 +9,7 @@ namespace Eventuous.Tests.SqlServer.Registrations;
 public class RegistrationTests {
     const string ConnectionString = "Server=localhost;User Id=sqlserver;Password=secret;Database=eventuous;TrustServerCertificate=True";
 
-    [Fact]
+    [Test]
     public void Should_resolve_store_with_manual_registration() {
         var builder = new WebHostBuilder();
         builder.Configure(_ => { });
@@ -27,7 +27,7 @@ public class RegistrationTests {
         innerStore.Should().BeOfType<SqlServerStore>();
     }
 
-    [Fact]
+    [Test]
     public void Should_resolve_store_with_extensions() {
         var builder = new WebHostBuilder();
 

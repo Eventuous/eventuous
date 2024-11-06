@@ -2,8 +2,10 @@
     <PropertyGroup>
         <IncludeTestHost>true</IncludeTestHost>
         <IncludeTestHelpers>true</IncludeTestHelpers>
+        <IsTestProject>false</IsTestProject>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
         <ProjectReference Include="..\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj"/>
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
     </ItemGroup>
@@ -13,5 +15,7 @@
     <ItemGroup>
         <PackageReference Include="Hypothesist"/>
         <PackageReference Remove="xunit.v3"/>
+        <PackageReference Include="TUnit.Core"/>
+        <PackageReference Include="TUnit.Assertions"/>
     </ItemGroup>
 </Project>

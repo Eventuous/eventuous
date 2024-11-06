@@ -14,7 +14,7 @@ public class AggregateFactoryRegistrationTests {
         _registry = app.Services.GetRequiredService<AggregateFactoryRegistry>();
     }
 
-    [Fact]
+    [Test]
     public void ShouldCreateNewAggregateWithExplicitFunction() {
         var instance = _registry.CreateInstance<TestAggregate, TestState>();
         instance.Should().BeOfType<TestAggregate>();
@@ -22,7 +22,7 @@ public class AggregateFactoryRegistrationTests {
         instance.State.Should().NotBeNull();
     }
 
-    [Fact]
+    [Test]
     public void ShouldCreateNewAggregateByResolve() {
         var instance = _registry.CreateInstance<AnotherTestAggregate, TestState>();
         instance.Should().BeOfType<AnotherTestAggregate>();
@@ -30,7 +30,7 @@ public class AggregateFactoryRegistrationTests {
         instance.State.Should().NotBeNull();
     }
 
-    [Fact]
+    [Test]
     public void ShouldCreateTwoSeparateInstances() {
         var instance1 = _registry.CreateInstance<AnotherTestAggregate, TestState>();
         var instance2 = _registry.CreateInstance<AnotherTestAggregate, TestState>();

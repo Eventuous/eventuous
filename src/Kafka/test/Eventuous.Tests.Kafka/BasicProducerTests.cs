@@ -6,26 +6,26 @@ using Eventuous.Tests.Subscriptions.Base;
 using Eventuous.Tools;
 using static System.String;
 using static Eventuous.DeserializationResult;
-using static Xunit.TestContext;
+
+// ReSharper disable MethodHasAsyncOverload
 
 namespace Eventuous.Tests.Kafka;
 
-public class BasicProducerTests : IClassFixture<KafkaFixture> {
-    readonly KafkaFixture      _fixture;
-    readonly ITestOutputHelper _output;
+[ClassDataSource<KafkaFixture>]
+public class BasicProducerTests {
+    readonly KafkaFixture _fixture;
 
-    public BasicProducerTests(KafkaFixture fixture, ITestOutputHelper output) {
+    public BasicProducerTests(KafkaFixture fixture) {
         _fixture = fixture;
-        _output  = output;
         TypeMap.Instance.AddType<TestEvent>("testEvent");
     }
 
     static readonly Fixture Auto = new();
 
-    [Fact]
-    public async Task ShouldProduceAndWait() {
+    [Test]
+    public async Task ShouldProduceAndWait(CancellationToken cancellationToken) {
         var topicName = Auto.Create<string>();
-        _output.WriteLine($"Topic: {topicName}");
+        TestContext.Current?.OutputWriter.WriteLine($"Topic: {topicName}");
 
         var events = Auto.CreateMany<TestEvent>().ToArray();
 
@@ -33,15 +33,15 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
 
         var consumed = new List<TestEvent>();
         await ExecuteConsume().NoThrow();
-        _output.WriteLine($"Consumed {consumed.Count} events");
+        TestContext.Current?.OutputWriter.WriteLine($"Consumed {consumed.Count} events");
         consumed.Should().BeEquivalentTo(events);
 
         return;
 
         async Task Produce() {
             await using var producer = new KafkaBasicProducer(new(new() { BootstrapServers = _fixture.BootstrapServers }));
-            await producer.StartAsync(Current.CancellationToken);
-            await producer.Produce(new(topicName), events, new(), new("test"), cancellationToken: Current.CancellationToken);
+            await producer.StartAsync(cancellationToken);
+            await producer.Produce(new(topicName), events, new(), new("test"), cancellationToken: cancellationToken);
         }
 
         async Task ExecuteConsume() {
@@ -56,11 +56,11 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
             }
         }
 
-        async Task Consume(IConsumer<string, byte[]> c, CancellationToken cancellationToken) {
-            var msg = c.Consume(cancellationToken);
+        async Task Consume(IConsumer<string, byte[]> c, CancellationToken ct) {
+            var msg = c.Consume(ct);
 
             if (msg == null) {
-                await Task.Delay(100, cancellationToken);
+                await Task.Delay(100, ct);
 
                 return;
             }
@@ -73,7 +73,7 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
             var result = DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as SuccessfullyDeserialized;
 
             var evt = (result!.Payload as TestEvent)!;
-            _output.WriteLine($"Consumed {evt}");
+            TestContext.Current?.OutputWriter.WriteLine($"Consumed {evt}");
             consumed.Add(evt);
         }
     }
@@ -91,11 +91,11 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
         };
 
         return new ConsumerBuilder<string, byte[]>(config)
-            .SetErrorHandler((_,      e) => _output.WriteLine($"Error: {e.Reason}"))
-            .SetStatisticsHandler((_, json) => _output.WriteLine($"Statistics: {json}"))
+            .SetErrorHandler((_,      e) => TestContext.Current?.OutputWriter.WriteLine($"Error: {e.Reason}"))
+            .SetStatisticsHandler((_, json) => TestContext.Current?.OutputWriter.WriteLine($"Statistics: {json}"))
             .SetPartitionsAssignedHandler(
                 (c, partitions) => {
-                    _output.WriteLine(
+                    TestContext.Current?.OutputWriter.WriteLine(
                         $"Partitions incrementally assigned: [{Join(',', partitions.Select(p => p.Partition.Value))}], all: [{Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value))}]"
                     );
                 }
@@ -104,12 +104,12 @@ public class BasicProducerTests : IClassFixture<KafkaFixture> {
                 (c, partitions) => {
                     var remaining = c.Assignment.Where(atp => partitions.All(rtp => rtp.TopicPartition != atp));
 
-                    _output.WriteLine(
+                    TestContext.Current?.OutputWriter.WriteLine(
                         $"Partitions incrementally revoked: [{Join(',', partitions.Select(p => p.Partition.Value))}], remaining: [{Join(',', remaining.Select(p => p.Partition.Value))}]"
                     );
                 }
             )
-            .SetPartitionsLostHandler((_, partitions) => _output.WriteLine($"Partitions were lost: [{Join(", ", partitions)}]"))
+            .SetPartitionsLostHandler((_, partitions) => TestContext.Current?.OutputWriter.WriteLine($"Partitions were lost: [{Join(", ", partitions)}]"))
             .Build();
     }
 }

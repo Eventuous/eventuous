@@ -11,13 +11,11 @@ namespace Eventuous.Tests.SqlServer.Subscriptions;
 
 public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHandler>(
         Action<TSubscriptionOptions> configureOptions,
-        ITestOutputHelper            outputHelper,
         bool                         autoStart         = true,
         Action<IServiceCollection>?  configureServices = null,
         LogLevel                     logLevel          = LogLevel.Debug
     )
     : SubscriptionFixtureBase<SqlEdgeContainer, TSubscription, TSubscriptionOptions, SqlServerCheckpointStore, TEventHandler>(
-        outputHelper,
         autoStart,
         logLevel
     )
@@ -25,8 +23,6 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     where TSubscriptionOptions : SqlServerSubscriptionBaseOptions
     where TEventHandler : class, IEventHandler {
     protected internal readonly string SchemaName = GetSchemaName();
-
-    readonly ITestOutputHelper _outputHelper = outputHelper;
 
     protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();
 
@@ -45,7 +41,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         services.AddEventuousSqlServer(Container.GetConnectionString(), SchemaName, true);
         services.AddEventStore<SqlServerStore>();
         services.AddSqlServerCheckpointStore();
-        services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
+        services.AddSingleton(new TestEventHandlerOptions());
         configureServices?.Invoke(services);
     }
 

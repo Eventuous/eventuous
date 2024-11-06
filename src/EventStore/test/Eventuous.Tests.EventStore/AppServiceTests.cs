@@ -1,39 +1,43 @@
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers;
-using static Xunit.TestContext;
+using Eventuous.TestHelpers.TUnit;
 
 namespace Eventuous.Tests.EventStore;
 
-public class AppServiceTests : IClassFixture<StoreFixture>, IDisposable {
-    readonly TestEventListener _listener;
+[ClassDataSource<StoreFixture>(Shared = SharedType.None)]
+public class AppServiceTests {
+    readonly TestEventListener _listener = new();
     readonly StoreFixture      _fixture;
 
-    public AppServiceTests(StoreFixture fixture, ITestOutputHelper output) {
-        _fixture  = fixture;
-        _listener = new(output);
-        Service   = new(fixture.EventStore);
+    public AppServiceTests(StoreFixture fixture) {
+        _fixture = fixture;
         _fixture.TypeMapper.AddType<BookingEvents.BookingImported>();
     }
 
-    BookingService Service { get; }
+    BookingService Service { get; set; } = null!;
 
-    [Fact]
-    [Trait("Category", "Application")]
-    public async Task ProcessAnyForNew() {
+    [Before(Test)]
+    public void BeforeTest() {
+        Service = new(_fixture.EventStore);
+    }
+
+    [Test]
+    [Category("Application")]
+    public async Task ProcessAnyForNew(CancellationToken cancellationToken) {
         var cmd = DomainFixture.CreateImportBooking();
 
         var expected = new object[] { new BookingEvents.BookingImported(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut) };
 
-        var handlingResult = await Service.Handle(cmd, Current.CancellationToken);
+        var handlingResult = await Service.Handle(cmd, cancellationToken);
         handlingResult.Success.Should().BeTrue();
 
-        var events = await _fixture.EventStore.ReadEvents(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, int.MaxValue, Current.CancellationToken);
+        var events = await _fixture.EventStore.ReadEvents(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, int.MaxValue, cancellationToken);
 
         var result = events.Select(x => x.Payload).ToArray();
 
         result.Should().BeEquivalentTo(expected);
     }
 
+    [After(Test)]
     public void Dispose() => _listener.Dispose();
 }

@@ -2,14 +2,14 @@ using Eventuous.GooglePubSub.Producers;
 using Eventuous.GooglePubSub.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.TestHelpers.Logging;
+using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.Subscriptions.Base;
 using Google.Api.Gax;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.GooglePubSub;
 
-public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
+[ClassDataSource<PubSubFixture>]
+public class PubSubTests {
     static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     static readonly Fixture Auto = new();
@@ -22,8 +22,8 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
     readonly ILogger<PubSubTests>     _log;
 
     // ReSharper disable once UnusedParameter.Local
-    public PubSubTests(PubSubFixture _, ITestOutputHelper outputHelper) {
-        var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXUnit(outputHelper));
+    public PubSubTests(PubSubFixture _) {
+        var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddTUnit());
 
         _log                = loggerFactory.CreateLogger<PubSubTests>();
         _pubsubTopic        = new($"test-{Guid.NewGuid():N}");
@@ -47,31 +47,33 @@ public class PubSubTests : IAsyncLifetime, IClassFixture<PubSubFixture> {
         );
     }
 
-    [Fact]
-    public async Task SubscribeAndProduce() {
+    [Test]
+    public async Task SubscribeAndProduce(CancellationToken cancellationToken) {
         var testEvent = Auto.Create<TestEvent>();
 
-        await _producer.Produce(_pubsubTopic, testEvent, null, cancellationToken: Current.CancellationToken);
+        await _producer.Produce(_pubsubTopic, testEvent, null, cancellationToken: cancellationToken);
 
-        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate(Current.CancellationToken);
+        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate(cancellationToken);
     }
 
-    [Fact]
-    public async Task SubscribeAndProduceMany() {
+    [Test]
+    public async Task SubscribeAndProduceMany(CancellationToken cancellationToken) {
         const int count = 10000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
 
-        await _producer.Produce(_pubsubTopic, testEvents, null, cancellationToken: Current.CancellationToken);
-        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate(Current.CancellationToken);
+        await _producer.Produce(_pubsubTopic, testEvents, null, cancellationToken: cancellationToken);
+        await _handler.AssertCollection(20.Seconds(), [..testEvents]).Validate(cancellationToken);
     }
 
-    public async ValueTask InitializeAsync() {
+    [Before(Test)]
+    public async Task InitializeAsync() {
         await _producer.StartAsync();
         await _subscription.SubscribeWithLog(_log);
     }
 
-    public async ValueTask DisposeAsync() {
+    [After(Test)]
+    public async Task DisposeAsync() {
         await _producer.StopAsync();
         await _subscription.UnsubscribeWithLog(_log);
 

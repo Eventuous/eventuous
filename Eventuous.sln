@@ -215,6 +215,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Brokers", "Brokers", "{86D9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Extensions.Logging", "src\Extensions\src\Eventuous.Extensions.Logging\Eventuous.Extensions.Logging.csproj", "{E1F6CDD8-D37E-487B-A429-25A06C590FE4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.TestHelpers.XUnit", "test\Eventuous.TestHelpers.XUnit\Eventuous.TestHelpers.XUnit.csproj", "{8ACC0B10-85A5-43ED-97F1-43E2C67D5F26}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.TestHelpers.TUnit", "test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj", "{2A816CFD-5D05-4F64-8222-F7214B229EBC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -550,6 +554,18 @@ Global
 		{E1F6CDD8-D37E-487B-A429-25A06C590FE4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1F6CDD8-D37E-487B-A429-25A06C590FE4}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
 		{E1F6CDD8-D37E-487B-A429-25A06C590FE4}.Debug CI|Any CPU.Build.0 = Debug CI|Any CPU
+		{8ACC0B10-85A5-43ED-97F1-43E2C67D5F26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ACC0B10-85A5-43ED-97F1-43E2C67D5F26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8ACC0B10-85A5-43ED-97F1-43E2C67D5F26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ACC0B10-85A5-43ED-97F1-43E2C67D5F26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8ACC0B10-85A5-43ED-97F1-43E2C67D5F26}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
+		{8ACC0B10-85A5-43ED-97F1-43E2C67D5F26}.Debug CI|Any CPU.Build.0 = Debug CI|Any CPU
+		{2A816CFD-5D05-4F64-8222-F7214B229EBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A816CFD-5D05-4F64-8222-F7214B229EBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A816CFD-5D05-4F64-8222-F7214B229EBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A816CFD-5D05-4F64-8222-F7214B229EBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A816CFD-5D05-4F64-8222-F7214B229EBC}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
+		{2A816CFD-5D05-4F64-8222-F7214B229EBC}.Debug CI|Any CPU.Build.0 = Debug CI|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -648,6 +664,8 @@ Global
 		{6E545DFE-FE70-4486-92E0-E47E86E66210} = {86D92758-EBB6-4B8C-94B7-BD91AF1E31D2}
 		{2E59C5F8-3E5A-4450-B902-7648AD7ECC0F} = {86D92758-EBB6-4B8C-94B7-BD91AF1E31D2}
 		{E1F6CDD8-D37E-487B-A429-25A06C590FE4} = {2B7F84B7-C0E5-408F-ABAF-BF23C8305486}
+		{8ACC0B10-85A5-43ED-97F1-43E2C67D5F26} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
+		{2A816CFD-5D05-4F64-8222-F7214B229EBC} = {C60C6094-2A03-45B6-AB33-C514C35DF823}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0691467B-C257-46DB-BC4F-88EB7CD615B8}

@@ -2,14 +2,14 @@ using Eventuous.Producers;
 using Eventuous.RabbitMq.Producers;
 using Eventuous.RabbitMq.Subscriptions;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.TestHelpers;
-using Eventuous.TestHelpers.Logging;
+using Eventuous.TestHelpers.TUnit;
+using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.Subscriptions.Base;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.RabbitMq;
 
-public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
+[ClassDataSource<RabbitMqFixture>]
+public class SubscriptionSpec {
     static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
     static readonly Fixture Auto = new();
@@ -23,38 +23,39 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
     readonly ILoggerFactory            _loggerFactory;
     readonly RabbitMqFixture           _fixture;
 
-    public SubscriptionSpec(RabbitMqFixture fixture, ITestOutputHelper outputHelper) {
+    public SubscriptionSpec(RabbitMqFixture fixture) {
         _fixture       = fixture;
-        _es            = new(outputHelper);
+        _es            = new();
         _exchange      = new(Auto.Create<string>());
-        _loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddXUnit(outputHelper));
+        _loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddTUnit());
 
         _log = _loggerFactory.CreateLogger<SubscriptionSpec>();
     }
 
-    [Fact]
-    public async Task SubscribeAndProduce() {
+    [Test]
+    public async Task SubscribeAndProduce(CancellationToken cancellationToken) {
         var testEvent = Auto.Create<TestEvent>();
-        await _producer.Produce(_exchange, testEvent, new Metadata(), cancellationToken: Current.CancellationToken);
-        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate(Current.CancellationToken);
+        await _producer.Produce(_exchange, testEvent, new(), cancellationToken: cancellationToken);
+        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate(cancellationToken);
     }
 
-    [Fact]
-    public async Task SubscribeAndProduceMany() {
+    [Test]
+    public async Task SubscribeAndProduceMany(CancellationToken cancellationToken) {
         const int count = 10000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
-        await _producer.Produce(_exchange, testEvents, new Metadata(), cancellationToken: Current.CancellationToken);
-        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate(Current.CancellationToken);
+        await _producer.Produce(_exchange, testEvents, new(), cancellationToken: cancellationToken);
+        await _handler.AssertCollection(10.Seconds(), [..testEvents]).Validate(cancellationToken);
     }
 
+    [Before(Test)]
     public async ValueTask InitializeAsync() {
         _handler  = new();
         _producer = new(_fixture.ConnectionFactory);
 
         var queue = Auto.Create<string>();
 
-        _subscription = new RabbitMqSubscription(
+        _subscription = new(
             _fixture.ConnectionFactory,
             new RabbitMqSubscriptionOptions {
                 ConcurrencyLimit = 10,
@@ -69,6 +70,7 @@ public class SubscriptionSpec : IAsyncLifetime, IClassFixture<RabbitMqFixture> {
         await _producer.StartAsync();
     }
 
+    [After(Test)]
     public async ValueTask DisposeAsync() {
         await _producer.StopAsync();
         await _subscription.UnsubscribeWithLog(_log);

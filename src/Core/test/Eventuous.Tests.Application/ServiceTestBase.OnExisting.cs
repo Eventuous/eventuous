@@ -6,7 +6,7 @@ using Shouldly;
 namespace Eventuous.Tests.Application;
 
 public abstract partial class ServiceTestBase {
-    [Fact]
+    [Test]
     public async Task Should_execute_on_existing_stream_exists() {
         var seedCmd = Helpers.GetBookRoom();
         var seed    = new BookingEvents.RoomBooked(seedCmd.RoomId, seedCmd.CheckIn, seedCmd.CheckOut, seedCmd.Price);
@@ -27,7 +27,7 @@ public abstract partial class ServiceTestBase {
             .Then(result => result.ResultIsOk().NewStreamEventsAre(expectedResult));
     }
 
-    [Fact]
+    [Test]
     public async Task Should_fail_on_existing_no_stream() {
         var seedCmd     = Helpers.GetBookRoom();
         var paymentTime = DateTimeOffset.Now;

@@ -7,9 +7,9 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Projections.MongoDB;
 
-public class ProjectWithBuilder(IntegrationFixture fixture, ITestOutputHelper output)
-    : ProjectionTestBase<ProjectWithBuilder.SutProjection>(nameof(ProjectWithBuilder), fixture, output) {
-    [Fact]
+[ClassDataSource<IntegrationFixture>]
+public class ProjectWithBuilder(IntegrationFixture fixture) : ProjectionTestBase<ProjectWithBuilder.SutProjection>(nameof(ProjectWithBuilder), fixture) {
+    [Test]
     public async Task ShouldProjectImported() {
         var evt    = DomainFixture.CreateImportBooking();
         var id     = new BookingId(CreateId());

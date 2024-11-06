@@ -5,39 +5,37 @@ using Eventuous.Producers;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
-using static Xunit.TestContext;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
+// ReSharper disable MethodHasAsyncOverload
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
-[Collection("Database")]
 public class StreamSubscriptionWithLinksTests : StoreFixture {
     const string SubId = "Test";
 
     readonly List<Checkpoint> _checkpoints = [];
     readonly string           _prefix      = $"{Faker.Commerce.ProductAdjective()}{Faker.Commerce.Product()}";
 
-    public StreamSubscriptionWithLinksTests(ITestOutputHelper output) {
-        Output    = output;
+    public StreamSubscriptionWithLinksTests() {
         AutoStart = false;
         TypeMapper.AddType<TestEvent>(TestEvent.TypeName);
     }
 
-    [Fact]
-    [Trait("Category", "Special cases")]
+    [Test]
+    [Category("Special cases")]
     public async Task ShouldHandleAllEventsFromStart() {
         await Start();
         await Execute(1000, null);
     }
 
-    [Fact]
-    [Trait("Category", "Special cases")]
-    public async Task ShouldHandleHalfOfTheEvents() {
+    [Test]
+    [Category("Special cases")]
+    public async Task ShouldHandleHalfOfTheEvents(CancellationToken cancellationToken) {
         const int count         = 1000;
         const int expectedCount = count / 2;
 
         var checkpointStore = Provider.GetRequiredService<NoOpCheckpointStore>();
-        await checkpointStore.StoreCheckpoint(new(SubId, expectedCount - 1), true, Current.CancellationToken);
+        await checkpointStore.StoreCheckpoint(new(SubId, expectedCount - 1), true, cancellationToken);
 
         await Start();
         await Execute(count, expectedCount);
@@ -54,7 +52,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
         TypeMap.Instance.AddType<TestEvent>(TestEvent.TypeName);
         var producer = provider.GetRequiredService<IProducer>();
 
-        Output?.WriteLine("Producing events...");
+        TestContext.Current?.OutputWriter.WriteLine("Producing events...");
 
         var events = new List<TestEvent>();
 
@@ -65,14 +63,14 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
             events.Add(evt);
         }
 
-        Output?.WriteLine("Producing complete");
+        TestContext.Current?.OutputWriter.WriteLine("Producing complete");
 
         return events;
     }
 
     void ValidateProcessed(IServiceProvider provider, IEnumerable<TestEvent> events) {
         var handler = provider.GetRequiredKeyedService<TestHandler>(SubId);
-        Output?.WriteLine($"Processed {handler.Handled.Count} events");
+        TestContext.Current?.OutputWriter.WriteLine($"Processed {handler.Handled.Count} events");
 
         foreach (var evt in events) {
             handler.Handled.Should().Contain(evt);
@@ -101,7 +99,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
                 await Task.Delay(500, source.Token);
             }
         } catch (OperationCanceledException) {
-            Output?.WriteLine("Deadline exceeded");
+            TestContext.Current?.OutputWriter.WriteLine("Deadline exceeded");
         }
     }
 
@@ -143,7 +141,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
         return;
 
         void CheckpointStoreOnCheckpointStored(object? sender, Checkpoint e) {
-            Output?.WriteLine($"Stored checkpoint {e.Id}: {e.Position}");
+            TestContext.Current?.OutputWriter.WriteLine($"Stored checkpoint {e.Id}: {e.Position}");
             _checkpoints.Add(e);
         }
     }

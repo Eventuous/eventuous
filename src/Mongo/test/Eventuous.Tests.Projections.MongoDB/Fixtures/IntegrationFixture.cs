@@ -5,10 +5,11 @@ using MongoDb.Bson.NodaTime;
 using MongoDB.Driver;
 using Testcontainers.EventStoreDb;
 using Testcontainers.MongoDb;
+using TUnit.Core.Interfaces;
 
 namespace Eventuous.Tests.Projections.MongoDB.Fixtures;
 
-public sealed class IntegrationFixture : IAsyncLifetime {
+public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
     public IEventStore      EventStore { get; set; }         = null!;
     public EventStoreClient Client     { get; private set; } = null!;
     public IMongoDatabase   Mongo      { get; private set; } = null!;
@@ -32,7 +33,7 @@ public sealed class IntegrationFixture : IAsyncLifetime {
     EventStoreDbContainer _esdbContainer  = null!;
     MongoDbContainer      _mongoContainer = null!;
 
-    public async ValueTask InitializeAsync() {
+    public async Task InitializeAsync() {
         _esdbContainer = new EventStoreDbBuilder().Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());

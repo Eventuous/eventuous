@@ -7,9 +7,19 @@
     </PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
+      <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
     </ItemGroup>
     <ItemGroup>
       <Compile Update="ServiceTestBase.OnNew.cs">
+        <DependentUpon>ServiceTestBase.cs</DependentUpon>
+      </Compile>
+      <Compile Update="ServiceTestBase.Amendments.cs">
+        <DependentUpon>ServiceTestBase.cs</DependentUpon>
+      </Compile>
+      <Compile Update="ServiceTestBase.OnAny.cs">
+        <DependentUpon>ServiceTestBase.cs</DependentUpon>
+      </Compile>
+      <Compile Update="ServiceTestBase.OnExisting.cs">
         <DependentUpon>ServiceTestBase.cs</DependentUpon>
       </Compile>
     </ItemGroup>

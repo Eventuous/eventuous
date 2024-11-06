@@ -5,7 +5,8 @@ namespace Eventuous.Tests.Application;
 using Sut.Domain;
 
 // ReSharper disable once UnusedType.Global
-public class FunctionalServiceTests(ITestOutputHelper output) : ServiceTestBase(output) {
+[InheritsTests]
+public class FunctionalServiceTests() : ServiceTestBase() {
     protected override ICommandService<BookingState> CreateService(
             AmendEvent<ImportBooking>? amendEvent = null,
             AmendEvent?                amendAll   = null

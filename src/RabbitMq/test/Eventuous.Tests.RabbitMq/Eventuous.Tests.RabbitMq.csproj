@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj" />
-        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj"/>
+        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <Using Include="RabbitMQ.Client" />
+        <Using Include="RabbitMQ.Client"/>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Testcontainers.RabbitMq" />
+        <PackageReference Include="Testcontainers.RabbitMq"/>
+        <PackageReference Remove="xunit.v3"/>
+        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>
 </Project>

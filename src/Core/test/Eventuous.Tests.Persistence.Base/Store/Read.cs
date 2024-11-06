@@ -1,13 +1,12 @@
 using System.Text.Json;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
-using static Xunit.TestContext;
 
 // ReSharper disable CoVariantArrayConversion
 
 namespace Eventuous.Tests.Persistence.Base.Store;
 
-public abstract class StoreReadTests<T> : IClassFixture<T> where T : StoreFixtureBase {
+public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     readonly T _fixture;
 
     protected StoreReadTests(T fixture) {
@@ -15,72 +14,71 @@ public abstract class StoreReadTests<T> : IClassFixture<T> where T : StoreFixtur
         _fixture = fixture;
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
-    public async Task ShouldReadOne() {
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadOne(CancellationToken cancellationToken) {
         var evt        = _fixture.CreateEvent();
         var streamName = _fixture.GetStreamName();
         await _fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
-        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, Current.CancellationToken);
-        result.Length.Should().Be(1);
-        result[0].Payload.Should().BeEquivalentTo(evt);
+        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, cancellationToken);
+        await Assert.That(result.Length).IsEqualTo(1);
+        await Assert.That(result[0].Payload).IsEquivalentTo(evt);
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
-    public async Task ShouldReadMany() {
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadMany(CancellationToken cancellationToken) {
         object[] events     = _fixture.CreateEvents(20).ToArray();
         var      streamName = _fixture.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, Current.CancellationToken);
+        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, cancellationToken);
         var actual = result.Select(x => x.Payload);
-        actual.Should().BeEquivalentTo(events);
+        await Assert.That(actual).IsEquivalentTo(events);
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
-    public async Task ShouldReadTail() {
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadTail(CancellationToken cancellationToken) {
         object[] events     = _fixture.CreateEvents(20).ToArray();
         var      streamName = _fixture.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result   = await _fixture.EventStore.ReadEvents(streamName, new(10), 100, Current.CancellationToken);
+        var result   = await _fixture.EventStore.ReadEvents(streamName, new(10), 100, cancellationToken);
         var expected = events.Skip(10);
         var actual   = result.Select(x => x.Payload);
-        actual.Should().BeEquivalentTo(expected);
+        await Assert.That(actual).IsEquivalentTo(expected);
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
-    public async Task ShouldReadHead() {
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadHead(CancellationToken cancellationToken) {
         object[] events     = _fixture.CreateEvents(20).ToArray();
         var      streamName = _fixture.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result   = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 10, Current.CancellationToken);
+        var result   = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 10, cancellationToken);
         var expected = events.Take(10);
-        var actual   = result.Select(x => x.Payload);
-        actual.Should().BeEquivalentTo(expected);
+
+        IEnumerable<object> actual = result.Select(x => x.Payload)!;
+        await Assert.That(actual).IsEquivalentCollectionTo(expected);
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
-    public async Task ShouldReadMetadata() {
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadMetadata(CancellationToken cancellationToken) {
         var evt        = _fixture.CreateEvent();
         var streamName = _fixture.GetStreamName();
 
         await _fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream, new() { { "Key1", "Value1" }, { "Key2", "Value2" } });
 
-        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, Current.CancellationToken);
+        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, cancellationToken);
 
-        result.Length.Should().Be(1);
-        result[0].Payload.Should().BeEquivalentTo(evt);
+        await Assert.That(result.Length).IsEqualTo(1);
+        await Assert.That(result[0].Payload).IsEquivalentTo(evt);
 
-        result[0]
-            .Metadata.ToDictionary(m => m.Key, m => ((JsonElement)m.Value!).GetString())
-            .Should()
-            .Contain([new("Key1", "Value1"), new("Key2", "Value2")]);
+        await Assert.That(result[0].Metadata.ToDictionary(m => m.Key, m => ((JsonElement)m.Value!).GetString()))
+            .ContainsKey("Key1").And.ContainsKey("Key2");
     }
 }

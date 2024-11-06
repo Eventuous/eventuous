@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions;
+using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Tests.Subscriptions.Base;
 

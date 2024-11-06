@@ -6,6 +6,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.XUnit\Eventuous.TestHelpers.XUnit.csproj" />
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj"/>
     </ItemGroup>
     <ItemGroup>

@@ -2,7 +2,9 @@ using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Hypothesist;
 using Hypothesist.Builders;
+
 // ReSharper disable NotAccessedPositionalProperty.Global
+// ReSharper disable MethodHasAsyncOverload
 
 namespace Eventuous.Tests.Subscriptions.Base;
 
@@ -12,7 +14,9 @@ public record TestEvent(string Data, int Number) {
     public const string TypeName = "test-event";
 }
 
-public class TestEventHandler(TestEventHandlerOptions? options = null) : BaseEventHandler {
+public class TestEventHandler(TestEventHandlerOptions? options) : BaseEventHandler {
+    public TestEventHandler() : this(null) { }
+
     readonly TimeSpan _delay = options?.Delay ?? TimeSpan.Zero;
 
     public int Count { get; private set; }
@@ -25,7 +29,7 @@ public class TestEventHandler(TestEventHandlerOptions? options = null) : BaseEve
         => Hypothesis.On(_observer).Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        options?.Output?.WriteLine(context.Message!.ToString() ?? string.Empty);
+        TestContext.Current?.OutputWriter.WriteLine(context.Message!.ToString() ?? string.Empty);
         await Task.Delay(_delay);
         await _observer.Add(context.Message!, context.CancellationToken);
         Count++;
@@ -36,4 +40,4 @@ public class TestEventHandler(TestEventHandlerOptions? options = null) : BaseEve
     public void Reset() => Count = 0;
 }
 
-public record TestEventHandlerOptions(TimeSpan? Delay = null, ITestOutputHelper? Output = null);
+public record TestEventHandlerOptions(TimeSpan? Delay = null);

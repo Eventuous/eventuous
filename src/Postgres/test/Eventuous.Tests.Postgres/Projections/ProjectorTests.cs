@@ -1,6 +1,3 @@
-// Copyright (C) Ubiquitous AS. All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using Eventuous.Postgresql.Projections;
 using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Sut.App;
@@ -8,13 +5,12 @@ using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Postgres.Subscriptions;
 using Npgsql;
-using static Xunit.TestContext;
+using Assert = TUnit.Assertions.Assert;
 
 namespace Eventuous.Tests.Postgres.Projections;
 
-[Collection("Database")]
-public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
-    readonly SubscriptionFixture<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, TestProjector> _fixture = new(_ => { }, outputHelper);
+public class ProjectorTests() {
+    readonly SubscriptionFixture<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, TestProjector> _fixture = new(_ => { });
 
     const string Schema = """
                           create table if not exists __schema__.bookings (
@@ -24,24 +20,24 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
                           );
                           """;
 
-    [Fact]
-    public async Task ProjectImportedBookingsToTable() {
+    [Test]
+    public async Task ProjectImportedBookingsToTable(CancellationToken cancellationToken) {
         await CreateSchema();
         var commands = await GenerateAndProduceEvents(100);
 
-        await Task.Delay(1000, Current.CancellationToken);
+        await Task.Delay(1000, cancellationToken);
 
-        await using var connection = await _fixture.DataSource.OpenConnectionAsync(Current.CancellationToken);
+        await using var connection = await _fixture.DataSource.OpenConnectionAsync(cancellationToken);
 
         var select = $"select * from {_fixture.SchemaName}.bookings where booking_id = @bookingId";
 
         foreach (var command in commands) {
             await using var cmd = new NpgsqlCommand(select, connection);
             cmd.Parameters.AddWithValue("@bookingId", command.BookingId);
-            await using var reader = await cmd.ExecuteReaderAsync(Current.CancellationToken);
-            await reader.ReadAsync(Current.CancellationToken);
-            reader["checkin_date"].Should().Be(command.CheckIn.ToDateTimeUnspecified());
-            reader["price"].Should().Be(command.Price);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            await reader.ReadAsync(cancellationToken);
+            await Assert.That(reader["checkin_date"]).IsEqualTo(command.CheckIn.ToDateTimeUnspecified());
+            await Assert.That(reader["price"]).IsEqualTo((decimal)command.Price);
         }
     }
 
@@ -72,8 +68,10 @@ public class ProjectorTests(ITestOutputHelper outputHelper) : IAsyncLifetime {
     static BookingEvents.BookingImported ToEvent(Commands.ImportBooking cmd)
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
+    [Before(Test)]
     public async ValueTask InitializeAsync() => await _fixture.InitializeAsync();
 
+    [After(Test)]
     public async ValueTask DisposeAsync() => await _fixture.DisposeAsync();
 }
 

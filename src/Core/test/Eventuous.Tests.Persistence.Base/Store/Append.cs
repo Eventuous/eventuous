@@ -6,7 +6,7 @@ using Eventuous.Tests.Persistence.Base.Fixtures;
 
 namespace Eventuous.Tests.Persistence.Base.Store;
 
-public abstract class StoreAppendTests<T> : IClassFixture<T> where T : StoreFixtureBase {
+public abstract class StoreAppendTests<T> where T : StoreFixtureBase {
     readonly T _fixture;
 
     protected StoreAppendTests(T fixture) {
@@ -14,18 +14,18 @@ public abstract class StoreAppendTests<T> : IClassFixture<T> where T : StoreFixt
         _fixture = fixture;
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
+    [Test]
+    [Category("Store")]
     public async Task ShouldAppendToNoStream() {
         var evt        = _fixture.CreateEvent();
         var streamName = _fixture.GetStreamName();
         var result     = await _fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
-        result.NextExpectedVersion.Should().Be(0);
+        await Assert.That(result.NextExpectedVersion).IsEqualTo(0);
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
+    [Test]
+    [Category("Store")]
     public async Task ShouldAppendOneByOne() {
         var evt    = _fixture.CreateEvent();
         var stream = _fixture.GetStreamName();
@@ -37,11 +37,11 @@ public abstract class StoreAppendTests<T> : IClassFixture<T> where T : StoreFixt
         var version = new ExpectedStreamVersion(result.NextExpectedVersion);
         result = await _fixture.AppendEvent(stream, evt, version);
 
-        result.NextExpectedVersion.Should().Be(1);
+        await Assert.That(result.NextExpectedVersion).IsEqualTo(1);
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
+    [Test]
+    [Category("Store")]
     public async Task ShouldFailOnWrongVersionNoStream() {
         var evt    = _fixture.CreateEvent();
         var stream = _fixture.GetStreamName();
@@ -50,12 +50,11 @@ public abstract class StoreAppendTests<T> : IClassFixture<T> where T : StoreFixt
 
         evt = _fixture.CreateEvent();
 
-        var task = () => _fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
-        await task.Should().ThrowAsync<AppendToStreamException>();
+        await Assert.That(() => _fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream)).Throws<AppendToStreamException>();
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
+    [Test]
+    [Category("Store")]
     public async Task ShouldFailOnWrongVersion() {
         var evt    = _fixture.CreateEvent();
         var stream = _fixture.GetStreamName();
@@ -64,13 +63,12 @@ public abstract class StoreAppendTests<T> : IClassFixture<T> where T : StoreFixt
 
         evt = _fixture.CreateEvent();
 
-        var task = () => _fixture.AppendEvent(stream, evt, new(3));
-        await task.Should().ThrowAsync<AppendToStreamException>();
+        await Assert.That(() => _fixture.AppendEvent(stream, evt, new(3))).Throws<AppendToStreamException>();
     }
     
 
-    [Fact]
-    [Trait("Category", "Store")]
+    [Test]
+    [Category("Store")]
     public async Task ShouldFailOnWrongVersionWithOptimisticConcurrencyException() {
         var evt    = _fixture.CreateEvent();
         var stream = _fixture.GetStreamName();
@@ -79,7 +77,6 @@ public abstract class StoreAppendTests<T> : IClassFixture<T> where T : StoreFixt
 
         evt = _fixture.CreateEvent();
 
-        var task = () => _fixture.StoreChanges(stream, evt, new(3));
-        await task.Should().ThrowAsync<OptimisticConcurrencyException>();
+        await Assert.That(() => _fixture.StoreChanges(stream, evt, new(3))).Throws<OptimisticConcurrencyException>();
     }
 }

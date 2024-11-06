@@ -1,6 +1,3 @@
-// Copyright (C) Ubiquitous AS.All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using DotNet.Testcontainers.Containers;
 using Eventuous.Diagnostics;
 using Eventuous.Subscriptions.Registrations;
@@ -42,9 +39,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     protected abstract void ConfigureSubscription(TSubscriptionOptions options);
 
     protected override void SetupServices(IServiceCollection services) {
-        if (Output != null) {
-            _listener = new(Output);
-        }
+        _listener = new();
 
         services.AddProducer<TProducer>();
         services.AddSingleton<MessageCounter>();
@@ -77,6 +72,6 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     }
 }
 
-class TestListener(ITestOutputHelper output) : GenericListener(SubscriptionMetrics.ListenerName) {
-    protected override void OnEvent(KeyValuePair<string, object?> obj) => output.WriteLine($"{obj.Key} {obj.Value}");
+class TestListener() : GenericListener(SubscriptionMetrics.ListenerName) {
+    protected override void OnEvent(KeyValuePair<string, object?> obj) => TestContext.Current?.OutputWriter.WriteLine($"{obj.Key} {obj.Value}");
 }

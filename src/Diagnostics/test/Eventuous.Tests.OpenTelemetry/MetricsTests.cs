@@ -1,25 +1,26 @@
 using DotNet.Testcontainers.Containers;
+using Eventuous.TestHelpers.TUnit;
 using Eventuous.Tests.OpenTelemetry.Fakes;
 using Eventuous.Tests.Subscriptions.Base;
+using Assert = TUnit.Assertions.Assert;
+// ReSharper disable MethodHasAsyncOverload
 
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace Eventuous.Tests.OpenTelemetry;
 
-public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, TSubscriptionOptions>(ITestOutputHelper outputHelper) : IAsyncLifetime
+public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, TSubscriptionOptions>
     where T : MetricsSubscriptionFixtureBase<TContainer, TProducer, TSubscription, TSubscriptionOptions>, new()
     where TContainer : DockerContainer
     where TProducer : class, IProducer
     where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>, IMeasuredSubscription
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
-    T Fixture { get; } = new() { Output = outputHelper };
+    T Fixture { get; } = new();
 
-    [Fact]
-    [Trait("Category", "Diagnostics")]
-    public void ShouldMeasureSubscriptionGapCount() {
-        Fixture.Output?.WriteLine($"Stream {Fixture.Stream}");
-        Assert.NotNull(_values);
-        var gapCount    = GetValue(_values, SubscriptionMetrics.GapCountMetricName)!;
+    protected async Task ShouldMeasureSubscriptionGapCountBase() {
+        TestContext.Current?.OutputWriter.WriteLine($"Stream {Fixture.Stream}");
+        await Assert.That(_values).IsNotNull();
+        var gapCount    = GetValue(_values!, SubscriptionMetrics.GapCountMetricName)!;
         var expectedGap = Fixture.Count - Fixture.Counter.Count;
 
         gapCount.Should().NotBeNull();
@@ -30,16 +31,16 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
 
     // [Fact]
     // [Trait("Category", "Diagnostics")]
-    public void ShouldMeasureSubscriptionDuration() {
-        Fixture.Output?.WriteLine($"Stream {Fixture.Stream}");
-        Assert.NotNull(_values);
-        var duration = GetValue(_values, SubscriptionMetrics.ProcessingRateName)!;
-
-        duration.Should().NotBeNull();
-        duration.CheckTag(SubscriptionMetrics.SubscriptionIdTag, Fixture.SubscriptionId);
-        duration.CheckTag(Fixture.DefaultTagKey, Fixture.DefaultTagValue);
-        duration.CheckTag(SubscriptionMetrics.MessageTypeTag, TestEvent.TypeName);
-    }
+    // public void ShouldMeasureSubscriptionDuration() {
+    //     Fixture.Output?.WriteLine($"Stream {Fixture.Stream}");
+    //     Assert.NotNull(_values);
+    //     var duration = GetValue(_values, SubscriptionMetrics.ProcessingRateName)!;
+    //
+    //     duration.Should().NotBeNull();
+    //     duration.CheckTag(SubscriptionMetrics.SubscriptionIdTag, Fixture.SubscriptionId);
+    //     duration.CheckTag(Fixture.DefaultTagKey, Fixture.DefaultTagValue);
+    //     duration.CheckTag(SubscriptionMetrics.MessageTypeTag, TestEvent.TypeName);
+    // }
 
     static MetricValue? GetValue(MetricValue[] values, string metric)
         => values.FirstOrDefault(x => x.Name == metric);
@@ -57,7 +58,7 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
         _values = Fixture.Exporter.CollectValues();
 
         foreach (var value in _values) {
-            Fixture.Output?.WriteLine(value.ToString());
+            TestContext.Current?.OutputWriter.WriteLine(value.ToString());
         }
     }
 
@@ -66,7 +67,7 @@ public abstract class MetricsTestsBase<T, TContainer, TProducer, TSubscription, 
         _es.Dispose();
     }
 
-    readonly TestEventListener _es = new(outputHelper, null, "OpenTelemetry");
+    readonly TestEventListener _es = new(null, "OpenTelemetry");
 
     MetricValue[]? _values;
 }

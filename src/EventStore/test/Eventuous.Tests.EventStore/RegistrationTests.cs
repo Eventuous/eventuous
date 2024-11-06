@@ -7,7 +7,8 @@ using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription
 
 namespace Eventuous.Tests.EventStore;
 
-public class RegistrationTests(StoreFixture fixture) : IClassFixture<StoreFixture>, IAsyncLifetime {
+[ClassDataSource<StoreFixture>]
+public class RegistrationTests(StoreFixture fixture) {
     const string SubId = "Test";
 
     static readonly StreamName Stream = new("teststream");
@@ -15,33 +16,34 @@ public class RegistrationTests(StoreFixture fixture) : IClassFixture<StoreFixtur
     ServiceProvider    Provider { get; set; } = null!;
     StreamSubscription Sub      { get; set; } = null!;
 
-    [Fact]
-    [Trait("Category", "Dependency injection")]
+    [Test]
+    [Category("Dependency injection")]
     public void ShouldResolveSubscription() {
         Sub.Should().NotBeNull();
         Sub.Should().BeOfType<StreamSubscription>();
     }
 
-    [Fact]
-    [Trait("Category", "Dependency injection")]
+    [Test]
+    [Category("Dependency injection")]
     public void ShouldHaveProperId() => Sub.SubscriptionId.Should().Be(SubId);
 
-    [Fact]
-    [Trait("Category", "Dependency injection")]
+    [Test]
+    [Category("Dependency injection")]
     public void ShouldHaveEventStoreClient() {
         var client = Sub.GetPrivateMember<EventStoreClient>("EventStoreClient");
 
         client.Should().Be(fixture.Client);
     }
 
-    [Fact]
-    [Trait("Category", "Dependency injection")]
+    [Test]
+    [Category("Dependency injection")]
     public void ShouldHaveNoOpStore() {
         var store = Sub.GetPrivateMember<ICheckpointStore>("CheckpointStore");
 
         store.Should().BeOfType<NoOpCheckpointStore>();
     }
 
+    [Before(Test)]
     public ValueTask InitializeAsync() {
         var services = new ServiceCollection();
 
@@ -62,6 +64,7 @@ public class RegistrationTests(StoreFixture fixture) : IClassFixture<StoreFixtur
         return ValueTask.CompletedTask;
     }
 
+    [After(Test)]
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 

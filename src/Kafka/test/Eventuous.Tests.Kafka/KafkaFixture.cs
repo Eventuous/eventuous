@@ -1,14 +1,12 @@
-// Copyright (C) Ubiquitous AS.All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using Testcontainers.Kafka;
+using TUnit.Core.Interfaces;
 
 namespace Eventuous.Tests.Kafka;
 
-public class KafkaFixture : IAsyncLifetime {
+public class KafkaFixture : IAsyncInitializer, IAsyncDisposable {
     KafkaContainer _kafkaContainer = null!;
 
-    public async ValueTask InitializeAsync() {
+    public async Task InitializeAsync() {
         _kafkaContainer = new KafkaBuilder()
             .WithImage("confluentinc/cp-kafka:7.2.6")
             .Build();

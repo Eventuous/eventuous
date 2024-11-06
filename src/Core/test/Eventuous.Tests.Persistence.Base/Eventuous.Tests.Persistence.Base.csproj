@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <IncludeSutApp>true</IncludeSutApp>
+        <IsTestProject>false</IsTestProject>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="Bogus" />
         <PackageReference Include="JetBrains.Annotations"/>
         <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
@@ -10,8 +12,11 @@
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Testcontainers"/>
         <PackageReference Remove="xunit.v3"/>
+        <PackageReference Include="TUnit.Core"/>
+        <PackageReference Include="TUnit.Assertions"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
     </ItemGroup>
 </Project>

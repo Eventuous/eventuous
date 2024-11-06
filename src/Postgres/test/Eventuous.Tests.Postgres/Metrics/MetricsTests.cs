@@ -7,6 +7,16 @@ using Testcontainers.PostgreSql;
 
 namespace Eventuous.Tests.Postgres.Metrics;
 
-[Collection("Database")]
-public class MetricsTests(ITestOutputHelper outputHelper)
-    : MetricsTestsBase<MetricsFixture, PostgreSqlContainer, UniversalProducer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions>(outputHelper);
+public class MetricsTests : MetricsTestsBase<MetricsFixture, PostgreSqlContainer, UniversalProducer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions> {
+    [Test]
+    public async Task ShouldMeasureSubscriptionGapCount() {
+        await ShouldMeasureSubscriptionGapCountBase();
+    }
+
+    [Before(Test)]
+    public async Task Setup() => await InitializeAsync();
+    
+    [After(Test)]
+    public async Task TearDown() => await DisposeAsync();
+}
+

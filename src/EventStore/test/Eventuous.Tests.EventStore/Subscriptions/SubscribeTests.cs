@@ -7,54 +7,55 @@ using Testcontainers.EventStoreDb;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
-[Collection("Database")]
-public class SubscribeToAll(ITestOutputHelper outputHelper)
+public class SubscribeToAll()
     : SubscribeToAllBase<EventStoreDbContainer, AllStreamSubscription, AllStreamSubscriptionOptions, TestCheckpointStore>(
-        outputHelper,
-        new CatchUpSubscriptionFixture<AllStreamSubscription, AllStreamSubscriptionOptions, TestEventHandler>(_ => { }, outputHelper, new("$all"), false)
+        new CatchUpSubscriptionFixture<AllStreamSubscription, AllStreamSubscriptionOptions, TestEventHandler>(_ => { }, new("$all"), false)
     ) {
-    [Fact]
-    public async Task Esdb_ShouldConsumeProducedEvents() {
-        await ShouldConsumeProducedEvents();
+    [Test]
+    public async Task Esdb_ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEvents(cancellationToken);
     }
 
-    [Fact]
-    public async Task Esdb_ShouldConsumeProducedEventsWhenRestarting() {
-        await ShouldConsumeProducedEventsWhenRestarting();
+    [Test]
+    public async Task Esdb_ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEventsWhenRestarting(cancellationToken);
     }
 
-    [Fact]
-    public async Task Esdb_ShouldUseExistingCheckpoint() {
-        await ShouldUseExistingCheckpoint();
+    [Test]
+    public async Task Esdb_ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
+        await ShouldUseExistingCheckpoint(cancellationToken);
     }
 }
 
-[Collection("Database")]
-public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture streamNameFixture)
+[ClassDataSource<StreamNameFixture>(Shared = SharedType.None)]
+public class SubscribeToStream(StreamNameFixture streamNameFixture)
     : SubscribeToStreamBase<EventStoreDbContainer, StreamSubscription, StreamSubscriptionOptions, TestCheckpointStore>(
-            outputHelper,
+        streamNameFixture.StreamName,
+        new CatchUpSubscriptionFixture<StreamSubscription, StreamSubscriptionOptions, TestEventHandler>(
+            opt => ConfigureOptions(opt, streamNameFixture),
             streamNameFixture.StreamName,
-            new CatchUpSubscriptionFixture<StreamSubscription, StreamSubscriptionOptions, TestEventHandler>(
-                opt => ConfigureOptions(opt, streamNameFixture),
-                outputHelper,
-                streamNameFixture.StreamName,
-                false
-            )
-        ),
-        IClassFixture<StreamNameFixture> {
-    [Fact]
-    public async Task Esdb_ShouldConsumeProducedEvents() {
-        await ShouldConsumeProducedEvents();
+            false
+        )
+    ) {
+    [Before(Test)]
+    public async Task Setup() => await InitializeAsync();
+
+    [After(Test)]
+    public async Task TearDown() => await DisposeAsync();
+    
+    [Test]
+    public async Task Esdb_ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEvents(cancellationToken);
     }
 
-    [Fact]
-    public async Task Esdb_ShouldConsumeProducedEventsWhenRestarting() {
-        await ShouldConsumeProducedEventsWhenRestarting();
+    [Test]
+    public async Task Esdb_ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEventsWhenRestarting(cancellationToken);
     }
 
-    [Fact]
-    public async Task Esdb_ShouldUseExistingCheckpoint() {
-        await ShouldUseExistingCheckpoint();
+    [Test]
+    public async Task Esdb_ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
+        await ShouldUseExistingCheckpoint(cancellationToken);
     }
 
     static void ConfigureOptions(StreamSubscriptionOptions options, StreamNameFixture streamNameFixture) {

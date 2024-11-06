@@ -1,3 +1,4 @@
+using AutoFixture;
 using DotNet.Testcontainers.Containers;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using JetBrains.Annotations;
@@ -10,7 +11,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
 
         var store      = _storeFixture.EventStore;
         var archive    = new ArchiveStore(_storeFixture.EventStore);
-        var testEvents = _fixture.CreateMany<TestEventForTiers>(count).ToList();
+        var testEvents = _fixture.CreateMany<TestEventForTiers>(count).ToArray();
         var stream     = new StreamName($"Test-{Guid.NewGuid():N}");
 
         await store.Store(stream, ExpectedStreamVersion.NoStream, testEvents);
@@ -21,10 +22,10 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
         var loaded   = (await combined.ReadStream(stream, StreamReadPosition.Start)).ToArray();
 
         var actual = loaded.Select(x => (TestEventForTiers)x.Payload!).ToArray();
-        actual.Should().BeEquivalentTo(testEvents);
+        await Assert.That(actual).IsEquivalentCollectionTo(testEvents);
 
-        loaded.Take(50).Select(x => x.FromArchive).Should().AllSatisfy(x => x.Should().BeFalse());
-        loaded.Skip(50).Select(x => x.FromArchive).Should().AllSatisfy(x => x.Should().BeTrue());
+        await Assert.That(loaded.Take(50).Select(x => x.FromArchive)).DoesNotContain(false);
+        await Assert.That(loaded.Skip(50).Select(x => x.FromArchive)).DoesNotContain(true);
     }
 
     readonly Fixture                      _fixture = new();

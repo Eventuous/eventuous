@@ -2,49 +2,49 @@ using Eventuous.Diagnostics.Logging;
 using Eventuous.Redis.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Filters;
-using Eventuous.TestHelpers.Logging;
+using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.Redis.Fixtures;
 
-public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, IEventHandler {
+public class SubscriptionFixture<T> where T : IEventHandler, new() {
     static SubscriptionFixture() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    protected IntegrationFixture   IntegrationFixture { get; private set; } = null!;
-    protected StreamName           Stream             { get; }
-    protected T                    Handler            { get; private set; } = null!;
+    public    IntegrationFixture   IntegrationFixture { get; private set; } = null!;
+    public    StreamName           Stream             { get; }
     protected ILogger              Log                { get; }
-    protected RedisCheckpointStore CheckpointStore    { get; private set; } = null!;
-    protected ILoggerFactory       LoggerFactory      { get; }
+    public    RedisCheckpointStore CheckpointStore    { get; private set; } = null!;
+    public    ILoggerFactory       LoggerFactory      { get; }
+    public    T                    Handler            { get; }
     IMessageSubscription           Subscription       { get; set; } = null!;
 
-    protected SubscriptionFixture(ITestOutputHelper outputHelper, bool subscribeToAll, bool autoStart = true, LogLevel logLevel = LogLevel.Trace) {
+    public SubscriptionFixture(bool subscribeToAll, LogLevel logLevel = LogLevel.Trace) {
+        Handler         = new T();
         _subscribeToAll = subscribeToAll;
-        _autoStart      = autoStart;
-        Stream          = new StreamName(SharedAutoFixture.Auto.Create<string>());
-        LoggerFactory   = LoggingExtensions.GetLoggerFactory(outputHelper, logLevel);
+        Stream          = new(SharedAutoFixture.Auto.Create<string>());
+        LoggerFactory   = LoggingExtensions.GetLoggerFactory(logLevel);
         SubscriptionId  = $"test-{Guid.NewGuid():N}";
         Log             = LoggerFactory.CreateLogger(GetType());
-        _listener       = new LoggingEventListener(LoggerFactory);
+        _listener       = new(LoggerFactory);
     }
-
-    protected abstract T GetHandler();
 
     public string SubscriptionId { get; }
 
-    protected ValueTask Start() => Subscription.SubscribeWithLog(Log);
+    public async Task Start() {
+        await Subscription.SubscribeWithLog(Log);
+    }
 
-    protected ValueTask Stop() => Subscription.UnsubscribeWithLog(Log);
+    public async Task Stop() {
+        await Subscription.UnsubscribeWithLog(Log);
+    }
 
     readonly bool                 _subscribeToAll;
-    readonly bool                 _autoStart;
     readonly LoggingEventListener _listener;
 
     public async ValueTask InitializeAsync() {
         IntegrationFixture = new();
         await IntegrationFixture.InitializeAsync();
-        Handler         = GetHandler();
-        CheckpointStore = new RedisCheckpointStore(IntegrationFixture.GetDatabase, LoggerFactory);
+        CheckpointStore = new(IntegrationFixture.GetDatabase, LoggerFactory);
 
         var pipe = new ConsumePipe();
         pipe.AddDefaultConsumer(Handler);
@@ -53,23 +53,21 @@ public abstract class SubscriptionFixture<T> : IAsyncLifetime where T : class, I
             !_subscribeToAll
                 ? new RedisStreamSubscription(
                     IntegrationFixture.GetDatabase,
-                    new RedisStreamSubscriptionOptions(Stream) { SubscriptionId = SubscriptionId },
+                    new(Stream) { SubscriptionId = SubscriptionId },
                     CheckpointStore,
                     pipe,
                     LoggerFactory
                 )
                 : new RedisAllStreamSubscription(
                     IntegrationFixture.GetDatabase,
-                    new RedisAllStreamSubscriptionOptions { SubscriptionId = SubscriptionId },
+                    new() { SubscriptionId = SubscriptionId },
                     CheckpointStore,
                     pipe,
                     LoggerFactory
                 );
-        if (_autoStart) await Start();
     }
 
     public async ValueTask DisposeAsync() {
-        if (_autoStart) await Stop();
         await FlushDb();
         _listener.Dispose();
         await IntegrationFixture.DisposeAsync();

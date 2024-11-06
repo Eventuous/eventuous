@@ -1,38 +1,34 @@
-// Copyright (C) Ubiquitous AS.All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using System.Text.RegularExpressions;
+using AutoFixture;
 using Bogus;
 using DotNet.Testcontainers.Containers;
 using Eventuous.TestHelpers;
-using Eventuous.TestHelpers.Logging;
+using Eventuous.TestHelpers.TUnit.Logging;
 using MicroElements.AutoFixture.NodaTime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using TUnit.Core.Interfaces;
 
 namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
 public abstract class StoreFixtureBase {
-    public           IEventStore        EventStore { get; protected private set; } = null!;
-    public           IFixture           Auto       { get; }                        = new Fixture().Customize(new NodaTimeCustomization());
-    protected static Faker              Faker      { get; }                        = new();
-    protected        ServiceProvider    Provider   { get; set; }                   = null!;
-    protected        bool               AutoStart  { get; init; }                  = true;
-    public           ITestOutputHelper? Output     { get; set; }
-    public           TypeMapper         TypeMapper { get; } = new();
+    public           IEventStore     EventStore { get; protected private set; } = null!;
+    public           IFixture        Auto       { get; }                        = new Fixture().Customize(new NodaTimeCustomization());
+    protected static Faker           Faker      { get; }                        = new();
+    protected        ServiceProvider Provider   { get; set; }                   = null!;
+    protected        bool            AutoStart  { get; init; }                  = true;
+    public           TypeMapper      TypeMapper { get; }                        = new();
 }
 
-public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncLifetime where TContainer : DockerContainer {
-    public virtual async ValueTask InitializeAsync() {
+public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncInitializer, IAsyncDisposable where TContainer : DockerContainer {
+    public virtual async Task InitializeAsync() {
         Container = CreateContainer();
         await Container.StartAsync();
 
         var services = new ServiceCollection();
 
-        if (Output != null) {
-            services.AddSingleton(Output);
-            services.AddLogging(cfg => cfg.AddXUnit(Output).SetMinimumLevel(LogLevel.Debug));
-        }
+        services.AddLogging(cfg => cfg.AddTUnit().SetMinimumLevel(LogLevel.Debug));
 
         Serializer = new DefaultEventSerializer(TestPrimitives.DefaultOptions, TypeMapper);
         services.AddSingleton(Serializer);

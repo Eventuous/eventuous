@@ -1,42 +1,42 @@
 using System.Collections.Immutable;
-using Eventuous.TestHelpers.Logging;
+using Eventuous.TestHelpers.TUnit.Logging;
 using JetBrains.Annotations;
 using static Eventuous.AggregateFactoryRegistry;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.EventStore.Store;
 
-public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable {
+[ClassDataSource<StoreFixture>]
+public class EventStoreAggregateTests {
     readonly StoreFixture                 _fixture;
     readonly ILogger<AggregateStoreTests> _log;
     readonly ILoggerFactory               _loggerFactory;
 
-    public EventStoreAggregateTests(StoreFixture fixture, ITestOutputHelper output) {
+    public EventStoreAggregateTests(StoreFixture fixture) {
         _fixture = fixture;
         _fixture.TypeMapper.AddType<TestEvent>("testEvent");
-        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddXUnit(output).SetMinimumLevel(LogLevel.Debug));
+        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddTUnit().SetMinimumLevel(LogLevel.Debug));
         _log           = _loggerFactory.CreateLogger<AggregateStoreTests>();
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
-    public async Task AppendedEventShouldBeTraced() {
+    [Test]
+    [Category("Store")]
+    public async Task AppendedEventShouldBeTraced(CancellationToken cancellationToken) {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: Current.CancellationToken);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: cancellationToken);
 
         var streamName = StreamNameFactory.For<TestAggregate, TestState, TestId>(id);
-        var events     = await _fixture.EventStore.ReadStream(streamName, StreamReadPosition.Start, cancellationToken: Current.CancellationToken);
+        var events     = await _fixture.EventStore.ReadStream(streamName, StreamReadPosition.Start, cancellationToken: cancellationToken);
         var first      = events[0];
 
         first.Metadata["trace-id"].Should().NotBeNull();
         first.Metadata["span-id"].Should().NotBeNull();
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
-    public async Task ShouldReadLongAggregateStream() {
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadLongAggregateStream(CancellationToken cancellationToken) {
         const int count = 9000;
 
         var id        = new TestId(Guid.NewGuid().ToString("N"));
@@ -51,32 +51,32 @@ public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable
             if (counter != 1000) continue;
 
             _log.LogInformation("Storing batch of events..");
-            await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: Current.CancellationToken);
-            aggregate = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: Current.CancellationToken);
+            await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: cancellationToken);
+            aggregate = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: cancellationToken);
             counter   = 0;
         }
 
-        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: Current.CancellationToken);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: cancellationToken);
 
         _log.LogInformation("Loading large aggregate stream..");
-        var restored = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: Current.CancellationToken);
+        var restored = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: cancellationToken);
 
         restored.State.Values.Count.Should().Be(count);
         restored.State.Values.Should().BeEquivalentTo(aggregate.State.Values);
     }
 
-    [Fact]
-    [Trait("Category", "Store")]
-    public async Task ShouldReadAggregateStreamManyTimes() {
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadAggregateStreamManyTimes(CancellationToken cancellationToken) {
         var id        = new TestId(Guid.NewGuid().ToString("N"));
         var aggregate = Instance.CreateInstance<TestAggregate, TestState>();
         aggregate.DoIt("test");
-        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: Current.CancellationToken);
+        await _fixture.EventStore.StoreAggregate<TestAggregate, TestState, TestId>(aggregate, id, cancellationToken: cancellationToken);
 
         const int numberOfReads = 100;
 
         foreach (var unused in Enumerable.Range(0, numberOfReads)) {
-            var read = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: Current.CancellationToken);
+            var read = await _fixture.EventStore.LoadAggregate<TestAggregate, TestState, TestId>(id, cancellationToken: cancellationToken);
             read.State.Should().BeEquivalentTo(aggregate.State);
         }
     }
@@ -96,5 +96,6 @@ public class EventStoreAggregateTests : IClassFixture<StoreFixture>, IDisposable
 
     record TestEvent(string Data);
 
+    [After(Test)]
     public void Dispose() => _loggerFactory.Dispose();
 }

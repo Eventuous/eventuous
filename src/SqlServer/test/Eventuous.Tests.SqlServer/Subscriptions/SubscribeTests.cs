@@ -6,53 +6,48 @@ using Testcontainers.SqlEdge;
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 
-[Collection("Database")]
-public class SubscribeToAll(ITestOutputHelper outputHelper)
+public class SubscribeToAll()
     : SubscribeToAllBase<SqlEdgeContainer, SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, SqlServerCheckpointStore>(
-        outputHelper,
-        new SubscriptionFixture<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, TestEventHandler>(_ => { }, outputHelper, false)
+        new SubscriptionFixture<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, TestEventHandler>(_ => { }, false)
     ) {
-    [Fact]
-    public async Task SqlServer_ShouldConsumeProducedEvents() {
-        await ShouldConsumeProducedEvents();
+    [Test]
+    public async Task SqlServer_ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEvents(cancellationToken);
     }
 
-    [Fact]
-    public async Task SqlServer_ShouldConsumeProducedEventsWhenRestarting() {
-        await ShouldConsumeProducedEventsWhenRestarting();
+    [Test]
+    public async Task SqlServer_ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEventsWhenRestarting(cancellationToken);
     }
 
-    [Fact]
-    public async Task SqlServer_ShouldUseExistingCheckpoint() {
-        await ShouldUseExistingCheckpoint();
+    [Test]
+    public async Task SqlServer_ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
+        await ShouldUseExistingCheckpoint(cancellationToken);
     }
 }
 
-[Collection("Database")]
-public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture streamNameFixture)
+[ClassDataSource<StreamNameFixture>(Shared = SharedType.None)]
+public class SubscribeToStream(StreamNameFixture streamNameFixture)
     : SubscribeToStreamBase<SqlEdgeContainer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, SqlServerCheckpointStore>(
-            outputHelper,
-            streamNameFixture.StreamName,
-            new SubscriptionFixture<SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, TestEventHandler>(
-                opt => ConfigureOptions(opt, streamNameFixture),
-                outputHelper,
-                false
-            )
-        ),
-        IClassFixture<StreamNameFixture> {
-    [Fact]
-    public async Task SqlServer_ShouldConsumeProducedEvents() {
-        await ShouldConsumeProducedEvents();
+        streamNameFixture.StreamName,
+        new SubscriptionFixture<SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, TestEventHandler>(
+            opt => ConfigureOptions(opt, streamNameFixture),
+            false
+        )
+    ) {
+    [Test]
+    public async Task SqlServer_ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEvents(cancellationToken);
     }
 
-    [Fact]
-    public async Task SqlServer_ShouldConsumeProducedEventsWhenRestarting() {
-        await ShouldConsumeProducedEventsWhenRestarting();
+    [Test]
+    public async Task SqlServer_ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEventsWhenRestarting(cancellationToken);
     }
 
-    [Fact]
-    public async Task SqlServer_ShouldUseExistingCheckpoint() {
-        await ShouldUseExistingCheckpoint();
+    [Test]
+    public async Task SqlServer_ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
+        await ShouldUseExistingCheckpoint(cancellationToken);
     }
 
     static void ConfigureOptions(SqlServerStreamSubscriptionOptions options, StreamNameFixture streamNameFixture) {

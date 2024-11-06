@@ -4,8 +4,14 @@ using Eventuous.Tests.Persistence.Base.Store;
 
 namespace Eventuous.Tests.EventStore.Store;
 
+[InheritsTests]
+[ClassDataSource<StoreFixture>]
 public class Append(StoreFixture fixture) : StoreAppendTests<StoreFixture>(fixture);
 
+[InheritsTests]
+[ClassDataSource<StoreFixture>]
 public class Read(StoreFixture fixture) : StoreReadTests<StoreFixture>(fixture);
 
+[InheritsTests]
+[ClassDataSource<StoreFixture>]
 public class OtherMethods(StoreFixture fixture) : StoreOtherOpsTests<StoreFixture>(fixture);

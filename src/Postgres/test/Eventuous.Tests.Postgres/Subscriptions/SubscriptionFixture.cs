@@ -11,13 +11,11 @@ namespace Eventuous.Tests.Postgres.Subscriptions;
 
 public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHandler>(
         Action<TSubscriptionOptions> configureOptions,
-        ITestOutputHelper            outputHelper,
         bool                         autoStart         = true,
         Action<IServiceCollection>?  configureServices = null,
         LogLevel                     logLevel          = LogLevel.Debug
     )
     : SubscriptionFixtureBase<PostgreSqlContainer, TSubscription, TSubscriptionOptions, PostgresCheckpointStore, TEventHandler>(
-        outputHelper,
         autoStart,
         logLevel
     )
@@ -25,8 +23,6 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     where TSubscriptionOptions : PostgresSubscriptionBaseOptions
     where TEventHandler : class, IEventHandler {
     protected internal readonly string SchemaName = GetSchemaName();
-
-    readonly ITestOutputHelper _outputHelper = outputHelper;
 
     protected override PostgreSqlContainer CreateContainer() => PostgresContainer.Create();
 
@@ -43,7 +39,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         services.AddSingleton(new SchemaInfo(SchemaName));
         services.AddEventuousPostgres(Container.GetConnectionString(), SchemaName, true);
         services.AddEventStore<PostgresStore>();
-        services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
+        services.AddSingleton(new TestEventHandlerOptions());
         services.AddPostgresCheckpointStore();
         configureServices?.Invoke(services);
     }

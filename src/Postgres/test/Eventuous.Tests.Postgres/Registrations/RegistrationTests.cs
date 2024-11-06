@@ -4,14 +4,15 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using Assert = TUnit.Assertions.Assert;
 
 namespace Eventuous.Tests.Postgres.Registrations;
 
 public class RegistrationTests {
     const string ConnectionString = "Host=localhost;Username=postgres;Password=secret;Database=eventuous;";
 
-    [Fact]
-    public void Should_resolve_store_with_manual_registration() {
+    [Test]
+    public async Task Should_resolve_store_with_manual_registration() {
         var ds      = new NpgsqlDataSourceBuilder(ConnectionString).Build();
         var builder = new WebHostBuilder();
         builder.Configure(_ => { });
@@ -25,11 +26,11 @@ public class RegistrationTests {
         );
         var app            = builder.Build();
         var aggregateStore = app.Services.GetRequiredService<IEventStore>();
-        aggregateStore.Should().NotBeNull();
+        await Assert.That(aggregateStore).IsNotNull();
     }
 
-    [Fact]
-    public void Should_resolve_store_with_extensions() {
+    [Test]
+    public async Task Should_resolve_store_with_extensions() {
         var builder = new WebHostBuilder();
         var config  = new Dictionary<string, string?> {
             ["postgres:schema"] = "test",
@@ -47,7 +48,7 @@ public class RegistrationTests {
         var app            = builder.Build();
         var reader       = app.Services.GetService<IEventStore>();
         var npgSqlReader = ((reader as TracedEventStore)!).Inner as PostgresStore;
-        npgSqlReader.Should().NotBeNull();
-        npgSqlReader!.Schema.StreamMessage.Should().Be("test.stream_message");
+        await Assert.That(npgSqlReader).IsNotNull();
+        await Assert.That(npgSqlReader!.Schema.StreamMessage).IsEqualTo("test.stream_message");
     }
 }

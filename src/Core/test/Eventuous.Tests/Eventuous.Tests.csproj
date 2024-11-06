@@ -10,7 +10,6 @@
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
-        <PackageReference Include="TUnit"/>
         <PackageReference Remove="xunit.v3"/>
         <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>

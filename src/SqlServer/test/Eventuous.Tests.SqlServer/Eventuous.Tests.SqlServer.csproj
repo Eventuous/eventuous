@@ -17,4 +17,8 @@
         <ProjectReference Include="$(SrcRoot)\Diagnostics\test\Eventuous.Tests.OpenTelemetry\Eventuous.Tests.OpenTelemetry.csproj"/>
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
     </ItemGroup>
+    <ItemGroup>
+        <PackageReference Remove="xunit.v3"/>
+        <Using Remove="XUnit"/>
+    </ItemGroup>
 </Project>

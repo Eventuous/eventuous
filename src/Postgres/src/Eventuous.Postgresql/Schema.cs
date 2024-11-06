@@ -13,7 +13,7 @@ namespace Eventuous.Postgresql;
 public class Schema(string schema = Schema.DefaultSchema) {
     public const string DefaultSchema = "eventuous";
 
-    public static string GetStreamMessageTypeName(string schema = Schema.DefaultSchema) => $"{schema}.stream_message";
+    public static string GetStreamMessageTypeName(string schema = DefaultSchema) => $"{schema}.stream_message";
 
     public string StreamMessage       => GetStreamMessageTypeName(schema);
     public string AppendEvents        => $"select * from {schema}.append_events(@_stream_name, @_expected_version, @_created, @_messages)";

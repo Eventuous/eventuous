@@ -7,9 +7,9 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Projections.MongoDB;
 
-public class ProjectWithBulkBuilder(IntegrationFixture fixture, ITestOutputHelper output)
-    : ProjectionTestBase<ProjectWithBulkBuilder.SutBulkProjection>(nameof(ProjectWithBulkBuilder), fixture, output) {
-    [Fact]
+[ClassDataSource<IntegrationFixture>]
+public class ProjectWithBulkBuilder(IntegrationFixture fixture) : ProjectionTestBase<ProjectWithBulkBuilder.SutBulkProjection>(nameof(ProjectWithBulkBuilder), fixture) {
+    [Test]
     public async Task ShouldProjectImported() {
         var evt    = DomainFixture.CreateImportBooking();
         var id     = new BookingId(CreateId());
@@ -60,7 +60,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture, ITestOutputHelpe
                     .AddOperation(
                         x => x.InsertOne
                             .Document(
-                                ctx => new BookingDocument(ctx.Stream.GetId()) {
+                                ctx => new(ctx.Stream.GetId()) {
                                     RoomId       = ctx.Message.RoomId,
                                     CheckInDate  = ctx.Message.CheckIn,
                                     CheckOutDate = ctx.Message.CheckOut,
@@ -77,7 +77,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture, ITestOutputHelpe
                     .AddOperation(
                         x => x.InsertOne
                             .Document(
-                                ctx => new BookingDocument(ctx.Stream.GetId()) {
+                                ctx => new(ctx.Stream.GetId()) {
                                     BookingPrice = ctx.Message.Price,
                                     Outstanding  = ctx.Message.Price
                                 }

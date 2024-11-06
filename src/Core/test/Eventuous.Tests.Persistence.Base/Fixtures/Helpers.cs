@@ -1,3 +1,4 @@
+using AutoFixture;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 

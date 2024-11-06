@@ -1,4 +1,3 @@
-using TUnit.Assertions.Extensions.Generic;
 using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests;

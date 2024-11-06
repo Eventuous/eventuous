@@ -7,6 +7,15 @@ using Testcontainers.SqlEdge;
 
 namespace Eventuous.Tests.SqlServer.Metrics;
 
-[Collection("Database")]
-public class MetricsTests(ITestOutputHelper outputHelper)
-    : MetricsTestsBase<MetricsFixture, SqlEdgeContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions>(outputHelper);
+public class MetricsTests : MetricsTestsBase<MetricsFixture, SqlEdgeContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions> {
+    [Test]
+    public async Task ShouldMeasureSubscriptionGapCount() {
+        await ShouldMeasureSubscriptionGapCountBase();
+    }
+
+    [Before(Test)]
+    public async Task Setup() => await InitializeAsync();
+
+    [After(Test)]
+    public async Task TearDown() => await DisposeAsync();
+}

@@ -3,51 +3,52 @@ using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
 
-public class AppendEvents(IntegrationFixture fixture) : IClassFixture<IntegrationFixture> {
-    [Fact]
-    public async Task ShouldAppendToNoStream() {
+[ClassDataSource<IntegrationFixture>]
+public class AppendEvents(IntegrationFixture fixture) {
+    [Test]
+    public async Task ShouldAppendToNoStream(CancellationToken cancellationToken) {
         var evt        = CreateEvent();
         var streamName = GetStreamName();
-        var result     = await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
+        var result     = await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream, cancellationToken);
         result.NextExpectedVersion.Should().Be(0);
     }
 
-    [Fact]
-    public async Task ShouldAppendOneByOne() {
+    [Test]
+    public async Task ShouldAppendOneByOne(CancellationToken cancellationToken) {
         var evt    = CreateEvent();
         var stream = GetStreamName();
 
-        var result = await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        var result = await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream, cancellationToken);
         evt = CreateEvent();
 
         var version = new ExpectedStreamVersion(result.NextExpectedVersion);
-        result = await fixture.AppendEvent(stream, evt, version);
+        result = await fixture.AppendEvent(stream, evt, version, cancellationToken);
         result.NextExpectedVersion.Should().Be(1);
     }
 
-    [Fact]
-    public async Task ShouldFailOnWrongVersionNoStream() {
+    [Test]
+    public async Task ShouldFailOnWrongVersionNoStream(CancellationToken cancellationToken) {
         var evt    = CreateEvent();
         var stream = GetStreamName();
 
-        await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream, cancellationToken);
 
         evt = CreateEvent();
 
-        var task = () => fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        var task = () => fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream, cancellationToken);
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
 
-    [Fact]
-    public async Task ShouldFailOnWrongVersion() {
+    [Test]
+    public async Task ShouldFailOnWrongVersion(CancellationToken cancellationToken) {
         var evt    = CreateEvent();
         var stream = GetStreamName();
 
-        await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream);
+        await fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream, cancellationToken);
 
         evt = CreateEvent();
 
-        var task = () => fixture.AppendEvent(stream, evt, new ExpectedStreamVersion(3));
+        var task = () => fixture.AppendEvent(stream, evt, new(3), cancellationToken);
         await task.Should().ThrowAsync<AppendToStreamException>();
     }
 }

@@ -6,6 +6,15 @@ using Testcontainers.EventStoreDb;
 
 namespace Eventuous.Tests.EventStore.Metrics;
 
-[Collection("Database")]
-public class MetricsTests(ITestOutputHelper outputHelper)
-    : MetricsTestsBase<MetricsFixture, EventStoreDbContainer, EventStoreProducer, StreamSubscription, StreamSubscriptionOptions>(outputHelper);
+public class MetricsTests : MetricsTestsBase<MetricsFixture, EventStoreDbContainer, EventStoreProducer, StreamSubscription, StreamSubscriptionOptions> {
+    [Test]
+    public async Task ShouldMeasureSubscriptionGapCount() {
+        await ShouldMeasureSubscriptionGapCountBase();
+    }
+
+    [Before(Test)]
+    public async Task Setup() => await InitializeAsync();
+    
+    [After(Test)]
+    public async Task TearDown() => await DisposeAsync();
+}

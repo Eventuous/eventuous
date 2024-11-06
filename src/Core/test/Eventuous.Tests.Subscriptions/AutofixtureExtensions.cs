@@ -1,11 +1,11 @@
 using Eventuous.Subscriptions.Context;
-using Eventuous.TestHelpers.Logging;
+using Eventuous.TestHelpers.TUnit.Logging;
 
 namespace Eventuous.Tests.Subscriptions;
 
 public static class AutoFixtureExtensions {
-    public static MessageConsumeContext CreateContext(this Fixture auto, ITestOutputHelper output) {
-        var factory = new LoggerFactory().AddXUnit(output);
+    public static MessageConsumeContext CreateContext(this Fixture auto) {
+        var factory = new LoggerFactory().AddTUnit();
         return auto.Build<MessageConsumeContext>().With(x => x.LogContext, () => new("test", factory)).Create();
     }
 }

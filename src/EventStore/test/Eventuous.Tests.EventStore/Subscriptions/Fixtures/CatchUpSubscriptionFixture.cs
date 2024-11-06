@@ -9,17 +9,11 @@ namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
 public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHandler>(
         Action<TSubscriptionOptions> configureOptions,
-        ITestOutputHelper            outputHelper,
         StreamName                   streamName,
         bool                         autoStart         = true,
         Action<IServiceCollection>?  configureServices = null,
         LogLevel                     logLevel          = LogLevel.Debug
-    )
-    : SubscriptionFixtureBase<EventStoreDbContainer, TSubscription, TSubscriptionOptions, TestCheckpointStore, TEventHandler>(
-        outputHelper,
-        autoStart,
-        logLevel
-    )
+    ) : SubscriptionFixtureBase<EventStoreDbContainer, TSubscription, TSubscriptionOptions, TestCheckpointStore, TEventHandler>(autoStart, logLevel)
     where TSubscription : EventStoreCatchUpSubscriptionBase<TSubscriptionOptions>
     where TSubscriptionOptions : CatchUpSubscriptionOptions
     where TEventHandler : class, IEventHandler {
@@ -33,7 +27,7 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
         base.SetupServices(services);
         services.AddEventStoreClient(Container.GetConnectionString());
         services.AddEventStore<EsdbEventStore>();
-        services.AddSingleton(new TestEventHandlerOptions(null, _outputHelper));
+        services.AddSingleton(new TestEventHandlerOptions());
         configureServices?.Invoke(services);
     }
 
@@ -48,7 +42,7 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
 
     public override async Task<ulong> GetLastPosition() {
         return streamName == "$all" ? await GetLastFromAll() : await GetLastFromStream();
-        
+
         async Task<ulong> GetLastFromStream() {
             var lastEvent = await Client.ReadStreamAsync(Direction.Backwards, streamName, StreamPosition.End, 1).ToArrayAsync();
 
@@ -67,8 +61,6 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
         // "EventStore.Client.SharingProvider",
         "Grpc.Net.Client.Internal.GrpcCall"
     ];
-
-    readonly ITestOutputHelper _outputHelper = outputHelper;
 
     static bool Filter(string? provider, string? category, LogLevel logLevel) {
         if (category == null) return true;

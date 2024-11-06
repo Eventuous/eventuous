@@ -14,10 +14,10 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
         var hotEvents = await LoadStreamEvents(hotReader, start, count).NoContext();
 
         var archivedEvents = hotEvents.Length == 0 || hotEvents[0].Position > start.Value
-            ? await LoadStreamEvents(archiveReader, start, count - hotEvents.Length).NoContext()
+            ? await LoadStreamEvents(archiveReader, start, (int)hotEvents[0].Position).NoContext()
             : Enumerable.Empty<StreamEvent>();
 
-        return hotEvents.Concat(archivedEvents.Select(x => x with { FromArchive = true })).Distinct(Comparer).ToArray();
+        return archivedEvents.Select(x => x with { FromArchive = true }).Concat(hotEvents).Distinct(Comparer).ToArray();
 
         async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition startPosition, int localCount) {
             try {

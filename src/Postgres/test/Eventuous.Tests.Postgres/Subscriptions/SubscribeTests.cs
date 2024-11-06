@@ -6,53 +6,48 @@ using Testcontainers.PostgreSql;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
-[Collection("Database")]
-public class SubscribeToAll(ITestOutputHelper outputHelper)
+public class SubscribeToAll()
     : SubscribeToAllBase<PostgreSqlContainer, PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, PostgresCheckpointStore>(
-        outputHelper,
-        new SubscriptionFixture<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, TestEventHandler>(_ => { }, outputHelper, false)
+        new SubscriptionFixture<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, TestEventHandler>(_ => { }, false)
     ) {
-    [Fact]
-    public async Task Postgres_ShouldConsumeProducedEvents() {
-        await ShouldConsumeProducedEvents();
+    [Test]
+    public async Task Postgres_ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEvents(cancellationToken);
     }
 
-    [Fact]
-    public async Task Postgres_ShouldConsumeProducedEventsWhenRestarting() {
-        await ShouldConsumeProducedEventsWhenRestarting();
+    [Test]
+    public async Task Postgres_ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEventsWhenRestarting(cancellationToken);
     }
 
-    [Fact]
-    public async Task Postgres_ShouldUseExistingCheckpoint() {
-        await ShouldUseExistingCheckpoint();
+    [Test]
+    public async Task Postgres_ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
+        await ShouldUseExistingCheckpoint(cancellationToken);
     }
 }
 
-[Collection("Database")]
-public class SubscribeToStream(ITestOutputHelper outputHelper, StreamNameFixture streamNameFixture)
+[ClassDataSource<StreamNameFixture>]
+public class SubscribeToStream(StreamNameFixture streamNameFixture)
     : SubscribeToStreamBase<PostgreSqlContainer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions, PostgresCheckpointStore>(
-            outputHelper,
-            streamNameFixture.StreamName,
-            new SubscriptionFixture<PostgresStreamSubscription, PostgresStreamSubscriptionOptions, TestEventHandler>(
-                opt => ConfigureOptions(opt, streamNameFixture),
-                outputHelper,
-                false
-            )
-        ),
-        IClassFixture<StreamNameFixture> {
-    [Fact]
-    public async Task Postgres_ShouldConsumeProducedEvents() {
-        await ShouldConsumeProducedEvents();
+        streamNameFixture.StreamName,
+        new SubscriptionFixture<PostgresStreamSubscription, PostgresStreamSubscriptionOptions, TestEventHandler>(
+            opt => ConfigureOptions(opt, streamNameFixture),
+            false
+        )
+    ) {
+    [Test]
+    public async Task Postgres_ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEvents(cancellationToken);
     }
 
-    [Fact]
-    public async Task Postgres_ShouldConsumeProducedEventsWhenRestarting() {
-        await ShouldConsumeProducedEventsWhenRestarting();
+    [Test]
+    public async Task Postgres_ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
+        await ShouldConsumeProducedEventsWhenRestarting(cancellationToken);
     }
 
-    [Fact]
-    public async Task Postgres_ShouldUseExistingCheckpoint() {
-        await ShouldUseExistingCheckpoint();
+    [Test]
+    public async Task Postgres_ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
+        await ShouldUseExistingCheckpoint(cancellationToken);
     }
 
     static void ConfigureOptions(PostgresStreamSubscriptionOptions options, StreamNameFixture streamNameFixture) {

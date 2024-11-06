@@ -1,10 +1,11 @@
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Google.Api.Gax;
+using TUnit.Core.Interfaces;
 
 namespace Eventuous.Tests.GooglePubSub;
 
-public class PubSubFixture : IAsyncLifetime {
+public class PubSubFixture : IAsyncInitializer, IAsyncDisposable {
     public static string PubsubProjectId => "test-id";
 
     public static async Task DeleteSubscription(string subscriptionId) {
@@ -23,7 +24,7 @@ public class PubSubFixture : IAsyncLifetime {
 
     IContainer _container = null!;
 
-    public async ValueTask InitializeAsync() {
+    public async Task InitializeAsync() {
         const int port = 8085;
 
         _container = new ContainerBuilder()

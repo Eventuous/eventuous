@@ -5,7 +5,7 @@ using Shouldly;
 namespace Eventuous.Tests.Application;
 
 public abstract partial class ServiceTestBase {
-    [Fact]
+    [Test]
     public async Task Should_execute_on_any_no_stream() {
         var bookRoom = Helpers.GetBookRoom();
 
