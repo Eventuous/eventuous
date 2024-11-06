@@ -1,19 +1,19 @@
+using Eventuous.TestHelpers.TUnit;
 using Microsoft.AspNetCore.Mvc.Testing;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.AspNetCore.BookingApi;
-using static Xunit.TestContext;
 
 namespace Eventuous.Tests.Extensions.AspNetCore;
 
-using TestHelpers;
 using Fixture;
 using static SutBookingCommands;
 
-public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<Program>> {
+[ClassDataSource<WebApplicationFactory<Program>>]
+public class ControllerTests : IDisposable {
     readonly ServerFixture     _fixture;
     readonly TestEventListener _listener;
 
-    public ControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper output) {
+    public ControllerTests(WebApplicationFactory<Program> factory) {
         var commandMap = new CommandMap<HttpContext>()
             .Add<RegisterPaymentHttp, RecordPayment>(
                 (x, ctx) => new(new(x.BookingId), x.PaymentId, new(x.Amount), x.PaidAt) { PaidBy = ctx.User.Identity?.Name }
@@ -21,7 +21,6 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
 
         _fixture = new(
             factory,
-            output,
             services => {
                 services.AddSingleton(commandMap);
                 services.AddControllers();
@@ -32,21 +31,21 @@ public class ControllerTests : IDisposable, IClassFixture<WebApplicationFactory<
             }
         );
 
-        _listener = new(output);
+        _listener = new();
     }
 
-    [Fact]
-    public async Task RecordPaymentUsingMappedCommand() {
+    [Test]
+    public async Task RecordPaymentUsingMappedCommand(CancellationToken cancellationToken) {
         using var client = _fixture.GetClient();
 
         var bookRoom = _fixture.GetBookRoom();
 
-        await client.PostJsonAsync("/book", bookRoom, cancellationToken: Current.CancellationToken);
+        await client.PostJsonAsync("/book", bookRoom, cancellationToken: cancellationToken);
 
         var registerPayment = new RegisterPaymentHttp(bookRoom.BookingId, bookRoom.RoomId, 100, DateTimeOffset.Now);
 
         var request  = new RestRequest("/v2/pay").AddJsonBody(registerPayment);
-        var response = await client.ExecutePostAsync<Result<BookingState>.Ok>(request, cancellationToken: Current.CancellationToken);
+        var response = await client.ExecutePostAsync<Result<BookingState>.Ok>(request, cancellationToken: cancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var expected = new BookingEvents.BookingFullyPaid(registerPayment.PaidAt);

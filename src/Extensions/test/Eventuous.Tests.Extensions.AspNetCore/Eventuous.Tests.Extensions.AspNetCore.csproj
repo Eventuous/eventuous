@@ -6,7 +6,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
-        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.XUnit\Eventuous.TestHelpers.XUnit.csproj" />
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj"/>
     </ItemGroup>
     <ItemGroup>
@@ -14,7 +14,7 @@
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="RestSharp"/>
         <PackageReference Include="Verify.DiffPlex"/>
-        <PackageReference Include="Verify.XunitV3"/>
+        <PackageReference Include="Verify.TUnit" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="Eventuous.Sut.AspNetCore"/>

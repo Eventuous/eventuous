@@ -3,7 +3,7 @@
 
 using System.Text.Json;
 using Eventuous.TestHelpers;
-using Eventuous.TestHelpers.Logging;
+using Eventuous.TestHelpers.TUnit.Logging;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RestSharp.Serializers.Json;
 
@@ -16,7 +16,6 @@ public class ServerFixture {
 
     public ServerFixture(
             WebApplicationFactory<Program> factory,
-            ITestOutputHelper              output,
             Action<IServiceCollection>?    register  = null,
             ConfigureWebApplication?       configure = null
         ) {
@@ -30,7 +29,7 @@ public class ServerFixture {
                                 if (configure != null) services.AddSingleton(configure);
                             }
                         )
-                        .ConfigureLogging(x => x.AddXUnit(output).AddConsole().SetMinimumLevel(LogLevel.Debug));
+                        .ConfigureLogging(x => x.AddTUnit().AddConsole().SetMinimumLevel(LogLevel.Debug));
                 }
             );
         builder.Server.PreserveExecutionContext = false;

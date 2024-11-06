@@ -6,11 +6,9 @@ using Fixture;
 using static SutBookingCommands;
 using static Fixture.TestCommands;
 
-public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFactory<Program> factory)
-    : TestBaseWithLogs(output), IClassFixture<WebApplicationFactory<Program>> {
-    readonly ITestOutputHelper _output = output;
-
-    [Fact]
+[ClassDataSource<WebApplicationFactory<Program>>]
+public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs() {
+    [Test]
     public void RegisterAggregateCommands() {
         var builder = WebApplication.CreateBuilder();
 
@@ -21,7 +19,7 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         b.DataSources.First().Endpoints[0].DisplayName.Should().Be("HTTP: POST book");
     }
 
-    [Fact]
+    [Test]
     public void RegisterAggregatesCommands() {
         var builder = WebApplication.CreateBuilder();
 
@@ -32,11 +30,10 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         b.DataSources.First().Endpoints[0].DisplayName.Should().Be("HTTP: POST nested-book");
     }
 
-    [Fact]
+    [Test]
     public void MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
         var act = () => new ServerFixture(
             factory,
-            _output,
             _ => { },
             app => app
                 .MapCommands<BookingState>()
@@ -46,12 +43,10 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         act.Should().Throw<InvalidOperationException>();
     }
 
-
-    [Fact]
+    [Test]
     public async Task MapAggregateContractToCommandExplicitly() {
         var fixture = new ServerFixture(
             factory,
-            _output,
             _ => { },
             app => app
                 .MapCommands<BookingState>()
@@ -61,11 +56,10 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         await Execute(fixture, ImportRoute);
     }
 
-    [Fact]
+    [Test]
     public async Task MapAggregateContractToCommandExplicitlyWithoutRoute() {
         var fixture = new ServerFixture(
             factory,
-            _output,
             _ => { },
             app => app
                 .MapCommands<BookingState>()
@@ -75,11 +69,10 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         await Execute(fixture, Import1Route);
     }
 
-    [Fact]
+    [Test]
     public async Task MapAggregateContractToCommandExplicitlyWithoutRouteWithGenericAttr() {
         var fixture = new ServerFixture(
             factory,
-            _output,
             _ => { },
             app => app
                 .MapCommands<BookingState>()
@@ -89,17 +82,16 @@ public class AggregateCommandsTests(ITestOutputHelper output, WebApplicationFact
         await Execute(fixture, Import2Route);
     }
 
-    [Fact]
+    [Test]
     public async Task MapEnrichedCommand() {
         var fixture = new ServerFixture(
             factory,
-            _output,
             _ => { },
             app => app
                 .MapCommands<BookingState>()
                 .MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
         );
-        var cmd      = fixture.GetBookRoom();
+        var cmd     = fixture.GetBookRoom();
         var content = await fixture.ExecuteRequest<BookRoom, BookingState>(cmd, "book", cmd.BookingId);
         await VerifyJson(content);
     }

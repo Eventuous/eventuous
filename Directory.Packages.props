@@ -50,11 +50,6 @@
         <PackageVersion Include="Polly" Version="8.4.2"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageVersion Include="StackExchange.Redis" Version="2.8.16"/>
-        <PackageVersion Include="TUnit" Version="0.2.187"/>
-        <PackageVersion Include="TUnit.Core" Version="0.2.187"/>
-        <PackageVersion Include="TUnit.Assertions" Version="0.2.187"/>
-        <PackageVersion Include="xunit.v3.assert" Version="0.4.0-pre.20"/>
-        <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.4.1"/>
     </ItemGroup>
     <ItemGroup Label="Testcontainers">
         <PackageVersion Include="Testcontainers" Version="$(TestcontainersVersion)"/>
@@ -85,10 +80,12 @@
         <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.2.0"/>
         <PackageVersion Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0"/>
         <PackageVersion Include="MongoDb.Bson.NodaTime" Version="3.0.0"/>
-        <PackageVersion Include="Verify.XunitV3" Version="27.0.1"/>
         <PackageVersion Include="Verify.DiffPlex" Version="3.1.2"/>
-        <PackageVersion Include="xunit.v3" Version="0.4.0-pre.20"/>
-        <PackageVersion Include="xunit.v3.extensibility.core" Version="0.4.0-pre.20"/>
+        <PackageVersion Include="TUnit" Version="0.2.187"/>
+        <PackageVersion Include="TUnit.Core" Version="0.2.187"/>
+        <PackageVersion Include="TUnit.Assertions" Version="0.2.187"/>
+        <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.4.1"/>
+        <PackageVersion Include="Verify.TUnit" Version="28.1.3"/>
     </ItemGroup>
     <ItemGroup Label="Packages for samples">
         <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="1.5.0"/>

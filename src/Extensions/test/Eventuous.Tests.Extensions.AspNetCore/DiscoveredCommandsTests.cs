@@ -6,15 +6,12 @@ namespace Eventuous.Tests.Extensions.AspNetCore;
 using static SutBookingCommands;
 using Fixture;
 
-public class DiscoveredCommandsTests(ITestOutputHelper output, WebApplicationFactory<Program> factory)
-    : TestBaseWithLogs(output), IClassFixture<WebApplicationFactory<Program>> {
-    readonly ITestOutputHelper _output = output;
-
-    [Fact]
+[ClassDataSource<WebApplicationFactory<Program>>]
+public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs() {
+    [Test]
     public async Task CallDiscoveredCommandRoute() {
         var fixture = new ServerFixture(
             factory,
-            _output,
             _ => { },
             app => app.MapDiscoveredCommands(typeof(NestedCommands).Assembly)
         );
