@@ -30,8 +30,8 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            '8.0.X'
-            '9.0.X'
+            '8.0.x'
+            '9.0.x'
           dotnet-quality: 'preview'
       -  
         name: Build
