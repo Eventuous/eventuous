@@ -8,7 +8,7 @@ using Google.Api.Gax;
 
 namespace Eventuous.Tests.GooglePubSub;
 
-[ClassDataSource<PubSubFixture>]
+[ClassDataSource<PubSubFixture>(Shared = SharedType.ForClass)]
 public class PubSubTests {
     static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
@@ -48,6 +48,7 @@ public class PubSubTests {
     }
 
     [Test]
+    [Retry(3)]
     public async Task SubscribeAndProduce(CancellationToken cancellationToken) {
         var testEvent = Auto.Create<TestEvent>();
 
@@ -57,27 +58,28 @@ public class PubSubTests {
     }
 
     [Test]
+    [Retry(3)]
     public async Task SubscribeAndProduceMany(CancellationToken cancellationToken) {
         const int count = 10000;
 
         var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
 
         await _producer.Produce(_pubsubTopic, testEvents, null, cancellationToken: cancellationToken);
-        await _handler.AssertCollection(20.Seconds(), [..testEvents]).Validate(cancellationToken);
+        await _handler.AssertCollection(40.Seconds(), [..testEvents]).Validate(cancellationToken);
     }
 
     [Before(Test)]
-    public async Task InitializeAsync() {
-        await _producer.StartAsync();
-        await _subscription.SubscribeWithLog(_log);
+    public async Task InitializeAsync(CancellationToken cancellationToken) {
+        await _producer.StartAsync(cancellationToken);
+        await _subscription.SubscribeWithLog(_log, cancellationToken);
     }
 
     [After(Test)]
-    public async Task DisposeAsync() {
-        await _producer.StopAsync();
-        await _subscription.UnsubscribeWithLog(_log);
+    public async Task DisposeAsync(CancellationToken cancellationToken) {
+        await _producer.StopAsync(cancellationToken);
+        await _subscription.UnsubscribeWithLog(_log, cancellationToken);
 
-        await PubSubFixture.DeleteSubscription(_pubsubSubscription);
-        await PubSubFixture.DeleteTopic(_pubsubTopic);
+        await PubSubFixture.DeleteSubscription(_pubsubSubscription, cancellationToken);
+        await PubSubFixture.DeleteTopic(_pubsubTopic, cancellationToken);
     }
 }

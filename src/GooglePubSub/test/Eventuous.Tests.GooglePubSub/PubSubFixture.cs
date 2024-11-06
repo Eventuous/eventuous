@@ -8,16 +8,16 @@ namespace Eventuous.Tests.GooglePubSub;
 public class PubSubFixture : IAsyncInitializer, IAsyncDisposable {
     public static string PubsubProjectId => "test-id";
 
-    public static async Task DeleteSubscription(string subscriptionId) {
+    public static async Task DeleteSubscription(string subscriptionId, CancellationToken cancellationToken) {
         var builder          = new SubscriberServiceApiClientBuilder { EmulatorDetection = EmulatorDetection.EmulatorOnly };
-        var subscriber       = await builder.BuildAsync();
+        var subscriber       = await builder.BuildAsync(cancellationToken);
         var subscriptionName = SubscriptionName.FromProjectSubscription(PubsubProjectId, subscriptionId);
         await subscriber.DeleteSubscriptionAsync(subscriptionName);
     }
 
-    public static async Task DeleteTopic(string topicId) {
+    public static async Task DeleteTopic(string topicId, CancellationToken cancellationToken) {
         var builder   = new PublisherServiceApiClientBuilder { EmulatorDetection = EmulatorDetection.EmulatorOnly };
-        var publisher = await builder.BuildAsync();
+        var publisher = await builder.BuildAsync(cancellationToken);
         var topicName = TopicName.FromProjectTopic(PubsubProjectId, topicId);
         await publisher.DeleteTopicAsync(topicName);
     }

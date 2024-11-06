@@ -39,12 +39,11 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     /// <param name="options">Producer options</param>
     /// <param name="serializer">Optional event serializer. Will use the default instance if missing.</param>
     /// <param name="log">Optional logger instance</param>
-    public GooglePubSubProducer(PubSubProducerOptions options, IEventSerializer? serializer = null, ILogger<GooglePubSubProducer>? log = null)
-        : base(TracingOptions) {
+    public GooglePubSubProducer(PubSubProducerOptions options, IEventSerializer? serializer = null, ILogger<GooglePubSubProducer>? log = null) : base(TracingOptions) {
         Ensure.NotNull(options);
 
         _serializer  = serializer ?? DefaultEventSerializer.Instance;
-        _clientCache = new ClientCache(options, log);
+        _clientCache = new(options, log);
         _attributes  = options.Attributes;
         _log         = log;
     }
