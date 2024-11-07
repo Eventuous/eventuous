@@ -1,5 +1,3 @@
-// using EventStore.Client;
-
 using Eventuous.Diagnostics.Logging;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Context;

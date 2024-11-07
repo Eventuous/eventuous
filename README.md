@@ -50,5 +50,5 @@ For development and production support, get in touch with [Ubiquitous](https://u
 ## Other things
 
 Licence: Apache 2.0
-Copyright © Ubiquitous AS
+Copyright © Eventuous HQ OÜ
 All rights reserved

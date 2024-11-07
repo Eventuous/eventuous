@@ -46,7 +46,7 @@
         <RepositoryType>git</RepositoryType>
         <Description>Production-grade Event Sourcing library</Description>
         <Authors>Alexey Zimarev and Eventuous community</Authors>
-        <Copyright>Ubiquitous AS</Copyright>
+        <Copyright>Eventuous HQ OÜ</Copyright>
         <PackageProjectUrl>https://eventuous.dev</PackageProjectUrl>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>

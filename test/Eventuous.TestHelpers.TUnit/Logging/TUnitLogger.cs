@@ -1,30 +1,13 @@
-// Copyright (C) Ubiquitous AS.All rights reserved
-// Licensed under the Apache License, Version 2.0.
-
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Eventuous.TestHelpers.TUnit.Logging;
 
-public sealed class TUnitLog<T>(LoggerExternalScopeProvider scopeProvider) : TUnitLog(scopeProvider, typeof(T).FullName), Microsoft.Extensions.Logging.ILogger<T>;
-
-public class TUnitLog : ILogger {
-    private readonly string?                     _categoryName;
-    private readonly LoggerExternalScopeProvider _scopeProvider;
-
-    public static ILogger CreateLogger() => new TUnitLog(new(), "");
-
-    public static Microsoft.Extensions.Logging.ILogger<T> CreateLogger<T>() => new TUnitLog<T>(new());
-
-    public TUnitLog(LoggerExternalScopeProvider scopeProvider, string? categoryName) {
-        _scopeProvider    = scopeProvider;
-        _categoryName     = categoryName;
-    }
-
+public class TUnitLog(LoggerExternalScopeProvider scopeProvider) : ILogger {
     public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _scopeProvider.Push(state);
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => scopeProvider.Push(state);
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
         if (TestContext.Current == null) return;

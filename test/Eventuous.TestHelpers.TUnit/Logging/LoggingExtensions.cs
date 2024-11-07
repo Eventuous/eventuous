@@ -27,7 +27,7 @@ public static class LoggingExtensions {
 public sealed class TUnitLoggerProvider() : ILoggerProvider {
     private readonly LoggerExternalScopeProvider _scopeProvider = new();
 
-    public ILogger CreateLogger(string categoryName) => new TUnitLog(_scopeProvider, categoryName);
+    public ILogger CreateLogger(string categoryName) => new TUnitLog(_scopeProvider);
 
     public void Dispose() { }
 }
