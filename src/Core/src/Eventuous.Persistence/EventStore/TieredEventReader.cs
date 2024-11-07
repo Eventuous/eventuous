@@ -17,7 +17,7 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
             ? await LoadStreamEvents(archiveReader, start, count - hotEvents.Length).NoContext()
             : Enumerable.Empty<StreamEvent>();
 
-        return hotEvents.Concat(archivedEvents.Select(x => x with { FromArchive = true })).Distinct(Comparer).ToArray();
+        return archivedEvents.Select(x => x with { FromArchive = true }).Concat(hotEvents).Distinct(Comparer).ToArray();
 
         async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition startPosition, int localCount) {
             try {
