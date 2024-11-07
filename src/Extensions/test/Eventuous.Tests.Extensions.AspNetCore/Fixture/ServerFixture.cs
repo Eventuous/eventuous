@@ -29,7 +29,7 @@ public class ServerFixture {
                                 if (configure != null) services.AddSingleton(configure);
                             }
                         )
-                        .ConfigureLogging(x => x.AddTUnit().AddConsole().SetMinimumLevel(LogLevel.Debug));
+                        .ConfigureLogging(x => x.ForTests());
                 }
             );
         builder.Server.PreserveExecutionContext = false;

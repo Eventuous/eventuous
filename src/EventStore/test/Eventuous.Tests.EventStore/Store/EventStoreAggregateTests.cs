@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
-using Eventuous.TestHelpers.TUnit.Logging;
 using JetBrains.Annotations;
 using static Eventuous.AggregateFactoryRegistry;
+using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 
 namespace Eventuous.Tests.EventStore.Store;
 
@@ -14,7 +14,7 @@ public class EventStoreAggregateTests {
     public EventStoreAggregateTests(StoreFixture fixture) {
         _fixture = fixture;
         _fixture.TypeMapper.AddType<TestEvent>("testEvent");
-        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddTUnit().SetMinimumLevel(LogLevel.Debug));
+        _loggerFactory = LoggingExtensions.GetLoggerFactory();
         _log           = _loggerFactory.CreateLogger<AggregateStoreTests>();
     }
 

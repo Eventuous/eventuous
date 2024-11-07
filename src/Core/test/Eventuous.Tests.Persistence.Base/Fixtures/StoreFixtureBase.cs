@@ -7,7 +7,6 @@ using Eventuous.TestHelpers.TUnit.Logging;
 using MicroElements.AutoFixture.NodaTime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using TUnit.Core.Interfaces;
 
 namespace Eventuous.Tests.Persistence.Base.Fixtures;
@@ -28,7 +27,7 @@ public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, I
 
         var services = new ServiceCollection();
 
-        services.AddLogging(cfg => cfg.AddTUnit().SetMinimumLevel(LogLevel.Debug));
+        services.AddLogging(cfg => cfg.ForTests());
 
         Serializer = new DefaultEventSerializer(TestPrimitives.DefaultOptions, TypeMapper);
         services.AddSingleton(Serializer);

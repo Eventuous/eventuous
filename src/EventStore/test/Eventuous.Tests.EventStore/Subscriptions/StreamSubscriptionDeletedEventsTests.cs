@@ -6,8 +6,8 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
-using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.Subscriptions.Base;
+using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
@@ -19,7 +19,7 @@ public sealed class StreamSubscriptionDeletedEventsTests {
 
     public StreamSubscriptionDeletedEventsTests() {
         _fixture       = new();
-        _loggerFactory = LoggerFactory.Create(cfg => cfg.AddTUnit().AddConsole().SetMinimumLevel(LogLevel.Debug));
+        _loggerFactory = LoggingExtensions.GetLoggerFactory();
         _listener      = new(_loggerFactory);
         _fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
     }

@@ -15,10 +15,8 @@ public abstract class ProjectionTestBase {
     readonly  IHostBuilder _builder;
 
     protected ProjectionTestBase(string id) {
-        _id = id;
-
-        _builder = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
-            .ConfigureLogging(cfg => cfg.AddTUnit().SetMinimumLevel(LogLevel.Trace));
+        _id      = id;
+        _builder = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().ConfigureLogging(cfg => cfg.ForTests());
     }
 
     protected abstract void ConfigureServices(IServiceCollection services, string id);
@@ -26,7 +24,6 @@ public abstract class ProjectionTestBase {
     [Before(Test)]
     public async Task InitializeAsync() {
         _builder.ConfigureServices(collection => ConfigureServices(collection, _id));
-
         Host = _builder.Build();
         Host.Services.AddEventuousLogs();
         await Host.StartAsync();

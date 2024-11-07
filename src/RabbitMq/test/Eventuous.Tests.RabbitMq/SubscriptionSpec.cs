@@ -27,9 +27,8 @@ public class SubscriptionSpec {
         _fixture       = fixture;
         _es            = new();
         _exchange      = new(Auto.Create<string>());
-        _loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddTUnit());
-
-        _log = _loggerFactory.CreateLogger<SubscriptionSpec>();
+        _loggerFactory = LoggingExtensions.GetLoggerFactory();
+        _log           = _loggerFactory.CreateLogger<SubscriptionSpec>();
     }
 
     [Test]

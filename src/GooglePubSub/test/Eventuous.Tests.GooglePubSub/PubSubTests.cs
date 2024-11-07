@@ -23,7 +23,7 @@ public class PubSubTests {
 
     // ReSharper disable once UnusedParameter.Local
     public PubSubTests(PubSubFixture _) {
-        var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug).AddTUnit());
+        var loggerFactory = LoggingExtensions.GetLoggerFactory();
 
         _log                = loggerFactory.CreateLogger<PubSubTests>();
         _pubsubTopic        = new($"test-{Guid.NewGuid():N}");
