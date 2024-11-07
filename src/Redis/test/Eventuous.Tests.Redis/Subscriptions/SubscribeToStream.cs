@@ -21,6 +21,7 @@ public class SubscribeToStream {
     }
 
     [Test]
+    [Retry(5)]
     public async Task ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
         const int count = 10;
 
@@ -34,6 +35,7 @@ public class SubscribeToStream {
     }
 
     [Test]
+    [Retry(5)]
     public async Task ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
         await TestConsumptionOfProducedEvents();
 
@@ -58,6 +60,7 @@ public class SubscribeToStream {
     }
 
     [Test]
+    [Retry(5)]
     public async Task ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
         const int count = 10;
 

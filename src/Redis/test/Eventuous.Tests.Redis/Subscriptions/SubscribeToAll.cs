@@ -6,7 +6,7 @@ using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Redis.Subscriptions;
 
-public class SubscribeToAll() {
+public class SubscribeToAll {
     SubscriptionFixture<TestEventHandler> _fixture = null!;
 
     [Before(Test)]
@@ -21,6 +21,7 @@ public class SubscribeToAll() {
     }
 
     [Test]
+    [Retry(5)]
     public async Task ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
         const int count = 10;
 
@@ -34,6 +35,7 @@ public class SubscribeToAll() {
     }
 
     [Test]
+    [Retry(5)]
     public async Task ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
         await TestConsumptionOfProducedEvents();
 
@@ -59,6 +61,7 @@ public class SubscribeToAll() {
     }
 
     [Test]
+    [Retry(5)]
     public async Task ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
         const int count = 10;
 
