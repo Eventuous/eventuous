@@ -84,7 +84,7 @@ Registering a global log subscription is similar to [EventStoreDB](../esdb/index
 ```csharp titlle="Program.cs"
 builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions>(
     "BookingsProjections",
-    builder => builder
+    b => b
         .AddEventHandler<BookingStateProjection>()
         .AddEventHandler<MyBookingsProjection>();
 );
@@ -95,7 +95,7 @@ When you register a subscription to a single stream, you need to configure the s
 ```csharp titlle="Program.cs"
 builder.Services.AddSubscription<PostgresStreamSubscription, PostgresStreamSubscriptionOptions>(
     "StreamSubscription",
-    builder => builder
+    b => b
         .Configure(x => x.StreamName = "my-stream")
         .AddEventHandler<StreamSubscriptionHander>()
 );
@@ -163,7 +163,7 @@ You can then register the projector as a subscription handler:
 ```csharp titlle="Program.cs"
 builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions>(
     "ImportedBookingsProjections",
-    builder => builder
+    b => b
         .UseCheckpointStore<PostgresCheckpointStore>()
         .AddEventHandler<ImportingBookingsProjector>();
 );

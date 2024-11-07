@@ -50,19 +50,18 @@ Eventuous allows you to consume messages from Google Pub/Sub, which are publishe
 Normally, you'd add the subscription to the service collection using `AddSubscription` extension method, as any other Eventuous subscription.
 
 ```csharp
-services
-    .AddSubscription<GooglePubSubSubscription, PubSubSubscriptionOptions>(
-        "pubsub-subscription",
-        builder => builder
-            .Configure(
-                x => {
-                    x.ProjectId          = "my-gcp-project";
-                    x.TopicId            = "my-topic";
-                    x.CreateSubscription = true;
-                }
-            )
-            .AddEventHandler<TestHandler>()
-    );
+builder.Services.AddSubscription<GooglePubSubSubscription, PubSubSubscriptionOptions>(
+    "pubsub-subscription",
+    b => b
+        .Configure(
+            x => {
+                x.ProjectId          = "my-gcp-project";
+                x.TopicId            = "my-topic";
+                x.CreateSubscription = true;
+            }
+        )
+        .AddEventHandler<TestHandler>()
+);
 ```
 
 Similarly to the producer, the Eventuous subscription can create a Pub/Sub subscription if it does not exist. Creating a subscription is a one-time operation, so you can set this option to `false` after the subscription is created. Often, you would have a separate process that creates topics and subscriptions, so the `CreateSubscription` option is set to `false` by default. 
