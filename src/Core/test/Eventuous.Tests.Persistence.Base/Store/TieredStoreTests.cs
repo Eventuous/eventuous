@@ -23,8 +23,8 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
         var actual = loaded.Select(x => (TestEventForTiers)x.Payload!).ToArray();
         actual.Should().BeEquivalentTo(testEvents);
 
-        loaded.Take(50).Select(x => x.FromArchive).Should().AllSatisfy(x => x.Should().BeFalse());
-        loaded.Skip(50).Select(x => x.FromArchive).Should().AllSatisfy(x => x.Should().BeTrue());
+        loaded.Take(50).Select(x => x.FromArchive).Should().AllSatisfy(x => x.Should().BeTrue());
+        loaded.Skip(50).Select(x => x.FromArchive).Should().AllSatisfy(x => x.Should().BeFalse());
     }
 
     readonly Fixture                      _fixture = new();
