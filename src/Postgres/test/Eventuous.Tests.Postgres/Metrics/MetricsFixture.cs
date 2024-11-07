@@ -8,8 +8,7 @@ using Testcontainers.PostgreSql;
 
 namespace Eventuous.Tests.Postgres.Metrics;
 
-public class MetricsFixture
-    : MetricsSubscriptionFixtureBase<PostgreSqlContainer, UniversalProducer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions> {
+public class MetricsFixture : MetricsSubscriptionFixtureBase<PostgreSqlContainer, UniversalProducer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions> {
     readonly string _schemaName = GetSchemaName();
 
     protected override PostgreSqlContainer CreateContainer() => PostgresContainer.Create();

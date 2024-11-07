@@ -1,3 +1,5 @@
+using Eventuous.Tests.Persistence.Base.Fixtures;
+
 namespace Eventuous.Tests.Subscriptions.Base;
 
 public abstract class SubscriptionTestBase(IStartableFixture fixture) {

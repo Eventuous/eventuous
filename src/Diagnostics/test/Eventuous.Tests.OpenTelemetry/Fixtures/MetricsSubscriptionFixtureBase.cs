@@ -8,13 +8,25 @@ using Microsoft.Extensions.Hosting;
 
 namespace Eventuous.Tests.OpenTelemetry.Fixtures;
 
-public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSubscription, TSubscriptionOptions> : StoreFixtureBase<TContainer>
+public interface IMetricsSubscriptionFixtureBase {
+    StreamName     Stream          { get; }
+    MessageCounter Counter         { get; }
+    TestExporter   Exporter        { get; }
+    int            Count           { get; }
+    public string  DefaultTagKey   { get; }
+    public string  DefaultTagValue { get; }
+    string         SubscriptionId  { get; }
+    IProducer      Producer        { get; }
+    IFixture       Auto            { get; }
+}
+
+public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSubscription, TSubscriptionOptions> : StoreFixtureBase<TContainer>, IMetricsSubscriptionFixtureBase
     where TContainer : DockerContainer
     where TProducer : class, IProducer
     where TSubscription : EventSubscriptionWithCheckpoint<TSubscriptionOptions>, IMeasuredSubscription
     where TSubscriptionOptions : SubscriptionWithCheckpointOptions {
     // ReSharper disable once ConvertToConstant.Global
-    public readonly int Count = 100;
+    public int Count => 100;
 
     // ReSharper disable once StaticMemberInGenericType
     static readonly KeyValuePair<string, string> DefaultTag = new("test", "foo");
@@ -32,7 +44,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     public string     DefaultTagValue => DefaultTag.Value;
 
     // ReSharper disable once ConvertToConstant.Global
-    public readonly string SubscriptionId = "test-sub";
+    public string SubscriptionId => "test-sub";
 
     TestListener? _listener;
 
@@ -61,7 +73,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
         Counter  = provider.GetRequiredService<MessageCounter>();
     }
 
-    public TProducer      Producer { get; private set; } = null!;
+    public IProducer      Producer { get; private set; } = null!;
     public MessageCounter Counter  { get; private set; } = null!;
     public TestExporter   Exporter { get; }              = new();
 

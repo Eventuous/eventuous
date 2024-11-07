@@ -7,13 +7,10 @@ using Eventuous.Tests.Persistence.Base.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using TUnit.Core.Interfaces;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Eventuous.Tests.Subscriptions.Base;
-
-public interface IStartableFixture : IAsyncInitializer, IAsyncDisposable;
 
 public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TEventHandler>
     : StoreFixtureBase<TContainer>, IStartableFixture

@@ -11,6 +11,8 @@ using TUnit.Core.Interfaces;
 
 namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
+public interface IStartableFixture : IAsyncInitializer, IAsyncDisposable;
+
 public abstract class StoreFixtureBase {
     public           IEventStore     EventStore { get; protected private set; } = null!;
     public           IFixture        Auto       { get; }                        = new Fixture().Customize(new NodaTimeCustomization());
@@ -20,7 +22,7 @@ public abstract class StoreFixtureBase {
     public           TypeMapper      TypeMapper { get; }                        = new();
 }
 
-public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, IAsyncInitializer, IAsyncDisposable where TContainer : DockerContainer {
+public abstract partial class StoreFixtureBase<TContainer> : StoreFixtureBase, IStartableFixture where TContainer : DockerContainer {
     public virtual async Task InitializeAsync() {
         Container = CreateContainer();
         await Container.StartAsync();
