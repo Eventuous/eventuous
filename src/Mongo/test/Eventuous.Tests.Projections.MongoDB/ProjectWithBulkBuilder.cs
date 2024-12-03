@@ -11,6 +11,7 @@ namespace Eventuous.Tests.Projections.MongoDB;
 public class ProjectWithBulkBuilder(IntegrationFixture fixture) : ProjectionTestBase<ProjectWithBulkBuilder.SutBulkProjection>(nameof(ProjectWithBulkBuilder), fixture) {
     [Test]
     public async Task ShouldProjectImported() {
+        await InitializeAsync();
         var evt    = DomainFixture.CreateImportBooking();
         var id     = new BookingId(CreateId());
         var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
@@ -32,6 +33,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture) : ProjectionTest
         var payment = new BookingPaymentRegistered(Fixture.Auto.Create<string>(), evt.Price);
 
         var second = await Act(stream, payment);
+        await DisposeAsync();
 
         expected = expected with {
             PaidAmount = payment.AmountPaid,

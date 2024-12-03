@@ -11,17 +11,23 @@ namespace Eventuous.Projections.MongoDB;
 using Tools;
 
 [Obsolete("Use MongoProjector instead")]
-public abstract class MongoProjection<T>(IMongoDatabase database, ITypeMapper? typeMap = null) : MongoProjector<T>(database, typeMap)
+public abstract class MongoProjection<T>(IMongoDatabase database, ITypeMapper? typeMap = null) : MongoProjector<T>(database, null, typeMap)
     where T : ProjectedDocument;
+
+public record MongoProjectionOptions<T> where T : Document {
+    public string CollectionName { get; set; } = MongoCollectionName.For<T>();
+}
 
 /// <summary>
 /// Base class for MongoDB projectors. Specify your event handlers in the constructor using <code>On</code> methods family.
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [UsedImplicitly]
-public abstract class MongoProjector<T>(IMongoDatabase database, ITypeMapper? typeMap = null) : BaseEventHandler where T : ProjectedDocument {
+public abstract class MongoProjector<T>(IMongoDatabase database, MongoProjectionOptions<T>? options = null, ITypeMapper? typeMap = null)
+    : BaseEventHandler where T : ProjectedDocument {
     [PublicAPI]
-    protected IMongoCollection<T> Collection { get; } = Ensure.NotNull<IMongoDatabase>(database).GetDocumentCollection<T>();
+    protected IMongoCollection<T> Collection { get; } =
+        options != null ? Ensure.NotNull(database).GetCollection<T>(options?.CollectionName) : Ensure.NotNull<IMongoDatabase>(database).GetDocumentCollection<T>();
 
     readonly Dictionary<Type, ProjectUntypedEvent> _handlers = new();
     readonly ITypeMapper                           _map      = typeMap ?? TypeMap.Instance;
