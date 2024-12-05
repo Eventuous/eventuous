@@ -56,7 +56,7 @@
     <PackageVersion Include="Testcontainers.PostgreSql" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.RabbitMq" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.Redis" Version="$(TestcontainersVersion)" />
-    <PackageVersion Include="Testcontainers.MySql" Version="$(TestcontainersVersion)" />
+    <PackageVersion Include="Testcontainers.MsSql" Version="$(TestcontainersVersion)" />
   </ItemGroup>
   <ItemGroup Label="References for packable projects">
     <PackageVersion Include="MinVer" Version="6.0.0" PrivateAssets="All" />
