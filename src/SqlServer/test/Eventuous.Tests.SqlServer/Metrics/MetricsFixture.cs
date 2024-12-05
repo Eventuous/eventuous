@@ -4,15 +4,15 @@ using Eventuous.SqlServer.Subscriptions;
 using Eventuous.Tests.OpenTelemetry.Fixtures;
 using Eventuous.Tests.SqlServer.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.SqlEdge;
+using Testcontainers.MsSql;
 
 namespace Eventuous.Tests.SqlServer.Metrics;
 
 public class MetricsFixture
-    : MetricsSubscriptionFixtureBase<SqlEdgeContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions> {
+    : MetricsSubscriptionFixtureBase<MsSqlContainer, UniversalProducer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions> {
     readonly string _schemaName = GetSchemaName();
 
-    protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();
+    protected override MsSqlContainer CreateContainer() => SqlContainer.Create();
 
     protected override void ConfigureSubscription(SqlServerStreamSubscriptionOptions options) {
         options.Schema           = _schemaName;

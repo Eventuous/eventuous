@@ -8,7 +8,7 @@ using Google.Api.Gax;
 
 namespace Eventuous.Tests.GooglePubSub;
 
-[ClassDataSource<PubSubFixture>(Shared = SharedType.ForClass)]
+[ClassDataSource<PubSubFixture>(Shared = SharedType.PerClass)]
 public class PubSubTests {
     static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 

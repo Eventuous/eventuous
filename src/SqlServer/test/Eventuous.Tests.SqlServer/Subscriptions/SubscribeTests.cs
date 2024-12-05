@@ -1,13 +1,13 @@
 using Eventuous.SqlServer.Subscriptions;
 using Eventuous.Tests.Subscriptions.Base;
-using Testcontainers.SqlEdge;
+using Testcontainers.MsSql;
 
 // ReSharper disable UnusedType.Global
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 
 public class SubscribeToAll()
-    : SubscribeToAllBase<SqlEdgeContainer, SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, SqlServerCheckpointStore>(
+    : SubscribeToAllBase<MsSqlContainer, SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, SqlServerCheckpointStore>(
         new SubscriptionFixture<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, TestEventHandler>(_ => { }, false)
     ) {
     [Test]
@@ -28,7 +28,7 @@ public class SubscribeToAll()
 
 [ClassDataSource<StreamNameFixture>(Shared = SharedType.None)]
 public class SubscribeToStream(StreamNameFixture streamNameFixture)
-    : SubscribeToStreamBase<SqlEdgeContainer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, SqlServerCheckpointStore>(
+    : SubscribeToStreamBase<MsSqlContainer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, SqlServerCheckpointStore>(
         streamNameFixture.StreamName,
         new SubscriptionFixture<SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, TestEventHandler>(
             opt => ConfigureOptions(opt, streamNameFixture),

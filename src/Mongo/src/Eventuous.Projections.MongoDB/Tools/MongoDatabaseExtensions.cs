@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Linq.Expressions;
-using MongoDB.Driver.Linq;
 
 namespace Eventuous.Projections.MongoDB.Tools;
 
@@ -278,14 +277,14 @@ public static class MongoDatabaseExtensions {
     ) where T : Document
         => database.GetDocumentCollection<T>(collectionName).DeleteManyDocuments(filter, cancellationToken);
 
-    public static IMongoQueryable<T> AsQueryable<T>(this IMongoDatabase database, MongoCollectionName collectionName, Action<AggregateOptions>? configure = null)
+    public static IQueryable<T> AsQueryable<T>(this IMongoDatabase database, MongoCollectionName collectionName, Action<AggregateOptions>? configure = null)
         where T : Document {
         var options = new AggregateOptions();
         configure?.Invoke(options);
         return database.GetDocumentCollection<T>(collectionName).AsQueryable(options);
     }
 
-    public static IMongoQueryable<T> AsQueryable<T>(this IMongoDatabase database, Action<AggregateOptions>? configure = null) where T : Document {
+    public static IQueryable<T> AsQueryable<T>(this IMongoDatabase database, Action<AggregateOptions>? configure = null) where T : Document {
         var options = new AggregateOptions();
         configure?.Invoke(options);
         return database.GetDocumentCollection<T>().AsQueryable(options);

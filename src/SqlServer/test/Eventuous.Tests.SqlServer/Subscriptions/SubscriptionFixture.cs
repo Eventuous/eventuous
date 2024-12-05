@@ -5,7 +5,7 @@ using Eventuous.Subscriptions;
 using Eventuous.Tests.SqlServer.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.SqlEdge;
+using Testcontainers.MsSql;
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 
@@ -15,7 +15,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         Action<IServiceCollection>?  configureServices = null,
         LogLevel                     logLevel          = LogLevel.Debug
     )
-    : SubscriptionFixtureBase<SqlEdgeContainer, TSubscription, TSubscriptionOptions, SqlServerCheckpointStore, TEventHandler>(
+    : SubscriptionFixtureBase<MsSqlContainer, TSubscription, TSubscriptionOptions, SqlServerCheckpointStore, TEventHandler>(
         autoStart,
         logLevel
     )
@@ -24,7 +24,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
     where TEventHandler : class, IEventHandler {
     protected internal readonly string SchemaName = GetSchemaName();
 
-    protected override SqlEdgeContainer CreateContainer() => SqlContainer.Create();
+    protected override MsSqlContainer CreateContainer() => SqlContainer.Create();
 
     protected override SqlServerCheckpointStore GetCheckpointStore(IServiceProvider sp)
         => sp.GetRequiredService<SqlServerCheckpointStore>();
