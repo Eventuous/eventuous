@@ -31,7 +31,7 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler> {
     [Test]
     [Category("Diagnostics")]
     public async Task ShouldPropagateRemoteContext(CancellationToken cancellationToken) {
-        var testEvent = Auto.Create<TestEvent>();
+        var testEvent = TestEvent.Create();
 
         await Producer.Produce(Stream, testEvent, new(), cancellationToken: cancellationToken);
 

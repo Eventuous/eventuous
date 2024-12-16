@@ -8,7 +8,5 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Testcontainers.RabbitMq"/>
-        <PackageReference Remove="xunit.v3"/>
-        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>
 </Project>

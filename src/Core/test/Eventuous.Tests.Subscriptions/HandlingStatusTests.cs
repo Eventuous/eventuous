@@ -3,9 +3,7 @@ using Eventuous.Subscriptions.Context;
 
 namespace Eventuous.Tests.Subscriptions;
 
-public class HandlingStatusTests() {
-    static Fixture Auto { get; } = new();
-
+public class HandlingStatusTests {
     [Test]
     public void AckAndNackShouldNack() {
         const EventHandlingStatus actual = EventHandlingStatus.Success | EventHandlingStatus.Failure;
@@ -39,8 +37,8 @@ public class HandlingStatusTests() {
 
     [Test]
     public void NackAndIgnoreShouldFail() {
-        var context = Auto.CreateContext();
-        context.Nack<object>(new Exception());
+        var context = TestContext.CreateContext();
+        context.Nack<object>(new());
         context.Ignore("test");
         context.HasFailed().Should().BeTrue();
         context.WasIgnored().Should().BeFalse();
@@ -49,8 +47,8 @@ public class HandlingStatusTests() {
 
     [Test]
     public void NackAckAndIgnoreShouldFail() {
-        var context = Auto.CreateContext();
-        context.Nack<object>(new Exception());
+        var context = TestContext.CreateContext();
+        context.Nack<object>(new());
         context.Ack<int>();
         context.Ignore<long>();
         context.HasFailed().Should().BeTrue();
@@ -60,7 +58,7 @@ public class HandlingStatusTests() {
 
     [Test]
     public void AckAndIgnoreShouldSucceed() {
-        var context = Auto.CreateContext();
+        var context = TestContext.CreateContext();
         context.Ack<object>();
         context.Ignore<int>();
         context.HasFailed().Should().BeFalse();
@@ -70,7 +68,7 @@ public class HandlingStatusTests() {
 
     [Test]
     public void IgnoreAndIgnoreShouldIgnore() {
-        var context = Auto.CreateContext();
+        var context = TestContext.CreateContext();
         context.Ignore<object>();
         context.Ignore<int>();
         context.WasIgnored().Should().BeTrue();
@@ -79,7 +77,7 @@ public class HandlingStatusTests() {
 
     [Test]
     public void PendingShouldBePending() {
-        var context = Auto.CreateContext();
+        var context = TestContext.CreateContext();
         context.WasIgnored().Should().BeFalse();
         context.HasFailed().Should().BeFalse();
         context.HandlingResults.IsPending().Should().BeTrue();

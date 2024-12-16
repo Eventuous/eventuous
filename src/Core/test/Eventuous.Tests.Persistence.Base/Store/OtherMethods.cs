@@ -14,8 +14,8 @@ public abstract class StoreOtherOpsTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task StreamShouldExist(CancellationToken cancellationToken) {
-        var evt        = _fixture.CreateEvent();
-        var streamName = _fixture.GetStreamName();
+        var evt        = Helpers.CreateEvent();
+        var streamName = Helpers.GetStreamName();
         await _fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
         var exists = await _fixture.EventStore.StreamExists(streamName, cancellationToken);
@@ -25,7 +25,7 @@ public abstract class StoreOtherOpsTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task StreamShouldNotExist(CancellationToken cancellationToken) {
-        var streamName = _fixture.GetStreamName();
+        var streamName = Helpers.GetStreamName();
         var exists     = await _fixture.EventStore.StreamExists(streamName, cancellationToken);
         await Assert.That(exists).IsFalse();
     }

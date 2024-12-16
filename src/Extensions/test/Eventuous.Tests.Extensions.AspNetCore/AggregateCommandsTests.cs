@@ -91,13 +91,13 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
                 .MapCommands<BookingState>()
                 .MapCommand<BookRoom>((x, _) => x with { GuestId = TestData.GuestId })
         );
-        var cmd     = fixture.GetBookRoom();
+        var cmd     = ServerFixture.GetBookRoom();
         var content = await fixture.ExecuteRequest<BookRoom, BookingState>(cmd, "book", cmd.BookingId);
         await VerifyJson(content);
     }
 
     static async Task Execute(ServerFixture fixture, string route) {
-        var bookRoom = fixture.GetBookRoom();
+        var bookRoom = ServerFixture.GetBookRoom();
 
         var import = new ImportBookingHttp(
             bookRoom.BookingId,

@@ -30,7 +30,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture) : ProjectionTest
 
         first.Doc.Should().BeEquivalentTo(expected);
 
-        var payment = new BookingPaymentRegistered(Fixture.Auto.Create<string>(), evt.Price);
+        var payment = new BookingPaymentRegistered(Guid.NewGuid().ToString(), evt.Price);
 
         var second = await Act(stream, payment);
         await DisposeAsync();

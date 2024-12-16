@@ -13,6 +13,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="RestSharp"/>
+        <PackageReference Include="System.Text.Json" />
         <PackageReference Include="Verify.DiffPlex"/>
         <PackageReference Include="Verify.TUnit" />
     </ItemGroup>

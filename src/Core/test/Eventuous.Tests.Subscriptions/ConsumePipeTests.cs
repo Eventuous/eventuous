@@ -5,13 +5,11 @@ using Eventuous.Subscriptions.Filters;
 namespace Eventuous.Tests.Subscriptions;
 
 public class ConsumePipeTests() {
-    static readonly Fixture Auto = new();
-
     [Test]
     public async Task ShouldCallHandlers() {
         var handler = new TestHandler();
         var pipe    = new ConsumePipe().AddDefaultConsumer(handler);
-        var ctx     = Auto.CreateContext();
+        var ctx     = TestContext.CreateContext();
 
         await pipe.Send(ctx);
 
@@ -24,11 +22,11 @@ public class ConsumePipeTests() {
     public async Task ShouldAddContextBaggage() {
         var handler = new TestHandler();
         var pipe    = new ConsumePipe().AddDefaultConsumer(handler);
-        var baggage = Auto.Create<string>();
+        var baggage = Guid.NewGuid().ToString();
 
         pipe.AddFilterFirst(new TestFilter(Key, baggage));
 
-        var ctx = Auto.CreateContext();
+        var ctx = TestContext.CreateContext();
 
         await pipe.Send(ctx);
 

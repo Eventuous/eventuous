@@ -15,9 +15,8 @@ using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 
 namespace Eventuous.Tests.Subscriptions;
 
-public class RegistrationTests() {
+public class RegistrationTests {
     readonly TestServer     _server = new(BuildHost());
-    readonly Fixture        _auto   = new();
     readonly ILoggerFactory _logger = LoggingExtensions.GetLoggerFactory();
 
     [Test]
@@ -50,17 +49,17 @@ public class RegistrationTests() {
         var current = subs[position];
 
         var ctx = new MessageConsumeContext(
-            _auto.Create<string>(),
-            _auto.Create<string>(),
-            _auto.Create<string>(),
-            _auto.Create<string>(),
+            Guid.NewGuid().ToString(),
+            Guid.NewGuid().ToString(),
+            Guid.NewGuid().ToString(),
+            Guid.NewGuid().ToString(),
             0,
             0,
             0,
             0,
             DateTime.UtcNow,
             new TestEvent(),
-            new Metadata(),
+            new(),
             current.SubscriptionId,
             default
         ) { LogContext = new(current.SubscriptionId, _logger) };

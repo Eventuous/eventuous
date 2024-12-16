@@ -1,11 +1,9 @@
-using AutoFixture;
 using EventStore.Client;
 using Eventuous.ElasticSearch.Store;
 using Eventuous.EventStore;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Nest;
-using NodaTime;
 using static Eventuous.Sut.App.Commands;
 
 namespace ElasticPlayground;
@@ -15,8 +13,6 @@ public class ConnectorAndArchive {
     readonly ElasticEventStore _elasticEventStore;
     readonly TieredEventStore  _tieredStore;
 
-    static readonly Fixture Fixture = new();
-
     public ConnectorAndArchive(IElasticClient elasticClient, EventStoreClient eventStoreClient) {
         _elasticEventStore = new(elasticClient);
         _esdbEventStore    = new(eventStoreClient);
@@ -24,13 +20,7 @@ public class ConnectorAndArchive {
     }
 
     public async Task Execute() {
-        var bookRoom = new BookRoom(
-            Fixture.Create<string>(),
-            Fixture.Create<string>(),
-            LocalDate.FromDateTime(DateTime.Today),
-            LocalDate.FromDateTime(DateTime.Today.AddDays(1)),
-            100
-        );
+        var bookRoom = Generator.CreateBookRoomCommand();
 
         await Seed(_elasticEventStore, bookRoom);
 
@@ -43,7 +33,7 @@ public class ConnectorAndArchive {
 
         var service = new ThrowingCommandService<BookingState>(new BookingService(_tieredStore));
 
-        var cmd = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
+        var cmd = bookRoom.ToRecordPayment(Generator.RandomString(), 2);
 
         var result = await service.Handle(cmd, default);
 
@@ -55,7 +45,7 @@ public class ConnectorAndArchive {
 
         await service.Handle(bookRoom, default);
 
-        var processPayment = bookRoom.ToRecordPayment(Fixture.Create<string>(), 2);
+        var processPayment = bookRoom.ToRecordPayment(Generator.RandomString(), 2);
 
         await service.Handle(processPayment, default);
     }

@@ -12,8 +12,6 @@ namespace Eventuous.Tests.GooglePubSub;
 public class PubSubTests {
     static PubSubTests() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    static readonly Fixture Auto = new();
-
     readonly GooglePubSubSubscription _subscription;
     readonly GooglePubSubProducer     _producer;
     readonly TestEventHandler         _handler;
@@ -50,7 +48,7 @@ public class PubSubTests {
     [Test]
     [Retry(3)]
     public async Task SubscribeAndProduce(CancellationToken cancellationToken) {
-        var testEvent = Auto.Create<TestEvent>();
+        var testEvent = TestEvent.Create();
 
         await _producer.Produce(_pubsubTopic, testEvent, null, cancellationToken: cancellationToken);
 
@@ -62,7 +60,7 @@ public class PubSubTests {
     public async Task SubscribeAndProduceMany(CancellationToken cancellationToken) {
         const int count = 10000;
 
-        var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
+        var testEvents = TestEvent.CreateMany(count);
 
         await _producer.Produce(_pubsubTopic, testEvents, null, cancellationToken: cancellationToken);
         await _handler.AssertCollection(40.Seconds(), [..testEvents]).Validate(cancellationToken);
@@ -81,5 +79,6 @@ public class PubSubTests {
 
         await PubSubFixture.DeleteSubscription(_pubsubSubscription, cancellationToken);
         await PubSubFixture.DeleteTopic(_pubsubTopic, cancellationToken);
+        await _subscription.DisposeAsync();
     }
 }

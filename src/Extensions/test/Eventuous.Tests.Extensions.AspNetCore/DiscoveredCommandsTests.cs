@@ -16,7 +16,7 @@ public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : T
             app => app.MapDiscoveredCommands(typeof(NestedCommands).Assembly)
         );
 
-        var cmd          = fixture.GetNestedBookRoom(new DateTime(2023, 10, 1));
+        var cmd          = ServerFixture.GetNestedBookRoom(new DateTime(2023, 10, 1));
         var streamEvents = await fixture.ExecuteRequest<NestedBookRoom, BookingState>(cmd, NestedBookRoute, cmd.BookingId);
         await VerifyJson(streamEvents);
     }

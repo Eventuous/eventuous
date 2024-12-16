@@ -15,9 +15,7 @@ public class PublishAndSubscribeManyPartitionedTests() : LegacySubscriptionFixtu
     public async Task SubscribeAndProduceMany(CancellationToken cancellationToken) {
         const int count = 10;
 
-        var testEvents = Enumerable.Range(1, count)
-            .Select(i => new TestEvent(Auto.Create<string>(), i))
-            .ToList();
+        var testEvents = TestEvent.CreateMany(count);
 
         await Start();
         await Producer.Produce(Stream, testEvents, new Metadata(), cancellationToken: cancellationToken);

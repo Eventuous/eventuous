@@ -10,7 +10,7 @@ public class PublishAndSubscribeManyTests() : LegacySubscriptionFixture(1.Millis
     public async Task SubscribeAndProduceMany(CancellationToken cancellationToken) {
         const int count = 100;
 
-        var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
+        var testEvents = TestEvent.CreateMany(count).ToList();
 
         await Start();
         await Producer.Produce(Stream, testEvents, new(), cancellationToken: cancellationToken);

@@ -15,11 +15,8 @@
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Testcontainers.EventStoreDb"/>
-        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
-        <PackageReference Remove="xunit.v3"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>

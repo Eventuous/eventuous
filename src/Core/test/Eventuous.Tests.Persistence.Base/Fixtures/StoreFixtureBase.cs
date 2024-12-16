@@ -1,10 +1,8 @@
 using System.Text.RegularExpressions;
-using AutoFixture;
 using Bogus;
 using DotNet.Testcontainers.Containers;
 using Eventuous.TestHelpers;
 using Eventuous.TestHelpers.TUnit.Logging;
-using MicroElements.AutoFixture.NodaTime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TUnit.Core.Interfaces;
@@ -15,7 +13,6 @@ public interface IStartableFixture : IAsyncInitializer, IAsyncDisposable;
 
 public abstract class StoreFixtureBase {
     public           IEventStore     EventStore { get; protected private set; } = null!;
-    public           IFixture        Auto       { get; }                        = new Fixture().Customize(new NodaTimeCustomization());
     protected static Faker           Faker      { get; }                        = new();
     protected        ServiceProvider Provider   { get; set; }                   = null!;
     protected        bool            AutoStart  { get; init; }                  = true;

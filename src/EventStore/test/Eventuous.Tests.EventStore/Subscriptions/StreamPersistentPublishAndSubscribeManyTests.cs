@@ -17,7 +17,7 @@ public class StreamPersistentPublishAndSubscribeManyTests {
         ) {
         const int count = 1000;
 
-        var testEvents = fixture.Auto.CreateMany<TestEvent>(count).ToList();
+        var testEvents = TestEvent.CreateMany(count);
 
         await fixture.InitializeAsync();
         await fixture.Start();
@@ -27,11 +27,9 @@ public class StreamPersistentPublishAndSubscribeManyTests {
         await fixture.DisposeAsync();
     }
 
-    public static PersistentSubscriptionFixture<StreamPersistentSubscription, StreamPersistentSubscriptionOptions, TestEventHandler>[] GetFixtures() {
-        return [
-            new(new(), CreateWithRegularClient, false),
-            new(new(), CreateWithPersistentSubClient, false),
-        ];
+    public static IEnumerable<Func<PersistentSubscriptionFixture<StreamPersistentSubscription, StreamPersistentSubscriptionOptions, TestEventHandler>>> GetFixtures() {
+        yield return () => new(new(), CreateWithRegularClient, false);
+        yield return () => new(new(), CreateWithPersistentSubClient, false);
     }
 
     static StreamPersistentSubscription CreateWithRegularClient(string id, string connectionString, StreamName stream, TestEventHandler handler, ILoggerFactory loggerFactory) {

@@ -60,10 +60,10 @@ public class SequenceTests {
         first.Should().Be(new CommitPosition(9, 9, timestamp));
     }
 
-    public static IEnumerable<(CommitPositionSequence, CommitPosition)> TestData() {
+    public static IEnumerable<Func<(CommitPositionSequence, CommitPosition)>> TestData() {
         var timestamp = DateTime.Now;
 
-        yield return ([new(0, 1, timestamp), new(0, 2, timestamp), new(0, 4, timestamp), new(0, 6, timestamp)], new(0, 2, timestamp));
-        yield return ([new(0, 1, timestamp), new(0, 2, timestamp), new(0, 8, timestamp), new(0, 6, timestamp)], new(0, 2, timestamp));
+        yield return () => ([new(0, 1, timestamp), new(0, 2, timestamp), new(0, 4, timestamp), new(0, 6, timestamp)], new(0, 2, timestamp));
+        yield return () => ([new(0, 1, timestamp), new(0, 2, timestamp), new(0, 8, timestamp), new(0, 6, timestamp)], new(0, 2, timestamp));
     }
 }

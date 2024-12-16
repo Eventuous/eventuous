@@ -16,7 +16,6 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="FluentAssertions"/>
-        <PackageReference Include="AutoFixture"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>
@@ -34,9 +33,6 @@
         <Using Include="Microsoft.Extensions.DependencyInjection"/>
         <Using Include="OpenTelemetry"/>
         <Using Include="OpenTelemetry.Metrics"/>
-    </ItemGroup>
-    <ItemGroup>
         <Using Include="FluentAssertions"/>
-        <Using Include="AutoFixture"/>
     </ItemGroup>
 </Project>

@@ -1,17 +1,16 @@
-using AutoFixture;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
 public static class Helpers {
-    public static StreamName GetStreamName(this StoreFixtureBase fixture) => new(fixture.Auto.Create<string>());
+    public static StreamName GetStreamName() => new(Guid.NewGuid().ToString());
 
-    public static BookingImported CreateEvent(this StoreFixtureBase fixture) => ToEvent(DomainFixture.CreateImportBooking(fixture.Auto));
+    public static BookingImported CreateEvent() => ToEvent(DomainFixture.CreateImportBooking());
 
     public static IEnumerable<BookingImported> CreateEvents(this StoreFixtureBase fixture, int count) {
         for (var i = 0; i < count; i++) {
-            yield return CreateEvent(fixture);
+            yield return CreateEvent();
         }
     }
 

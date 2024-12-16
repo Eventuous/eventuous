@@ -8,8 +8,6 @@ using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
 public abstract class LegacySubscriptionFixture<T>: IAsyncInitializer, IAsyncDisposable where T : class, IEventHandler {
-    protected readonly Fixture Auto = new();
-
     protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
     protected StoreFixture        StoreFixture    { get; } = new();
     protected T                   Handler         { get; }

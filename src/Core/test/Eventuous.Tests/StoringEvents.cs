@@ -17,13 +17,7 @@ public class StoringEvents : NaiveFixture {
 
     [Test]
     public async Task StoreInitial(CancellationToken cancellationToken) {
-        var cmd = new Commands.BookRoom(
-            Auto.Create<string>(),
-            Auto.Create<string>(),
-            LocalDate.FromDateTime(DateTime.Today),
-            LocalDate.FromDateTime(DateTime.Today.AddDays(2)),
-            Auto.Create<float>()
-        );
+        var cmd = CreateBookRoomCommand();
 
         Change[] expected = [new(new RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price), TypeNames.RoomBooked)];
 

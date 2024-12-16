@@ -1,4 +1,3 @@
-using AutoFixture;
 using EventStore.Client;
 using Eventuous.ElasticSearch.Store;
 using Eventuous.EventStore;
@@ -12,8 +11,6 @@ namespace ElasticPlayground;
 public class OnlyArchive {
     readonly TieredEventStore _tieredEventStore;
 
-    static readonly Fixture Fixture = new();
-
     public OnlyArchive(IElasticClient elasticClient, EventStoreClient eventStoreClient) {
         var elasticEventStore = new ElasticEventStore(elasticClient);
         var esdbEventStore    = new EsdbEventStore(eventStoreClient);
@@ -25,7 +22,7 @@ public class OnlyArchive {
 
         var service = new ThrowingCommandService<BookingState>(new BookingService(_tieredEventStore));
 
-        var cmd = new RecordPayment(new(bookingId), Fixture.Create<string>(), new Money(10), DateTimeOffset.Now);
+        var cmd = new RecordPayment(new(bookingId), Generator.RandomString(), new(10), DateTimeOffset.Now);
 
         var result = await service.Handle(cmd, default);
 

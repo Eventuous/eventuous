@@ -62,7 +62,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         TestContext.Current?.OutputWriter.WriteLine("Last checkpoint: {0}", l.Position!);
 
         await fixture.StartSubscription();
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
         await fixture.StopSubscription();
         await Assert.That(fixture.Handler.Count).IsEqualTo(0);
     }
@@ -72,7 +72,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
     async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking(fixture.Auto))
+            .Select(_ => DomainFixture.CreateImportBooking())
             .ToList();
 
         var service = new BookingService(fixture.EventStore);

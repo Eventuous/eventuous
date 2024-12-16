@@ -14,7 +14,6 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Hypothesist"/>
-        <PackageReference Remove="xunit.v3"/>
         <PackageReference Include="TUnit.Core"/>
         <PackageReference Include="TUnit.Assertions"/>
     </ItemGroup>

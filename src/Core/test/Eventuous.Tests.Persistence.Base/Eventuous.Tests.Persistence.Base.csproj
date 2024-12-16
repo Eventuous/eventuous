@@ -6,12 +6,11 @@
     <ItemGroup>
         <PackageReference Include="Bogus" />
         <PackageReference Include="JetBrains.Annotations"/>
-        <PackageReference Include="MicroElements.AutoFixture.NodaTime"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
+        <PackageReference Include="NodaTime.Bogus" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Testcontainers"/>
-        <PackageReference Remove="xunit.v3"/>
         <PackageReference Include="TUnit.Core"/>
         <PackageReference Include="TUnit.Assertions"/>
     </ItemGroup>

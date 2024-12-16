@@ -11,7 +11,8 @@
         <Using Include="Eventuous" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="AutoFixture" />
+        <PackageReference Include="Bogus" />
+        <PackageReference Include="NodaTime.Bogus" />
         <PackageReference Include="EventStore.Client.Grpc.Streams" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>

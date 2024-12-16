@@ -62,13 +62,11 @@
         <Using Include="System.Diagnostics.CodeAnalysis"/>
     </ItemGroup>
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
-        <PackageReference Include="AutoFixture"/>
         <PackageReference Include="Bogus"/>
         <PackageReference Include="coverlet.collector"/>
         <PackageReference Include="FluentAssertions"/>
         <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
         <PackageReference Include="TUnit"/>
-        <Using Include="AutoFixture"/>
         <Using Include="FluentAssertions"/>
         <Using Include="FluentAssertions.Extensions"/>
         <Using Include="Microsoft.Extensions.Logging"/>

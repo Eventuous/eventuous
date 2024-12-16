@@ -1,3 +1,4 @@
+using Bogus;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Hypothesist;
@@ -12,6 +13,12 @@ namespace Eventuous.Tests.Subscriptions.Base;
 // ReSharper disable once ClassNeverInstantiated.Global
 public record TestEvent(string Data, int Number) {
     public const string TypeName = "test-event";
+    
+    static readonly Faker<TestEvent> Faker = new Faker<TestEvent>().RuleFor(x => x.Data, f => f.Lorem.Sentence()).RuleFor(x => x.Number, f => f.Random.Int());
+    
+    public static TestEvent Create() => Faker.Generate();
+    
+    public static List<TestEvent> CreateMany(int count) => Faker.Generate(count);
 }
 
 public class TestEventHandler(TestEventHandlerOptions? options) : BaseEventHandler {

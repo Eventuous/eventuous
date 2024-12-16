@@ -9,6 +9,5 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj"/>
-        <PackageReference Remove="xunit.v3"/>
     </ItemGroup>
 </Project>

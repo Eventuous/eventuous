@@ -8,13 +8,11 @@ namespace Eventuous.Tests.Subscriptions;
 public class DefaultConsumerTests() : IDisposable {
     readonly TestEventListener _listener = new();
 
-    static readonly Fixture Auto = new();
-
     [Test]
     public async Task ShouldFailWhenHandlerNacks() {
         var handler  = new FailingHandler();
         var consumer = new DefaultConsumer([handler]);
-        var ctx      = Auto.CreateContext();
+        var ctx      = TestContext.CreateContext();
 
         await consumer.Consume(ctx);
 

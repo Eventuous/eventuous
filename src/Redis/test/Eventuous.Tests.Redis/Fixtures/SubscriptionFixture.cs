@@ -21,7 +21,7 @@ public class SubscriptionFixture<T> where T : IEventHandler, new() {
     public SubscriptionFixture(bool subscribeToAll, LogLevel logLevel = LogLevel.Trace) {
         Handler         = new T();
         _subscribeToAll = subscribeToAll;
-        Stream          = new(SharedAutoFixture.Auto.Create<string>());
+        Stream          = new(Guid.NewGuid().ToString());
         LoggerFactory   = LoggingExtensions.GetLoggerFactory(logLevel);
         SubscriptionId  = $"test-{Guid.NewGuid():N}";
         Log             = LoggerFactory.CreateLogger(GetType());

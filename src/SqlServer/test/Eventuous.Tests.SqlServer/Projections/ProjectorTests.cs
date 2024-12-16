@@ -62,7 +62,7 @@ public class ProjectorTests() {
     async Task<List<Commands.ImportBooking>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking(_fixture.Auto))
+            .Select(_ => DomainFixture.CreateImportBooking())
             .ToList();
 
         foreach (var command in commands) {

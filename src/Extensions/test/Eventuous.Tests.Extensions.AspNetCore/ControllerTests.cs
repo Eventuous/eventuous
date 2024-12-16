@@ -9,9 +9,8 @@ using Fixture;
 using static SutBookingCommands;
 
 [ClassDataSource<WebApplicationFactory<Program>>]
-public class ControllerTests : IDisposable {
-    readonly ServerFixture     _fixture;
-    readonly TestEventListener _listener;
+public class ControllerTests {
+    readonly ServerFixture _fixture;
 
     public ControllerTests(WebApplicationFactory<Program> factory) {
         var commandMap = new CommandMap<HttpContext>()
@@ -31,14 +30,14 @@ public class ControllerTests : IDisposable {
             }
         );
 
-        _listener = new();
+        listener = new();
     }
 
     [Test]
     public async Task RecordPaymentUsingMappedCommand(CancellationToken cancellationToken) {
         using var client = _fixture.GetClient();
 
-        var bookRoom = _fixture.GetBookRoom();
+        var bookRoom = ServerFixture.GetBookRoom();
 
         await client.PostJsonAsync("/book", bookRoom, cancellationToken: cancellationToken);
 
@@ -55,5 +54,11 @@ public class ControllerTests : IDisposable {
         last.Payload.Should().BeEquivalentTo(expected);
     }
 
-    public void Dispose() => _listener.Dispose();
+    static TestEventListener? listener;
+
+    [After(Class)]
+    public static void Dispose() => listener?.Dispose();
+
+    [Before(Class)]
+    public static void BeforeClass() => listener = new();
 }

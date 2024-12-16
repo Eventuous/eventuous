@@ -17,7 +17,6 @@ public interface IMetricsSubscriptionFixtureBase {
     public string  DefaultTagValue { get; }
     string         SubscriptionId  { get; }
     IProducer      Producer        { get; }
-    IFixture       Auto            { get; }
 }
 
 public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSubscription, TSubscriptionOptions> : StoreFixtureBase<TContainer>, IMetricsSubscriptionFixtureBase

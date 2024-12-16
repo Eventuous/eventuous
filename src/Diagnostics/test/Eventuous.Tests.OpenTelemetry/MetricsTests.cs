@@ -35,13 +35,12 @@ public abstract class MetricsTestsBase(IMetricsSubscriptionFixtureBase fixture) 
     //     duration.CheckTag(SubscriptionMetrics.MessageTypeTag, TestEvent.TypeName);
     // }
 
-    static MetricValue? GetValue(MetricValue[] values, string metric)
-        => values.FirstOrDefault(x => x.Name == metric);
+    static MetricValue? GetValue(MetricValue[] values, string metric) => values.FirstOrDefault(x => x.Name == metric);
 
     [Before(Test)]
     public async Task InitializeAsync() {
-        var testEvents = fixture.Auto.CreateMany<TestEvent>(fixture.Count).ToList();
-        await fixture.Producer.Produce(fixture.Stream, testEvents, new Metadata());
+        var testEvents = TestEvent.CreateMany(fixture.Count);
+        await fixture.Producer.Produce(fixture.Stream, testEvents, new());
 
         while (fixture.Counter.Count < fixture.Count / 2) {
             await Task.Delay(100);

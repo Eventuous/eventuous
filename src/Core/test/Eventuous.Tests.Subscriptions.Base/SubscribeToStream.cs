@@ -86,7 +86,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
 
         var commands = Enumerable
             .Range(0, count)
-            .Select(_ => DomainFixture.CreateImportBooking(fixture.Auto))
+            .Select(_ => DomainFixture.CreateImportBooking())
             .ToList();
 
         var events       = commands.Select(ToEvent).ToList();

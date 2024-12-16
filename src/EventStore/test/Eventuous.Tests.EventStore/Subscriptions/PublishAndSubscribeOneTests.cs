@@ -8,7 +8,7 @@ public class PublishAndSubscribeOneTests() : LegacySubscriptionFixture(null, fal
     [Test]
     [Category("Stream catch-up subscription")]
     public async Task SubscribeAndProduce(CancellationToken cancellationToken) {
-        var testEvent = Auto.Create<TestEvent>();
+        var testEvent = TestEvent.Create();
 
         await Start();
         await Producer.Produce(Stream, testEvent, new(), cancellationToken: cancellationToken);

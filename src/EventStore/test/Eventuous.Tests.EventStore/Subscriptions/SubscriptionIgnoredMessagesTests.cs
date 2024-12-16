@@ -45,8 +45,8 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
 
         IEnumerable<object> Generate() {
             for (var i = 0; i < count; i++) {
-                yield return new TestEvent(Auto.Create<string>(), i);
-                yield return new UnknownEvent(Auto.Create<string>(), i);
+                yield return new TestEvent(Guid.NewGuid().ToString(), i);
+                yield return new UnknownEvent(Guid.NewGuid().ToString(), i);
             }
         }
     }

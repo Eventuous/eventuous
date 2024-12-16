@@ -13,6 +13,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="MongoDb.Bson.NodaTime"/>
+        <PackageReference Include="NodaTime.Bogus" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Testcontainers.MongoDb"/>
         <PackageReference Include="Testcontainers.EventStoreDb"/>

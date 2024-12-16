@@ -7,7 +7,7 @@ public class ForgotToSetId : NaiveFixture {
 
     [Test]
     public async Task ShouldFailWithNoId(CancellationToken cancellationToken) {
-        var cmd    = new DoIt(Auto.Create<string>());
+        var cmd    = new DoIt(Guid.NewGuid().ToString());
         var result = await Service.Handle(cmd, cancellationToken);
         result.Success.Should().BeTrue();
     }

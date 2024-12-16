@@ -5,11 +5,9 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests.Redis.Store;
 
 public static class Helpers {
-    public static StreamName GetStreamName()
-        => new(SharedAutoFixture.Auto.Create<string>());
+    public static StreamName GetStreamName() => new(Guid.NewGuid().ToString("N"));
 
-    public static BookingImported CreateEvent()
-        => ToEvent(DomainFixture.CreateImportBooking());
+    public static BookingImported CreateEvent() => ToEvent(DomainFixture.CreateImportBooking());
 
     public static IEnumerable<object> CreateEvents(int count) {
         for (var i = 0; i < count; i++) {

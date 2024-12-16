@@ -64,7 +64,5 @@ public class SubscribeToStream(StreamNameFixture streamNameFixture)
 }
 
 public class StreamNameFixture {
-    static readonly Fixture Auto = new();
-
-    public StreamName StreamName = new(Auto.Create<string>());
+    public StreamName StreamName = new(Guid.NewGuid().ToString("N"));
 }

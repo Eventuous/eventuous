@@ -13,7 +13,6 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
     public IEventStore      EventStore { get; set; }         = null!;
     public EventStoreClient Client     { get; private set; } = null!;
     public IMongoDatabase   Mongo      { get; private set; } = null!;
-    public Fixture          Auto       { get; }              = new();
 
     static IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
 

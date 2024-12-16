@@ -9,8 +9,6 @@ namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 using static SutBookingCommands;
 
 public class ServerFixture {
-    readonly AutoFixture.Fixture _fixture = new();
-
     public ServerFixture(
             WebApplicationFactory<Program> factory,
             Action<IServiceCollection>?    register  = null,
@@ -47,20 +45,22 @@ public class ServerFixture {
 
     public T Resolve<T>() where T : notnull => _app.Services.GetRequiredService<T>();
 
+    static string RandomString() => Guid.NewGuid().ToString();
+
     public Task<StreamEvent[]> ReadStream<T>(string id)
         => Resolve<IEventStore>().ReadEvents(StreamName.For<T>(id), StreamReadPosition.Start, 100, default);
 
-    internal BookRoom GetBookRoom() {
+    internal static BookRoom GetBookRoom() {
         var now  = new DateTime(2023, 10, 1);
         var date = LocalDate.FromDateTime(now);
 
-        return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
+        return new(RandomString(), RandomString(), date, date.PlusDays(1), 100, "guest");
     }
 
-    internal NestedCommands.NestedBookRoom GetNestedBookRoom(DateTime? dateTime = null) {
+    internal static NestedCommands.NestedBookRoom GetNestedBookRoom(DateTime? dateTime = null) {
         var date = LocalDate.FromDateTime(dateTime ?? DateTime.Now);
 
-        return new(_fixture.Create<string>(), _fixture.Create<string>(), date, date.PlusDays(1), 100, "guest");
+        return new(RandomString(), RandomString(), date, date.PlusDays(1), 100, "guest");
     }
 
     public async Task<string> ExecuteRequest<TCommand, TResult>(TCommand cmd, string route, string id)

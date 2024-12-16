@@ -58,7 +58,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
 
         for (var i = 0; i < count; i++) {
             var evt    = new TestEvent(Guid.NewGuid().ToString(), i);
-            var stream = new StreamName($"{_prefix}-{Auto.Create<string>()}");
+            var stream = new StreamName($"{_prefix}-{Guid.NewGuid():N}");
             await producer.Produce(stream, evt, null);
             events.Add(evt);
         }

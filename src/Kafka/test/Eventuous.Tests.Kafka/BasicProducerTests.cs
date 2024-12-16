@@ -20,14 +20,12 @@ public class BasicProducerTests {
         TypeMap.Instance.AddType<TestEvent>("testEvent");
     }
 
-    static readonly Fixture Auto = new();
-
     [Test]
     public async Task ShouldProduceAndWait(CancellationToken cancellationToken) {
-        var topicName = Auto.Create<string>();
+        var topicName = Guid.NewGuid().ToString();
         TestContext.Current?.OutputWriter.WriteLine($"Topic: {topicName}");
 
-        var events = Auto.CreateMany<TestEvent>().ToArray();
+        var events = TestEvent.CreateMany(10);
 
         await Produce();
 
@@ -52,7 +50,7 @@ public class BasicProducerTests {
             while (!cts.IsCancellationRequested) {
                 await Consume(consumer, cts.Token);
 
-                if (consumed.Count == events.Length) break;
+                if (consumed.Count == events.Count) break;
             }
         }
 

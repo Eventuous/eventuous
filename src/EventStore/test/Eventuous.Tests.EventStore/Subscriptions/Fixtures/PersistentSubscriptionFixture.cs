@@ -7,16 +7,14 @@ using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 namespace Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 
 public class PersistentSubscriptionFixture<TSubscription, TOptions, THandler>(
-        THandler                                    handler,
+        THandler                                                                  handler,
         Func<string, string, StreamName, THandler, ILoggerFactory, TSubscription> subscriptionFactory,
-        bool                                        autoStart = true,
-        LogLevel                                    logLevel  = LogLevel.Information
+        bool                                                                      autoStart = true,
+        LogLevel                                                                  logLevel  = LogLevel.Information
     )
     where THandler : class, IEventHandler
     where TSubscription : PersistentSubscriptionBase<TOptions>
     where TOptions : PersistentSubscriptionOptions {
-    public readonly Fixture Auto = new();
-
     public    StreamName         Stream       { get; }              = new($"test-{Guid.NewGuid():N}");
     public    THandler           Handler      { get; }              = handler;
     public    EventStoreProducer Producer     { get; private set; } = null!;

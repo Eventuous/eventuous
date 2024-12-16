@@ -12,28 +12,25 @@ namespace Eventuous.Tests.RabbitMq;
 public class SubscriptionSpec {
     static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    static readonly Fixture Auto = new();
-
     RabbitMqSubscription               _subscription = null!;
     RabbitMqProducer                   _producer     = null!;
     TestEventHandler                   _handler      = null!;
+    TestEventListener                  _es           = null!;
     readonly StreamName                _exchange;
     readonly ILogger<SubscriptionSpec> _log;
-    readonly TestEventListener         _es;
     readonly ILoggerFactory            _loggerFactory;
     readonly RabbitMqFixture           _fixture;
 
     public SubscriptionSpec(RabbitMqFixture fixture) {
         _fixture       = fixture;
-        _es            = new();
-        _exchange      = new(Auto.Create<string>());
+        _exchange      = new(Guid.NewGuid().ToString());
         _loggerFactory = LoggingExtensions.GetLoggerFactory();
         _log           = _loggerFactory.CreateLogger<SubscriptionSpec>();
     }
 
     [Test]
     public async Task SubscribeAndProduce(CancellationToken cancellationToken) {
-        var testEvent = Auto.Create<TestEvent>();
+        var testEvent = TestEvent.Create();
         await _producer.Produce(_exchange, testEvent, new(), cancellationToken: cancellationToken);
         await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate(cancellationToken);
     }
@@ -42,17 +39,18 @@ public class SubscriptionSpec {
     public async Task SubscribeAndProduceMany(CancellationToken cancellationToken) {
         const int count = 10000;
 
-        var testEvents = Auto.CreateMany<TestEvent>(count).ToList();
+        var testEvents = TestEvent.CreateMany(count);
         await _producer.Produce(_exchange, testEvents, new(), cancellationToken: cancellationToken);
         await _handler.AssertCollection(30.Seconds(), [..testEvents]).Validate(cancellationToken);
     }
 
     [Before(Test)]
     public async ValueTask InitializeAsync() {
+        _es       = new();
         _handler  = new();
         _producer = new(_fixture.ConnectionFactory);
 
-        var queue = Auto.Create<string>();
+        var queue = Guid.NewGuid().ToString();
 
         _subscription = new(
             _fixture.ConnectionFactory,
@@ -74,5 +72,6 @@ public class SubscriptionSpec {
         await _producer.StopAsync();
         await _subscription.UnsubscribeWithLog(_log);
         _es.Dispose();
+        await _subscription.DisposeAsync();
     }
 }
