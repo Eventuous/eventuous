@@ -18,11 +18,6 @@ public class EventStoreAggregateTests {
         _log           = _loggerFactory.CreateLogger<AggregateStoreTests>();
     }
 
-<<<<<<<<<<<<<<  ✨ Codeium Command ⭐ >>>>>>>>>>>>>>>>
-    /// <summary>
-    /// Verifies that appending an event to an aggregate stream traces the <see cref="DistributedTracing.TraceId"/> and <see cref="DistributedTracing.SpanId"/>.
-    /// </summary>
-<<<<<<<  805dce60-3810-4dbe-8ba7-daa0fbe59742  >>>>>>>
     [Test]
     [Category("Store")]
     public async Task AppendedEventShouldBeTraced(CancellationToken cancellationToken) {
