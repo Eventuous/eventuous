@@ -23,7 +23,7 @@ public static class ActivityExtensions {
     }
 
     public static TracingMeta GetTracingData(this Activity activity)
-        => new(activity.TraceId.ToString(), activity.SpanId.ToString(), activity.ParentSpanId.ToString());
+        => new(activity.TraceId.ToString(), activity.SpanId.ToString());
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Activity SetActivityStatus(this Activity activity, ActivityStatus status) {

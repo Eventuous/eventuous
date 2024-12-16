@@ -3,7 +3,7 @@
 
 namespace Eventuous.Diagnostics;
 
-public record TracingMeta(string? TraceId, string? SpanId, string? ParentSpanId) {
+public record TracingMeta(string? TraceId, string? SpanId) {
     bool IsValid() => TraceId != null && SpanId != null;
 
     public ActivityContext? ToActivityContext(bool isRemote) {

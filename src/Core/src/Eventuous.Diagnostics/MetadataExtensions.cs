@@ -24,12 +24,11 @@ public static class MetadataExtensions {
             ? metadata // don't override existing tracing data
             : metadata
                 .AddNotNull(TraceId, tracingMeta.TraceId)
-                .AddNotNull(SpanId, tracingMeta.SpanId)
-                .AddNotNull(ParentSpanId, tracingMeta.ParentSpanId == EmptyId ? null : tracingMeta.ParentSpanId);
+                .AddNotNull(SpanId, tracingMeta.SpanId);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TracingMeta GetTracingMeta(this Metadata metadata)
-        => new(metadata.GetString(TraceId), metadata.GetString(SpanId), metadata.GetString(ParentSpanId));
+        => new(metadata.GetString(TraceId), metadata.GetString(SpanId));
 
     const string EmptyId = "0000000000000000";
 }

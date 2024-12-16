@@ -164,7 +164,7 @@ public class EsdbEventStore : IEventStore {
                 () => _client.SetStreamMetadataAsync(stream, expectedVersion.AsStreamRevision(), meta, cancellationToken: cancellationToken)
             ),
             stream,
-            () => new ErrorInfo("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition),
+            () => new("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition),
             (s, ex) => new TruncateStreamException(s, ex)
         );
     }
