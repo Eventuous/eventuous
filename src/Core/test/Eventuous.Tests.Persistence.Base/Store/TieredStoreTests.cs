@@ -22,7 +22,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
         var loaded   = (await combined.ReadStream(stream, StreamReadPosition.Start)).ToArray();
 
         var actual = loaded.Select(x => (TestEventForTiers)x.Payload!).ToArray();
-        await Assert.That(actual).IsEquivalentCollectionTo(testEvents);
+        await Assert.That(actual).IsEquivalentTo(testEvents);
 
         await Assert.That(loaded.Take(50).Select(x => x.FromArchive)).DoesNotContain(false);
         await Assert.That(loaded.Skip(50).Select(x => x.FromArchive)).DoesNotContain(true);

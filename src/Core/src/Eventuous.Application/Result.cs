@@ -63,10 +63,10 @@ public record Result<TState> where TState : class, new() {
     /// </summary>
     /// <param name="state">State instance</param>
     /// <param name="changes">List of new events</param>
-    /// <param name="streamPosition">Position of the last new event in the log</param>
+    /// <param name="globalPosition">Global position of the last new event in the log</param>
     /// <returns>New result instance</returns>
-    public static Result<TState> FromSuccess(TState state, IEnumerable<Change> changes, ulong streamPosition)
-        => new() { _value = new(state, changes, streamPosition) };
+    public static Result<TState> FromSuccess(TState state, IEnumerable<Change> changes, ulong globalPosition)
+        => new() { _value = new(state, changes, globalPosition) };
 
     /// <summary>
     /// Creates a result instance from an error
@@ -151,8 +151,8 @@ public record Result<TState> where TState : class, new() {
     /// </summary>
     /// <param name="State">New state instance</param>
     /// <param name="Changes">Collection of new events</param>
-    /// <param name="StreamPosition">Position of the last new event in the log</param>
-    public record Ok(TState State, IEnumerable<Change> Changes, ulong StreamPosition);
+    /// <param name="GlobalPosition">Global position of the last new event in the log</param>
+    public record Ok(TState State, IEnumerable<Change> Changes, ulong GlobalPosition);
 
     /// <summary>
     /// State of an error result

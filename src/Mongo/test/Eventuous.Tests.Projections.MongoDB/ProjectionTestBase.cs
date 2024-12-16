@@ -21,7 +21,6 @@ public abstract class ProjectionTestBase {
 
     protected abstract void ConfigureServices(IServiceCollection services, string id);
 
-    [Before(Test)]
     public async Task InitializeAsync() {
         _builder.ConfigureServices(collection => ConfigureServices(collection, _id));
         Host = _builder.Build();
@@ -29,13 +28,12 @@ public abstract class ProjectionTestBase {
         await Host.StartAsync();
     }
 
-    [After(Test)]
     public async Task DisposeAsync() => await Host.StopAsync();
 }
 
-public abstract class ProjectionTestBase<TProjection>(string id, IntegrationFixture fixture) : ProjectionTestBase(id)
+public class ProjectionTestBase<TProjection>(string id, IntegrationFixture fixture) : ProjectionTestBase(id)
     where TProjection : class, IEventHandler {
-    protected readonly IntegrationFixture Fixture = fixture;
+    public readonly IntegrationFixture Fixture = fixture;
 
     protected override void ConfigureServices(IServiceCollection services, string id)
         => services
@@ -47,9 +45,9 @@ public abstract class ProjectionTestBase<TProjection>(string id, IntegrationFixt
                 builder => builder.AddEventHandler<TProjection>()
             );
 
-    protected string CreateId() => new(Guid.NewGuid().ToString("N"));
+    public string CreateId() => new(Guid.NewGuid().ToString("N"));
 
-    protected async Task WaitForPosition(ulong position) {
+    public async Task WaitForPosition(ulong position) {
         var checkpointStore = Host.Services.GetRequiredService<ICheckpointStore>();
         var count           = 100;
 

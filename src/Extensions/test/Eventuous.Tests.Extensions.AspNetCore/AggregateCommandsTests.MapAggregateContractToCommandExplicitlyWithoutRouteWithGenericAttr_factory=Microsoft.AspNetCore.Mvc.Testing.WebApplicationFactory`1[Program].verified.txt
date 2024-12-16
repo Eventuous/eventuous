@@ -23,5 +23,5 @@
       eventType: V1.BookingImported
     }
   ],
-  streamPosition: 0
+  globalPosition: 0
 }

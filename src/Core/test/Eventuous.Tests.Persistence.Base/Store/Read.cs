@@ -62,7 +62,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
         var expected = events.Take(10);
 
         IEnumerable<object> actual = result.Select(x => x.Payload)!;
-        await Assert.That(actual).IsEquivalentCollectionTo(expected);
+        await Assert.That(actual).IsEquivalentTo(expected);
     }
 
     [Test]

@@ -12,6 +12,7 @@ public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture)
     : ProjectionTestBase<ProjectingWithTypedHandlers.SutProjection>(nameof(ProjectingWithTypedHandlers), fixture) {
     [Test]
     public async Task ShouldProjectImported(CancellationToken cancellationToken) {
+        await InitializeAsync();
         var evt    = DomainFixture.CreateImportBooking();
         var id     = new BookingId(CreateId());
         var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
@@ -32,6 +33,8 @@ public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture)
 
         var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(id.ToString(), cancellationToken: cancellationToken);
         actual.Should().Be(expected);
+
+        await DisposeAsync();
     }
 
     public class SutProjection : MongoProjector<BookingDocument> {

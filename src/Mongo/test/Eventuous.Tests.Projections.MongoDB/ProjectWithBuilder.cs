@@ -8,14 +8,18 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests.Projections.MongoDB;
 
 [ClassDataSource<IntegrationFixture>]
-public class ProjectWithBuilder(IntegrationFixture fixture) : ProjectionTestBase<ProjectWithBuilder.SutProjection>(nameof(ProjectWithBuilder), fixture) {
+public class ProjectWithBuilder(IntegrationFixture fixture) {
     [Test]
-    public async Task ShouldProjectImported() {
-        var evt    = DomainFixture.CreateImportBooking();
-        var id     = new BookingId(CreateId());
-        var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
+    [MethodDataSource(typeof(CollectionSource), nameof(CollectionSource.TestOptions))]
+    public async Task ShouldProjectImported(MongoProjectionOptions<BookingDocument>? options) {
+        var projectionFixture = new ProjectionTestBase<SutProjection>(nameof(ProjectWithBuilder), fixture);
+        var evt               = DomainFixture.CreateImportBooking();
+        var id                = new BookingId(projectionFixture.CreateId());
+        var stream            = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
+        
+        await projectionFixture.InitializeAsync();
 
-        var first = await Act(stream, evt);
+        var first = await Act(projectionFixture, stream, evt);
 
         var expected = new BookingDocument(id.ToString()) {
             RoomId         = evt.RoomId,
@@ -29,9 +33,11 @@ public class ProjectWithBuilder(IntegrationFixture fixture) : ProjectionTestBase
 
         first.Doc.Should().BeEquivalentTo(expected);
 
-        var payment = new BookingPaymentRegistered(Fixture.Auto.Create<string>(), evt.Price);
+        var payment = new BookingPaymentRegistered(projectionFixture.Fixture.Auto.Create<string>(), evt.Price);
 
-        var second = await Act(stream, payment);
+        var second = await Act(projectionFixture, stream, payment);
+
+        await projectionFixture.DisposeAsync();
 
         expected = expected with {
             PaidAmount = payment.AmountPaid,
@@ -42,18 +48,16 @@ public class ProjectWithBuilder(IntegrationFixture fixture) : ProjectionTestBase
         second.Doc.Should().BeEquivalentTo(expected);
     }
 
-    async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)
-        where T : class {
-        var append = await Fixture.AppendEvent(stream, evt);
-        await WaitForPosition(append.GlobalPosition);
-        var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId());
+    static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(ProjectionTestBase<SutProjection> f, StreamName stream, T evt) where T : class {
+        var append = await f.Fixture.AppendEvent(stream, evt);
+        await f.WaitForPosition(append.GlobalPosition);
+        var actual = await f.Fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId());
 
         return (append, actual);
     }
 
     public class SutProjection : MongoProjector<BookingDocument> {
-        public SutProjection(IMongoDatabase database)
-            : base(database) {
+        public SutProjection(IMongoDatabase database) : base(database) {
             On<BookingImported>(
                 b => b
                     .InsertOne
@@ -86,5 +90,12 @@ public class ProjectWithBuilder(IntegrationFixture fixture) : ProjectionTestBase
                     .Update((evt, update) => update.Set(x => x.PaidAmount, evt.AmountPaid))
             );
         }
+    }
+}
+
+public static class CollectionSource {
+    public static IEnumerable<MongoProjectionOptions<BookingDocument>?> TestOptions() {
+        yield return null;
+        yield return new() { CollectionName = "test" };
     }
 }
