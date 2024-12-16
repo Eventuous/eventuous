@@ -13,7 +13,7 @@ public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture)
     [Test]
     public async Task ShouldProjectImported(CancellationToken cancellationToken) {
         await InitializeAsync();
-        var evt    = DomainFixture.CreateImportBooking();
+        var evt    = DomainFixture.CreateImportBookingEvent();
         var id     = new BookingId(CreateId());
         var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
 

@@ -12,7 +12,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture) : ProjectionTest
     [Test]
     public async Task ShouldProjectImported() {
         await InitializeAsync();
-        var evt    = DomainFixture.CreateImportBooking();
+        var evt    = DomainFixture.CreateImportBookingEvent();
         var id     = new BookingId(CreateId());
         var stream = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
 

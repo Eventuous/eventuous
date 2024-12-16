@@ -12,8 +12,8 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
     [Test]
     [MethodDataSource(typeof(CollectionSource), nameof(CollectionSource.TestOptions))]
     public async Task ShouldProjectImported(MongoProjectionOptions<BookingDocument>? options) {
+        var evt               = DomainFixture.CreateImportBookingEvent();
         var projectionFixture = new ProjectionTestBase<SutProjection>(nameof(ProjectWithBuilder), fixture);
-        var evt               = DomainFixture.CreateImportBooking();
         var id                = new BookingId(projectionFixture.CreateId());
         var stream            = StreamNameFactory.For<Booking, BookingState, BookingId>(id);
 
