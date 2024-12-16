@@ -8,8 +8,6 @@ using Testing;
 using static Sut.Domain.BookingEvents;
 
 public class TwoAggregateOpsSpec : AggregateSpec<Booking, BookingState> {
-    public TwoAggregateOpsSpec() => _testData = Faker.Generate();
-
     protected override void When(Booking booking) {
         var amount   = new Money(_testData.Amount);
         var checkIn  = LocalDate.FromDateTime(DateTime.Today);
@@ -37,13 +35,10 @@ public class TwoAggregateOpsSpec : AggregateSpec<Booking, BookingState> {
     [Test]
     public void should_not_be_overpaid() => Then().State.IsOverpaid().Should().BeFalse();
 
-    readonly TestData _testData;
+    readonly TestData _testData = Faker.Generate();
 
     [UsedImplicitly]
     record TestData(string PaymentId, float Amount, DateTimeOffset PaidAt);
 
-    static readonly Faker<TestData> Faker = new Faker<TestData>()
-        .RuleFor(x => x.PaymentId, f => f.Random.Guid().ToString())
-        .RuleFor(x => x.Amount, f => f.Random.Float())
-        .RuleFor(x => x.PaidAt, f => f.Date.Past());
+    static readonly Faker<TestData> Faker = new Faker<TestData>().CustomInstantiator(f => new(f.Random.String(), f.Random.Float(), f.Date.Past()));
 }
