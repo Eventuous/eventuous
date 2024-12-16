@@ -30,8 +30,8 @@ public class EventStoreAggregateTests {
         var events     = await _fixture.EventStore.ReadStream(streamName, StreamReadPosition.Start, cancellationToken: cancellationToken);
         var first      = events[0];
 
-        first.Metadata["trace-id"].Should().NotBeNull();
-        first.Metadata["span-id"].Should().NotBeNull();
+        first.Metadata["$traceId"].Should().NotBeNull();
+        first.Metadata["$spanId"].Should().NotBeNull();
     }
 
     [Test]
