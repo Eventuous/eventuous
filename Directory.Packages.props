@@ -9,7 +9,7 @@
     <MicrosoftTestHostVer>8.0.6</MicrosoftTestHostVer>
   </PropertyGroup>
   <PropertyGroup Label="Testcontainers version">
-    <TestcontainersVersion>4.0.0</TestcontainersVersion>
+    <TestcontainersVersion>4.1.0</TestcontainersVersion>
   </PropertyGroup>
   <PropertyGroup>
     <NpgsqlVersion>9.0.1</NpgsqlVersion>
@@ -44,7 +44,7 @@
     <PackageVersion Include="RabbitMQ.Client" Version="6.8.1" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageVersion Include="NEST" Version="7.17.5" />
-    <PackageVersion Include="Polly" Version="8.4.2" />
+    <PackageVersion Include="Polly" Version="8.5.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
   </ItemGroup>
@@ -71,7 +71,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(MicrosoftTestHostVer)" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)" />
     <PackageVersion Include="RestSharp" Version="112.1.0" />
-    <PackageVersion Include="Hypothesist" Version="3.0.91" />
+    <PackageVersion Include="Hypothesist" Version="3.0.97" />
     <PackageVersion Include="NodaTime" Version="3.2.0" />
     <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.2.0" />
     <PackageVersion Include="MongoDb.Bson.NodaTime" Version="3.0.0" />
@@ -94,8 +94,8 @@
     <PackageVersion Include="OpenTelemetry.Exporter.Zipkin" Version="1.10.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.10.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.9.0-beta.1" />
-    <PackageVersion Include="Serilog.AspNetCore" Version="8.0.3" />
-    <PackageVersion Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.Seq" Version="8.0.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.9.0" />
