@@ -19,7 +19,7 @@ public static class DomainFixture {
     static Faker<BookingEvents.BookingImported> EventFaker => new Faker<BookingEvents.BookingImported>()
         .CustomInstantiator(f => {
                 var checkIn = f.Noda().LocalDate.Soon();
-                return new(f.Random.String(), f.Random.Number(50, 200), checkIn, checkIn.PlusDays(f.Random.Number(1, 5)));
+                return new(f.Commerce.Product(), f.Random.Number(50, 200), checkIn, checkIn.PlusDays(f.Random.Number(1, 5)));
             }
         );
 

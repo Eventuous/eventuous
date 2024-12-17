@@ -9,11 +9,14 @@ public class NaiveFixture {
     protected IEventStore EventStore { get; } = new InMemoryEventStore();
 
     static readonly Faker<Commands.BookRoom> Faker = new Faker<Commands.BookRoom>()
-        .RuleFor(x => x.BookingId, _ => Guid.NewGuid().ToString("N"))
-        .RuleFor(x => x.RoomId, _ => Guid.NewGuid().ToString("N"))
-        .RuleFor(x => x.Price, f => f.Random.Number(50, 200))
-        .RuleFor(x => x.CheckIn, f => f.Noda().LocalDate.Soon())
-        .RuleFor(x => x.CheckOut, (f, c) => c.CheckIn.PlusDays(f.Random.Number(1, 5)));
+        .CustomInstantiator(
+            f => {
+                var checkin  = f.Noda().LocalDate.Soon();
+                var checkout = checkin.PlusDays(f.Random.Number(1, 5));
+
+                return new(f.Random.Guid().ToString("N"), f.Random.Guid().ToString("N"), checkin, checkout, f.Random.Number(50, 200));
+            }
+        );
 
     protected static Commands.BookRoom CreateBookRoomCommand() => Faker.Generate();
 }

@@ -5,6 +5,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Logging"/>
+        <PackageReference Include="TUnit.Assertions" />
         <PackageReference Include="TUnit.Core"/>
     </ItemGroup>
 </Project>
