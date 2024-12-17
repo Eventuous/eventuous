@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using EventStore.Client;
 using Eventuous.EventStore;
 using Eventuous.TestHelpers;
@@ -33,7 +34,10 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
     MongoDbContainer      _mongoContainer = null!;
 
     public async Task InitializeAsync() {
-        _esdbContainer = new EventStoreDbBuilder().Build();
+        var image = RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+            ? "eventstore/eventstore:24.6.0-alpha-arm64v8"
+            : "eventstore/eventstore:24.6";
+        _esdbContainer = new EventStoreDbBuilder().WithImage(image).Build();
         await _esdbContainer.StartAsync();
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
         Client          = new(settings);
