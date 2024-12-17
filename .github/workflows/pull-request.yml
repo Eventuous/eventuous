@@ -8,7 +8,8 @@ on:
 jobs:
   event_file:
     name: "Event File"
-    runs-on: ubuntu-latest
+#    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Upload
         uses: actions/upload-artifact@v4
@@ -17,7 +18,8 @@ jobs:
           path: ${{ github.event_path }}
   build-and-test:
     name: "Build and test"
-    runs-on: ubuntu-latest
+#    runs-on: ubuntu-latest
+    runs-on: self-hosted
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
       TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
