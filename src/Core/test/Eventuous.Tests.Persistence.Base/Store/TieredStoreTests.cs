@@ -21,8 +21,8 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
         var combined = new TieredEventReader(store, archive);
         var loaded   = (await combined.ReadStream(stream, StreamReadPosition.Start)).ToArray();
 
-        var actual = loaded.Select(x => (TestEventForTiers)x.Payload!).ToArray();
-        await Assert.That(actual).IsEquivalentTo(testEvents);
+        var actual = loaded.Select(x => (TestEventForTiers)x.Payload!);
+        await CollectionsIsExtensions.IsEquivalentTo(Assert.That(actual), testEvents);
 
         await Assert.That(loaded.Take(50).Select(x => x.FromArchive)).DoesNotContain(false);
         await Assert.That(loaded.Skip(50).Select(x => x.FromArchive)).DoesNotContain(true);
@@ -58,7 +58,7 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
 record TestEventForTiers(string Data, int Number) {
     public const string TypeName = "test-event-tiers";
 
-    static readonly Faker<TestEventForTiers> Faker = new Faker<TestEventForTiers>().CustomInstantiator(f => new(f.Random.String(), f.Random.Int()));
+    static readonly Faker<TestEventForTiers> Faker = new Faker<TestEventForTiers>().CustomInstantiator(f => new(f.Commerce.Product(), f.Random.Int()));
     
     public static IEnumerable<TestEventForTiers> CreateMany(int count) => Faker.Generate(count);
 }
