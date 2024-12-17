@@ -38,7 +38,7 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
         var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
         Client          = new(settings);
         EventStore      = new EsdbEventStore(Client);
-        _mongoContainer = new MongoDbBuilder().Build();
+        _mongoContainer = new MongoDbBuilder().WithImage("mongo:8").Build();
         await _mongoContainer.StartAsync();
         var mongoSettings = MongoClientSettings.FromConnectionString(_mongoContainer.GetConnectionString());
         Mongo = new MongoClient(mongoSettings).GetDatabase("bookings");
