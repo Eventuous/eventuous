@@ -7,6 +7,7 @@ using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.OpenTelemetry;
 
+[NotInParallel]
 public abstract class MetricsTestsBase(IMetricsSubscriptionFixtureBase fixture) {
     [Test]
     [Retry(3)]

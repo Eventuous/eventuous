@@ -45,13 +45,9 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     // ReSharper disable once ConvertToConstant.Global
     public string SubscriptionId => "test-sub";
 
-    TestListener? _listener;
-
     protected abstract void ConfigureSubscription(TSubscriptionOptions options);
 
     protected override void SetupServices(IServiceCollection services) {
-        _listener = new();
-
         services.AddProducer<TProducer>();
         services.AddSingleton<MessageCounter>();
 
@@ -79,10 +75,5 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
     public override async ValueTask DisposeAsync() {
         await base.DisposeAsync();
         Exporter.Dispose();
-        _listener?.Dispose();
     }
-}
-
-class TestListener() : GenericListener(SubscriptionMetrics.ListenerName) {
-    protected override void OnEvent(KeyValuePair<string, object?> obj) => TestContext.Current?.OutputWriter.WriteLine($"{obj.Key} {obj.Value}");
 }

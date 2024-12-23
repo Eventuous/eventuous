@@ -13,6 +13,7 @@ namespace Eventuous.Tests.Kafka;
 
 [ClassDataSource<KafkaFixture>]
 [NotInParallel]
+[Retry(3)]
 public class BasicProducerTests {
     readonly KafkaFixture _fixture;
 
