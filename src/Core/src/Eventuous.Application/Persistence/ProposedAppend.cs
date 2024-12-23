@@ -6,8 +6,10 @@ using System.Runtime.InteropServices;
 namespace Eventuous.Persistence;
 
 [StructLayout(LayoutKind.Auto)]
-public record struct ProposedAppend(StreamName StreamName, ExpectedStreamVersion ExpectedVersion, object[] Events);
+public record struct ProposedEvent(object Data, Metadata Metadata);
 
+[StructLayout(LayoutKind.Auto)]
+public record struct ProposedAppend(StreamName StreamName, ExpectedStreamVersion ExpectedVersion, ProposedEvent[] Events);
 
 public delegate ProposedAppend AmendAppend<in T>(ProposedAppend originalEvent, T context);
 

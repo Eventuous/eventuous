@@ -1,6 +1,7 @@
 // Copyright (C) Eventuous HQ OÜ.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics;
 using Shouldly;
 
 namespace Eventuous.Testing;
@@ -27,7 +28,7 @@ public abstract class AggregateSpec<TAggregate, TState>(AggregateFactoryRegistry
     /// </summary>
     /// <param name="aggregate"></param>
     protected abstract void When(TAggregate aggregate);
-    
+
     /// <summary>
     /// Function to create aggregate instances.
     /// </summary>
@@ -53,6 +54,7 @@ public abstract class AggregateSpec<TAggregate, TState>(AggregateFactoryRegistry
     /// <param name="events">Events to verify</param>
     /// <returns>Aggregate instance for further inspection</returns>
     // ReSharper disable once UnusedMethodReturnValue.Global
+    [StackTraceHidden]
     protected TAggregate Emitted(params object[] events) {
         if (Instance == null) {
             Then();

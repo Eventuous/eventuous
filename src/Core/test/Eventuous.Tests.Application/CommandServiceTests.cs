@@ -6,10 +6,7 @@ namespace Eventuous.Tests.Application;
 // ReSharper disable once UnusedType.Global
 [InheritsTests]
 public class CommandServiceTests : ServiceTestBase {
-    protected override ICommandService<BookingState> CreateService(
-            AmendEvent<ImportBooking>? amendEvent = null,
-            AmendEvent?                amendAll   = null
-        )
+    protected override ICommandService<BookingState> CreateService(AmendEvent<ImportBooking>? amendEvent = null, AmendEvent? amendAll = null)
         => new ExtendedService(Store, TypeMap, amendEvent, amendAll);
 
     class ExtendedService : BookingService {

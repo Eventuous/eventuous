@@ -1,6 +1,8 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Eventuous.Persistence;
+
 namespace Eventuous;
 
 using static Diagnostics.ApplicationEventSource;
@@ -87,8 +89,10 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (result.Changes.Count == 0) return Result<TState>.FromSuccess(result.State, Array.Empty<Change>(), 0);
 
+            var proposed    = new ProposedAppend(stream, new(result.OriginalVersion), result.Changes.Select(x => new ProposedEvent(x, new())).ToArray());
+            var final       = registeredHandler.AmendAppend?.Invoke(proposed, command) ?? proposed;
             var writer      = registeredHandler.ResolveWriter(command);
-            var storeResult = await writer.StoreAggregate<TAggregate, TState>(stream, result, Amend, cancellationToken).NoContext();
+            var storeResult = await writer.Store(final, Amend, cancellationToken).NoContext();
             var changes     = result.Changes.Select(x => Change.FromEvent(x, _typeMap));
             Log.CommandHandled<TCommand>();
 

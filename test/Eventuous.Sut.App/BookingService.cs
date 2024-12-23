@@ -37,5 +37,11 @@ public class BookingService : CommandService<Booking, BookingState, BookingId> {
             .InState(ExpectedState.Any)
             .GetId(cmd => cmd.BookingId)
             .Act((booking, _) => booking.Cancel());
+        
+        On<ExecuteNoMatterWhat>()
+            .InState(ExpectedState.New)
+            .GetId(cmd => new(cmd.BookingId))
+            .Act((booking, _) => booking.Execute())
+            .AmendAppend((append, _) => append with { ExpectedVersion = ExpectedStreamVersion.Any });
     }
 }

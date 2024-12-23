@@ -88,7 +88,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
 
             var result = await registeredHandler.Handler(loadedState.State, loadedState.Events, command, cancellationToken).NoContext();
 
-            var newEvents = result.ToArray();
+            var newEvents = result.Select(x => new ProposedEvent(x, new())).ToArray();
             var newState  = newEvents.Aggregate(loadedState.State, (current, evt) => current.When(evt));
 
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length

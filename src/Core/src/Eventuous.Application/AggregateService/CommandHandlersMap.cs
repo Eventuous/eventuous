@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Reflection;
+using Eventuous.Persistence;
 using static Eventuous.CommandServiceDelegates;
 using static Eventuous.FuncServiceDelegates;
 
@@ -16,7 +17,9 @@ record RegisteredHandler<TAggregate, TState, TId>(
         ResolveReaderFromCommand                 ResolveReader,
         ResolveWriterFromCommand                 ResolveWriter,
         AmendEventFromCommand?                   AmendEvent
-    ) where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new();
+    ) where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
+    public AmendAppend? AmendAppend { get; set; }
+}
 
 class HandlersMap<TAggregate, TState, TId> where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
     readonly TypeMap<RegisteredHandler<TAggregate, TState, TId>> _typeMap = new();

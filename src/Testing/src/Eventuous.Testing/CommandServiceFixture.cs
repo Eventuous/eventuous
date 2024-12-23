@@ -1,6 +1,7 @@
 // Copyright (C) Eventuous HQ OÜ.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics;
 using Shouldly;
 
 namespace Eventuous.Testing;
@@ -124,9 +125,10 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
     }
 
     public class FixtureResult {
-        readonly StreamEvent[]  _streamEvents;
-        readonly long           _version;
-        public   Result<TState> Result { get; }
+        readonly StreamEvent[] _streamEvents;
+        readonly long          _version;
+
+        public Result<TState> Result { get; }
 
         internal FixtureResult(Result<TState> result, StreamEvent[] streamEvents, long version) {
             _streamEvents = streamEvents;
@@ -140,16 +142,28 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         /// <param name="assert">Assertion function for successful result</param>
         /// <returns></returns>
         /// <exception cref="ShouldAssertException">Thrown if the result is not ok</exception>
+        [StackTraceHidden]
         public FixtureResult ResultIsOk(Action<Result<TState>.Ok>? assert = null) {
-            if (!Result.TryGet(out var ok)) {
-                throw new ShouldAssertException("Expected the result to be Ok, but it was not");
+            if (Result.TryGet(out var ok)) {
+                assert?.Invoke(ok);
+
+                return this;
+            }
+            
+            if (Result.TryGetError(out var error)) {
+                throw new ShouldAssertException($"Expected the result to be Ok, but it was Error \"{error.ErrorMessage}\"", error.Exception);
             }
 
-            assert?.Invoke(ok);
-
-            return this;
+            throw new ShouldAssertException("Expected the result to be Ok, but it was not");
         }
 
+        /// <summary>
+        /// Asserts if the result is Error and executes the provided assertions
+        /// </summary>
+        /// <param name="assert">Assertion function for error result</param>
+        /// <returns></returns>
+        /// <exception cref="ShouldAssertException">Thrown if the result is not an error</exception>
+        [StackTraceHidden]
         public FixtureResult ResultIsError(Action<Result<TState>.Error>? assert = null) {
             if (!Result.TryGetError(out var error)) {
                 throw new ShouldAssertException("Expected the result to be Error, but it was Ok");
@@ -160,13 +174,21 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
             return this;
         }
 
+        /// <summary>
+        /// Asserts if the result is Error and the exception is of type T and executes the provided assertions
+        /// </summary>
+        /// <param name="assert">Assertion function for error result</param>
+        /// <typeparam name="T">Type of exception that is expected</typeparam>
+        /// <returns></returns>
+        /// <exception cref="ShouldAssertException">Thrown if the result is not an error or if the exception is not of type T</exception>
+        [StackTraceHidden]
         public FixtureResult ResultIsError<T>(Action<T>? assert = null) where T : Exception {
             if (!Result.TryGetError(out var error)) {
                 throw new ShouldAssertException("Expected the result to be Error, but it was Ok");
             }
-            
+
             error.Exception.ShouldBeOfType<T>();
-            
+
             assert?.Invoke((T)error.Exception);
 
             return this;
@@ -177,6 +199,7 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         /// </summary>
         /// <param name="events">Events to be found in the stream</param>
         /// <returns></returns>
+        [StackTraceHidden]
         public FixtureResult FullStreamEventsAre(params object[] events) {
             var stream = _streamEvents.Select(x => x.Payload);
             stream.ShouldBe(events);
@@ -189,6 +212,7 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         /// </summary>
         /// <param name="events">Events that are expected to be new</param>
         /// <returns></returns>
+        [StackTraceHidden]
         public FixtureResult NewStreamEventsAre(params object[] events) {
             var stream = _streamEvents.Where(x => x.Position >= _version).Select(x => x.Payload);
             stream.ShouldBe(events);
@@ -201,6 +225,7 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         /// </summary>
         /// <param name="assert">Assertion function to check StreamEvent collection</param>
         /// <returns></returns>
+        [StackTraceHidden]
         public FixtureResult StreamIs(Action<StreamEvent[]> assert) {
             assert(_streamEvents);
 
