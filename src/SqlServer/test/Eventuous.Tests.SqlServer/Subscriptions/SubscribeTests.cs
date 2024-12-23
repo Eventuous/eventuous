@@ -6,6 +6,7 @@ using Testcontainers.MsSql;
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 
+[NotInParallel]
 public class SubscribeToAll()
     : SubscribeToAllBase<MsSqlContainer, SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, SqlServerCheckpointStore>(
         new SubscriptionFixture<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, TestEventHandler>(_ => { }, false)
@@ -27,6 +28,7 @@ public class SubscribeToAll()
 }
 
 [ClassDataSource<StreamNameFixture>(Shared = SharedType.None)]
+[NotInParallel]
 public class SubscribeToStream(StreamNameFixture streamNameFixture)
     : SubscribeToStreamBase<MsSqlContainer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, SqlServerCheckpointStore>(
         streamNameFixture.StreamName,

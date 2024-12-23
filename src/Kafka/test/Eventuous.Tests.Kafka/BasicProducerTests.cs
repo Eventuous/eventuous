@@ -12,6 +12,7 @@ using static Eventuous.DeserializationResult;
 namespace Eventuous.Tests.Kafka;
 
 [ClassDataSource<KafkaFixture>]
+[NotInParallel]
 public class BasicProducerTests {
     readonly KafkaFixture _fixture;
 

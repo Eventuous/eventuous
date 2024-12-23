@@ -6,6 +6,7 @@ using Testcontainers.PostgreSql;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
+[NotInParallel]
 public class SubscribeToAll()
     : SubscribeToAllBase<PostgreSqlContainer, PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, PostgresCheckpointStore>(
         new SubscriptionFixture<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, TestEventHandler>(_ => { }, false)
@@ -26,7 +27,8 @@ public class SubscribeToAll()
     }
 }
 
-[ClassDataSource<StreamNameFixture>]
+[ClassDataSource<StreamNameFixture>(Shared = SharedType.None)]
+[NotInParallel]
 public class SubscribeToStream(StreamNameFixture streamNameFixture)
     : SubscribeToStreamBase<PostgreSqlContainer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions, PostgresCheckpointStore>(
         streamNameFixture.StreamName,
