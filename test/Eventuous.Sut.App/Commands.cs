@@ -21,4 +21,6 @@ public static class Commands {
     };
     
     public record CancelBooking(BookingId BookingId);
+    
+    public record ExecuteNoMatterWhat(string BookingId);
 }

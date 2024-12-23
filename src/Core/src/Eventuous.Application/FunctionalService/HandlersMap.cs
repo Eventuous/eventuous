@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using Eventuous.Diagnostics;
+using Eventuous.Persistence;
 using static Eventuous.FuncServiceDelegates;
 
 namespace Eventuous;
@@ -14,7 +15,9 @@ record RegisteredHandler<TState>(
         ResolveReaderFromCommand        ResolveReaderFromCommand,
         ResolveWriterFromCommand        ResolveWriterFromCommand,
         AmendEventFromCommand?          AmendEvent
-    ) where TState : State<TState>;
+    ) where TState : State<TState> {
+    public AmendAppend? AmendAppend { get; set; }
+}
 
 class HandlersMap<TState> where TState : State<TState> {
     readonly TypeMap<RegisteredHandler<TState>> _typeMap = new();

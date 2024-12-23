@@ -1,3 +1,4 @@
+using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Testing;
 
@@ -26,5 +27,18 @@ public abstract partial class ServiceTestBase {
             .Given(cmd.BookingId, seed)
             .When(cmd)
             .Then(result => result.ResultIsError<WrongVersion>());
+    }
+
+    [Test]
+    public async Task Should_execute_amended_append() {
+        var seedCmd = Helpers.GetBookRoom();
+        var seed    = new BookingEvents.RoomBooked(seedCmd.RoomId, seedCmd.CheckIn, seedCmd.CheckOut, seedCmd.Price);
+        var cmd     = new Commands.ExecuteNoMatterWhat(seedCmd.BookingId);
+
+        await CommandServiceFixture
+            .ForService(() => CreateService(), Store)
+            .Given(seedCmd.BookingId, seed)
+            .When(cmd)
+            .Then(result => result.ResultIsOk(x => x.Changes.Should().HaveCount(1)).FullStreamEventsAre(seed, new BookingEvents.Executed()));
     }
 }

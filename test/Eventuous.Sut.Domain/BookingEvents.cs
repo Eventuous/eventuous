@@ -26,6 +26,9 @@ public static class BookingEvents {
     [EventType(TypeNames.BookingImported)]
     public record BookingImported(string RoomId, float Price, LocalDate CheckIn, LocalDate CheckOut);
 
+    [EventType(TypeNames.Executed)]
+    public record Executed;
+
     // These constants are for test purpose, use inline names in real apps
     public static class TypeNames {
         public const string BookingCancelled         = "V1.BookingCancelled";
@@ -35,5 +38,6 @@ public static class BookingEvents {
         public const string OutstandingAmountChanged = "V1.OutstandingAmountChanged";
         public const string BookingFullyPaid         = "V1.BookingFullyPaid";
         public const string BookingOverpaid          = "V1.BookingOverpaid";
+        public const string Executed                 = "V1.Executed";
     }
 }

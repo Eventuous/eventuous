@@ -16,7 +16,7 @@ public abstract partial class ServiceTestBase {
 
         var tasks = Enumerable
             .Range(1, threadCount)
-            .Select(bookingId => Task.Run(() => service.Handle(Helpers.GetBookRoom(bookingId.ToString()), cancellationToken)))
+            .Select(bookingId => Task.Run(() => service.Handle(Helpers.GetBookRoom(bookingId.ToString()), cancellationToken), cancellationToken))
             .ToList();
 
         await Task.WhenAll(tasks);
@@ -52,10 +52,7 @@ public abstract partial class ServiceTestBase {
 
     readonly TestEventListener _listener;
 
-    protected abstract ICommandService<BookingState> CreateService(
-            AmendEvent<ImportBooking>? amendEvent = null,
-            AmendEvent?                amendAll   = null
-        );
+    protected abstract ICommandService<BookingState> CreateService(AmendEvent<ImportBooking>? amendEvent = null, AmendEvent? amendAll = null);
 
     protected record ImportBooking(
             string    BookingId,

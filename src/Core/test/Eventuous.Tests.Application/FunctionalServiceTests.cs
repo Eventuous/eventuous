@@ -1,16 +1,11 @@
-#pragma warning disable CS0618 // Type or member is obsolete
-
 namespace Eventuous.Tests.Application;
 
 using Sut.Domain;
 
 // ReSharper disable once UnusedType.Global
 [InheritsTests]
-public class FunctionalServiceTests() : ServiceTestBase() {
-    protected override ICommandService<BookingState> CreateService(
-            AmendEvent<ImportBooking>? amendEvent = null,
-            AmendEvent?                amendAll   = null
-        )
+public class FunctionalServiceTests : ServiceTestBase {
+    protected override ICommandService<BookingState> CreateService(AmendEvent<ImportBooking>? amendEvent = null, AmendEvent? amendAll = null)
         => new ExtendedService(Store, TypeMap, amendEvent, amendAll);
 
     class ExtendedService : BookingFuncService {

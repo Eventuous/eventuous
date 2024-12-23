@@ -69,7 +69,7 @@ class InMemoryStream(StreamName name) {
     readonly List<StoredEvent> _events = [];
 
     public void CheckVersion(ExpectedStreamVersion expectedVersion) {
-        if (expectedVersion.Value != Version) throw new WrongVersion(expectedVersion, Version);
+        if (expectedVersion != ExpectedStreamVersion.Any && expectedVersion.Value != Version) throw new WrongVersion(expectedVersion, Version);
     }
 
     public void AppendEvents(ExpectedStreamVersion expectedVersion, IReadOnlyCollection<NewStreamEvent> events) {

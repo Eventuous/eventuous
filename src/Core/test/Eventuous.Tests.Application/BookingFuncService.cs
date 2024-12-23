@@ -26,6 +26,12 @@ public class BookingFuncService : CommandService<BookingState> {
             .GetStream(cmd => GetStream(cmd.BookingId))
             .Act((_, _, _) => [new BookingCancelled()]);
 
+        On<ExecuteNoMatterWhat>()
+            .InState(ExpectedState.New)
+            .GetStream(cmd => GetStream(cmd.BookingId))
+            .Act((_, _, _) => [new Executed()])
+            .AmendAppend((append, _) => append with { ExpectedVersion = ExpectedStreamVersion.Any });
+
         return;
 
         static IEnumerable<object> RecordPayment(BookingState state, object[] originalEvents, RecordPayment cmd) {
