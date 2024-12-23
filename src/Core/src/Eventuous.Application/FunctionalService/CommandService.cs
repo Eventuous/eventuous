@@ -86,7 +86,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
                 _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
             };
 
-            var result = await registeredHandler.Handler(loadedState.State, loadedState.Events, command, cancellationToken).NoContext();
+            var result = (await registeredHandler.Handler(loadedState.State, loadedState.Events, command, cancellationToken).NoContext()).ToArray();
 
             var newEvents = result.Select(x => new ProposedEvent(x, new())).ToArray();
             var newState  = newEvents.Aggregate(loadedState.State, (current, evt) => current.When(evt));
@@ -97,7 +97,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
             var proposed    = new ProposedAppend(streamName, loadedState.StreamVersion, newEvents);
             var final       = registeredHandler.AmendAppend?.Invoke(proposed, command) ?? proposed;
             var storeResult = await resolvedWriter.Store(final, Amend, cancellationToken).NoContext();
-            var changes     = newEvents.Select(x => Change.FromEvent(x, _typeMap));
+            var changes     = result.Select(x => Change.FromEvent(x, _typeMap));
             Log.CommandHandled<TCommand>();
 
             return Result<TState>.FromSuccess(newState, changes, storeResult.GlobalPosition);
