@@ -21,7 +21,8 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
     public IntegrationFixture() => DefaultEventSerializer.SetDefaultSerializer(Serializer);
 
     public async Task InitializeAsync() {
-        _redisContainer = GetContainer();
+        _redisContainer = new RedisBuilder().WithImage("redis:7.0.12-alpine").Build();
+
         await _redisContainer.StartAsync();
         var connString = _redisContainer.GetConnectionString();
         await Module.LoadModule(GetDb);
@@ -37,17 +38,6 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
             var muxer = ConnectionMultiplexer.Connect(connString);
 
             return muxer.GetDatabase();
-        }
-
-        RedisContainer GetContainer() {
-        while (true) {
-            try {
-                return new RedisBuilder().WithImage("redis:7.0.12-alpine").Build();
-            } catch (Exception e) {
-                Console.WriteLine(e);
-            }
-        }
-            
         }
     }
 

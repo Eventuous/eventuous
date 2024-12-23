@@ -9,15 +9,9 @@ public static class EsdbContainer {
             ? "eventstore/eventstore:24.6.0-alpha-arm64v8"
             : "eventstore/eventstore:24.6";
 
-        while (true) {
-            try {
-                return new EventStoreDbBuilder()
-                    .WithImage(image)
-                    .WithEnvironment("EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP", "true")
-                    .Build();
-            } catch (Exception e) {
-                Console.WriteLine(e);
-            }
-        }
+        return new EventStoreDbBuilder()
+            .WithImage(image)
+            .WithEnvironment("EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP", "true")
+            .Build();
     }
 }
