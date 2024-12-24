@@ -7,20 +7,17 @@ using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.OpenTelemetry;
 
-[NotInParallel]
 public abstract class MetricsTestsBase(IMetricsSubscriptionFixtureBase fixture) {
-    [Test]
-    [Retry(3)]
-    public async Task ShouldMeasureSubscriptionGapCountBase() {
+    protected async Task ShouldMeasureSubscriptionGapCountBase() {
         TestContext.Current?.OutputWriter.WriteLine($"Stream {fixture.Stream}");
         await Assert.That(_values).IsNotNull();
         var gapCount    = GetValue(_values!, SubscriptionMetrics.GapCountMetricName)!;
         var expectedGap = fixture.Count - fixture.Counter.Count;
 
-        gapCount.Should().NotBeNull();
-        gapCount.Value.Should().BeInRange(expectedGap - 20, expectedGap + 20);
-        gapCount.CheckTag(SubscriptionMetrics.SubscriptionIdTag, fixture.SubscriptionId);
-        gapCount.CheckTag(fixture.DefaultTagKey, fixture.DefaultTagValue);
+        await Assert.That(gapCount).IsNotNull();
+        await Assert.That(gapCount.Value).IsBetween(expectedGap - 20, expectedGap + 20);
+        await gapCount.CheckTag(SubscriptionMetrics.SubscriptionIdTag, fixture.SubscriptionId);
+        await gapCount.CheckTag(fixture.DefaultTagKey, fixture.DefaultTagValue);
     }
 
     // [Fact]
@@ -66,8 +63,8 @@ public abstract class MetricsTestsBase(IMetricsSubscriptionFixtureBase fixture) 
 }
 
 static class TagExtensions {
-    public static void CheckTag(this MetricValue metric, string tag, string expectedValue) {
-        metric.GetTag(tag).Should().Be(expectedValue);
+    public static async Task CheckTag(this MetricValue metric, string tag, string expectedValue) {
+        await Assert.That(metric.GetTag(tag)).IsEqualTo(expectedValue);
     }
 
     static object GetTag(this MetricValue metric, string key) {
