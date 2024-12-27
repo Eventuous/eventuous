@@ -47,6 +47,7 @@ jobs:
       -  
         name: Run tests
         run: |
+          echo "dotnet test -c "Debug CI" --no-build -f net${{ matrix.dotnet-version }}"
           dotnet test -c "Debug CI" --no-build -f net${{ matrix.dotnet-version }}
       -  
         name: Upload Test Results
