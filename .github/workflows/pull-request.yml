@@ -20,6 +20,9 @@ jobs:
     name: "Build and test"
 #    runs-on: ubuntu-latest
     runs-on: self-hosted
+    strategy:
+      matrix:
+        dotnet-version: [ '8.0.x', '9.0.x' ]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
       TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
@@ -32,9 +35,8 @@ jobs:
         name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
+          dotnet-version: ${{ matrix.dotnet-version }}
+          cache: 'true'
       -  
         name: Build
         run: |
@@ -52,7 +54,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Test Results ${{ matrix.dotnet }}
+          name: Test Results ${{ matrix.dotnet-version }}
           path: |
             test-results/**/*.xml
             test-results/**/*.trx
