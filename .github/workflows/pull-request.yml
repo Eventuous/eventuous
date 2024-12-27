@@ -36,10 +36,14 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
+      -
+        name: Restore
+        run: |
+          dotnet restore -c "Debug CI" -f net${{ matrix.dotnet-version }}
       -  
         name: Build
         run: |
-          dotnet build -c "Debug CI" -f net${{ matrix.dotnet-version }}
+          dotnet build -c "Debug CI" -f net${{ matrix.dotnet-version }} --no-restore
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
@@ -47,7 +51,6 @@ jobs:
       -  
         name: Run tests
         run: |
-          echo "dotnet test -c "Debug CI" --no-build -f net${{ matrix.dotnet-version }}"
           dotnet test -c "Debug CI" --no-build -f net${{ matrix.dotnet-version }}
       -  
         name: Upload Test Results
