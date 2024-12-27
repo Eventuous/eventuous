@@ -22,7 +22,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        dotnet-version: [ '8.0.x', '9.0.x' ]
+        dotnet-version: [ '8.0', '9.0' ]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
       TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
@@ -39,7 +39,7 @@ jobs:
       -  
         name: Build
         run: |
-          dotnet build -c "Debug CI"
+          dotnet build -c "Debug CI" -f net${{ matrix.dotnet-version }}
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
@@ -47,7 +47,7 @@ jobs:
       -  
         name: Run tests
         run: |
-          dotnet test -c "Debug CI" --no-build
+          dotnet test -c "Debug CI" --no-build -f net${{ matrix.dotnet-version }}
       -  
         name: Upload Test Results
         if: always()
