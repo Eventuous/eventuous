@@ -9,7 +9,7 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
     Task? _runner;
 
     public TaskRunner Start() {
-        _runner = Task.Run(Run);
+        _runner = Task.Factory.StartNew(Run, _stopSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         return this;
 
