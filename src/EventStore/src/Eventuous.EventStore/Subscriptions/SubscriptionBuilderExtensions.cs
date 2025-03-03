@@ -57,4 +57,16 @@ public static class SubscriptionBuilderExtensions {
         Func<IServiceProvider, T> factory
     ) where T : class, ICheckpointStore
         => builder.UseCheckpointStore<AllStreamSubscription, AllStreamSubscriptionOptions, T>(factory);
+    
+    /// <summary>
+    /// Use non-default serializer
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <typeparam name="T">Serializer type</typeparam>
+    /// <returns></returns>
+    public static SubscriptionBuilder<AllStreamSubscription, AllStreamSubscriptionOptions> UseSerializer<T>(
+        this SubscriptionBuilder<AllStreamSubscription, AllStreamSubscriptionOptions> builder
+    ) where T : class, IEventSerializer
+        => builder.UseSerializer<AllStreamSubscription, AllStreamSubscriptionOptions, T>();
+
 }

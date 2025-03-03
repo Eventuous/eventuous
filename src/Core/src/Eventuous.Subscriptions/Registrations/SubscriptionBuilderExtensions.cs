@@ -89,4 +89,22 @@ public static class SubscriptionBuilderExtensions {
 
         return builder;
     }
+    
+
+    /// <summary>
+    /// Use non-default serializer for the specific subscription
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <typeparam name="TSubscription">Subscription type</typeparam>
+    /// <typeparam name="TOptions">Subscription options type</typeparam>
+    /// <typeparam name="T">Serializer type</typeparam>
+    /// <returns></returns>
+    public static SubscriptionBuilder<TSubscription, TOptions> UseSerializer<TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
+        where T : class, IEventSerializer
+        where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
+        where TOptions : SubscriptionWithCheckpointOptions {
+        builder.Services.TryAddKeyedSingleton<IEventSerializer, T>(builder.SubscriptionId);
+
+        return builder;
+    }
 }
