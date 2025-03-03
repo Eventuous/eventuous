@@ -14,8 +14,7 @@ public class StateStore(IEventReader eventReader, IEventSerializer? serializer =
     const int PageSize = 500;
 
     [Obsolete("Use IEventReader.LoadState<T> instead")]
-    public async Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken)
-        where T : State<T>, new() {
+    public async Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken) where T : State<T>, new() {
         var state = new T();
 
         const int pageSize = 500;
@@ -23,7 +22,7 @@ public class StateStore(IEventReader eventReader, IEventSerializer? serializer =
         var position = StreamReadPosition.Start;
 
         while (true) {
-            var events = await _eventReader.ReadEvents(stream, position, pageSize, cancellationToken).NoContext();
+            var events = await _eventReader.ReadEvents(stream, position, pageSize, true, cancellationToken).NoContext();
 
             foreach (var streamEvent in events) {
                 Fold(streamEvent);

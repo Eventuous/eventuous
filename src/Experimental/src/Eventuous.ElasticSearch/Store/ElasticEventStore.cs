@@ -35,7 +35,7 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
             );
     }
 
-    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
         var response = await ReadEvents(
             q => q.Bool(
                 b => b.Must(
@@ -47,10 +47,10 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
             cancellationToken
         );
 
-        return response.Length == 0 ? throw new StreamNotFound(stream) : response;
+        return response.Length == 0 && failIfNotFound ? throw new StreamNotFound(stream) : response;
     }
 
-    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
         var response = await ReadEvents(
             q => q.Bool(
                 b => b.Must(
@@ -62,7 +62,7 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
             cancellationToken
         );
 
-        return response.Length == 0 ? throw new StreamNotFound(stream) : response.OrderByDescending(x => x.Position).ToArray();
+        return response.Length == 0 && failIfNotFound ? throw new StreamNotFound(stream) : response.OrderByDescending(x => x.Position).ToArray();
     }
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {

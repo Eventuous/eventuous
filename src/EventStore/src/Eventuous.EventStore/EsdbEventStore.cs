@@ -88,6 +88,7 @@ public class EsdbEventStore : IEventStore {
                 return new AppendEventsResult(result.LogPosition.CommitPosition, result.NextExpectedStreamRevision.ToInt64());
             },
             stream,
+            true,
             () => new("Unable to appends events to {Stream}", stream),
             (s, ex) => {
                 Log.UnableToAppendEvents(stream, ex);
@@ -110,23 +111,32 @@ public class EsdbEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
+    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken);
 
-        return TryExecute(
-            async () => {
-                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
+        try {
+            return await TryExecute(
+                async () => {
+                    var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
 
-                return ToStreamEvents(resolvedEvents);
-            },
-            stream,
-            () => new("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream),
-            (s, ex) => new ReadFromStreamException(s, ex)
-        );
+                    return ToStreamEvents(resolvedEvents);
+                },
+                stream,
+                failIfNotFound,
+                () => new("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream),
+                (s, ex) => new ReadFromStreamException(s, ex)
+            );
+        } catch (StreamNotFound) {
+            if (failIfNotFound) {
+                throw;
+            }
+
+            return [];
+        }
     }
 
     /// <inheritdoc/>
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
             stream,
@@ -136,16 +146,25 @@ public class EsdbEventStore : IEventStore {
             cancellationToken: cancellationToken
         );
 
-        return TryExecute(
-            async () => {
-                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
+        try {
+            return await TryExecute(
+                async () => {
+                    var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
 
-                return ToStreamEvents(resolvedEvents);
-            },
-            stream,
-            () => new("Unable to read {Count} events backwards from {Stream}", count, stream),
-            (s, ex) => new ReadFromStreamException(s, ex)
-        );
+                    return ToStreamEvents(resolvedEvents);
+                },
+                stream,
+                failIfNotFound,
+                () => new("Unable to read {Count} events backwards from {Stream}", count, stream),
+                (s, ex) => new ReadFromStreamException(s, ex)
+            );
+        } catch (StreamNotFound) {
+            if (failIfNotFound) {
+                throw;
+            }
+
+            return [];
+        }
     }
 
     /// <inheritdoc/>
@@ -164,6 +183,7 @@ public class EsdbEventStore : IEventStore {
                 () => _client.SetStreamMetadataAsync(stream, expectedVersion.AsStreamRevision(), meta, cancellationToken: cancellationToken)
             ),
             stream,
+            expectedVersion.ExistingStream,
             () => new("Unable to truncate stream {Stream} at {Position}", stream, truncatePosition),
             (s, ex) => new TruncateStreamException(s, ex)
         );
@@ -178,6 +198,7 @@ public class EsdbEventStore : IEventStore {
                 () => _client.DeleteAsync(stream, expectedVersion.AsStreamRevision(), cancellationToken: cancellationToken)
             ),
             stream,
+            expectedVersion.ExistingStream,
             () => new("Unable to delete stream {Stream}", stream),
             (s, ex) => new DeleteStreamException(s, ex)
         );
@@ -185,13 +206,16 @@ public class EsdbEventStore : IEventStore {
     async Task<T> TryExecute<T>(
             Func<Task<T>>                      func,
             string                             stream,
+            bool                               failIfNotFound,
             Func<ErrorInfo>                    getError,
             Func<string, Exception, Exception> getException
         ) {
         try {
             return await func().NoContext();
         } catch (StreamNotFoundException) {
-            _logger?.LogWarning("Stream {Stream} not found", stream);
+            if (failIfNotFound) {
+                _logger?.LogWarning("Stream {Stream} not found", stream);
+            }
 
             throw new StreamNotFound(stream);
         } catch (Exception ex) {
@@ -217,12 +241,13 @@ public class EsdbEventStore : IEventStore {
 
         return deserialized switch {
             SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
-            FailedToDeserialize failed => HandleFailure(failed),
-            _ => throw new SerializationException("Unknown deserialization result")
+            FailedToDeserialize failed       => HandleFailure(failed),
+            _                                => throw new SerializationException("Unknown deserialization result")
         };
 
         StreamEvent? HandleFailure(FailedToDeserialize failed) {
             if (resolvedEvent.Event.EventType.StartsWith('$')) return null;
+
             throw new SerializationException($"Can't deserialize {resolvedEvent.Event.EventType}: {failed.Error}");
         }
 

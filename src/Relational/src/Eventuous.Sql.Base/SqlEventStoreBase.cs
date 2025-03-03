@@ -90,22 +90,22 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         );
 
     /// <inheritdoc />
-    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetReadCommand(connection, stream, start, count);
 
-        return await ReadInternal(cmd, stream, cancellationToken).NoContext();
+        return await ReadInternal(cmd, stream, failIfNotFound, cancellationToken).NoContext();
     }
 
     /// <inheritdoc />
-    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetReadBackwardsCommand(connection, stream, start, count);
 
-        return await ReadInternal(cmd, stream, cancellationToken).NoContext();
+        return await ReadInternal(cmd, stream, failIfNotFound, cancellationToken).NoContext();
     }
 
-    async Task<StreamEvent[]> ReadInternal(DbCommand cmd, StreamName stream, CancellationToken cancellationToken) {
+    async Task<StreamEvent[]> ReadInternal(DbCommand cmd, StreamName stream, bool failIfNotFound, CancellationToken cancellationToken) {
         try {
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
@@ -113,7 +113,15 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
 
             return await result.Select(ToStreamEvent).ToArrayAsync(cancellationToken).NoContext();
         } catch (Exception e) {
-            throw IsStreamNotFound(e) ? new StreamNotFound(stream) : e;
+            if (IsStreamNotFound(e)) {
+                if (failIfNotFound) {
+                    throw new StreamNotFound(stream);
+                }
+
+                return [];
+            }
+
+            throw;
         }
     }
 

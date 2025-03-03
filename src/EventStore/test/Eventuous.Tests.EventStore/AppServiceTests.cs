@@ -31,7 +31,7 @@ public class AppServiceTests {
         var handlingResult = await Service.Handle(cmd, cancellationToken);
         handlingResult.Success.Should().BeTrue();
 
-        var events = await _fixture.EventStore.ReadEvents(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, int.MaxValue, cancellationToken);
+        var events = await _fixture.EventStore.ReadEvents(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, int.MaxValue, true, cancellationToken);
 
         var result = events.Select(x => x.Payload).ToArray();
 

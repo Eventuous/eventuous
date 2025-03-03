@@ -21,7 +21,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
         var streamName = Helpers.GetStreamName();
         await _fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream);
 
-        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, cancellationToken);
+        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, true, cancellationToken);
         await Assert.That(result.Length).IsEqualTo(1);
         await Assert.That(result[0].Payload).IsEquivalentTo(evt);
     }
@@ -33,7 +33,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, cancellationToken);
+        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, true, cancellationToken);
         var actual = result.Select(x => x.Payload);
         await Assert.That(actual).IsEquivalentTo(events);
     }
@@ -45,7 +45,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result   = await _fixture.EventStore.ReadEvents(streamName, new(10), 100, cancellationToken);
+        var result   = await _fixture.EventStore.ReadEvents(streamName, new(10), 100, true, cancellationToken);
         var expected = events.Skip(10);
         var actual   = result.Select(x => x.Payload!);
         await Assert.That(actual).IsEquivalentTo(expected);
@@ -58,7 +58,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
-        var result   = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 10, cancellationToken);
+        var result   = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 10, true, cancellationToken);
         var expected = events.Take(10);
 
         IEnumerable<object> actual = result.Select(x => x.Payload)!;
@@ -73,7 +73,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
 
         await _fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream, new() { { "Key1", "Value1" }, { "Key2", "Value2" } });
 
-        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, cancellationToken);
+        var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, true, cancellationToken);
 
         await Assert.That(result.Length).IsEqualTo(1);
         await Assert.That(result[0].Payload).IsEquivalentTo(evt);

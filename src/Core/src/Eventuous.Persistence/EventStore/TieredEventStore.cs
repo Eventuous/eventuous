@@ -14,11 +14,11 @@ namespace Eventuous;
 public class TieredEventStore(IEventStore hotStore, IEventReader archiveReader) : IEventStore {
     readonly TieredEventReader _tieredReader = new(Ensure.NotNull(hotStore), Ensure.NotNull(archiveReader));
 
-    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
-        => _tieredReader.ReadEvents(stream, start, count, cancellationToken);
+    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
+        => _tieredReader.ReadEvents(stream, start, count, failIfNotFound, cancellationToken);
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
-        => _tieredReader.ReadEventsBackwards(stream, start, count, cancellationToken);
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
+        => _tieredReader.ReadEventsBackwards(stream, start, count, failIfNotFound, cancellationToken);
 
     public Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,

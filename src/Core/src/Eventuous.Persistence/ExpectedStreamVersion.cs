@@ -6,11 +6,14 @@ namespace Eventuous;
 public readonly record struct ExpectedStreamVersion(long Value) {
     public static readonly ExpectedStreamVersion NoStream = new(-1);
     public static readonly ExpectedStreamVersion Any      = new(-2);
+
+    public bool ExistingStream => Value >= 0;
 }
 
 public record struct StreamReadPosition {
     public StreamReadPosition(long Value) {
         if (Value < 0) throw new ArgumentOutOfRangeException(nameof(Value), "StreamReadPosition cannot be negative.");
+
         this.Value = Value;
     }
 

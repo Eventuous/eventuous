@@ -10,36 +10,36 @@ namespace Eventuous;
 /// <param name="hotReader">Event reader pointing to hot store</param>
 /// <param name="archiveReader">Event reader pointing to archive store</param>
 public class TieredEventReader(IEventReader hotReader, IEventReader archiveReader) : IEventReader {
-    public async Task<StreamEvent[]> ReadEvents(StreamName streamName, StreamReadPosition start, int count, CancellationToken cancellationToken) {
-        var hotEvents = await LoadStreamEvents(hotReader, start, count).NoContext();
+    public async Task<StreamEvent[]> ReadEvents(StreamName streamName, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
+        var hotEvents = await LoadStreamEvents(hotReader, start, count, true).NoContext();
 
         var archivedEvents = hotEvents.Length == 0 || hotEvents[0].Position > start.Value
-            ? await LoadStreamEvents(archiveReader, start, (int)hotEvents[0].Position).NoContext()
+            ? await LoadStreamEvents(archiveReader, start, (int)hotEvents[0].Position, !failIfNotFound).NoContext()
             : Enumerable.Empty<StreamEvent>();
 
         return archivedEvents.Select(x => x with { FromArchive = true }).Concat(hotEvents).Distinct(Comparer).ToArray();
 
-        async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition startPosition, int localCount) {
+        async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition startPosition, int localCount, bool ignore) {
             try {
-                return await reader.ReadEvents(streamName, startPosition, localCount, cancellationToken).NoContext();
+                return await reader.ReadEvents(streamName, startPosition, localCount, !ignore, cancellationToken).NoContext();
             } catch (StreamNotFound) {
                 return [];
             }
         }
     }
 
-    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName streamName, StreamReadPosition start, int count, CancellationToken cancellationToken) {
-        var hotEvents = await LoadStreamEvents(hotReader, start, count).NoContext();
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName streamName, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
+        var hotEvents = await LoadStreamEvents(hotReader, start, count, true).NoContext();
 
         var archivedEvents = hotEvents.Length == 0 || hotEvents[0].Position > start.Value - count
-            ? await LoadStreamEvents(archiveReader, new(hotEvents[0].Position - 1), count - hotEvents.Length).NoContext()
+            ? await LoadStreamEvents(archiveReader, new(hotEvents[0].Position - 1), count - hotEvents.Length, failIfNotFound).NoContext()
             : Enumerable.Empty<StreamEvent>();
 
         return hotEvents.Concat(archivedEvents.Select(x => x with { FromArchive = true })).Distinct(Comparer).ToArray();
 
-        async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition startPosition, int localCount) {
+        async Task<StreamEvent[]> LoadStreamEvents(IEventReader reader, StreamReadPosition startPosition, int localCount, bool ignore) {
             try {
-                return await reader.ReadEventsBackwards(streamName, startPosition, localCount, cancellationToken).NoContext();
+                return await reader.ReadEventsBackwards(streamName, startPosition, localCount, !ignore, cancellationToken).NoContext();
             } catch (StreamNotFound) {
                 return [];
             }
