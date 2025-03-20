@@ -76,7 +76,7 @@ public static class StoreFunctions {
 
         try {
             while (true) {
-                var events = await eventReader.ReadEvents(streamName, position, pageSize, cancellationToken).NoContext();
+                var events = await eventReader.ReadEvents(streamName, position, pageSize, failIfNotFound, cancellationToken).NoContext();
                 streamEvents.AddRange(events);
 
                 if (events.Length < pageSize) break;

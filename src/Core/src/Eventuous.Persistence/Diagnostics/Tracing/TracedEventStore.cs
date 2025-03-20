@@ -9,7 +9,7 @@ using static Constants;
 
 public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore {
     public static IEventStore Trace(IEventStore eventStore) => new TracedEventStore(eventStore);
-    
+
     readonly string _componentName = eventStore.GetType().Name;
 
     internal IEventStore Inner { get; } = eventStore;
@@ -28,11 +28,11 @@ public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore 
         )
         => Writer.AppendEvents(stream, expectedVersion, events, cancellationToken);
 
-    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
-        => Reader.ReadEvents(stream, start, count, cancellationToken);
+    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
+        => Reader.ReadEvents(stream, start, count, failIfNotFound, cancellationToken);
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
-        => Reader.ReadEventsBackwards(stream, start, count, cancellationToken);
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
+        => Reader.ReadEventsBackwards(stream, start, count, failIfNotFound, cancellationToken);
 
     public Task TruncateStream(
             StreamName             stream,

@@ -48,7 +48,7 @@ public class ServerFixture {
     static string RandomString() => Guid.NewGuid().ToString();
 
     public Task<StreamEvent[]> ReadStream<T>(string id)
-        => Resolve<IEventStore>().ReadEvents(StreamName.For<T>(id), StreamReadPosition.Start, 100, default);
+        => Resolve<IEventStore>().ReadEvents(StreamName.For<T>(id), StreamReadPosition.Start, 100, true, default);
 
     internal static BookRoom GetBookRoom() {
         var now  = new DateTime(2023, 10, 1);

@@ -37,7 +37,7 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler> {
 
         await Start();
 
-        var writtenEvent = (await StoreFixture.EventStore.ReadEvents(Stream, StreamReadPosition.Start, 1, cancellationToken))[0];
+        var writtenEvent = (await StoreFixture.EventStore.ReadEvents(Stream, StreamReadPosition.Start, 1, true, cancellationToken))[0];
 
         var meta = writtenEvent.Metadata;
         var (traceId, spanId) = meta.GetTracingMeta();

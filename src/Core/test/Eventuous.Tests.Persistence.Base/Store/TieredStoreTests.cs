@@ -37,11 +37,11 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
     }
 
     class ArchiveStore(IEventStore original) : IEventReader, IEventWriter {
-        public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
-            => original.ReadEvents(GetArchiveStreamName(stream), start, count, cancellationToken);
+        public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
+            => original.ReadEvents(GetArchiveStreamName(stream), start, count, failIfNotFound, cancellationToken);
 
-        public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
-            => original.ReadEventsBackwards(GetArchiveStreamName(stream), start, count, cancellationToken);
+        public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
+            => original.ReadEventsBackwards(GetArchiveStreamName(stream), start, count, failIfNotFound, cancellationToken);
 
         static StreamName GetArchiveStreamName(string streamName) => new($"Archive-{streamName}");
 

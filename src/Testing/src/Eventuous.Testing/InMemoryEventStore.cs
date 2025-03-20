@@ -28,12 +28,12 @@ public class InMemoryEventStore : IEventStore {
     }
 
     /// <inheritdoc />
-    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
-        => Task.FromResult(FindStream(stream).GetEvents(start, count).ToArray());
+    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
+        => Task.FromResult(FindStream(stream, failIfNotFound).GetEvents(start, count).ToArray());
 
     /// <inheritdoc />
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
-        => Task.FromResult(FindStream(stream).GetEventsBackwards(start, count).ToArray());
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
+        => Task.FromResult(FindStream(stream, failIfNotFound).GetEventsBackwards(start, count).ToArray());
 
     /// <inheritdoc />
     public Task TruncateStream(
@@ -42,14 +42,14 @@ public class InMemoryEventStore : IEventStore {
             ExpectedStreamVersion  expectedVersion,
             CancellationToken      cancellationToken
         ) {
-        FindStream(stream).Truncate(expectedVersion, truncatePosition);
+        FindStream(stream, expectedVersion.ExistingStream).Truncate(expectedVersion, truncatePosition);
 
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken) {
-        var existing = FindStream(stream);
+        var existing = FindStream(stream, expectedVersion.ExistingStream);
         existing.CheckVersion(expectedVersion);
         _storage.Remove(stream, out _);
 
@@ -57,7 +57,17 @@ public class InMemoryEventStore : IEventStore {
     }
 
     // ReSharper disable once ReturnTypeCanBeEnumerable.Local
-    InMemoryStream FindStream(StreamName stream) => !_storage.TryGetValue(stream, out var existing) ? throw new StreamNotFound(stream) : existing;
+    InMemoryStream FindStream(StreamName stream, bool failIfNotFound) {
+        if (!_storage.TryGetValue(stream, out var existing)) {
+            if (failIfNotFound) {
+                throw new StreamNotFound(stream);
+            }
+
+            return new(stream);
+        }
+
+        return existing!;
+    }
 }
 
 record StoredEvent(StreamEvent Event, int Position);

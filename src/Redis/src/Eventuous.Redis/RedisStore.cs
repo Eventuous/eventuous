@@ -35,11 +35,17 @@ public class RedisStore : IEventReader, IEventWriter {
 
     const string ContentType = "application/json";
 
-    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
         try {
             var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count).NoContext();
 
-            if (result == null) throw new StreamNotFound(stream);
+            if (result == null! || result.Length == 0) {
+                if (failIfNotFound) {
+                    throw new StreamNotFound(stream);
+                }
+
+                return [];
+            }
 
             return result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer)).ToArray();
         } catch (InvalidOperationException e) when (e.Message.Contains("Reading is not allowed after reader was completed") ||
@@ -48,7 +54,7 @@ public class RedisStore : IEventReader, IEventWriter {
         }
     }
 
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
         => throw new NotImplementedException();
 
     public async Task<AppendEventsResult> AppendEvents(
