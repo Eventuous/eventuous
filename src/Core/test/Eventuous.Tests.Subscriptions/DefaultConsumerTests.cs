@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Subscriptions.Context;
@@ -5,7 +6,8 @@ using Eventuous.TestHelpers.TUnit;
 
 namespace Eventuous.Tests.Subscriptions;
 
-public class DefaultConsumerTests() : IDisposable {
+[SuppressMessage("Performance", "CA1822:Mark members as static")]
+public class DefaultConsumerTests : IDisposable {
     readonly TestEventListener _listener = new();
 
     [Test]
@@ -16,7 +18,7 @@ public class DefaultConsumerTests() : IDisposable {
 
         await consumer.Consume(ctx);
 
-        ctx.HandlingResults.GetFailureStatus().Should().Be(EventHandlingStatus.Failure);
+        await Assert.That(ctx.HandlingResults.GetFailureStatus()).IsEqualTo(EventHandlingStatus.Failure);
     }
 
     public void Dispose() => _listener.Dispose();

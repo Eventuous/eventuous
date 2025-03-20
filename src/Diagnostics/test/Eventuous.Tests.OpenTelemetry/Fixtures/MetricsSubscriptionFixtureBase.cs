@@ -56,7 +56,7 @@ public abstract class MetricsSubscriptionFixtureBase<TContainer, TProducer, TSub
             SubscriptionId,
             builder => builder
                 .Configure(ConfigureSubscription)
-                .UseCheckpointStore<TSubscription, TSubscriptionOptions, NoOpCheckpointStore>()
+                .UseCheckpointStore<NoOpCheckpointStore>()
                 .AddEventHandler<TestHandler>()
         );
 

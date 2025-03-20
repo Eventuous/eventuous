@@ -71,8 +71,16 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
             ILoggerFactory?           loggerFactory   = null,
             IEventSerializer?         eventSerializer = null,
             IMetadataSerializer?      metaSerializer  = null
-        ) : base(client, options, checkpointStore, consumePipe, SubscriptionKind.Stream, loggerFactory, eventSerializer, metaSerializer)
-        => Ensure.NotEmptyString(options.StreamName);
+        ) : base(client, options, checkpointStore, consumePipe, SubscriptionKind.Stream, loggerFactory, eventSerializer, metaSerializer) {
+        if (string.IsNullOrWhiteSpace(options.StreamName)) {
+            Log.FatalLog?.Log("Subscription has no stream name configured. Use SubscriptionBuilder.Configure to set the stream name", SubscriptionId);
+
+            // ReSharper disable once NotResolvedInText
+#pragma warning disable CA2208
+            throw new ArgumentNullException("StreamName");
+#pragma warning restore CA2208
+        }
+    }
 
     /// <summary>
     /// Starts a catch-up subscription

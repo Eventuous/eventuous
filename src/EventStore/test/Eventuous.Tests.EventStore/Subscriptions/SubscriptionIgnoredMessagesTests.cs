@@ -1,6 +1,7 @@
 using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
+using Eventuous.Subscriptions.Registrations;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
 // ReSharper disable MethodHasAsyncOverload

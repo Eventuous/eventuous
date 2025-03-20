@@ -40,6 +40,7 @@ public class LogContext {
     public   InternalLogger? InfoLog        { get; }
     public   InternalLogger? WarnLog        { get; }
     public   InternalLogger? ErrorLog       { get; }
+    public   InternalLogger? FatalLog       { get; }
 
     public LogContext(string subscriptionId, ILoggerFactory loggerFactory) {
         SubscriptionId = subscriptionId;
@@ -49,6 +50,7 @@ public class LogContext {
         InfoLog        = GetLogger(LogLevel.Information);
         WarnLog        = GetLogger(LogLevel.Warning);
         ErrorLog       = GetLogger(LogLevel.Error);
+        FatalLog       = GetLogger(LogLevel.Critical);
 
         return;
 

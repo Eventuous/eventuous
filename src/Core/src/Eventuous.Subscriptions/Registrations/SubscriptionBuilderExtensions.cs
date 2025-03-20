@@ -37,15 +37,11 @@ public static class SubscriptionBuilderExtensions {
     /// <summary>
     /// Use non-default checkpoint store for the specific subscription
     /// </summary>
-    /// <param name="builder"></param>
-    /// <typeparam name="TSubscription">Subscription type</typeparam>
-    /// <typeparam name="TOptions">Subscription options type</typeparam>
+    /// <param name="builder">Subscription builder</param>
     /// <typeparam name="T">Checkpoint store type</typeparam>
     /// <returns></returns>
-    public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore<TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
-        where T : class, ICheckpointStore
-        where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
-        where TOptions : SubscriptionWithCheckpointOptions {
+    public static SubscriptionBuilder UseCheckpointStore<T>(this SubscriptionBuilder builder)
+        where T : class, ICheckpointStore {
         builder.Services.TryAddKeyedSingleton<T>(builder.SubscriptionId);
 
         if (EventuousDiagnostics.Enabled) {
@@ -64,19 +60,12 @@ public static class SubscriptionBuilderExtensions {
     /// <summary>
     /// Use non-default checkpoint store for the specific subscription
     /// </summary>
-    /// <param name="builder"></param>
+    /// <param name="builder">Subscription builder</param>
     /// <param name="factory">Function to resolve the checkpoint store service from service provider</param>
-    /// <typeparam name="TSubscription">Subscription type</typeparam>
-    /// <typeparam name="TOptions">Subscription options type</typeparam>
     /// <typeparam name="T">Checkpoint store type</typeparam>
     /// <returns></returns>
-    public static SubscriptionBuilder<TSubscription, TOptions> UseCheckpointStore<TSubscription, TOptions, T>(
-            this SubscriptionBuilder<TSubscription, TOptions> builder,
-            Func<IServiceProvider, T>                         factory
-        )
-        where T : class, ICheckpointStore
-        where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
-        where TOptions : SubscriptionWithCheckpointOptions {
+    public static SubscriptionBuilder UseCheckpointStore<T>(this SubscriptionBuilder builder, Func<IServiceProvider, T> factory)
+        where T : class, ICheckpointStore {
         if (EventuousDiagnostics.Enabled) {
             builder.Services.TryAddKeyedSingleton<ICheckpointStore>(
                 builder.SubscriptionId,
@@ -89,20 +78,27 @@ public static class SubscriptionBuilderExtensions {
 
         return builder;
     }
-    
 
     /// <summary>
     /// Use non-default serializer for the specific subscription
     /// </summary>
-    /// <param name="builder"></param>
-    /// <typeparam name="TSubscription">Subscription type</typeparam>
-    /// <typeparam name="TOptions">Subscription options type</typeparam>
+    /// <param name="builder">Subscription builder</param>
+    /// <param name="factory">Function to create the serializer instance</param>
     /// <typeparam name="T">Serializer type</typeparam>
     /// <returns></returns>
-    public static SubscriptionBuilder<TSubscription, TOptions> UseSerializer<TSubscription, TOptions, T>(this SubscriptionBuilder<TSubscription, TOptions> builder)
-        where T : class, IEventSerializer
-        where TSubscription : EventSubscriptionWithCheckpoint<TOptions>
-        where TOptions : SubscriptionWithCheckpointOptions {
+    public static SubscriptionBuilder UseSerializer<T>(this SubscriptionBuilder builder, Func<IServiceProvider, T> factory) where T : class, IEventSerializer {
+        builder.Services.TryAddKeyedSingleton<IEventSerializer>(builder.SubscriptionId, (sp, _) => factory(sp));
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Use non-default serializer for the specific subscription
+    /// </summary>
+    /// <param name="builder">Subscription builder</param>
+    /// <typeparam name="T">Serializer type</typeparam>
+    /// <returns></returns>
+    public static SubscriptionBuilder UseSerializer<T>(this SubscriptionBuilder builder) where T : class, IEventSerializer {
         builder.Services.TryAddKeyedSingleton<IEventSerializer, T>(builder.SubscriptionId);
 
         return builder;
