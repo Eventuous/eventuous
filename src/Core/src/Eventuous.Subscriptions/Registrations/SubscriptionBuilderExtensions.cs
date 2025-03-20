@@ -103,4 +103,17 @@ public static class SubscriptionBuilderExtensions {
 
         return builder;
     }
+
+    /// <summary>
+    /// Use non-default type mapper for the specific subscription
+    /// </summary>
+    /// <param name="builder">Subscription builder</param>
+    /// <param name="typeMapper">Custom type mapper instance</param>
+    /// <typeparam name="T">Type mapper type</typeparam>
+    /// <returns></returns>
+    public static SubscriptionBuilder UseTypeMapper<T>(this SubscriptionBuilder builder, T typeMapper) where T : class, ITypeMapper {
+        builder.Services.TryAddKeyedSingleton<ITypeMapper>(builder.SubscriptionId, typeMapper);
+
+        return builder;
+    }
 }

@@ -38,7 +38,8 @@ public class CustomDependenciesTests {
         services.AddCheckpointStore<NoOpCheckpointStore>();
 
         _handler = new();
-        TypeMap.Instance.AddType<TestEvent>();
+        var typeMapper = new TypeMapper();
+        typeMapper.AddType<TestEvent>();
 
         services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
             "test-custom",
@@ -46,6 +47,7 @@ public class CustomDependenciesTests {
                 .Configure(cfg => cfg.StreamName = _streamName)
                 .UseCheckpointStore<TestCheckpointStore>(_ => _checkpointStore)
                 .UseSerializer<TestSerializer>(_ => _serializer)
+                .UseTypeMapper(typeMapper)
                 .AddEventHandler(_handler)
         );
 
