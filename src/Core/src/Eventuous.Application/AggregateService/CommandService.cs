@@ -87,7 +87,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
             var result = await registeredHandler.Handler(aggregate!, command, cancellationToken).NoContext();
 
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
-            if (result.Changes.Count == 0) return Result<TState>.FromSuccess(result.State, Array.Empty<Change>(), 0);
+            if (result.Changes.Count == 0) return Result<TState>.FromSuccess(result.State, [], 0);
 
             var proposed    = new ProposedAppend(stream, new(result.OriginalVersion), result.Changes.Select(x => new ProposedEvent(x, new())).ToArray());
             var final       = registeredHandler.AmendAppend?.Invoke(proposed, command) ?? proposed;

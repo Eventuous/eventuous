@@ -92,7 +92,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
             var newState  = newEvents.Aggregate(loadedState.State, (current, evt) => current.When(evt));
 
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
-            if (newEvents.Length == 0) return Result<TState>.FromSuccess(newState, Array.Empty<Change>(), 0);
+            if (newEvents.Length == 0) return Result<TState>.FromSuccess(newState, [], 0);
 
             var proposed    = new ProposedAppend(streamName, loadedState.StreamVersion, newEvents);
             var final       = registeredHandler.AmendAppend?.Invoke(proposed, command) ?? proposed;

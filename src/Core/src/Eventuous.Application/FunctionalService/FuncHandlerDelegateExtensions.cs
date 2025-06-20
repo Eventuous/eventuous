@@ -3,7 +3,7 @@
 
 namespace Eventuous;
 
-public static partial class FuncServiceDelegates {
+static partial class FuncServiceDelegates {
     internal static ExecuteUntypedCommand<TState> AsExecute<TCommand, TState>(this Func<TCommand, CancellationToken, Task<NewEvents>> execute)
         where TState : State<TState> where TCommand : class
         => async (_, _, command, token) => await execute((TCommand)command, token).NoContext();

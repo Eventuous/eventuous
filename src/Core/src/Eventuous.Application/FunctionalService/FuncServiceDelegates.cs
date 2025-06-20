@@ -4,7 +4,7 @@ global using NewEvents = System.Collections.Generic.IEnumerable<object>;
 
 namespace Eventuous;
 
-public static partial class FuncServiceDelegates {
+static partial class FuncServiceDelegates {
     internal delegate ValueTask<StreamName> GetStreamNameFromUntypedCommand(object command, CancellationToken cancellationToken);
 
     internal delegate ValueTask<NewEvents> ExecuteUntypedCommand<in T>(T state, object[] events, object command, CancellationToken cancellationToken)

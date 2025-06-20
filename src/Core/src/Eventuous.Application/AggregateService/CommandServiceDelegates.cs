@@ -3,7 +3,7 @@
 
 namespace Eventuous;
 
-public static class CommandServiceDelegates {
+static class CommandServiceDelegates {
     internal delegate ValueTask<TAggregate> HandleUntypedCommand<TAggregate, TState>(TAggregate aggregate, object command, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new();
 
