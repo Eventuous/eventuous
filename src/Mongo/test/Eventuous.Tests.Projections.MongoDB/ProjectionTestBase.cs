@@ -6,23 +6,25 @@ using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.Projections.MongoDB.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using static Microsoft.Extensions.Hosting.Host;
 
 namespace Eventuous.Tests.Projections.MongoDB;
 
 public abstract class ProjectionTestBase {
-    readonly  string       _id;
-    protected IHost        Host = null!;
-    readonly  IHostBuilder _builder;
+    readonly string       _subscriptionId;
+    readonly IHostBuilder _builder;
 
-    protected ProjectionTestBase(string id) {
-        _id      = id;
-        _builder = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().ConfigureLogging(cfg => cfg.ForTests());
+    protected IHost Host = null!;
+
+    protected ProjectionTestBase(string subscriptionId) {
+        _subscriptionId      = subscriptionId;
+        _builder = CreateDefaultBuilder().ConfigureLogging(cfg => cfg.ForTests());
     }
 
-    protected abstract void ConfigureServices(IServiceCollection services, string id);
+    protected abstract void ConfigureServices(IServiceCollection services, string subscriptionId);
 
     public async Task InitializeAsync() {
-        _builder.ConfigureServices(collection => ConfigureServices(collection, _id));
+        _builder.ConfigureServices(collection => ConfigureServices(collection, _subscriptionId));
         Host = _builder.Build();
         Host.Services.AddEventuousLogs();
         await Host.StartAsync();
@@ -31,17 +33,17 @@ public abstract class ProjectionTestBase {
     public async Task DisposeAsync() => await Host.StopAsync();
 }
 
-public class ProjectionTestBase<TProjection>(string id, IntegrationFixture fixture) : ProjectionTestBase(id)
+public class ProjectionTestBase<TProjection>(string subscriptionId, IntegrationFixture fixture) : ProjectionTestBase(subscriptionId)
     where TProjection : class, IEventHandler {
     public readonly IntegrationFixture Fixture = fixture;
 
-    protected override void ConfigureServices(IServiceCollection services, string id)
+    protected override void ConfigureServices(IServiceCollection services, string subscriptionId)
         => services
             .AddSingleton(Fixture.Client)
             .AddSingleton(Fixture.Mongo)
             .AddCheckpointStore<MongoCheckpointStore>()
             .AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
-                id,
+                subscriptionId,
                 builder => builder.AddEventHandler<TProjection>()
             );
 

@@ -3,16 +3,16 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <PropertyGroup Label="Package versions for .NET 9" Condition="'$(TargetFramework)' == 'net9.0'">
-    <MicrosoftTestHostVer>9.0.0</MicrosoftTestHostVer>
+    <MicrosoftTestHostVer>9.0.6</MicrosoftTestHostVer>
   </PropertyGroup>
   <PropertyGroup Label="Package versions for .NET 8" Condition="'$(TargetFramework)' == 'net8.0'">
-    <MicrosoftTestHostVer>8.0.6</MicrosoftTestHostVer>
+    <MicrosoftTestHostVer>8.0.17</MicrosoftTestHostVer>
   </PropertyGroup>
   <PropertyGroup Label="Testcontainers version">
-    <TestcontainersVersion>4.1.0</TestcontainersVersion>
+    <TestcontainersVersion>4.6.0</TestcontainersVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <NpgsqlVersion>9.0.1</NpgsqlVersion>
+    <NpgsqlVersion>9.0.3</NpgsqlVersion>
     <TUnitVersion>0.5.18</TUnitVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -20,14 +20,14 @@
     <PackageVersion Include="FluentValidation" Version="11.11.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.6" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageVersion Include="Shouldly" Version="4.2.1" />
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
@@ -36,7 +36,7 @@
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.10.0" />
     <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="23.3.7" />
     <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.3.7" />
-    <PackageVersion Include="MongoDB.Driver" Version="3.1.0" />
+    <PackageVersion Include="MongoDB.Driver" Version="3.4.0" />
     <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.19.0" />
     <PackageVersion Include="Confluent.Kafka" Version="2.6.1" />
     <PackageVersion Include="Npgsql" Version="$(NpgsqlVersion)" />
@@ -67,7 +67,7 @@
     <PackageVersion Include="Bogus" Version="35.6.1" />
     <PackageVersion Include="Fare" Version="2.2.1" />
     <PackageVersion Include="FluentAssertions" Version="7.0.0" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.2" PrivateAssets="All" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" PrivateAssets="All" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(MicrosoftTestHostVer)" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)" />
     <PackageVersion Include="RestSharp" Version="112.1.0" />
@@ -85,7 +85,7 @@
     <PackageVersion Include="System.Text.Json" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup Label="Packages for samples">
-    <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.0.0" />
+    <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.1.0" />
     <PackageVersion Include="MongoDB.Driver.Core" Version="2.30.0" />
     <PackageVersion Include="Npgsql.OpenTelemetry" Version="$(NpgsqlVersion)" />
     <PackageVersion Include="OpenTelemetry" Version="1.9.0" />

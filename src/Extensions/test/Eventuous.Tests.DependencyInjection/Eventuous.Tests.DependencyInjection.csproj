@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <IncludeTestHost>true</IncludeTestHost>
-        <RootNamespace>Eventuous.Tests.AspNetCore</RootNamespace>
         <OutputType>Exe</OutputType>
     </PropertyGroup>
     

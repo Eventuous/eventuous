@@ -38,8 +38,6 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
 
         var second = await Act(projectionFixture, stream, payment);
 
-        await projectionFixture.DisposeAsync();
-
         expected = expected with {
             PaidAmount = payment.AmountPaid,
             Position = second.Append.GlobalPosition,
@@ -47,6 +45,14 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
         };
 
         second.Doc.Should().BeEquivalentTo(expected);
+
+        var cancellation = new BookingCancelled();
+
+        var third = await Act(projectionFixture, stream, cancellation);
+
+        await projectionFixture.DisposeAsync();
+
+        third.Doc.Should().BeNull();
     }
 
     static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(ProjectionTestBase<SutProjection> f, StreamName stream, T evt) where T : class {
@@ -90,6 +96,8 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
                     .DefaultId()
                     .Update((evt, update) => update.Set(x => x.PaidAmount, evt.AmountPaid))
             );
+
+            On<BookingCancelled>(b => b.DeleteOne.DefaultId());
         }
     }
 }

@@ -1,8 +1,9 @@
 // Copyright (C) Eventuous HQ OÜ.All rights reserved
 // Licensed under the Apache License, Version 2.0.
+
 namespace Eventuous.Projections.MongoDB; 
 
-public static class Options<TOptions> where TOptions: new() {
+static class Options<TOptions> where TOptions: new() {
     public static TOptions New(Action<TOptions>? configure)  {
         var options = new TOptions();
         configure?.Invoke(options);

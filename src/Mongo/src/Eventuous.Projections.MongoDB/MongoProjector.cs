@@ -27,7 +27,9 @@ public abstract class MongoProjector<T>(IMongoDatabase database, MongoProjection
     : BaseEventHandler where T : ProjectedDocument {
     [PublicAPI]
     protected IMongoCollection<T> Collection { get; } =
-        options != null ? Ensure.NotNull(database).GetCollection<T>(options?.CollectionName) : Ensure.NotNull<IMongoDatabase>(database).GetDocumentCollection<T>();
+        options != null 
+            ? Ensure.NotNull(database).GetCollection<T>(options?.CollectionName) 
+            : Ensure.NotNull<IMongoDatabase>(database).GetDocumentCollection<T>();
 
     readonly Dictionary<Type, ProjectUntypedEvent> _handlers = new();
     readonly ITypeMapper                           _map      = typeMap ?? TypeMap.Instance;
@@ -62,25 +64,61 @@ public abstract class MongoProjector<T>(IMongoDatabase database, MongoProjection
         On(operation);
     }
 
+    /// <summary>
+    /// Register a handler for an event type that updates a document by ID extracted from the event
+    /// </summary>
+    /// <param name="getId">Function to extract document ID from the event</param>
+    /// <param name="getUpdate">Function to build the update operation</param>
+    /// <typeparam name="TEvent">Event type</typeparam>
     [PublicAPI]
     protected void On<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message)).UpdateFromContext(getUpdate));
 
+    /// <summary>
+    /// Register a handler for an event type that updates a document by ID extracted from the stream
+    /// </summary>
+    /// <param name="getId">Function to extract document ID from the stream</param>
+    /// <param name="getUpdate">Function to build the update operation</param>
+    /// <typeparam name="TEvent">Event type</typeparam>
     protected void On<TEvent>(GetDocumentIdFromStream getId, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).UpdateFromContext(getUpdate));
 
+    /// <summary>
+    /// Register a handler for an event type that updates documents matching a filter
+    /// </summary>
+    /// <param name="getFilter">Function to build the filter for matching documents</param>
+    /// <param name="getUpdate">Function to build the update operation</param>
+    /// <typeparam name="TEvent">Event type</typeparam>
     [PublicAPI]
     protected void On<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdate<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Filter(getFilter).UpdateFromContext(getUpdate));
 
+    /// <summary>
+    /// Register an asynchronous handler for an event type that updates a document by ID extracted from the event
+    /// </summary>
+    /// <param name="getId">Function to extract document ID from the event</param>
+    /// <param name="getUpdate">Async function to build the update operation</param>
+    /// <typeparam name="TEvent">Event type</typeparam>
     [PublicAPI]
     protected void OnAsync<TEvent>(GetDocumentIdFromEvent<TEvent> getId, BuildUpdateAsync<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Message)).UpdateFromContext(getUpdate));
 
+    /// <summary>
+    /// Register an asynchronous handler for an event type that updates a document by ID extracted from the stream
+    /// </summary>
+    /// <param name="getId">Function to extract document ID from the stream</param>
+    /// <param name="getUpdate">Async function to build the update operation</param>
+    /// <typeparam name="TEvent">Event type</typeparam>
     [PublicAPI]
     protected void OnAsync<TEvent>(GetDocumentIdFromStream getId, BuildUpdateAsync<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Id(x => getId(x.Stream)).UpdateFromContext(getUpdate));
 
+    /// <summary>
+    /// Register an asynchronous handler for an event type that updates documents matching a filter
+    /// </summary>
+    /// <param name="getFilter">Function to build the filter for matching documents</param>
+    /// <param name="getUpdate">Async function to build the update operation</param>
+    /// <typeparam name="TEvent">Event type</typeparam>
     [PublicAPI]
     protected void OnAsync<TEvent>(BuildFilter<TEvent, T> getFilter, BuildUpdateAsync<TEvent, T> getUpdate) where TEvent : class
         => On<TEvent>(b => b.UpdateOne.Filter(getFilter).UpdateFromContext(getUpdate));
@@ -126,6 +164,12 @@ public abstract class MongoProjector<T>(IMongoDatabase database, MongoProjection
         return EventHandlingStatus.Success;
     }
 
+    /// <summary>
+    /// Override this method to provide custom update logic for events that don't have registered handlers
+    /// </summary>
+    /// <param name="evt">The event object</param>
+    /// <param name="position">The stream position</param>
+    /// <returns>The projection operation to execute</returns>
     [PublicAPI]
     protected virtual ValueTask<MongoProjectOperation<T>> GetUpdate(object evt, ulong? position) => NoOp;
 
@@ -142,4 +186,5 @@ public delegate ValueTask<MongoProjectOperation<T>> ProjectTypedEvent<T, TEvent>
 
 public record MongoProjectOperation<T>(Func<IMongoCollection<T>, CancellationToken, Task> Execute);
 
-public delegate ValueTask<WriteModel<T>> BuildWriteModel<T, TEvent>(MessageConsumeContext<TEvent> context) where T : ProjectedDocument where TEvent : class;
+public delegate ValueTask<WriteModel<T>> BuildWriteModel<T, TEvent>(MessageConsumeContext<TEvent> context) 
+    where T : ProjectedDocument where TEvent : class;

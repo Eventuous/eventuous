@@ -5,7 +5,4 @@
         <IsPackable>false</IsPackable>
         <NoWarn>CA1816</NoWarn>
     </PropertyGroup>
-    <Target Name="WorkaroundRider117732" AfterTargets="Build" Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
-        <Copy Condition="Exists('$(OutputPath)$(AssemblyName)')" SourceFiles="$(OutputPath)$(AssemblyName)" DestinationFiles="$(OutputPath)$(AssemblyName).exe"/>
-    </Target>
 </Project>

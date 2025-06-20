@@ -67,8 +67,6 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
         Log             = LoggerFactory.CreateLogger(GetType());
     }
 
-    protected virtual ILoggingBuilder ConfigureLogging(ILoggingBuilder builder) => builder;
-
     public abstract Task<ulong> GetLastPosition();
 
     public override async Task InitializeAsync() {

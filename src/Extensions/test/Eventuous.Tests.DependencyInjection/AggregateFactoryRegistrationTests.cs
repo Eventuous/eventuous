@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Eventuous.Tests.AspNetCore;
+namespace Eventuous.Tests.DependencyInjection;
 
 public class AggregateFactoryRegistrationTests {
     readonly AggregateFactoryRegistry _registry;

@@ -38,8 +38,7 @@ public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture)
     }
 
     public class SutProjection : MongoProjector<BookingDocument> {
-        public SutProjection(IMongoDatabase database)
-            : base(database) {
+        public SutProjection(IMongoDatabase database) : base(database) {
             On<BookingImported>(
                 stream => stream.GetId(),
                 (ctx, update) => update
