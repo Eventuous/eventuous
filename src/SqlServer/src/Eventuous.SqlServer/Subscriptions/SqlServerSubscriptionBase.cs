@@ -29,7 +29,8 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
                 ? connectionOptions.Schema
                 : options.Schema
         );
-        _connectionString = Ensure.NotEmptyString(Options.ConnectionString);
+        var connectionString = connectionOptions?.ConnectionString ?? options.ConnectionString;
+        _connectionString = Ensure.NotEmptyString(connectionString);
         GetEndOfStream    = $"SELECT MAX(StreamPosition) FROM {options.Schema}.Messages";
         GetEndOfAll       = $"SELECT MAX(GlobalPosition) FROM {options.Schema}.Messages";
     }
