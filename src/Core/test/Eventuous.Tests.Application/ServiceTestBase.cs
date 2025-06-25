@@ -1,4 +1,3 @@
-using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers.TUnit;
 using Eventuous.Testing;
@@ -33,13 +32,6 @@ public abstract partial class ServiceTestBase {
         var today = LocalDate.FromDateTime(DateTime.Today);
 
         return new("booking1", "room1", 100, today, today.PlusDays(1), "user");
-    }
-
-    static async Task<Commands.BookRoom> Seed(ICommandService<BookingState> service) {
-        var cmd = Helpers.GetBookRoom();
-        await service.Handle(cmd, default);
-
-        return cmd;
     }
 
     protected ServiceTestBase() {

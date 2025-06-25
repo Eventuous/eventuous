@@ -34,13 +34,13 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
     }
 
     protected async Task ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
-        TestContext.Current?.OutputWriter.WriteLine("Phase one");
+        WriteLine("Phase one");
         await TestConsumptionOfProducedEvents();
 
-        TestContext.Current?.OutputWriter.WriteLine("Resetting handler");
+        WriteLine("Resetting handler");
         fixture.Handler.Reset();
 
-        TestContext.Current?.OutputWriter.WriteLine("Phase two");
+        WriteLine("Phase two");
         await TestConsumptionOfProducedEvents();
 
         var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
@@ -51,13 +51,13 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
         async Task TestConsumptionOfProducedEvents() {
             const int count = 10;
 
-            TestContext.Current?.OutputWriter.WriteLine("Generating and producing events");
+            WriteLine("Generating and producing events");
             var testEvents = await GenerateAndProduceEvents(count);
 
-            TestContext.Current?.OutputWriter.WriteLine("Starting subscription");
+            WriteLine("Starting subscription");
             await fixture.StartSubscription();
-            await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [..testEvents]).Validate();
-            TestContext.Current?.OutputWriter.WriteLine("Stopping subscription");
+            await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [..testEvents]).Validate(cancellationToken);
+            WriteLine("Stopping subscription");
             await fixture.StopSubscription();
             await Assert.That(fixture.Handler.Count).IsEqualTo(10);
         }

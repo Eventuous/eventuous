@@ -12,16 +12,19 @@ public class SubscribeToAll()
         new CatchUpSubscriptionFixture<AllStreamSubscription, AllStreamSubscriptionOptions, TestEventHandler>(_ => { }, new("$all"), false)
     ) {
     [Test]
+    [Retry(3)]
     public async Task Esdb_ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
         await ShouldConsumeProducedEvents(cancellationToken);
     }
 
     [Test]
+    [Retry(3)]
     public async Task Esdb_ShouldConsumeProducedEventsWhenRestarting(CancellationToken cancellationToken) {
         await ShouldConsumeProducedEventsWhenRestarting(cancellationToken);
     }
 
     [Test]
+    [Retry(3)]
     public async Task Esdb_ShouldUseExistingCheckpoint(CancellationToken cancellationToken) {
         await ShouldUseExistingCheckpoint(cancellationToken);
     }

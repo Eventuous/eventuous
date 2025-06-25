@@ -59,7 +59,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         await fixture.CheckpointStore.StoreCheckpoint(new(fixture.SubscriptionId, last), true, cancellationToken);
 
         var l = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
-        TestContext.Current?.OutputWriter.WriteLine("Last checkpoint: {0}", l.Position!);
+        WriteLine("Last checkpoint: {0}", l.Position!);
 
         await fixture.StartSubscription();
         await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
