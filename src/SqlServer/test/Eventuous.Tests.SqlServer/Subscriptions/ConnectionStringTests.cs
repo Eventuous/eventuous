@@ -1,10 +1,8 @@
-using Eventuous.Sql.Base;
 using Eventuous.SqlServer.Projections;
 using Eventuous.SqlServer.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
-using Microsoft.Extensions.Logging;
 using Microsoft.Data.SqlClient;
 using System.Data;
 
@@ -33,13 +31,7 @@ public class ConnectionStringTests {
         var connectionOptions = new SqlServerConnectionOptions(expectedConnectionString, "dbo");
 
         // Act & Assert - The constructor should not throw an exception
-        var subscription = new TestSubscription(
-            options,
-            _checkpointStore,
-            _consumePipe,
-            _loggerFactory,
-            connectionOptions
-        );
+        var subscription = new TestSubscription(options, _checkpointStore, _consumePipe, _loggerFactory, connectionOptions);
 
         await Assert.That(subscription.IsInitialized).IsTrue();
     }
@@ -55,13 +47,7 @@ public class ConnectionStringTests {
         };
 
         // Act & Assert - The constructor should not throw an exception
-        var subscription = new TestSubscription(
-            options,
-            _checkpointStore,
-            _consumePipe,
-            _loggerFactory,
-            null
-        );
+        var subscription = new TestSubscription(options, _checkpointStore, _consumePipe, _loggerFactory, null);
 
         await Assert.That(subscription.IsInitialized).IsTrue();
     }
@@ -79,13 +65,7 @@ public class ConnectionStringTests {
         var connectionOptions = new SqlServerConnectionOptions(null!, "dbo");
 
         // Act & Assert - The constructor should not throw an exception
-        var subscription = new TestSubscription(
-            options,
-            _checkpointStore,
-            _consumePipe,
-            _loggerFactory,
-            connectionOptions
-        );
+        var subscription = new TestSubscription(options, _checkpointStore, _consumePipe, _loggerFactory, connectionOptions);
 
         await Assert.That(subscription.IsInitialized).IsTrue();
     }
@@ -101,13 +81,7 @@ public class ConnectionStringTests {
         var connectionOptions = new SqlServerConnectionOptions(null!, "dbo");
 
         // Act & Assert
-        await Assert.That(() => new TestSubscription(
-            options,
-            _checkpointStore,
-            _consumePipe,
-            _loggerFactory,
-            connectionOptions
-        )).Throws<ArgumentException>();
+        await Assert.That(() => new TestSubscription(options, _checkpointStore, _consumePipe, _loggerFactory, connectionOptions)).Throws<ArgumentException>();
     }
 
     [Test]
@@ -121,13 +95,7 @@ public class ConnectionStringTests {
         var connectionOptions = new SqlServerConnectionOptions("", "dbo");
 
         // Act & Assert
-        await Assert.That(() => new TestSubscription(
-            options,
-            _checkpointStore,
-            _consumePipe,
-            _loggerFactory,
-            connectionOptions
-        )).Throws<ArgumentException>();
+        await Assert.That(() => new TestSubscription(options, _checkpointStore, _consumePipe, _loggerFactory, connectionOptions)).Throws<ArgumentException>();
     }
 
     [Test]
@@ -139,13 +107,7 @@ public class ConnectionStringTests {
         };
 
         // Act & Assert
-        await Assert.That(() => new TestSubscription(
-            options,
-            _checkpointStore,
-            _consumePipe,
-            _loggerFactory,
-            null
-        )).Throws<ArgumentException>();
+        await Assert.That(() => new TestSubscription(options, _checkpointStore, _consumePipe, _loggerFactory, null)).Throws<ArgumentException>();
     }
 
     [Test]
@@ -157,29 +119,21 @@ public class ConnectionStringTests {
         };
 
         // Act & Assert
-        await Assert.That(() => new TestSubscription(
-            options,
-            _checkpointStore,
-            _consumePipe,
-            _loggerFactory,
-            null
-        )).Throws<ArgumentException>();
+        await Assert.That(() => new TestSubscription(options, _checkpointStore, _consumePipe, _loggerFactory, null)).Throws<ArgumentException>();
     }
 }
 
 /// <summary>
 /// Test implementation of SqlServerSubscriptionBase for testing connection string handling
 /// </summary>
-public class TestSubscription : SqlServerSubscriptionBase<TestSubscriptionOptions> {
-    public bool IsInitialized { get; private set; }
-
-    public TestSubscription(
-        TestSubscriptionOptions options,
-        ICheckpointStore checkpointStore,
-        ConsumePipe consumePipe,
-        ILoggerFactory loggerFactory,
+public class TestSubscription(
+        TestSubscriptionOptions     options,
+        ICheckpointStore            checkpointStore,
+        ConsumePipe                 consumePipe,
+        ILoggerFactory              loggerFactory,
         SqlServerConnectionOptions? connectionOptions
-    ) : base(
+    )
+    : SqlServerSubscriptionBase<TestSubscriptionOptions>(
         options,
         checkpointStore,
         consumePipe,
@@ -189,8 +143,7 @@ public class TestSubscription : SqlServerSubscriptionBase<TestSubscriptionOption
         null,
         connectionOptions
     ) {
-        IsInitialized = true;
-    }
+    public bool IsInitialized { get; } = true;
 
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start) {
         var command = connection.CreateCommand();
