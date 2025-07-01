@@ -16,7 +16,8 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler> {
     public TracesTests() : base(new()) {
         _listener = new() {
             ShouldListenTo = _ => true,
-            Sample         = (ref _) => ActivitySamplingResult.AllData,
+            // ReSharper disable once RedundantLambdaParameterType
+            Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
             ActivityStarted = activity => Log.LogTrace(
                 "Started {Activity} with {Id}, parent {ParentId}",
                 activity.DisplayName,
