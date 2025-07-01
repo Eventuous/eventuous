@@ -16,6 +16,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="Shouldly" />
         <PackageReference Include="Testcontainers.EventStoreDb"/>
     </ItemGroup>
     <ItemGroup>

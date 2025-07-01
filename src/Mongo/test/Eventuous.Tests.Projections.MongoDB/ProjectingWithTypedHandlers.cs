@@ -32,7 +32,7 @@ public sealed class ProjectingWithTypedHandlers(IntegrationFixture fixture)
         };
 
         var actual = await Fixture.Mongo.LoadDocument<BookingDocument>(id.ToString(), cancellationToken: cancellationToken);
-        actual.Should().Be(expected);
+        await Assert.That(actual).IsEquivalentTo(expected);
 
         await DisposeAsync();
     }

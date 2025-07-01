@@ -14,12 +14,16 @@ public abstract partial class ServiceTestBase {
             .ForService(() => CreateService(), Store)
             .Given(cmd.BookingId)
             .When(cmd)
-            .Then(result => result.ResultIsOk(x => x.Changes.Should().HaveCount(1)).FullStreamEventsAre(expected));
+            .ThenAsync(async result => {
+                    await result.ResultIsOkAsync(async x => await Assert.That(x.Changes).HasCount(1));
+                    result.FullStreamEventsAre(expected);
+                }
+            );
     }
-    
+
     [Test]
     public async Task Should_fail_on_new_stream_exists() {
-        var cmd      = Helpers.GetBookRoom();
+        var cmd  = Helpers.GetBookRoom();
         var seed = new BookingEvents.RoomBooked(cmd.RoomId, cmd.CheckIn, cmd.CheckOut, cmd.Price);
 
         await CommandServiceFixture
@@ -39,6 +43,10 @@ public abstract partial class ServiceTestBase {
             .ForService(() => CreateService(), Store)
             .Given(seedCmd.BookingId, seed)
             .When(cmd)
-            .Then(result => result.ResultIsOk(x => x.Changes.Should().HaveCount(1)).FullStreamEventsAre(seed, new BookingEvents.Executed()));
+            .ThenAsync(async result => {
+                    await result.ResultIsOkAsync(async x => await Assert.That(x.Changes).HasCount(1));
+                    result.FullStreamEventsAre(seed, new BookingEvents.Executed());
+                }
+            );
     }
 }

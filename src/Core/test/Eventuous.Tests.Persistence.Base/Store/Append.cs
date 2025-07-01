@@ -1,5 +1,6 @@
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
+using TUnit.Assertions.AssertConditions.Throws;
 
 namespace Eventuous.Tests.Persistence.Base.Store;
 

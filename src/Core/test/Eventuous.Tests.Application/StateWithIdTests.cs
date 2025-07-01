@@ -21,13 +21,13 @@ public class StateWithIdTests {
         var bookingId = new BookingId(id);
 
         // Ensure that the id was set when the aggregate was created
-        result.TryGet(out var ok).Should().BeTrue();
-        ok!.State.Id.Should().Be(bookingId);
+        await Assert.That(result.TryGet(out var ok)).IsTrue();
+        await Assert.That(ok!.State.Id).IsEqualTo(bookingId);
 
-        var instance = await _store.LoadAggregate<Booking, BookingState, BookingId>(bookingId, map, true, cancellationToken: cancellationToken);
+        var instance = await _store.LoadAggregate<Booking, BookingState, BookingId>(bookingId, map, cancellationToken: cancellationToken);
 
         // Ensure that the id was set when the aggregate was loaded
-        instance.State.Id.Should().Be(bookingId);
+        await Assert.That(instance.State.Id).IsEqualTo(bookingId);
     }
 
     async Task<Result<BookingState>> Seed(string id) {

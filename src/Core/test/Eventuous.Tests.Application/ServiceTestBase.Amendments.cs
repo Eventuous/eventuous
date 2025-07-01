@@ -12,7 +12,7 @@ public abstract partial class ServiceTestBase {
         await service.Handle(cmd, cancellationToken);
 
         var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: cancellationToken);
-        stream[0].Metadata["userId"].Should().Be(cmd.ImportedBy);
+        await Assert.That(stream[0].Metadata["userId"]).IsEqualTo(cmd.ImportedBy);
     }
 
     [Test]
@@ -23,7 +23,7 @@ public abstract partial class ServiceTestBase {
             .ForService(() => CreateService(amendAll: AddMeta), Store)
             .Given(cmd.BookingId)
             .When(cmd)
-            .Then(x => x.StreamIs(e => e[0].Metadata["foo"].Should().Be("bar")));
+            .ThenAsync(async x => await x.StreamIsAsync(async e => await Assert.That(e[0].Metadata["foo"]).IsEqualTo("bar")));
     }
 
     [Test]
@@ -34,8 +34,8 @@ public abstract partial class ServiceTestBase {
         await service.Handle(cmd, cancellationToken);
 
         var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: cancellationToken);
-        stream[0].Metadata["userId"].Should().Be(cmd.ImportedBy);
-        stream[0].Metadata["foo"].Should().Be("bar");
+        await Assert.That(stream[0].Metadata["userId"]).IsEqualTo(cmd.ImportedBy);
+        await Assert.That(stream[0].Metadata["foo"]).IsEqualTo("bar");
     }
 
     static NewStreamEvent AmendEvent(NewStreamEvent evt, ImportBooking cmd) => evt with { Metadata = evt.Metadata.With("userId", cmd.ImportedBy) };

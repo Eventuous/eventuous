@@ -23,8 +23,8 @@ public abstract partial class ServiceTestBase {
         foreach (var task in tasks) {
             var result = await task;
 
-            result.TryGet(out var ok).Should().BeTrue();
-            ok!.Changes.Should().HaveCount(1);
+            await Assert.That(result.TryGet(out var ok)).IsTrue();
+            await Assert.That(ok!.Changes).HasCount(1);
         }
     }
 

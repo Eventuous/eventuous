@@ -3,6 +3,7 @@ using Eventuous.SqlServer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 
 namespace Eventuous.Tests.SqlServer.Registrations;
 
@@ -22,9 +23,9 @@ public class RegistrationTests {
         );
         var app   = builder.Build();
         var store = app.Services.GetRequiredService<IEventStore>();
-        store.Should().BeOfType<TracedEventStore>();
+        store.ShouldBeOfType<TracedEventStore>();
         var innerStore = ((TracedEventStore)store).Inner;
-        innerStore.Should().BeOfType<SqlServerStore>();
+        innerStore.ShouldBeOfType<SqlServerStore>();
     }
 
     [Test]
@@ -46,9 +47,9 @@ public class RegistrationTests {
         );
         var app            = builder.Build();
         var store = app.Services.GetService<IEventStore>();
-        store.Should().NotBeNull();
+        store.ShouldNotBeNull();
         var inner = ((store as TracedEventStore)!).Inner as SqlServerStore;
-        inner.Should().NotBeNull();
-        inner!.Schema.SchemaName.Should().Be("test");
+        inner.ShouldNotBeNull();
+        inner!.Schema.SchemaName.ShouldBe("test");
     }
 }

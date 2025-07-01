@@ -32,7 +32,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
             StreamPosition = (ulong)first.Append.NextExpectedVersion
         };
 
-        first.Doc.Should().BeEquivalentTo(expected);
+        await Assert.That(first.Doc).IsEquivalentTo(expected);
 
         var payment = new BookingPaymentRegistered(Guid.NewGuid().ToString(), evt.Price);
 
@@ -44,7 +44,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
             StreamPosition = (ulong)second.Append.NextExpectedVersion
         };
 
-        second.Doc.Should().BeEquivalentTo(expected);
+        await Assert.That(second.Doc).IsEquivalentTo(expected);
 
         var cancellation = new BookingCancelled();
 
@@ -52,7 +52,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
 
         await projectionFixture.DisposeAsync();
 
-        third.Doc.Should().BeNull();
+        await Assert.That(third.Doc).IsNull();
     }
 
     static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(ProjectionTestBase<SutProjection> f, StreamName stream, T evt) where T : class {

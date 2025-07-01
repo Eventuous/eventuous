@@ -3,6 +3,7 @@ using Eventuous.EventStore.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore;
@@ -19,20 +20,20 @@ public class RegistrationTests(StoreFixture fixture) {
     [Test]
     [Category("Dependency injection")]
     public void ShouldResolveSubscription() {
-        Sub.Should().NotBeNull();
-        Sub.Should().BeOfType<StreamSubscription>();
+        Sub.ShouldNotBeNull();
+        Sub.ShouldBeOfType<StreamSubscription>();
     }
 
     [Test]
     [Category("Dependency injection")]
-    public void ShouldHaveProperId() => Sub.SubscriptionId.Should().Be(SubId);
+    public void ShouldHaveProperId() => Sub.SubscriptionId.ShouldBe(SubId);
 
     [Test]
     [Category("Dependency injection")]
     public void ShouldHaveEventStoreClient() {
         var client = Sub.GetPrivateMember<EventStoreClient>("EventStoreClient");
 
-        client.Should().Be(fixture.Client);
+        client.ShouldBe(fixture.Client);
     }
 
     [Test]
@@ -40,7 +41,7 @@ public class RegistrationTests(StoreFixture fixture) {
     public void ShouldHaveNoOpStore() {
         var store = Sub.GetPrivateMember<ICheckpointStore>("CheckpointStore");
 
-        store.Should().BeOfType<NoOpCheckpointStore>();
+        store.ShouldBeOfType<NoOpCheckpointStore>();
     }
 
     [Before(Test)]

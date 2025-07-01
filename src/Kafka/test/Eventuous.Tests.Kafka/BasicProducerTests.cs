@@ -34,7 +34,7 @@ public class BasicProducerTests {
         var consumed = new List<TestEvent>();
         await ExecuteConsume().NoThrow();
         TestContext.Current?.OutputWriter.WriteLine($"Consumed {consumed.Count} events");
-        consumed.Should().BeEquivalentTo(events);
+        await Assert.That(consumed).IsEquivalentTo(events);
 
         return;
 

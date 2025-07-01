@@ -5,22 +5,16 @@ using Eventuous.Subscriptions.Filters;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Subscriptions.Base;
+using Shouldly;
 using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
 public sealed class StreamSubscriptionDeletedEventsTests {
-    readonly StoreFixture         _fixture;
-    readonly ILoggerFactory       _loggerFactory;
-    readonly LoggingEventListener _listener;
-
-    public StreamSubscriptionDeletedEventsTests() {
-        _fixture       = new(LogLevel.Information);
-        _loggerFactory = LoggingExtensions.GetLoggerFactory();
-        _listener      = new(_loggerFactory);
-        _fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
-    }
+    StoreFixture         _fixture = null!;
+    ILoggerFactory       _loggerFactory = null!;
+    LoggingEventListener _listener = null!;
 
     [Test]
     [Category("Special cases")]
@@ -86,7 +80,7 @@ public sealed class StreamSubscriptionDeletedEventsTests {
 
         var actual = handler.Processed.Select(x => x.Stream.GetId()).ToList();
         log.LogInformation("Actual:\n {Join}", string.Join("\n", actual));
-        actual.Should().BeEquivalentTo(expected);
+        actual.ShouldBeEquivalentTo(expected);
 
         return;
 
@@ -110,7 +104,7 @@ public sealed class StreamSubscriptionDeletedEventsTests {
     }
 
     [After(Test)]
-    public async ValueTask DisposeAsync() {
+    public async ValueTask Cleanup() {
         await _fixture.DisposeAsync();
         await CastAndDispose(_loggerFactory);
         await CastAndDispose(_listener);
@@ -126,5 +120,11 @@ public sealed class StreamSubscriptionDeletedEventsTests {
     }
 
     [Before(Test)]
-    public Task InitializeAsync() => _fixture.InitializeAsync();
+    public Task Setup() {
+        _fixture       = new(LogLevel.Information);
+        _loggerFactory = LoggingExtensions.GetLoggerFactory();
+        _listener      = new(_loggerFactory);
+        _fixture.TypeMapper.RegisterKnownEventTypes(typeof(BookingEvents.BookingImported).Assembly);
+        return _fixture.InitializeAsync();
+    }
 }

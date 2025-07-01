@@ -1,6 +1,7 @@
 using Eventuous.Producers;
 using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
+using Shouldly;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
@@ -16,6 +17,6 @@ public class PublishAndSubscribeOneTests() : LegacySubscriptionFixture(null, fal
         await Stop();
 
         await Task.Delay(100, cancellationToken);
-        CheckpointStore.GetCheckpoint(Subscription.SubscriptionId).Should().Be(0);
+        CheckpointStore.GetCheckpoint(Subscription.SubscriptionId).ShouldBe(0UL);
     }
 }

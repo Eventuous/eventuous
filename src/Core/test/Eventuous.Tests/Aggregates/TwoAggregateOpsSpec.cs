@@ -3,8 +3,8 @@ using JetBrains.Annotations;
 
 namespace Eventuous.Tests.Aggregates;
 
-using Sut.Domain;
 using Testing;
+using Sut.Domain;
 using static Sut.Domain.BookingEvents;
 
 public class TwoAggregateOpsSpec : AggregateSpec<Booking, BookingState> {
@@ -27,13 +27,13 @@ public class TwoAggregateOpsSpec : AggregateSpec<Booking, BookingState> {
     public void should_produce_outstanding_changed() => Emitted(new BookingOutstandingAmountChanged(0));
 
     [Test]
-    public void should_make_booking_fully_paid() => Then().State.IsFullyPaid().Should().BeTrue();
+    public async Task should_make_booking_fully_paid() => await Assert.That(Then().State.IsFullyPaid()).IsTrue();
 
     [Test]
-    public void should_record_payment() => Then().HasPaymentRecord(_testData.PaymentId).Should().BeTrue();
+    public async Task should_record_payment() => await Assert.That(Then().HasPaymentRecord(_testData.PaymentId)).IsTrue();
 
     [Test]
-    public void should_not_be_overpaid() => Then().State.IsOverpaid().Should().BeFalse();
+    public async Task should_not_be_overpaid() => await Assert.That(Then().State.IsOverpaid()).IsFalse();
 
     readonly TestData _testData = Faker.Generate();
 

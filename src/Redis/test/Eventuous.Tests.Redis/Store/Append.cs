@@ -1,4 +1,5 @@
 using Eventuous.Tests.Redis.Fixtures;
+using Shouldly;
 using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
@@ -10,7 +11,7 @@ public class AppendEvents(IntegrationFixture fixture) {
         var evt        = CreateEvent();
         var streamName = GetStreamName();
         var result     = await fixture.AppendEvent(streamName, evt, ExpectedStreamVersion.NoStream, cancellationToken);
-        result.NextExpectedVersion.Should().Be(0);
+        result.NextExpectedVersion.ShouldBe(0);
     }
 
     [Test]
@@ -23,7 +24,7 @@ public class AppendEvents(IntegrationFixture fixture) {
 
         var version = new ExpectedStreamVersion(result.NextExpectedVersion);
         result = await fixture.AppendEvent(stream, evt, version, cancellationToken);
-        result.NextExpectedVersion.Should().Be(1);
+        result.NextExpectedVersion.ShouldBe(1);
     }
 
     [Test]
@@ -36,7 +37,7 @@ public class AppendEvents(IntegrationFixture fixture) {
         evt = CreateEvent();
 
         var task = () => fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream, cancellationToken);
-        await task.Should().ThrowAsync<AppendToStreamException>();
+        await task.ShouldThrowAsync<AppendToStreamException>();
     }
 
     [Test]
@@ -49,6 +50,6 @@ public class AppendEvents(IntegrationFixture fixture) {
         evt = CreateEvent();
 
         var task = () => fixture.AppendEvent(stream, evt, new(3), cancellationToken);
-        await task.Should().ThrowAsync<AppendToStreamException>();
+        await task.ShouldThrowAsync<AppendToStreamException>();
     }
 }

@@ -1,4 +1,5 @@
 using Eventuous.Tests.Redis.Fixtures;
+using Shouldly;
 using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
@@ -13,8 +14,8 @@ public class ReadEvents(IntegrationFixture fixture) {
 
         var result = await fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 100, true, cancellationToken);
 
-        result.Length.Should().Be(1);
-        result[0].Payload.Should().BeEquivalentTo(evt);
+        result.Length.ShouldBe(1);
+        result[0].Payload.ShouldBeEquivalentTo(evt);
     }
 
     [Test]
@@ -27,7 +28,7 @@ public class ReadEvents(IntegrationFixture fixture) {
         var result = await fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 100, true, cancellationToken);
 
         var actual = result.Select(x => x.Payload);
-        actual.Should().BeEquivalentTo(events);
+        actual.ShouldBeEquivalentTo(events);
     }
 
     [Test]
@@ -45,7 +46,7 @@ public class ReadEvents(IntegrationFixture fixture) {
         var result = await fixture.EventReader.ReadEvents(streamName, new((long)position), 100, true, cancellationToken);
 
         var actual = result.Select(x => x.Payload);
-        actual.Should().BeEquivalentTo(events2);
+        actual.ShouldBeEquivalentTo(events2);
     }
 
     [Test]
@@ -59,6 +60,6 @@ public class ReadEvents(IntegrationFixture fixture) {
 
         var expected = events.Take(10);
         var actual   = result.Select(x => x.Payload);
-        actual.Should().BeEquivalentTo(expected);
+        actual.ShouldBeEquivalentTo(expected);
     }
 }

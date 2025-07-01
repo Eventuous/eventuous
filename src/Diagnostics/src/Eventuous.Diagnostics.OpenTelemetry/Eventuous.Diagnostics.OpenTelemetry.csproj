@@ -5,6 +5,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">

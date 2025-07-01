@@ -1,6 +1,5 @@
 using Eventuous.Sut.App;
 using Eventuous.Testing;
-using Shouldly;
 
 namespace Eventuous.Tests.Application;
 
@@ -21,6 +20,10 @@ public abstract partial class ServiceTestBase {
             .ForService(() => CreateService(), Store)
             .Given(cmd.BookingId)
             .When(cmd)
-            .Then(result => result.ResultIsOk(x => x.Changes.Should().HaveCount(1)).StreamIs(x => x.Length.ShouldBe(1)));
+            .ThenAsync(async result => {
+                    await result.ResultIsOkAsync(async x => await Assert.That(x.Changes).HasCount(1));
+                    await result.StreamIsAsync(async x => await Assert.That(x).HasCount(1));
+                }
+            );
     }
 }

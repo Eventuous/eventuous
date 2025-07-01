@@ -9,25 +9,25 @@ public class ForgotToSetId : NaiveFixture {
     public async Task ShouldFailWithNoId(CancellationToken cancellationToken) {
         var cmd    = new DoIt(Guid.NewGuid().ToString());
         var result = await Service.Handle(cmd, cancellationToken);
-        result.Success.Should().BeTrue();
+        await Assert.That(result.Success).IsTrue();
     }
 
     TestService Service { get; }
 
-    class TestService : CommandService<TestAggregate, TestState, TestId> {
+    public class TestService : CommandService<TestAggregate, TestState, TestId> {
         public TestService(IEventStore store) : base(store)
             => On<DoIt>().InState(ExpectedState.New).GetId(cmd => new(cmd.Id)).Act((test, _) => test.Process());
     }
 
     record DoIt(string Id);
 
-    class TestAggregate : Aggregate<TestState> {
+    public class TestAggregate : Aggregate<TestState> {
         public void Process() => Apply(new TestEvent());
     }
 
-    record TestState : State<TestState>;
+    public record TestState : State<TestState>;
 
-    record TestId(string Value) : Id(Value);
+    public record TestId(string Value) : Id(Value);
 
     record TestEvent;
 }

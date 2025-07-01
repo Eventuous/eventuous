@@ -1,6 +1,7 @@
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers.TUnit;
+using Shouldly;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -29,13 +30,13 @@ public class AppServiceTests {
         var expected = new object[] { new BookingEvents.BookingImported(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut) };
 
         var handlingResult = await Service.Handle(cmd, cancellationToken);
-        handlingResult.Success.Should().BeTrue();
+        handlingResult.Success.ShouldBeTrue();
 
         var events = await _fixture.EventStore.ReadEvents(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, int.MaxValue, true, cancellationToken);
 
         var result = events.Select(x => x.Payload).ToArray();
 
-        result.Should().BeEquivalentTo(expected);
+        result.ShouldBeEquivalentTo(expected);
     }
 
     [After(Test)]

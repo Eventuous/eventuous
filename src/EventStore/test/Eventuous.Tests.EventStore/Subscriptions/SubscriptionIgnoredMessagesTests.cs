@@ -4,6 +4,8 @@ using Eventuous.Producers;
 using Eventuous.Subscriptions.Registrations;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
+
 // ReSharper disable MethodHasAsyncOverload
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
@@ -40,7 +42,7 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
         await DisposeAsync();
 
         var last = await _checkpointStore.GetLastCheckpoint(_subscriptionId, cancellationToken);
-        last.Position.Should().Be((ulong)(testEvents.Count - 1));
+        last.Position.ShouldBe((ulong)(testEvents.Count - 1));
 
         return;
 

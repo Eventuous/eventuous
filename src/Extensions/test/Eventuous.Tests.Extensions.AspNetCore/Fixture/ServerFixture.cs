@@ -3,6 +3,7 @@ using Eventuous.TestHelpers;
 using Eventuous.TestHelpers.TUnit.Logging;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RestSharp.Serializers.Json;
+using Shouldly;
 
 namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 
@@ -69,7 +70,7 @@ public class ServerFixture {
 
         var request  = new RestRequest(route).AddJsonBody(cmd);
         var response = await client.ExecutePostAsync<Result<TResult>.Ok>(request);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
         return response.Content!;
     }

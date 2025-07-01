@@ -23,11 +23,11 @@ public class StoringEvents : NaiveFixture {
 
         var result = await Service.Handle(cmd, cancellationToken);
 
-        result.TryGet(out var ok).Should().BeTrue();
-        ok!.Changes.Should().BeEquivalentTo(expected);
+        await Assert.That(result.TryGet(out var ok)).IsTrue();
+        await Assert.That(ok!.Changes).IsEquivalentTo(expected);
 
         var evt = await EventStore.ReadEvents(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, 1, true, CancellationToken.None);
 
-        evt[0].Payload.Should().BeEquivalentTo(ok.Changes.First().Event);
+        await Assert.That(evt[0].Payload).IsEquivalentTo(ok.Changes.First().Event);
     }
 }

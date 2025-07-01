@@ -43,19 +43,26 @@ public interface IServiceFixtureWhen<TState> where TState : State<TState>, new()
     /// <param name="command">Command to execute</param>
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
-    IServiceFixtureTHen<TState> When<TCommand>(TCommand command) where TCommand : class;
+    IServiceFixtureThen<TState> When<TCommand>(TCommand command) where TCommand : class;
 }
 
-public interface IServiceFixtureTHen<TState> where TState : State<TState>, new() {
+public interface IServiceFixtureThen<TState> where TState : State<TState>, new() {
     /// <summary>
     /// Execute the assertions
     /// </summary>
     /// <param name="assert">Assertions function</param>
     /// <returns></returns>
     Task Then(Action<CommandServiceFixture<TState>.FixtureResult> assert);
+
+    /// <summary>
+    /// Execute the async assertions
+    /// </summary>
+    /// <param name="assert">Assertions function</param>
+    /// <returns></returns>
+    Task ThenAsync(Func<CommandServiceFixture<TState>.FixtureResult, Task> assert);
 }
 
-public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServiceFixtureWhen<TState>, IServiceFixtureTHen<TState>
+public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServiceFixtureWhen<TState>, IServiceFixtureThen<TState>
     where TState : State<TState>, new() {
     readonly IEventStore             _store;
     readonly ICommandService<TState> _service;
@@ -90,13 +97,25 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         return this;
     }
 
-    public IServiceFixtureTHen<TState> When<TCommand>(TCommand command) where TCommand : class {
+    public IServiceFixtureThen<TState> When<TCommand>(TCommand command) where TCommand : class {
         _result = Execute(command);
 
         return this;
     }
 
     public async Task Then(Action<FixtureResult> assert) {
+        await ThenAsync(Assert);
+
+        return;
+
+        Task Assert(FixtureResult r) {
+            assert(r);
+
+            return Task.CompletedTask;
+        }
+    }
+
+    public async Task ThenAsync(Func<FixtureResult, Task> assert) {
         if (_result == null) {
             throw new InvalidOperationException("You need to call When() before calling Then()");
         }
@@ -112,7 +131,7 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         var result = _result.IsCompletedSuccessfully ? _result.Result : await _result;
         var stream = await _store.ReadStream(_streamName, StreamReadPosition.Start, false);
 
-        assert(new(result, stream, _nextExpectedVersion + 1));
+        await assert(new(result, stream, _nextExpectedVersion + 1));
     }
 
     async Task<Result<TState>> Execute<TCommand>(TCommand command) where TCommand : class {
@@ -143,13 +162,36 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         /// <returns></returns>
         /// <exception cref="ShouldAssertException">Thrown if the result is not ok</exception>
         [StackTraceHidden]
+        public async Task<FixtureResult> ResultIsOkAsync(Func<Result<TState>.Ok, Task>? assert = null) {
+            if (Result.TryGet(out var ok)) {
+                if (assert != null) {
+                    await assert.Invoke(ok);
+                }
+
+                return this;
+            }
+
+            if (Result.TryGetError(out var error)) {
+                throw new ShouldAssertException($"Expected the result to be Ok, but it was Error \"{error.ErrorMessage}\"", error.Exception);
+            }
+
+            throw new ShouldAssertException("Expected the result to be Ok, but it was not");
+        }
+
+        /// <summary>
+        /// Asserts if the result is Ok and executes the provided assertions
+        /// </summary>
+        /// <param name="assert">Assertion function for successful result</param>
+        /// <returns></returns>
+        /// <exception cref="ShouldAssertException">Thrown if the result is not ok</exception>
+        [StackTraceHidden]
         public FixtureResult ResultIsOk(Action<Result<TState>.Ok>? assert = null) {
             if (Result.TryGet(out var ok)) {
                 assert?.Invoke(ok);
 
                 return this;
             }
-            
+
             if (Result.TryGetError(out var error)) {
                 throw new ShouldAssertException($"Expected the result to be Ok, but it was Error \"{error.ErrorMessage}\"", error.Exception);
             }
@@ -216,6 +258,18 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         public FixtureResult NewStreamEventsAre(params object[] events) {
             var stream = _streamEvents.Where(x => x.Position >= _version).Select(x => x.Payload);
             stream.ShouldBe(events);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Asserts stream events using an async function
+        /// </summary>
+        /// <param name="assert">Assertion function to check StreamEvent collection</param>
+        /// <returns></returns>
+        [StackTraceHidden]
+        public async Task<FixtureResult> StreamIsAsync(Func<StreamEvent[], Task> assert) {
+            await assert(_streamEvents);
 
             return this;
         }

@@ -1,6 +1,7 @@
 using Eventuous.Producers;
 using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
+using Shouldly;
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
 
@@ -17,6 +18,6 @@ public class PublishAndSubscribeManyPartitionedTests() : LegacySubscriptionFixtu
         await Handler.AssertCollection(5.Seconds(), [..testEvents]).Validate(cancellationToken);
         await Stop();
 
-        CheckpointStore.GetCheckpoint(Subscription.SubscriptionId).Should().Be(count - 1);
+        CheckpointStore.GetCheckpoint(Subscription.SubscriptionId).ShouldBe(count - 1UL);
     }
 }

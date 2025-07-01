@@ -46,8 +46,8 @@ public class ProjectorTests() {
             cmd.Parameters.AddWithValue("@BookingId", command.BookingId);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             await reader.ReadAsync(cancellationToken);
-            reader["CheckinDate"].Should().Be(command.CheckIn.ToDateTimeUnspecified());
-            reader["Price"].Should().Be(command.Price);
+            await Assert.That(reader["CheckinDate"]).IsEqualTo(command.CheckIn.ToDateTimeUnspecified());
+            await Assert.That(reader["Price"]).IsEqualTo(command.Price);
         }
     }
 

@@ -64,11 +64,8 @@
     <ItemGroup Condition="'$(IsTestProject)' == 'true'">
         <PackageReference Include="Bogus"/>
         <PackageReference Include="coverlet.collector"/>
-        <PackageReference Include="FluentAssertions"/>
         <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
         <PackageReference Include="TUnit"/>
-        <Using Include="FluentAssertions"/>
-        <Using Include="FluentAssertions.Extensions"/>
         <Using Include="Microsoft.Extensions.Logging"/>
     </ItemGroup>
     <ItemGroup Condition="'$(IncludeTestHost)' == 'true'">

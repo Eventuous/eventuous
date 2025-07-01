@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using JetBrains.Annotations;
+using Shouldly;
 using static Eventuous.AggregateFactoryRegistry;
 using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 
@@ -55,8 +56,8 @@ public class AggregateStoreTests {
         _log.LogInformation("Loading large aggregate stream..");
         var restored = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, cancellationToken);
 
-        restored.State.Values.Count.Should().Be(count);
-        restored.State.Values.Should().BeEquivalentTo(aggregate.State.Values);
+        restored.State.Values.Count.ShouldBe(count);
+        restored.State.Values.ShouldBeEquivalentTo(aggregate.State.Values);
     }
 
     [Test]
@@ -72,7 +73,7 @@ public class AggregateStoreTests {
 
         foreach (var unused in Enumerable.Range(0, numberOfReads)) {
             var read = await _fixture.AggregateStore.Load<TestAggregate, TestState, TestId>(id, cancellationToken);
-            read.State.Should().BeEquivalentTo(aggregate.State);
+            read.State.ShouldBeEquivalentTo(aggregate.State);
         }
     }
 

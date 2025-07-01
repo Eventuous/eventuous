@@ -1,5 +1,6 @@
 using Eventuous.TestHelpers.TUnit;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Shouldly;
 using static Eventuous.Sut.App.Commands;
 using static Eventuous.Sut.AspNetCore.BookingApi;
 
@@ -45,13 +46,13 @@ public class ControllerTests {
 
         var request  = new RestRequest("/v2/pay").AddJsonBody(registerPayment);
         var response = await client.ExecutePostAsync<Result<BookingState>.Ok>(request, cancellationToken: cancellationToken);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
         var expected = new BookingEvents.BookingFullyPaid(registerPayment.PaidAt);
 
         var events = await _fixture.ReadStream<Booking>(bookRoom.BookingId);
         var last   = events.LastOrDefault();
-        last.Payload.Should().BeEquivalentTo(expected);
+        last.Payload.ShouldBeEquivalentTo(expected);
     }
 
     static TestEventListener? listener;

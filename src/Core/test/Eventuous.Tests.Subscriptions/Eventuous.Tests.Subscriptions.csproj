@@ -10,4 +10,7 @@
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj"/>
     </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Shouldly" />
+    </ItemGroup>
 </Project>

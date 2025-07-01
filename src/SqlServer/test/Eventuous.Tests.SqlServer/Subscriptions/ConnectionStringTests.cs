@@ -5,6 +5,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using TUnit.Assertions.AssertConditions.Throws;
 
 namespace Eventuous.Tests.SqlServer.Subscriptions;
 

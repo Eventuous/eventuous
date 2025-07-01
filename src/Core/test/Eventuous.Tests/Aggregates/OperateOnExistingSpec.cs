@@ -17,14 +17,14 @@ public class OperateOnExistingSpec : AggregateSpec<Booking, BookingState> {
     public void should_produce_outstanding_changed() => Emitted(new BookingEvents.BookingOutstandingAmountChanged(50));
 
     [Test]
-    public void should_not_be_fully_paid() => Then().State.IsFullyPaid().Should().BeFalse();
+    public async Task should_not_be_fully_paid() => await Assert.That(Then().State.IsFullyPaid()).IsFalse();
 
     [Test]
-    public void should_record_payment() => Then().HasPaymentRecord("payment1").Should().BeTrue();
+    public async Task should_record_payment() => await Assert.That(Then().HasPaymentRecord("payment1")).IsTrue();
 
     [Test]
-    public void should_not_be_overpaid() => Then().State.IsOverpaid().Should().BeFalse();
+    public async Task should_not_be_overpaid() => await Assert.That(Then().State.IsOverpaid()).IsFalse();
 
     [Test]
-    public void should_produce_two_events() => Then().Changes.Should().HaveCount(2);
+    public async Task should_produce_two_events() => await Assert.That(Then().Changes).HasCount(2);
 }

@@ -28,7 +28,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture) : ProjectionTest
             StreamPosition = (ulong)first.Append.NextExpectedVersion
         };
 
-        first.Doc.Should().BeEquivalentTo(expected);
+        await Assert.That(first.Doc).IsEquivalentTo(expected);
 
         var payment = new BookingPaymentRegistered(Guid.NewGuid().ToString(), evt.Price);
 
@@ -41,7 +41,7 @@ public class ProjectWithBulkBuilder(IntegrationFixture fixture) : ProjectionTest
             StreamPosition = (ulong)second.Append.NextExpectedVersion
         };
 
-        second.Doc.Should().BeEquivalentTo(expected);
+        await Assert.That(second.Doc).IsEquivalentTo(expected);
     }
 
     async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(StreamName stream, T evt)

@@ -4,6 +4,7 @@ using Eventuous.Producers;
 using Eventuous.TestHelpers;
 using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
+using Shouldly;
 
 namespace Eventuous.Tests.EventStore;
 
@@ -15,7 +16,7 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler> {
     public TracesTests() : base(new()) {
         _listener = new() {
             ShouldListenTo = _ => true,
-            Sample         = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            Sample         = (ref _) => ActivitySamplingResult.AllData,
             ActivityStarted = activity => Log.LogTrace(
                 "Started {Activity} with {Id}, parent {ParentId}",
                 activity.DisplayName,
@@ -42,8 +43,8 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler> {
         var meta = writtenEvent.Metadata;
         var (traceId, spanId) = meta.GetTracingMeta();
 
-        traceId.Should().NotBe(RecordedTrace.DefaultTraceId);
-        spanId.Should().NotBe(RecordedTrace.DefaultSpanId);
+        traceId.ShouldNotBe(RecordedTrace.DefaultTraceId);
+        spanId.ShouldNotBe(RecordedTrace.DefaultSpanId);
 
         while (Handler.Contexts.Count == 0) {
             await Task.Delay(100, cancellationToken);
@@ -51,14 +52,14 @@ public class TracesTests : LegacySubscriptionFixture<TracedHandler> {
 
         await Stop();
 
-        Handler.Contexts.Should().NotBeEmpty();
+        Handler.Contexts.ShouldNotBeEmpty();
 
         var recordedTrace = Handler.Contexts.First();
 
-        recordedTrace.IsDefaultTraceId.Should().BeFalse();
-        recordedTrace.IsDefaultSpanId.Should().BeFalse();
-        recordedTrace.TraceId!.Value.ToString().Should().Be(traceId);
-        recordedTrace.ParentSpanId!.Value.ToString().Should().Be(spanId);
+        recordedTrace.IsDefaultTraceId.ShouldBeFalse();
+        recordedTrace.IsDefaultSpanId.ShouldBeFalse();
+        recordedTrace.TraceId!.Value.ToString().ShouldBe(traceId);
+        recordedTrace.ParentSpanId!.Value.ToString().ShouldBe(spanId);
     }
 
     [After(Test)]

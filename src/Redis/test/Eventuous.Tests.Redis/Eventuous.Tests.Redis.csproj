@@ -5,6 +5,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="Shouldly" />
         <PackageReference Include="StackExchange.Redis"/>
         <PackageReference Include="Testcontainers.Redis"/>
     </ItemGroup>

@@ -24,12 +24,12 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
         var result = await Service.Handle(cmd, cancellationToken);
 
-        result.TryGet(out var ok).Should().BeTrue();
-        ok!.Changes.Should().BeEquivalentTo(expected);
+        await Assert.That(result.TryGet(out var ok)).IsTrue();
+        await Assert.That(ok!.Changes).IsEquivalentTo(expected);
 
         var evt = await EventStore.ReadEvents(GetStreamName(new(cmd.BookingId)), StreamReadPosition.Start, 1, true, CancellationToken.None);
 
-        evt[0].Payload.Should().BeEquivalentTo(ok.Changes.First().Event);
+        await Assert.That(evt[0].Payload).IsEquivalentTo(ok.Changes.First().Event);
     }
 
     [Test]
@@ -48,14 +48,14 @@ public class StoringEventsWithCustomStream : NaiveFixture {
 
         var result = await Service.Handle(secondCmd, cancellationToken);
 
-        result.TryGet(out var ok).Should().BeTrue();
-        ok!.Changes.Should().BeEquivalentTo(expected);
+        await Assert.That(result.TryGet(out var ok)).IsTrue();
+        await Assert.That(ok!.Changes).IsEquivalentTo(expected);
 
         var evt = await EventStore.ReadEvents(GetStreamName(new(cmd.BookingId)), StreamReadPosition.Start, 100, true, CancellationToken.None);
 
-        var actual = evt.Skip(1).Select(x => x.Payload);
+        var actual = evt.Skip(1).Select(x => x.Payload!);
 
-        actual.Should().BeEquivalentTo(expected.Select(x => x.Event));
+        await Assert.That(actual).IsEquivalentTo(expected.Select(x => x.Event));
     }
 
     static StreamName GetStreamName(BookingId bookingId) => new($"hotel-booking-{bookingId}");

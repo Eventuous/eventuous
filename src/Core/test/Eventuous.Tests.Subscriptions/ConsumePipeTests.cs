@@ -13,7 +13,7 @@ public class ConsumePipeTests() {
 
         await pipe.Send(ctx);
 
-        handler.Called.Should().Be(1);
+        await Assert.That(handler.Called).IsEqualTo(1);
     }
 
     const string Key = "test-baggage";
@@ -30,9 +30,9 @@ public class ConsumePipeTests() {
 
         await pipe.Send(ctx);
 
-        handler.Called.Should().Be(1);
-        handler.Received.Should().NotBeNull();
-        handler.Received!.Items.GetItem<string>(Key).Should().Be(baggage);
+        await Assert.That(handler.Called).IsEqualTo(1);
+        await Assert.That(handler.Received).IsNotNull();
+        await Assert.That(handler.Received!.Items.GetItem<string>(Key)).IsEqualTo(baggage);
     }
 
     class TestFilter(string key, string payload) : ConsumeFilter<IMessageConsumeContext> {

@@ -2,6 +2,7 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.TestHelpers.TUnit.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Shouldly;
 
 namespace Eventuous.Tests.Subscriptions;
 
@@ -19,14 +20,14 @@ public class SequenceTests {
     [MethodDataSource(nameof(TestData))]
     public void ShouldReturnFirstBefore(CommitPositionSequence sequence, CommitPosition expected) {
         var first = sequence.FirstBeforeGap();
-        first.Should().Be(expected);
+        first.ShouldBe(expected);
     }
 
     [Test]
     public void ShouldWorkForOne() {
         var timestamp = DateTime.Now;
         var sequence  = new CommitPositionSequence { new(0, 1, timestamp) };
-        sequence.FirstBeforeGap().Should().Be(new CommitPosition(0, 1, timestamp));
+        sequence.FirstBeforeGap().ShouldBe(new CommitPosition(0, 1, timestamp));
     }
 
     [Test]
@@ -44,7 +45,7 @@ public class SequenceTests {
         sequence.Remove(sequence.ElementAt(gapPlace));
 
         var first = sequence.FirstBeforeGap();
-        first.Should().Be(sequence.ElementAt(gapPlace - 1));
+        first.ShouldBe(sequence.ElementAt(gapPlace - 1));
     }
 
     [Test]
@@ -57,7 +58,7 @@ public class SequenceTests {
         }
 
         var first = sequence.FirstBeforeGap();
-        first.Should().Be(new CommitPosition(9, 9, timestamp));
+        first.ShouldBe(new CommitPosition(9, 9, timestamp));
     }
 
     public static IEnumerable<Func<(CommitPositionSequence, CommitPosition)>> TestData() {

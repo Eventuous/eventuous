@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using Shouldly;
 
 namespace Eventuous.Tests.Extensions.AspNetCore;
 
@@ -16,7 +17,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
 
         var b = app.MapDiscoveredCommands<BookingState>(typeof(BookRoom).Assembly);
 
-        b.DataSources.First().Endpoints[0].DisplayName.Should().Be("HTTP: POST book");
+        b.DataSources.First().Endpoints[0].DisplayName.ShouldBe("HTTP: POST book");
     }
 
     [Test]
@@ -27,7 +28,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
 
         var b = app.MapDiscoveredCommands(typeof(NestedCommands).Assembly);
 
-        b.DataSources.First().Endpoints[0].DisplayName.Should().Be("HTTP: POST nested-book");
+        b.DataSources.First().Endpoints[0].DisplayName.ShouldBe("HTTP: POST nested-book");
     }
 
     [Test]
@@ -40,7 +41,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
                 .MapCommand<ImportBookingHttp3, ImportBooking>(Enricher.EnrichCommand)
         );
 
-        act.Should().Throw<InvalidOperationException>();
+        act.ShouldThrow<InvalidOperationException>();
     }
 
     [Test]
