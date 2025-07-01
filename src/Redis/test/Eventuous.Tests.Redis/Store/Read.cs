@@ -28,7 +28,7 @@ public class ReadEvents(IntegrationFixture fixture) {
         var result = await fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 100, true, cancellationToken);
 
         var actual = result.Select(x => x.Payload);
-        actual.ShouldBeEquivalentTo(events);
+        await Assert.That(actual).IsEquivalentTo(events);
     }
 
     [Test]
@@ -46,7 +46,7 @@ public class ReadEvents(IntegrationFixture fixture) {
         var result = await fixture.EventReader.ReadEvents(streamName, new((long)position), 100, true, cancellationToken);
 
         var actual = result.Select(x => x.Payload);
-        actual.ShouldBeEquivalentTo(events2);
+        await Assert.That(actual).IsEquivalentTo(events2);
     }
 
     [Test]
@@ -59,7 +59,7 @@ public class ReadEvents(IntegrationFixture fixture) {
         var result = await fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 10, true, cancellationToken);
 
         var expected = events.Take(10);
-        var actual   = result.Select(x => x.Payload);
-        actual.ShouldBeEquivalentTo(expected);
+        var actual   = result.Select(x => x.Payload!);
+        await Assert.That(actual).IsEquivalentTo(expected);
     }
 }
