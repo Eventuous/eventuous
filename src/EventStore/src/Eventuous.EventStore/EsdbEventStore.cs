@@ -73,12 +73,13 @@ public class EsdbEventStore : IEventStore {
         ) {
         var proposedEvents = events.Select(ToEventData);
 
+        var deadline = TimeSpan.FromSeconds(60);
         var resultTask = expectedVersion == ExpectedStreamVersion.NoStream
-            ? _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents, cancellationToken: cancellationToken)
+            ? _client.AppendToStreamAsync(stream, StreamState.NoStream, proposedEvents, deadline: deadline, cancellationToken: cancellationToken)
             : AnyOrNot(
                 expectedVersion,
-                () => _client.AppendToStreamAsync(stream, StreamState.Any, proposedEvents, cancellationToken: cancellationToken),
-                () => _client.AppendToStreamAsync(stream, expectedVersion.AsStreamRevision(), proposedEvents, cancellationToken: cancellationToken)
+                () => _client.AppendToStreamAsync(stream, StreamState.Any, proposedEvents, deadline: deadline, cancellationToken: cancellationToken),
+                () => _client.AppendToStreamAsync(stream, expectedVersion.AsStreamRevision(), proposedEvents, deadline: deadline, cancellationToken: cancellationToken)
             );
 
         return TryExecute(
