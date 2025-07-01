@@ -17,7 +17,7 @@ public class StoreFixture : StoreFixtureBase<EventStoreDbContainer> {
 
     readonly ActivityListener _listener = DummyActivityListener.Create();
 
-    static StoreFixture() => AppContext.SetSwitch("System.Net.SocketsHttpHandler.Http2FlowControl.DisableDynamicWindowSizing", true);
+    // static StoreFixture() => AppContext.SetSwitch("System.Net.SocketsHttpHandler.Http2FlowControl.DisableDynamicWindowSizing", true);
 
     public StoreFixture() : this(LogLevel.Information) { }
 
