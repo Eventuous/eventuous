@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Azure.ServiceBus\Eventuous.Azure.ServiceBus.csproj" />
+        <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Azure.Messaging.ServiceBus" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Testcontainers.ServiceBus" />
+    </ItemGroup>
+
+</Project>

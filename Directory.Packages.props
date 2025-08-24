@@ -47,6 +47,7 @@
     <PackageVersion Include="Polly" Version="8.5.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
+    <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
   </ItemGroup>
   <ItemGroup Label="Testcontainers">
     <PackageVersion Include="Testcontainers" Version="$(TestcontainersVersion)" />
@@ -57,6 +58,7 @@
     <PackageVersion Include="Testcontainers.RabbitMq" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.Redis" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.MsSql" Version="$(TestcontainersVersion)" />
+    <PackageVersion Include="Testcontainers.ServiceBus" Version="$(TestcontainersVersion)" />
   </ItemGroup>
   <ItemGroup Label="References for packable projects">
     <PackageVersion Include="MinVer" Version="6.0.0" PrivateAssets="All" />

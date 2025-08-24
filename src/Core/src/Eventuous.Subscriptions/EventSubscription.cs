@@ -130,7 +130,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
             } catch (Exception e) { context.Nack(SubscriptionId, e); }
 
             if (context.HasFailed()) {
-                if (activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.Recorded;
+                activity?.ActivityTraceFlags = ActivityTraceFlags.Recorded;
 
                 var exception = context.HandlingResults.GetException();
 
