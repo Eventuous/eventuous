@@ -31,7 +31,7 @@ For subscriptions, Eventuous adds a table called `checkpoints` that stores the l
 
 Usually, you just need to register the aggregate store that uses the Postgres event store. For that to work, you'd also need to register a Postgres connection factory, which is used to create connections to the database.
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 // Local connection factory function
 NpgsqlConnection GetConnection() => new(connectionString);
 
@@ -41,7 +41,7 @@ builder.Services.AddAggregateStore<PostgresStore>();
 
 For the newer NpgSql driver (v7+), you can use the `NpgsqlDataSourceBuilder`:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 var ds = new NpgsqlDataSourceBuilder(connectionString).Build();
 NpgsqlConnection GetConnection() => ds.CreateConnection();
 builder.Services.AddSingleton(GetConnection());
@@ -58,7 +58,7 @@ You can also override the default schema by configuring the store options:
 }
 ```
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.Configure<PostgresStoreOptions>(
     builder.Configuration.GetSection("PostgresStore")
 );
@@ -78,7 +78,7 @@ Both subscription types use continuous polling to check for new events. We don't
 
 Registering a global log subscription is similar to [EventStoreDB](../esdb/index.md#all-stream-subscription). The only difference is the subscription and the options types:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions>(
     "BookingsProjections",
     builder => builder
@@ -89,7 +89,7 @@ builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStrea
 
 When you register a subscription to a single stream, you need to configure the subscription options to specify the stream name:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.AddSubscription<PostgresStreamSubscription, PostgresStreamSubscriptionOptions>(
     "StreamSubscription",
     builder => builder
@@ -147,7 +147,7 @@ There, `Project` is a small helper function that creates a command from a given 
 
 You can then register the projector as a subscription handler:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions>(
     "ImportedBookingsProjections",
     builder => builder
