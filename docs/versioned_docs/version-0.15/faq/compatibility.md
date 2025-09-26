@@ -5,7 +5,7 @@ description: "Platforms and SDKs"
 
 ## Only .NET 6+? Why not .NET Framework 3.5?
 
-Eventuous uses the latest features of C#, like records and advanced pattern matching. Therefore, we rely on compiler versions which supports C# 11.
+Eventuous uses the latest features of C#, like records and advanced pattern matching. Therefore, we rely on compiler versions which support C# 11.
 
 We also aim to support the current application hosting model that only got consistent and stable in .NET 6+.
 
@@ -14,5 +14,4 @@ Eventuous supports .NET Core 3.1, but it's not a priority. Some packages only su
 - .NET 6
 - .NET 8
 
-Targets will be added and removed when getting our of support or when new versions get released.
-
+Targets will be added and removed when getting out of support or when new versions get released.
