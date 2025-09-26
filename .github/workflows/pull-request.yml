@@ -45,7 +45,7 @@ jobs:
       -  
         name: Build
         run: |
-          dotnet build -c "Debug CI" -f net${{ matrix.dotnet-version }} --no-restore
+          dotnet build -c "Debug CI" -f net${{ matrix.dotnet-version }}
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
