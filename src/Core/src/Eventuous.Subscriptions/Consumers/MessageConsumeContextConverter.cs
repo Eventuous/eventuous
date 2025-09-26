@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Eventuous.Subscriptions.Logging;
 using Conversion = System.Func<Eventuous.Subscriptions.Context.IMessageConsumeContext, object>;
 using ContextConversion = System.Func<Eventuous.Subscriptions.Context.IMessageConsumeContext, Eventuous.Subscriptions.Context.IMessageConsumeContext?>;
 
@@ -35,7 +36,7 @@ public static class MessageConsumeContextConverter {
         RegisteredConverters.Add(converter);
     }
 
-    public static IMessageConsumeContext ConvertToGeneric(this IMessageConsumeContext context) {
+    public static IMessageConsumeContext ConvertToGeneric(this IMessageConsumeContext context, InternalLogger? log = null) {
         var messageType = context.Message!.GetType();
 
         // ReSharper disable InconsistentlySynchronizedField
@@ -52,6 +53,8 @@ public static class MessageConsumeContextConverter {
 
         // ReSharper disable once InconsistentlySynchronizedField
         if (!ConversionCache.TryGetValue(messageType, out var conversion)) {
+            log?.Log("Static context conversion not found for message type {MessageType}, using reflections. Consider opening a GitHub issue to help improving the generator", messageType);
+
             lock (CacheLock) {
                 if (!ConversionCache.TryGetValue(messageType, out conversion)) {
                     conversion = CreateConversionFunction(messageType);
