@@ -48,6 +48,8 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup Label="Testcontainers">
     <PackageVersion Include="Testcontainers" Version="$(TestcontainersVersion)" />
@@ -66,8 +68,9 @@
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Label="References for test projects">
+    <PackageVersion Include="AutoFixture" Version="4.18.1" />
+    <PackageVersion Include="MicroElements.AutoFixture.NodaTime" Version="1.0.0" />
     <PackageVersion Include="Bogus" Version="35.6.1" />
-    <PackageVersion Include="Fare" Version="2.2.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" PrivateAssets="All" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(MicrosoftTestHostVer)" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)" />

@@ -21,9 +21,7 @@ public static class MetaSerializerExtensions {
         catch (Exception e) {
             Logger.Current.MetadataDeserializationFailed(stream, position, e);
 
-            if (options.ThrowOnError) throw new DeserializationException(stream, "metadata", position, e);
-
-            return null;
+            return options.ThrowOnError ? throw new DeserializationException(stream, "metadata", position, e) : null;
         }
     }
 }

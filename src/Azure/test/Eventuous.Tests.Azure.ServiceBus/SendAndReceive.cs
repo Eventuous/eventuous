@@ -66,7 +66,7 @@ public class SendAndReceive {
     [After(Test)]
     public async ValueTask CleanUpProducerAndSubscription() {
         await _producer.StopAsync(TestCancellationToken);
-        await _subscription.Unsubscribe(id => { }, TestCancellationToken);
+        await _subscription.Unsubscribe(_ => { }, TestCancellationToken);
         await _subscription.DisposeAsync();
         await _producer.DisposeAsync();
     }
@@ -77,6 +77,6 @@ public class SendAndReceive {
         _subscription = _fixture.CreateSubscription(_serviceBusSubscriptionOptions, _handler, _correlationId);
 
         await _producer.StartAsync(TestCancellationToken);
-        await _subscription.Subscribe(id => { }, (id, reason, ex) => { }, TestCancellationToken);
+        await _subscription.Subscribe(_ => { }, (_, _, _) => { }, TestCancellationToken);
     }
 }

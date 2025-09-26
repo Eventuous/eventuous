@@ -1,4 +1,4 @@
-using Eventuous.Extensions.AspNetCore;
+using Eventuous.Extensions.AspNetCore.Http;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
 using Microsoft.AspNetCore.Mvc;

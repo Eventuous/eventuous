@@ -47,7 +47,7 @@ public sealed class StreamSubscriptionDeletedEventsTests {
                 StreamName     = categoryStream,
                 SubscriptionId = subscriptionId,
                 ResolveLinkTos = true,
-                ThrowOnError   = true,
+                ThrowOnError   = true
             },
             new NoOpCheckpointStore(startPosition),
             new ConsumePipe().AddSystemEventsFilter().AddDefaultConsumer(handler),
@@ -69,6 +69,7 @@ public sealed class StreamSubscriptionDeletedEventsTests {
             await Task.Delay(100, cts.Token);
         }
 
+        // ReSharper disable once PossiblyMistakenUseOfCancellationToken
         await subscription.UnsubscribeWithLog(log, cancellationToken);
 
         var actual = handler.Processed.Select(x => x.Stream.GetId()).ToList();

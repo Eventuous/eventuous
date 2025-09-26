@@ -9,7 +9,7 @@ using Microsoft.Data.SqlClient;
 
 namespace Eventuous.Tests.SqlServer.Projections;
 
-public class ProjectorTests() {
+public class ProjectorTests {
     readonly SubscriptionFixture<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions, TestProjector> _fixture
         = new(_ => { });
 

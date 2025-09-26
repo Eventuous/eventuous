@@ -1,13 +1,18 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+// ReSharper disable UseSymbolAlias
+
 namespace Eventuous.Diagnostics;
 
 using Metrics;
+#if NET8_0
+using Lock = object;
+#endif
 
 public abstract class GenericListener : IObserver<KeyValuePair<string, object?>> {
     readonly IDisposable? _listenerSubscription;
-    readonly object       _allListeners = new();
+    readonly Lock         _allListeners = new();
 
     IDisposable? _subscription;
 

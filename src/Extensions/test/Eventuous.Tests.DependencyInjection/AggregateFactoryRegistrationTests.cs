@@ -1,4 +1,4 @@
-﻿using Eventuous.Tests.AspNetCore.Sut;
+﻿using Eventuous.Tests.DependencyInjection.Sut;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;

@@ -4,7 +4,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 
-namespace Eventuous.Extensions.AspNetCore;
+namespace Eventuous.Extensions.AspNetCore.Http;
 
 public class CommandServiceRouteBuilder<TState>(IEndpointRouteBuilder builder) where TState : State<TState>, new() {
     /// <summary>

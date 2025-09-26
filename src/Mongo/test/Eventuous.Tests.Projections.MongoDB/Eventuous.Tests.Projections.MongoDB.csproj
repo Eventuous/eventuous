@@ -10,8 +10,12 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj"/>
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="AutoFixture" />
+        <PackageReference Include="JetBrains.Annotations" />
+        <PackageReference Include="MicroElements.AutoFixture.NodaTime" />
         <PackageReference Include="MongoDb.Bson.NodaTime"/>
         <PackageReference Include="NodaTime.Bogus" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>

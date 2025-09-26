@@ -18,7 +18,7 @@ public static class Commands {
 
     public record RecordPayment(BookingId BookingId, string PaymentId, Money Amount, DateTimeOffset PaidAt) {
         public string? PaidBy { get; init; }
-    };
+    }
     
     public record CancelBooking(BookingId BookingId);
     

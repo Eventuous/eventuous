@@ -8,7 +8,7 @@ using static SutBookingCommands;
 using static Fixture.TestCommands;
 
 [ClassDataSource<WebApplicationFactory<Program>>]
-public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs() {
+public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs {
     [Test]
     public void RegisterAggregateCommands() {
         var builder = WebApplication.CreateBuilder();

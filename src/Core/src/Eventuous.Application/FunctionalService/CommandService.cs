@@ -83,7 +83,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
                 ExpectedState.Any      => await resolvedReader.LoadState<TState>(streamName, false, cancellationToken).NoContext(),
                 ExpectedState.Existing => await resolvedReader.LoadState<TState>(streamName, true, cancellationToken).NoContext(),
                 ExpectedState.New      => new(streamName, ExpectedStreamVersion.NoStream, []),
-                _                      => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
+                _                      => throw new ArgumentOutOfRangeException(null, "Unknown expected state")
             };
 
             var result = (await registeredHandler.Handler(loadedState.State, loadedState.Events, command, cancellationToken).NoContext()).ToArray();

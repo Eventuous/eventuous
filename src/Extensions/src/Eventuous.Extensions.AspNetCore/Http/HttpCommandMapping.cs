@@ -4,6 +4,7 @@
 using System.Reflection;
 using Eventuous.Extensions.AspNetCore;
 using Eventuous.Extensions.AspNetCore.Diagnostics;
+using Eventuous.Extensions.AspNetCore.Http;
 using static Microsoft.AspNetCore.Http.StatusCodes;
 
 // ReSharper disable CheckNamespace

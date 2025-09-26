@@ -227,6 +227,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Azure.ServiceBus"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Tests.Azure.ServiceBus", "src\Azure\test\Eventuous.Tests.Azure.ServiceBus\Eventuous.Tests.Azure.ServiceBus.csproj", "{D9F77069-79AE-4274-BB57-8AADA092C60E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventuous.Subscriptions.Generators", "src\Core\src\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj", "{658B886B-BDB3-4080-83E4-9492E834174C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1318,6 +1320,24 @@ Global
 		{D9F77069-79AE-4274-BB57-8AADA092C60E}.Debug CI|x64.Build.0 = Debug CI|Any CPU
 		{D9F77069-79AE-4274-BB57-8AADA092C60E}.Debug CI|x86.ActiveCfg = Debug CI|Any CPU
 		{D9F77069-79AE-4274-BB57-8AADA092C60E}.Debug CI|x86.Build.0 = Debug CI|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug|x64.Build.0 = Debug|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug|x86.Build.0 = Debug|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Release|x64.ActiveCfg = Release|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Release|x64.Build.0 = Release|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Release|x86.ActiveCfg = Release|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Release|x86.Build.0 = Release|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug CI|Any CPU.ActiveCfg = Debug CI|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug CI|Any CPU.Build.0 = Debug CI|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug CI|x64.ActiveCfg = Debug CI|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug CI|x64.Build.0 = Debug CI|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug CI|x86.ActiveCfg = Debug CI|Any CPU
+		{658B886B-BDB3-4080-83E4-9492E834174C}.Debug CI|x86.Build.0 = Debug CI|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1422,6 +1442,7 @@ Global
 		{7BF63527-3ED1-452C-AE62-74C2650EF649} = {D9767EDD-85E1-4A2C-8DD2-A271295D169C}
 		{3E13493B-AD0E-4DF1-9ABC-44B834173C4F} = {7D090B42-7A0F-4D55-9151-B055336EBD48}
 		{D9F77069-79AE-4274-BB57-8AADA092C60E} = {7BF63527-3ED1-452C-AE62-74C2650EF649}
+		{658B886B-BDB3-4080-83E4-9492E834174C} = {7BBD9F8E-EB6A-4E2D-84A9-AF15C1784401}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0691467B-C257-46DB-BC4F-88EB7CD615B8}

@@ -81,7 +81,7 @@ public abstract partial class CommandService<TAggregate, TState, TId>(
                     .NoContext(),
                 ExpectedState.New     => Create(aggregateId),
                 ExpectedState.Unknown => null,
-                _                     => throw new ArgumentOutOfRangeException(nameof(registeredHandler.ExpectedState), "Unknown expected state")
+                _                     => throw new ArgumentOutOfRangeException(null, "Unknown expected state")
             };
 
             var result = await registeredHandler.Handler(aggregate!, command, cancellationToken).NoContext();

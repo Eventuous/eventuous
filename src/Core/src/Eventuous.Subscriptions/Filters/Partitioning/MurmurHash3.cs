@@ -15,12 +15,12 @@ static class MurmurHash3 {
 
     static unsafe Span<byte> GetBytes(string data)
     {
-        if (data == null) throw new ArgumentNullException(nameof(data));
+        ArgumentNullException.ThrowIfNull(data);
         if (data.Length == 0) return Span<byte>.Empty;
 
         fixed (char* p = data)
         {
-            return new Span<byte>(p, data.Length * CharSize);
+            return new(p, data.Length * CharSize);
         }
     }
 

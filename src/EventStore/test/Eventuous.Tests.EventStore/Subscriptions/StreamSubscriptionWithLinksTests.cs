@@ -6,6 +6,7 @@ using Eventuous.Subscriptions.Context;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
+
 // ReSharper disable MethodHasAsyncOverload
 
 namespace Eventuous.Tests.EventStore.Subscriptions;
@@ -44,8 +45,8 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
     async Task Execute(int count, ulong? expectedCount) {
         var events = await Seed(Provider, count);
         await WaitForCheckpoint(count, 10.Seconds());
-        ValidateProcessed(Provider, expectedCount == null ? events : events.Skip((int)expectedCount.Value));
-        ValidateCheckpoint(count);
+        await ValidateProcessed(Provider, expectedCount == null ? events : events.Skip((int)expectedCount.Value));
+        await ValidateCheckpoint(count);
     }
 
     async Task<List<TestEvent>> Seed(IServiceProvider provider, int count) {
@@ -68,7 +69,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
         return events;
     }
 
-    async Task ValidateProcessed(IServiceProvider provider, IEnumerable<TestEvent> events) {
+    static async Task ValidateProcessed(IServiceProvider provider, IEnumerable<TestEvent> events) {
         var handler = provider.GetRequiredKeyedService<TestHandler>(SubId);
         TestContext.Current?.OutputWriter.WriteLine($"Processed {handler.Handled.Count} events");
 
@@ -78,10 +79,13 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
         }
     }
 
-    void ValidateCheckpoint(int count) {
+    async Task ValidateCheckpoint(int count) {
+        await Assert.That(_checkpoints).IsNotEmpty();
         // _checkpoints.Count.Should().BeGreaterThan(0);
         // _checkpoints.Skip(1).Select(x => x.Position).Should().NotContain(0);
         // _checkpoints.Last().Position.Should().Be((ulong)(count - 1));
+        await Assert.That(_checkpoints.Skip(1).Select(x => x.Position)).DoesNotContain((ulong?)0);
+        await Assert.That(_checkpoints.Last().Position).IsEqualTo((ulong)(count - 1));
     }
 
     async Task WaitForCheckpoint(int count, TimeSpan deadline) {

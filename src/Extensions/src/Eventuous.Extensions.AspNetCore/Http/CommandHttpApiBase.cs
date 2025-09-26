@@ -3,7 +3,7 @@
 
 using Microsoft.AspNetCore.Http;
 
-namespace Eventuous.Extensions.AspNetCore;
+namespace Eventuous.Extensions.AspNetCore.Http;
 
 /// <summary>
 /// Base class for exposing commands via Web API using a controller that returns the default result.

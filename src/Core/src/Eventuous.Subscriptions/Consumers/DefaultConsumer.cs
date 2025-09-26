@@ -11,7 +11,7 @@ public class DefaultConsumer(IEventHandler[] eventHandlers) : IMessageConsumer {
         var scope = new Dictionary<string, object> {
             {"SubscriptionId", context.SubscriptionId},
             {"Stream", context.Stream},
-            {"MessageType", context.MessageType},
+            {"MessageType", context.MessageType}
         };
 
         using var _ = context.LogContext.Logger.BeginScope(scope);

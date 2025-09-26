@@ -20,7 +20,7 @@ public static class MetadataExtensions {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static Metadata AddTracingMeta(this Metadata metadata, TracingMeta tracingMeta)
-        => metadata.ContainsKey(TraceId)
+        => metadata.ContainsKey(TraceId) || tracingMeta.TraceId == EmptyId
             ? metadata // don't override existing tracing data
             : metadata
                 .AddNotNull(TraceId, tracingMeta.TraceId)

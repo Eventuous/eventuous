@@ -9,7 +9,7 @@ using Assert = TUnit.Assertions.Assert;
 
 namespace Eventuous.Tests.Postgres.Projections;
 
-public class ProjectorTests() {
+public class ProjectorTests {
     readonly SubscriptionFixture<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions, TestProjector> _fixture = new(_ => { });
 
     const string Schema = """

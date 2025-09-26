@@ -23,7 +23,7 @@ public record BookingState : State<BookingState> {
     public BookingState() {
         On<V1.RoomBooked>(HandleBooked);
         On<V1.PaymentRecorded>(HandlePayment);
-        On<V1.BookingFullyPaid>((state, paid) => state with { Paid = true });
+        On<V1.BookingFullyPaid>((state, _) => state with { Paid = true });
     }
 
     static BookingState HandlePayment(BookingState state, V1.PaymentRecorded e)

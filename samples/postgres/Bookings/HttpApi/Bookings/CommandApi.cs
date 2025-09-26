@@ -1,6 +1,6 @@
 using Bookings.Domain.Bookings;
 using Eventuous;
-using Eventuous.Extensions.AspNetCore;
+using Eventuous.Extensions.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static Bookings.Application.BookingCommands;
 

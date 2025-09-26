@@ -5,7 +5,7 @@ using Testing;
 
 public class OperateOnExistingSpec : AggregateSpec<Booking, BookingState> {
     protected override object[] GivenEvents() => [
-        new BookingEvents.RoomBooked("room1", LocalDate.FromDateTime(DateTime.Today), LocalDate.FromDateTime(DateTime.Today.AddDays(2)), 100.0f),
+        new BookingEvents.RoomBooked("room1", LocalDate.FromDateTime(DateTime.Today), LocalDate.FromDateTime(DateTime.Today.AddDays(2)), 100.0f)
     ];
 
     protected override void When(Booking booking) => booking.RecordPayment("payment1", new(50), DateTimeOffset.Now);

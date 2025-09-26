@@ -82,7 +82,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
-        await TestContext.Current!.OutputWriter.WriteLineAsync($"Producing events to {streamName}")!;
+        await TestContext.Current!.OutputWriter.WriteLineAsync($"Producing events to {streamName}");
 
         var commands = Enumerable
             .Range(0, count)

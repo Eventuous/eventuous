@@ -1,7 +1,9 @@
 using Eventuous.Projections.MongoDB;
 using Eventuous.Projections.MongoDB.Tools;
+using Eventuous.Subscriptions.Consumers;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Projections.MongoDB.Fixtures;
+using JetBrains.Annotations;
 using MongoDB.Driver;
 using static Eventuous.Sut.Domain.BookingEvents;
 
@@ -53,8 +55,11 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
         await projectionFixture.DisposeAsync();
 
         await Assert.That(third.Doc).IsNull();
+        
+        // Extra test to make sure that generated context conversions were used
+        await Assert.That(MessageConsumeContextConverter.ConversionCache).IsEmpty();
     }
-
+    
     static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(ProjectionTestBase<SutProjection> f, StreamName stream, T evt) where T : class {
         var append = await f.Fixture.AppendEvent(stream, evt);
         await f.WaitForPosition(append.GlobalPosition);
@@ -63,7 +68,8 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
         return (append, actual);
     }
 
-    public class SutProjection : MongoProjector<BookingDocument> {
+    [UsedImplicitly]
+    class SutProjection : MongoProjector<BookingDocument> {
         public SutProjection(IMongoDatabase database) : base(database) {
             On<BookingImported>(
                 b => b

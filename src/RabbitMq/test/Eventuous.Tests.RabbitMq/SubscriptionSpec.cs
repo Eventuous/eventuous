@@ -12,10 +12,12 @@ namespace Eventuous.Tests.RabbitMq;
 public class SubscriptionSpec {
     static SubscriptionSpec() => TypeMap.Instance.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
 
-    RabbitMqSubscription               _subscription = null!;
     RabbitMqProducer                   _producer     = null!;
     TestEventHandler                   _handler      = null!;
+#pragma warning disable TUnit0023
+    RabbitMqSubscription               _subscription = null!;
     TestEventListener                  _es           = null!;
+#pragma warning restore TUnit0023
     readonly StreamName                _exchange;
     readonly ILogger<SubscriptionSpec> _log;
     readonly ILoggerFactory            _loggerFactory;

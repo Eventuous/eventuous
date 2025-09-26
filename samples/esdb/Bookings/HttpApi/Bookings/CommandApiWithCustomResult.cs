@@ -1,7 +1,7 @@
 using Bookings.Domain;
 using Bookings.Domain.Bookings;
 using Eventuous;
-using Eventuous.Extensions.AspNetCore;
+using Eventuous.Extensions.AspNetCore.Http;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using static Bookings.Application.BookingCommands;
@@ -43,7 +43,7 @@ public class CommandApiWithCustomResult(ICommandService<BookingState> service) :
             throw new ArgumentNullException(nameof(error), "Exception in result is not of the type `ValidationException`. Unable to map validation result.");
         }
 
-        var problemDetails = new ValidationProblemDetails() {
+        var problemDetails = new ValidationProblemDetails {
             Status = StatusCodes.Status400BadRequest,
             Detail = "Please refer to the errors property for additional details."
         };

@@ -1,4 +1,4 @@
-namespace Eventuous.Tests.AspNetCore.Sut;
+namespace Eventuous.Tests.DependencyInjection.Sut;
 
 public class FakeStore : IEventStore {
     public Task<bool> StreamExists(StreamName streamName, CancellationToken cancellationToken) => throw new NotImplementedException();

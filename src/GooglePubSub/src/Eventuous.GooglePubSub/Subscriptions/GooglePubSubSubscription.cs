@@ -126,7 +126,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
             } catch (Exception ex) { return await _failureHandler(_client, msg, ex).NoContext(); }
         }
 
-        Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, x => (object)x.Value)!);
+        Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, object (x) => x.Value)!);
     }
 
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {

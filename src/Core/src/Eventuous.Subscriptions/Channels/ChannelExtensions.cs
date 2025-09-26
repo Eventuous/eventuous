@@ -37,13 +37,7 @@ static class ChannelExtensions {
     public static ValueTask Write<T>(this Channel<T> channel, T element, bool throwOnFull, CancellationToken cancellationToken) {
         return throwOnFull ? WriteOrThrow() : channel.Writer.WriteAsync(element, cancellationToken);
 
-        ValueTask WriteOrThrow() {
-            if (!channel.Writer.TryWrite(element)) {
-                throw new ChannelFullException();
-            }
-
-            return default;
-        }
+        ValueTask WriteOrThrow() => !channel.Writer.TryWrite(element) ? throw new ChannelFullException() : default;
     }
 
     public static async ValueTask Stop<T>(

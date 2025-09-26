@@ -6,7 +6,7 @@ static class ResultExtensions {
 
         r.Match(
             ok => {
-                foreach (var change in ok.Changes!) {
+                foreach (var change in ok.Changes) {
                     Console.WriteLine($"{change.EventType} {change.Event}");
                 }
             },

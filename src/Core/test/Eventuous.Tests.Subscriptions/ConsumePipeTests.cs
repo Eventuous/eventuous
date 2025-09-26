@@ -4,7 +4,7 @@ using Eventuous.Subscriptions.Filters;
 
 namespace Eventuous.Tests.Subscriptions;
 
-public class ConsumePipeTests() {
+public class ConsumePipeTests {
     [Test]
     public async Task ShouldCallHandlers() {
         var handler = new TestHandler();

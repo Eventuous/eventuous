@@ -11,6 +11,9 @@
         <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj"/>
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true"/>
+    </ItemGroup>
+    <ItemGroup>
         <None Remove="Eventuous.Subscriptions.csproj.DotSettings"/>
     </ItemGroup>
     <ItemGroup>
@@ -30,5 +33,6 @@
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="Eventuous.Tests.Subscriptions.Base"/>
+        <InternalsVisibleTo Include="Eventuous.Tests.Projections.MongoDB"/>
     </ItemGroup>
 </Project>

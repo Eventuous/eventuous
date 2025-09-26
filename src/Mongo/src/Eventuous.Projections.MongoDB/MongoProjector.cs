@@ -28,8 +28,8 @@ public abstract class MongoProjector<T>(IMongoDatabase database, MongoProjection
     [PublicAPI]
     protected IMongoCollection<T> Collection { get; } =
         options != null 
-            ? Ensure.NotNull(database).GetCollection<T>(options?.CollectionName) 
-            : Ensure.NotNull<IMongoDatabase>(database).GetDocumentCollection<T>();
+            ? Ensure.NotNull(database).GetCollection<T>(options.CollectionName) 
+            : Ensure.NotNull(database).GetDocumentCollection<T>();
 
     readonly Dictionary<Type, ProjectUntypedEvent> _handlers = new();
     readonly ITypeMapper                           _map      = typeMap ?? TypeMap.Instance;
