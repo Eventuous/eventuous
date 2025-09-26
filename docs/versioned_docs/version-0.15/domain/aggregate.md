@@ -132,7 +132,7 @@ public class Booking : Aggregate<BookingState> {
         if (!previousState.IsFullyPaid() && currentState.IsFullyPaid()) 
             Apply(new BookingFullyPaid(paidAt));
     }
-    
+
     // This function uses the previously loaded events collection to 
     // check if the payment was already recorded. You can do the same using the state.
     public bool HasPaymentRecord(string paymentId)

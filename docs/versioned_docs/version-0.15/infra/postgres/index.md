@@ -35,7 +35,7 @@ Eventuous provides a few overloads for `AddEventuousPostgres` registration exten
 
 One way to register the data source is to provide a connection string and, optionally, the schema name:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.AddEventuousPostgres(connectionString, "mySchema");
 ```
 
@@ -55,7 +55,7 @@ Another way to register the data source is by using configuration options. For e
 
 Then, use the configuration section to register the data source:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.AddEventuousPostgres(
     builder.Configuration.GetSection("PostgresStore")
 );
@@ -81,7 +81,7 @@ Both subscription types use continuous polling to check for new events. We don't
 
 Registering a global log subscription is similar to [EventStoreDB](../esdb/index.md#all-stream-subscription). The only difference is the subscription and the options types:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions>(
     "BookingsProjections",
     b => b
@@ -92,7 +92,7 @@ builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStrea
 
 When you register a subscription to a single stream, you need to configure the subscription options to specify the stream name:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.AddSubscription<PostgresStreamSubscription, PostgresStreamSubscriptionOptions>(
     "StreamSubscription",
     b => b
@@ -160,7 +160,7 @@ There, `Project` is a small helper function that creates a command from a given 
 
 You can then register the projector as a subscription handler:
 
-```csharp titlle="Program.cs"
+```csharp title="Program.cs"
 builder.Services.AddSubscription<PostgresAllStreamSubscription, PostgresAllStreamSubscriptionOptions>(
     "ImportedBookingsProjections",
     b => b

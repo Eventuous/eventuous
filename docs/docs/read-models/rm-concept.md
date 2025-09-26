@@ -61,7 +61,7 @@ Built as read models, all those queries can be run in a single query, without th
 
 For building read models, you need to receive events from the event store and project them real time to a queryable store. Let's say that we have two event types:
 
-```
+```csharp
 record RoomBooked(
     string BookingsId,
     string RoomId,
@@ -123,7 +123,7 @@ In some cases, you have a requirement that the query model needs to be updated _
 
 ### Stop forgetting things
 
-Not all user interfaces are built stateless. With the rise of single-page application frameworks such as React and VueJS, the user's browser holds quite a lot of state. That state can be used for remembering things. Think about that form again, haven't you got the [new entity state](../application/app-service.md#result) from Eventuous after calling the HTTP API? Why can't it be used to update the existing client-side application state instead of querying it from the server again? When using state management tools like Redux or VueX you can even propagate events received in the `Result` object to the client-side application state using the store reducers (which are, effectively, event handlers). This way, you can even improve the cohesiveness of the whole system by letting its front- and back-end to use the same events, using the same Ubiquitous Language.
+Not all user interfaces are built stateless. With the rise of single-page application frameworks such as [React](https://react.dev) and [Vue](https://vuejs.org), the user's browser holds quite a lot of state. That state can be used for remembering things. Think about that form again, haven't you got the [new entity state](../application/app-service.md#result) from Eventuous after calling the HTTP API? Why can't it be used to update the existing client-side application state instead of querying it from the server again? When using state management tools like [Redux](https://redux.js.org/) or [Vuex](https://vuex.vuejs.org) you can even propagate events received in the `Result` object to the client-side application state using the store reducers (which are, effectively, event handlers). This way, you can even improve the cohesiveness of the whole system by letting its front- and back-end to use the same events, using the same Ubiquitous Language.
 
 ### Wait
 

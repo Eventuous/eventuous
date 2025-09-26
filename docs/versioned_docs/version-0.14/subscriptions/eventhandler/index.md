@@ -14,7 +14,7 @@ The default consumer holds classes that implement the basic interface of an even
 ```csharp title="IEventHandler.cs"
 public interface IEventHandler {
     string DiagnosticName { get; }
-    
+
     ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context);
 }
 ```
