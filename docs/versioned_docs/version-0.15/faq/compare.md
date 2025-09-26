@@ -23,7 +23,7 @@ However, this approach sets certain expectations for the underlying infrastructu
 
 Eventuous provides just enough abstractions to make it easy to use, but not too much to make it hard to understand. We believe that the best way to learn is to see how things work under the hood. That's why Eventuous is built with a clear separation of concerns, but without unnecessary abstractions.
 
-Many libs and frameworks enforce abstractions on things that should not be abstracted. Mainly, it's about so-called _marker interfaces) like `IEvent` or `ICommand`. Eventuous does not enforce such interfaces, as they are not necessary for the library to work.
+Many libs and frameworks enforce abstractions on things that should not be abstracted. Mainly, it's about so-called marker interfaces) like `IEvent` or `ICommand`. Eventuous does not enforce such interfaces, as they are not necessary for the library to work.
 
 Additionally, interfaces like `IEventHandler` are often used for things like projections, or implicit invocation of `Apply<T>` methods on aggregates. Eventuous does not use such interfaces in favour of explicit mappings of types to functions, which avoids the library to do magic behind the scenes and doesn't require to use reflections, which would be bad for performance.
 
