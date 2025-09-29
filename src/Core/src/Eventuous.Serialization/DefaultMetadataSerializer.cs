@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Eventuous;
 
@@ -11,14 +12,24 @@ public class DefaultMetadataSerializer(JsonSerializerOptions options) : IMetadat
 
     public static void SetDefaultSerializer(IMetadataSerializer serializer) => Instance = serializer;
 
-    public byte[] Serialize(Metadata evt) => JsonSerializer.SerializeToUtf8Bytes(evt, options);
+    MetadataSourceGenerationContext _context = new(options);
+
+    public byte[] Serialize(Metadata evt) => JsonSerializer.SerializeToUtf8Bytes(evt, _context.Metadata);
 
     /// <inheritdoc/>
     public Metadata? Deserialize(ReadOnlySpan<byte> bytes) {
         try {
-            return JsonSerializer.Deserialize<Metadata>(bytes, options);
+            return JsonSerializer.Deserialize(bytes, _context.Metadata);
         } catch (JsonException e) {
             throw new MetadataDeserializationException(e);
         }
     }
 }
+
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(Metadata))]
+[JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(long))]
+[JsonSerializable(typeof(bool))]
+internal partial class MetadataSourceGenerationContext : JsonSerializerContext;

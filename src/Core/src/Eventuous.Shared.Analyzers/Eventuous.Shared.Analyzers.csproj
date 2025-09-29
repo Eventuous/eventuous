@@ -10,6 +10,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
     </ItemGroup>
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="/"/>
+        <AdditionalFiles Remove="AnalyzerReleases.Unshipped.md" />
+        <AdditionalFiles Remove="AnalyzerReleases.Shipped.md" />
     </ItemGroup>
 </Project>

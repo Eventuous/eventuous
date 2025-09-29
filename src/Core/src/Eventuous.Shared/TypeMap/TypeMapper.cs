@@ -25,6 +25,7 @@ public static class TypeMap {
     /// </summary>
     /// <param name="assemblies">Zero or more assemblies that contain event classes to scan.
     /// If omitted, all the assemblies of the current <seealso cref="AppDomain"/> will be scanned.</param>
+    [RequiresUnreferencedCode("Requires assembly scanning")]
     public static void RegisterKnownEventTypes(params Assembly[] assemblies) {
         Instance.RegisterKnownEventTypes(assemblies);
     }
@@ -95,6 +96,13 @@ public class TypeMapper : ITypeMapperExt {
         _map.Remove(typeof(T));
     }
 
+    public void Register(params Assembly[] assembliesWithEvents) {
+        foreach (var assembly in assembliesWithEvents) {
+            Console.WriteLine(assembly.FullName);
+        }
+    }
+
+    [RequiresUnreferencedCode("Requires assembly scanning")]
     public void RegisterKnownEventTypes(params Assembly[] assembliesWithEvents) {
         var assembliesToScan = assembliesWithEvents.Length == 0 ? GetDefaultAssemblies() : assembliesWithEvents;
 
@@ -104,11 +112,13 @@ public class TypeMapper : ITypeMapperExt {
 
         return;
 
+        [RequiresUnreferencedCode("Calls Get(Assembly)")]
         Assembly[] GetDefaultAssemblies() {
             var firstLevel = AppDomain.CurrentDomain.GetAssemblies().Where(x => !x.IsDynamic && NamePredicate(x.GetName())).ToArray();
 
             return firstLevel.SelectMany(Get).Concat(firstLevel).Distinct().ToArray();
 
+            [RequiresUnreferencedCode("Calls System.Reflection.Assembly.GetReferencedAssemblies()")]
             IEnumerable<Assembly> Get(Assembly assembly) {
                 // ReSharper disable once ConvertClosureToMethodGroup
                 var referenced = assembly.GetReferencedAssemblies().Where(name => NamePredicate(name));
@@ -127,6 +137,7 @@ public class TypeMapper : ITypeMapperExt {
 
     static readonly Type AttributeType = typeof(EventTypeAttribute);
 
+    [RequiresUnreferencedCode("Calls System.Reflection.Assembly.DefinedTypes")]
     void RegisterAssemblyEventTypes(Assembly assembly) {
         var decoratedTypes = assembly.DefinedTypes.Where(x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == AttributeType));
 

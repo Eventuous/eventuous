@@ -2,9 +2,13 @@
     <PropertyGroup>
         <RootNamespace>Eventuous</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="System.Diagnostics.DiagnosticSource"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true"/>
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">

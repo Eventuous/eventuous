@@ -147,24 +147,21 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         sb.AppendLine();
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
-        sb.AppendLine("namespace Eventuous.Subscriptions.Consumers { ");
-        sb.AppendLine("    internal static class MessageConsumeContextGeneratedConvertersInitializer {");
-        sb.AppendLine("        [ModuleInitializer]");
-        sb.AppendLine("        internal static void Initialize() {");
-        sb.AppendLine("            MessageConsumeContextConverter.Register(Convert);");
-        sb.AppendLine("        }");
+        sb.AppendLine("namespace Eventuous.Subscriptions.Consumers;");
         sb.AppendLine();
-        sb.AppendLine("        private static IMessageConsumeContext? Convert(IMessageConsumeContext context) {");
-        sb.AppendLine("            return context.Message switch {");
+        sb.AppendLine("internal static class MessageConsumeContextGeneratedConvertersInitializer {");
+        sb.AppendLine("    [ModuleInitializer]");
+        sb.AppendLine("    internal static void Initialize() => MessageConsumeContextConverter.Register(Convert);");
+        sb.AppendLine();
+        sb.AppendLine("    private static IMessageConsumeContext? Convert(IMessageConsumeContext context)");
+        sb.AppendLine("        => context.Message switch {");
 
         foreach (var t in distinct) {
-            sb.AppendLine($"                {t} => new MessageConsumeContext<{t}>(context),");
+            sb.AppendLine($"            {t} => new MessageConsumeContext<{t}>(context),");
         }
 
-        sb.AppendLine("                _ => null");
-        sb.AppendLine("            };");
-        sb.AppendLine("        }");
-        sb.AppendLine("    }");
+        sb.AppendLine("            _ => null");
+        sb.AppendLine("        };");
         sb.AppendLine("}");
 
         context.AddSource("MessageConsumeContext_Converters.g.cs", sb.ToString());
