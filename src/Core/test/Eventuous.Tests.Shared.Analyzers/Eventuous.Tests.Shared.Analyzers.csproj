@@ -1,11 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <IncludeSutApp>true</IncludeSutApp>
         <IncludeTestHelpers>true</IncludeTestHelpers>
         <OutputType>Exe</OutputType>
-        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
         <IsTestProject>true</IsTestProject>
-        <EnableMSTestRunner>true</EnableMSTestRunner>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations"/>
@@ -18,6 +15,7 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Shared.Analyzers\Eventuous.Shared.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <!-- Also reference the analyzer as a normal assembly so we can instantiate it in tests -->
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Shared.Analyzers\Eventuous.Shared.Analyzers.csproj" />
     </ItemGroup>
 </Project>

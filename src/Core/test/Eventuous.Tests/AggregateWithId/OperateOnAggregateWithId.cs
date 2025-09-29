@@ -24,4 +24,5 @@ public record TestState : State<TestState, TestId>;
 
 public record TestId(string Value) : Id(Value);
 
+[EventType("TestEvent")]
 record TestEvent;

@@ -48,9 +48,9 @@
     <Project Path="src/Core/src/Eventuous.Persistence/Eventuous.Persistence.csproj" />
     <Project Path="src/Core/src/Eventuous.Producers/Eventuous.Producers.csproj" />
     <Project Path="src/Core/src/Eventuous.Serialization/Eventuous.Serialization.csproj" />
+    <Project Path="src/Core/src/Eventuous.Shared.Analyzers/Eventuous.Shared.Analyzers.csproj" />
     <Project Path="src/Core/src/Eventuous.Shared/Eventuous.Shared.csproj" />
     <Project Path="src/Core/src/Eventuous.Subscriptions.Generators/Eventuous.Subscriptions.Generators.csproj" />
-    <Project Path="src/Core/src/Eventuous.Shared.Analyzers/Eventuous.Shared.Analyzers.csproj" />
     <Project Path="src/Core/src/Eventuous.Subscriptions/Eventuous.Subscriptions.csproj" />
     <Project Path="src/Core/src/Eventuous/Eventuous.csproj" />
     <Project Path="src\Core\src\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" Type="Classic C#">
@@ -68,6 +68,14 @@
     <Project Path="src/Core/test/Eventuous.Tests.Subscriptions.Base/Eventuous.Tests.Subscriptions.Base.csproj" />
     <Project Path="src/Core/test/Eventuous.Tests.Subscriptions/Eventuous.Tests.Subscriptions.csproj" />
     <Project Path="src/Core/test/Eventuous.Tests/Eventuous.Tests.csproj" />
+    <Project Path="src\Core\test\Eventuous.Tests.Shared.Analyzers\Eventuous.Tests.Shared.Analyzers.csproj" Type="Classic C#">
+      <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
+      <Configuration Solution="Debug|x86" Project="Debug|Any CPU" />
+      <Configuration Solution="Debug CI|x64" Project="Debug CI|Any CPU" />
+      <Configuration Solution="Debug CI|x86" Project="Debug CI|Any CPU" />
+      <Configuration Solution="Release|x64" Project="Release|Any CPU" />
+      <Configuration Solution="Release|x86" Project="Release|Any CPU" />
+    </Project>
   </Folder>
   <Folder Name="/Diagnostics/" />
   <Folder Name="/Diagnostics/src/">

@@ -36,16 +36,45 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
         var method = inv.TargetMethod;
 
-        // Case 1: Aggregate<T>.Apply<TEvent>(TEvent evt)
-        if (method is { Name: "Apply", TypeArguments.Length: 1, Parameters.Length: 1 }) {
-            var containing = method.ContainingType;
-            if (IsAggregate(containing)) {
+        switch (method) {
+            // Case 1: Aggregate<T>.Apply<TEvent>(TEvent evt)
+            case { Name: "Apply", TypeArguments.Length: 1, Parameters.Length: 1 }: {
+                var containing = method.ContainingType;
+                if (IsAggregate(containing)) {
+                    var eventType = method.TypeArguments[0];
+                    if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
+                        ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, inv.Syntax.GetLocation(), eventType.ToDisplayString()));
+                    }
+                }
+                return;
+            }
+            // Case 1b: State<T>.When(...) invocations where an event instance is passed
+            case { Name: "When", Parameters.Length: 1 } when IsState(method.ContainingType): {
+                var          arg       = inv.Arguments.Length > 0 ? inv.Arguments[0].Value : null;
+                ITypeSymbol? eventType = null;
+
+                if (method.TypeArguments.Length == 1) {
+                    eventType = method.TypeArguments[0];
+                }
+                eventType ??= arg switch {
+                    IConversionOperation conv when conv.Operand?.Type is not null => conv.Operand.Type,
+                    _                                                             => arg?.Type
+                };
+
+                if (eventType != null && IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
+                    var location = arg?.Syntax.GetLocation() ?? inv.Syntax.GetLocation();
+                    ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, location, eventType.ToDisplayString()));
+                }
+                return;
+            }
+            // Case 1c: State<T>.On<TEvent>(...) handler registrations
+            case { Name: "On", TypeArguments.Length: 1 } when IsState(method.ContainingType): {
                 var eventType = method.TypeArguments[0];
                 if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
                     ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, inv.Syntax.GetLocation(), eventType.ToDisplayString()));
                 }
+                return;
             }
-            return;
         }
 
         // Case 2: Functional service: Act/ActAsync handlers
@@ -150,6 +179,15 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         // Walk base types to check if it derives from Eventuous.Aggregate<>
         for (var t = type; t != null; t = t.BaseType) {
             if (t is { Name: "Aggregate", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == "Eventuous") return true;
+        }
+        return false;
+    }
+
+    static bool IsState(INamedTypeSymbol? type) {
+        if (type == null) return false;
+        // Walk base types to check if it derives from Eventuous.State<>
+        for (var t = type; t != null; t = t.BaseType) {
+            if (t is { Name: "State", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == "Eventuous") return true;
         }
         return false;
     }

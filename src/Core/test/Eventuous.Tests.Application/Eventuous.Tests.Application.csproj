@@ -6,22 +6,22 @@
         <IsTestProject>true</IsTestProject>
     </PropertyGroup>
     <ItemGroup>
-      <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
-      <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
-          <ProjectReference Include="$(RepoRoot)\src\Core\src\Eventuous.Shared.Analyzers\Eventuous.Shared.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj"/>
+        <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj"/>
+        <ProjectReference Include="$(RepoRoot)\src\Core\src\Eventuous.Shared.Analyzers\Eventuous.Shared.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
     <ItemGroup>
-      <Compile Update="ServiceTestBase.OnNew.cs">
-        <DependentUpon>ServiceTestBase.cs</DependentUpon>
-      </Compile>
-      <Compile Update="ServiceTestBase.Amendments.cs">
-        <DependentUpon>ServiceTestBase.cs</DependentUpon>
-      </Compile>
-      <Compile Update="ServiceTestBase.OnAny.cs">
-        <DependentUpon>ServiceTestBase.cs</DependentUpon>
-      </Compile>
-      <Compile Update="ServiceTestBase.OnExisting.cs">
-        <DependentUpon>ServiceTestBase.cs</DependentUpon>
-      </Compile>
+        <Compile Update="ServiceTestBase.OnNew.cs">
+            <DependentUpon>ServiceTestBase.cs</DependentUpon>
+        </Compile>
+        <Compile Update="ServiceTestBase.Amendments.cs">
+            <DependentUpon>ServiceTestBase.cs</DependentUpon>
+        </Compile>
+        <Compile Update="ServiceTestBase.OnAny.cs">
+            <DependentUpon>ServiceTestBase.cs</DependentUpon>
+        </Compile>
+        <Compile Update="ServiceTestBase.OnExisting.cs">
+            <DependentUpon>ServiceTestBase.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 </Project>
