@@ -2,6 +2,8 @@
     <PropertyGroup>
         <NoWarn>CA2254</NoWarn>
         <IsAotCompatible>true</IsAotCompatible>
+        <EnableAotAnalyzer>true</EnableAotAnalyzer>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions"/>
