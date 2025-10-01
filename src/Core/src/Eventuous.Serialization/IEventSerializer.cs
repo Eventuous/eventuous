@@ -4,9 +4,19 @@
 namespace Eventuous;
 
 public interface IEventSerializer {
+    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
     DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType);
 
+    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
     SerializationResult SerializeEvent(object evt);
+
+    internal const string SerializationUnreferencedCodeMessage =
+        "JSON serialization and deserialization might require types that cannot be statically analyzed. Use DefaultStaticEventSerializer with System.Text.Json source generation for native AOT applications.";
+
+    internal const string SerializationRequiresDynamicCodeMessage =
+        "JSON serialization and deserialization might require types that cannot be statically analyzed and might need runtime code generation. Use DefaultStaticEventSerializer with System.Text.Json source generation for native AOT applications.";
 }
 
 public record SerializationResult(string EventType, string ContentType, byte[] Payload);

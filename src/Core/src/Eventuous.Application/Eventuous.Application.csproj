@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <RootNamespace>Eventuous</RootNamespace>
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Eventuous.Domain\Eventuous.Domain.csproj" />

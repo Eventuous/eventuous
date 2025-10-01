@@ -140,7 +140,7 @@ public interface ICommandHandlerBuilder<out TCommand, out TAggregate, out TState
 /// <typeparam name="TAggregate">Aggregate type</typeparam>
 /// <typeparam name="TState">State of the aggregate type</typeparam>
 /// <typeparam name="TId">Identity of the aggregate type</typeparam>
-public class CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(
+public class CommandHandlerBuilder<TCommand, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState, TId>(
         CommandService<TAggregate, TState, TId> service,
         IEventReader?                           reader,
         IEventWriter?                           writer

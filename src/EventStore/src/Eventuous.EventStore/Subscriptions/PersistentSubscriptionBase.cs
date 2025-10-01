@@ -31,7 +31,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     protected EventStorePersistentSubscriptionsClient SubscriptionClient { get; }
 
     /// <summary>
-    /// EventStoreDB client instance. It's used for custom NACK behavior as well as for measuring the subscription gap. 
+    /// EventStoreDB client instance. It's used for custom NACK behavior as well as for measuring the subscription gap.
     /// </summary>
     protected EventStoreClient EventStoreClient { get; }
 
@@ -115,6 +115,8 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// Subscribe to a persistent subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var settings = Options.SubscriptionSettings ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
 
@@ -191,6 +193,8 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
         await _handleEventProcessingFailure(EventStoreClient, subscription, re, exception).NoContext();
     }
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,

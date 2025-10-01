@@ -18,6 +18,8 @@ public class TracedCommandService<TState> : ICommandService<TState> where TState
         InnerService        = appService;
     }
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : class
         => CommandServiceActivity.TryExecute(

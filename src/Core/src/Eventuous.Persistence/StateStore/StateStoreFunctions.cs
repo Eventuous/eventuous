@@ -16,6 +16,8 @@ public static class StateStoreFunctions {
     /// <typeparam name="TState">State object type</typeparam>
     /// <returns>Instance of <seealso cref="FoldedEventStream{T}"/> containing events and folded state</returns>
     /// <exception cref="StreamNotFound">Thrown if there's no stream and failIfNotFound is true</exception>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public static async Task<FoldedEventStream<TState>> LoadState<TState>(
             this IEventReader reader,
             StreamName        streamName,
@@ -48,6 +50,8 @@ public static class StateStoreFunctions {
     /// <typeparam name="TState">State object type</typeparam>
     /// <typeparam name="TId">State identity type</typeparam>
     /// <returns>Instance of <seealso cref="FoldedEventStream{T}"/> containing events and folded state</returns>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public static async Task<FoldedEventStream<TState>> LoadState<TState, TId>(
             this IEventReader reader,
             StreamNameMap     streamNameMap,

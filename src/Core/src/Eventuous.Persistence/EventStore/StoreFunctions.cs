@@ -16,6 +16,8 @@ public static class StoreFunctions {
     /// <returns>Append events result</returns>
     /// <exception cref="Exception">Any exception that occurred in the event store</exception>
     /// <exception cref="OptimisticConcurrencyException">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public static async Task<AppendEventsResult> Store(
             this IEventWriter           eventWriter,
             StreamName                  streamName,
@@ -61,6 +63,8 @@ public static class StoreFunctions {
     /// stream with the given name found in the store, the function will return an empty collection.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Collection of events wrapped in <seealso cref="StreamEvent"/></returns>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public static async Task<StreamEvent[]> ReadStream(
             this IEventReader  eventReader,
             StreamName         streamName,

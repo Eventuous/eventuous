@@ -65,6 +65,8 @@ public class EsdbEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,
@@ -97,7 +99,8 @@ public class EsdbEventStore : IEventStore {
                 return new AppendToStreamException(s, ex);
             }
         );
-
+        [RequiresDynamicCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
+        [RequiresUnreferencedCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
         EventData ToEventData(NewStreamEvent streamEvent) {
             var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
@@ -112,6 +115,8 @@ public class EsdbEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken);
 
@@ -137,6 +142,8 @@ public class EsdbEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
@@ -235,6 +242,8 @@ public class EsdbEventStore : IEventStore {
         => version == ExpectedStreamVersion.Any ? whenAny() : otherwise();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     StreamEvent? ToStreamEvent(ResolvedEvent resolvedEvent) {
         var deserialized = _serializer.DeserializeEvent(
             resolvedEvent.Event.Data.Span,
@@ -277,6 +286,8 @@ public class EsdbEventStore : IEventStore {
             );
     }
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents
             .Select(ToStreamEvent)

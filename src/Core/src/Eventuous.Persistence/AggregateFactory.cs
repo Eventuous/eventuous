@@ -9,7 +9,7 @@ namespace Eventuous;
 /// </summary>
 public class AggregateFactoryRegistry {
     /// <summary>
-    /// Aggregate factory registry singleton instance 
+    /// Aggregate factory registry singleton instance
     /// </summary>
     public static readonly AggregateFactoryRegistry Instance = new();
 
@@ -40,7 +40,7 @@ public class AggregateFactoryRegistry {
 
     public void UnsafeCreateAggregateUsing(Type type, Func<object> factory) => Registry.TryAdd(type, factory);
 
-    public T CreateInstance<T, TState>() where T : Aggregate<TState> where TState : State<TState>, new() {
+    public T CreateInstance<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TState>() where T : Aggregate<TState> where TState : State<TState>, new() {
         var instance = Registry.TryGetValue(typeof(T), out var factory) ? (T)factory() : Activator.CreateInstance<T>();
 
         return instance;

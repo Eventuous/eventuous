@@ -60,6 +60,8 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
         ProduceOperation = "publish"
     };
 
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected override async Task ProduceMessages(
             StreamName                   stream,
             IEnumerable<ProducedMessage> messages,
@@ -94,6 +96,8 @@ public class RabbitMqProducer : BaseProducer<RabbitMqProduceOptions>, IHostedPro
             .NoContext();
     }
 
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     void Publish(string stream, ProducedMessage message, RabbitMqProduceOptions? options) {
         if (_channel == null) throw new InvalidOperationException("Producer hasn't been initialized, call Initialize");
 

@@ -20,6 +20,8 @@ public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore 
     public Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken)
         => Trace(stream, Operations.StreamExists, () => Inner.StreamExists(stream, cancellationToken));
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,
@@ -28,9 +30,13 @@ public class TracedEventStore(IEventStore eventStore) : BaseTracer, IEventStore 
         )
         => Writer.AppendEvents(stream, expectedVersion, events, cancellationToken);
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
         => Reader.ReadEvents(stream, start, count, failIfNotFound, cancellationToken);
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken)
         => Reader.ReadEventsBackwards(stream, start, count, failIfNotFound, cancellationToken);
 

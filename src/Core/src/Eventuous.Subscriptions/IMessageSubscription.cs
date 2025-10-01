@@ -14,6 +14,8 @@ public delegate void OnUnsubscribed(string subscriptionId);
 public interface IMessageSubscription {
     string SubscriptionId { get; }
 
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     ValueTask Subscribe(OnSubscribed onSubscribed, OnDropped onDropped, CancellationToken cancellationToken);
 
     ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken);

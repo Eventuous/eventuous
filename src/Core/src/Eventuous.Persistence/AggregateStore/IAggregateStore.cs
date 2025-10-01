@@ -20,6 +20,8 @@ public interface IAggregateStore {
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns>Result of the append operation</returns>
     [Obsolete("Use IEventWriter.StoreAggregate<TAggregate, TState> instead.")]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult> Store<TAggregate, TState, TId>(TAggregate aggregate, TId id, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new()
         => Store<TAggregate, TState>(StreamNameFactory.For<TAggregate, TState, TId>(id), aggregate, cancellationToken);
@@ -34,6 +36,8 @@ public interface IAggregateStore {
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns>Result of the append operation</returns>
     [Obsolete("Use IEventWriter.StoreAggregate<TAggregate, TState> instead.")]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task<AppendEventsResult> Store<TAggregate, TState>(StreamName streamName, TAggregate aggregate, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new();
 
@@ -47,7 +51,9 @@ public interface IAggregateStore {
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns>Aggregate instance</returns>
     [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
-    public Task<TAggregate> Load<TAggregate, TState, TId>(TId id, CancellationToken cancellationToken)
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    public Task<TAggregate> Load<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState, TId>(TId id, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new()
         => Load<TAggregate, TState>(StreamNameFactory.For<TAggregate, TState, TId>(id), cancellationToken);
 
@@ -60,7 +66,9 @@ public interface IAggregateStore {
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns>Aggregate instance</returns>
     [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
-    Task<TAggregate> Load<TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    Task<TAggregate> Load<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new();
 
     /// <summary>
@@ -74,7 +82,9 @@ public interface IAggregateStore {
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns>Aggregate instance</returns>
     [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
-    public Task<TAggregate> LoadOrNew<TAggregate, TState, TId>(TId id, CancellationToken cancellationToken)
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    public Task<TAggregate> LoadOrNew<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState, TId>(TId id, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new()
         => LoadOrNew<TAggregate, TState>(StreamNameFactory.For<TAggregate, TState, TId>(id), cancellationToken);
 
@@ -88,6 +98,8 @@ public interface IAggregateStore {
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns>Aggregate instance</returns>
     [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
-    Task<TAggregate> LoadOrNew<TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    Task<TAggregate> LoadOrNew<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new();
 }

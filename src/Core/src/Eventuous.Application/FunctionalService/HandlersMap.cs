@@ -1,7 +1,6 @@
 // Copyright (C) Eventuous HQ OÜ.All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Reflection;
 using Eventuous.Diagnostics;
 using Eventuous.Persistence;
 using static Eventuous.FuncServiceDelegates;
@@ -22,13 +21,7 @@ record RegisteredHandler<TState>(
 class HandlersMap<TState> where TState : State<TState> {
     readonly TypeMap<RegisteredHandler<TState>> _typeMap = new();
 
-    static readonly MethodInfo AddHandlerInternalMethod =
-        typeof(HandlersMap<TState>).GetMethod(nameof(AddHandlerInternal), BindingFlags.NonPublic | BindingFlags.Instance)!;
-
-    internal void AddHandlerUntyped(Type commandType, RegisteredHandler<TState> handler)
-        => AddHandlerInternalMethod.MakeGenericMethod(commandType).Invoke(this, [handler]);
-
-    void AddHandlerInternal<TCommand>(RegisteredHandler<TState> handler) where TCommand : class {
+    internal void AddHandler<TCommand>(RegisteredHandler<TState> handler) where TCommand : class {
         try {
             _typeMap.Add<TCommand>(handler);
             ApplicationEventSource.Log.CommandHandlerRegistered<TCommand>();

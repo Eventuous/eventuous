@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IsAotCompatible>true</IsAotCompatible>
+    </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Diagnostics\src\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
+    <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj" />
   </ItemGroup>
 </Project>

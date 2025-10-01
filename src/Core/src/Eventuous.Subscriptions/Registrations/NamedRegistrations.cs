@@ -8,7 +8,11 @@ using Eventuous.Subscriptions.Registrations;
 namespace Microsoft.Extensions.DependencyInjection;
 
 static class NamedRegistrationExtensions {
-    public static IServiceCollection AddSubscriptionBuilder<T, TOptions>(this IServiceCollection services, SubscriptionBuilder<T, TOptions> builder)
+    public static IServiceCollection AddSubscriptionBuilder
+        <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
+            this IServiceCollection          services,
+            SubscriptionBuilder<T, TOptions> builder
+        )
         where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
         services.AddKeyedSingleton(builder.SubscriptionId, builder);
         // services.Add(descriptor);
@@ -17,7 +21,11 @@ static class NamedRegistrationExtensions {
         return services;
     }
 
-    public static SubscriptionBuilder<T, TOptions> GetSubscriptionBuilder<T, TOptions>(this IServiceProvider provider, string subscriptionId)
+    public static SubscriptionBuilder<T, TOptions> GetSubscriptionBuilder
+        <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
+            this IServiceProvider provider,
+            string                subscriptionId
+        )
         where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
         return provider.GetRequiredKeyedService<SubscriptionBuilder<T, TOptions>>(subscriptionId);
     }

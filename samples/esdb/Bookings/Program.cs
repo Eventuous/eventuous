@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Bookings;
 using Bookings.Application;
 using Bookings.Domain.Bookings;
@@ -10,8 +11,6 @@ using NodaTime.Serialization.SystemTextJson;
 using Serilog;
 using Serilog.Events;
 
-TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.V1.RoomBooked).Assembly);
-
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Verbose()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -23,6 +22,7 @@ Log.Logger = new LoggerConfiguration()
     // .WriteTo.Seq("http://localhost:5341")
     .CreateLogger();
 
+DefaultEventSerializer.SetDefaultSerializer(new DefaultStaticEventSerializer(new SourceGenerationContext()));
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
@@ -66,3 +66,10 @@ try {
     Log.CloseAndFlush();
     listener.Dispose();
 }
+
+[JsonSerializable(typeof(BookingEvents.V1.RoomBooked))]
+[JsonSerializable(typeof(BookingEvents.V1.BookingCancelled))]
+[JsonSerializable(typeof(BookingEvents.V1.BookingFullyPaid))]
+[JsonSerializable(typeof(BookingEvents.V1.BookingOverpaid))]
+[JsonSerializable(typeof(BookingEvents.V1.PaymentRecorded))]
+internal partial class SourceGenerationContext : JsonSerializerContext;

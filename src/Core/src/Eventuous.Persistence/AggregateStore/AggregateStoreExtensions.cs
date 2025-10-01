@@ -16,7 +16,9 @@ public static class AggregateStoreExtensions {
     /// <typeparam name="TId">Aggregate id type</typeparam>
     /// <returns></returns>
     [Obsolete("Use IEventReader.LoadAggregates instead.")]
-    public static async Task<T> Load<T, TState, TId>(this IAggregateStore store, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    public static async Task<T> Load<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TState, TId>(this IAggregateStore store, StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
         where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
         var aggregate = await store.Load<T, TState>(streamNameMap.GetStreamName<T, TState, TId>(id), cancellationToken).NoContext();
 
@@ -36,7 +38,9 @@ public static class AggregateStoreExtensions {
     /// <typeparam name="TId">Aggregate id type</typeparam>
     /// <returns></returns>
     [Obsolete("Use IEventReader.LoadAggregates instead.")]
-    public static async Task<TAggregate> LoadOrNew<TAggregate, TState, TId>(
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    public static async Task<TAggregate> LoadOrNew<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState, TId>(
             this IAggregateStore store,
             StreamNameMap        streamNameMap,
             TId                  id,

@@ -13,6 +13,8 @@ public interface IProducer {
     /// <param name="messages">Collection of messages to produce</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default);
 }
 
@@ -26,6 +28,8 @@ public interface IProducer<in TProduceOptions> : IProducer where TProduceOptions
     /// <param name="options">Produce options</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
 }
 

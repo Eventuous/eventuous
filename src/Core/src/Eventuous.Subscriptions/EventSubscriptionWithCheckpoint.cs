@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
 
+using System.Diagnostics.CodeAnalysis;
 using Checkpoints;
 using Context;
 using Filters;
@@ -51,6 +52,8 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
             SubscriptionKind.Stream => EventPosition.FromContext(context)
         };
 
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
         try {
             Logger.Current = Log;

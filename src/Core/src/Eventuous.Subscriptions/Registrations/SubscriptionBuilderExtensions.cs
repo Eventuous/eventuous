@@ -10,6 +10,7 @@ namespace Eventuous.Subscriptions.Registrations;
 using Filters;
 using Filters.Partitioning;
 using Checkpoints;
+using System.Diagnostics.CodeAnalysis;
 
 public static class SubscriptionBuilderExtensions {
     /// <summary>
@@ -40,7 +41,7 @@ public static class SubscriptionBuilderExtensions {
     /// <param name="builder">Subscription builder</param>
     /// <typeparam name="T">Checkpoint store type</typeparam>
     /// <returns></returns>
-    public static SubscriptionBuilder UseCheckpointStore<T>(this SubscriptionBuilder builder)
+    public static SubscriptionBuilder UseCheckpointStore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this SubscriptionBuilder builder)
         where T : class, ICheckpointStore {
         builder.Services.TryAddKeyedSingleton<T>(builder.SubscriptionId);
 
@@ -98,7 +99,7 @@ public static class SubscriptionBuilderExtensions {
     /// <param name="builder">Subscription builder</param>
     /// <typeparam name="T">Serializer type</typeparam>
     /// <returns></returns>
-    public static SubscriptionBuilder UseSerializer<T>(this SubscriptionBuilder builder) where T : class, IEventSerializer {
+    public static SubscriptionBuilder UseSerializer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this SubscriptionBuilder builder) where T : class, IEventSerializer {
         builder.Services.TryAddKeyedSingleton<IEventSerializer, T>(builder.SubscriptionId);
 
         return builder;

@@ -93,6 +93,8 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         eventSerializer
     ) { }
 
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected override ValueTask Subscribe(CancellationToken cancellationToken) {
         var exchange = Ensure.NotEmptyString(Options.Exchange);
 
@@ -140,6 +142,8 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
 
     const string ReceivedMessageKey = "receivedMessage";
 
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     async Task HandleReceived(object sender, BasicDeliverEventArgs received) {
         Logger.Current = Log;
 
@@ -168,6 +172,8 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         return default;
     }
 
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     MessageConsumeContext CreateContext(object sender, BasicDeliverEventArgs received) {
         var evt = DeserializeData(received.BasicProperties.ContentType, received.BasicProperties.Type, received.Body, received.Exchange);
 

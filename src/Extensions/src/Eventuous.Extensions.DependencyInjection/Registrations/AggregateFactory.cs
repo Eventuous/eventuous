@@ -3,6 +3,7 @@
 
 // ReSharper disable CheckNamespace
 
+
 namespace Microsoft.Extensions.DependencyInjection;
 
 [PublicAPI]
@@ -34,7 +35,7 @@ public static class AggregateFactoryContainerExtensions {
     /// <typeparam name="T">Aggregate type</typeparam>
     /// <typeparam name="TState">Aggregate state type</typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddAggregate<T, TState>(this IServiceCollection services) where T : Aggregate<TState> where TState : State<TState>, new() {
+    public static IServiceCollection AddAggregate<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T, TState>(this IServiceCollection services) where T : Aggregate<TState> where TState : State<TState>, new() {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.AddTransient<T>();
         // ReSharper disable once ConvertToLocalFunction

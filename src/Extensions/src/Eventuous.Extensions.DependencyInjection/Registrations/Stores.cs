@@ -16,7 +16,7 @@ public static partial class ServiceCollectionExtensions {
     /// <param name="services"></param>
     /// <typeparam name="T">Implementation of <see cref="IEventReader"/></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddEventReader<T>(this IServiceCollection services) where T : class, IEventReader {
+    public static IServiceCollection AddEventReader<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services) where T : class, IEventReader {
         if (EventuousDiagnostics.Enabled) {
             services.TryAddSingleton<T>();
             services.TryAddSingleton(sp => TracedEventReader.Trace(sp.GetRequiredService<T>()));
@@ -49,7 +49,7 @@ public static partial class ServiceCollectionExtensions {
     /// <param name="services"></param>
     /// <typeparam name="T">Implementation of <see cref="IEventWriter"/></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddEventWriter<T>(this IServiceCollection services) where T : class, IEventWriter {
+    public static IServiceCollection AddEventWriter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services) where T : class, IEventWriter {
         if (EventuousDiagnostics.Enabled) {
             services.TryAddSingleton<T>();
             services.TryAddSingleton(sp => TracedEventWriter.Trace(sp.GetRequiredService<T>()));
@@ -82,7 +82,7 @@ public static partial class ServiceCollectionExtensions {
     /// <param name="services"></param>
     /// <typeparam name="T">Implementation of <see cref="IEventWriter"/> and <see cref="IEventReader"/></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddEventReaderWriter<T>(this IServiceCollection services) where T : class, IEventWriter, IEventReader {
+    public static IServiceCollection AddEventReaderWriter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services) where T : class, IEventWriter, IEventReader {
         if (EventuousDiagnostics.Enabled) {
             services.TryAddSingleton<T>();
             services.TryAddSingleton(sp => TracedEventReader.Trace(sp.GetRequiredService<T>()));
@@ -125,7 +125,7 @@ public static partial class ServiceCollectionExtensions {
     /// <param name="services"></param>
     /// <typeparam name="T">Implementation of <see cref="IEventStore"/> </typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddEventStore<T>(this IServiceCollection services) where T : class, IEventStore {
+    public static IServiceCollection AddEventStore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services) where T : class, IEventStore {
         if (EventuousDiagnostics.Enabled) {
             services.TryAddSingleton<T>();
             services.AddSingleton(sp => new TracedEventStore(sp.GetRequiredService<T>()));

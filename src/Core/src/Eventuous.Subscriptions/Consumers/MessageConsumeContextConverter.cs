@@ -9,6 +9,7 @@ using ContextConversion = System.Func<Eventuous.Subscriptions.Context.IMessageCo
 
 namespace Eventuous.Subscriptions.Consumers;
 
+using System.Diagnostics.CodeAnalysis;
 using Context;
 #if NET8_0
 using Lock = object;
@@ -67,6 +68,7 @@ public static class MessageConsumeContextConverter {
         return (IMessageConsumeContext)conversion!(context);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This should not be used because all the conversions should be pre-generated")]
     static Conversion CreateConversionFunction(Type messageType) {
         var contextType   = typeof(MessageConsumeContext<>).MakeGenericType(messageType);
         var contextParam  = Expression.Parameter(typeof(IMessageConsumeContext), "context");

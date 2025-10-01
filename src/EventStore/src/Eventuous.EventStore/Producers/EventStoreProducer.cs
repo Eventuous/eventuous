@@ -51,6 +51,8 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
     /// <param name="messages">Batch of messages</param>
     /// <param name="produceOptions">Options for the produce operation</param>
     /// <param name="cancellationToken"></param>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected override async Task ProduceMessages(
             StreamName                   stream,
             IEnumerable<ProducedMessage> messages,
@@ -87,6 +89,8 @@ public class EventStoreProducer : BaseProducer<EventStoreProduceOptions> {
         }
     }
 
+    [RequiresUnreferencedCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
+    [RequiresDynamicCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
     EventData CreateMessage(ProducedMessage message, bool setMessageType) {
         var msg = Ensure.NotNull(message.Message);
         var (eventType, contentType, payload) = _serializer.SerializeEvent(msg);

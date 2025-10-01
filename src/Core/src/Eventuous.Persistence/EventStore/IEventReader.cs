@@ -13,6 +13,8 @@ public interface IEventReader {
     /// <param name="failIfNotFound">Throw an exception if the stream is not found</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An array with events retrieved from the stream</returns>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken);
 
     /// <summary>
@@ -24,5 +26,7 @@ public interface IEventReader {
     /// <param name="failIfNotFound">Throw an exception if the stream is not found</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An array with events retrieved from the stream</returns>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken);
 }

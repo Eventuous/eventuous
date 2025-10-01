@@ -14,10 +14,11 @@ namespace Microsoft.Extensions.DependencyInjection;
 using Extensions;
 using Diagnostics.HealthChecks;
 using Logging;
+using System.Diagnostics.CodeAnalysis;
 
 [PublicAPI]
 public static class SubscriptionRegistrationExtensions {
-    public static IServiceCollection AddSubscription<T, TOptions>(
+    public static IServiceCollection AddSubscription<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
             this IServiceCollection                  services,
             string                                   subscriptionId,
             Action<SubscriptionBuilder<T, TOptions>> configureSubscription
@@ -64,7 +65,7 @@ public static class SubscriptionRegistrationExtensions {
         return builder.AddCheck<SubscriptionHealthCheck>(checkName, failureStatus, tags);
     }
 
-    public static IServiceCollection AddCheckpointStore<T>(this IServiceCollection services)
+    public static IServiceCollection AddCheckpointStore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services)
         where T : class, ICheckpointStore {
         services.AddSingleton<T>();
 

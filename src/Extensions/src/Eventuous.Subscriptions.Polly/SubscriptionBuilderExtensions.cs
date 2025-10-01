@@ -3,6 +3,7 @@
 
 namespace Eventuous.Subscriptions.Polly;
 
+using System.Diagnostics.CodeAnalysis;
 using Registrations;
 
 [PublicAPI]
@@ -14,9 +15,12 @@ public static class SubscriptionBuilderExtensions {
     /// <param name="retryPolicy">Polly retry policy</param>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    public static SubscriptionBuilder AddEventHandlerWithRetries<THandler>(this SubscriptionBuilder builder, IAsyncPolicy retryPolicy)
+    public static SubscriptionBuilder AddEventHandlerWithRetries<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>(
+            this SubscriptionBuilder builder,
+            IAsyncPolicy             retryPolicy
+        )
         where THandler : class, IEventHandler
-        => builder.AddCompositionEventHandler<THandler, PollyEventHandler>(h => new PollyEventHandler(h, retryPolicy));
+        => builder.AddCompositionEventHandler<THandler, PollyEventHandler>(h => new(h, retryPolicy));
 
     /// <summary>
     /// Adds an event handler to the subscription, adding the specified retry policy
@@ -27,9 +31,9 @@ public static class SubscriptionBuilderExtensions {
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
     public static SubscriptionBuilder AddEventHandlerWithRetries<THandler>(
-        this SubscriptionBuilder         builder,
-        Func<IServiceProvider, THandler> getHandler,
-        IAsyncPolicy                     retryPolicy
-    ) where THandler : class, IEventHandler
+            this SubscriptionBuilder         builder,
+            Func<IServiceProvider, THandler> getHandler,
+            IAsyncPolicy                     retryPolicy
+        ) where THandler : class, IEventHandler
         => builder.AddCompositionEventHandler(getHandler, h => new PollyEventHandler(h, retryPolicy));
 }

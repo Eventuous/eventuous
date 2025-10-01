@@ -10,6 +10,11 @@ public sealed class Measure(DiagnosticSource diagnosticSource, object context) :
 
     public void SetError() => _error = true;
 
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
+        Justification = "MeasureContext is not referencing anything."
+    )]
     void Record() {
         var stoppedAt = DateTime.UtcNow;
         var duration  = stoppedAt - _startedAt;

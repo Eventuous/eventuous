@@ -8,6 +8,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 using Hosting;
 using Extensions;
+using System.Diagnostics.CodeAnalysis;
 
 [PublicAPI]
 public static class RegistrationExtensions {
@@ -32,7 +33,8 @@ public static class RegistrationExtensions {
     }
 
     [Obsolete("Use AddProducer instead")]
-    public static void AddEventProducer<T>(this IServiceCollection services, Func<IServiceProvider, T> getProducer) where T : class, IProducer {
+    public static void AddEventProducer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] T>(this IServiceCollection services, Func<IServiceProvider, T> getProducer)
+        where T : class, IProducer {
         services.AddProducer(getProducer);
     }
 
@@ -42,13 +44,15 @@ public static class RegistrationExtensions {
     /// <param name="services"></param>
     /// <param name="getProducer">Function to resolve the producer from the service provider</param>
     /// <typeparam name="T">Producer implementation type</typeparam>
-    public static void AddProducer<T>(this IServiceCollection services, Func<IServiceProvider, T> getProducer) where T : class, IProducer {
+    public static void AddProducer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] T>(this IServiceCollection services, Func<IServiceProvider, T> getProducer)
+        where T : class, IProducer {
         services.TryAddSingleton(getProducer);
         AddCommon<T>(services);
     }
 
     [Obsolete("Use AddProducer instead")]
-    public static void AddEventProducer<T>(this IServiceCollection services) where T : class, IProducer {
+    public static void AddEventProducer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces)] T>(this IServiceCollection services)
+        where T : class, IProducer {
         services.AddProducer<T>();
     }
 
@@ -57,21 +61,22 @@ public static class RegistrationExtensions {
     /// </summary>
     /// <param name="services"></param>
     /// <typeparam name="T">Producer implementation type</typeparam>
-    public static void AddProducer<T>(this IServiceCollection services) where T : class, IProducer {
+    public static void AddProducer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces)] T>(this IServiceCollection services)
+        where T : class, IProducer {
         services.TryAddSingleton<T>();
         AddCommon<T>(services);
     }
 
-    static void AddCommon<T>(IServiceCollection services) where T : class, IProducer {
+    static void AddCommon<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] T>(IServiceCollection services) where T : class, IProducer {
         services.TryAddSingleton<IProducer>(sp => sp.GetRequiredService<T>());
         services.AddHostedServiceIfSupported<T>();
     }
 
-    public static void AddHostedServiceIfSupported<T>(this IServiceCollection services) where T : class {
+    public static void AddHostedServiceIfSupported<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] T>(this IServiceCollection services) where T : class {
         if (typeof(T).GetInterfaces().Contains(typeof(IHostedService))) {
             // ReSharper disable once ConvertToLocalFunction
-            Func<IServiceProvider, T> factory = sp => sp.GetRequiredService<T>();
-            var descriptor = ServiceDescriptor.Describe(typeof(IHostedService), factory, ServiceLifetime.Singleton);
+            Func<IServiceProvider, T> factory    = sp => sp.GetRequiredService<T>();
+            var                       descriptor = ServiceDescriptor.Describe(typeof(IHostedService), factory, ServiceLifetime.Singleton);
             services.TryAddEnumerable(descriptor);
         }
     }

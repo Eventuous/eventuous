@@ -74,6 +74,8 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
     /// Starts the subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var filterOptions = new SubscriptionFilterOptions(
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
@@ -82,7 +84,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
 
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
-        var fromAll = position == null ? FromAll.Start : FromAll.After(new Position(position.Value, position.Value));
+        var fromAll = position == null ? FromAll.Start : FromAll.After(new(position.Value, position.Value));
 
         Subscription = await EventStoreClient.SubscribeToAllAsync(
                 fromAll,
@@ -104,6 +106,8 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             => Dropped(EsdbMappings.AsDropReason(reason), ex);
     }
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,

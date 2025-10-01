@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
 
+using System.Diagnostics.CodeAnalysis;
 using Diagnostics;
 
 // ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
@@ -19,6 +20,8 @@ public class SubscriptionHostedService(
 
     ILogger<SubscriptionHostedService>? Log { get; } = loggerFactory?.CreateLogger<SubscriptionHostedService>();
 
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Enough warnings from the subscription")]
+    [UnconditionalSuppressMessage("AOT", "IL2026", Justification = "Enough warnings from the subscription")]
     public virtual async Task StartAsync(CancellationToken cancellationToken) {
         Log?.LogDebug("Starting subscription {SubscriptionId}", subscription.SubscriptionId);
 

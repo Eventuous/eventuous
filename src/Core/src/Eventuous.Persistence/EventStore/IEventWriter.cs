@@ -13,6 +13,8 @@ public interface IEventWriter {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Append result, which contains the global position of the last written event,
     /// as well as the next stream version</returns>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,

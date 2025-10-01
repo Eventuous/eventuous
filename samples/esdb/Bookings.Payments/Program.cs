@@ -1,10 +1,8 @@
 using Bookings.Payments;
 using Bookings.Payments.Domain;
 using Bookings.Payments.Infrastructure;
-using Eventuous;
 using Serilog;
 
-TypeMap.RegisterKnownEventTypes();
 Logging.ConfigureLog();
 
 var builder = WebApplication.CreateBuilder(args);

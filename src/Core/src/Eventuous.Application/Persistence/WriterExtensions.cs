@@ -4,6 +4,8 @@
 namespace Eventuous.Persistence;
 
 static class WriterExtensions {
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public static async Task<AppendEventsResult> Store(this IEventWriter writer, ProposedAppend append, AmendEvent? amendEvent, CancellationToken cancellationToken) {
         Ensure.NotNull(append.Events);
 

@@ -32,7 +32,7 @@ public static class MeterProviderBuilderExtensions {
             .AddMeter(PersistenceMetrics.MeterName)
             .AddMetrics<PersistenceMetrics>(customTags);
 
-    static MeterProviderBuilder AddMetrics<T>(this MeterProviderBuilder builder, TagList? customTags = null)
+    static MeterProviderBuilder AddMetrics<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this MeterProviderBuilder builder, TagList? customTags = null)
         where T : class, IWithCustomTags {
         builder.ConfigureServices(services => services.AddSingleton<T>());
 

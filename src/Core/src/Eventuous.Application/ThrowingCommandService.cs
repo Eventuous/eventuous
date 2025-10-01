@@ -10,6 +10,8 @@ namespace Eventuous;
 /// <typeparam name="TState"></typeparam>
 public class ThrowingCommandService<TState>(ICommandService<TState> inner) : ICommandService<TState>
     where TState : State<TState>, new() {
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
         var result = await inner.Handle(command, cancellationToken);
 

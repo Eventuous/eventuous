@@ -1,7 +1,6 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Reflection;
 using Eventuous.Persistence;
 using static Eventuous.CommandServiceDelegates;
 using static Eventuous.FuncServiceDelegates;
@@ -24,10 +23,7 @@ record RegisteredHandler<TAggregate, TState, TId>(
 class HandlersMap<TAggregate, TState, TId> where TAggregate : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
     readonly TypeMap<RegisteredHandler<TAggregate, TState, TId>> _typeMap = new();
 
-    static readonly MethodInfo AddHandlerInternalMethod =
-        typeof(HandlersMap<TAggregate, TState, TId>).GetMethod(nameof(AddHandlerInternal), BindingFlags.NonPublic | BindingFlags.Instance)!;
-
-    internal void AddHandlerInternal<TCommand>(RegisteredHandler<TAggregate, TState, TId> handler) {
+    internal void AddHandler<TCommand>(RegisteredHandler<TAggregate, TState, TId> handler) {
         try {
             _typeMap.Add<TCommand>(handler);
             Log.CommandHandlerRegistered<TCommand>();
@@ -37,9 +33,6 @@ class HandlersMap<TAggregate, TState, TId> where TAggregate : Aggregate<TState> 
             throw new Exceptions.CommandHandlerAlreadyRegistered<TCommand>();
         }
     }
-
-    internal void AddHandlerUntyped(Type command, RegisteredHandler<TAggregate, TState, TId> handler)
-        => AddHandlerInternalMethod.MakeGenericMethod(command).Invoke(this, [handler]);
 
     public bool TryGet<TCommand>([NotNullWhen(true)] out RegisteredHandler<TAggregate, TState, TId>? handler) => _typeMap.TryGetValue<TCommand>(out handler);
 }

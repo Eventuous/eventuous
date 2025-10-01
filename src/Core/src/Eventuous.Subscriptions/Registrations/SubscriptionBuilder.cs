@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace Eventuous.Subscriptions.Registrations;
 
+using System.Diagnostics.CodeAnalysis;
 using Consumers;
 using Context;
 using Filters;
@@ -30,7 +31,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// </summary>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    public SubscriptionBuilder AddEventHandler<THandler>() where THandler : class, IEventHandler {
+    public SubscriptionBuilder AddEventHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IEventHandler {
         Services.TryAddKeyedSingleton<THandler>(SubscriptionId);
         AddHandlerResolve(sp => sp.GetRequiredKeyedService<THandler>(SubscriptionId));
 
@@ -62,7 +63,8 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
         return this;
     }
 
-    public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(Func<THandler, TWrappingHandler> getWrappingHandler)
+    public SubscriptionBuilder AddCompositionEventHandler
+        <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler, TWrappingHandler>(Func<THandler, TWrappingHandler> getWrappingHandler)
         where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         Services.TryAddKeyedSingleton<THandler>(SubscriptionId);
         AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredKeyedService<THandler>(SubscriptionId)));
@@ -125,8 +127,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     }
 
     void AddHandlerResolve(ResolveHandler resolveHandler)
-        => _handlers.Add(
-            sp => {
+        => _handlers.Add(sp => {
                 var handler = resolveHandler(sp);
 
                 return EventuousDiagnostics.Enabled ? new TracedEventHandler(handler) : handler;
@@ -134,7 +135,10 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
         );
 }
 
-public class SubscriptionBuilder<T, TOptions> : SubscriptionBuilder
+public class SubscriptionBuilder
+<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T,
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+    TOptions> : SubscriptionBuilder
     where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
     public SubscriptionBuilder(IServiceCollection services, string subscriptionId) : base(services, subscriptionId) {

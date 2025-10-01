@@ -18,14 +18,20 @@ public abstract class BaseProducer<TProduceOptions> : IProducer<TProduceOptions>
     // ReSharper disable once MemberCanBePrivate.Global
     protected KeyValuePair<string, object?>[] DefaultTags { get; }
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
 
     protected void SetActivityMessageType(string messageType) => Activity.Current?.SetTag(Message.Type, messageType);
 
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default)
         => Produce(stream, messages, null, cancellationToken);
 
     /// <inheritdoc />
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default) {
         var messagesArray = messages.ToArray();
         if (messagesArray.Length == 0) return;

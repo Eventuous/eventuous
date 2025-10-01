@@ -15,7 +15,11 @@ public static class StoreWithArchiveRegistrations {
     /// <typeparam name="THotStore">Implementation of <see cref="IEventStore"/> that points to the hot store</typeparam>
     /// <typeparam name="TArchiveStore">Implementation of <see cref="IEventReader"/> that points to the archive</typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddEventStore<THotStore, TArchiveStore>(this IServiceCollection services)
+    public static IServiceCollection AddEventStore
+        <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THotStore,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TArchiveStore>(
+            this IServiceCollection services
+        )
         where THotStore : class, IEventStore
         where TArchiveStore : class, IEventReader {
         services.TryAddSingleton<THotStore>();

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions.Checkpoints;
 
+using System.Diagnostics.CodeAnalysis;
 using Channels;
 using Logging;
 using static Diagnostics.SubscriptionsEventSource;
@@ -77,6 +78,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
     [PublicAPI]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Diagnostics only")]
     public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken) {
         if (Diagnostic.IsEnabled(CommitOperation)) Diagnostic.Write(CommitOperation, new CommitEvent(_subscriptionId, position, _positions.Min));
         position.LogContext?.PositionReceived(position);

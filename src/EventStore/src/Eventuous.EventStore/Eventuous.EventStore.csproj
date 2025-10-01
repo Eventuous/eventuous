@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <NoWarn>CA2254</NoWarn>
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions"/>

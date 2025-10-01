@@ -18,5 +18,7 @@ public interface IStateStore {
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     [Obsolete("Use IEventReader.LoadState<T> instead")]
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken) where T : State<T>, new();
 }

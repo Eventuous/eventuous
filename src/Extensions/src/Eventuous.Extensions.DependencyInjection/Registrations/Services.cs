@@ -15,7 +15,7 @@ public static partial class ServiceCollectionExtensions {
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TState"></typeparam>
     /// <returns></returns>
-    public static IServiceCollection AddCommandService<T, TState>(this IServiceCollection services)
+    public static IServiceCollection AddCommandService<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T, TState>(this IServiceCollection services)
         where T : class, ICommandService<TState>
         where TState : State<TState>, new() {
         services.AddSingleton<T>();

@@ -11,6 +11,8 @@ namespace Eventuous.Sql.Base.Producers;
 /// <param name="store"></param>
 public class UniversalProducer(IEventStore store) : IProducer {
     /// <inheritdoc />
+    [RequiresDynamicCode(Constants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(Constants.DynamicSerializationMessage)]
     public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default) {
         var events = messages.Select(ToStreamEvent).ToList();
         await store.AppendEvents(stream, ExpectedStreamVersion.Any, events, cancellationToken);

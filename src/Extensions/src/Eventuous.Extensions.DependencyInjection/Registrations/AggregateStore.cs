@@ -15,7 +15,8 @@ public static class AggregateStoreRegistrationExtensions {
     /// <typeparam name="T">Implementation of <see cref="IEventStore"/></typeparam>
     /// <returns></returns>
     [Obsolete("Use AddEventStore instead.")]
-    public static IServiceCollection AddAggregateStore<T>(this IServiceCollection services) where T : class, IEventStore {
+    public static IServiceCollection AddAggregateStore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services)
+        where T : class, IEventStore {
         services.TryAddSingleton<AggregateFactoryRegistry>();
         services.TryAddSingleton<T>();
 
@@ -50,7 +51,9 @@ public static class AggregateStoreRegistrationExtensions {
     }
 
     [Obsolete("Use AddEventStore and TieredEventReader instead.")]
-    public static IServiceCollection AddAggregateStore<T, TArchive>(this IServiceCollection services)
+    public static IServiceCollection AddAggregateStore
+    <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TArchive>(this IServiceCollection services)
         where T : class, IEventStore where TArchive : class, IEventReader {
         services.TryAddSingleton<AggregateFactoryRegistry>();
 
@@ -65,5 +68,4 @@ public static class AggregateStoreRegistrationExtensions {
 
         return services;
     }
-    
 }

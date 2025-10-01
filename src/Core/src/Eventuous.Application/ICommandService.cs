@@ -6,6 +6,8 @@
 namespace Eventuous;
 
 public interface ICommandService<TState> where TState : State<TState>, new() {
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class;
 }
 
