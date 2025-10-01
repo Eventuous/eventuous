@@ -30,7 +30,7 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
 
         var mergedCandidates = syntaxCandidates
             .Combine(symbolCandidates)
-            .Select(static (pair, _) => pair.Left.AddRange((System.Collections.Generic.IEnumerable<Mapping>)pair.Right));
+            .Select(static (pair, _) => pair.Left.AddRange((IEnumerable<Mapping>)pair.Right));
 
         var assemblyName = context.CompilationProvider.Select((c, _) => c.AssemblyName ?? "UnknownAssembly");
         var combined     = assemblyName.Combine(mergedCandidates);
@@ -43,9 +43,9 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
             or RecordDeclarationSyntax { AttributeLists.Count: > 0 };
     }
 
-    sealed class Mapping(string fullyQualifiedType, string eventTypeName) {
-        public string FullyQualifiedType { get; } = fullyQualifiedType;
-        public string EventTypeName      { get; } = eventTypeName;
+    sealed record Mapping {
+        public required string FullyQualifiedType { get; set; }
+        public required string EventTypeName      { get; set; }
     }
 
     static Mapping? Transform(GeneratorSyntaxContext ctx, CancellationToken _) {
@@ -66,10 +66,11 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         var evtName = TryGetEventTypeName(attr) ?? string.Empty;
 
         // Use fully-qualified global:: name for the type
-        var typeName                                                             = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        if (!typeName.StartsWith("global::", StringComparison.Ordinal)) typeName = "global::" + typeName;
+        var typeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-        return new Mapping(typeName, evtName);
+        if (!typeName.StartsWith("global::", StringComparison.Ordinal)) typeName = $"global::{typeName}";
+
+        return new() { FullyQualifiedType = typeName, EventTypeName = evtName };
     }
 
     static AttributeData? GetEventTypeAttribute(ISymbol symbol) {
@@ -83,7 +84,7 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
             if (name == AttributeFullName) return a;
 
             // Also accept short name w/o namespace to be resilient
-            if (attrClass.Name is "EventTypeAttribute" or $"{AttributeShortName}Attribute") return a;
+            if (attrClass.Name is "EventTypeAttribute") return a;
         }
 
         return null;
@@ -112,10 +113,11 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
             var attr = GetEventTypeAttribute(type);
 
             if (attr is not null) {
-                var evtName                                                              = TryGetEventTypeName(attr) ?? string.Empty;
-                var typeName                                                             = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                if (!typeName.StartsWith("global::", StringComparison.Ordinal)) typeName = "global::" + typeName;
-                builder.Add(new Mapping(typeName, evtName));
+                var evtName  = TryGetEventTypeName(attr) ?? string.Empty;
+                var typeName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+                if (!typeName.StartsWith("global::", StringComparison.Ordinal)) typeName = $"global::{typeName}";
+                builder.Add(new() { FullyQualifiedType = typeName, EventTypeName = evtName });
             }
 
             foreach (var nt in type.GetTypeMembers()) {
@@ -192,14 +194,14 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         context.AddSource($"{className}.g.cs", sb.ToString());
     }
 
-    static string EscapeString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    static string EscapeString(string s) => s.Replace("\\", @"\\").Replace("\"", "\\\"");
 
     static string SanitizeIdentifier(string name) {
         // Replace characters that cannot appear in identifiers
         var sb = new StringBuilder(name.Length);
 
         foreach (var ch in name) {
-            if (ch == '.' || ch == '-' || ch == '+') sb.Append('_');
+            if (ch is '.' or '-' or '+') sb.Append('_');
             else if (SyntaxFacts.IsIdentifierPartCharacter(ch)) sb.Append(ch);
             else sb.Append('_');
         }
