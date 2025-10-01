@@ -1,17 +1,15 @@
-version: '3.7'
-
 services:
 
   postgres:
     container_name: evt_pgsql_postgres
-    image: postgres:14.2
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "secret"
       POSTGRES_DB: "eventuous"
     ports:
       - "5432:5432"
-  
+
   pgadmin:
     container_name: evt_pgsql_pgadmin
     image: dpage/pgadmin4
@@ -49,7 +47,7 @@ services:
 
   prometheus:
     container_name: evt_pgsql_prometheus
-    image: prom/prometheus:v2.17.1
+    image: prom/prometheus:v3.6.0
     ports:
       - "9090:9090"
     volumes:
@@ -57,7 +55,7 @@ services:
 
   grafana:
     container_name: evt_pgsql_grafana
-    image: grafana/grafana:6.7.2
+    image: grafana/grafana:12.2
     ports:
       - "3000:3000"
     volumes:

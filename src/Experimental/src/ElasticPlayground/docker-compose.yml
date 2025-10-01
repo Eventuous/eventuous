@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
   es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
@@ -26,7 +24,7 @@ services:
       - "9200:9200"
     networks:
       - elastic
-  
+
   es02:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
     container_name: es02
@@ -50,7 +48,7 @@ services:
       - snapshots:/usr/share/elasticsearch/snapshots
     networks:
       - elastic
-  
+
   es03:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
     container_name: es03
@@ -74,7 +72,7 @@ services:
       - snapshots:/usr/share/elasticsearch/snapshots
     networks:
       - elastic
-  
+
   es04:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
     container_name: es04
@@ -99,7 +97,7 @@ services:
       - snapshots:/usr/share/elasticsearch/snapshots
     networks:
       - elastic
-  
+
   kib01:
     image: docker.elastic.co/kibana/kibana:7.15.0
     container_name: kib01
@@ -111,7 +109,7 @@ services:
     mem_limit: 1Gb
     networks:
       - elastic
-  
+
   esdb:
     container_name: eventuous-elastic-esdb
     image: ghcr.io/eventstore/eventstore:21.10.0-alpha-arm64v8

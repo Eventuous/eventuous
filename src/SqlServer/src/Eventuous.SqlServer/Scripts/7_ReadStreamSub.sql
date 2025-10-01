@@ -1,7 +1,7 @@
 CREATE OR ALTER PROCEDURE __schema__.read_stream_sub
     @stream_id int,
     @stream_name NVARCHAR(850),
-    @from_position bigint,
+    @from_position INT,
     @count int
     AS
 BEGIN

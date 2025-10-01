@@ -9,13 +9,14 @@ using Testcontainers.PostgreSql;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
 
-public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHandler>(
+public class SubscriptionFixture<TEventStore, TSubscription, TSubscriptionOptions, TEventHandler>(
         Action<TSubscriptionOptions> configureOptions,
         bool                         autoStart         = true,
         Action<IServiceCollection>?  configureServices = null,
         LogLevel                     logLevel          = LogLevel.Information
     )
     : SubscriptionFixtureBase<PostgreSqlContainer, TSubscription, TSubscriptionOptions, PostgresCheckpointStore, TEventHandler>(autoStart, logLevel)
+    where TEventStore : PostgresStore
     where TSubscription : PostgresSubscriptionBase<TSubscriptionOptions>
     where TSubscriptionOptions : PostgresSubscriptionBaseOptions
     where TEventHandler : class, IEventHandler {
@@ -34,7 +35,7 @@ public class SubscriptionFixture<TSubscription, TSubscriptionOptions, TEventHand
         base.SetupServices(services);
         services.AddSingleton(new SchemaInfo(SchemaName));
         services.AddEventuousPostgres(Container.GetConnectionString(), SchemaName, true);
-        services.AddEventStore<PostgresStore>();
+        services.AddEventStore<TEventStore>();
         services.AddSingleton(new TestEventHandlerOptions());
         services.AddPostgresCheckpointStore();
         configureServices?.Invoke(services);

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Sql.Base.Subscriptions;
+using Eventuous.Sql.Base;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
@@ -46,6 +47,28 @@ public abstract class PostgresSubscriptionBase<T>(
 
     protected override string GetEndOfStream { get; } = $"select max(stream_position) from {options.Schema}.messages";
     protected override string GetEndOfAll    { get; } = $"select max(global_position) from {options.Schema}.messages";
+
+    protected override async ValueTask HandleGapTimeout(long gapPosition, long currentStart, CancellationToken cancellationToken) {
+        try {
+            await using var connection = await DataSource.OpenConnectionAsync(cancellationToken).NoContext();
+            await using var cmd        = new NpgsqlCommand(Schema.TryInsertTombstone, connection);
+            cmd.Parameters.AddWithValue("@_gap_position", gapPosition);
+            cmd.Parameters.AddWithValue("@_stream_name", PostgresSubscriptionConstants.TombstoneStream);
+            cmd.Parameters.AddWithValue("@_type", PostgresSubscriptionConstants.TombstoneMessageType);
+            cmd.Parameters.AddWithValue("@_id", Guid.NewGuid());
+            await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
+        } catch (PostgresException) {
+            // best-effort; ignore
+        }
+    }
+
+    protected override bool ShouldSkipEvent(PersistedEvent evt)
+        => evt.StreamName == PostgresSubscriptionConstants.TombstoneStream && evt.MessageType == PostgresSubscriptionConstants.TombstoneMessageType;
+}
+
+public static class PostgresSubscriptionConstants {
+    public const string TombstoneStream    = "__tombstones__";
+    public const string TombstoneMessageType = "$tombstone";
 }
 
 public abstract record PostgresSubscriptionBaseOptions : SqlSubscriptionOptionsBase {
