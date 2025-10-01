@@ -96,12 +96,6 @@ public class TypeMapper : ITypeMapperExt {
         _map.Remove(typeof(T));
     }
 
-    public void Register(params Assembly[] assembliesWithEvents) {
-        foreach (var assembly in assembliesWithEvents) {
-            Console.WriteLine(assembly.FullName);
-        }
-    }
-
     [RequiresUnreferencedCode("Requires assembly scanning")]
     public void RegisterKnownEventTypes(params Assembly[] assembliesWithEvents) {
         var assembliesToScan = assembliesWithEvents.Length == 0 ? GetDefaultAssemblies() : assembliesWithEvents;
