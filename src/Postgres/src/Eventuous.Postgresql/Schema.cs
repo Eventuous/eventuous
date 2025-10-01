@@ -15,6 +15,8 @@ public class Schema(string schema = Schema.DefaultSchema) {
 
     public static string GetStreamMessageTypeName(string schema = DefaultSchema) => $"{schema}.stream_message";
 
+    public string Name => schema;
+
     public string StreamMessage       => GetStreamMessageTypeName(schema);
     public string AppendEvents        => $"select * from {schema}.append_events(@_stream_name, @_expected_version, @_created, @_messages)";
     public string ReadStreamForwards  => $"select * from {schema}.read_stream_forwards(@_stream_name, @_from_position, @_count)";
@@ -27,6 +29,7 @@ public class Schema(string schema = Schema.DefaultSchema) {
     public string GetCheckpointSql    => $"select position from {schema}.checkpoints where id=(@checkpointId)";
     public string AddCheckpointSql    => $"insert into {schema}.checkpoints (id) values (@checkpointId)";
     public string UpdateCheckpointSql => $"update {schema}.checkpoints set position=(@position) where id=(@checkpointId)";
+    public string TryInsertTombstone  => $"select {schema}.try_insert_tombstone(@_gap_position, @_stream_name, @_type, @_id)";
 
     static readonly Assembly Assembly = typeof(Schema).Assembly;
 

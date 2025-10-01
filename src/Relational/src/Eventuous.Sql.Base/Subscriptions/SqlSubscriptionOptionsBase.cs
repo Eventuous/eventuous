@@ -31,6 +31,26 @@ public abstract record SqlSubscriptionOptionsBase : SubscriptionWithCheckpointOp
     public RetryOptions Retry { get; set; } = new();
 
     /// <summary>
+    /// Gap age threshold in milliseconds. If != null, gaps older than this threshold will be ignored entirely,
+    /// allowing the subscription to skip past old missing positions. This is useful for scenarios where
+    /// old tombstones may have been deleted and should not be recreated during replay. Default is 1 hour.
+    /// </summary>
+    public int? GapAgeThresholdMs { get; set; } = 60 * 60 * 1000;
+
+    /// <summary>
+    /// Gap skip timeout in milliseconds. If != null, a detected gap will only hold the subscription from
+    /// advancing for this duration. Default value is 5 sec.
+    /// </summary>
+    public int? GapSkipTimeoutMs { get; set; } = 5000;
+
+    /// <summary>
+    /// Gap handling timeout in milliseconds. If != null, when a gap in the global position sequence is detected
+    /// and it persists for at least this duration, the subscription will attempt to handle it in a provider-specific
+    /// way (e.g. creating tombstones). Default is null (don't create tombstones).
+    /// </summary>
+    public int? GapHandlingTimeoutMs { get; set; }
+
+    /// <summary>
     /// Options for polling.
     /// </summary>
     public record PollingOptions {

@@ -9,13 +9,13 @@ create table if not exists __schema__.streams (
 );
 
 create table if not exists __schema__.messages (
-    message_id      uuid,
+    message_id      uuid not null,
     message_type    varchar not null,
     stream_id       integer not null,
     stream_position integer not null,
     global_position bigint primary key generated always as identity, 
     json_data       jsonb not null,
-    json_metadata   jsonb,
+    json_metadata   jsonb null,
     created         timestamp not null,
     constraint fk_messages_stream foreign key (stream_id) references __schema__.streams (stream_id),
     constraint uq_messages_stream_id_and_stream_position unique (stream_id, stream_position),

@@ -74,10 +74,14 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     // ReSharper disable once CognitiveComplexity
 
+    private record DetectedGap(long Position, DateTime FirstSeen);
+
     [RequiresUnreferencedCode("Calls ExecutePollCycle()")]
     [RequiresDynamicCode("Calls ExecutePollCycle()")]
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
         var start = position.HasValue ? (long)position : -1;
+
+        DetectedGap? gap = null;
 
         var retryCount   = 0;
         var currentDelay = Options.Polling.MinIntervalMs;
@@ -103,12 +107,35 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                 var received = 0;
 
                 await foreach (var persistedEvent in result.NoContext(cancellationToken)) {
-                    await HandleInternal(ToConsumeContext(persistedEvent, cancellationToken)).NoContext();
+                    // For All subscriptions we need to ensure we don't skip not-yet-committed events from other concurrent transactions.
+                    // If we observe a gap in the global position sequence, we stop processing further events in this poll cycle
+                    // and will retry on the next poll. This prevents advancing the checkpoint beyond an uncommitted (invisible) row.
+                    if (Kind == SubscriptionKind.All) {
+                        gap = DetectGap(start, persistedEvent, gap);
+
+                        if (gap != null)
+                            break;
+                    }
+
+                    if (!ShouldSkipEvent(persistedEvent)) {
+                        await HandleInternal(ToConsumeContext(persistedEvent, cancellationToken)).NoContext();
+                    }
+
                     start = MoveStart(persistedEvent);
                     received++;
                 }
 
-                return new(true, false, received);
+
+                // If a gap persists beyond timeout, attempt provider-specific remediation (e.g. tombstone insert).
+                if (Kind == SubscriptionKind.All && gap != null && Options.GapHandlingTimeoutMs != null) {
+                    var gapAge = DateTime.UtcNow - gap.FirstSeen;
+
+                    if (gapAge.TotalMilliseconds >= Options.GapHandlingTimeoutMs.Value) {
+                        await HandleGapTimeout(gap.Position, start, cancellationToken).NoContext();
+                    }
+                }
+
+                return new(true, gap != null, received);
             } catch (Exception e) {
                 if (IsStopping(e)) {
                     IsDropped = true;
@@ -155,6 +182,26 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                 await Task.Delay(currentDelay, cancellationToken).NoContext();
             }
         }
+    }
+
+    DetectedGap? DetectGap(long start, PersistedEvent persistedEvent, DetectedGap? previousGap) {
+        var expectedNext = start < 0 ? 1 : start + 1; // global position identity starts at 1
+
+        if (persistedEvent.GlobalPosition > expectedNext) {
+            if (previousGap != null) {
+                if (Options.GapSkipTimeoutMs == null || (DateTime.UtcNow - previousGap.FirstSeen) < TimeSpan.FromMilliseconds(Options.GapSkipTimeoutMs.Value)) {
+                    return previousGap;
+                }
+            }
+
+            var newGapAge = DateTime.UtcNow - persistedEvent.Created;
+
+            if (Options.GapAgeThresholdMs == null || newGapAge.TotalMilliseconds < Options.GapAgeThresholdMs.Value) {
+                return new(expectedNext, DateTime.UtcNow);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -243,6 +290,25 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     TaskRunner? _runner;
 
     const string ContentType = "application/json";
+
+    /// <summary>
+    /// Provider-specific hook: attempt to resolve a persistent gap (e.g. insert tombstone rows).
+    /// Base implementation does nothing. Implementations should be idempotent; this method may be called repeatedly
+    /// until the gap is naturally filled by the original row becoming visible or by a remedial action (like tombstone insertion).
+    /// </summary>
+    /// <param name="gapPosition">The missing global position</param>
+    /// <param name="currentStart">Current start pointer</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    protected virtual ValueTask HandleGapTimeout(long gapPosition, long currentStart, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+    /// <summary>
+    /// Determine if the event should be skipped instead of dispatched to user handlers.
+    /// Base implementation returns false; providers can override.
+    /// </summary>
+    /// <param name="evt"></param>
+    /// <returns></returns>
+    protected virtual bool ShouldSkipEvent(PersistedEvent evt) => false;
 
     [StructLayout(LayoutKind.Auto)]
     readonly record struct PollingResult(bool Continue, bool Retry, int ReceivedEvents);
