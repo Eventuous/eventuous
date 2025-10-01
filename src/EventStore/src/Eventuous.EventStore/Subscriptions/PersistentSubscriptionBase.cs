@@ -1,7 +1,6 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Concurrent;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
@@ -169,15 +168,16 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             CancellationToken                                                          cancellationToken
         );
 
-    ConcurrentQueue<ResolvedEvent> AckQueue { get; } = new();
-
-    async ValueTask Ack(IMessageConsumeContext ctx) {
+    // ReSharper disable once MemberCanBeMadeStatic.Local
+#pragma warning disable CA1822
+    async ValueTask Ack(MessageConsumeContext ctx) {
+#pragma warning restore CA1822
         var re           = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
         var subscription = ctx.Items.GetItem<PersistentSubscription>(SubscriptionKey)!;
         await subscription.Ack(re).NoContext();
     }
 
-    async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
+    async ValueTask Nack(MessageConsumeContext ctx, Exception exception) {
         if (exception is OperationCanceledException && ctx.CancellationToken.IsCancellationRequested) {
             return;
         }

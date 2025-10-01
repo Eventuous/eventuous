@@ -16,4 +16,4 @@ public sealed class MetricsListener<T>(string name, Histogram<double> duration, 
     }
 }
 
-record MeasureContext(TimeSpan Duration, bool Error, object Context);
+record struct MeasureContext(TimeSpan Duration, bool Error, object Context);

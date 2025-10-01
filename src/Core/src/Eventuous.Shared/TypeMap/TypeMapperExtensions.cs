@@ -29,7 +29,7 @@ public static class TypeMapperExtensions {
     public static string GetTypeName(this ITypeMapper typeMapper, object o, bool fail = true) => typeMapper.GetTypeNameByType(o.GetType(), fail);
 
     public static string GetTypeName<T>(this ITypeMapper typeMapper, bool fail = true) => typeMapper.GetTypeNameByType(typeof(T), fail);
-    
+
     public static bool TryGetTypeName<T>(this ITypeMapper typeMapper, [NotNullWhen(true)] out string? typeName) => typeMapper.TryGetTypeName(typeof(T), out typeName);
 
     /// <summary>

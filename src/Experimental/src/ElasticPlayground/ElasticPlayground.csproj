@@ -16,9 +16,4 @@
         <PackageReference Include="EventStore.Client.Grpc.Streams" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
-    <ItemGroup>
-        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\Ensure.cs">
-            <Link>Tools\Ensure.cs</Link>
-        </Compile>
-    </ItemGroup>
 </Project>

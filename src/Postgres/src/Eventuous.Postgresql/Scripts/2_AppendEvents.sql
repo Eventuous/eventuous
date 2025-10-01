@@ -17,7 +17,7 @@ begin
     select s.stream_id, s.new_version 
         into _stream_id, _current_version 
         from __schema__.check_stream(_stream_name, _expected_version) s;
-    
+
     insert into __schema__.messages (message_id, message_type, stream_id, stream_position, 
                                      json_data, json_metadata, created) 
     select m.message_id, m.message_type, _stream_id, 
@@ -25,13 +25,13 @@ begin
            m.json_data, m.json_metadata, _created
     from unnest(_messages) m
     on conflict do nothing;
-    
+
     select m.stream_position, m.global_position into _current_version, _position
         from __schema__.messages m
         where m.stream_id = _stream_id
         order by m.global_position desc limit 1;
     update __schema__.streams set version = _current_version where stream_id = _stream_id;
-    
+
     return query select _current_version, _position;
 end;
 

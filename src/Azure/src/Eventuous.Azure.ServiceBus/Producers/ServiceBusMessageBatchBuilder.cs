@@ -8,19 +8,12 @@ namespace Eventuous.Azure.ServiceBus.Producers;
 
 using Shared;
 
-class ServiceBusMessageBatchBuilder {
-    readonly IEventSerializer                _serializer;
-    readonly ServiceBusMessageAttributeNames _attributes;
-    readonly Action<string>?                 _setActivityMessageType;
-    readonly ServiceBusSender                _sender;
-
-    internal ServiceBusMessageBatchBuilder(ServiceBusSender sender, IEventSerializer serializer, Shared.ServiceBusMessageAttributeNames attributes, Action<string>? setActivityMessageType) {
-        this._sender                 = sender;
-        this._serializer             = serializer;
-        this._attributes             = attributes;
-        this._setActivityMessageType = setActivityMessageType;
-    }
-
+class ServiceBusMessageBatchBuilder(
+        ServiceBusSender                sender,
+        IEventSerializer                serializer,
+        ServiceBusMessageAttributeNames attributes,
+        Action<string>?                 setActivityMessageType
+    ) {
     /// <summary>
     /// Creates a sequence of <see cref="ServiceBusMessageBatch"/> from the provided produced messages
     /// so we can optimise if we want to produce a large number of messages at once.
@@ -40,11 +33,11 @@ class ServiceBusMessageBatchBuilder {
         ) {
         using var enumerator = messages.GetEnumerator();
 
-        var messageBuilder = new ServiceBusMessageBuilder(_serializer, stream, _attributes, options, _setActivityMessageType);
+        var messageBuilder = new ServiceBusMessageBuilder(serializer, stream, attributes, options, setActivityMessageType);
         var notDone        = enumerator.MoveNext();
 
         while (notDone) {
-            using var batch = await _sender.CreateMessageBatchAsync(cancellationToken);
+            using var batch = await sender.CreateMessageBatchAsync(cancellationToken);
 
             var produced = new List<ProducedMessage>();
 

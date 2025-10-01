@@ -114,11 +114,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
             return await result.Select(ToStreamEvent).ToArrayAsync(cancellationToken).NoContext();
         } catch (Exception e) {
             if (IsStreamNotFound(e)) {
-                if (failIfNotFound) {
-                    throw new StreamNotFound(stream);
-                }
-
-                return [];
+                return failIfNotFound ? throw new StreamNotFound(stream) : [];
             }
 
             throw;
@@ -128,7 +124,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     StreamEvent ToStreamEvent(PersistedEvent evt) {
         var deserialized = _serializer.DeserializeEvent(Encoding.UTF8.GetBytes(evt.JsonData), evt.MessageType, ContentType);
 
-        var meta = evt.JsonMetadata == null ? new Metadata() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
+        var meta = evt.JsonMetadata == null ? new() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
 
         return deserialized switch {
             SuccessfullyDeserialized success => AsStreamEvent(success.Payload),

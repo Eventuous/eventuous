@@ -15,7 +15,7 @@ public static class DomainFixture {
         .RuleFor(x => x.Price, f => f.Random.Number(50, 200))
         .RuleFor(x => x.CheckIn, f => f.Noda().LocalDate.Soon())
         .RuleFor(x => x.CheckOut, (f, c) => c.CheckIn.PlusDays(f.Random.Number(1, 5)));
-    
+
     static Faker<BookingEvents.BookingImported> EventFaker => new Faker<BookingEvents.BookingImported>()
         .CustomInstantiator(f => {
                 var checkIn = f.Noda().LocalDate.Soon();
@@ -24,7 +24,7 @@ public static class DomainFixture {
         );
 
     public static Commands.ImportBooking CreateImportBooking() => CmdFaker.Generate();
-    
+
     public static BookingEvents.BookingImported CreateImportBookingEvent() => EventFaker.Generate();
 }
 

@@ -14,7 +14,6 @@ public static class EventuousDiagnostics {
 
     public const string InstrumentationName = DiagnosticName.BaseName;
 
-    static ActivitySource?   activitySource;
     static ActivityListener? listener;
 
     public static KeyValuePair<string, object?>[] Tags { get; private set; } = [];
@@ -41,18 +40,19 @@ public static class EventuousDiagnostics {
     /// Allows disabling the diagnostics from code. Normally, you disable it by setting the environment variable EVENTUOUS_DISABLE_DIAGS=1
     /// </summary>
     public static void Disable() => Enabled = false;
-    
+
     public static void Enable() => Enabled = true;
 
+    [field: AllowNull, MaybeNull]
     public static ActivitySource ActivitySource {
         get {
-            if (activitySource != null) return activitySource;
+            if (field != null) return field;
 
-            activitySource = new(InstrumentationName, Version?.ToString());
+            field = new(InstrumentationName, Version?.ToString());
 
             listener = DummyActivityListener.Create();
             ActivitySource.AddActivityListener(listener);
-            return activitySource;
+            return field;
         }
     }
 

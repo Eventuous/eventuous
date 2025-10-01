@@ -3,11 +3,11 @@
         <IncludeTestHost>true</IncludeTestHost>
         <OutputType>Exe</OutputType>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
     </ItemGroup>
-    
+
     <ItemGroup>
       <PackageReference Include="Shouldly" />
     </ItemGroup>

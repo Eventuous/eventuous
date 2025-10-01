@@ -1,4 +1,4 @@
-namespace Eventuous.Tests.AspNetCore.Sut;
+namespace Eventuous.Tests.DependencyInjection.Sut;
 
 public class TestAggregate(TestDependency dependency) : Aggregate<TestState> {
     public TestDependency Dependency { get; } = dependency;

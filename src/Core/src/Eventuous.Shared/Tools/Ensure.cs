@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace Eventuous;
 
+[PublicAPI]
 static class Ensure {
     /// <summary>
     /// Checks if the object is not null, otherwise throws
@@ -26,9 +27,7 @@ static class Ensure {
     [DebuggerHidden]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T NotNull<T>(T? value, [CallerArgumentExpression("value")] string? name = default) where T : struct {
-        ArgumentNullException.ThrowIfNull(value, name);
-
-        return value.Value;
+        return value ?? throw new ArgumentNullException(nameof(value));
     }
 
     /// <summary>

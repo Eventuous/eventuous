@@ -10,7 +10,7 @@ static class Options<TOptions> where TOptions: new() {
 
         return options;
     }
-    
+
     public static TOptions DefaultIfNotConfigured(Action<TOptions>? configure, Func<TOptions> factory)  {
         if (configure is null) return factory();
         
@@ -19,7 +19,7 @@ static class Options<TOptions> where TOptions: new() {
 
         return options;
     }
-    
+
     public static TOptions? NullIfNotConfigured(Action<TOptions>? configure) {
         if (configure is null) return default;
         

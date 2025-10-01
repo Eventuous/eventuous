@@ -12,7 +12,7 @@ public class AggregateFactoryRegistry {
     /// Aggregate factory registry singleton instance 
     /// </summary>
     public static readonly AggregateFactoryRegistry Instance = new();
-    
+
     private AggregateFactoryRegistry() { }
 
     [UsedImplicitly]

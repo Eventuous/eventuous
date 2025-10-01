@@ -4,7 +4,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-namespace Eventuous.Extensions.AspNetCore;
+namespace Eventuous.Extensions.AspNetCore.Http;
 
 static class RouteHandlerBuilderExt {
     public static RouteHandlerBuilder ProducesValidationProblemDetails(this RouteHandlerBuilder builder, int statusCode)

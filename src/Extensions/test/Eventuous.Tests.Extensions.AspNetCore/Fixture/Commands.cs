@@ -1,3 +1,5 @@
+using Eventuous.Extensions.AspNetCore.Http;
+
 namespace Eventuous.Tests.Extensions.AspNetCore.Fixture;
 
 public static class TestCommands {
@@ -5,7 +7,7 @@ public static class TestCommands {
     public const string Import1Route = "import1";
     public const string Import2Route = "import2";
     public const string ImportWrongRoute = "import-wrong";
-    
+
     public record ImportBookingHttp(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price);
 
     [HttpCommand(Route = Import1Route)]

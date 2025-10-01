@@ -5,7 +5,7 @@ namespace ElasticPlayground;
 
 public class Generator{
     public static string RandomString() => Guid.NewGuid().ToString();
-    
+
     static readonly Faker<Commands.BookRoom> Faker = new Faker<Commands.BookRoom>()
         .CustomInstantiator(
             f => {

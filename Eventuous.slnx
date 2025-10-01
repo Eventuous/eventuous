@@ -1,0 +1,188 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Debug CI" />
+    <BuildType Name="Release" />
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Benchmarks/">
+    <Project Path="src/Benchmarks/Benchmarks/Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/Brokers/" />
+  <Folder Name="/Brokers/Azure/" />
+  <Folder Name="/Brokers/Azure/src/">
+    <Project Path="src/Azure/src/Eventuous.Azure.ServiceBus/Eventuous.Azure.ServiceBus.csproj" />
+  </Folder>
+  <Folder Name="/Brokers/Azure/test/">
+    <Project Path="src/Azure/test/Eventuous.Tests.Azure.ServiceBus/Eventuous.Tests.Azure.ServiceBus.csproj" />
+  </Folder>
+  <Folder Name="/Brokers/GooglePubSub/" />
+  <Folder Name="/Brokers/GooglePubSub/src/">
+    <Project Path="src/GooglePubSub/src/Eventuous.GooglePubSub.CloudRun/Eventuous.GooglePubSub.CloudRun.csproj" />
+    <Project Path="src/GooglePubSub/src/Eventuous.GooglePubSub/Eventuous.GooglePubSub.csproj" />
+  </Folder>
+  <Folder Name="/Brokers/GooglePubSub/test/">
+    <Project Path="src/GooglePubSub/test/Eventuous.Tests.GooglePubSub/Eventuous.Tests.GooglePubSub.csproj" />
+  </Folder>
+  <Folder Name="/Brokers/Kafka/" />
+  <Folder Name="/Brokers/Kafka/src/">
+    <Project Path="src/Kafka/src/Eventuous.Kafka/Eventuous.Kafka.csproj" />
+  </Folder>
+  <Folder Name="/Brokers/Kafka/test/">
+    <Project Path="src/Kafka/test/Eventuous.Tests.Kafka/Eventuous.Tests.Kafka.csproj" />
+  </Folder>
+  <Folder Name="/Brokers/RabbitMq/" />
+  <Folder Name="/Brokers/RabbitMq/src/">
+    <Project Path="src/RabbitMq/src/Eventuous.RabbitMq/Eventuous.RabbitMq.csproj" />
+  </Folder>
+  <Folder Name="/Brokers/RabbitMq/test/">
+    <Project Path="src/RabbitMq/test/Eventuous.Tests.RabbitMq/Eventuous.Tests.RabbitMq.csproj" />
+  </Folder>
+  <Folder Name="/Core/" />
+  <Folder Name="/Core/src/">
+    <Project Path="src/Core/src/Eventuous.Application/Eventuous.Application.csproj" />
+    <Project Path="src/Core/src/Eventuous.Diagnostics/Eventuous.Diagnostics.csproj" />
+    <Project Path="src/Core/src/Eventuous.Domain/Eventuous.Domain.csproj" />
+    <Project Path="src/Core/src/Eventuous.Persistence/Eventuous.Persistence.csproj" />
+    <Project Path="src/Core/src/Eventuous.Producers/Eventuous.Producers.csproj" />
+    <Project Path="src/Core/src/Eventuous.Serialization/Eventuous.Serialization.csproj" />
+    <Project Path="src/Core/src/Eventuous.Shared/Eventuous.Shared.csproj" />
+    <Project Path="src/Core/src/Eventuous.Subscriptions.Generators/Eventuous.Subscriptions.Generators.csproj" />
+    <Project Path="src/Core/src/Eventuous.Subscriptions/Eventuous.Subscriptions.csproj" />
+    <Project Path="src/Core/src/Eventuous/Eventuous.csproj" />
+  </Folder>
+  <Folder Name="/Core/test/">
+    <Project Path="src/Core/test/Eventuous.Tests.Application/Eventuous.Tests.Application.csproj" />
+    <Project Path="src/Core/test/Eventuous.Tests.Persistence.Base/Eventuous.Tests.Persistence.Base.csproj" />
+    <Project Path="src/Core/test/Eventuous.Tests.Subscriptions.Base/Eventuous.Tests.Subscriptions.Base.csproj" />
+    <Project Path="src/Core/test/Eventuous.Tests.Subscriptions/Eventuous.Tests.Subscriptions.csproj" />
+    <Project Path="src/Core/test/Eventuous.Tests/Eventuous.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Diagnostics/" />
+  <Folder Name="/Diagnostics/src/">
+    <Project Path="src/Diagnostics/src/Eventuous.Diagnostics.Logging/Eventuous.Diagnostics.Logging.csproj" />
+    <Project Path="src/Diagnostics/src/Eventuous.Diagnostics.OpenTelemetry/Eventuous.Diagnostics.OpenTelemetry.csproj" />
+  </Folder>
+  <Folder Name="/Diagnostics/test/">
+    <Project Path="src/Diagnostics/test/Eventuous.Tests.OpenTelemetry/Eventuous.Tests.OpenTelemetry.csproj" />
+  </Folder>
+  <Folder Name="/EventStore/" />
+  <Folder Name="/EventStore/src/">
+    <Project Path="src/EventStore/src/Eventuous.EventStore/Eventuous.EventStore.csproj" />
+  </Folder>
+  <Folder Name="/EventStore/test/">
+    <Project Path="src/EventStore/test/Eventuous.Tests.EventStore/Eventuous.Tests.EventStore.csproj" />
+  </Folder>
+  <Folder Name="/Experimental/" />
+  <Folder Name="/Experimental/src/">
+    <Project Path="src/Experimental/src/ElasticPlayground/ElasticPlayground.csproj">
+      <Build Solution="Debug CI|Any CPU" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+    <Project Path="src/Experimental/src/Eventuous.ElasticSearch/Eventuous.ElasticSearch.csproj" />
+    <Project Path="src/Experimental/src/Eventuous.Spyglass/Eventuous.Spyglass.csproj" />
+    <Project Path="src/Redis/src/Eventuous.Redis/Eventuous.Redis.csproj" />
+  </Folder>
+  <Folder Name="/Experimental/test/">
+    <Project Path="src/Redis/test/Eventuous.Tests.Redis/Eventuous.Tests.Redis.csproj" />
+  </Folder>
+  <Folder Name="/Extensions/" />
+  <Folder Name="/Extensions/src/">
+    <Project Path="src/Extensions/src/Eventuous.Extensions.AspNetCore/Eventuous.Extensions.AspNetCore.csproj" />
+    <Project Path="src/Extensions/src/Eventuous.Extensions.DependencyInjection/Eventuous.Extensions.DependencyInjection.csproj" />
+    <Project Path="src/Extensions/src/Eventuous.Extensions.Logging/Eventuous.Extensions.Logging.csproj" />
+    <Project Path="src/Extensions/src/Eventuous.Subscriptions.Polly/Eventuous.Subscriptions.Polly.csproj" />
+  </Folder>
+  <Folder Name="/Extensions/test/">
+    <Project Path="src/Extensions/test/Eventuous.Sut.AspNetCore/Eventuous.Sut.AspNetCore.csproj" />
+    <Project Path="src/Extensions/test/Eventuous.Tests.DependencyInjection/Eventuous.Tests.DependencyInjection.csproj" />
+    <Project Path="src/Extensions/test/Eventuous.Tests.Extensions.AspNetCore/Eventuous.Tests.Extensions.AspNetCore.csproj" />
+  </Folder>
+  <Folder Name="/Gateway/" />
+  <Folder Name="/Gateway/src/">
+    <Project Path="src/Gateway/src/Eventuous.Gateway/Eventuous.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/Gateway/test/">
+    <Project Path="src/Gateway/test/Eventuous.Tests.Gateway/Eventuous.Tests.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/Mongo/" />
+  <Folder Name="/Mongo/src/">
+    <Project Path="src/Mongo/src/Eventuous.Projections.MongoDB/Eventuous.Projections.MongoDB.csproj" />
+  </Folder>
+  <Folder Name="/Mongo/test/">
+    <Project Path="src/Mongo/test/Eventuous.Tests.Projections.MongoDB/Eventuous.Tests.Projections.MongoDB.csproj" />
+  </Folder>
+  <Folder Name="/Relational/" />
+  <Folder Name="/Relational/Base/" />
+  <Folder Name="/Relational/Base/src/">
+    <Project Path="src/Relational/src/Eventuous.Sql.Base/Eventuous.Sql.Base.csproj" />
+  </Folder>
+  <Folder Name="/Relational/Base/test/" />
+  <Folder Name="/Relational/Postgres/" />
+  <Folder Name="/Relational/Postgres/src/">
+    <Project Path="src/Postgres/src/Eventuous.Postgresql/Eventuous.Postgresql.csproj" />
+  </Folder>
+  <Folder Name="/Relational/Postgres/test/">
+    <Project Path="src/Postgres/test/Eventuous.Tests.Postgres/Eventuous.Tests.Postgres.csproj" />
+  </Folder>
+  <Folder Name="/Relational/SqlServer/" />
+  <Folder Name="/Relational/SqlServer/src/">
+    <Project Path="src/SqlServer/src/Eventuous.SqlServer/Eventuous.SqlServer.csproj" />
+  </Folder>
+  <Folder Name="/Relational/SqlServer/test/">
+    <Project Path="src/SqlServer/test/Eventuous.Tests.SqlServer/Eventuous.Tests.SqlServer.csproj" />
+  </Folder>
+  <Folder Name="/Samples/" />
+  <Folder Name="/Samples/Esdb/">
+    <Project Path="samples/esdb/Bookings.Domain/Bookings.Domain.csproj">
+      <BuildType Solution="Debug CI|Any CPU" Project="?" />
+      <Platform Solution="Debug CI|Any CPU" Project="?" />
+      <Build Solution="Debug CI|Any CPU" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+    <Project Path="samples/esdb/Bookings.Payments/Bookings.Payments.csproj">
+      <BuildType Solution="Debug CI|Any CPU" Project="?" />
+      <Platform Solution="Debug CI|Any CPU" Project="?" />
+      <Build Solution="Debug CI|Any CPU" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+    <Project Path="samples/esdb/Bookings/Bookings.csproj">
+      <BuildType Solution="Debug CI|Any CPU" Project="?" />
+      <Platform Solution="Debug CI|Any CPU" Project="?" />
+      <Build Solution="Debug CI|Any CPU" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Samples/Postgres/">
+    <Project Path="samples/postgres/Bookings.Domain/Bookings.Domain.csproj">
+      <BuildType Solution="Debug CI|Any CPU" Project="?" />
+      <Platform Solution="Debug CI|Any CPU" Project="?" />
+      <Build Solution="Debug CI|Any CPU" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+    <Project Path="samples/postgres/Bookings.Payments/Bookings.Payments.csproj">
+      <BuildType Solution="Debug CI|Any CPU" Project="?" />
+      <Platform Solution="Debug CI|Any CPU" Project="?" />
+      <Build Solution="Debug CI|Any CPU" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+    <Project Path="samples/postgres/Bookings/Bookings.csproj">
+      <BuildType Solution="Debug CI|Any CPU" Project="?" />
+      <Platform Solution="Debug CI|Any CPU" Project="?" />
+      <Build Solution="Debug CI|Any CPU" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Testing/" />
+  <Folder Name="/Testing/src/">
+    <Project Path="src/Testing/src/Eventuous.Testing/Eventuous.Testing.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="test/Eventuous.Sut.App/Eventuous.Sut.App.csproj" />
+    <Project Path="test/Eventuous.Sut.Domain/Eventuous.Sut.Domain.csproj" />
+    <Project Path="test/Eventuous.TestHelpers.TUnit/Eventuous.TestHelpers.TUnit.csproj" />
+    <Project Path="test/Eventuous.TestHelpers/Eventuous.TestHelpers.csproj" />
+  </Folder>
+</Solution>

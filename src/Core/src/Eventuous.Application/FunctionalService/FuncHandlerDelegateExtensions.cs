@@ -13,7 +13,7 @@ static partial class FuncServiceDelegates {
 
     internal static ResolveWriterFromCommand AsResolveWriter<TCommand>(this Func<TCommand, IEventWriter> resolveWriter) where TCommand : class
         => cmd => resolveWriter((TCommand)cmd);
-    
+
     internal static AmendEventFromCommand AsAmendEvent<TCommand>(this AmendEvent<TCommand> amendEvent) where TCommand : class
         => (streamEvent, cmd) => amendEvent(streamEvent, (TCommand)cmd);
 }

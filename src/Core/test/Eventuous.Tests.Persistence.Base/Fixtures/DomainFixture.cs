@@ -5,7 +5,7 @@ namespace Eventuous.Tests.Persistence.Base.Fixtures;
 
 public static class DomainFixture {
     static DomainFixture() => TypeMap.RegisterKnownEventTypes(typeof(DomainFixture).Assembly);
-    
+
     static Faker<Commands.ImportBooking> Faker => new Faker<Commands.ImportBooking>()
         .RuleFor(x => x.BookingId, _ => Guid.NewGuid().ToString("N"))
         .RuleFor(x => x.RoomId, _ => Guid.NewGuid().ToString("N"))

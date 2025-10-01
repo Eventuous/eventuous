@@ -31,7 +31,7 @@ public class ConvertEventToMessage {
                     [MetaTags.CausationId]   = "causation-id",
                     ["AAA"]                  = 1111
                 },
-                new() { ["BBB"] = "12345", },
+                new() { ["BBB"] = "12345" },
                 _messageId
             )
         );
@@ -92,7 +92,7 @@ public class ConvertEventToMessage {
 
         public WithMessagePropertiesInMetaData() {
             var attributeNames = new ServiceBusMessageAttributeNames();
-            var builder        = new ServiceBusMessageBuilder(DefaultEventSerializer.Instance, "test-stream", attributeNames, new ServiceBusProduceOptions());
+            var builder        = new ServiceBusMessageBuilder(DefaultEventSerializer.Instance, "test-stream", attributeNames, new());
 
             _message = builder.CreateServiceBusMessage(
                 new(
@@ -100,13 +100,13 @@ public class ConvertEventToMessage {
                         Id   = "event-id",
                         Name = "Test Event"
                     },
-                    new Metadata {
+                    new() {
                         [attributeNames.MessageId]     = "12345",
                         [attributeNames.CorrelationId] = "correlation-id",
                         [attributeNames.CausationId]   = "causation-id",
                         [attributeNames.ReplyTo]       = "test-reply-to",
                         [attributeNames.Subject]       = "test-subject",
-                        [attributeNames.To]            = "test-to",
+                        [attributeNames.To]            = "test-to"
                     },
                     new()
                 )

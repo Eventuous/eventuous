@@ -54,7 +54,7 @@ public class ElasticProducer(IElasticClient elasticClient, ILogger<ElasticProduc
             => mode switch {
                 ProduceMode.Create => GetCreateDescriptor(descriptor),
                 ProduceMode.Index  => descriptor.IndexMany(documents),
-                _                  => throw new ArgumentOutOfRangeException(nameof(mode))
+                _                  => throw new ArgumentOutOfRangeException(null, nameof(mode))
             };
 
         BulkDescriptor GetCreateDescriptor(BulkDescriptor descriptor) => descriptor.CreateMany<object>(

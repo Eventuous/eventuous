@@ -14,7 +14,7 @@ class ServiceBusMessageBuilder {
     readonly ServiceBusMessageAttributeNames _attributes;
     readonly Action<string>?                 _setActivityMessageType;
 
-    internal ServiceBusMessageBuilder(
+    public ServiceBusMessageBuilder(
             IEventSerializer                serializer,
             string                          streamName,
             ServiceBusMessageAttributeNames attributes,
@@ -60,11 +60,11 @@ class ServiceBusMessageBuilder {
         return serviceBusMessage;
     }
 
-    IEnumerable<KeyValuePair<string, object>> GetCustomApplicationProperties(ProducedMessage message, string messageType, HashSet<string> reservedAttributes) =>
-        (message.Metadata ?? [])
-        .Concat(message.AdditionalHeaders ?? [])
-        .Concat([new(_attributes.MessageType, messageType), new(_attributes.StreamName, _streamName)])
-        .Where(pair => !reservedAttributes.Contains(pair.Key))
-        .Where(pair => pair.Value is not null)
-        .Select(pair => new KeyValuePair<string, object>(pair.Key, pair.Value!));
+    IEnumerable<KeyValuePair<string, object>> GetCustomApplicationProperties(ProducedMessage message, string messageType, HashSet<string> reservedAttributes)
+        => (message.Metadata ?? [])
+            .Concat(message.AdditionalHeaders ?? [])
+            .Concat([new(_attributes.MessageType, messageType), new(_attributes.StreamName, _streamName)])
+            .Where(pair => !reservedAttributes.Contains(pair.Key))
+            .Where(pair => pair.Value is not null)
+            .Select(pair => new KeyValuePair<string, object>(pair.Key, pair.Value!));
 }

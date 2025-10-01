@@ -15,7 +15,7 @@ Eric Evans, the author of the Blue Book, has added the definition to his [Domain
 
 When talking about Event Sourcing, we focus on the last bit: "making explicit the events [...], which are associated with state changes." Event Sourcing takes this definition further, and suggests:
 
-> Persist the domain objects state as series of domain events. Each domain event represents an explicit state transition. Applying previously recorded events to a domain objects allows us to recover the current state of the object itself.
+> Persist the domain objects state as series of domain events. Each domain event represents an explicit state transition. Applying previously recorded events to a domain object allows us to recover the current state of the object itself.
 
 We can also cite an [article](https://suzdalnitski.medium.com/oop-will-make-you-suffer-846d072b4dce) from Medium (a bit controversial one):
 
@@ -24,7 +24,7 @@ We can also cite an [article](https://suzdalnitski.medium.com/oop-will-make-you-
 
 Event Sourcing effectively answers this question by giving you a history of all the state transitions for your domain objects, represented as domain events.
 
-So, what this page is about? It doesn't look like a conventional documentation page, does it? Nevertheless, let's see how domain events look like when you build a system with Eventuous.
+So, what is this page about? It doesn't look like a conventional documentation page, does it? Nevertheless, let's see what domain events look like when you build a system with Eventuous.
 
 ```csharp title="BookingEvents.cs"
 public static class BookingEvents {

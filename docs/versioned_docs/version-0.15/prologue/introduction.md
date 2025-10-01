@@ -7,7 +7,7 @@ sidebar_position: 1
 
 ## What is Eventuous?
 
-Eventuous is a (relatively) lightweight library, which allows building production-grade applications using the [Event Sourcing](https://www.eventstore.com/blog/what-is-event-sourcing) pattern.
+Eventuous is a (relatively) lightweight library, which allows building production-grade applications using the [Event Sourcing](https://www.kurrent.io/resources/eventsourcing/what-is-event-sourcing) pattern.
 
 The base library has a set of abstractions, following Domain-Driven Design tactical patterns, like `Aggregate`.
 

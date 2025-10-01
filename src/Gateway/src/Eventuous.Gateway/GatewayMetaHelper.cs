@@ -34,19 +34,19 @@ public static class ProducedMessageExtensions {
 
     public static object? GetOriginalMessage(this ProducedMessage message)
         => message.AdditionalHeaders?.Get<object>(GatewayContextItems.OriginalMessage);
-    
+
     public static Metadata? GetOriginalMetadata(this ProducedMessage message)
         => message.AdditionalHeaders?.Get<Metadata>(GatewayContextItems.OriginalMessageMeta);
-    
+
     public static ulong GetOriginalStreamPosition(this ProducedMessage message)
         => message.AdditionalHeaders?.Get<ulong>(GatewayContextItems.OriginalStreamPosition) ?? default;
-    
+
     public static ulong GetOriginalGlobalPosition(this ProducedMessage message)
         => message.AdditionalHeaders?.Get<ulong>(GatewayContextItems.OriginalGlobalPosition) ?? default;
-    
+
     public static string? GetOriginalMessageId(this ProducedMessage message)
         => message.AdditionalHeaders?.Get<string>(GatewayContextItems.OriginalMessageId);
-    
+
     public static string? GetOriginalMessageType(this ProducedMessage message)
         => message.AdditionalHeaders?.Get<string>(GatewayContextItems.OriginalMessageType);
 }

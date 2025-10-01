@@ -38,7 +38,7 @@ public static class Helpers {
 
         return fixture.EventStore.AppendEvents(stream, version, [streamEvent], default);
     }
-    
+
     public static Task<AppendEventsResult> StoreChanges(
             this StoreFixtureBase fixture,
             StreamName            stream,

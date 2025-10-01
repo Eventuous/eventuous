@@ -60,6 +60,6 @@ record TestEventForTiers(string Data, int Number) {
     public const string TypeName = "test-event-tiers";
 
     static readonly Faker<TestEventForTiers> Faker = new Faker<TestEventForTiers>().CustomInstantiator(f => new(f.Commerce.Product(), f.Random.Int()));
-    
+
     public static IEnumerable<TestEventForTiers> CreateMany(int count) => Faker.Generate(count);
 }

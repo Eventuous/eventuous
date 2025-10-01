@@ -20,11 +20,10 @@ public record Money {
 
     public bool IsSameCurrency(Money another) => Currency == another.Currency;
 
-    public static Money operator -(Money one, Money another) {
-        if (!one.IsSameCurrency(another)) throw new DomainException("Cannot operate on different currencies");
-
-        return new Money(one.Amount - another.Amount, one.Currency);
-    }
+    public static Money operator -(Money one, Money another)
+        => !one.IsSameCurrency(another)
+            ? throw new DomainException("Cannot operate on different currencies")
+            : new Money(one.Amount - another.Amount, one.Currency);
 
     public static implicit operator double(Money money) => money.Amount;
 }

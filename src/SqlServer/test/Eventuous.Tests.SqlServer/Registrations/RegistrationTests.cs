@@ -50,6 +50,6 @@ public class RegistrationTests {
         store.ShouldNotBeNull();
         var inner = ((store as TracedEventStore)!).Inner as SqlServerStore;
         inner.ShouldNotBeNull();
-        inner!.Schema.SchemaName.ShouldBe("test");
+        inner.Schema.SchemaName.ShouldBe("test");
     }
 }

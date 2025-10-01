@@ -38,7 +38,7 @@ public abstract class PostgresProjector(NpgsqlDataSource dataSource, ITypeMapper
 
         return cmd;
     }
-    
+
     protected static NpgsqlCommand Project(NpgsqlConnection connection, string commandText, params (string Name, object Value)[] parameters) 
         => Project(connection, commandText, parameters.Select(x => new NpgsqlParameter(x.Name, x.Value)).ToArray());
 }

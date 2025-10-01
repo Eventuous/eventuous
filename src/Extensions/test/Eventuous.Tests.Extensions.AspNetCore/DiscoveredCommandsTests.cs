@@ -7,7 +7,7 @@ using static SutBookingCommands;
 using Fixture;
 
 [ClassDataSource<WebApplicationFactory<Program>>]
-public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs() {
+public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs {
     [Test]
     public async Task CallDiscoveredCommandRoute() {
         var fixture = new ServerFixture(

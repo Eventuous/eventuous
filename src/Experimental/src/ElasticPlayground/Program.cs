@@ -16,9 +16,7 @@ var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
 const string connectionString = "http://localhost:9200";
 
 var settings = new ConnectionSettings(
-    new SingleNodeConnectionPool(
-        new Uri(Ensure.NotEmptyString(connectionString, "Elasticsearch connection string"))
-    ),
+    new SingleNodeConnectionPool(new(connectionString)),
     (def, _) => new ElasticSerializer(def, options)
 );
 

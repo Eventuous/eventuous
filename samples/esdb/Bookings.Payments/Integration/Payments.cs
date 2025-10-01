@@ -10,7 +10,7 @@ namespace Bookings.Payments.Integration;
 
 public static class PaymentsGateway {
     static readonly StreamName Stream = new("PaymentsIntegration");
-    
+
     public static ValueTask<GatewayMessage<EventStoreProduceOptions>[]> Transform(IMessageConsumeContext original) {
         var result = original.Message is PaymentEvents.PaymentRecorded evt
             ? new GatewayMessage<EventStoreProduceOptions>(

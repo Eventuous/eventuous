@@ -17,7 +17,7 @@ public class StreamNameTests {
     public async Task Should_fail_when_id_is_null() {
          await Assert.That(() => _ = StreamName.For<BookingState>(null!)).Throws<ArgumentNullException>();
     }
-    
+
     [Test]
     public async Task Should_fail_when_id_is_empty() {
          await Assert.That(() => _ = StreamName.For<BookingState>("  ")).Throws<ArgumentException>();

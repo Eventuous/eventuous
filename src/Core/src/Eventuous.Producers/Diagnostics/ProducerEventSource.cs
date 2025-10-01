@@ -11,7 +11,7 @@ namespace Eventuous.Producers.Diagnostics;
 [EventSource(Name = $"{DiagnosticName.BaseName}.producer")]
 public class ProducerEventSource<T> : EventSource where T : class {
     public static readonly ProducerEventSource<T> Log = new();
-    
+
     static readonly string ProducerName = typeof(T).Name;
 
     const int ProduceAcknowledgedId    = 1;

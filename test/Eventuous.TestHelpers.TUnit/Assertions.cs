@@ -15,7 +15,7 @@ public static class Assertions {
             [CallerArgumentExpression(nameof(expected))] string doNotPopulateThisValue = ""
         )
         where TActual : IEnumerable<TInner> {
-        return CollectionsIsExtensions.IsEquivalentTo(valueSource, expected, doNotPopulateThisValue);
+        return valueSource.IsEquivalentTo(expected, doNotPopulateThisValue);
     }
 
     public static InvokableValueAssertionBuilder<TActual> CollectionIsEquivalentTo
@@ -26,7 +26,7 @@ public static class Assertions {
             [CallerArgumentExpression(nameof(expected))] string doNotPopulateThisValue = ""
         )
         where TActual : IEnumerable<TInner> {
-        return CollectionsIsExtensions.IsEquivalentTo(valueSource, expected, comparer, doNotPopulateThisValue);
+        return valueSource.IsEquivalentTo(expected, comparer, doNotPopulateThisValue);
     }
 
     public static InvokableValueAssertionBuilder<TActual> CollectionEquivalentTo
@@ -37,7 +37,7 @@ public static class Assertions {
             [CallerArgumentExpression(nameof(expected))] string doNotPopulateThisValue = ""
         )
         where TActual : IEnumerable<TInner> {
-        return CollectionsIsExtensions.IsEquivalentTo(valueSource, expected, collectionOrdering, doNotPopulateThisValue);
+        return valueSource.IsEquivalentTo(expected, collectionOrdering, doNotPopulateThisValue);
     }
 
     public static InvokableValueAssertionBuilder<TActual> CollectionEquivalentTo
@@ -49,7 +49,6 @@ public static class Assertions {
             [CallerArgumentExpression(nameof(expected))] string doNotPopulateThisValue = ""
         )
         where TActual : IEnumerable<TInner> {
-        return CollectionsIsExtensions.IsEquivalentTo(valueSource, expected, comparer, collectionOrdering, doNotPopulateThisValue);
+        return valueSource.IsEquivalentTo(expected, comparer, collectionOrdering, doNotPopulateThisValue);
     }
-
 }

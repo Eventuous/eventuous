@@ -14,7 +14,7 @@ public record FoldedEventStream<T> where T : State<T>, new() {
         Events        = events;
         State         = events.Aggregate(new T(), (state, o) => state.When(o));
     }
-    
+
     public StreamName            StreamName    { get; }
     public ExpectedStreamVersion StreamVersion { get; }
     public object[]              Events        { get; }

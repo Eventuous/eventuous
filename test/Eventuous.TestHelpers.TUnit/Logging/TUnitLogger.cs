@@ -7,8 +7,7 @@ namespace Eventuous.TestHelpers.TUnit.Logging;
 public class TUnitLog(LoggerExternalScopeProvider scopeProvider, string category, LogLevel logLevel) : ILogger {
     public bool IsEnabled(LogLevel level) => level >= logLevel;
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => scopeProvider.Push(state);
-
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => scopeProvider.Push(state);
 
     public void Log<TState>(LogLevel l, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
         if (TestContext.Current == null || !IsEnabled(l)) return;

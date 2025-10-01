@@ -136,6 +136,7 @@ If you annotate the command with the `HttpCommand` attribute, and specify the ro
 
 ```csharp
 app.MapCommand<BookingCommand, Booking>();
+
 ...
 
 [HttpCommand(Route = "payment")]
@@ -151,7 +152,7 @@ app
     .MapAggregateCommands<Booking>()
     .MapCommand<ProcessPayment>()
     .MapCommand<ApplyDiscount>("discount");
-    
+
 ...
 
 // route specified in the annotation
@@ -172,6 +173,7 @@ First, the `MapDiscoveredCommand<TAggregate>`, which assumes your application on
 app.MapDiscoveredCommands<Booking>();
 
 ...
+
 [HttpCommand(Route = "payment")] 
 record ProcessPayment(string BookingId, float PaidAmount);
 ```
@@ -192,7 +194,7 @@ record ProcessPayment(string BookingId, float PaidAmount);
 class V1.PaymentCommands {
     [HttpCommand(Route = "payments/register")]
     public record RegisterPayment(string PaymentId, string Provider, float Amount);
-    
+
     [HttpCommand(Route = "payments/refund")]
     public record RefundPayment(string PaymentId);
 }

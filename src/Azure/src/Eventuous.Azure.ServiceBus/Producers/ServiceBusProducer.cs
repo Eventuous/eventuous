@@ -11,7 +11,11 @@ namespace Eventuous.Azure.ServiceBus.Producers;
 /// </summary>
 public class ServiceBusProducer : BaseProducer<ServiceBusProduceOptions>, IHostedProducer, IAsyncDisposable {
     // maybe want something a bit more focused on Azure Service Bus?
-    static readonly ProducerTracingOptions TracingOptions = new() { MessagingSystem = "azure-service-bus", DestinationKind = "topic", ProduceOperation = "publish" };
+    static readonly ProducerTracingOptions TracingOptions = new() {
+        MessagingSystem = "azure-service-bus", 
+        DestinationKind = "topic", 
+        ProduceOperation = "publish"
+    };
 
     readonly ServiceBusProducerOptions     _options;
     readonly ILogger<ServiceBusProducer>?  _log;
@@ -51,7 +55,7 @@ public class ServiceBusProducer : BaseProducer<ServiceBusProduceOptions>, IHoste
     /// </summary>
     /// <returns></returns>
     public async ValueTask DisposeAsync() {
-        await _sender.DisposeAsync();
+        await _sender.DisposeAsync().NoContext();
         GC.SuppressFinalize(this);
     }
 
@@ -75,7 +79,7 @@ public class ServiceBusProducer : BaseProducer<ServiceBusProduceOptions>, IHoste
     /// <returns></returns>
     public async Task StopAsync(CancellationToken cancellationToken) {
         Ready = false;
-        await _sender.CloseAsync(cancellationToken);
+        await _sender.CloseAsync(cancellationToken).NoContext();
         _log?.LogInformation("ServiceBusProducer stopped for {QueueOrTopicName}", _options.QueueOrTopicName);
     }
 
@@ -88,7 +92,7 @@ public class ServiceBusProducer : BaseProducer<ServiceBusProduceOptions>, IHoste
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     protected override async Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, ServiceBusProduceOptions? options, CancellationToken cancellationToken = default) {
-        if (messages is ProducedMessage[] singleMessage && singleMessage.Length == 1) {
+        if (messages is ProducedMessage[] { Length: 1 } singleMessage) {
             await ProcessSingleMessage(stream, options, singleMessage, cancellationToken);
         }
         else {
@@ -102,41 +106,37 @@ public class ServiceBusProducer : BaseProducer<ServiceBusProduceOptions>, IHoste
         var serviceBusMessage = new ServiceBusMessageBuilder(
             _serializer,
             stream,
-            this._options.AttributeNames,
+            _options.AttributeNames,
             options,
             SetActivityMessageType
         ).CreateServiceBusMessage(message);
 
-        _log?.LogInformation("Sending single message to {QueueOrTopicName}", this._options.QueueOrTopicName);
+        _log?.LogInformation("Sending single message to {QueueOrTopicName}", _options.QueueOrTopicName);
 
         try {
-            await _sender.SendMessageAsync(serviceBusMessage, cancellationToken);
-            await message.Ack<ServiceBusProducer>();
-            _log?.LogInformation("Single message sent successfully to {QueueOrTopicName}", this._options.QueueOrTopicName);
+            await _sender.SendMessageAsync(serviceBusMessage, cancellationToken).NoContext();
+            await message.Ack<ServiceBusProducer>().NoContext();
+            _log?.LogInformation("Single message sent successfully to {QueueOrTopicName}", _options.QueueOrTopicName);
         } catch (Exception ex) {
-            _log?.LogError(ex, "Failed to send single message to {QueueOrTopicName}", this._options.QueueOrTopicName);
-            await message.Nack<ServiceBusProducer>("Failed to send single message", ex);
+            _log?.LogError(ex, "Failed to send single message to {QueueOrTopicName}", _options.QueueOrTopicName);
+            await message.Nack<ServiceBusProducer>("Failed to send single message", ex).NoContext();
         }
     }
 
     async Task ProcessMessagesInBatches(StreamName stream, IEnumerable<ProducedMessage> messages, ServiceBusProduceOptions? options, CancellationToken cancellationToken) {
-        await foreach (var (batch, produced) in _messageBatchBuilder.CreateMessageBatches(messages, stream, options, cancellationToken)) {
-            _log?.LogInformation("Sending batch of {MessageCount} messages to {QueueOrTopicName}", batch.Count, this._options.QueueOrTopicName);
+        await foreach (var (batch, produced) in _messageBatchBuilder.CreateMessageBatches(messages, stream, options, cancellationToken).NoContext(cancellationToken)) {
+            _log?.LogInformation("Sending batch of {MessageCount} messages to {QueueOrTopicName}", batch.Count, _options.QueueOrTopicName);
 
             try {
-                await _sender.SendMessagesAsync(batch, cancellationToken);
+                await _sender.SendMessagesAsync(batch, cancellationToken).NoContext();
 
-                foreach (var message in produced) {
-                    await message.Ack<ServiceBusProducer>();
-                }
+                await produced.Select(x => x.Ack<ServiceBusProducer>()).WhenAll().NoContext();
 
-                _log?.LogInformation("Batch sent successfully to {QueueOrTopicName}", this._options.QueueOrTopicName);
+                _log?.LogInformation("Batch sent successfully to {QueueOrTopicName}", _options.QueueOrTopicName);
             } catch (Exception ex) {
-                _log?.LogError(ex, "Failed to send batch to {QueueOrTopicName}", this._options.QueueOrTopicName);
+                _log?.LogError(ex, "Failed to send batch to {QueueOrTopicName}", _options.QueueOrTopicName);
 
-                foreach (var message in produced) {
-                    await message.Nack<ServiceBusProducer>("Failed to send batch", ex);
-                }
+                await produced.Select(x => x.Nack<ServiceBusProducer>("Failed to send batch", ex)).WhenAll().NoContext();
             }
         }
     }

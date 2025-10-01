@@ -25,7 +25,7 @@ static class MetadataExtensions {
         }
         return headers;
     }
-    
+
     public static Metadata AsMetadata(this Headers headers) {
         var metadata = new Metadata();
 

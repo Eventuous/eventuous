@@ -40,7 +40,7 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     ICheckpointStore         CheckpointStore         { get; } = Ensure.NotNull(checkpointStore);
 
     protected SubscriptionKind Kind { get; } = kind;
-    
+
     protected IMetadataSerializer MetadataSerializer { get; } = metadataSerializer ?? DefaultMetadataSerializer.Instance;
 
     EventPosition GetPositionFromContext(IMessageConsumeContext context)

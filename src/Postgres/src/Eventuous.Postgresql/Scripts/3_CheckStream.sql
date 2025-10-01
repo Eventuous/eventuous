@@ -26,7 +26,7 @@ begin
             raise exception 'WrongExpectedVersion %, current version %', _expected_version, _current_version;
         end if;
     end if;
-    
+
     return query select _stream_id, _current_version;
 end;
 

@@ -62,11 +62,11 @@ static UpdateDefinition<BookingDocument> HandleRoomBooked(
     var evt = ctx.Message;
 
     // Get Id and TenantId
-	var (id, tenantId) = ctx.Stream.ExtractMultiTenantIds();
+    var (id, tenantId) = ctx.Stream.ExtractMultiTenantIds();
 
-	return update
-	    .SetOnInsert(x => x.Id, id) 
-	    .SetOnInsert(x => x.TenantId, tenantId)
+    return update
+        .SetOnInsert(x => x.Id, id) 
+        .SetOnInsert(x => x.TenantId, tenantId)
         .Set(x => x.GuestId, evt.GuestId)
         .Set(x => x.RoomId, evt.RoomId)
         .Set(x => x.CheckInDate, evt.CheckInDate)
@@ -90,15 +90,15 @@ public static class StreamNameExtensions
     /// <exception cref="InvalidStreamName">When stream id can't be split in 2 sections.</exception>
     public static (string TenantId, string Id) ExtractMultiTenantIds(this StreamName stream, char separator = ':')
     {
-    	string streamId = stream.GetId();
-    	var streamIdParts = streamId.Split(separator);
-    
-    	if (streamIdParts.Length != 2)
-    	{
+        string streamId = stream.GetId();
+        var streamIdParts = streamId.Split(separator);
+
+        if (streamIdParts.Length != 2)
+        {
             throw new InvalidStreamName(streamId);
-    	}
-    
-    	return (streamIdParts[0], streamIdParts[1]);
+        }
+
+        return (streamIdParts[0], streamIdParts[1]);
     }
 }
 ```

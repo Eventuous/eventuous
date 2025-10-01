@@ -8,19 +8,19 @@ namespace Eventuous.Subscriptions.Filters.Partitioning;
 static class MurmurHash3 {
     const uint C1 = 0xCC9E2D51U;
     const uint C2 = 0x1B873593U;
-    
+
     const uint Seed = 0xc58f1a7b;
 
     const int CharSize = sizeof(char);
 
     static unsafe Span<byte> GetBytes(string data)
     {
-        if (data == null) throw new ArgumentNullException(nameof(data));
+        ArgumentNullException.ThrowIfNull(data);
         if (data.Length == 0) return Span<byte>.Empty;
 
         fixed (char* p = data)
         {
-            return new Span<byte>(p, data.Length * CharSize);
+            return new(p, data.Length * CharSize);
         }
     }
 

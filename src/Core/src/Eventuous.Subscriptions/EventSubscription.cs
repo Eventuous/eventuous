@@ -84,7 +84,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         var scope = new Dictionary<string, object> {
             { "SubscriptionId", SubscriptionId },
             { "Stream", context.Stream },
-            { "MessageType", context.MessageType },
+            { "MessageType", context.MessageType }
         };
 
         // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
@@ -179,6 +179,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
     protected abstract ValueTask Unsubscribe(CancellationToken cancellationToken);
 
+    [PublicAPI]
     protected virtual async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
         await Task.Delay(delay, cancellationToken).NoContext();
 

@@ -33,17 +33,19 @@ jobs:
         uses: actions/checkout@v5
       - 
         name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}
-      -
-        name: Restore
-        run: |
-          dotnet restore -p:TargetFramework=net${{ matrix.dotnet-version }} -p:Configuration="Debug CI" 
-      -  
-        name: Build
-        run: |
-          dotnet build -c "Debug CI" -f net${{ matrix.dotnet-version }} --no-restore
+          dotnet-version: |
+            8.0
+            9.0
+#      -
+#        name: Restore
+#        run: |
+#          dotnet restore -p:TargetFramework=net${{ matrix.dotnet-version }} -p:Configuration="Debug CI" 
+#      -  
+#        name: Build
+#        run: |
+#          dotnet build -c "Debug CI" -f net${{ matrix.dotnet-version }}
       -  
         name: Prepare Testcontainers Cloud agent
         if: env.TC_CLOUD_TOKEN != ''
@@ -51,7 +53,7 @@ jobs:
       -  
         name: Run tests
         run: |
-          dotnet test -c "Debug CI" --no-build -f net${{ matrix.dotnet-version }}
+          dotnet test -c "Debug CI" -f net${{ matrix.dotnet-version }}
       -  
         name: Upload Test Results
         if: always()

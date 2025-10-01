@@ -68,7 +68,7 @@ public interface IBaseConsumeContext {
     /// </summary>
     ulong             Sequence          { get; }
     /// <summary>
-    /// Subscription identifier, can also be used as a checkpoint
+    /// Subscription identifier, which can also be used as a checkpoint
     /// </summary>
     string            SubscriptionId    { get; }
     /// <summary>

@@ -14,7 +14,7 @@ public abstract class BaseTracer {
     static readonly KeyValuePair<string, object?>[] DefaultTags = EventuousDiagnostics.Tags
         .Concat([new(TelemetryTags.Db.System, "eventstore")])
         .ToArray();
-    
+
     protected async Task<T> Trace<T>(StreamName stream, string operation, Func<Task<T>> task) {
         using var activity = StartActivity(stream, operation);
         using var measure  = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, operation));

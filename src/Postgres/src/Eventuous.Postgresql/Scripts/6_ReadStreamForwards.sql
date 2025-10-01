@@ -20,15 +20,15 @@ begin
     select s.version, s.stream_id into _current_version, _stream_id
     from __schema__.streams s
     where s.stream_name = _stream_name;
-    
+
     if _stream_id is null then
         raise exception 'StreamNotFound';
     end if;
-    
+
     if _current_version < _from_position then
         return;
     end if;
-    
+
     return query select m.message_id, m.message_type, m.stream_position, m.global_position,
                         m.json_data, m.json_metadata, m.created
         from __schema__.messages m 

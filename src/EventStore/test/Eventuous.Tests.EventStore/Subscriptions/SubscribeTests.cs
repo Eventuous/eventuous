@@ -45,7 +45,7 @@ public class SubscribeToStream(StreamNameFixture streamNameFixture)
 
     [After(Test)]
     public async Task TearDown() => await DisposeAsync();
-    
+
     [Test]
     public async Task Esdb_ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
         await ShouldConsumeProducedEvents(cancellationToken);

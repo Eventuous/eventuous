@@ -10,7 +10,7 @@ using static Constants;
 
 public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
     public static IEventWriter Trace(IEventWriter writer) => new TracedEventWriter(writer);
-    
+
     readonly string _componentName = writer.GetType().Name;
 
     public async Task<AppendEventsResult> AppendEvents(

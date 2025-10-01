@@ -49,7 +49,7 @@ public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : 
             await hostedService.StartAsync(CancellationToken.None);
         }
     }
-    
+
     protected virtual ILoggingBuilder ConfigureLogging(ILoggingBuilder builder) => builder;
 
     public virtual async ValueTask DisposeAsync() {

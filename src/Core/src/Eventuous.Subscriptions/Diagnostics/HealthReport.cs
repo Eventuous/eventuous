@@ -10,7 +10,7 @@ readonly record struct HealthReport {
     }
 
     public static HealthReport Healthy() => new(true, null);
-    
+
     public static HealthReport Unhealthy(Exception? exception) => new(false, exception);
 
     public bool       IsHealthy     { get; }

@@ -40,10 +40,10 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
                 var exception = ctx.HandlingResults.GetException();
 
                 switch (exception) {
-                    case TaskCanceledException:      break;
+                    case TaskCanceledException:
                     case OperationCanceledException: break;
-                    case null:                       throw new ApplicationException("Event handler failed");
-                    default:                         throw exception;
+                    case null: throw new ApplicationException("Event handler failed");
+                    default:   throw exception;
                 }
             }
 
@@ -61,11 +61,10 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
         if (activity != null && ctx.WasIgnored()) activity.ActivityTraceFlags = ActivityTraceFlags.None;
     }
 
-    protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
-        if (next == null) throw new InvalidOperationException("Concurrent context must have a next filer");
-
-        return _worker.Write(new(context, next), context.CancellationToken);
-    }
+    protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next)
+        => next == null
+            ? throw new InvalidOperationException("Concurrent context must have a next filer")
+            : _worker.Write(new(context, next), context.CancellationToken);
 
     readonly record struct WorkerTask(AsyncConsumeContext Context, LinkedListNode<IConsumeFilter> Filter);
 

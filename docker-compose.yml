@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
 
   esdb:
@@ -82,7 +80,7 @@ services:
       POSTGRES_DB: "eventuous"
     ports:
       - "5432:5432"
-  
+
   pgadmin:
     container_name: eventuous_pgadmin
     image: dpage/pgadmin4
@@ -92,7 +90,7 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
       - "5050:80"
-        
+
   mssql:
     container_name: eventuous_mssql
     image: "mcr.microsoft.com/azure-sql-edge"

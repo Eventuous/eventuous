@@ -12,7 +12,7 @@ public class Metadata : Dictionary<string, object?> {
     public Metadata(IDictionary<string, object?> dictionary) : base(dictionary) { }
 
     public static Metadata FromHeaders(Dictionary<string, string?>? headers)
-        => headers == null ? new Metadata() : new(headers.ToDictionary(x => x.Key, x => (object?)x.Value));
+        => headers == null ? new Metadata() : new(headers.ToDictionary(x => x.Key, object? (x) => x.Value));
 
     public Dictionary<string, string?> ToHeaders() => this.ToDictionary(x => x.Key, x => x.Value?.ToString());
 

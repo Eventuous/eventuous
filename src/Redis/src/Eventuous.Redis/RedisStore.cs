@@ -40,11 +40,7 @@ public class RedisStore : IEventReader, IEventWriter {
             var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count).NoContext();
 
             if (result == null! || result.Length == 0) {
-                if (failIfNotFound) {
-                    throw new StreamNotFound(stream);
-                }
-
-                return [];
+                return failIfNotFound ? throw new StreamNotFound(stream) : [];
             }
 
             return result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer)).ToArray();

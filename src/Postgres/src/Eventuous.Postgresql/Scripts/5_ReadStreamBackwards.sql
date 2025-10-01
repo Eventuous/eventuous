@@ -20,11 +20,11 @@ begin
     select s.stream_id into _current_version, _stream_id
     from __schema__.streams s
     where s.stream_name = _stream_name;
-    
+
     if _stream_id is null then
         raise exception 'StreamNotFound';
     end if;
-    
+
     if _current_version < _from_position + _count then
         return;
     end if;

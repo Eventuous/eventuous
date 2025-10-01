@@ -12,7 +12,7 @@ public abstract class MetricsTestsBase(IMetricsSubscriptionFixtureBase fixture) 
         TestContext.Current?.OutputWriter.WriteLine($"Stream {fixture.Stream}");
         await Assert.That(_values).IsNotNull();
         var gapCount    = GetValue(_values!, SubscriptionMetrics.GapCountMetricName)!;
-        var expectedGap = fixture.Count - fixture.Counter.Count;
+        // var expectedGap = fixture.Count - fixture.Counter.Count;
 
         await Assert.That(gapCount).IsNotNull();
         // await Assert.That(gapCount.Value).IsBetween(expectedGap - 20, expectedGap + 20);

@@ -133,7 +133,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             Log.MetricCollectionFailed(metric, e);
             Activity.Current?.SetStatus(ActivityStatusCode.Error, e.Message);
 
-            return Array.Empty<Measurement<T>>();
+            return [];
         }
     }
 

@@ -82,11 +82,12 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
             );
 
             try {
-                await Handler(ctx);
-                await arg.CompleteMessageAsync(msg, ct);
+                await Handler(ctx).NoContext();
+                await arg.CompleteMessageAsync(msg, ct).NoContext();
             } catch (Exception ex) {
-                await arg.AbandonMessageAsync(msg, null, ct); // Abandoning the message will make it available for reprocessing, or dead letter it?
-                await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, arg.FullyQualifiedNamespace, arg.EntityPath, arg.Identifier, arg.CancellationToken));
+                // Abandoning the message will make it available for reprocessing, or dead letter it?
+                await arg.AbandonMessageAsync(msg, null, ct).NoContext(); 
+                await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, arg.FullyQualifiedNamespace, arg.EntityPath, arg.Identifier, arg.CancellationToken)).NoContext();
                 Log.ErrorLog?.Log(ex, "Error processing message: {MessageId}", msg.MessageId);
             }
         }
@@ -111,7 +112,7 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
             yield return new(attributes.MessageId, msg.MessageId);
     }
 
-    static Metadata? AsMeta(IEnumerable<KeyValuePair<string, object>> applicationProperties) =>
+    static Metadata AsMeta(IEnumerable<KeyValuePair<string, object>> applicationProperties) =>
         new(applicationProperties.ToDictionary(pair => pair.Key, object? (pair) => pair.Value));
 
     async Task DefaultErrorHandler(ProcessErrorEventArgs arg) {
@@ -127,5 +128,8 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => new(_processor?.StopProcessingAsync(cancellationToken) ?? Task.CompletedTask);
+    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
+        if (_processor == null) return;
+        await _processor.StopProcessingAsync(cancellationToken).NoContext();
+    }
 }

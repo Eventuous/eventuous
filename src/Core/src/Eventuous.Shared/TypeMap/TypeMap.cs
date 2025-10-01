@@ -11,9 +11,7 @@ public class TypeMap<TV> {
 
     public TypeMap<TV> Add<TK>(TV value) {
         var index = GetIndex<TK>();
-        if (!TryAdd(index, value)) throw new Exceptions.DuplicateTypeException<TK>();
-
-        return this;
+        return !TryAdd(index, value) ? throw new Exceptions.DuplicateTypeException<TK>() : this;
     }
 
     public bool TryGetValue<TK>([MaybeNullWhen(false)] out TV value) {

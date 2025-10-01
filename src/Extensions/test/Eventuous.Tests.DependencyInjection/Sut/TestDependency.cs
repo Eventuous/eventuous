@@ -1,3 +1,3 @@
-namespace Eventuous.Tests.AspNetCore.Sut; 
+namespace Eventuous.Tests.DependencyInjection.Sut; 
 
 public class TestDependency;

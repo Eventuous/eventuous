@@ -21,7 +21,7 @@ public static class PaymentsGateway {
             )
             : null;
 
-        return ValueTask.FromResult(result != null ? [result] : Array.Empty<GatewayMessage<RabbitMqProduceOptions>>());
+        return ValueTask.FromResult<GatewayMessage<RabbitMqProduceOptions>[]>(result != null ? [result] : []);
     }
 }
 

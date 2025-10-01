@@ -222,7 +222,9 @@ public class EsdbEventStore : IEventStore {
         } catch (Exception ex) {
             var (message, args) = getError();
             // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
+#pragma warning disable CA2254
             _logger?.LogWarning(ex, message, args);
+#pragma warning restore CA2254
 
             throw getException(stream, ex);
         }
@@ -246,11 +248,7 @@ public class EsdbEventStore : IEventStore {
             _                                => throw new SerializationException("Unknown deserialization result")
         };
 
-        StreamEvent? HandleFailure(FailedToDeserialize failed) {
-            if (resolvedEvent.Event.EventType.StartsWith('$')) return null;
-
-            throw new SerializationException($"Can't deserialize {resolvedEvent.Event.EventType}: {failed.Error}");
-        }
+        StreamEvent? HandleFailure(FailedToDeserialize failed) => resolvedEvent.Event.EventType.StartsWith('$') ? null : throw new SerializationException($"Can't deserialize {resolvedEvent.Event.EventType}: {failed.Error}");
 
         Metadata? DeserializeMetadata() {
             var meta = resolvedEvent.Event.Metadata.Span;
