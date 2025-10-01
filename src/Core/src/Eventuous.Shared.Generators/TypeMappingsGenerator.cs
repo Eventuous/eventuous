@@ -15,7 +15,6 @@ namespace Eventuous.Shared.Generators;
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed class TypeMappingsGenerator : IIncrementalGenerator {
-    const string AttributeShortName = "EventType"; // allows [EventType("...")]
     const string AttributeFullName  = "Eventuous.EventTypeAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
@@ -44,8 +43,8 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
     }
 
     sealed record Mapping {
-        public required string FullyQualifiedType { get; set; }
-        public required string EventTypeName      { get; set; }
+        public string FullyQualifiedType { get; set; } = null!;
+        public string EventTypeName      { get; set; } = null!;
     }
 
     static Mapping? Transform(GeneratorSyntaxContext ctx, CancellationToken _) {
