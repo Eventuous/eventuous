@@ -19,7 +19,8 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         category: "Eventuous",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Domain events should be annotated with [EventType] so they can be resolved by the type mapper.");
+        description: "Domain events should be annotated with [EventType] so they can be resolved by the type mapper."
+    );
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [MissingEventTypeAttribute];
 
@@ -40,39 +41,47 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             // Case 1: Aggregate<T>.Apply<TEvent>(TEvent evt)
             case { Name: "Apply", TypeArguments.Length: 1, Parameters.Length: 1 }: {
                 var containing = method.ContainingType;
+
                 if (IsAggregate(containing)) {
                     var eventType = method.TypeArguments[0];
+
                     if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
                         ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, inv.Syntax.GetLocation(), eventType.ToDisplayString()));
                     }
                 }
+
                 return;
             }
             // Case 1b: State<T>.When(...) invocations where an event instance is passed
             case { Name: "When", Parameters.Length: 1 } when IsState(method.ContainingType): {
-                var          arg       = inv.Arguments.Length > 0 ? inv.Arguments[0].Value : null;
+                var arg = inv.Arguments.Length > 0 ? inv.Arguments[0].Value : null;
+
                 ITypeSymbol? eventType = null;
 
                 if (method.TypeArguments.Length == 1) {
                     eventType = method.TypeArguments[0];
                 }
+
                 eventType ??= arg switch {
-                    IConversionOperation conv when conv.Operand?.Type is not null => conv.Operand.Type,
-                    _                                                             => arg?.Type
+                    IConversionOperation { Operand.Type: not null } conv => conv.Operand.Type,
+                    _                                                    => arg?.Type
                 };
 
                 if (eventType != null && IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
                     var location = arg?.Syntax.GetLocation() ?? inv.Syntax.GetLocation();
                     ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, location, eventType.ToDisplayString()));
                 }
+
                 return;
             }
             // Case 1c: State<T>.On<TEvent>(...) handler registrations
             case { Name: "On", TypeArguments.Length: 1 } when IsState(method.ContainingType): {
                 var eventType = method.TypeArguments[0];
+
                 if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
                     ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, inv.Syntax.GetLocation(), eventType.ToDisplayString()));
                 }
+
                 return;
             }
         }
@@ -94,6 +103,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
                     // Method groups: try to resolve to the referenced method and analyze its body if available
                     case IMethodReferenceOperation methodRef: {
                         var decl = methodRef.Method;
+
                         if (decl is { DeclaringSyntaxReferences.Length: > 0 }) {
                             // We cannot easily get an IOperation for arbitrary method here; rely on separate object creation callback
                             // so we do nothing here and rely on AnalyzeObjectCreation to catch creations within the method body
@@ -112,6 +122,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         foreach (var op in body.Descendants()) {
             if (op is IObjectCreationOperation create) {
                 var created = create.Type;
+
                 if (created != null && IsConcreteEvent(created) && !HasEventTypeAttribute(created)) {
                     ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, create.Syntax.GetLocation(), created.ToDisplayString()));
                 }
@@ -125,9 +136,11 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         if (ctx.Operation is not IObjectCreationOperation create) return;
 
         var created = create.Type;
+
         if (created is null || !IsConcreteEvent(created)) return;
 
         var method = GetEnclosingMethod(ctx.Operation);
+
         if (method == null) return;
 
         if (ReturnsNewEvents(method)) {
@@ -148,6 +161,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
                     return body.SemanticModel?.GetEnclosingSymbol(body.Syntax.SpanStart) as IMethodSymbol;
             }
         }
+
         return null;
     }
 
@@ -157,6 +171,8 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
         return ret switch {
             null => false,
+            // Check if it's an array
+            IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Object } => true,
             // Check name first (alias would appear as IEnumerable<object> in symbols, so rely on namespace/type)
             INamedTypeSymbol named when IsIEnumerableOfObject(named) => true,
             _                                                        => false
@@ -167,38 +183,49 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         if (type.Name == "IEnumerable" && type.ContainingNamespace.ToDisplayString() == "System.Collections.Generic" && type.TypeArguments.Length == 1) {
             return type.TypeArguments[0] is { SpecialType: SpecialType.System_Object };
         }
+
         // Also consider array of object (object[])
         if (type is { IsGenericType: false } && type.AllInterfaces.Any(static i => i.Name == "IEnumerable" && i.ContainingNamespace.ToDisplayString() == "System.Collections")) {
             // not precise; skip
         }
+
         return false;
     }
 
     static bool IsAggregate(INamedTypeSymbol? type) {
         if (type == null) return false;
+
         // Walk base types to check if it derives from Eventuous.Aggregate<>
         for (var t = type; t != null; t = t.BaseType) {
             if (t is { Name: "Aggregate", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == "Eventuous") return true;
         }
+
         return false;
     }
 
     static bool IsState(INamedTypeSymbol? type) {
         if (type == null) return false;
+
         // Walk base types to check if it derives from Eventuous.State<>
         for (var t = type; t != null; t = t.BaseType) {
             if (t is { Name: "State", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == "Eventuous") return true;
         }
+
         return false;
     }
 
     static bool IsFunctionalServiceAct(IMethodSymbol method) {
         // We only care about the Act methods from CommandHandlerBuilder and the related interfaces in Eventuous namespace
         if (method.Name is not ("Act" or "ActAsync")) return false;
+
         var containing = method.ContainingType;
+
         if (containing == null) return false;
+
         var ns = containing.ContainingNamespace?.ToDisplayString();
+
         if (ns != "Eventuous") return false;
+
         // Simple name checks
         return containing.Name is "CommandHandlerBuilder" or "IDefineExecution" or "ICommandHandlerBuilder" or "IDefineStoreOrExecution";
     }
@@ -208,11 +235,15 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
     static bool HasEventTypeAttribute(ITypeSymbol type) {
         foreach (var a in type.GetAttributes()) {
             var attrClass = a.AttributeClass;
+
             if (attrClass == null) continue;
+
             var name = attrClass.ToDisplayString();
+
             if (name == "Eventuous.EventTypeAttribute") return true;
             if (attrClass.Name is "EventTypeAttribute") return true;
         }
+
         return false;
     }
 }
