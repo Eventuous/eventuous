@@ -9,18 +9,19 @@ on:
 
 jobs:
   nuget:
-    runs-on: self-hosted
+#    runs-on: self-hosted
+    runs-on: [ self-hosted, type-cx42, image-x86-app-docker-ce ]
 
     steps:
-      -  
+      -
         name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: 3.8
-      -  
+      -
         name: Checkout code
         uses: actions/checkout@v5
-        with: 
+        with:
           fetch-depth: 0
       -
         name: Run tests
@@ -33,7 +34,7 @@ jobs:
           files: |
             test-results/**/*.xml
             test-results/**/*.trx
-      -  
+      -
         name: Create and push NuGet package
         run: |
           dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg

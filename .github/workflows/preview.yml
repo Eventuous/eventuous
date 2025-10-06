@@ -8,8 +8,9 @@ on:
       - 'docs/**'
 jobs:
   nuget:
-    runs-on: self-hosted
+#    runs-on: self-hosted
 #    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, type-cx42, image-x86-app-docker-ce ]
     env:
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
     steps:
@@ -31,7 +32,7 @@ jobs:
       -
         name: Run tests
         run: dotnet test --framework net9.0
-      -  
+      -
         name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
         if: always()
@@ -39,7 +40,7 @@ jobs:
           files: |
             test-results/**/*.xml
             test-results/**/*.trx
-      -  
+      -
         name: Create and push NuGet package
         run: |
           dotnet pack -c Debug -o nuget
