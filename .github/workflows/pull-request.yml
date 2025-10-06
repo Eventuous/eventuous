@@ -35,7 +35,7 @@ jobs:
         run: |
           if [ -d "/mnt/cache" ]; then
               NUGET_PACKAGES="/mnt/cache/nuget"
-              NUGET_LOCAL="${{ github.workspace }}/.nuget/packages"
+              NUGET_LOCAL="$PWD/.nuget/packages"
               mkdir -p "$NUGET_PACKAGES" "$NUGET_LOCAL"
               sudo mount --bind "$NUGET_PACKAGES" "$NUGET_LOCAL"
               echo "Using cached NuGet packages directory: $NUGET_PACKAGES"
