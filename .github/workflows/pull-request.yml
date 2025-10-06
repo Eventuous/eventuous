@@ -25,23 +25,9 @@ jobs:
       matrix:
         dotnet-version: [ '8.0', '9.0' ]
     env:
-      NUGET_PACKAGES: "${{ github.workspace }}/.nuget/packages"
-      TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
-      DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
+      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
+      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
     steps:
-      -
-        name: Setup NuGet cache
-        shell: bash
-        run: |
-          if [ -d "/mnt/cache" ]; then
-              NUGET_PACKAGES="/mnt/cache/nuget"
-              NUGET_LOCAL="$PWD/.nuget/packages"
-              mkdir -p "$NUGET_PACKAGES" "$NUGET_LOCAL"
-              sudo mount --bind "$NUGET_PACKAGES" "$NUGET_LOCAL"
-              echo "Using cached NuGet packages directory: $NUGET_PACKAGES"
-          else
-              echo "No NuGet packages cache directory available, proceeding without caching"
-          fi
       -
         name: Checkout
         uses: actions/checkout@v5
@@ -52,18 +38,6 @@ jobs:
           dotnet-version: |
             8.0
             9.0
-#      -
-#        name: Restore
-#        run: |
-#          dotnet restore -p:TargetFramework=net${{ matrix.dotnet-version }} -p:Configuration="Debug CI"
-#      -
-#        name: Build
-#        run: |
-#          dotnet build -c "Debug CI" -f net${{ matrix.dotnet-version }}
-      -
-        name: Prepare Testcontainers Cloud agent
-        if: env.TC_CLOUD_TOKEN != ''
-        uses: atomicjar/testcontainers-cloud-setup-action@main
       -
         name: Run tests
         run: |
