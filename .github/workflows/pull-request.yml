@@ -20,15 +20,28 @@ jobs:
     name: "Build and test"
 #    runs-on: ubuntu-latest
 #    runs-on: self-hosted
-    runs-on: [ self-hosted, type-cx42, type-cax31, image-x86-app-docker-ce ]
+    runs-on: [ self-hosted, type-cx42, type-cax31, image-x86-app-docker-ce, volume-cache-20GB ]
     strategy:
       matrix:
         dotnet-version: [ '8.0', '9.0' ]
     env:
-      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+      NUGET_PACKAGES: "${{ github.workspace }}/.nuget/packages"
       TC_CLOUD_TOKEN: ${{ secrets.TC_TOKEN }}
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
     steps:
+      -
+        name: Setup NuGet cache
+        shell: bash
+        run: |
+          if [ -d "/mnt/cache" ]; then
+              NUGET_PACKAGES="/mnt/cache/nuget"
+              NUGET_LOCAL="${{ github.workspace }}/.nuget/packages"
+              mkdir -p "$NUGET_PACKAGES" "$NUGET_LOCAL"
+              sudo mount --bind "$NUGET_PACKAGES" "$NUGET_LOCAL"
+              echo "Using cached NuGet packages directory: $NUGET_PACKAGES"
+          else
+              echo "No NuGet packages cache directory available, proceeding without caching"
+          fi
       -
         name: Checkout
         uses: actions/checkout@v5
