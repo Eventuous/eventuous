@@ -20,7 +20,7 @@ jobs:
     name: "Build and test"
 #    runs-on: ubuntu-latest
 #    runs-on: self-hosted
-    runs-on: [ self-hosted, type-cx42, image-x86-app-docker-ce ]
+    runs-on: [ self-hosted, type-cx42, type-cax31, image-x86-app-docker-ce ]
     strategy:
       matrix:
         dotnet-version: [ '8.0', '9.0' ]

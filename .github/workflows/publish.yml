@@ -10,7 +10,7 @@ on:
 jobs:
   nuget:
 #    runs-on: self-hosted
-    runs-on: [ self-hosted, type-cx42, image-x86-app-docker-ce ]
+    runs-on: [ self-hosted, type-cx42, type-cax31, image-x86-app-docker-ce ]
 
     steps:
       -
