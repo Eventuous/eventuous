@@ -8,11 +8,10 @@ on:
       - 'docs/**'
 jobs:
   nuget:
-#    runs-on: self-hosted
-#    runs-on: ubuntu-latest
-    runs-on: [ self-hosted, type-cx42, type-cax31, image-x86-app-docker-ce ]
+    runs-on: [ self-hosted, type-cx42, type-cax31, image-x86-app-docker-ce, volume-cache-20GB ]
     env:
-      DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
+      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
+      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
     steps:
       -
         name: Setup Python
