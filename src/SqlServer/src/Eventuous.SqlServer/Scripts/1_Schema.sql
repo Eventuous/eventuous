@@ -10,7 +10,7 @@ IF OBJECT_ID('__schema__.Streams', 'U') IS NULL
             StreamId   INT IDENTITY (1,1) NOT NULL,
             StreamName NVARCHAR(850)      NOT NULL,
             [Version]  INT DEFAULT (-1)   NOT NULL,
-            CONSTRAINT PK_Streams PRIMARY KEY CLUSTERED (StreamId),
+            CONSTRAINT PK_Streams PRIMARY KEY CLUSTERED (StreamId) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON),
             CONSTRAINT UQ_StreamName UNIQUE NONCLUSTERED (StreamName),
             CONSTRAINT CK_VersionGteNegativeOne CHECK ([Version] >= -1)
         );
@@ -28,7 +28,7 @@ IF OBJECT_ID('__schema__.Messages', 'U') IS NULL
             JsonData       NVARCHAR(MAX)         NOT NULL,
             JsonMetadata   NVARCHAR(MAX)         NOT NULL,
             Created        DATETIME2(7)          NOT NULL,
-            CONSTRAINT PK_Events PRIMARY KEY CLUSTERED (GlobalPosition),
+            CONSTRAINT PK_Events PRIMARY KEY CLUSTERED (GlobalPosition) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON),
             CONSTRAINT FK_MessageStreamId FOREIGN KEY (StreamId) REFERENCES __schema__.Streams (StreamId),
             CONSTRAINT UQ_StreamIdAndStreamPosition UNIQUE NONCLUSTERED (StreamId, StreamPosition),
             CONSTRAINT UQ_StreamIdAndMessageId UNIQUE NONCLUSTERED (StreamId, MessageId),
