@@ -34,7 +34,7 @@ public class CommandServiceRouteBuilder<TState>(IEndpointRouteBuilder builder) w
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
     public CommandServiceRouteBuilder<TState> MapCommand<TCommand>(
-            string                                  route,
+            [StringSyntax("Route")] string          route,
             EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
             Action<RouteHandlerBuilder>?            configure     = null
         ) where TCommand : class {
@@ -55,7 +55,7 @@ public class CommandServiceRouteBuilder<TState>(IEndpointRouteBuilder builder) w
     /// <typeparam name="TCommand"></typeparam>
     /// <returns></returns>
     public CommandServiceRouteBuilder<TState> MapCommand<TContract, TCommand>(
-            string?                                      route,
+            [StringSyntax("Route")] string?              route,
             ConvertAndEnrichCommand<TContract, TCommand> enrichCommand,
             Action<RouteHandlerBuilder>?                 configure = null
         ) where TCommand : class where TContract : class {

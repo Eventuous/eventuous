@@ -8,12 +8,12 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj"/>
+        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.AspNetCore.Analyzers\Eventuous.Extensions.AspNetCore.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="RestSharp"/>
-        <PackageReference Include="Shouldly" />
         <PackageReference Include="System.Text.Json" />
         <PackageReference Include="Verify.DiffPlex"/>
         <PackageReference Include="Verify.TUnit" />

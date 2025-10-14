@@ -44,10 +44,10 @@ public static partial class RouteBuilderExtensions {
     /// <typeparam name="TState">State type</typeparam>
     /// <returns></returns>
     public static RouteHandlerBuilder MapCommand<TContract, TCommand, TState>(
-            this IEndpointRouteBuilder                   builder,
-            string?                                      route,
-            ConvertAndEnrichCommand<TContract, TCommand> convert,
-            string?                                      policyName = null
+            this                    IEndpointRouteBuilder builder,
+            [StringSyntax("Route")] string?               route,
+            ConvertAndEnrichCommand<TContract, TCommand>  convert,
+            string?                                       policyName = null
         ) where TState : State<TState>, new() where TCommand : class where TContract : class
         => MapInternal<TState, TContract, TCommand>(builder, route, convert, policyName);
 }

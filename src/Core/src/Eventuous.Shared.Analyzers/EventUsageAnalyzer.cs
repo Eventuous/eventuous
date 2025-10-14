@@ -10,7 +10,7 @@ namespace Eventuous.Shared.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
-    public const string DiagnosticId = "EV001";
+    public const string DiagnosticId = "EVTC001";
 
     static readonly DiagnosticDescriptor MissingEventTypeAttribute = new(
         id: DiagnosticId,

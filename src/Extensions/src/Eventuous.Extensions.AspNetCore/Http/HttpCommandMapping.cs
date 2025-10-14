@@ -49,10 +49,10 @@ public static partial class RouteBuilderExtensions {
     /// <typeparam name="TState">State type on which the command will operate</typeparam>
     /// <returns></returns>
     public static RouteHandlerBuilder MapCommand<TCommand, TState>(
-            this IEndpointRouteBuilder              builder,
-            string?                                 route,
-            EnrichCommandFromHttpContext<TCommand>? enrichCommand = null,
-            string?                                 policyName    = null
+            this                    IEndpointRouteBuilder builder,
+            [StringSyntax("Route")] string?               route,
+            EnrichCommandFromHttpContext<TCommand>?       enrichCommand = null,
+            string?                                       policyName    = null
         )
         where TState : State<TState>, new()
         where TCommand : class
@@ -65,7 +65,7 @@ public static partial class RouteBuilderExtensions {
 
     /// <summary>
     /// Creates an instance of <see cref="CommandServiceRouteBuilder{TState}"/> for a given aggregate type, so you
-    /// can explicitly map commands to HTTP endpoints. 
+    /// can explicitly map commands to HTTP endpoints.
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
     /// <typeparam name="TState">State type</typeparam>

@@ -108,11 +108,27 @@
     <Project Path="src/Extensions/src/Eventuous.Extensions.DependencyInjection/Eventuous.Extensions.DependencyInjection.csproj" />
     <Project Path="src/Extensions/src/Eventuous.Extensions.Logging/Eventuous.Extensions.Logging.csproj" />
     <Project Path="src/Extensions/src/Eventuous.Subscriptions.Polly/Eventuous.Subscriptions.Polly.csproj" />
+    <Project Path="src\Extensions\src\Eventuous.Extensions.AspNetCore.Analyzers\Eventuous.Extensions.AspNetCore.Analyzers.csproj" Type="Classic C#">
+      <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
+      <Configuration Solution="Debug|x86" Project="Debug|Any CPU" />
+      <Configuration Solution="Debug CI|x64" Project="Debug CI|Any CPU" />
+      <Configuration Solution="Debug CI|x86" Project="Debug CI|Any CPU" />
+      <Configuration Solution="Release|x64" Project="Release|Any CPU" />
+      <Configuration Solution="Release|x86" Project="Release|Any CPU" />
+    </Project>
   </Folder>
   <Folder Name="/Extensions/test/">
     <Project Path="src/Extensions/test/Eventuous.Sut.AspNetCore/Eventuous.Sut.AspNetCore.csproj" />
     <Project Path="src/Extensions/test/Eventuous.Tests.DependencyInjection/Eventuous.Tests.DependencyInjection.csproj" />
     <Project Path="src/Extensions/test/Eventuous.Tests.Extensions.AspNetCore/Eventuous.Tests.Extensions.AspNetCore.csproj" />
+    <Project Path="src\Extensions\test\Eventuous.Tests.Extensions.AspNetCore.Analyzers\Eventuous.Tests.Extensions.AspNetCore.Analyzers.csproj" Type="Classic C#">
+      <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
+      <Configuration Solution="Debug|x86" Project="Debug|Any CPU" />
+      <Configuration Solution="Debug CI|x64" Project="Debug CI|Any CPU" />
+      <Configuration Solution="Debug CI|x86" Project="Debug CI|Any CPU" />
+      <Configuration Solution="Release|x64" Project="Release|Any CPU" />
+      <Configuration Solution="Release|x86" Project="Release|Any CPU" />
+    </Project>
   </Folder>
   <Folder Name="/Gateway/" />
   <Folder Name="/Gateway/src/">

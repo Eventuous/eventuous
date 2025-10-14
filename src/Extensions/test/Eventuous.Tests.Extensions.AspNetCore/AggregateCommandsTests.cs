@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc.Testing;
-using Shouldly;
 
 namespace Eventuous.Tests.Extensions.AspNetCore;
 
@@ -10,38 +9,25 @@ using static Fixture.TestCommands;
 [ClassDataSource<WebApplicationFactory<Program>>]
 public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs {
     [Test]
-    public void RegisterAggregateCommands() {
+    public async Task RegisterAggregateCommands() {
         var builder = WebApplication.CreateBuilder();
 
-        using var app = builder.Build();
+        await using var app = builder.Build();
 
         var b = app.MapDiscoveredCommands<BookingState>(typeof(BookRoom).Assembly);
 
-        b.DataSources.First().Endpoints[0].DisplayName.ShouldBe("HTTP: POST book");
+        await Assert.That(b.DataSources.First().Endpoints[0].DisplayName).IsEqualTo("HTTP: POST book");
     }
 
     [Test]
-    public void RegisterAggregatesCommands() {
+    public async Task RegisterAggregatesCommands() {
         var builder = WebApplication.CreateBuilder();
 
-        using var app = builder.Build();
+        await using var app = builder.Build();
 
         var b = app.MapDiscoveredCommands(typeof(NestedCommands).Assembly);
 
-        b.DataSources.First().Endpoints[0].DisplayName.ShouldBe("HTTP: POST nested-book");
-    }
-
-    [Test]
-    public void MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
-        var act = () => new ServerFixture(
-            factory,
-            _ => { },
-            app => app
-                .MapCommands<BookingState>()
-                .MapCommand<ImportBookingHttp3, ImportBooking>(Enricher.EnrichCommand)
-        );
-
-        act.ShouldThrow<InvalidOperationException>();
+        await Assert.That(b.DataSources.First().Endpoints[0].DisplayName).IsEqualTo("HTTP: POST nested-book");
     }
 
     [Test]

@@ -15,6 +15,7 @@ public class HttpCommandAttribute : Attribute {
     /// <summary>
     /// HTTP POST route for the command
     /// </summary>
+    [StringSyntax("Route")]
     public string? Route { get; set; }
 
     /// <summary>

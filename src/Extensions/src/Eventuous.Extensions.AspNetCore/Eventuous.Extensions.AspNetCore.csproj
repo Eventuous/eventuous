@@ -3,6 +3,9 @@
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
         <ProjectReference Include="..\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+        <ProjectReference Include="..\Eventuous.Extensions.AspNetCore.Analyzers\Eventuous.Extensions.AspNextCore.Analyzers.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true"/>
+    </ItemGroup>
+    <ItemGroup Label="Implicit usings">
         <Using Include="Eventuous"/>
         <Using Include="Microsoft.Extensions.DependencyInjection"/>
         <Using Include="Microsoft.AspNetCore.Mvc"/>
