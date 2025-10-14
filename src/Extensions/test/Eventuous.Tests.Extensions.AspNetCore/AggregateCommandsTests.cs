@@ -70,6 +70,25 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
     }
 
     [Test]
+    public void MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
+        Assert.Throws<InvalidOperationException>(() => Act());
+
+        return;
+
+        void Act() {
+            _ = new ServerFixture(
+                factory,
+                _ => { },
+#pragma warning disable EVTA001
+                app => app
+                    .MapCommands<BookingState>()
+                    .MapCommand<ImportBookingHttp3, ImportBooking>(Enricher.EnrichCommand)
+#pragma warning restore EVTA001
+            );
+        }
+    }
+
+    [Test]
     public async Task MapEnrichedCommand() {
         var fixture = new ServerFixture(
             factory,
