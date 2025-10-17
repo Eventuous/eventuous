@@ -19,6 +19,14 @@ public static class TestCommands {
         : ImportBookingHttp(BookingId, RoomId, CheckIn, CheckOut, Price);
 
     [HttpCommand<BrookingState>(Route = ImportWrongRoute)]
+#pragma warning disable EVTA003
     public record ImportBookingHttp3(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price)
+#pragma warning restore EVTA003
+        : ImportBookingHttp(BookingId, RoomId, CheckIn, CheckOut, Price);
+
+    [HttpCommand<BrookingState>(Route = ImportWrongRoute)]
+#pragma warning disable EVTA003
+    public record DuplicateCommand(string BookingId, string RoomId, LocalDate CheckIn, LocalDate CheckOut, float Price)
+#pragma warning restore EVTA003
         : ImportBookingHttp(BookingId, RoomId, CheckIn, CheckOut, Price);
 }

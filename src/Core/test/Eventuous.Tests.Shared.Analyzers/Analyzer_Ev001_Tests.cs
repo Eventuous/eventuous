@@ -3,7 +3,7 @@
 
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Eventuous.Shared.Analyzers;
+using Eventuous.Shared.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;

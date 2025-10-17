@@ -9,28 +9,6 @@ using static Fixture.TestCommands;
 [ClassDataSource<WebApplicationFactory<Program>>]
 public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs {
     [Test]
-    public async Task RegisterAggregateCommands() {
-        var builder = WebApplication.CreateBuilder();
-
-        await using var app = builder.Build();
-
-        var b = app.MapDiscoveredCommands<BookingState>(typeof(BookRoom).Assembly);
-
-        await Assert.That(b.DataSources.First().Endpoints[0].DisplayName).IsEqualTo("HTTP: POST book");
-    }
-
-    [Test]
-    public async Task RegisterAggregatesCommands() {
-        var builder = WebApplication.CreateBuilder();
-
-        await using var app = builder.Build();
-
-        var b = app.MapDiscoveredCommands(typeof(NestedCommands).Assembly);
-
-        await Assert.That(b.DataSources.First().Endpoints[0].DisplayName).IsEqualTo("HTTP: POST nested-book");
-    }
-
-    [Test]
     public async Task MapAggregateContractToCommandExplicitly() {
         var fixture = new ServerFixture(
             factory,

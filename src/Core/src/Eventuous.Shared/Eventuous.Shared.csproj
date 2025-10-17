@@ -9,7 +9,6 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true"/>
-        <ProjectReference Include="..\Eventuous.Shared.Analyzers\Eventuous.Shared.Analyzers.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true"/>
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Exceptions\ExceptionMessages.restext">

@@ -48,7 +48,6 @@
     <Project Path="src/Core/src/Eventuous.Persistence/Eventuous.Persistence.csproj" />
     <Project Path="src/Core/src/Eventuous.Producers/Eventuous.Producers.csproj" />
     <Project Path="src/Core/src/Eventuous.Serialization/Eventuous.Serialization.csproj" />
-    <Project Path="src/Core/src/Eventuous.Shared.Analyzers/Eventuous.Shared.Analyzers.csproj" />
     <Project Path="src/Core/src/Eventuous.Shared/Eventuous.Shared.csproj" />
     <Project Path="src/Core/src/Eventuous.Subscriptions.Generators/Eventuous.Subscriptions.Generators.csproj" />
     <Project Path="src/Core/src/Eventuous.Subscriptions/Eventuous.Subscriptions.csproj" />
@@ -108,7 +107,7 @@
     <Project Path="src/Extensions/src/Eventuous.Extensions.DependencyInjection/Eventuous.Extensions.DependencyInjection.csproj" />
     <Project Path="src/Extensions/src/Eventuous.Extensions.Logging/Eventuous.Extensions.Logging.csproj" />
     <Project Path="src/Extensions/src/Eventuous.Subscriptions.Polly/Eventuous.Subscriptions.Polly.csproj" />
-    <Project Path="src\Extensions\src\Eventuous.Extensions.AspNetCore.Analyzers\Eventuous.Extensions.AspNetCore.Analyzers.csproj" Type="Classic C#">
+    <Project Path="src\Extensions\src\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj" Type="Classic C#">
       <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
       <Configuration Solution="Debug|x86" Project="Debug|Any CPU" />
       <Configuration Solution="Debug CI|x64" Project="Debug CI|Any CPU" />

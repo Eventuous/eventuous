@@ -11,6 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
     <ProjectReference Include="$(RepoRoot)\src\Core\src\Eventuous.Shared\Eventuous.Shared.csproj" />
-    <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.AspNetCore.Analyzers\Eventuous.Extensions.AspNetCore.Analyzers.csproj" />
+    <ProjectReference Include="..\..\src\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj" />
   </ItemGroup>
 </Project>

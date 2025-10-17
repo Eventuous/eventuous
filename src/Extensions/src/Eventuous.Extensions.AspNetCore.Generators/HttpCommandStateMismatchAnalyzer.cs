@@ -3,21 +3,16 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using static Eventuous.Extensions.AspNetCore.Generators.Diagnostics;
 
 // ReSharper disable CognitiveComplexity
 
-namespace Eventuous.Extensions.AspNetCore.Analyzers;
+namespace Eventuous.Extensions.AspNetCore.Generators;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class HttpCommandStateMismatchAnalyzer : DiagnosticAnalyzer {
     public const string DiagnosticId      = "EVTA001";
     public const string RouteDiagnosticId = "EVTA002";
-
-    static readonly LocalizableString Title      = "HttpCommand state type mismatches MapCommands state";
-    static readonly LocalizableString RouteTitle = "HttpCommand route override mismatches attribute route";
-
-    static readonly LocalizableString MessageFormat =
-        "Command {0} is mapped to state {1} but the route builder is for state {2}";
 
     static readonly LocalizableString RouteMessageFormat =
         "Command {0} attribute route '{1}' does not match route override '{2}'";
@@ -28,8 +23,6 @@ public class HttpCommandStateMismatchAnalyzer : DiagnosticAnalyzer {
     static readonly LocalizableString RouteDescription =
         "When an HttpCommandAttribute specifies a Route and MapCommand is called with an explicit route override, the values should match.";
 
-    const string Category = "HTTP Command Mapping";
-
     const string NamespaceName       = "Eventuous.Extensions.AspNetCore.Http";
     const string BuilderTypeName     = "CommandServiceRouteBuilder";
     const string RouteBuilderExtName = "RouteBuilderExtensions";
@@ -37,27 +30,8 @@ public class HttpCommandStateMismatchAnalyzer : DiagnosticAnalyzer {
     const string StateTypeParamName  = "StateType";
     const string RouteParamName      = "Route";
 
-    static readonly DiagnosticDescriptor Rule = new(
-        DiagnosticId,
-        Title,
-        MessageFormat,
-        Category,
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: Description
-    );
 
-    static readonly DiagnosticDescriptor RouteRule = new(
-        RouteDiagnosticId,
-        RouteTitle,
-        RouteMessageFormat,
-        Category,
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: RouteDescription
-    );
-
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule, RouteRule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [StateMatchRule, RouteRule];
 
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
@@ -235,7 +209,7 @@ public class HttpCommandStateMismatchAnalyzer : DiagnosticAnalyzer {
 
     static void ReportState(SyntaxNodeAnalysisContext ctx, InvocationExpressionSyntax node, ITypeSymbol contract, ITypeSymbol attrState, ITypeSymbol builderState) {
         var diag = Diagnostic.Create(
-            Rule,
+            StateMatchRule,
             node.GetLocation(),
             contract.Name,
             attrState.Name,

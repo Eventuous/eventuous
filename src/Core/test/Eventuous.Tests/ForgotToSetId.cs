@@ -22,9 +22,9 @@ public class ForgotToSetId : NaiveFixture {
     record DoIt(string Id);
 
     public class TestAggregate : Aggregate<TestState> {
-#pragma warning disable EV001
+#pragma warning disable EVTC001
         public void Process() => Apply(new TestEvent());
-#pragma warning restore EV001
+#pragma warning restore EVTC001
     }
 
     public record TestState : State<TestState>;

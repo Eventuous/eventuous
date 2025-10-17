@@ -1,7 +1,7 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using Eventuous.Extensions.AspNetCore.Analyzers;
+using Eventuous.Extensions.AspNetCore.Generators;
 
 namespace Eventuous.Tests.Extensions.AspNetCore.Analyzers;
 

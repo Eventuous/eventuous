@@ -1,5 +1,5 @@
 using System.Reflection;
-using Eventuous.Extensions.AspNetCore.Analyzers;
+using Eventuous.Extensions.AspNetCore.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;

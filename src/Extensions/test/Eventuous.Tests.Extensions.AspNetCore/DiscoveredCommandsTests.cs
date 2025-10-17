@@ -9,11 +9,39 @@ using Fixture;
 [ClassDataSource<WebApplicationFactory<Program>>]
 public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs {
     [Test]
+    public async Task RegisterStateCommands() {
+        var builder = WebApplication.CreateBuilder();
+
+        await using var app = builder.Build();
+
+        var b = app.MapDiscoveredCommands<BookingState>();
+
+        var actual   = b.DataSources.First().Endpoints.Select(x => x.DisplayName).ToList();
+        var expected = new[] { "HTTP: POST nested-book", "HTTP: POST import2", "HTTP: POST import-wrong" };
+
+        await Assert.That(actual).IsEquivalentTo(expected);
+    }
+
+    [Test]
+    public async Task RegisterStatesCommands() {
+        var builder = WebApplication.CreateBuilder();
+
+        await using var app = builder.Build();
+
+        var b = app.MapDiscoveredCommands();
+
+        var actual   = b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order().ToList();
+        var expected = new[] { "HTTP: POST nested-book", "HTTP: POST import2", "HTTP: POST import-wrong" };
+
+        await Assert.That(actual).IsEquivalentTo(expected.Order());
+    }
+
+    [Test]
     public async Task CallDiscoveredCommandRoute() {
         var fixture = new ServerFixture(
             factory,
             _ => { },
-            app => app.MapDiscoveredCommands(typeof(NestedCommands).Assembly)
+            app => app.MapDiscoveredCommands()
         );
 
         var cmd          = ServerFixture.GetNestedBookRoom(new DateTime(2023, 10, 1));

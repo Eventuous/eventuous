@@ -1,4 +1,4 @@
-using Eventuous.Extensions.AspNetCore.Analyzers;
+using Eventuous.Extensions.AspNetCore.Generators;
 
 namespace Eventuous.Tests.Extensions.AspNetCore.Analyzers;
 

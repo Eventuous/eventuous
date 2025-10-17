@@ -1,7 +1,6 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Reflection;
 using Eventuous.Extensions.AspNetCore;
 using Eventuous.Extensions.AspNetCore.Diagnostics;
 using Eventuous.Extensions.AspNetCore.Http;
@@ -79,37 +78,21 @@ public static partial class RouteBuilderExtensions {
     /// Only use it if your application only handles commands for one state type.
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
-    /// <param name="assemblies">List of assemblies to scan</param>
     /// <typeparam name="TState">State type</typeparam>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static IEndpointRouteBuilder MapDiscoveredCommands<TState>(this IEndpointRouteBuilder builder, params Assembly[] assemblies)
+    public static IEndpointRouteBuilder MapDiscoveredCommands<TState>(this IEndpointRouteBuilder builder)
         where TState : State<TState> {
-        var assembliesToScan = assemblies.Length == 0 ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
-
-        var attributeType = typeof(HttpCommandAttribute);
-
-        foreach (var assembly in assembliesToScan) {
-            MapAssemblyCommands(assembly);
+        // Use generated registry for specified assemblies only
+        foreach (var map in CommandMappingRegistry.GetForState(typeof(TState))) {
+            map(builder);
         }
-
+        // Bind commands that didn't have explicit state at generation time
+        // AZ: Ignore for now, as it's not clear how to handle this case
+        // foreach (var unbound in CommandMappingRegistry.GetWithoutState()) {
+        //     builder.LocalMap(typeof(TState), unbound.CommandType, unbound.Route, unbound.Policy);
+        // }
         return builder;
-
-        void MapAssemblyCommands(Assembly assembly) {
-            var decoratedTypes = assembly.DefinedTypes.Where(
-                x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == attributeType)
-            );
-
-            foreach (var type in decoratedTypes) {
-                var attr = type.GetAttribute<HttpCommandAttribute>()!;
-
-                if (attr.StateType != null && attr.StateType != typeof(TState)) {
-                    throw new InvalidOperationException($"Command state is {attr.StateType.Name} but expected to be {typeof(TState).Name}");
-                }
-
-                builder.LocalMap(typeof(TState), type, attr.Route, attr.PolicyName);
-            }
-        }
     }
 
     /// <summary>
@@ -118,51 +101,23 @@ public static partial class RouteBuilderExtensions {
     /// application domain if no assembly is specified explicitly.
     /// </summary>
     /// <param name="builder">Endpoint router builder instance</param>
-    /// <param name="assemblies">List of assemblies to scan</param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     [PublicAPI]
-    public static IEndpointRouteBuilder MapDiscoveredCommands(this IEndpointRouteBuilder builder, params Assembly[] assemblies) {
-        var assembliesToScan = assemblies.Length == 0 ? AppDomain.CurrentDomain.GetAssemblies() : assemblies;
-
-        var attributeType = typeof(HttpCommandAttribute);
-
-        foreach (var assembly in assembliesToScan) {
-            MapAssemblyCommands(assembly);
+    public static IEndpointRouteBuilder MapDiscoveredCommands(this IEndpointRouteBuilder builder) {
+        // Use generated registry, no reflection/assembly scanning
+        foreach (var map in CommandMappingRegistry.GetAll()) {
+            map(builder);
         }
-
         return builder;
-
-        void MapAssemblyCommands(Assembly assembly) {
-            var decoratedTypes = assembly.DefinedTypes.Where(
-                x => x.IsClass && x.CustomAttributes.Any(a => a.AttributeType == attributeType)
-            );
-
-            foreach (var type in decoratedTypes) {
-                var attr            = type.GetAttribute<HttpCommandAttribute>()!;
-                var parentAttribute = type.DeclaringType?.GetAttribute<HttpCommandsAttribute>();
-
-                var stateType = parentAttribute?.StateType ?? attr.StateType;
-
-                if (stateType == null) continue;
-
-                if (parentAttribute != null && stateType != parentAttribute.StateType) {
-                    throw new InvalidOperationException(
-                        $"Command state type {stateType.Name} doesn't match with parent state type {parentAttribute.StateType.Name}"
-                    );
-                }
-
-                builder.LocalMap(stateType, type, attr.Route, attr.PolicyName);
-            }
-        }
     }
 
-    static void LocalMap(this IEndpointRouteBuilder builder, Type stateType, Type type, string? route, string? policyName) {
-        var genericMethod = MapMethod.MakeGenericMethod(stateType, type, type);
-        genericMethod.Invoke(null, [builder, route, null, policyName]);
-    }
+    // static void LocalMap(this IEndpointRouteBuilder builder, Type stateType, Type type, string? route, string? policyName) {
+    //     var genericMethod = MapMethod.MakeGenericMethod(stateType, type, type);
+    //     genericMethod.Invoke(null, [builder, route, null, policyName]);
+    // }
 
-    static readonly MethodInfo MapMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapInternal), BindingFlags.Static | BindingFlags.NonPublic)!;
+    // static readonly MethodInfo MapMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapInternal), BindingFlags.Static | BindingFlags.NonPublic)!;
 
     static RouteHandlerBuilder MapInternal<TState, TContract, TCommand>(
             IEndpointRouteBuilder                         builder,

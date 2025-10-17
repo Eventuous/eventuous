@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Eventuous.Shared.Analyzers;
+namespace Eventuous.Shared.Generators;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
@@ -21,6 +21,10 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         isEnabledByDefault: true,
         description: "Domain events should be annotated with [EventType] so they can be resolved by the type mapper."
     );
+
+    const string BaseNamespace = "Eventuous";
+    const string EventTypeAttribute = "EventTypeAttribute";
+    const string EventTypeAttrFqcn = $"{BaseNamespace}.{EventTypeAttribute}";
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [MissingEventTypeAttribute];
 
@@ -197,7 +201,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
         // Walk base types to check if it derives from Eventuous.Aggregate<>
         for (var t = type; t != null; t = t.BaseType) {
-            if (t is { Name: "Aggregate", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == "Eventuous") return true;
+            if (t is { Name: "Aggregate", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == BaseNamespace) return true;
         }
 
         return false;
@@ -208,7 +212,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
         // Walk base types to check if it derives from Eventuous.State<>
         for (var t = type; t != null; t = t.BaseType) {
-            if (t is { Name: "State", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == "Eventuous") return true;
+            if (t is { Name: "State", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == BaseNamespace) return true;
         }
 
         return false;
@@ -224,7 +228,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
         var ns = containing.ContainingNamespace?.ToDisplayString();
 
-        if (ns != "Eventuous") return false;
+        if (ns != BaseNamespace) return false;
 
         // Simple name checks
         return containing.Name is "CommandHandlerBuilder" or "IDefineExecution" or "ICommandHandlerBuilder" or "IDefineStoreOrExecution";
@@ -240,8 +244,8 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
             var name = attrClass.ToDisplayString();
 
-            if (name == "Eventuous.EventTypeAttribute") return true;
-            if (attrClass.Name is "EventTypeAttribute") return true;
+            if (name == EventTypeAttrFqcn) return true;
+            if (attrClass.Name is EventTypeAttribute) return true;
         }
 
         return false;

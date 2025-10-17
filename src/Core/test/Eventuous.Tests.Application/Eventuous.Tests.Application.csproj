@@ -8,7 +8,6 @@
     <ItemGroup>
         <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj"/>
-        <ProjectReference Include="$(RepoRoot)\src\Core\src\Eventuous.Shared.Analyzers\Eventuous.Shared.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Update="ServiceTestBase.OnNew.cs">
