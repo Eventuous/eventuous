@@ -12,7 +12,7 @@
         <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true"/>
+        <ProjectReference Include="..\..\gen\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true"/>
     </ItemGroup>
     <ItemGroup>
         <None Remove="Eventuous.Subscriptions.csproj.DotSettings"/>

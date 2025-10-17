@@ -8,7 +8,7 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj"/>
-        <ProjectReference Include="..\..\src\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj">
+        <ProjectReference Include="..\..\gen\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj">
           <OutputItemType>Analyzer</OutputItemType>
           <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
         </ProjectReference>
