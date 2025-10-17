@@ -1,4 +1,4 @@
-// Copyright (C) Eventuous HQ OÜ.All rights reserved
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Microsoft.AspNetCore.Builder;
@@ -16,7 +16,7 @@ static class RouteHandlerBuilderExt {
     static RouteHandlerBuilder ProducesOk(this RouteHandlerBuilder builder, Type resultType)
         => builder.Produces(StatusCodes.Status200OK, resultType, ContentTypes.Json);
 
-    public static RouteHandlerBuilder ProducesOk<TState>(this RouteHandlerBuilder builder) where TState : class, new() 
+    public static RouteHandlerBuilder ProducesOk<TState>(this RouteHandlerBuilder builder) where TState : class, new()
         => builder.ProducesOk(typeof(Result<TState>.Ok));
 
     static RouteHandlerBuilder Accepts(this RouteHandlerBuilder builder, Type commandType) => builder.Accepts(commandType, false, ContentTypes.Json);

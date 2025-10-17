@@ -1,4 +1,4 @@
-// Copyright (C) Eventuous HQ OÜ.All rights reserved
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 namespace Eventuous.Projections.MongoDB;
@@ -10,21 +10,21 @@ public partial class MongoOperationBuilder<TEvent, T> where T : ProjectedDocumen
         Action<BulkWriteOptions>?                 _configureOptions;
         readonly List<BuildWriteModel<T, TEvent>> _builders = [];
 
-        public BulkWriteBuilder AddOperation<TFactory>(Func<MongoBulkOperationBuilders, TFactory> getBuilderFactory) 
+        public BulkWriteBuilder AddOperation<TFactory>(Func<MongoBulkOperationBuilders, TFactory> getBuilderFactory)
             where TFactory: IMongoBulkBuilderFactory {
                 var factory = getBuilderFactory(MongoBulkOperationBuilders.Instance);
                 _builders.Add(factory.GetBuilder());
 
                 return this;
         }
-        
+
         public BulkWriteBuilder Configure(Action<BulkWriteOptions> configure) {
             _configureOptions = configure;
 
             return this;
         }
 
-        ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build() => 
+        ProjectTypedEvent<T, TEvent> IMongoProjectorBuilder.Build() =>
             GetHandler(async (ctx, collection, token) => {
                 var options = Options<BulkWriteOptions>.New(_configureOptions);
                 var models = await _builders.Select(build => build(ctx)).WhenAll().NoContext();

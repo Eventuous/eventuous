@@ -1,4 +1,4 @@
-// Copyright (C) Eventuous HQ OÜ.All rights reserved
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 namespace Eventuous;
@@ -33,7 +33,7 @@ public static class TypeMapperExtensions {
     public static bool TryGetTypeName<T>(this ITypeMapper typeMapper, [NotNullWhen(true)] out string? typeName) => typeMapper.TryGetTypeName(typeof(T), out typeName);
 
     /// <summary>
-    /// Get the registered type for a given name 
+    /// Get the registered type for a given name
     /// </summary>
     /// <param name="typeMapper">Type mapper instance</param>
     /// <param name="typeName">Type name for which the type needs to be returned</param>

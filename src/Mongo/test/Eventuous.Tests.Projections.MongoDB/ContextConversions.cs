@@ -1,4 +1,4 @@
-// Copyright (C) Eventuous HQ OÜ.All rights reserved
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Subscriptions.Consumers;
@@ -19,12 +19,12 @@ public class ContextConversions {
 
         static MessageConsumeContext<T> CreateContext<T>() where T : class => new(TestContext<T>.CreateContext());
     }
-    
+
     [Test]
     [MethodDataSource(nameof(GetArgs))]
     public async Task TestContextConversion(IMessageConsumeContext context, Type expectedType) {
         await Assert.That(MessageConsumeContextConverter.RegisteredConverters).HasCount(1);
-        
+
         var typed = MessageConsumeContextConverter.RegisteredConverters[0].Invoke(context);
         await Assert.That(typed).IsNotNull();
         await Assert.That(typed).IsAssignableTo(expectedType);

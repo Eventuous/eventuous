@@ -1,4 +1,4 @@
-// Copyright (C) Eventuous HQ OÜ.All rights reserved
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.EventStore.Producers;
@@ -112,8 +112,8 @@ public class CustomDependenciesTests {
                 return result;
             }
 
-            return evt is not TestEvent testEvent 
-                ? result 
+            return evt is not TestEvent testEvent
+                ? result
                 : new DeserializationResult.SuccessfullyDeserialized(testEvent with { Number = testEvent.Number + 1 });
         }
 

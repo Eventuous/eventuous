@@ -1,7 +1,7 @@
-// Copyright (C) Eventuous HQ OÜ.All rights reserved
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-namespace Eventuous.Testing; 
+namespace Eventuous.Testing;
 
 public static class AggregateFactoryExtensions {
     /// <summary>
@@ -14,7 +14,7 @@ public static class AggregateFactoryExtensions {
     /// <typeparam name="TId">Aggregate identity type</typeparam>
     /// <returns></returns>
     [Obsolete("This overload is for backwards compability. Use CreateTestAggregateInstance that uses Id in stead of AggregateId as TId parameter.")]
-    public static TAggregate CreateTestAggregateInstanceForAggregateId<TAggregate, TState, TId>(this AggregateFactoryRegistry registry, TId id) 
+    public static TAggregate CreateTestAggregateInstanceForAggregateId<TAggregate, TState, TId>(this AggregateFactoryRegistry registry, TId id)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new() where TId : AggregateId
         => registry.CreateInstance<TAggregate, TState>().WithId<TAggregate, TState, TId>(id);
 

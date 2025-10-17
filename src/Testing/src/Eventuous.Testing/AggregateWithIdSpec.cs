@@ -1,4 +1,4 @@
-// Copyright (C) Eventuous HQ OÜ.All rights reserved
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
 namespace Eventuous.Testing;
@@ -19,6 +19,6 @@ public abstract class AggregateWithIdSpec<TAggregate, TState, TId>(AggregateFact
     protected abstract TId? Id { get; }
 
     /// <inheritdoc />
-    protected override TAggregate CreateInstance() 
+    protected override TAggregate CreateInstance()
         => Id == null ? base.CreateInstance() : Registry.CreateTestAggregateInstance<TAggregate, TState, TId>(Id);
 }
