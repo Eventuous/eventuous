@@ -78,13 +78,14 @@ public static partial class RouteBuilderExtensions {
     /// Only use it if your application only handles commands for one state type.
     /// </summary>
     /// <param name="builder">Endpoint route builder instance</param>
+    /// <param name="exclude">Exclude command types</param>
     /// <typeparam name="TState">State type</typeparam>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static IEndpointRouteBuilder MapDiscoveredCommands<TState>(this IEndpointRouteBuilder builder)
+    public static IEndpointRouteBuilder MapDiscoveredCommands<TState>(this IEndpointRouteBuilder builder, params Type[] exclude)
         where TState : State<TState> {
-        // Use generated registry for specified assemblies only
-        foreach (var map in CommandMappingRegistry.GetForState(typeof(TState))) {
+        foreach (var (commandType, map) in CommandMappingRegistry.GetForState(typeof(TState))) {
+            if (exclude.Contains(commandType)) continue;
             map(builder);
         }
         // Bind commands that didn't have explicit state at generation time
@@ -101,12 +102,14 @@ public static partial class RouteBuilderExtensions {
     /// application domain if no assembly is specified explicitly.
     /// </summary>
     /// <param name="builder">Endpoint router builder instance</param>
+    /// <param name="exclude">Exclude command types</param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     [PublicAPI]
-    public static IEndpointRouteBuilder MapDiscoveredCommands(this IEndpointRouteBuilder builder) {
+    public static IEndpointRouteBuilder MapDiscoveredCommands(this IEndpointRouteBuilder builder, params Type[] exclude) {
         // Use generated registry, no reflection/assembly scanning
-        foreach (var map in CommandMappingRegistry.GetAll()) {
+        foreach (var (commandType, map) in CommandMappingRegistry.GetAll()) {
+            if (exclude.Contains(commandType)) continue;
             map(builder);
         }
         return builder;

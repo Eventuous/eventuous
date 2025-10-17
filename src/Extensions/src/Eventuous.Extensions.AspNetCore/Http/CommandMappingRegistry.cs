@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Concurrent;
-using Microsoft.AspNetCore.Routing;
+using ConfigureEndpoint = System.Action<Microsoft.AspNetCore.Routing.IEndpointRouteBuilder>;
 
 namespace Eventuous.Extensions.AspNetCore.Http;
 
@@ -12,23 +12,28 @@ namespace Eventuous.Extensions.AspNetCore.Http;
 /// in the consumer assembly by calling Register* methods.
 /// </summary>
 public static class CommandMappingRegistry {
-    public readonly record struct Unbound(Type CommandType, string? Route, string? Policy);
+    readonly record struct Unbound(Type CommandType, string? Route, string? Policy);
 
-    static readonly ConcurrentDictionary<Type, List<Action<IEndpointRouteBuilder>>> PerState     = new();
-    static readonly List<Action<IEndpointRouteBuilder>>                             All          = [];
-    static readonly List<Unbound>                                                   WithoutState = [];
+    public readonly record struct Bound(Type CommandType, ConfigureEndpoint Map);
 
-    public static void RegisterForState(Type stateType, Action<IEndpointRouteBuilder> map) {
+    static readonly ConcurrentDictionary<Type, List<Bound>> PerState = new();
+    static readonly List<Bound>                       All      = [];
+
+    // TODO: Figure out what to do with it
+    // ReSharper disable once CollectionNeverQueried.Local
+    static readonly List<Unbound> WithoutState = [];
+
+    public static void RegisterForState(Type stateType, Type commandType, ConfigureEndpoint map) {
         var list = PerState.GetOrAdd(stateType, _ => []);
 
         lock (list) {
-            list.Add(map);
+            list.Add(new(commandType, map));
         }
     }
 
-    public static void RegisterAll(Action<IEndpointRouteBuilder> map) {
+    public static void RegisterAll(Type commandType, ConfigureEndpoint map) {
         lock (All) {
-            All.Add(map);
+            All.Add(new(commandType, map));
         }
     }
 
@@ -38,10 +43,10 @@ public static class CommandMappingRegistry {
         }
     }
 
-    public static IEnumerable<Action<IEndpointRouteBuilder>> GetForState(Type stateType) {
+    public static IEnumerable<Bound> GetForState(Type stateType) {
         if (!PerState.TryGetValue(stateType, out var list)) yield break;
 
-        List<Action<IEndpointRouteBuilder>> copy;
+        List<Bound> copy;
         lock (list) copy = list.ToList();
 
         foreach (var a in copy) {
@@ -49,21 +54,12 @@ public static class CommandMappingRegistry {
         }
     }
 
-    public static IEnumerable<Action<IEndpointRouteBuilder>> GetAll() {
-        List<Action<IEndpointRouteBuilder>> copy;
+    public static IEnumerable<Bound> GetAll() {
+        List<Bound> copy;
         lock (All) copy = All.ToList();
 
         foreach (var a in copy) {
             yield return a;
-        }
-    }
-
-    public static IEnumerable<Unbound> GetWithoutState() {
-        Unbound[] copy;
-        lock (WithoutState) copy = WithoutState.ToArray();
-
-        foreach (var u in copy) {
-            yield return u;
         }
     }
 }

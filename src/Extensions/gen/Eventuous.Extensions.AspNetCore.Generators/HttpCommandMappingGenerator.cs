@@ -19,9 +19,6 @@ public class HttpCommandMappingGenerator : IIncrementalGenerator {
     const string CommandServiceFqn        = "Eventuous.ICommandService`1";
     const string CommandServiceType       = "ICommandService";
 
-    const string Category = "HTTP Command Mapping";
-
-
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         var syntaxProvider = context.SyntaxProvider
             .CreateSyntaxProvider(
@@ -148,6 +145,7 @@ public class HttpCommandMappingGenerator : IIncrementalGenerator {
                     $"""
                              CommandMappingRegistry.RegisterForState(
                                  typeof({stateFqn}),
+                                 typeof({cmdFqn}),
                                  {mapString}
                              );
                      """
@@ -156,10 +154,11 @@ public class HttpCommandMappingGenerator : IIncrementalGenerator {
                 // Also for non-generic discovery
                 sb.AppendLine(
                     $"""
-                             CommandMappingRegistry.RegisterAll(
-                                 {mapString}
-                             );
-                     """
+                              CommandMappingRegistry.RegisterAll(
+                                  typeof({cmdFqn}),
+                                  {mapString}
+                              );
+                      """
                 );
             }
             else {
