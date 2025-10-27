@@ -30,8 +30,6 @@ public class ControllerTests {
                 app.MapCommands<BookingState>().MapCommand<BookRoom>();
             }
         );
-
-        listener = new();
     }
 
     [Test]
@@ -55,9 +53,7 @@ public class ControllerTests {
         last.Payload.ShouldBeEquivalentTo(expected);
     }
 
-#pragma warning disable TUnit0023
     static TestEventListener? listener;
-#pragma warning restore TUnit0023
 
     [After(Class)]
     public static void Dispose() => listener?.Dispose();
