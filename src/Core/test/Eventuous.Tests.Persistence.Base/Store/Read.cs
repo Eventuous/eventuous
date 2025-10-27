@@ -34,7 +34,8 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
         var result = await _fixture.EventStore.ReadEvents(streamName, StreamReadPosition.Start, 100, true, cancellationToken);
-        var actual = result.Select(x => x.Payload);
+
+        IEnumerable<object> actual = result.Select(x => x.Payload)!;
         await Assert.That(actual).IsEquivalentTo(events);
     }
 
@@ -79,6 +80,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
         await Assert.That(result[0].Payload).IsEquivalentTo(evt);
 
         await Assert.That(result[0].Metadata.ToDictionary(m => m.Key, m => ((JsonElement)m.Value!).GetString()))
-            .ContainsKey("Key1").And.ContainsKey("Key2");
+            .ContainsKey("Key1")
+            .And.ContainsKey("Key2");
     }
 }

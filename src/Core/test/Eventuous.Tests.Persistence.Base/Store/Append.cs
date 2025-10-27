@@ -1,6 +1,5 @@
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
-using TUnit.Assertions.AssertConditions.Throws;
 
 namespace Eventuous.Tests.Persistence.Base.Store;
 
@@ -48,7 +47,7 @@ public abstract class StoreAppendTests<T> where T : StoreFixtureBase {
 
         evt = Helpers.CreateEvent();
 
-        await Assert.That(() => _fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream)).Throws<AppendToStreamException>();
+        await Assert.That(() => _fixture.AppendEvent(stream, evt, ExpectedStreamVersion.NoStream)!).Throws<AppendToStreamException>();
     }
 
     [Test]
@@ -61,9 +60,9 @@ public abstract class StoreAppendTests<T> where T : StoreFixtureBase {
 
         evt = Helpers.CreateEvent();
 
-        await Assert.That(() => _fixture.AppendEvent(stream, evt, new(3))).Throws<AppendToStreamException>();
+        await Assert.That(() => _fixture.AppendEvent(stream, evt, new(3))!).Throws<AppendToStreamException>();
     }
-    
+
 
     [Test]
     [Category("Store")]
@@ -75,6 +74,6 @@ public abstract class StoreAppendTests<T> where T : StoreFixtureBase {
 
         evt = Helpers.CreateEvent();
 
-        await Assert.That(() => _fixture.StoreChanges(stream, evt, new(3))).Throws<OptimisticConcurrencyException>();
+        await Assert.That(() => _fixture.StoreChanges(stream, evt, new(3))!).Throws<OptimisticConcurrencyException>();
     }
 }

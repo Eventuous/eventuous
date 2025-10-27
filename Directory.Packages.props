@@ -13,7 +13,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <NpgsqlVersion>9.0.3</NpgsqlVersion>
-    <TUnitVersion>0.25.21</TUnitVersion>
+    <TUnitVersion>0.77.3</TUnitVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
@@ -33,7 +33,7 @@
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="9.0.6" />
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.3" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
     <PackageVersion Include="EventStore.Client.Grpc.PersistentSubscriptions" Version="23.3.9" />
     <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.3.9" />
     <PackageVersion Include="MongoDB.Driver" Version="3.4.0" />
@@ -84,8 +84,8 @@
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
     <PackageVersion Include="TUnit.Core" Version="$(TUnitVersion)" />
     <PackageVersion Include="TUnit.Assertions" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.7.3" />
-    <PackageVersion Include="Verify.TUnit" Version="30.4.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.1" />
+    <PackageVersion Include="Verify.TUnit" Version="31.0.5" />
     <PackageVersion Include="NodaTime.Bogus" Version="3.0.2" />
     <PackageVersion Include="System.Text.Json" Version="9.0.6" />
   </ItemGroup>
@@ -93,12 +93,12 @@
     <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.1.0" />
     <PackageVersion Include="MongoDB.Driver.Core" Version="2.30.0" />
     <PackageVersion Include="Npgsql.OpenTelemetry" Version="$(NpgsqlVersion)" />
-    <PackageVersion Include="OpenTelemetry" Version="1.9.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.10.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Zipkin" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.9.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry" Version="1.13.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.13.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.13.1-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Zipkin" Version="1.13.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.13.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.13.0-beta.1" />
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />

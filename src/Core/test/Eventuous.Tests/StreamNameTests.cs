@@ -1,5 +1,4 @@
 using Eventuous.Sut.Domain;
-using TUnit.Assertions.AssertConditions.Throws;
 
 namespace Eventuous.Tests;
 

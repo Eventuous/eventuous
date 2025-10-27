@@ -27,7 +27,7 @@ public class ContextConversions {
 
         var typed = MessageConsumeContextConverter.RegisteredConverters[0].Invoke(context);
         await Assert.That(typed).IsNotNull();
-        await Assert.That(typed).IsAssignableTo(expectedType);
+        await Assert.That(typed.GetType().IsAssignableTo(expectedType)).IsTrue();
     }
 
     [Test]

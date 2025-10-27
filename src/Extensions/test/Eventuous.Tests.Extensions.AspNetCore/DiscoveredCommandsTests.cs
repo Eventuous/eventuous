@@ -16,7 +16,8 @@ public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : T
 
         var b = app.MapDiscoveredCommands<BookingState>();
 
-        var actual   = b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order().ToList();
+        IEnumerable<string> actual = b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order().ToList()!;
+
         var expected = new[] { "HTTP: POST nested-book", "HTTP: POST import2" };
 
         await Assert.That(actual).IsEquivalentTo(expected.Order());
@@ -30,7 +31,8 @@ public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : T
 
         var b = app.MapDiscoveredCommands(typeof(TestCommands.DuplicateCommand));
 
-        var actual   = b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order().ToList();
+        IEnumerable<string> actual = b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order().ToList()!;
+
         var expected = new[] { "HTTP: POST nested-book", "HTTP: POST import2", "HTTP: POST import-wrong" };
 
         await Assert.That(actual).IsEquivalentTo(expected.Order());

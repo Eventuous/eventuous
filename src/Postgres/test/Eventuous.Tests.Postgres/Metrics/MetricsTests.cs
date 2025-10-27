@@ -11,4 +11,3 @@ public class MetricsTests(MetricsFixture fixture) : MetricsTestsBase(fixture) {
         await ShouldMeasureSubscriptionGapCountBase();
     }
 }
-

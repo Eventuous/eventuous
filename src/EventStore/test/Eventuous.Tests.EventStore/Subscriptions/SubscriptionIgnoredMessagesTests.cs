@@ -2,6 +2,7 @@ using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Registrations;
+using Eventuous.TestHelpers.TUnit;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;

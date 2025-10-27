@@ -1,4 +1,5 @@
 using Eventuous.Subscriptions.Logging;
+using Eventuous.TestHelpers.TUnit;
 using Eventuous.Tests.Redis.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 using Shouldly;

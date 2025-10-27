@@ -3,6 +3,7 @@ using Eventuous.EventStore.Producers;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Context;
+using Eventuous.TestHelpers.TUnit;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
 using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
