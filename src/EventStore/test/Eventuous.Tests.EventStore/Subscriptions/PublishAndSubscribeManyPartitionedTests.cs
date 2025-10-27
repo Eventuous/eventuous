@@ -1,4 +1,5 @@
 using Eventuous.Producers;
+using Eventuous.TestHelpers.TUnit;
 using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 using Shouldly;

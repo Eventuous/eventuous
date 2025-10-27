@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
+using TestDependency = Eventuous.Tests.DependencyInjection.Sut.TestDependency;
+using TestState = Eventuous.Tests.DependencyInjection.Sut.TestState;
 
 namespace Eventuous.Tests.DependencyInjection;
 

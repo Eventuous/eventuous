@@ -52,7 +52,7 @@ public class PubSubTests {
 
         await _producer.Produce(_pubsubTopic, testEvent, null, cancellationToken: cancellationToken);
 
-        await _handler.AssertThat().Timebox(10.Seconds()).Any().Match(x => x as TestEvent == testEvent).Validate(cancellationToken);
+        await _handler.AssertThat().Timebox(TimeSpan.FromSeconds(10)).Any().Match(x => x as TestEvent == testEvent).Validate(cancellationToken);
     }
 
     [Test]
@@ -63,7 +63,7 @@ public class PubSubTests {
         var testEvents = TestEvent.CreateMany(count);
 
         await _producer.Produce(_pubsubTopic, testEvents, null, cancellationToken: cancellationToken);
-        await _handler.AssertCollection(40.Seconds(), [..testEvents]).Validate(cancellationToken);
+        await _handler.AssertCollection(TimeSpan.FromSeconds(40), [..testEvents]).Validate(cancellationToken);
     }
 
     [Before(Test)]

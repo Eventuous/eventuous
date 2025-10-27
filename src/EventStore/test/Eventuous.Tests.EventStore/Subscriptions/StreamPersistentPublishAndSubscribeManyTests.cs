@@ -2,6 +2,7 @@ using EventStore.Client;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Producers;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.TestHelpers.TUnit;
 using Eventuous.Tests.EventStore.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 
