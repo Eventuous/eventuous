@@ -11,7 +11,7 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests.Subscriptions.Base;
 
 public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TCheckpointStore>(
-        StreamName                                                                                 streamName,
+        StreamName streamName,
         SubscriptionFixtureBase<TContainer, TSub, TSubOptions, TCheckpointStore, TestEventHandler> fixture
     ) : SubscriptionTestBase(fixture)
     where TContainer : DockerContainer
@@ -25,11 +25,10 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
         var testEvents = await GenerateAndProduceEvents(count);
 
         await fixture.StartSubscription();
-        await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [..testEvents]).Validate(cancellationToken);
-        await fixture.StopSubscription();
+        await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [..testEvents]).Validate(cancellationToken);        await fixture.StopSubscription();
         await Assert.That(fixture.Handler.Count).IsEqualTo(10);
 
-        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
+        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, CheckpointInitialPosition.Beginning, cancellationToken);
         await Assert.That(checkpoint.Position).IsEqualTo(expected);
     }
 
@@ -43,7 +42,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
         WriteLine("Phase two");
         await TestConsumptionOfProducedEvents();
 
-        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
+        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, CheckpointInitialPosition.Beginning, cancellationToken);
         await Assert.That(checkpoint.Position).IsEqualTo(19UL);
 
         return;
@@ -56,8 +55,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
 
             WriteLine("Starting subscription");
             await fixture.StartSubscription();
-            await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [..testEvents]).Validate(cancellationToken);
-            WriteLine("Stopping subscription");
+            await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [..testEvents]).Validate(cancellationToken);            WriteLine("Stopping subscription");
             await fixture.StopSubscription();
             await Assert.That(fixture.Handler.Count).IsEqualTo(10);
         }
@@ -68,7 +66,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
 
         await GenerateAndProduceEvents(count);
 
-        await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
+        await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, CheckpointInitialPosition.Beginning, cancellationToken);
         Logger.ConfigureIfNull(fixture.SubscriptionId, fixture.LoggerFactory);
         await fixture.CheckpointStore.StoreCheckpoint(new(fixture.SubscriptionId, 9), true, cancellationToken);
 

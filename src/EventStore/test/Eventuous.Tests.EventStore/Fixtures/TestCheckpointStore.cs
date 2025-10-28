@@ -3,7 +3,7 @@ namespace Eventuous.Tests.EventStore.Fixtures;
 public class TestCheckpointStore : ICheckpointStore {
     readonly Dictionary<string, Checkpoint> _checkpoints = new();
 
-    public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+    public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CheckpointInitialPosition _, CancellationToken cancellationToken) {
         var checkpoint = _checkpoints.TryGetValue(checkpointId, out var cp) ? cp : new(checkpointId, null);
         Logger.Current.CheckpointLoaded(this, checkpoint);
         return new(checkpoint);

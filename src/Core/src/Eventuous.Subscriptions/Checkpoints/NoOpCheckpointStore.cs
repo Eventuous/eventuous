@@ -12,7 +12,7 @@ using Logging;
 public class NoOpCheckpointStore(ulong? start = null) : ICheckpointStore {
     Checkpoint _start = new("", start);
 
-    public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+    public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CheckpointInitialPosition _, CancellationToken cancellationToken) {
         var checkpoint = _start with { Id = checkpointId };
         Logger.Current.CheckpointLoaded(this, checkpoint);
 

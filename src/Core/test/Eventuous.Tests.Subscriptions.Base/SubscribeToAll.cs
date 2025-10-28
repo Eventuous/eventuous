@@ -16,8 +16,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
     where TSubscriptionOptions : SubscriptionOptions
     where TCheckpointStore : class, ICheckpointStore {
     protected async Task ShouldConsumeProducedEvents(CancellationToken cancellationToken) {
-        const int count = 10;
-
+        const int   count    = 10;
         var commands   = await GenerateAndHandleCommands(count);
         var testEvents = commands.Select(ToEvent).ToList();
 
@@ -38,8 +37,7 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
         return;
 
         async Task TestConsumptionOfProducedEvents() {
-            const int count = 10;
-
+            const int   count    = 10;
             var commands   = await GenerateAndHandleCommands(count);
             var testEvents = commands.Select(ToEvent).ToList();
             await fixture.StartSubscription();
@@ -54,11 +52,11 @@ public abstract class SubscribeToAllBase<TContainer, TSubscription, TSubscriptio
 
         await GenerateAndHandleCommands(count);
 
-        await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
+        await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, CheckpointInitialPosition.Beginning, cancellationToken);
         var last = await fixture.GetLastPosition();
         await fixture.CheckpointStore.StoreCheckpoint(new(fixture.SubscriptionId, last), true, cancellationToken);
 
-        var l = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
+        var l = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, CheckpointInitialPosition.Beginning, cancellationToken);
         WriteLine("Last checkpoint: {0}", l.Position!);
 
         await fixture.StartSubscription();

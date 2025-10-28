@@ -19,4 +19,5 @@ public abstract record SubscriptionOptions {
 public abstract record SubscriptionWithCheckpointOptions : SubscriptionOptions {
     public int CheckpointCommitBatchSize { get; set; } = 100;
     public int CheckpointCommitDelayMs   { get; set; } = 5000;
+    public CheckpointInitialPosition CheckpointInitialPosition { get; set; } = new Beginning();
 }

@@ -101,7 +101,7 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
 
         Logger.Current = Log;
 
-        var checkpoint = await CheckpointStore.GetLastCheckpoint(Options.SubscriptionId, cancellationToken).NoContext();
+        var checkpoint = await CheckpointStore.GetLastCheckpoint(Options.SubscriptionId, Options.CheckpointInitialPosition, cancellationToken).NoContext();
 
         LastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
 

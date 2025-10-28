@@ -29,7 +29,7 @@ public class MongoCheckpointStore(IMongoDatabase database, MongoCheckpointStoreO
 
     IMongoCollection<Checkpoint> Checkpoints { get; } = Ensure.NotNull(database).GetCollection<Checkpoint>(options.CollectionName);
 
-    public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken = default) {
+    public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(string checkpointId, CheckpointInitialPosition _, CancellationToken cancellationToken = default) {
         var storedCheckpoint = await Checkpoints.AsQueryable()
             .Where(x => x.Id == checkpointId)
             .SingleOrDefaultAsync(cancellationToken)

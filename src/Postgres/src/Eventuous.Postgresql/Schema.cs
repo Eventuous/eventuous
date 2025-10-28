@@ -27,7 +27,7 @@ public class Schema(string schema = Schema.DefaultSchema) {
     public string StreamExists        => $"select exists (select 1 from {schema}.streams where stream_name = (@name))";
     public string TruncateStream      => $"select * from {schema}.truncate_stream(@_stream_name, @_expected_version, @_position)";
     public string GetCheckpointSql    => $"select position from {schema}.checkpoints where id=(@checkpointId)";
-    public string AddCheckpointSql    => $"insert into {schema}.checkpoints (id) values (@checkpointId)";
+    public string AddCheckpointSql    => $"insert into {schema}.checkpoints (id, position) values (@checkpointId, case when @initialPosition = 'end' then (select max(global_position) from {schema}.messages) when @initialPosition is not null then cast(@initialPosition as bigint) else null end) returning position";
     public string UpdateCheckpointSql => $"update {schema}.checkpoints set position=(@position) where id=(@checkpointId)";
     public string TryInsertTombstone  => $"select {schema}.try_insert_tombstone(@_gap_position, @_stream_name, @_type, @_id)";
 

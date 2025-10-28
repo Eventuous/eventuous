@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.SqlServer.Subscriptions;
 
+using Eventuous.Subscriptions;
 using Extensions;
 
 /// <summary>
@@ -33,7 +34,7 @@ public class SqlServerCheckpointStore : ICheckpointStore {
         : this(options.ConnectionString!, options is { Schema: not null } ? options.Schema : Schema.DefaultSchema, loggerFactory) { }
 
     /// <inheritdoc />
-    public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+    public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CheckpointInitialPosition _, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, _loggerFactory);
         await using var connection = await ConnectionFactory.GetConnection(_connectionString, cancellationToken).NoContext();
 

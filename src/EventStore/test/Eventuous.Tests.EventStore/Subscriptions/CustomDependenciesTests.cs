@@ -44,7 +44,10 @@ public class CustomDependenciesTests {
         services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
             "test-custom",
             b => b
-                .Configure(cfg => cfg.StreamName = _streamName)
+                .Configure(cfg => {
+                    cfg.StreamName = _streamName;
+                    cfg.CheckpointInitialPosition = CheckpointInitialPosition.Beginning;
+                })
                 .UseCheckpointStore<TestCheckpointStore>(_ => _checkpointStore)
                 .UseSerializer<TestSerializer>(_ => _serializer)
                 .UseTypeMapper(typeMapper)
@@ -93,7 +96,7 @@ public class CustomDependenciesTests {
     class TestCheckpointStore : ICheckpointStore {
         public bool ReceivedGetCheckpoint { get; private set; }
 
-        public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+        public ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CheckpointInitialPosition _, CancellationToken cancellationToken) {
             ReceivedGetCheckpoint = true;
 
             return ValueTask.FromResult(new Checkpoint(checkpointId, null));

@@ -1,3 +1,4 @@
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Logging;
 using Eventuous.TestHelpers.TUnit;
 using Eventuous.Tests.Redis.Fixtures;
@@ -68,7 +69,7 @@ public class SubscribeToStream {
 
         await GenerateAndProduceEvents(count);
 
-        await _fixture.CheckpointStore.GetLastCheckpoint(_fixture.SubscriptionId, cancellationToken);
+        await _fixture.CheckpointStore.GetLastCheckpoint(_fixture.SubscriptionId, CheckpointInitialPosition.Beginning, cancellationToken);
         var streamPosition = await GetStreamPosition(count);
         Logger.ConfigureIfNull(_fixture.SubscriptionId, _fixture.LoggerFactory);
         await _fixture.CheckpointStore.StoreCheckpoint(new(_fixture.SubscriptionId, (ulong)streamPosition), true, cancellationToken);

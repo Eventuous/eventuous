@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Concurrent;
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Options;
@@ -34,7 +35,7 @@ public class ElasticCheckpointStore : ICheckpointStore {
 
     readonly ConcurrentDictionary<string, int> _counters = new();
 
-    public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+    public async ValueTask<EventuousCheckpoint> GetLastCheckpoint(string checkpointId, CheckpointInitialPosition _, CancellationToken cancellationToken) {
         var response = await _client.GetAsync(
                 DocumentPath<Checkpoint>.Id(checkpointId),
                 x => x.Realtime(),

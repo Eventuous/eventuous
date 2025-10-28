@@ -51,10 +51,10 @@ public class ProjectionTestBase<TProjection>(string subscriptionId, IntegrationF
 
     public async Task WaitForPosition(ulong position) {
         var checkpointStore = Host.Services.GetRequiredService<ICheckpointStore>();
-        var count           = 100;
+        var count = 100;
 
         while (count-- > 0) {
-            var checkpoint = await checkpointStore.GetLastCheckpoint(nameof(ProjectWithBuilder), default);
+            var checkpoint = await checkpointStore.GetLastCheckpoint(nameof(ProjectWithBuilder), CheckpointInitialPosition.Beginning, default);
 
             if (checkpoint.Position.HasValue && checkpoint.Position.Value >= position) break;
 

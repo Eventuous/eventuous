@@ -42,7 +42,7 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
         await _handler.AssertCollection(5.Seconds(), expected).Validate(cancellationToken);
         await DisposeAsync();
 
-        var last = await _checkpointStore.GetLastCheckpoint(_subscriptionId, cancellationToken);
+        var last = await _checkpointStore.GetLastCheckpoint(_subscriptionId, CheckpointInitialPosition.Beginning, cancellationToken);
         last.Position.ShouldBe((ulong)(testEvents.Count - 1));
 
         return;

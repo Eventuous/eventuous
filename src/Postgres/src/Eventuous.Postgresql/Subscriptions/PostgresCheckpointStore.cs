@@ -1,6 +1,7 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Eventuous.Postgresql.Subscriptions;
 
 using Extensions;
+using System.Data;
 
 public class PostgresCheckpointStoreOptions {
     public PostgresCheckpointStoreOptions() : this(Postgresql.Schema.DefaultSchema) { }
@@ -48,7 +50,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
         : this(dataSource, options?.Value.Schema ?? Schema.DefaultSchema, loggerFactory) { }
 
     /// <inheritdoc />
-    public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
+    public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CheckpointInitialPosition initialPosition, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, _loggerFactory);
 
         var (checkpoint, loaded) = await GetCheckpoint().NoContext();
@@ -56,15 +58,19 @@ public class PostgresCheckpointStore : ICheckpointStore {
         if (loaded) return checkpoint;
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
-        await using var add        = GetCheckpointCommand(connection, _addCheckpointSql, checkpointId);
-        await add.ExecuteNonQueryAsync(cancellationToken).NoContext();
+        await using var add = GetCheckpointCommand(connection, _addCheckpointSql, checkpointId, initialPosition);
+        await using var reader = await add.ExecuteReaderAsync(cancellationToken).NoContext();
+        await reader.ReadAsync(cancellationToken).NoContext();
+        var position = (ulong?)reader.GetInt64(0);
+        checkpoint = new Checkpoint(checkpointId, position);
+
         Logger.Current.CheckpointLoaded(this, checkpoint);
 
         return checkpoint;
 
         async Task<(Checkpoint Checkpoint, bool Loaded)> GetCheckpoint() {
-            await using var c      = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
-            await using var cmd    = GetCheckpointCommand(c, _getCheckpointSql, checkpointId);
+            await using var c = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
+            await using var cmd = GetCheckpointCommand(c, _getCheckpointSql, checkpointId, null);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
             if (!await reader.ReadAsync(cancellationToken).NoContext()) return (Checkpoint.Empty(checkpointId), false);
@@ -83,7 +89,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
 
-        await using var cmd = GetCheckpointCommand(connection, _storeCheckpointSql, checkpoint.Id)
+        await using var cmd = GetCheckpointCommand(connection, _storeCheckpointSql, checkpoint.Id, null)
             .Add("position", NpgsqlDbType.Bigint, (long)checkpoint.Position);
 
         await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
@@ -92,6 +98,13 @@ public class PostgresCheckpointStore : ICheckpointStore {
         return checkpoint;
     }
 
-    static NpgsqlCommand GetCheckpointCommand(NpgsqlConnection connection, string sql, string checkpointId)
-        => connection.GetCommand(sql).Add("checkpointId", NpgsqlDbType.Varchar, checkpointId);
+    static NpgsqlCommand GetCheckpointCommand(NpgsqlConnection connection, string sql, string checkpointId, CheckpointInitialPosition? initialPosition)
+        => connection.GetCommand(sql)
+                .Add("checkpointId", NpgsqlDbType.Varchar, checkpointId)
+                .Add("initialPosition", NpgsqlDbType.Varchar, initialPosition switch {
+                    End => "end",
+                    From position => position.ToString(),
+                    Beginning => "beginning",
+                    _ => "beginning"
+                });
 }
