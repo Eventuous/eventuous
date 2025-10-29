@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Eventuous.Shared.Generators.Constants;
 
 // ReSharper disable CognitiveComplexity
@@ -35,6 +36,40 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         context.RegisterOperationAction(AnalyzeObjectCreation, OperationKind.ObjectCreation);
     }
 
+    static ImmutableHashSet<ITypeSymbol> GetExplicitRegistrations(OperationAnalysisContext ctx) {
+        var model = ctx.Operation.SemanticModel;
+        if (model == null) return ImmutableHashSet<ITypeSymbol>.Empty;
+        var root = ctx.Operation.Syntax.SyntaxTree.GetRoot();
+        var set = ImmutableHashSet.CreateBuilder<ITypeSymbol>(SymbolEqualityComparer.Default);
+
+        foreach (var invSyntax in root.DescendantNodes().OfType<InvocationExpressionSyntax>()) {
+            if (model.GetOperation(invSyntax) is not IInvocationOperation op) continue;
+            var m = op.TargetMethod;
+            if (m.Name != "AddType") continue;
+            var ct = m.ContainingType;
+            if (ct == null) continue;
+            if (ct.Name != "TypeMapper") continue;
+            var ns = ct.ContainingNamespace?.ToDisplayString();
+            if (ns != BaseNamespace) continue;
+
+            if (m.TypeArguments.Length == 1) {
+                set.Add(m.TypeArguments[0]);
+                continue;
+            }
+
+            if (op.Arguments.Length > 0 && op.Arguments[0].Value is ITypeOfOperation typeOfOp) {
+                set.Add(typeOfOp.TypeOperand);
+            }
+        }
+
+        return set.ToImmutable();
+    }
+
+    static bool IsExplicitlyRegistered(ITypeSymbol type, OperationAnalysisContext ctx) {
+        var set = GetExplicitRegistrations(ctx);
+        return set.Contains(type);
+    }
+
     static void AnalyzeInvocation(OperationAnalysisContext ctx) {
         if (ctx.Operation is not IInvocationOperation inv) return;
 
@@ -48,7 +83,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
                 if (IsAggregate(containing)) {
                     var eventType = method.TypeArguments[0];
 
-                    if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
+                    if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType) && !IsExplicitlyRegistered(eventType, ctx)) {
                         ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, inv.Syntax.GetLocation(), eventType.ToDisplayString()));
                     }
                 }
@@ -70,7 +105,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
                     _                                                    => arg?.Type
                 };
 
-                if (eventType != null && IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
+                if (eventType != null && IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType) && !IsExplicitlyRegistered(eventType, ctx)) {
                     var location = arg?.Syntax.GetLocation() ?? inv.Syntax.GetLocation();
                     ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, location, eventType.ToDisplayString()));
                 }
@@ -81,7 +116,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             case { Name: "On", TypeArguments.Length: 1 } when IsState(method.ContainingType): {
                 var eventType = method.TypeArguments[0];
 
-                if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType)) {
+                if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType) && !IsExplicitlyRegistered(eventType, ctx)) {
                     ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, inv.Syntax.GetLocation(), eventType.ToDisplayString()));
                 }
 
@@ -119,7 +154,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             if (op is IObjectCreationOperation create) {
                 var created = create.Type;
 
-                if (created != null && IsConcreteEvent(created) && !HasEventTypeAttribute(created)) {
+                if (created != null && IsConcreteEvent(created) && !HasEventTypeAttribute(created) && !IsExplicitlyRegistered(created, ctx)) {
                     ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, create.Syntax.GetLocation(), created.ToDisplayString()));
                 }
             }
@@ -140,7 +175,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         if (method == null) return;
 
         if (ReturnsNewEvents(method)) {
-            if (!HasEventTypeAttribute(created)) {
+            if (!HasEventTypeAttribute(created) && !IsExplicitlyRegistered(created, ctx)) {
                 ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, create.Syntax.GetLocation(), created.ToDisplayString()));
             }
         }
