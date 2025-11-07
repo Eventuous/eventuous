@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable ClassNeverInstantiated.Local
@@ -15,12 +16,18 @@ namespace Eventuous.Tests.Gateway;
 
 public class RegistrationTests {
     [Test]
-    public void Test() {
-       TestServer host = new(BuildHost()); 
-       host.Dispose();
-    }
+    public async Task Test() {
+        using var host = new HostBuilder()
+            .ConfigureWebHost(webHostBuilder => webHostBuilder
+                .UseTestServer()
+                .UseStartup<Startup>()
+            )
+            .Build();
+        await host.StartAsync();
 
-    static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
+        var testServer = host.GetTestServer();
+        testServer.Dispose();
+    }
 
     class Startup {
         public static void ConfigureServices(IServiceCollection services) {

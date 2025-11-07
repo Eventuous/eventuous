@@ -9,6 +9,8 @@
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
         <PackageReference Include="Npgsql"/>
         <PackageReference Include="Npgsql.DependencyInjection"/>
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
         <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
     <ItemGroup>

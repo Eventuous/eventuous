@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
@@ -17,8 +18,30 @@ using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 namespace Eventuous.Tests.Subscriptions;
 
 public class RegistrationTests {
-    readonly TestServer     _server = new(BuildHost());
+    TestServer _server = null!;
+    IHost      _host    = null!;
+
     readonly ILoggerFactory _logger = LoggingExtensions.GetLoggerFactory();
+
+    [Before(Test)]
+    public async Task Setup() {
+        _host = new HostBuilder()
+            .ConfigureWebHost(webHostBuilder => webHostBuilder
+                .UseTestServer()
+                .UseStartup<Startup>()
+            )
+            .Build();
+        await _host.StartAsync();
+
+        _server = _host.GetTestServer();
+    }
+
+    [After(Test)]
+    public async Task Teardown() {
+        _server.Dispose();
+        await _host.StopAsync();
+        _host.Dispose();
+    }
 
     [Test]
     public void ShouldBeSingletons() {
@@ -104,8 +127,6 @@ public class RegistrationTests {
         subs.ShouldNotBeEmpty();
         _server.Services.GetRequiredService<SubscriptionMetrics>();
     }
-
-    static IWebHostBuilder BuildHost() => new WebHostBuilder().UseStartup<Startup>();
 
     class Startup {
         public static void ConfigureServices(IServiceCollection services) {

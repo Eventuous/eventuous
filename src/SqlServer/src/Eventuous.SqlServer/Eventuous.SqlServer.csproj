@@ -7,9 +7,11 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.SqlClient"/>
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
-        <PackageReference Include="System.Linq.Async"/>
         <Using Include="Microsoft.Data.SqlClient"/>
         <Using Include="System.Data"/>
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
+        <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Scripts\1_Schema.sql"/>

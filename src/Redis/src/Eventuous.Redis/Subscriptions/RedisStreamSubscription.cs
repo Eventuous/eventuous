@@ -30,7 +30,7 @@ public class RedisStreamSubscription(
 
         return events.Select(
                 evt => new ReceivedEvent(
-                    Guid.Parse(evt[MessageId]!),
+                    Guid.Parse(evt[MessageId].ToString()),
                     evt[MessageType]!,
                     evt.Id.ToLong(),
                     evt.Id.ToLong(),

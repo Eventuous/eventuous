@@ -28,12 +28,12 @@ public class RedisAllStreamSubscription(
             var stream         = linkEvent[EventuousRedisKeys.Stream];
             var streamPosition = linkEvent[Position];
 
-            var streamEvents = await database.StreamRangeAsync(new RedisKey(stream), streamPosition).NoContext();
+            var streamEvents = await database.StreamRangeAsync(new(stream), streamPosition).NoContext();
             var entry        = streamEvents[0];
 
             persistentEvents.Add(
-                new ReceivedEvent(
-                    Guid.Parse(entry[MessageId]!),
+                new(
+                    Guid.Parse(entry[MessageId].ToString()),
                     entry[MessageType]!,
                     entry.Id.ToLong(),
                     entry.Id.ToLong(),
