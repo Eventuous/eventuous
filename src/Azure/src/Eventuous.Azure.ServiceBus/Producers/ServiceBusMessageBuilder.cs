@@ -2,29 +2,30 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Producers;
+using static Eventuous.Azure.ServiceBus.Shared.ServiceBusHelper;
 
 namespace Eventuous.Azure.ServiceBus.Producers;
 
 using Shared;
 
 class ServiceBusMessageBuilder {
-    readonly IEventSerializer                _serializer;
-    readonly string                          _streamName;
-    readonly ServiceBusProduceOptions?       _options;
+    readonly IEventSerializer _serializer;
+    readonly string _streamName;
+    readonly ServiceBusProduceOptions? _options;
     readonly ServiceBusMessageAttributeNames _attributes;
-    readonly Action<string>?                 _setActivityMessageType;
+    readonly Action<string>? _setActivityMessageType;
 
     public ServiceBusMessageBuilder(
-            IEventSerializer                serializer,
-            string                          streamName,
+            IEventSerializer serializer,
+            string streamName,
             ServiceBusMessageAttributeNames attributes,
-            ServiceBusProduceOptions?       options                = null,
-            Action<string>?                 setActivityMessageType = null
+            ServiceBusProduceOptions? options = null,
+            Action<string>? setActivityMessageType = null
         ) {
-        _serializer             = serializer;
-        _streamName             = streamName;
-        _options                = options;
-        _attributes             = attributes;
+        _serializer = serializer;
+        _streamName = streamName;
+        _options = options;
+        _attributes = attributes;
         _setActivityMessageType = setActivityMessageType;
     }
 
@@ -42,13 +43,13 @@ class ServiceBusMessageBuilder {
         var metadata = message.Metadata;
 
         var serviceBusMessage = new ServiceBusMessage(payload) {
-            ContentType   = contentType,
-            MessageId     = metadata?.GetValueOrDefault(_attributes.MessageId, message.MessageId)?.ToString(),
-            Subject       = metadata?.GetValueOrDefault(_attributes.Subject, _options?.Subject)?.ToString(),
-            TimeToLive    = _options?.TimeToLive ?? TimeSpan.MaxValue,
+            ContentType = contentType,
+            MessageId = metadata?.GetValueOrDefault(_attributes.MessageId, message.MessageId)?.ToString(),
+            Subject = metadata?.GetValueOrDefault(_attributes.Subject, _options?.Subject)?.ToString(),
+            TimeToLive = _options?.TimeToLive ?? TimeSpan.MaxValue,
             CorrelationId = message.Metadata?.GetCorrelationId(),
-            To            = metadata?.GetValueOrDefault(_attributes.To, _options?.To)?.ToString(),
-            ReplyTo       = metadata?.GetValueOrDefault(_attributes.ReplyTo, _options?.ReplyTo)?.ToString()
+            To = metadata?.GetValueOrDefault(_attributes.To, _options?.To)?.ToString(),
+            ReplyTo = metadata?.GetValueOrDefault(_attributes.ReplyTo, _options?.ReplyTo)?.ToString()
         };
 
         var reservedAttributes = _attributes.ReservedNames();
@@ -65,6 +66,6 @@ class ServiceBusMessageBuilder {
             .Concat(message.AdditionalHeaders ?? [])
             .Concat([new(_attributes.MessageType, messageType), new(_attributes.StreamName, _streamName)])
             .Where(pair => !reservedAttributes.Contains(pair.Key))
-            .Where(pair => pair.Value is not null)
-            .Select(pair => new KeyValuePair<string, object>(pair.Key, pair.Value!));
+            .Where(pair => IsSerialisableByServiceBus(pair.Value))
+            .Select(pair => new KeyValuePair<string, object>(pair.Key, pair.Value!)); 
 }
