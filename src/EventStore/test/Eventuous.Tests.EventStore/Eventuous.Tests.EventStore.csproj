@@ -21,7 +21,7 @@
         <PackageReference Include="Testcontainers.EventStoreDb"/>
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-        <PackageReference Include="System.Linq.Async" ExcludeAssets="All"/>
+        <PackageReference Include="System.Linq.Async" ExcludeAssets="Compile"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>
