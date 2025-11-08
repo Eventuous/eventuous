@@ -22,6 +22,7 @@ public class IsSerialisableByServiceBus {
         yield return () => DateTimeOffset.UtcNow;
         yield return () => TimeSpan.FromMinutes(5);
         yield return () => new Uri("https://example.com");
+        yield return () => new MemoryStream(); // Stream
     }
 
     public static IEnumerable<Func<object?>> FailingTestData() {
