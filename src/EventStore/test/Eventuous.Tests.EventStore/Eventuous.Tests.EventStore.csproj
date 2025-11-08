@@ -10,15 +10,18 @@
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(LocalRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
-        <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Diagnostics\test\Eventuous.Tests.OpenTelemetry\Eventuous.Tests.OpenTelemetry.csproj"/>
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
-        <PackageReference Include="Shouldly" />
+        <PackageReference Include="Shouldly"/>
         <PackageReference Include="Testcontainers.EventStoreDb"/>
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <PackageReference Include="System.Linq.Async" ExcludeAssets="Compile"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>

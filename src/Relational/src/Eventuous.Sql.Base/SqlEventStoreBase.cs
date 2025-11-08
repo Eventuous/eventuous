@@ -139,7 +139,6 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
             FailedToDeserialize failed       => throw new SerializationException($"Can't deserialize {evt.MessageType}: {failed.Error}"),
             _                                => throw new("Unknown deserialization result")
         };
-
         StreamEvent AsStreamEvent(object payload) => new(evt.MessageId, payload, meta ?? new Metadata(), ContentType, evt.StreamPosition);
     }
 

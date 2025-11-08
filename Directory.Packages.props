@@ -2,11 +2,17 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
+  <PropertyGroup Label="Package versions for .NET 10" Condition="'$(TargetFramework)' == 'net10.0'">
+    <MicrosoftTestHostVer>10.0.0-rc.2.25502.107</MicrosoftTestHostVer>
+    <MicrosoftExtensionsVer>10.0.0-rc.2.25502.107</MicrosoftExtensionsVer>
+  </PropertyGroup>
   <PropertyGroup Label="Package versions for .NET 9" Condition="'$(TargetFramework)' == 'net9.0'">
-    <MicrosoftTestHostVer>9.0.6</MicrosoftTestHostVer>
+    <MicrosoftTestHostVer>9.0.10</MicrosoftTestHostVer>
+    <MicrosoftExtensionsVer>9.0.10</MicrosoftExtensionsVer>
   </PropertyGroup>
   <PropertyGroup Label="Package versions for .NET 8" Condition="'$(TargetFramework)' == 'net8.0'">
-    <MicrosoftTestHostVer>8.0.17</MicrosoftTestHostVer>
+    <MicrosoftTestHostVer>8.0.21</MicrosoftTestHostVer>
+    <MicrosoftExtensionsVer>9.0.10</MicrosoftExtensionsVer>
   </PropertyGroup>
   <PropertyGroup Label="Testcontainers version">
     <TestcontainersVersion>4.6.0</TestcontainersVersion>
@@ -18,19 +24,19 @@
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="FluentValidation" Version="12.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageVersion Include="Shouldly" Version="4.2.1" />
-    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="9.0.6" />
+    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.3" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />

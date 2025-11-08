@@ -21,7 +21,7 @@ jobs:
     runs-on: [ self-hosted, type-cpx52, setup-docker, volume-cache-50GB ]
     strategy:
       matrix:
-        dotnet-version: [ '8.0', '9.0' ]
+        dotnet-version: [ '8.0', '9.0', '10.0' ]
     env:
       NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
       DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
@@ -36,6 +36,8 @@ jobs:
           dotnet-version: |
             8.0
             9.0
+            10.0
+          dotnet-quality: 'preview'
       -
         name: Login to Docker Hub
         if: ${{ github.event.pull_request.head.repo.fork == false }}

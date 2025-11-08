@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
         <LangVersion>preview</LangVersion>
         <NoWarn>$(NoWarn);CS1591;CS0618;</NoWarn>
         <Nullable>enable</Nullable>
@@ -23,12 +23,8 @@
     </PropertyGroup>
     <Import Project="$(RepoRoot)\props\Common.props"/>
     <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Eventuous.Tests'))">
-        <VSTestLogger>trx%3bLogFileName=$(MSBuildProjectName).trx</VSTestLogger>
-        <VSTestResultsDirectory>$(RepoRoot)/test-results/$(TargetFramework)</VSTestResultsDirectory>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-        <EnableMSTestRunner>true</EnableMSTestRunner>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
         <TestingPlatformCommandLineArguments>--report-trx --results-directory $(RepoRoot)/test-results/$(TargetFramework)</TestingPlatformCommandLineArguments>
         <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
