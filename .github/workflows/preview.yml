@@ -6,6 +6,7 @@ on:
       - dev
     paths-ignore:
       - 'docs/**'
+      - '*.md'
 jobs:
   nuget:
     runs-on: [ self-hosted, type-cpx52, setup-docker, volume-cache-50GB ]
