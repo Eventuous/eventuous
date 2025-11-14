@@ -1,0 +1,41 @@
+services:
+  eventuous-db-from-dacpac:
+    build:
+      context: ../../../../../ # repo root (adjust depth to your tree)
+      dockerfile: src/SqlServer/src/Eventuous.SqlServer.Database/docker/Dockerfile.db-from-dacpac
+    image: eventuous-db-from-dacpac:latest
+    ports:
+      - 11433:1433
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: Password1!
+    tty: true
+    stdin_open: true
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/db/.ready"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+    volumes:
+      - eventuous-db-from-dacpac_mssql:/var/opt/mssql
+    restart: unless-stopped
+  eventuous-db-test-runner:
+    build:
+      context: ../../../../../ # repo root (adjust depth to your tree)
+      dockerfile: src/SqlServer/test/Eventuous.Tests.SqlServer.Database/docker/Dockerfile.eventuous-db-tsqlt-runner
+    depends_on:
+      eventuous-db-from-dacpac:
+        condition: service_healthy
+    profiles:
+      - testing
+    image: eventuous-db-tsqlt-runner:latest
+    environment:
+      MSSQL_SA_PASSWORD: Password1!
+      DB_SERVER: eventuous-db-from-dacpac
+      DB_PORT: 1433
+    tty: true        # allocate a TTY so you can `run ... sh`
+    stdin_open: true # keep STDIN open
+
+volumes:
+  eventuous-db-from-dacpac_mssql:

@@ -1,0 +1,2 @@
+CREATE SCHEMA eventuous AUTHORIZATION dbo;
+GO

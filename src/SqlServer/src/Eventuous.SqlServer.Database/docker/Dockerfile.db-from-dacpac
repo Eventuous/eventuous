@@ -1,0 +1,53 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS publish
+WORKDIR /src
+
+# System deps in one layer, no cache files
+# package required for:
+#  building DacFx-style dacpac
+#  bash is added to run entrypoint.sh
+RUN apk add --no-cache \
+    bash \
+    krb5-libs
+
+COPY Directory.Packages.props ./Directory.Packages.props
+COPY src/SqlServer/src/Eventuous.SqlServer.Database /src/Eventuous.SqlServer.Database
+
+# Build Eventuous.SqlServer.Database project.
+# Eventuous.SqlServer.Database.dacpac will land in the /output directory as a result.
+RUN dotnet restore /src/Eventuous.SqlServer.Database/Eventuous.SqlServer.Database.csproj && \
+    dotnet build /src/Eventuous.SqlServer.Database/Eventuous.SqlServer.Database.csproj \
+    -c Release \
+    -o /output \
+    --no-restore
+
+FROM mcr.microsoft.com/mssql/server:2022-CU21-ubuntu-22.04
+
+ENV MSSQL_SA_PASSWORD=Password1! \
+    ACCEPT_EULA=Y
+
+USER root
+
+ADD https://aka.ms/sqlpackage-linux /tmp/sqlpackage.zip
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl dotnet-runtime-8.0 gnupg p7zip-full && \
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/ms.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/ms.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" > /etc/apt/sources.list.d/msprod.list && \
+    apt-get update && \
+    ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 mssql-tools18 && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/opt/mssql-tools18/bin:${PATH}"
+
+ADD https://aka.ms/sqlpackage-linux /tmp/sqlpackage.zip
+RUN mkdir -p /opt/sqlpackage && 7z x /tmp/sqlpackage.zip -o/opt/sqlpackage && \
+    chmod +x /opt/sqlpackage/sqlpackage && rm /tmp/sqlpackage.zip
+
+# Copying the entrypoint.sh script.
+COPY --chmod=755 src/SqlServer/src/Eventuous.SqlServer.Database/docker/entrypoint.sh /entrypoint.sh
+
+# Copy the built .dacpac from the first stage
+COPY --from=publish /output/*.dacpac /tmp/db/
+
+ENTRYPOINT ["bash", "/entrypoint.sh"]

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<StaticCodeAnalysis version="2" xmlns="urn:Microsoft.Data.Tools.Schema.StaticCodeAnalysis">
+
+    <!--SqlServer.Rules : Wide (n)varchar columns should not be used in primary keys. (https://github.com/ErikEJ/SqlServer.Rules/blob/master/docs/Design/SRD0003.md)-->
+    <SuppressedFile FilePath="Tables/Checkpoints.sql">
+        <SuppressedRule Category="SqlServer.Rules" RuleId="SRD0003" />
+    </SuppressedFile>
+
+    <!--SqlServer.Rules : Wrap multiple action statements within a transaction. (https://github.com/ErikEJ/SqlServer.Rules/blob/master/docs/Design/SRD0009.md)-->
+    <SuppressedFile FilePath="Procedures/append_events.sql">
+        <SuppressedRule Category="SqlServer.Rules" RuleId="SRD0009" />
+    </SuppressedFile>
+
+    <!--SqlServer.Rules : Cache multiple calls to GETDATE or SYSDATETIME into a variable. (https://github.com/ErikEJ/SqlServer.Rules/blob/master/docs/Design/SRD0064.md)-->
+    <SuppressedFile FilePath="Procedures/append_events.sql">
+        <SuppressedRule Category="SqlServer.Rules" RuleId="SRD0064" />
+    </SuppressedFile>
+
+    <!--SqlServer.Rules : Do not use IF statements containing queries in stored procedures. (https://github.com/ErikEJ/SqlServer.Rules/blob/master/docs/Design/SRD0063.md)-->
+    <SuppressedFile FilePath="Procedures/check_stream.sql">
+        <SuppressedRule Category="SqlServer.Rules" RuleId="SRD0063" />
+    </SuppressedFile>
+
+</StaticCodeAnalysis>

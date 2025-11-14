@@ -1,0 +1,27 @@
+﻿<Project Sdk="MSBuild.Sdk.SqlProj/3.2.0">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <OutputType>Database</OutputType>
+        <DeployToDatabase>True</DeployToDatabase>
+        <SqlServerVersion>Sql160</SqlServerVersion>
+        <GenerateCreateScript>True</GenerateCreateScript>
+        <RunScriptsFromReferences>True</RunScriptsFromReferences>
+        <RunSqlCodeAnalysis>True</RunSqlCodeAnalysis>
+        <!-- For additional properties that can be set here, please refer to https://github.com/rr-wfm/MSBuild.Sdk.SqlProj#model-properties -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ErikEJ.DacFX.SqlServer.Rules">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="ErikEJ.DacFX.TSQLSmellSCA">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" DacpacName="master" DatabaseVariableLiteralValue="master" SuppressMissingDependenciesErrors="False" />
+    </ItemGroup>
+</Project>

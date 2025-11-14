@@ -134,9 +134,11 @@
     </Folder>
     <Folder Name="/Relational/SqlServer/"/>
     <Folder Name="/Relational/SqlServer/src/">
+        <Project Path="src/SqlServer/src/Eventuous.SqlServer.Database/Eventuous.SqlServer.Database.csproj" />
         <Project Path="src/SqlServer/src/Eventuous.SqlServer/Eventuous.SqlServer.csproj"/>
     </Folder>
     <Folder Name="/Relational/SqlServer/test/">
+        <Project Path="src/SqlServer/test/Eventuous.Tests.SqlServer.Database/Eventuous.Tests.SqlServer.Database.csproj" />
         <Project Path="src/SqlServer/test/Eventuous.Tests.SqlServer/Eventuous.Tests.SqlServer.csproj"/>
     </Folder>
     <Folder Name="/Samples/"/>

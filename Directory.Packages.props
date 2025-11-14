@@ -111,4 +111,9 @@
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="9.0.1" />
   </ItemGroup>
+  <ItemGroup Label="Packages for SQL Server Database project">
+    <PackageVersion Include="ErikEJ.DacFX.SqlServer.Rules" Version="3.0.0" />
+    <PackageVersion Include="ErikEJ.DacFX.TSQLSmellSCA" Version="3.0.0" />
+    <PackageVersion Include="Microsoft.SqlServer.Dacpacs.Master" Version="160.2.4" />
+  </ItemGroup>
 </Project>

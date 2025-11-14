@@ -1,0 +1,91 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS publish
+WORKDIR /src
+
+# System deps in one layer, no cache files
+# package required for:
+#  building DacFx-style dacpac
+#  bash is added for the Eventuous.Tests.SqlServer.Database build, so that BeforeBuild generate-postdeploy.sh script can be run.
+RUN apk add --no-cache \
+    bash \
+    krb5-libs
+
+COPY nuget.config ./nuget.config
+COPY Directory.Packages.props ./Directory.Packages.props
+COPY src/SqlServer/src/Eventuous.SqlServer.Database /src/SqlServer/src/Eventuous.SqlServer.Database
+COPY src/SqlServer/test/Eventuous.Tests.SqlServer.Database /src/SqlServer/test/Eventuous.Tests.SqlServer.Database
+
+# Build Eventuous.Tests.SqlServer.Database project. The Eventuous.SqlServer.Database is a project reference so it is also built.
+# Eventuous.SqlServer.Database.dacpac and Eventuous.Tests.SqlServer.Database.dacpac will land in the /output directory as a result.
+RUN dotnet restore /src/SqlServer/test/Eventuous.Tests.SqlServer.Database/Eventuous.Tests.SqlServer.Database.csproj \
+    --configfile nuget.config && \
+    dotnet build /src/SqlServer/test/Eventuous.Tests.SqlServer.Database/Eventuous.Tests.SqlServer.Database.csproj \
+    -c Release \
+    -o /output \
+    --no-restore
+
+# Clean up all source files now that /output holds everything we need
+WORKDIR /
+RUN rm -rf /src
+
+FROM mcr.microsoft.com/mssql/server:2022-CU21-ubuntu-22.04
+
+# allow SA password to be passed at build or runtime
+ARG MSSQL_SA_PASSWORD
+ENV ACCEPT_EULA=Y \
+    MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    dotnet-runtime-8.0 \
+    p7zip-full && \
+    rm -rf /var/lib/apt/lists/*
+
+# SQL Package is required for installing the dacpacs
+# allow easy updates and proper cache busting when the URL or version changes
+ARG SQLPACKAGE_URL="https://aka.ms/sqlpackage-linux"
+RUN set -eux; \
+    # download only when URL or ARG changes
+    wget -qO /tmp/sqlpackage.zip "$SQLPACKAGE_URL"; \
+    mkdir -p /opt/sqlpackage; \
+    # extract only once, keep layer small by removing ZIP immediately
+    7z x /tmp/sqlpackage.zip -o/opt/sqlpackage; \
+    rm /tmp/sqlpackage.zip; \
+    # fix permissions in one shot
+    chmod +x /opt/sqlpackage/sqlpackage
+
+# sqlfilter is used to facilitate these 2 existing sqlpackage params: 
+# /p:AdditionalDeploymentContributors=AgileSqlClub.DeploymentFilterContributor /p:AdditionalDeploymentContributorArguments="SqlPackageFilter0=IgnoreSchema(tSQLt);"
+ARG SQLFILTER_URL="https://github.com/GoEddie/DeploymentContributorFilterer/releases/download/1.5.3/AgileSqlClub.SqlPackageFilter.1.5.3-netstandard2.1.zip"
+RUN set -eux; \
+    # download the filterer zip
+    wget -qO /tmp/sqlfilter.zip "${SQLFILTER_URL}"; \
+    # extract only once into a temp dir
+    7z x /tmp/sqlfilter.zip -o/tmp; \
+    # ensure target exists and move in the DLLs
+    mkdir -p /opt/sqlpackage; \
+    mv /tmp/AgileSqlClub.SqlPackageFilter.1.5.3-netstandard2.1/* /opt/sqlpackage/; \
+    # clean up everything under /tmp
+    rm -rf /tmp/sqlfilter.zip /tmp/AgileSqlClub.SqlPackageFilter.1.5.3-netstandard2.1
+
+# tsqlt downloaded for a few sql files to be installed on the databases
+ADD https://tsqlt.org/download/tsqlt/ /tmp/tsqlt.zip
+
+RUN 7z x /tmp/tsqlt.zip \
+      tSQLt.class.sql \
+      PrepareServer.sql \
+      -o/opt/tsqlt && \
+    chown -R mssql:mssql /opt/tsqlt && \
+    rm /tmp/tsqlt.zip
+
+COPY src/SqlServer/test/Eventuous.Tests.SqlServer.Database/docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# pull files out of the earlier "publish" stage and into the current image
+# These dacpacs are then used within entrypoint.sh: Eventuous.SqlServer.Database.dacpac and Eventuous.Tests.SqlServer.Database.dacpac
+COPY --from=publish /output/Eventuous.SqlServer.Database.dacpac /tmp/db/Eventuous.SqlServer.Database.dacpac
+COPY --from=publish /output/Eventuous.Tests.SqlServer.Database.dacpac /tmp/db/Eventuous.Tests.SqlServer.Database.dacpac
+COPY --from=publish /output/master.dacpac /tmp/db/master.dacpac
+
+ENTRYPOINT ["/entrypoint.sh"]
