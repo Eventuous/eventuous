@@ -76,7 +76,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
             Func<IServiceProvider, THandler> getInnerHandler,
             Func<THandler, TWrappingHandler> getWrappingHandler
         ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
-        Services.TryAddKeyedSingleton(SubscriptionId, getInnerHandler);
+        Services.TryAddKeyedSingleton(SubscriptionId, (sp, _) => getInnerHandler(sp));
         AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredKeyedService<THandler>(SubscriptionId)));
 
         return this;
