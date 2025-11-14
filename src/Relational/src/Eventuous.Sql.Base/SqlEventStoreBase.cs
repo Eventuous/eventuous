@@ -93,6 +93,8 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     [RequiresDynamicCode(Constants.DynamicSerializationMessage)]
     [RequiresUnreferencedCode(Constants.DynamicSerializationMessage)]
     public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
+        if (count <= 0 || start == StreamReadPosition.End) return [];
+
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetReadCommand(connection, stream, start, count);
 
@@ -103,6 +105,8 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     [RequiresDynamicCode(Constants.DynamicSerializationMessage)]
     [RequiresUnreferencedCode(Constants.DynamicSerializationMessage)]
     public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
+        if (count <= 0) return [];
+
         await using var connection = await OpenConnection(cancellationToken).NoContext();
         await using var cmd        = GetReadBackwardsCommand(connection, stream, start, count);
 
@@ -123,7 +127,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
                 return failIfNotFound ? throw new StreamNotFound(stream) : [];
             }
 
-            throw;
+            throw new ReadFromStreamException(stream, e);
         }
     }
 

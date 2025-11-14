@@ -1,8 +1,10 @@
 ﻿using Eventuous.Diagnostics.Tracing;
 using Eventuous.SqlServer;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 
 namespace Eventuous.Tests.SqlServer.Registrations;
@@ -12,17 +14,17 @@ public class RegistrationTests {
 
     [Test]
     public void Should_resolve_store_with_manual_registration() {
-        var builder = new WebHostBuilder();
-        builder.Configure(_ => { });
-
-        builder.ConfigureServices(
-            services => {
-                services.AddEventStore<SqlServerStore>();
-                services.AddSingleton(new SqlServerStoreOptions { ConnectionString = ConnectionString });
-            }
-        );
-        var app   = builder.Build();
-        var store = app.Services.GetRequiredService<IEventStore>();
+        using var host = new HostBuilder()
+            .ConfigureWebHost(webHostBuilder => webHostBuilder
+                .UseTestServer()
+                .ConfigureServices(services => {
+                        services.AddEventStore<SqlServerStore>();
+                        services.AddSingleton(new SqlServerStoreOptions { ConnectionString = ConnectionString });
+                    }
+                )
+            )
+            .Build();
+        var store = host.Services.GetRequiredService<IEventStore>();
         store.ShouldBeOfType<TracedEventStore>();
         var innerStore = ((TracedEventStore)store).Inner;
         innerStore.ShouldBeOfType<SqlServerStore>();
@@ -30,23 +32,23 @@ public class RegistrationTests {
 
     [Test]
     public void Should_resolve_store_with_extensions() {
-        var builder = new WebHostBuilder();
-
         var config = new Dictionary<string, string?> {
             ["sqlserver:schema"]           = "test",
             ["sqlserver:connectionString"] = ConnectionString
         };
-        builder.ConfigureAppConfiguration(cfg => cfg.AddInMemoryCollection(config));
-        builder.Configure(_ => { });
 
-        builder.ConfigureServices(
-            (ctx, services) => {
-                services.AddEventStore<SqlServerStore>();
-                services.AddEventuousSqlServer(ctx.Configuration.GetSection("sqlserver"));
-            }
-        );
-        var app            = builder.Build();
-        var store = app.Services.GetService<IEventStore>();
+        using var host = new HostBuilder()
+            .ConfigureWebHost(webHostBuilder => webHostBuilder
+                .UseTestServer()
+                .ConfigureAppConfiguration(cfg => cfg.AddInMemoryCollection(config))
+                .ConfigureServices((ctx, services) => {
+                        services.AddEventStore<SqlServerStore>();
+                        services.AddEventuousSqlServer(ctx.Configuration.GetSection("sqlserver"));
+                    }
+                )
+            )
+            .Build();
+        var store = host.Services.GetService<IEventStore>();
         store.ShouldNotBeNull();
         var inner = ((store as TracedEventStore)!).Inner as SqlServerStore;
         inner.ShouldNotBeNull();

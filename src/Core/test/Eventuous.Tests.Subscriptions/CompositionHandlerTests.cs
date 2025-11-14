@@ -105,17 +105,17 @@ public class CompositionHandlerTests {
     }
 
     public class TestDependency {
-        public string Value { get; } = "test-value";
+        public string Value => "test-value";
     }
 
-    public class TestHandler(TestDependency dependency, TestHandlerLogger logger) : BaseEventHandler {
+    class TestHandler(TestDependency dependency, TestHandlerLogger logger) : BaseEventHandler {
         public TestDependency Dependency { get; } = dependency;
 
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx)
             => logger.EventReceived(GetType(), ctx);
     }
 
-    public class CompositionWrapper(IEventHandler innerHandler, TestHandlerLogger logger) : BaseEventHandler {
+    class CompositionWrapper(IEventHandler _, TestHandlerLogger logger) : BaseEventHandler {
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) {
             // Wrap the inner handler call - this simulates what PollyEventHandler does
             return logger.EventReceived(GetType(), ctx);

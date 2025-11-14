@@ -17,7 +17,7 @@ declare
     _current_version integer;
     _stream_id integer;
 begin
-    select s.stream_id into _current_version, _stream_id
+    select s.version, s.stream_id into _current_version, _stream_id
     from __schema__.streams s
     where s.stream_name = _stream_name;
 
@@ -30,16 +30,19 @@ begin
         return;
     end if;
 
+    if _from_position < 0 then             -- A negative starting position is invalid
+       raise exception 'InvalidStartingPosition';
+    end if;
+
     -- Validate the starting position for backwards read.
-    if _from_position < 0                  -- A negative starting position is invalid
-    or _from_position > _current_version   -- A starting position greater than the current version means we're trying to read from beyond the head of the stream
+    if _from_position > _current_version   -- A starting position greater than the current version means we're trying to read from beyond the head of the stream
     then
-        return;
+        _from_position = _current_version;
     end if;
 
     return query select m.message_id, m.message_type, m.stream_position, m.global_position,
                         m.json_data, m.json_metadata, m.created
-        from __schema__.messages m 
+        from __schema__.messages m
         where m.stream_id = _stream_id and m.stream_position <= _from_position
         order by m.stream_position desc
         limit _count;
