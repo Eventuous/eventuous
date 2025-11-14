@@ -63,8 +63,19 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
         return this;
     }
 
-    public SubscriptionBuilder AddCompositionEventHandler
-        <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler, TWrappingHandler>(Func<THandler, TWrappingHandler> getWrappingHandler)
+    /// <summary>
+    /// Adds a composition event handler to the subscription.
+    /// The inner handler of type <typeparamref name="THandler"/> will be resolved from the container
+    /// (keyed by <see cref="SubscriptionId"/>), and then wrapped by <typeparamref name="TWrappingHandler"/>
+    /// using the provided factory.
+    /// </summary>
+    /// <typeparam name="THandler">Inner event handler type to be resolved from the service provider</typeparam>
+    /// <typeparam name="TWrappingHandler">Wrapping event handler type produced by the factory</typeparam>
+    /// <param name="getWrappingHandler">Factory that takes the resolved inner handler and returns the wrapping handler</param>
+    /// <returns>The current <see cref="SubscriptionBuilder"/> instance</returns>
+    public SubscriptionBuilder AddCompositionEventHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler, TWrappingHandler>(
+            Func<THandler, TWrappingHandler> getWrappingHandler
+        )
         where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         Services.TryAddKeyedSingleton<THandler>(SubscriptionId);
         AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredKeyedService<THandler>(SubscriptionId)));
@@ -72,12 +83,42 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
         return this;
     }
 
+    /// <summary>
+    /// Adds a composition event handler to the subscription with a custom inner handler resolver.
+    /// The inner handler is created via <paramref name="getInnerHandler"/> and then wrapped into
+    /// <typeparamref name="TWrappingHandler"/> using <paramref name="getWrappingHandler"/>.
+    /// </summary>
+    /// <typeparam name="THandler">Inner event handler type</typeparam>
+    /// <typeparam name="TWrappingHandler">Wrapping event handler type</typeparam>
+    /// <param name="getInnerHandler">Function that resolves or creates the inner handler using the service provider</param>
+    /// <param name="getWrappingHandler">Factory that produces the wrapping handler from the inner handler</param>
+    /// <returns>The current <see cref="SubscriptionBuilder"/> instance</returns>
     public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(
             Func<IServiceProvider, THandler> getInnerHandler,
             Func<THandler, TWrappingHandler> getWrappingHandler
         ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
-        Services.TryAddKeyedSingleton(SubscriptionId, getInnerHandler);
+        Services.TryAddKeyedSingleton(SubscriptionId, (sp, _) => getInnerHandler(sp));
         AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredKeyedService<THandler>(SubscriptionId)));
+
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a composition event handler to the subscription with a custom inner handler resolver.
+    /// The inner handler is created via <paramref name="getInnerHandler"/> and then wrapped into
+    /// <typeparamref name="TWrappingHandler"/> using <paramref name="getWrappingHandler"/>.
+    /// </summary>
+    /// <typeparam name="THandler">Inner event handler type</typeparam>
+    /// <typeparam name="TWrappingHandler">Wrapping event handler type</typeparam>
+    /// <param name="getInnerHandler">Function that resolves or creates the inner handler using the service provider</param>
+    /// <param name="getWrappingHandler">Factory that produces the wrapping handler from the inner handler</param>
+    /// <returns>The current <see cref="SubscriptionBuilder"/> instance</returns>
+    public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(
+            Func<IServiceProvider, THandler> getInnerHandler,
+            Func<THandler, IServiceProvider, TWrappingHandler> getWrappingHandler
+        ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
+        Services.TryAddKeyedSingleton(SubscriptionId, (sp, _) => getInnerHandler(sp));
+        AddHandlerResolve(sp => getWrappingHandler(sp.GetRequiredKeyedService<THandler>(SubscriptionId), sp));
 
         return this;
     }
@@ -141,6 +182,11 @@ public class SubscriptionBuilder
     TOptions> : SubscriptionBuilder
     where T : EventSubscription<TOptions>
     where TOptions : SubscriptionOptions {
+    /// <summary>
+    /// Creates a new subscription builder for a specific subscription id.
+    /// </summary>
+    /// <param name="services">The service collection to register handlers and dependencies with</param>
+    /// <param name="subscriptionId">The subscription identifier used to key registrations</param>
     public SubscriptionBuilder(IServiceCollection services, string subscriptionId) : base(services, subscriptionId) {
         ResolveConsumer  = ResolveDefaultConsumer;
         ConfigureOptions = options => options.SubscriptionId = subscriptionId;
@@ -182,6 +228,14 @@ public class SubscriptionBuilder
         return _resolvedConsumer;
     }
 
+    /// <summary>
+    /// Resolves and builds the subscription instance of type <typeparamref name="T"/>.
+    /// Applies tracing and consumer filters to the consume pipe when diagnostics are enabled,
+    /// resolves the configured consumer, and creates the subscription using options keyed by
+    /// <see cref="SubscriptionId"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve dependencies</param>
+    /// <returns>The resolved and configured subscription instance</returns>
     public T ResolveSubscription(IServiceProvider sp) {
         if (_resolvedSubscription != null) {
             return _resolvedSubscription;
