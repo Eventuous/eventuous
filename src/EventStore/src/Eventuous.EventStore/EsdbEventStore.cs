@@ -123,7 +123,8 @@ public class EsdbEventStore : IEventStore {
         try {
             return await TryExecute(
                 async () => {
-                    var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
+                    var  resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
+                    bool x              = true;
 
                     return ToStreamEvents(resolvedEvents);
                 },

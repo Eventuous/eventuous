@@ -1,5 +1,6 @@
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Filters;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -35,12 +36,12 @@ public class CompositionHandlerTests {
     }
 
     [Test]
-    public void ShouldResolveCompositionHandlerWithFactory() {
+    public async Task ShouldResolveCompositionHandlerWithFactory() {
         // This test validates that AddCompositionEventHandler correctly registers
         // handlers when using a factory function
         var handler = _server.Services.GetRequiredKeyedService<TestHandler>("sub-with-factory");
-        handler.ShouldNotBeNull();
-        handler.Dependency.ShouldNotBeNull();
+        await Assert.That(handler).IsNotNull();
+        await Assert.That(handler.Dependency.Value).IsEqualTo("test-value");
     }
 
     [Test]
@@ -70,9 +71,10 @@ public class CompositionHandlerTests {
         await sub.Pipe.Send(ctx);
 
         var handled = logger.Records.Where(x => x.Context.SubscriptionId == sub.SubscriptionId).ToArray();
-        handled.Length.ShouldBe(1);
-        handled[0].HandlerType.ShouldBe(typeof(CompositionWrapper));
-        handled[0].Context.MessageId.ShouldBe(ctx.MessageId);
+        await Assert.That(handled.Length).IsEqualTo(1);
+        var handledMessage = handled[0];
+        await Assert.That(handledMessage.HandlerType).IsEqualTo(typeof(CompositionWrapper));
+        await Assert.That(handledMessage.Context.MessageId).IsEqualTo(ctx.MessageId);
     }
 
     class Startup {
@@ -84,8 +86,8 @@ public class CompositionHandlerTests {
             services.AddSubscription<TestSub, TestOptions>(
                 "sub-with-factory",
                 builder => builder.AddCompositionEventHandler<TestHandler, CompositionWrapper>(
-                    sp => new TestHandler(sp.GetRequiredService<TestDependency>(), sp.GetRequiredService<TestHandlerLogger>()),
-                    handler => new CompositionWrapper(handler, sp => sp.GetRequiredService<TestHandlerLogger>())
+                    sp => new(sp.GetRequiredService<TestDependency>(), sp.GetRequiredService<TestHandlerLogger>()),
+                    (handler, sp) => new(handler, sp.GetRequiredService<TestHandlerLogger>())
                 )
             );
         }
@@ -109,14 +111,14 @@ public class CompositionHandlerTests {
     public class TestHandler(TestDependency dependency, TestHandlerLogger logger) : BaseEventHandler {
         public TestDependency Dependency { get; } = dependency;
 
-        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) 
+        public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx)
             => logger.EventReceived(GetType(), ctx);
     }
 
-    public class CompositionWrapper(IEventHandler innerHandler, Func<IServiceProvider, TestHandlerLogger> getLogger) : BaseEventHandler {
+    public class CompositionWrapper(IEventHandler innerHandler, TestHandlerLogger logger) : BaseEventHandler {
         public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext ctx) {
             // Wrap the inner handler call - this simulates what PollyEventHandler does
-            return getLogger(ctx.Services).EventReceived(GetType(), ctx);
+            return logger.EventReceived(GetType(), ctx);
         }
     }
 
