@@ -30,12 +30,13 @@ begin
         return;
     end if;
 
-    if _from_position < 0 then             -- A negative starting position is invalid
+    -- A negative starting position is invalid
+    if _from_position < 0 then
        raise exception 'InvalidStartingPosition';
     end if;
 
-    -- Validate the starting position for backwards read.
-    if _from_position > _current_version   -- A starting position greater than the current version means we're trying to read from beyond the head of the stream
+    -- If the starting position is greater than the current version, set it to the current version.
+    if _from_position > _current_version
     then
         _from_position = _current_version;
     end if;

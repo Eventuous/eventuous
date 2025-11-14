@@ -29,10 +29,15 @@ BEGIN
     END;
 
     -- Validate the starting position for backwards read.
-    IF @from_position < 0                -- A negative starting position is invalid
-    OR @from_position > @current_version -- A starting position greater than the current version means we're trying to read from beyond the head of the stream
+    IF @from_position < 0
     BEGIN
         RETURN;
+    END;
+
+    -- If the starting position is greater than the current version, set it to the current version.
+    IF @from_position > @current_version
+    BEGIN
+        SET @from_position = @current_version;
     END;
 
     SELECT TOP (@count)
