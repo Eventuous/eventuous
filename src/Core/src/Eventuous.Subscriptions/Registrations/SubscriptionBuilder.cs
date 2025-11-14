@@ -232,7 +232,7 @@ public class SubscriptionBuilder
     /// Resolves and builds the subscription instance of type <typeparamref name="T"/>.
     /// Applies tracing and consumer filters to the consume pipe when diagnostics are enabled,
     /// resolves the configured consumer, and creates the subscription using options keyed by
-    /// <see cref="SubscriptionId"/>.
+    /// <code>SubscriptionId</code>.
     /// </summary>
     /// <param name="sp">Service provider used to resolve dependencies</param>
     /// <returns>The resolved and configured subscription instance</returns>

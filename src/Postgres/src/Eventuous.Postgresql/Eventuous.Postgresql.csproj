@@ -3,26 +3,23 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Relational\src\Eventuous.Sql.Base\Eventuous.Sql.Base.csproj"/>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions"/>
         <PackageReference Include="Npgsql"/>
         <PackageReference Include="Npgsql.DependencyInjection"/>
     </ItemGroup>
-    <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
-        <PackageReference Include="System.Linq.Async"/>
-    </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Scripts\1_Schema.sql"/>
-        <EmbeddedResource Include="Scripts\2_AppendEvents.sql" />
-        <EmbeddedResource Include="Scripts\3_CheckStream.sql" />
-        <EmbeddedResource Include="Scripts\4_ReadAllForwards.sql" />
-        <EmbeddedResource Include="Scripts\5_ReadStreamBackwards.sql" />
-        <EmbeddedResource Include="Scripts\6_ReadStreamForwards.sql" />
-        <EmbeddedResource Include="Scripts\7_ReadStreamSub.sql" />
-        <EmbeddedResource Include="Scripts\8_TruncateStream.sql" />
-        <EmbeddedResource Include="Scripts\9_TryInsertTombstone.sql" />
+        <EmbeddedResource Include="Scripts\2_AppendEvents.sql"/>
+        <EmbeddedResource Include="Scripts\3_CheckStream.sql"/>
+        <EmbeddedResource Include="Scripts\4_ReadAllForwards.sql"/>
+        <EmbeddedResource Include="Scripts\5_ReadStreamBackwards.sql"/>
+        <EmbeddedResource Include="Scripts\6_ReadStreamForwards.sql"/>
+        <EmbeddedResource Include="Scripts\7_ReadStreamSub.sql"/>
+        <EmbeddedResource Include="Scripts\8_TruncateStream.sql"/>
+        <EmbeddedResource Include="Scripts\9_TryInsertTombstone.sql"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
