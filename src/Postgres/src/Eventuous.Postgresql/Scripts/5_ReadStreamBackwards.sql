@@ -25,7 +25,15 @@ begin
         raise exception 'StreamNotFound';
     end if;
 
-    if _current_version < _from_position + _count then
+    -- nothing to read / invalid request
+    if _count <= 0 then
+        return;
+    end if;
+
+    -- Validate the starting position for backwards read.
+    if _from_position < 0                  -- A negative starting position is invalid
+    or _from_position > _current_version   -- A starting position greater than the current version means we're trying to read from beyond the head of the stream
+    then
         return;
     end if;
 
