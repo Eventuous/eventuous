@@ -25,7 +25,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
-        <ProjectReference Include="$(SrcRoot)\EventStore\src\Eventuous.EventStore\Eventuous.EventStore.csproj"/>
+        <ProjectReference Include="..\..\..\src\KurrentDb\src\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
         <ProjectReference Include="$(SrcRoot)\Experimental\src\Eventuous.Spyglass\Eventuous.Spyglass.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj"/>

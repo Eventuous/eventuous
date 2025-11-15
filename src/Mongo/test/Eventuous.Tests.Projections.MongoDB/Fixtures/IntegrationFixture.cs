@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using EventStore.Client;
-using Eventuous.EventStore;
+using Eventuous.KurrentDB;
 using Eventuous.TestHelpers;
+using KurrentDB.Client;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Driver;
 using Testcontainers.EventStoreDb;
@@ -12,7 +12,7 @@ namespace Eventuous.Tests.Projections.MongoDB.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
     public IEventStore      EventStore { get; set; }         = null!;
-    public EventStoreClient Client     { get; private set; } = null!;
+    public KurrentDBClient Client     { get; private set; } = null!;
     public IMongoDatabase   Mongo      { get; private set; } = null!;
 
     static IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
@@ -39,9 +39,9 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
             : "eventstore/eventstore:24.6";
         _esdbContainer = new EventStoreDbBuilder().WithImage(image).Build();
         await _esdbContainer.StartAsync();
-        var settings = EventStoreClientSettings.Create(_esdbContainer.GetConnectionString());
+        var settings = KurrentDBClientSettings.Create(_esdbContainer.GetConnectionString());
         Client          = new(settings);
-        EventStore      = new EsdbEventStore(Client);
+        EventStore      = new KurrentDBEventStore(Client);
         _mongoContainer = new MongoDbBuilder().WithImage("mongo:8").Build();
         await _mongoContainer.StartAsync();
         var mongoSettings = MongoClientSettings.FromConnectionString(_mongoContainer.GetConnectionString());

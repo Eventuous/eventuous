@@ -10,7 +10,7 @@
         <CoreRoot>$(SrcRoot)\Core\src</CoreRoot>
         <CoreTestRoot>$(SrcRoot)\Core\test</CoreTestRoot>
         <DiagRoot>$(SrcRoot)\Diagnostics\src</DiagRoot>
-        <EsdbRoot>$(SrcRoot)\EventStore\src</EsdbRoot>
+        <KurrentDbRoot>$(SrcRoot)\KurrentDb\src</KurrentDbRoot>
         <ExtRoot>$(SrcRoot)\Extensions\src</ExtRoot>
         <GatewayRoot>$(SrcRoot)\Shovel\src</GatewayRoot>
         <LocalRoot>..\..\src</LocalRoot>

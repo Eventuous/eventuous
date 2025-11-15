@@ -1,0 +1,64 @@
+using Eventuous.KurrentDB.Subscriptions;
+using Eventuous.Producers;
+using Eventuous.Subscriptions.Filters;
+using Eventuous.TestHelpers.TUnit;
+using Eventuous.Tests.KurrentDB.Subscriptions.Fixtures;
+using Eventuous.Tests.Subscriptions.Base;
+using KurrentDB.Client;
+
+namespace Eventuous.Tests.KurrentDB.Subscriptions;
+
+public class StreamPersistentPublishAndSubscribeManyTests {
+    [Test]
+    [Category("Persistent subscription")]
+    [MethodDataSource(nameof(GetFixtures))]
+    public async Task SubscribeAndProduceMany(
+            PersistentSubscriptionFixture<StreamPersistentSubscription, StreamPersistentSubscriptionOptions, TestEventHandler> fixture,
+            CancellationToken                                                                                                  cancellationToken
+        ) {
+        const int count = 1000;
+
+        var testEvents = TestEvent.CreateMany(count);
+
+        await fixture.InitializeAsync();
+        await fixture.Start();
+        await fixture.Producer.Produce(fixture.Stream, testEvents, new(), cancellationToken: cancellationToken);
+        await fixture.Handler.AssertCollection(10.Seconds(), [..testEvents]).Validate(cancellationToken);
+        await fixture.Stop();
+        await fixture.DisposeAsync();
+    }
+
+    public static IEnumerable<Func<PersistentSubscriptionFixture<StreamPersistentSubscription, StreamPersistentSubscriptionOptions, TestEventHandler>>> GetFixtures() {
+        yield return () => new(new(), CreateWithRegularClient, false);
+        yield return () => new(new(), CreateWithPersistentSubClient, false);
+    }
+
+    static StreamPersistentSubscription CreateWithRegularClient(string id, string connectionString, StreamName stream, TestEventHandler handler, ILoggerFactory loggerFactory) {
+        var settings = KurrentDBClientSettings.Create(connectionString);
+
+        return new(
+            new KurrentDBClient(settings),
+            new() {
+                StreamName     = stream,
+                SubscriptionId = id
+            },
+            new ConsumePipe().AddDefaultConsumer(handler),
+            loggerFactory
+        );
+    }
+
+    static StreamPersistentSubscription CreateWithPersistentSubClient(string id, string connectionString, StreamName stream, TestEventHandler handler, ILoggerFactory loggerFactory) {
+        var settings = KurrentDBClientSettings.Create(connectionString);
+        var client   = new KurrentDBPersistentSubscriptionsClient(settings);
+
+        return new(
+            client,
+            new() {
+                StreamName     = stream,
+                SubscriptionId = id
+            },
+            new ConsumePipe().AddDefaultConsumer(handler),
+            loggerFactory
+        );
+    }
+}
