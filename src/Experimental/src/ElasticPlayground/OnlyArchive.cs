@@ -1,8 +1,8 @@
-using EventStore.Client;
 using Eventuous.ElasticSearch.Store;
-using Eventuous.EventStore;
+using Eventuous.KurrentDB;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
+using KurrentDB.Client;
 using Nest;
 using static Eventuous.Sut.App.Commands;
 
@@ -11,9 +11,9 @@ namespace ElasticPlayground;
 public class OnlyArchive {
     readonly TieredEventStore _tieredEventStore;
 
-    public OnlyArchive(IElasticClient elasticClient, EventStoreClient eventStoreClient) {
+    public OnlyArchive(IElasticClient elasticClient, KurrentDBClient kurrentDBClient) {
         var elasticEventStore = new ElasticEventStore(elasticClient);
-        var esdbEventStore    = new EsdbEventStore(eventStoreClient);
+        var esdbEventStore    = new EsdbEventStore(kurrentDBClient);
         _tieredEventStore = new(esdbEventStore, elasticEventStore);
     }
 

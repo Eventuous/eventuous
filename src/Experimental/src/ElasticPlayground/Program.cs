@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 using ElasticPlayground;
 using Elasticsearch.Net;
-using EventStore.Client;
 using Eventuous.ElasticSearch.Store;
 using Eventuous.Sut.Domain;
+using KurrentDB.Client;
 using Nest;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
@@ -24,8 +24,8 @@ var elasticClient = new ElasticClient(settings);
 
 await elasticClient.ConfigureIndex();
 
-var esdbSettings     = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
-var eventStoreClient = new EventStoreClient(esdbSettings);
+var kurrentDBClientSettings = KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false");
+var kurrentDBClient         = new KurrentDBClient(kurrentDBClientSettings);
 DefaultEventSerializer.SetDefaultSerializer(new DefaultEventSerializer(options));
 
 // var elasticOnly = new ElasticOnly(client);
@@ -37,5 +37,5 @@ DefaultEventSerializer.SetDefaultSerializer(new DefaultEventSerializer(options))
 // var connectorAndArchive = new ConnectorAndArchive(elasticClient, eventStoreClient);
 // await connectorAndArchive.Execute();
 
-var connectorAndArchive = new OnlyArchive(elasticClient, eventStoreClient);
+var connectorAndArchive = new OnlyArchive(elasticClient, kurrentDBClient);
 await connectorAndArchive.Execute();

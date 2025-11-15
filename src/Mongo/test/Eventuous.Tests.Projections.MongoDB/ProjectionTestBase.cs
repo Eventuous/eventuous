@@ -1,4 +1,4 @@
-using Eventuous.EventStore.Subscriptions;
+using Eventuous.KurrentDB.Subscriptions;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;

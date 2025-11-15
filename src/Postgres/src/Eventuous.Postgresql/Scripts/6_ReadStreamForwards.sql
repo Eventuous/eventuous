@@ -25,13 +25,17 @@ begin
         raise exception 'StreamNotFound';
     end if;
 
+    if _from_position < 0 then             -- A negative starting position is invalid
+       raise exception 'InvalidStartingPosition';
+    end if;
+
     if _current_version < _from_position then
         return;
     end if;
 
     return query select m.message_id, m.message_type, m.stream_position, m.global_position,
                         m.json_data, m.json_metadata, m.created
-        from __schema__.messages m 
+        from __schema__.messages m
         where m.stream_id = _stream_id and m.stream_position >= _from_position
         order by m.stream_position
         limit _count;

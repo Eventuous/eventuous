@@ -1,8 +1,8 @@
-using EventStore.Client;
 using Eventuous.ElasticSearch.Store;
-using Eventuous.EventStore;
+using Eventuous.KurrentDB;
 using Eventuous.Sut.App;
 using Eventuous.Sut.Domain;
+using KurrentDB.Client;
 using Nest;
 using static Eventuous.Sut.App.Commands;
 
@@ -13,9 +13,9 @@ public class CombinedStore {
     readonly EsdbEventStore    _esdbEventStore;
     readonly ElasticEventStore _elasticEventStore;
 
-    public CombinedStore(IElasticClient elasticClient, EventStoreClient eventStoreClient) {
+    public CombinedStore(IElasticClient elasticClient, KurrentDBClient kurrentDbClient) {
         _elasticEventStore = new(elasticClient);
-        _esdbEventStore    = new(eventStoreClient);
+        _esdbEventStore    = new(kurrentDbClient);
         _store             = new(_esdbEventStore, _elasticEventStore);
     }
 

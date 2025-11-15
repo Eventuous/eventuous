@@ -83,4 +83,81 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
             .ContainsKey("Key1")
             .And.ContainsKey("Key2");
     }
+
+    [Test]
+    [Category("Store")]
+    public async Task ShouldThrowWhenReadingForwardsFromNegativePosition(CancellationToken cancellationToken) {
+        object[] events     = _fixture.CreateEvents(10).ToArray();
+        var      streamName = Helpers.GetStreamName();
+        await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+
+        await Assert.ThrowsAsync(ReadFunc);
+
+        return;
+
+        // Try to read from negative position
+        Task<StreamEvent[]> ReadFunc() => _fixture.EventStore.ReadEvents(streamName, new(-10), 5, true, cancellationToken);
+    }
+
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadBackwardsFromEnd(CancellationToken cancellationToken) {
+        object[] events     = _fixture.CreateEvents(10).ToArray();
+        var      streamName = Helpers.GetStreamName();
+        await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+
+        var result = await _fixture.EventStore.ReadEventsBackwards(streamName, new(9), 3, true, cancellationToken);
+
+        await Assert.That(result.Length).IsEqualTo(3);
+        // Events should be in reverse order: positions 9, 8, 7
+        await Assert.That(result[0].Payload).IsEquivalentTo(events[9]);
+        await Assert.That(result[1].Payload).IsEquivalentTo(events[8]);
+        await Assert.That(result[2].Payload).IsEquivalentTo(events[7]);
+    }
+
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReadBackwardsFromMiddle(CancellationToken cancellationToken) {
+        object[] events     = _fixture.CreateEvents(20).ToArray();
+        var      streamName = Helpers.GetStreamName();
+        await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+
+        var result = await _fixture.EventStore.ReadEventsBackwards(streamName, new(10), 5, true, cancellationToken);
+
+        await Assert.That(result.Length).IsEqualTo(5);
+        // Events should be in reverse order: positions 10, 9, 8, 7, 6
+        await Assert.That(result[0].Payload).IsEquivalentTo(events[10]);
+        await Assert.That(result[1].Payload).IsEquivalentTo(events[9]);
+        await Assert.That(result[2].Payload).IsEquivalentTo(events[8]);
+        await Assert.That(result[3].Payload).IsEquivalentTo(events[7]);
+        await Assert.That(result[4].Payload).IsEquivalentTo(events[6]);
+    }
+
+    [Test]
+    [Category("Store")]
+    public async Task ShouldReturnWhenReadingBackwards(CancellationToken cancellationToken) {
+        object[] events     = _fixture.CreateEvents(10).ToArray();
+        var      streamName = Helpers.GetStreamName();
+        await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+
+        // Try to read from position 20 when stream only has events at positions 0-9
+        var result = await _fixture.EventStore.ReadEventsBackwards(streamName, new(20), 5, true, cancellationToken);
+
+        await Assert.That(result.Length).IsEqualTo(5);
+    }
+
+    [Test]
+    [Category("Store")]
+    public async Task ShouldThrowWhenReadingBackwardsFromNegativePosition(CancellationToken cancellationToken) {
+        object[] events     = _fixture.CreateEvents(10).ToArray();
+        var      streamName = Helpers.GetStreamName();
+        await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
+
+        await Assert.ThrowsAsync(ReadFunc);
+
+        return;
+
+        // Try to read from negative position
+        Task<StreamEvent[]> ReadFunc() => _fixture.EventStore.ReadEventsBackwards(streamName, new(-10), 5, true, cancellationToken);
+    }
 }

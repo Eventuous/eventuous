@@ -6,14 +6,14 @@
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="$(EsdbRoot)\Eventuous.EventStore\Eventuous.EventStore.csproj" />
+        <ProjectReference Include="$(KurrentDBRoot)\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
         <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj" />
         <Using Include="Eventuous" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Bogus" />
         <PackageReference Include="NodaTime.Bogus" />
-        <PackageReference Include="EventStore.Client.Grpc.Streams" />
+        <PackageReference Include="KurrentDB.Client" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
     </ItemGroup>
 </Project>

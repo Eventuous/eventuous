@@ -1,6 +1,6 @@
 using Bookings.Payments.Domain;
 using Eventuous;
-using Eventuous.EventStore.Producers;
+using Eventuous.KurrentDB.Producers;
 using Eventuous.Gateway;
 using Eventuous.Subscriptions.Context;
 using static Bookings.Payments.Integration.IntegrationEvents;
@@ -11,16 +11,16 @@ namespace Bookings.Payments.Integration;
 public static class PaymentsGateway {
     static readonly StreamName Stream = new("PaymentsIntegration");
 
-    public static ValueTask<GatewayMessage<EventStoreProduceOptions>[]> Transform(IMessageConsumeContext original) {
+    public static ValueTask<GatewayMessage<KurrentDbProduceOptions>[]> Transform(IMessageConsumeContext original) {
         var result = original.Message is PaymentEvents.PaymentRecorded evt
-            ? new GatewayMessage<EventStoreProduceOptions>(
+            ? new GatewayMessage<KurrentDbProduceOptions>(
                 Stream,
                 new BookingPaymentRecorded(original.Stream.GetId(), evt.BookingId, evt.Amount, evt.Currency),
-                new Metadata(),
-                new EventStoreProduceOptions()
+                new(),
+                new()
             )
             : null;
-        GatewayMessage<EventStoreProduceOptions>[] gatewayMessages = result != null ? [result] : [];
+        GatewayMessage<KurrentDbProduceOptions>[] gatewayMessages = result != null ? [result] : [];
         return ValueTask.FromResult(gatewayMessages);
     }
 }
