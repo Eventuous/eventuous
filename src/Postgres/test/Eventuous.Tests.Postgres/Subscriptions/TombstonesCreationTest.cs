@@ -13,7 +13,7 @@ public class TombstonesCreationTest() : SubscriptionTestBase(Fixture) {
 
     [Test]
     public async Task ShouldCreateTombstones(CancellationToken cancellationToken) {
-        var streamName = new StreamName($"test-stream");
+        var streamName = new StreamName("test-stream");
 
         // create 2 events
         await Fixture.AppendEvents(streamName, Fixture.CreateEvents(2).Cast<object>().ToArray(), ExpectedStreamVersion.NoStream);

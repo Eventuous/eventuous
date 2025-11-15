@@ -15,7 +15,7 @@ public class PublishAndSubscribeManyPartitionedTests() : LegacySubscriptionFixtu
         var testEvents = TestEvent.CreateMany(count);
 
         await Start();
-        await Producer.Produce(Stream, testEvents, new Metadata(), cancellationToken: cancellationToken);
+        await Producer.Produce(Stream, testEvents, new(), cancellationToken: cancellationToken);
         await Handler.AssertCollection(5.Seconds(), [..testEvents]).Validate(cancellationToken);
         await Stop();
 

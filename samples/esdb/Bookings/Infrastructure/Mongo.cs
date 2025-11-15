@@ -11,7 +11,7 @@ public static class Mongo {
         var settings = MongoClientSettings.FromConnectionString(config!.ConnectionString);
 
         if (config is { User: not null, Password: not null }) {
-            settings.Credential = new MongoCredential(
+            settings.Credential = new(
                 null,
                 new MongoInternalIdentity("admin", config.User),
                 new PasswordEvidence(config.Password)

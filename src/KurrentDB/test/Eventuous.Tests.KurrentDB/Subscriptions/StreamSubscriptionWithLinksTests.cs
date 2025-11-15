@@ -124,7 +124,7 @@ public class StreamSubscriptionWithLinksTests : StoreFixture {
 
     protected override void SetupServices(IServiceCollection services) {
         base.SetupServices(services);
-        services.AddProducer<KurrentDbProducer>();
+        services.AddProducer<KurrentDBProducer>();
 
         services
             .AddSubscription<StreamSubscription, StreamSubscriptionOptions>(

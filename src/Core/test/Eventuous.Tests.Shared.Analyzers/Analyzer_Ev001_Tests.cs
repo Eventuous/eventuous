@@ -53,7 +53,7 @@ public class Analyzer_Ev001_Tests {
             MetadataReference.CreateFromFile(typeof(Enumerable).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(State<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Aggregate<>).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(EventTypeAttribute).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(EventTypeAttribute).Assembly.Location)
         };
 
         // Some frameworks need additional facades depending on runtime; try to add them if present

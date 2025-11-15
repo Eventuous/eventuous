@@ -8,7 +8,7 @@ namespace Eventuous.Gateway;
 static class GatewayMetaHelper {
     public static Metadata GetMeta<T>(this GatewayMessage<T> gatewayMessage, IMessageConsumeContext context) {
         var (_, _, metadata, _) = gatewayMessage;
-        var meta = metadata == null ? new Metadata() : new Metadata(metadata);
+        var meta = metadata == null ? new() : new Metadata(metadata);
         return meta.WithCausationId(context.MessageId);
     }
 
@@ -23,32 +23,34 @@ static class GatewayMetaHelper {
             [GatewayContextItems.OriginalMessageMeta]    = context.Metadata
         };
 
-        return new Metadata(headers);
+        return new(headers);
     }
 }
 
 [PublicAPI]
 public static class ProducedMessageExtensions {
-    public static Stream? GetOriginalStream(this ProducedMessage message)
-        => message.AdditionalHeaders?.Get<Stream>(GatewayContextItems.OriginalStream);
+    extension(ProducedMessage message) {
+        public Stream? GetOriginalStream()
+            => message.AdditionalHeaders?.Get<Stream>(GatewayContextItems.OriginalStream);
 
-    public static object? GetOriginalMessage(this ProducedMessage message)
-        => message.AdditionalHeaders?.Get<object>(GatewayContextItems.OriginalMessage);
+        public object? GetOriginalMessage()
+            => message.AdditionalHeaders?.Get<object>(GatewayContextItems.OriginalMessage);
 
-    public static Metadata? GetOriginalMetadata(this ProducedMessage message)
-        => message.AdditionalHeaders?.Get<Metadata>(GatewayContextItems.OriginalMessageMeta);
+        public Metadata? GetOriginalMetadata()
+            => message.AdditionalHeaders?.Get<Metadata>(GatewayContextItems.OriginalMessageMeta);
 
-    public static ulong GetOriginalStreamPosition(this ProducedMessage message)
-        => message.AdditionalHeaders?.Get<ulong>(GatewayContextItems.OriginalStreamPosition) ?? default;
+        public ulong GetOriginalStreamPosition()
+            => message.AdditionalHeaders?.Get<ulong>(GatewayContextItems.OriginalStreamPosition) ?? default;
 
-    public static ulong GetOriginalGlobalPosition(this ProducedMessage message)
-        => message.AdditionalHeaders?.Get<ulong>(GatewayContextItems.OriginalGlobalPosition) ?? default;
+        public ulong GetOriginalGlobalPosition()
+            => message.AdditionalHeaders?.Get<ulong>(GatewayContextItems.OriginalGlobalPosition) ?? default;
 
-    public static string? GetOriginalMessageId(this ProducedMessage message)
-        => message.AdditionalHeaders?.Get<string>(GatewayContextItems.OriginalMessageId);
+        public string? GetOriginalMessageId()
+            => message.AdditionalHeaders?.Get<string>(GatewayContextItems.OriginalMessageId);
 
-    public static string? GetOriginalMessageType(this ProducedMessage message)
-        => message.AdditionalHeaders?.Get<string>(GatewayContextItems.OriginalMessageType);
+        public string? GetOriginalMessageType()
+            => message.AdditionalHeaders?.Get<string>(GatewayContextItems.OriginalMessageType);
+    }
 }
 
 public static class GatewayContextItems {

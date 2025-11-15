@@ -17,7 +17,7 @@ public static class CommandMappingRegistry {
     public readonly record struct Bound(Type CommandType, ConfigureEndpoint Map);
 
     static readonly ConcurrentDictionary<Type, List<Bound>> PerState = new();
-    static readonly List<Bound>                       All      = [];
+    static readonly List<Bound>                             All      = [];
 
     // TODO: Figure out what to do with it
     // ReSharper disable once CollectionNeverQueried.Local

@@ -90,9 +90,7 @@ public abstract class RedisSubscriptionBase<T>(
             (ulong)evt.StreamPosition
         );
 
-        var meta = (evt.JsonMetadata == null)
-            ? new Metadata()
-            : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata));
+        var meta = (evt.JsonMetadata == null) ? new() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata));
 
         return AsContext(evt, data, meta, cancellationToken);
     }

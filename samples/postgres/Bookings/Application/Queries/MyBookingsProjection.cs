@@ -12,7 +12,7 @@ public class MyBookingsProjection : MongoProjector<MyBookings> {
             .UpdateFromContext((ctx, update) =>
                 update.AddToSet(
                     x => x.Bookings,
-                    new MyBookings.Booking(ctx.Stream.GetId(),
+                    new(ctx.Stream.GetId(),
                         ctx.Message.CheckInDate,
                         ctx.Message.CheckOutDate,
                         ctx.Message.BookingPrice

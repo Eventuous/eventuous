@@ -65,18 +65,20 @@ public static class SubscriptionRegistrationExtensions {
         return builder.AddCheck<SubscriptionHealthCheck>(checkName, failureStatus, tags);
     }
 
-    public static IServiceCollection AddCheckpointStore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services)
-        where T : class, ICheckpointStore {
-        services.AddSingleton<T>();
+    extension(IServiceCollection services) {
+        public IServiceCollection AddCheckpointStore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
+            where T : class, ICheckpointStore {
+            services.AddSingleton<T>();
 
-        return AddCheckpointStoreInternal<T>(services);
-    }
+            return AddCheckpointStoreInternal<T>(services);
+        }
 
-    public static IServiceCollection AddCheckpointStore<T>(this IServiceCollection services, Func<IServiceProvider, T> getStore)
-        where T : class, ICheckpointStore {
-        services.AddSingleton(getStore);
+        public IServiceCollection AddCheckpointStore<T>(Func<IServiceProvider, T> getStore)
+            where T : class, ICheckpointStore {
+            services.AddSingleton(getStore);
 
-        return AddCheckpointStoreInternal<T>(services);
+            return AddCheckpointStoreInternal<T>(services);
+        }
     }
 
     static void TryAddSubscriptionHealthCheck(IServiceCollection services) {

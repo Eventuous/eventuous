@@ -10,7 +10,10 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
     </ItemGroup>
     <ItemGroup>
-      <AdditionalFiles Remove="AnalyzerReleases.Shipped.md" />
-      <AdditionalFiles Remove="AnalyzerReleases.Unshipped.md" />
+        <AdditionalFiles Remove="AnalyzerReleases.Shipped.md"/>
+        <AdditionalFiles Remove="AnalyzerReleases.Unshipped.md"/>
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Eventuous.Tests.Extensions.AspNetCore.Analyzers"/>
     </ItemGroup>
 </Project>

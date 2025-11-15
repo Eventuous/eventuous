@@ -13,9 +13,6 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Persistence\Eventuous.Persistence.csproj"/>
     </ItemGroup>
-    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-        <PackageReference Include="System.Linq.Async" ExcludeAssets="Compile"/>
-    </ItemGroup>
     <ItemGroup>
         <Using Include="KurrentDB.Client"/>
         <Using Include="Eventuous.Subscriptions"/>

@@ -11,7 +11,7 @@ namespace Eventuous.KurrentDB.Subscriptions;
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [PublicAPI]
-public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T> where T : CatchUpSubscriptionOptions {
+public abstract class KurrentDBCatchUpSubscriptionBase<T> : EventSubscriptionWithCheckpoint<T> where T : CatchUpSubscriptionOptions {
     /// <summary>
     /// Catch-up subscription base class constructor
     /// </summary>
@@ -23,7 +23,7 @@ public abstract class EventStoreCatchUpSubscriptionBase<T> : EventSubscriptionWi
     /// <param name="loggerFactory">Optional logger factory</param>
     /// <param name="eventSerializer">Optional: event serializer instance</param>
     /// <param name="metaSerializer">Optional: metadata serializer instance</param>
-    protected EventStoreCatchUpSubscriptionBase(
+    protected KurrentDBCatchUpSubscriptionBase(
             KurrentDBClient      client,
             T                    options,
             ICheckpointStore     checkpointStore,

@@ -7,7 +7,7 @@ using Testcontainers.EventStoreDb;
 
 namespace Eventuous.Tests.KurrentDB.Metrics;
 
-public class MetricsFixture : MetricsSubscriptionFixtureBase<EventStoreDbContainer, KurrentDbProducer, StreamSubscription, StreamSubscriptionOptions> {
+public class MetricsFixture : MetricsSubscriptionFixtureBase<EventStoreDbContainer, KurrentDBProducer, StreamSubscription, StreamSubscriptionOptions> {
     protected override EventStoreDbContainer CreateContainer() => EsdbContainer.Create();
 
     protected override void ConfigureSubscription(StreamSubscriptionOptions options) => options.StreamName = Stream;

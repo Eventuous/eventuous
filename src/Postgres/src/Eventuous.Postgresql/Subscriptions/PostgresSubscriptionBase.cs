@@ -63,7 +63,7 @@ public abstract class PostgresSubscriptionBase<T>(
     }
 
     protected override bool ShouldSkipEvent(PersistedEvent evt)
-        => evt.StreamName == PostgresSubscriptionConstants.TombstoneStream && evt.MessageType == PostgresSubscriptionConstants.TombstoneMessageType;
+        => evt is { StreamName: PostgresSubscriptionConstants.TombstoneStream, MessageType: PostgresSubscriptionConstants.TombstoneMessageType };
 }
 
 public static class PostgresSubscriptionConstants {

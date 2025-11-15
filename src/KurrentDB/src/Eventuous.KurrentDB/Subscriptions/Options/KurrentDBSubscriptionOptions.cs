@@ -4,9 +4,9 @@
 namespace Eventuous.KurrentDB.Subscriptions;
 
 /// <summary>
-/// Options base record for EventStoreDB checkpoint-based subscriptions
+/// Base class for EventStoreDB subscription options
 /// </summary>
-public abstract record EventStoreSubscriptionWithCheckpointOptions : SubscriptionWithCheckpointOptions {
+public abstract record KurrentDBSubscriptionOptions : SubscriptionOptions {
     /// <summary>
     /// User credentials
     /// </summary>
@@ -15,5 +15,5 @@ public abstract record EventStoreSubscriptionWithCheckpointOptions : Subscriptio
     /// <summary>
     /// Resolve link events
     /// </summary>
-    public bool ResolveLinkTos { get; set; }
+    public bool ResolveLinkTos { get; [PublicAPI] set; }
 }

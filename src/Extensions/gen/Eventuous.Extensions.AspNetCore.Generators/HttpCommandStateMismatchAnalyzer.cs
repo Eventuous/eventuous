@@ -14,17 +14,6 @@ namespace Eventuous.Extensions.AspNetCore.Generators;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class HttpCommandStateMismatchAnalyzer : DiagnosticAnalyzer {
-    public const string DiagnosticId      = "EVTA001";
-    public const string RouteDiagnosticId = "EVTA002";
-
-    static readonly LocalizableString RouteMessageFormat =
-        "Command {0} attribute route '{1}' does not match route override '{2}'";
-
-    static readonly LocalizableString Description =
-        "When using MapCommands<TState>().MapCommand<TContract, TCommand>(...), the TContract decorated with HttpCommandAttribute<T> must have T matching the TState of the route builder.";
-
-    static readonly LocalizableString RouteDescription =
-        "When an HttpCommandAttribute specifies a Route and MapCommand is called with an explicit route override, the values should match.";
 
     const string NamespaceName       = "Eventuous.Extensions.AspNetCore.Http";
     const string BuilderTypeName     = "CommandServiceRouteBuilder";
@@ -32,7 +21,6 @@ public class HttpCommandStateMismatchAnalyzer : DiagnosticAnalyzer {
     const string AttribTypeName      = "HttpCommandAttribute";
     const string StateTypeParamName  = "StateType";
     const string RouteParamName      = "Route";
-
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [StateMatchRule, RouteRule];
 
@@ -46,9 +34,8 @@ public class HttpCommandStateMismatchAnalyzer : DiagnosticAnalyzer {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
         // Get the invoked method symbol
-        var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol as IMethodSymbol;
 
-        if (symbol == null) return;
+        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol symbol) return;
 
         // We care about MapCommand invocations only
         if (symbol.Name != "MapCommand") return;
@@ -83,13 +70,11 @@ public class HttpCommandStateMismatchAnalyzer : DiagnosticAnalyzer {
                     }
                 }
             }
-            else if (symbol is { ContainingType: not null } containing && containing.ContainingType is { } || symbol.ContainingType is { }) {
+            else if (symbol is { ContainingType: not null } || symbol.ContainingType is not null) {
                 // Fallback to previous logic using method symbol's containing type (in case receiver type retrieval fails)
                 var containingType = symbol.ContainingType;
 
-                if (containingType                                       != null
-                 && containingType.Name                                  == BuilderTypeName
-                 && containingType.Arity                                 == 1
+                if (containingType is { Name: BuilderTypeName, Arity: 1 }
                  && containingType.ContainingNamespace.ToDisplayString() == NamespaceName
                  && invocation.Expression is MemberAccessExpressionSyntax { Name: GenericNameSyntax { TypeArgumentList.Arguments.Count: 2 } gname }) {
                     var tState              = containingType.TypeArguments.FirstOrDefault();

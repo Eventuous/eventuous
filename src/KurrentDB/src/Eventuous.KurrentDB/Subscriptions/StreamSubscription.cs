@@ -15,7 +15,7 @@ using Diagnostics;
 /// Catch-up subscription for EventStoreDB, for a specific stream
 /// </summary>
 [PublicAPI]
-public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscriptionOptions>, IMeasuredSubscription {
+public class StreamSubscription : KurrentDBCatchUpSubscriptionBase<StreamSubscriptionOptions>, IMeasuredSubscription {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for a given stream
     /// </summary>
@@ -119,7 +119,7 @@ public class StreamSubscription : EventStoreCatchUpSubscriptionBase<StreamSubscr
         }
 
         void HandleDrop(global::KurrentDB.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
-            => Dropped(EsdbMappings.AsDropReason(reason), ex);
+            => Dropped(KurrentDBMappings.AsDropReason(reason), ex);
     }
 
     [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]

@@ -16,7 +16,7 @@ namespace Eventuous.KurrentDB.Subscriptions;
 /// Catch-up subscription for EventStoreDB, using the $all global stream
 /// </summary>
 [PublicAPI]
-public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStreamSubscriptionOptions>, IMeasuredSubscription {
+public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamSubscriptionOptions>, IMeasuredSubscription {
     /// <summary>
     /// Creates EventStoreDB catch-up subscription service for $all
     /// </summary>
@@ -103,7 +103,7 @@ public class AllStreamSubscription : EventStoreCatchUpSubscriptionBase<AllStream
             => HandleInternal(CreateContext(re, ct)).AsTask();
 
         void HandleDrop(global::KurrentDB.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
-            => Dropped(EsdbMappings.AsDropReason(reason), ex);
+            => Dropped(KurrentDBMappings.AsDropReason(reason), ex);
     }
 
     [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]

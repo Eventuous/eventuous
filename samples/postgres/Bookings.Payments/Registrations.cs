@@ -13,7 +13,7 @@ namespace Bookings.Payments;
 public static class Registrations {
     public static void AddEventuous(this IServiceCollection services, IConfiguration configuration) {
         var connectionFactory = new ConnectionFactory {
-            Uri                    = new Uri(configuration["RabbitMq:ConnectionString"]!),
+            Uri                    = new(configuration["RabbitMq:ConnectionString"]!),
             DispatchConsumersAsync = true
         };
         services.AddSingleton(connectionFactory);

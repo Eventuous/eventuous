@@ -27,7 +27,7 @@ public class SequenceTests {
     public void ShouldWorkForOne() {
         var timestamp = DateTime.Now;
         var sequence  = new CommitPositionSequence { new(0, 1, timestamp) };
-        sequence.FirstBeforeGap().ShouldBe(new CommitPosition(0, 1, timestamp));
+        sequence.FirstBeforeGap().ShouldBe(new(0, 1, timestamp));
     }
 
     [Test]
@@ -58,7 +58,7 @@ public class SequenceTests {
         }
 
         var first = sequence.FirstBeforeGap();
-        first.ShouldBe(new CommitPosition(9, 9, timestamp));
+        first.ShouldBe(new(9, 9, timestamp));
     }
 
     public static IEnumerable<Func<(CommitPositionSequence, CommitPosition)>> TestData() {

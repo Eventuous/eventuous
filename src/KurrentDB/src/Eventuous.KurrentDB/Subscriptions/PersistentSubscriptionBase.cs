@@ -132,7 +132,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
         return;
 
         void HandleDrop(PersistentSubscription __, SubscriptionDroppedReason reason, Exception? exception)
-            => Dropped(EsdbMappings.AsDropReason(reason), exception);
+            => Dropped(KurrentDBMappings.AsDropReason(reason), exception);
 
         async Task HandleEvent(PersistentSubscription subscription, ResolvedEvent re, int? retryCount, CancellationToken ct) {
             Logger.Configure(Options.SubscriptionId, LoggerFactory);

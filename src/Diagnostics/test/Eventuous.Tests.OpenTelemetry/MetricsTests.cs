@@ -63,13 +63,15 @@ public abstract class MetricsTestsBase(IMetricsSubscriptionFixtureBase fixture) 
 }
 
 static class TagExtensions {
-    public static async Task CheckTag(this MetricValue metric, string tag, string expectedValue) {
-        await Assert.That(metric.GetTag(tag)).IsEqualTo(expectedValue);
-    }
+    extension(MetricValue metric) {
+        public async Task CheckTag(string tag, string expectedValue) {
+            await Assert.That(metric.GetTag(tag)).IsEqualTo(expectedValue);
+        }
 
-    static object GetTag(this MetricValue metric, string key) {
-        var index = metric.Keys.Select((x, i) => (x, i)).First(x => x.x == key).i;
+        object GetTag(string key) {
+            var index = metric.Keys.Select((x, i) => (x, i)).First(x => x.x == key).i;
 
-        return metric.Values[index];
+            return metric.Values[index];
+        }
     }
 }

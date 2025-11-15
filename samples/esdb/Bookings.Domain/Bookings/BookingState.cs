@@ -28,17 +28,17 @@ public record BookingState : State<BookingState> {
 
     static BookingState HandlePayment(BookingState state, V1.PaymentRecorded e)
         => state with {
-            Outstanding = new Money { Amount = e.Outstanding, Currency = e.Currency },
-            Payments = state.Payments.Add(new PaymentRecord(e.PaymentId, new Money(e.PaidAmount, e.Currency)))
+            Outstanding = new() { Amount = e.Outstanding, Currency = e.Currency },
+            Payments = state.Payments.Add(new(e.PaymentId, new(e.PaidAmount, e.Currency)))
         };
 
     static BookingState HandleBooked(BookingState state, V1.RoomBooked booked)
         => state with {
-            RoomId = new RoomId(booked.RoomId),
-            Period = new StayPeriod(booked.CheckInDate, booked.CheckOutDate),
+            RoomId = new(booked.RoomId),
+            Period = new(booked.CheckInDate, booked.CheckOutDate),
             GuestId = booked.GuestId,
-            Price = new Money { Amount       = booked.BookingPrice, Currency      = booked.Currency },
-            Outstanding = new Money { Amount = booked.OutstandingAmount, Currency = booked.Currency }
+            Price = new() { Amount       = booked.BookingPrice, Currency      = booked.Currency },
+            Outstanding = new() { Amount = booked.OutstandingAmount, Currency = booked.Currency }
         };
 }
 

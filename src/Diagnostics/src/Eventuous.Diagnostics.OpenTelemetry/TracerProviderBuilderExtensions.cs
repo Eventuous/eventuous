@@ -25,7 +25,7 @@ public static class TracerProviderBuilderExtensions {
         public override SamplingResult ShouldSample(in SamplingParameters samplingParameters) {
             return samplingParameters.ParentContext is { TraceFlags: ActivityTraceFlags.None } && samplingParameters is { Kind: ActivityKind.Client, Name: "eventuous" }
                 ? new SamplingResult(SamplingDecision.Drop)
-                : new SamplingResult(SamplingDecision.RecordAndSample);
+                : new(SamplingDecision.RecordAndSample);
         }
     }
 }

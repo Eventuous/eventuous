@@ -16,7 +16,7 @@ public static class PaymentsGateway {
             ? new GatewayMessage<RabbitMqProduceOptions>(
                 Stream,
                 new BookingPaymentRecorded(original.Stream.GetId(), evt.BookingId, evt.Amount, evt.Currency),
-                new Metadata(),
+                new(),
                 ProduceOptions
             )
             : null;

@@ -11,7 +11,7 @@ namespace Eventuous.KurrentDB.Producers;
 /// Producer for EventStoreDB
 /// </summary>
 [PublicAPI]
-public class KurrentDbProducer : BaseProducer<KurrentDbProduceOptions> {
+public class KurrentDBProducer : BaseProducer<KurrentDBProduceOptions> {
     readonly KurrentDBClient    _client;
     readonly IEventSerializer    _serializer;
     readonly IMetadataSerializer _metaSerializer;
@@ -22,7 +22,7 @@ public class KurrentDbProducer : BaseProducer<KurrentDbProduceOptions> {
     /// <param name="client">EventStoreDB gRPC client</param>
     /// <param name="serializer">Optional: event serializer instance</param>
     /// <param name="metaSerializer">Optional: metadata serializer instance</param>
-    public KurrentDbProducer(KurrentDBClient client, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
+    public KurrentDBProducer(KurrentDBClient client, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
         : base(TracingOptions) {
         _client         = Ensure.NotNull(client);
         _serializer     = serializer     ?? DefaultEventSerializer.Instance;
@@ -35,7 +35,7 @@ public class KurrentDbProducer : BaseProducer<KurrentDbProduceOptions> {
     /// <param name="clientSettings">EventStoreDB gRPC client settings</param>
     /// <param name="serializer">Optional: event serializer instance</param>
     /// <param name="metaSerializer">Optional: metadata serializer instance</param>
-    public KurrentDbProducer(KurrentDBClientSettings clientSettings, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
+    public KurrentDBProducer(KurrentDBClientSettings clientSettings, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
         : this(new KurrentDBClient(Ensure.NotNull(clientSettings)), serializer, metaSerializer) { }
 
     static readonly ProducerTracingOptions TracingOptions = new() {
@@ -56,10 +56,10 @@ public class KurrentDbProducer : BaseProducer<KurrentDbProduceOptions> {
     protected override async Task ProduceMessages(
             StreamName                   stream,
             IEnumerable<ProducedMessage> messages,
-            KurrentDbProduceOptions?    produceOptions,
+            KurrentDBProduceOptions?    produceOptions,
             CancellationToken            cancellationToken = default
         ) {
-        var options = produceOptions ?? KurrentDbProduceOptions.Default;
+        var options = produceOptions ?? KurrentDBProduceOptions.Default;
 
         foreach (var chunk in Ensure.NotNull(messages).Chunks(options.MaxAppendEventsCount)) {
             var chunkMessages = chunk.ToArray();
@@ -79,10 +79,10 @@ public class KurrentDbProducer : BaseProducer<KurrentDbProduceOptions> {
                     )
                     .NoContext();
 
-                await chunkMessages.Select(x => x.Ack<KurrentDbProducer>()).WhenAll().NoContext();
+                await chunkMessages.Select(x => x.Ack<KurrentDBProducer>()).WhenAll().NoContext();
             } catch (Exception e) {
                 await chunkMessages
-                    .Select(x => x.Nack<KurrentDbProducer>("Unable to produce to EventStoreDB", e))
+                    .Select(x => x.Nack<KurrentDBProducer>("Unable to produce to EventStoreDB", e))
                     .WhenAll()
                     .NoContext();
             }

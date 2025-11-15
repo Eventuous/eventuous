@@ -172,12 +172,11 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
 
         foreach (var m in distinct) {
             // Prefer passing the explicit name when we have it, so runtime reflection is avoided
-            if (!string.IsNullOrEmpty(m.EventTypeName)) {
-                sb.AppendLine($"        mapper.AddType(typeof({m.FullyQualifiedType}), \"{EscapeString(m.EventTypeName)}\");");
-            }
-            else {
-                sb.AppendLine($"        mapper.AddType(typeof({m.FullyQualifiedType}));");
-            }
+            sb.AppendLine(
+                !string.IsNullOrEmpty(m.EventTypeName)
+                    ? $"        mapper.AddType(typeof({m.FullyQualifiedType}), \"{EscapeString(m.EventTypeName)}\");"
+                    : $"        mapper.AddType(typeof({m.FullyQualifiedType}));"
+            );
         }
 
         sb.AppendLine("    }");

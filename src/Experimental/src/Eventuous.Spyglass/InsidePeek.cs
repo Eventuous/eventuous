@@ -48,7 +48,7 @@ public class InsidePeek {
 
             var methods = (type as dynamic).DeclaredMethods as MethodInfo[];
 
-            AggregateInfos.Add(new AggregateInfo(type, stateType, methods!, () => CreateInstance(reg, type)));
+            AggregateInfos.Add(new(type, stateType, methods!, () => CreateInstance(reg, type)));
         }
 
         return;
@@ -70,7 +70,7 @@ public class InsidePeek {
     public async Task<object> Load(string streamName, int version) {
         var typeName       = streamName[..streamName.IndexOf('-')];
         var agg            = AggregateInfos.First(x => x.AggregateType == typeName);
-        var events         = await _eventStore.ReadStream(new StreamName(streamName), StreamReadPosition.Start, true, CancellationToken.None);
+        var events         = await _eventStore.ReadStream(new(streamName), StreamReadPosition.Start, true, CancellationToken.None);
         var aggregate      = agg.GetAggregate();
         var selectedEvents = version == -1 ? events : events.Take(version + 1);
         aggregate.Load(selectedEvents.Select(x => x.Payload));

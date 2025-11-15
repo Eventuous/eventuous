@@ -11,7 +11,7 @@ public class RedisCheckpointStore(GetRedisDatabase getDatabase, ILoggerFactory? 
     public async ValueTask<Checkpoint> GetLastCheckpoint(string checkpointId, CancellationToken cancellationToken) {
         Logger.ConfigureIfNull(checkpointId, loggerFactory);
         var position   = await getDatabase().StringGetAsync(checkpointId).NoContext();
-        var checkpoint = position.IsNull ? Checkpoint.Empty(checkpointId) : new Checkpoint(checkpointId, Convert.ToUInt64(position));
+        var checkpoint = position.IsNull ? Checkpoint.Empty(checkpointId) : new(checkpointId, Convert.ToUInt64(position));
         Logger.Current.CheckpointLoaded(this, checkpoint);
         return checkpoint;
     }

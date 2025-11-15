@@ -8,25 +8,25 @@ public static class ConfigureElastic {
     public static async Task ConfigureIndex(this ElasticClient client) {
         var config = new IndexConfig {
             IndexName = "eventuous",
-            Lifecycle = new LifecycleConfig {
+            Lifecycle = new() {
                 PolicyName = "eventuous",
                 Tiers = [
-                    new TierDefinition {
+                    new() {
                         Tier     = "hot",
                         MinAge   = "1d",
                         Priority = 100,
-                        Rollover = new Rollover {
+                        Rollover = new() {
                             MaxAge  = "1d",
                             MaxSize = "100mb"
                         }
                     },
-                    new TierDefinition {
+                    new() {
                         Tier       = "warm",
                         MinAge     = "1d",
                         Priority   = 50,
-                        ForceMerge = new ForceMerge { MaxNumSegments = 1 }
+                        ForceMerge = new() { MaxNumSegments = 1 }
                     },
-                    new TierDefinition {
+                    new() {
                         Tier     = "cold",
                         MinAge   = "1d",
                         Priority = 0,
@@ -34,9 +34,7 @@ public static class ConfigureElastic {
                     }
                 ]
             },
-            Template = new DataStreamTemplateConfig {
-                TemplateName = "eventuous"
-            }
+            Template = new() { TemplateName = "eventuous" }
         };
 
         await client.CreateIndexIfNecessary<PersistedEvent>(config);

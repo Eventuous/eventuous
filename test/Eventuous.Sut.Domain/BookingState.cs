@@ -12,7 +12,7 @@ public record BookingState : State<BookingState, BookingId> {
         On<BookingPaymentRegistered>(
             (state, paid) => state with {
                 AmountPaid = state.AmountPaid + new Money(paid.AmountPaid),
-                _registeredPayments = state._registeredPayments.Add(new(paid.PaymentId, new Money(paid.AmountPaid)))
+                _registeredPayments = state._registeredPayments.Add(new(paid.PaymentId, new(paid.AmountPaid)))
             }
         );
     }

@@ -7,7 +7,7 @@ namespace Eventuous.KurrentDB.Producers;
 /// Event producing options
 /// </summary>
 [PublicAPI]
-public record KurrentDbProduceOptions {
+public record KurrentDBProduceOptions {
     /// <summary>
     /// User credentials
     /// </summary>
@@ -31,5 +31,5 @@ public record KurrentDbProduceOptions {
     /// <summary>
     /// Default set of options
     /// </summary>
-    public static KurrentDbProduceOptions Default { get; } = new();
+    public static KurrentDBProduceOptions Default { get; } = new();
 }

@@ -19,20 +19,22 @@ static class MetadataExtensions {
         return headers;
     }
 
-    public static Headers AddHeader(this Headers headers, string key, string? value) {
-        if (value != null) {
-            headers.Add(key, Encoding.UTF8.GetBytes(value));
-        }
-        return headers;
-    }
-
-    public static Metadata AsMetadata(this Headers headers) {
-        var metadata = new Metadata();
-
-        foreach (var header in headers) {
-            metadata.Add(header.Key, Encoding.UTF8.GetString(header.GetValueBytes()));
+    extension(Headers headers) {
+        public Headers AddHeader(string key, string? value) {
+            if (value != null) {
+                headers.Add(key, Encoding.UTF8.GetBytes(value));
+            }
+            return headers;
         }
 
-        return metadata;
+        public Metadata AsMetadata() {
+            var metadata = new Metadata();
+
+            foreach (var header in headers) {
+                metadata.Add(header.Key, Encoding.UTF8.GetString(header.GetValueBytes()));
+            }
+
+            return metadata;
+        }
     }
 }

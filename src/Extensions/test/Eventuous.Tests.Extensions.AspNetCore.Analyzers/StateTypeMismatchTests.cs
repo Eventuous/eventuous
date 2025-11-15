@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Extensions.AspNetCore.Generators;
+using Diags = Eventuous.Extensions.AspNetCore.Generators.Diagnostics;
 
 namespace Eventuous.Tests.Extensions.AspNetCore.Analyzers;
 
@@ -35,7 +36,7 @@ public partial class HttpCommandAnnotationTests {
 
         var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
 
-        var evta001 = diagnostics.Where(d => d.Id == HttpCommandStateMismatchAnalyzer.DiagnosticId).ToArray();
+        var evta001 = diagnostics.Where(d => d.Id == Diags.DiagnosticId).ToArray();
         await Assert.That(evta001.Length).IsEqualTo(1);
         await Assert.That(evta001[0].GetMessage()).Contains("ImportBookingHttp3");
     }

@@ -10,45 +10,46 @@ namespace Eventuous.Diagnostics.OpenTelemetry;
 
 [PublicAPI]
 public static class MeterProviderBuilderExtensions {
-    /// <summary>
-    /// Adds subscription metrics instrumentation
-    /// </summary>
     /// <param name="builder"></param>
-    /// <param name="customTags"></param>
-    /// <returns></returns>
-    public static MeterProviderBuilder AddEventuousSubscriptions(this MeterProviderBuilder builder, TagList? customTags = null)
-        => Ensure.NotNull(builder).AddMeter(SubscriptionMetrics.MeterName).AddMetrics<SubscriptionMetrics>(customTags);
+    extension(MeterProviderBuilder builder) {
+        /// <summary>
+        /// Adds subscription metrics instrumentation
+        /// </summary>
+        /// <param name="customTags"></param>
+        /// <returns></returns>
+        public MeterProviderBuilder AddEventuousSubscriptions(TagList? customTags = null)
+            => Ensure.NotNull(builder).AddMeter(SubscriptionMetrics.MeterName).AddMetrics<SubscriptionMetrics>(customTags);
 
-    /// <summary>
-    /// Adds metrics instrumentation for core components such as application service and event store
-    /// </summary>
-    /// <param name="builder"></param>
-    /// <param name="customTags"></param>
-    /// <returns></returns>
-    public static MeterProviderBuilder AddEventuous(this MeterProviderBuilder builder, TagList? customTags = null)
-        => Ensure.NotNull(builder)
-            .AddMeter(CommandServiceMetrics.MeterName)
-            .AddMetrics<CommandServiceMetrics>(customTags)
-            .AddMeter(PersistenceMetrics.MeterName)
-            .AddMetrics<PersistenceMetrics>(customTags);
+        /// <summary>
+        /// Adds metrics instrumentation for core components such as application service and event store
+        /// </summary>
+        /// <param name="customTags"></param>
+        /// <returns></returns>
+        public MeterProviderBuilder AddEventuous(TagList? customTags = null)
+            => Ensure.NotNull(builder)
+                .AddMeter(CommandServiceMetrics.MeterName)
+                .AddMetrics<CommandServiceMetrics>(customTags)
+                .AddMeter(PersistenceMetrics.MeterName)
+                .AddMetrics<PersistenceMetrics>(customTags);
 
-    static MeterProviderBuilder AddMetrics<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this MeterProviderBuilder builder, TagList? customTags = null)
-        where T : class, IWithCustomTags {
-        builder.ConfigureServices(services => services.AddSingleton<T>());
+        MeterProviderBuilder AddMetrics<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(TagList? customTags = null)
+            where T : class, IWithCustomTags {
+            builder.ConfigureServices(services => services.AddSingleton<T>());
 
-        return builder is IDeferredMeterProviderBuilder deferredMeterProviderBuilder
-            ? deferredMeterProviderBuilder.Configure(
-                (sp, b) => {
-                    b.AddInstrumentation(
-                        () => {
-                            var instrument = sp.GetRequiredService<T>();
-                            if (customTags != null) instrument.SetCustomTags(customTags.Value);
+            return builder is IDeferredMeterProviderBuilder deferredMeterProviderBuilder
+                ? deferredMeterProviderBuilder.Configure(
+                    (sp, b) => {
+                        b.AddInstrumentation(
+                            () => {
+                                var instrument = sp.GetRequiredService<T>();
+                                if (customTags != null) instrument.SetCustomTags(customTags.Value);
 
-                            return instrument;
-                        }
-                    );
-                }
-            )
-            : builder;
+                                return instrument;
+                            }
+                        );
+                    }
+                )
+                : builder;
+        }
     }
 }

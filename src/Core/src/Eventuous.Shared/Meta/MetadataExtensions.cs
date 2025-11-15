@@ -4,33 +4,32 @@
 namespace Eventuous;
 
 public static class MetadataExtensions {
-    /// <summary>
-    /// Add correlation id to metadata
-    /// </summary>
     /// <param name="metadata">Metadata instance</param>
-    /// <param name="correlationId">Correlation id value</param>
-    /// <returns></returns>
-    public static Metadata WithCorrelationId(this Metadata metadata, string? correlationId) => metadata.With(MetaTags.CorrelationId, correlationId);
+    extension(Metadata metadata) {
+        /// <summary>
+        /// Add correlation id to metadata
+        /// </summary>
+        /// <param name="correlationId">Correlation id value</param>
+        /// <returns></returns>
+        public Metadata WithCorrelationId(string? correlationId) => metadata.With(MetaTags.CorrelationId, correlationId);
 
-    /// <summary>
-    /// Add causation id to metadata
-    /// </summary>
-    /// <param name="metadata">Metadata instance</param>
-    /// <param name="causationId">Causation id value</param>
-    /// <returns></returns>
-    public static Metadata WithCausationId(this Metadata metadata, string? causationId) => metadata.With(MetaTags.CausationId, causationId);
+        /// <summary>
+        /// Add causation id to metadata
+        /// </summary>
+        /// <param name="causationId">Causation id value</param>
+        /// <returns></returns>
+        public Metadata WithCausationId(string? causationId) => metadata.With(MetaTags.CausationId, causationId);
 
-    /// <summary>
-    /// Get the correlation id from metadata, if available
-    /// </summary>
-    /// <param name="metadata">Metadata instance</param>
-    /// <returns>Correlation id or null</returns>
-    public static string? GetCorrelationId(this Metadata metadata) => metadata.GetString(MetaTags.CorrelationId);
+        /// <summary>
+        /// Get the correlation id from metadata, if available
+        /// </summary>
+        /// <returns>Correlation id or null</returns>
+        public string? GetCorrelationId() => metadata.GetString(MetaTags.CorrelationId);
 
-    /// <summary>
-    /// Get the causation id from metadata, if available
-    /// </summary>
-    /// <param name="metadata">Metadata instance</param>
-    /// <returns>Causation id or null</returns>
-    public static string? GetCausationId(this Metadata metadata) => metadata.GetString(MetaTags.CausationId);
+        /// <summary>
+        /// Get the causation id from metadata, if available
+        /// </summary>
+        /// <returns>Causation id or null</returns>
+        public string? GetCausationId() => metadata.GetString(MetaTags.CausationId);
+    }
 }

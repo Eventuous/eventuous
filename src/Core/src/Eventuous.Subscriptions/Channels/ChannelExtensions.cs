@@ -9,56 +9,56 @@ namespace Eventuous.Subscriptions.Channels;
 public delegate ValueTask ProcessElement<in T>(T element, CancellationToken cancellationToken);
 
 static class ChannelExtensions {
-    public static async Task Read<T>(this Channel<T> channel, ProcessElement<T> process, CancellationToken cancellationToken) {
-        try {
-            while (!cancellationToken.IsCancellationRequested) {
-                var element = await channel.Reader.ReadAsync(cancellationToken).NoContext();
-                await process(element, cancellationToken).NoContext();
+    extension<T>(Channel<T> channel) {
+        public async Task Read(ProcessElement<T> process, CancellationToken cancellationToken) {
+            try {
+                while (!cancellationToken.IsCancellationRequested) {
+                    var element = await channel.Reader.ReadAsync(cancellationToken).NoContext();
+                    await process(element, cancellationToken).NoContext();
+                }
+            } catch (OperationCanceledException) {
+                // it's ok
+            } catch (ChannelClosedException) {
+                // ok, we are quitting
             }
-        } catch (OperationCanceledException) {
-            // it's ok
-        } catch (ChannelClosedException) {
-            // ok, we are quitting
-        }
-    }
-
-    public static async Task ReadBatches<T>(
-            this Channel<T>     channel,
-            ProcessElement<T[]> process,
-            int                 maxCount,
-            TimeSpan            maxTime,
-            CancellationToken   cancellationToken
-        ) {
-        await foreach (var batch in channel.Reader.ReadAllBatches(maxCount, maxTime, cancellationToken).NoContext(cancellationToken)) {
-            await process(batch, cancellationToken).NoContext();
-        }
-    }
-
-    public static ValueTask Write<T>(this Channel<T> channel, T element, bool throwOnFull, CancellationToken cancellationToken) {
-        return throwOnFull ? WriteOrThrow() : channel.Writer.WriteAsync(element, cancellationToken);
-
-        ValueTask WriteOrThrow() => !channel.Writer.TryWrite(element) ? throw new ChannelFullException() : default;
-    }
-
-    public static async ValueTask Stop<T>(
-            this Channel<T>                     channel,
-            CancellationTokenSource             cts,
-            Task[]                              readers,
-            Func<CancellationToken, ValueTask>? finalize = null
-        ) {
-        channel.Writer.TryComplete();
-
-        var incompleteReaders = readers.Where(r => !r.IsCompleted).ToArray();
-
-        if (readers.Length > 0) {
-            cts.CancelAfter(TimeSpan.FromSeconds(10));
-            await Task.WhenAll(incompleteReaders).NoContext();
         }
 
-        if (finalize == null) return;
+        public async Task ReadBatches(
+                ProcessElement<T[]> process,
+                int                 maxCount,
+                TimeSpan            maxTime,
+                CancellationToken   cancellationToken
+            ) {
+            await foreach (var batch in channel.Reader.ReadAllBatches(maxCount, maxTime, cancellationToken).NoContext(cancellationToken)) {
+                await process(batch, cancellationToken).NoContext();
+            }
+        }
 
-        using var ts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        await finalize(ts.Token).NoContext();
+        public ValueTask Write(T element, bool throwOnFull, CancellationToken cancellationToken) {
+            return throwOnFull ? WriteOrThrow() : channel.Writer.WriteAsync(element, cancellationToken);
+
+            ValueTask WriteOrThrow() => !channel.Writer.TryWrite(element) ? throw new ChannelFullException() : default;
+        }
+
+        public async ValueTask Stop(
+                CancellationTokenSource             cts,
+                Task[]                              readers,
+                Func<CancellationToken, ValueTask>? finalize = null
+            ) {
+            channel.Writer.TryComplete();
+
+            var incompleteReaders = readers.Where(r => !r.IsCompleted).ToArray();
+
+            if (readers.Length > 0) {
+                cts.CancelAfter(TimeSpan.FromSeconds(10));
+                await Task.WhenAll(incompleteReaders).NoContext();
+            }
+
+            if (finalize == null) return;
+
+            using var ts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await finalize(ts.Token).NoContext();
+        }
     }
 
     static async IAsyncEnumerable<T[]> ReadAllBatches<T>(

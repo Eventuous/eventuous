@@ -97,7 +97,7 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
             LoggerFactory
         );
 
-        if (IsRunning && LastProcessed != null) { return new Checkpoint(Options.SubscriptionId, LastProcessed?.Position); }
+        if (IsRunning && LastProcessed != null) { return new(Options.SubscriptionId, LastProcessed?.Position); }
 
         Logger.Current = Log;
 

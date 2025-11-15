@@ -8,8 +8,13 @@ namespace Eventuous.Extensions.AspNetCore.Generators;
 internal static class Diagnostics {
     public const string DiagnosticCategory = "Eventuous.Extensions.AspNetCore";
 
+    public const string DiagnosticId          = "EVTA001";
+    public const string RouteDiagnosticId     = "EVTA002";
+    public const string DuplicateRouteId      = "EVTA003";
+    public const string ParentStateMismatchId = "EVTA004";
+
     internal static readonly DiagnosticDescriptor StateMatchRule = new(
-        "EVTA001",
+        DiagnosticId,
         "HttpCommand state type mismatches MapCommands state",
         "Command {0} is mapped to state {1} but the route builder is for state {2}",
         DiagnosticCategory,
@@ -19,7 +24,7 @@ internal static class Diagnostics {
     );
 
     internal static readonly DiagnosticDescriptor RouteRule = new(
-        "EVTA002",
+        RouteDiagnosticId,
         "HttpCommand route override mismatches attribute route",
         "Command {0} attribute route '{1}' does not match route override '{2}'",
         DiagnosticCategory,
@@ -29,7 +34,7 @@ internal static class Diagnostics {
     );
 
     internal static readonly DiagnosticDescriptor DuplicateRouteDiagnostic = new(
-        id: "EVTA003",
+        id: DuplicateRouteId,
         title: "Duplicate route detected",
         messageFormat: "Duplicate route detected: {0}",
         category: DiagnosticCategory,
@@ -38,7 +43,7 @@ internal static class Diagnostics {
     );
 
     internal static readonly DiagnosticDescriptor ParentStateMatchDiagnostic = new(
-        id: "EVTA004",
+        id: ParentStateMismatchId,
         title: "State type mismatch",
         messageFormat: "Command '{0}' state type '{1}' doesn't match with parent state type '{2}'",
         category: DiagnosticCategory,

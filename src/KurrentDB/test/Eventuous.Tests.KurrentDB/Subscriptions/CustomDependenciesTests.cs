@@ -32,7 +32,7 @@ public class CustomDependenciesTests {
         services.AddLogging(b => b.AddFilter("Grpc", LogLevel.Error).AddConsole().AddTUnit(LogLevel.Debug));
 
         services.AddKurrentDBClient(_container.GetConnectionString());
-        services.AddProducer<KurrentDbProducer>();
+        services.AddProducer<KurrentDBProducer>();
 
         // Add NoOp store globally to make sure it's not picked up
         services.AddCheckpointStore<NoOpCheckpointStore>();

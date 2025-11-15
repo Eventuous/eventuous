@@ -7,19 +7,43 @@ using Microsoft.AspNetCore.Http;
 namespace Eventuous.Extensions.AspNetCore.Http;
 
 static class RouteHandlerBuilderExt {
-    public static RouteHandlerBuilder ProducesValidationProblemDetails(this RouteHandlerBuilder builder, int statusCode)
-        => builder.Produces<ValidationProblemDetails>(statusCode, ContentTypes.ProblemDetails);
+    extension(RouteHandlerBuilder builder) {
+        /// <summary>
+        /// Configures the route to produce a <see cref="ValidationProblemDetails"/> payload
+        /// with the specified HTTP status code and the <c>application/problem+json</c> content type.
+        /// </summary>
+        /// <param name="statusCode">The HTTP status code to declare for validation problem responses.</param>
+        /// <returns>The same <see cref="RouteHandlerBuilder"/> instance for chaining.</returns>
+        public RouteHandlerBuilder ProducesValidationProblemDetails(int statusCode)
+            => builder.Produces<ValidationProblemDetails>(statusCode, ContentTypes.ProblemDetails);
 
-    public static RouteHandlerBuilder ProducesProblemDetails(this RouteHandlerBuilder builder, int statusCode)
-        => builder.Produces<ProblemDetails>(statusCode, ContentTypes.ProblemDetails);
+        /// <summary>
+        /// Configures the route to produce a <see cref="ProblemDetails"/> payload
+        /// with the specified HTTP status code and the <c>application/problem+json</c> content type.
+        /// </summary>
+        /// <param name="statusCode">The HTTP status code to declare for problem responses.</param>
+        /// <returns>The same <see cref="RouteHandlerBuilder"/> instance for chaining.</returns>
+        public RouteHandlerBuilder ProducesProblemDetails(int statusCode)
+            => builder.Produces<ProblemDetails>(statusCode, ContentTypes.ProblemDetails);
 
-    static RouteHandlerBuilder ProducesOk(this RouteHandlerBuilder builder, Type resultType)
-        => builder.Produces(StatusCodes.Status200OK, resultType, ContentTypes.Json);
+        RouteHandlerBuilder ProducesOk(Type resultType)
+            => builder.Produces(StatusCodes.Status200OK, resultType, ContentTypes.Json);
 
-    public static RouteHandlerBuilder ProducesOk<TState>(this RouteHandlerBuilder builder) where TState : class, new()
-        => builder.ProducesOk(typeof(Result<TState>.Ok));
+        /// <summary>
+        /// Declares a successful <c>200 OK</c> response for the route with a JSON body
+        /// containing <see cref="Result{TState}.Ok"/> for the specified state type.
+        /// </summary>
+        /// <typeparam name="TState">The state type wrapped by the successful result.</typeparam>
+        /// <returns>The same <see cref="RouteHandlerBuilder"/> instance for chaining.</returns>
+        public RouteHandlerBuilder ProducesOk<TState>() where TState : class, new()
+            => builder.ProducesOk(typeof(Result<TState>.Ok));
 
-    static RouteHandlerBuilder Accepts(this RouteHandlerBuilder builder, Type commandType) => builder.Accepts(commandType, false, ContentTypes.Json);
-
-    public static RouteHandlerBuilder Accepts<T>(this RouteHandlerBuilder builder) => builder.Accepts(typeof(T));
+        RouteHandlerBuilder Accepts(Type commandType) => builder.Accepts(commandType, false, ContentTypes.Json);
+        /// <summary>
+        /// Declares that the route accepts a JSON request body of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The request/command type accepted by the route.</typeparam>
+        /// <returns>The same <see cref="RouteHandlerBuilder"/> instance for chaining.</returns>
+        public RouteHandlerBuilder Accepts<T>() => builder.Accepts(typeof(T));
+    }
 }

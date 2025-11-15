@@ -7,7 +7,7 @@ namespace Eventuous.KurrentDB.Subscriptions;
 /// Base class for persistent subscription options
 /// </summary>
 [PublicAPI]
-public abstract record PersistentSubscriptionOptions : EventStoreSubscriptionOptions {
+public abstract record PersistentSubscriptionOptions : KurrentDBSubscriptionOptions {
     /// <summary>
     /// Native EventStoreDB settings for the subscription
     /// </summary>

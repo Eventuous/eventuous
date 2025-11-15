@@ -11,7 +11,7 @@ public abstract class LegacySubscriptionFixture<T> : IAsyncInitializer, IAsyncDi
     protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
     protected StoreFixture        StoreFixture    { get; }
     protected T                   Handler         { get; }
-    protected KurrentDbProducer  Producer        { get; private set; } = null!;
+    protected KurrentDBProducer  Producer        { get; private set; } = null!;
     protected ILogger             Log             { get; }
     protected TestCheckpointStore CheckpointStore { get; }      = new();
     protected StreamSubscription  Subscription    { get; set; } = null!;
@@ -65,6 +65,7 @@ public class LegacySubscriptionFixture(TimeSpan? timeout, bool autoStart = true,
         if (autoStart) await Start();
     }
 
+    [After(Test)]
     public async Task Teardown() {
         if (autoStart) await Stop();
         await DisposeAsync();

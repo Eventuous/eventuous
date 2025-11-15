@@ -4,7 +4,8 @@
 namespace Eventuous.TestHelpers.TUnit;
 
 public static class IntToTimespan {
-    public static TimeSpan Seconds(this int value) => TimeSpan.FromSeconds(value);
-
-    public static TimeSpan Milliseconds(this int value) => TimeSpan.FromMilliseconds(value);
+    extension(int value) {
+        public TimeSpan Seconds() => TimeSpan.FromSeconds(value);
+        public TimeSpan Milliseconds() => TimeSpan.FromMilliseconds(value);
+    }
 }

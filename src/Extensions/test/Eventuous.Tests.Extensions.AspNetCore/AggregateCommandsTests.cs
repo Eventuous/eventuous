@@ -49,7 +49,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
 
     [Test]
     public void MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
-        Assert.Throws<InvalidOperationException>(() => Act());
+        Assert.Throws<InvalidOperationException>(Act);
 
         return;
 

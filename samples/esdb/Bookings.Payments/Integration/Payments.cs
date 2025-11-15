@@ -11,16 +11,16 @@ namespace Bookings.Payments.Integration;
 public static class PaymentsGateway {
     static readonly StreamName Stream = new("PaymentsIntegration");
 
-    public static ValueTask<GatewayMessage<KurrentDbProduceOptions>[]> Transform(IMessageConsumeContext original) {
+    public static ValueTask<GatewayMessage<KurrentDBProduceOptions>[]> Transform(IMessageConsumeContext original) {
         var result = original.Message is PaymentEvents.PaymentRecorded evt
-            ? new GatewayMessage<KurrentDbProduceOptions>(
+            ? new GatewayMessage<KurrentDBProduceOptions>(
                 Stream,
                 new BookingPaymentRecorded(original.Stream.GetId(), evt.BookingId, evt.Amount, evt.Currency),
                 new(),
                 new()
             )
             : null;
-        GatewayMessage<KurrentDbProduceOptions>[] gatewayMessages = result != null ? [result] : [];
+        GatewayMessage<KurrentDBProduceOptions>[] gatewayMessages = result != null ? [result] : [];
         return ValueTask.FromResult(gatewayMessages);
     }
 }

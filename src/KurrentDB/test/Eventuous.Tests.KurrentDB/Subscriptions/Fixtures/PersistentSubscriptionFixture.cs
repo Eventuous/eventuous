@@ -17,7 +17,7 @@ public class PersistentSubscriptionFixture<TSubscription, TOptions, THandler>(
     where TOptions : PersistentSubscriptionOptions {
     public    StreamName         Stream       { get; }              = new($"test-{Guid.NewGuid():N}");
     public    THandler           Handler      { get; }              = handler;
-    public    KurrentDbProducer Producer     { get; private set; } = null!;
+    public    KurrentDBProducer Producer     { get; private set; } = null!;
     protected ILogger            Log          { get; set; }         = null!;
     protected StoreFixture       Fixture      { get; }              = new(logLevel);
     TSubscription                Subscription { get; set; }         = null!;

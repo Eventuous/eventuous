@@ -5,13 +5,6 @@ namespace Eventuous.KurrentDB;
 /// </summary>
 public static class StreamRevisionExtensions {
     /// <summary>
-    /// Converts <see cref="ExpectedStreamVersion"/> to <see cref="StreamState"/>
-    /// </summary>
-    /// <param name="version">Stream version</param>
-    /// <returns></returns>
-    public static StreamState AsStreamRevision(this ExpectedStreamVersion version) => StreamState.StreamRevision((ulong)version.Value);
-
-    /// <summary>
     /// Converts <see cref="StreamTruncatePosition"/> to <see cref="StreamPosition"/>
     /// </summary>
     /// <param name="position">Position for stream truncation</param>

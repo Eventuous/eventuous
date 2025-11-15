@@ -70,7 +70,7 @@ public class PostgresCheckpointStore : ICheckpointStore {
             if (!await reader.ReadAsync(cancellationToken).NoContext()) return (Checkpoint.Empty(checkpointId), false);
 
             var hasPosition = !reader.IsDBNull(0);
-            checkpoint = hasPosition ? new Checkpoint(checkpointId, (ulong?)reader.GetInt64(0)) : Checkpoint.Empty(checkpointId);
+            checkpoint = hasPosition ? new(checkpointId, (ulong?)reader.GetInt64(0)) : Checkpoint.Empty(checkpointId);
             Logger.Current.CheckpointLoaded(this, checkpoint);
 
             return (checkpoint, true);

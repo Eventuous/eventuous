@@ -19,7 +19,7 @@ public class SubscriptionFixture<T> where T : IEventHandler, new() {
     IMessageSubscription           Subscription       { get; set; } = null!;
 
     public SubscriptionFixture(bool subscribeToAll, LogLevel logLevel = LogLevel.Trace) {
-        Handler         = new T();
+        Handler         = new();
         _subscribeToAll = subscribeToAll;
         Stream          = new(Guid.NewGuid().ToString());
         LoggerFactory   = LoggingExtensions.GetLoggerFactory(logLevel);

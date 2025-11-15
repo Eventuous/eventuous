@@ -205,7 +205,7 @@ public class CommandHandlerBuilder<TCommand, [DynamicallyAccessedMembers(Dynamic
     }
 
     IDefineExecution<TCommand, TAggregate, TState> IDefineStore<TCommand, TAggregate, TState>.ResolveStore(Func<TCommand, IEventStore> resolveStore) {
-        Ensure.NotNull(resolveStore, nameof(resolveStore));
+        Ensure.NotNull(resolveStore);
         _reader = resolveStore;
         _writer = resolveStore;
 

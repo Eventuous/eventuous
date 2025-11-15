@@ -16,35 +16,20 @@ public static class Helpers {
 
     static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
-    public static Task<AppendEventsResult> AppendEvents(
-            this StoreFixtureBase fixture,
-            StreamName            stream,
-            object[]              evt,
-            ExpectedStreamVersion version
-        ) {
-        var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
+    extension(StoreFixtureBase fixture) {
+        public Task<AppendEventsResult> AppendEvents(StreamName stream, object[] evt, ExpectedStreamVersion version) {
+            var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
-        return fixture.EventStore.AppendEvents(stream, version, streamEvents.ToArray(), default);
-    }
+            return fixture.EventStore.AppendEvents(stream, version, streamEvents.ToArray(), default);
+        }
 
-    public static Task<AppendEventsResult> AppendEvent(
-            this StoreFixtureBase fixture,
-            StreamName            stream,
-            object                evt,
-            ExpectedStreamVersion version,
-            Metadata?             metadata = null
-        ) {
-        var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, metadata ?? new Metadata());
+        public Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version, Metadata? metadata = null) {
+            var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, metadata ?? new Metadata());
 
-        return fixture.EventStore.AppendEvents(stream, version, [streamEvent], default);
-    }
+            return fixture.EventStore.AppendEvents(stream, version, [streamEvent], default);
+        }
 
-    public static Task<AppendEventsResult> StoreChanges(
-            this StoreFixtureBase fixture,
-            StreamName            stream,
-            object                evt,
-            ExpectedStreamVersion version
-        ) {
-        return fixture.EventStore.Store(stream, version, [evt]);
+        public Task<AppendEventsResult> StoreChanges(StreamName stream, object evt, ExpectedStreamVersion version)
+            => fixture.EventStore.Store(stream, version, [evt]);
     }
 }

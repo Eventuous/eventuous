@@ -18,21 +18,22 @@ public static class Helpers {
     static BookingImported ToEvent(ImportBooking cmd)
         => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
-    public static Task<AppendEventsResult> AppendEvents(
-            this IntegrationFixture fixture,
-            StreamName              stream,
-            object[]                evt,
-            ExpectedStreamVersion   version,
-            CancellationToken       cancellationToken
-        ) {
-        var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
+    extension(IntegrationFixture fixture) {
+        public Task<AppendEventsResult> AppendEvents(
+                StreamName            stream,
+                object[]              evt,
+                ExpectedStreamVersion version,
+                CancellationToken     cancellationToken
+            ) {
+            var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
-        return fixture.EventWriter.AppendEvents(stream, version, streamEvents.ToArray(), cancellationToken);
-    }
+            return fixture.EventWriter.AppendEvents(stream, version, streamEvents.ToArray(), cancellationToken);
+        }
 
-    public static Task<AppendEventsResult> AppendEvent(this IntegrationFixture fixture, StreamName stream, object evt, ExpectedStreamVersion version, CancellationToken cancellationToken) {
-        var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, new());
+        public Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version, CancellationToken cancellationToken) {
+            var streamEvent = new NewStreamEvent(Guid.NewGuid(), evt, new());
 
-        return fixture.EventWriter.AppendEvents(stream, version, [streamEvent], cancellationToken);
+            return fixture.EventWriter.AppendEvents(stream, version, [streamEvent], cancellationToken);
+        }
     }
 }

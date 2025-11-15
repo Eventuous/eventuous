@@ -5,12 +5,11 @@ namespace Eventuous.TestHelpers.TUnit.Logging;
 
 public static class LoggingExtensions {
     public static ILoggerFactory GetLoggerFactory(LogLevel logLevel = LogLevel.Information)
-        => LoggerFactory.Create(
-            builder => builder
-                .SetMinimumLevel(logLevel)
-                .AddFilter("Microsoft", LogLevel.Warning)
-                .AddFilter("Grpc", LogLevel.Warning)
-                .AddTUnit(logLevel)
+        => LoggerFactory.Create(builder => builder
+            .SetMinimumLevel(logLevel)
+            .AddFilter("Microsoft", LogLevel.Warning)
+            .AddFilter("Grpc", LogLevel.Warning)
+            .AddTUnit(logLevel)
         );
 
     public static ILoggerFactory AddTUnit(this ILoggerFactory factory, LogLevel logLevel) {
@@ -19,15 +18,17 @@ public static class LoggingExtensions {
         return factory;
     }
 
-    public static ILoggingBuilder AddTUnit(this ILoggingBuilder builder, LogLevel logLevel) => builder.AddProvider(new TUnitLoggerProvider(logLevel));
+    extension(ILoggingBuilder builder) {
+        public ILoggingBuilder AddTUnit(LogLevel logLevel) => builder.AddProvider(new TUnitLoggerProvider(logLevel));
 
-    public static ILoggingBuilder ForTests(this ILoggingBuilder builder, LogLevel logLevel = LogLevel.Information)
-        => builder
-            .AddTUnit(logLevel)
-            .SetMinimumLevel(logLevel)
-            .AddFilter("Grpc", LogLevel.Warning)
-            .AddFilter("Microsoft", LogLevel.Warning)
-            .AddFilter("Npgsql", LogLevel.Warning);
+        public ILoggingBuilder ForTests(LogLevel logLevel = LogLevel.Information)
+            => builder
+                .AddTUnit(logLevel)
+                .SetMinimumLevel(logLevel)
+                .AddFilter("Grpc", LogLevel.Warning)
+                .AddFilter("Microsoft", LogLevel.Warning)
+                .AddFilter("Npgsql", LogLevel.Warning);
+    }
 }
 
 public sealed class TUnitLoggerProvider(LogLevel logLevel) : ILoggerProvider {

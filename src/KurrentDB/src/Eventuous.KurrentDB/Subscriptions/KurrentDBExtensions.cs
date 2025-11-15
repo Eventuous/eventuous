@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Eventuous.KurrentDB.Subscriptions;
 
-static class KurrentDbExtensions {
+static class KurrentDBExtensions {
     public static KurrentDBClientSettings GetSettings(this KurrentDBClientBase client) {
         var prop = typeof(KurrentDBClientBase).GetProperty("Settings", BindingFlags.NonPublic | BindingFlags.Instance);
 

@@ -25,7 +25,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
 
     static bool IsPotentialUsage(SyntaxNode node, CancellationToken _) {
         return node switch {
-            GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } g => g.Identifier.Text == "IMessageConsumeContext" || g.Identifier.Text == "On",
+            GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } g => g.Identifier.Text is "IMessageConsumeContext" or "On",
             // handle qualified names like Eventuous.Subscriptions.Context.IMessageConsumeContext<T>
             QualifiedNameSyntax { Right: GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } g2 } => g2.Identifier.Text == "IMessageConsumeContext",
             // implicit: lambdas where parameter type is inferred to IMessageConsumeContext<T>

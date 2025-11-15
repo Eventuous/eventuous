@@ -1,8 +1,8 @@
 using System.Reflection;
-using Eventuous.Extensions.AspNetCore.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Diags = Eventuous.Extensions.AspNetCore.Generators.Diagnostics;
 
 namespace Eventuous.Tests.Extensions.AspNetCore.Analyzers;
 
@@ -11,7 +11,7 @@ public partial class HttpCommandAnnotationTests {
         var withAnalyzers = compilation.WithAnalyzers([analyzer]);
         var diagnostics   = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
 
-        return diagnostics.Where(d => d.Id is HttpCommandStateMismatchAnalyzer.DiagnosticId or HttpCommandStateMismatchAnalyzer.RouteDiagnosticId).ToArray();
+        return diagnostics.Where(d => d.Id is Diags.DiagnosticId or Diags.RouteDiagnosticId).ToArray();
     }
 
     static CSharpCompilation CreateCompilation(string source) {
@@ -20,12 +20,12 @@ public partial class HttpCommandAnnotationTests {
         var refs = new List<MetadataReference> {
             MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Enumerable).GetTypeInfo().Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Eventuous.State<>).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(State<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Eventuous.Extensions.AspNetCore.Http.CommandServiceRouteBuilder<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder).Assembly.Location),
             // Additional ASP.NET Core references used in method signatures to enable full symbol binding
             MetadataReference.CreateFromFile(typeof(Microsoft.AspNetCore.Builder.RouteHandlerBuilder).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Microsoft.AspNetCore.Http.HttpContext).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Microsoft.AspNetCore.Http.HttpContext).Assembly.Location)
         };
 
         TryAddRef(refs, "System.Runtime");

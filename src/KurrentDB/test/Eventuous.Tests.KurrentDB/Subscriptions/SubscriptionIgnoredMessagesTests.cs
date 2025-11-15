@@ -32,7 +32,7 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
         TypeMapper.AddType<TestEvent>(TestEvent.TypeName);
         TypeMapper.AddType<UnknownEvent>("ignored");
         TestContext.Current?.OutputWriter.WriteLine($"Producing to {_stream}");
-        await _producer.Produce(_stream, testEvents, new Metadata(), cancellationToken: cancellationToken);
+        await _producer.Produce(_stream, testEvents, new(), cancellationToken: cancellationToken);
         TestContext.Current?.OutputWriter.WriteLine("Produce complete");
 
         TypeMapper.RemoveType<UnknownEvent>();
@@ -57,7 +57,7 @@ public class SubscriptionIgnoredMessagesTests : StoreFixture {
 
     protected override void SetupServices(IServiceCollection services) {
         base.SetupServices(services);
-        services.AddProducer<KurrentDbProducer>();
+        services.AddProducer<KurrentDBProducer>();
 
         services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>(
             _subscriptionId,

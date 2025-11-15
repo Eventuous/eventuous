@@ -91,5 +91,5 @@ public static class ProducerExtensions {
             AcknowledgeProduce?  onAck,
             ReportFailedProduce? onNack
         )
-        => [new ProducedMessage(message, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack }];
+        => [new(message, metadata, additionalHeaders) { OnAck = onAck, OnNack = onNack }];
 }

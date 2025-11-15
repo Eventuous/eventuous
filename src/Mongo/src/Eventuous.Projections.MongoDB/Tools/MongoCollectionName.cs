@@ -3,7 +3,7 @@
 
 using static System.String;
 
-namespace Eventuous.Projections.MongoDB.Tools; 
+namespace Eventuous.Projections.MongoDB.Tools;
 
 /// <summary>
 /// Convention based mongo collection name.
@@ -33,7 +33,7 @@ public record MongoCollectionName {
 
         if (!IsNullOrWhiteSpace(prefix)) collectionName = $"{prefix}-{collectionName}";
 
-        return new MongoCollectionName(collectionName);
+        return new(collectionName);
     }
 
     public override string ToString() => _value ?? "";
@@ -41,5 +41,5 @@ public record MongoCollectionName {
     public static implicit operator string(MongoCollectionName self) => self._value ?? "";
 
     public static implicit operator MongoCollectionName(string value)
-        => IsNullOrWhiteSpace(value) ? Default : new MongoCollectionName(value);
+        => IsNullOrWhiteSpace(value) ? Default : new(value);
 }

@@ -10,7 +10,7 @@ public class CommandService : CommandService<Payment, PaymentState, PaymentId> {
         On<PaymentCommands.RecordPayment>()
             .InState(ExpectedState.New)
             .GetId(cmd => new(cmd.PaymentId))
-            .Act((payment, cmd) => payment.ProcessPayment(cmd.BookingId, new Money(cmd.Amount, cmd.Currency), cmd.Method, cmd.Provider));
+            .Act((payment, cmd) => payment.ProcessPayment(cmd.BookingId, new(cmd.Amount, cmd.Currency), cmd.Method, cmd.Provider));
     }
 }
 

@@ -14,7 +14,7 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
         Action<IServiceCollection>?  configureServices = null,
         LogLevel                     logLevel          = LogLevel.Information
     ) : SubscriptionFixtureBase<EventStoreDbContainer, TSubscription, TSubscriptionOptions, TestCheckpointStore, TEventHandler>(autoStart, logLevel)
-    where TSubscription : EventStoreCatchUpSubscriptionBase<TSubscriptionOptions>
+    where TSubscription : KurrentDBCatchUpSubscriptionBase<TSubscriptionOptions>
     where TSubscriptionOptions : CatchUpSubscriptionOptions
     where TEventHandler : class, IEventHandler {
     protected override EventStoreDbContainer CreateContainer() => EsdbContainer.Create();

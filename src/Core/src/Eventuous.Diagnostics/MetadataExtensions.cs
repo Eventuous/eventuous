@@ -6,29 +6,31 @@ namespace Eventuous.Diagnostics;
 using static DiagnosticTags;
 
 public static class MetadataExtensions {
-    public static Metadata AddActivityTags(this Metadata metadata, Activity? activity) {
-        if (activity == null) return metadata;
+    extension(Metadata metadata) {
+        public Metadata AddActivityTags(Activity? activity) {
+            if (activity == null) return metadata;
 
-        var tags = activity.Tags.Where(x => x.Value != null && MetaMappings.TelemetryToInternalTagsMap.ContainsKey(x.Key));
+            var tags = activity.Tags.Where(x => x.Value != null && MetaMappings.TelemetryToInternalTagsMap.ContainsKey(x.Key));
 
-        foreach (var (key, value) in tags) {
-            metadata.With(MetaMappings.TelemetryToInternalTagsMap[key], value!);
+            foreach (var (key, value) in tags) {
+                metadata.With(MetaMappings.TelemetryToInternalTagsMap[key], value!);
+            }
+
+            return metadata.AddTracingMeta(activity.GetTracingData());
         }
 
-        return metadata.AddTracingMeta(activity.GetTracingData());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Metadata AddTracingMeta(TracingMeta tracingMeta)
+            => metadata.ContainsKey(TraceId) || tracingMeta.TraceId == EmptyId
+                ? metadata // don't override existing tracing data
+                : metadata
+                    .AddNotNull(TraceId, tracingMeta.TraceId)
+                    .AddNotNull(SpanId, tracingMeta.SpanId);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TracingMeta GetTracingMeta()
+            => new(metadata.GetString(TraceId), metadata.GetString(SpanId));
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static Metadata AddTracingMeta(this Metadata metadata, TracingMeta tracingMeta)
-        => metadata.ContainsKey(TraceId) || tracingMeta.TraceId == EmptyId
-            ? metadata // don't override existing tracing data
-            : metadata
-                .AddNotNull(TraceId, tracingMeta.TraceId)
-                .AddNotNull(SpanId, tracingMeta.SpanId);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TracingMeta GetTracingMeta(this Metadata metadata)
-        => new(metadata.GetString(TraceId), metadata.GetString(SpanId));
 
     const string EmptyId = "0000000000000000";
 }

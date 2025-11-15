@@ -8,7 +8,7 @@ namespace Eventuous.KurrentDB.Subscriptions;
 /// <summary>
 /// Base class for catch-up subscription options
 /// </summary>
-public record CatchUpSubscriptionOptions : EventStoreSubscriptionWithCheckpointOptions {
+public record CatchUpSubscriptionOptions : KurrentDBSubscriptionWithCheckpointOptions {
     /// <summary>
     /// Number of parallel consumers. Defaults to 1.
     /// Don't set this value if you use partitioned subscriptions with <see cref="PartitioningFilter"/>.
