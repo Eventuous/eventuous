@@ -6,8 +6,6 @@
         <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     </PropertyGroup>
     <ItemGroup>
-<!--        <PackageReference Include="EventStore.Client.Grpc.PersistentSubscriptions"/>-->
-<!--        <PackageReference Include="EventStore.Client.Grpc.Streams"/>-->
         <PackageReference Include="KurrentDB.Client" />
     </ItemGroup>
     <ItemGroup>
