@@ -6,7 +6,7 @@
         <IncludeSutApp>true</IncludeSutApp>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\KurrentDb\src\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
+        <ProjectReference Include="$(KurrentDBRoot)\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
         <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj" />
         <Using Include="Eventuous" />
     </ItemGroup>
