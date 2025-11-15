@@ -107,10 +107,10 @@
     </Folder>
     <Folder Name="/Kurrent/" />
     <Folder Name="/Kurrent/src/">
-        <Project Path="src/KurrentDb/src/Eventuous.KurrentDB/Eventuous.KurrentDB.csproj" />
+        <Project Path="src/KurrentDB/src/Eventuous.KurrentDB/Eventuous.KurrentDB.csproj" />
     </Folder>
     <Folder Name="/Kurrent/test/">
-        <Project Path="src/KurrentDb/test/Eventuous.Tests.KurrentDB/Eventuous.Tests.KurrentDB.csproj" />
+        <Project Path="src/KurrentDB/test/Eventuous.Tests.KurrentDB/Eventuous.Tests.KurrentDB.csproj" />
     </Folder>
     <Folder Name="/Mongo/" />
     <Folder Name="/Mongo/src/">
