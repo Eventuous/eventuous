@@ -187,7 +187,11 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        if (_processor == null) return;
-        await _processor.StopProcessingAsync(cancellationToken).NoContext();
+        if (_sessionProcessor is not null) {
+            await _sessionProcessor.StopProcessingAsync(cancellationToken).NoContext();
+        }
+        else if (_processor is not null) {
+            await _processor.StopProcessingAsync(cancellationToken).NoContext();
+        }
     }
 }
