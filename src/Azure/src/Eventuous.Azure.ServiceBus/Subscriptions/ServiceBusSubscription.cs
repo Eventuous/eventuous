@@ -15,6 +15,7 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     readonly ServiceBusClient                  _client;
     readonly Func<ProcessErrorEventArgs, Task> _defaultErrorHandler;
     ServiceBusProcessor?                       _processor;
+    ServiceBusSessionProcessor?                _sessionProcessor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceBusSubscription"/> class.
@@ -37,12 +38,21 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     protected override ValueTask Subscribe(CancellationToken cancellationToken) {
-        _processor = Options.QueueOrTopic.MakeProcessor(_client, Options);
+        if (Options.SessionProcessorOptions is not null) {
+            _sessionProcessor = Options.QueueOrTopic.MakeSessionProcessor(_client, Options);
 
-        _processor.ProcessMessageAsync += HandleMessage;
-        _processor.ProcessErrorAsync   += _defaultErrorHandler;
+            _sessionProcessor.ProcessMessageAsync += HandleSessionMessage;
+            _sessionProcessor.ProcessErrorAsync   += _defaultErrorHandler;
 
-        return new(_processor.StartProcessingAsync(cancellationToken));
+            return new ValueTask(_sessionProcessor.StartProcessingAsync(cancellationToken));
+        } else {
+            _processor = Options.QueueOrTopic.MakeProcessor(_client, Options);
+
+            _processor.ProcessMessageAsync += HandleMessage;
+            _processor.ProcessErrorAsync   += _defaultErrorHandler;
+
+            return new(_processor.StartProcessingAsync(cancellationToken));
+        }
 
         async Task HandleMessage(ProcessMessageEventArgs arg) {
             var ct = arg.CancellationToken;
@@ -87,6 +97,54 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
             } catch (Exception ex) {
                 // Abandoning the message will make it available for reprocessing, or dead letter it?
                 await arg.AbandonMessageAsync(msg, null, ct).NoContext(); 
+                await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, arg.FullyQualifiedNamespace, arg.EntityPath, arg.Identifier, arg.CancellationToken)).NoContext();
+                Log.ErrorLog?.Log(ex, "Error processing message: {MessageId}", msg.MessageId);
+            }
+        }
+
+        async Task HandleSessionMessage(ProcessSessionMessageEventArgs arg) {
+            var ct = arg.CancellationToken;
+
+            if (ct.IsCancellationRequested) return;
+
+            var msg = arg.Message;
+
+            var eventType = msg.ApplicationProperties[Options.AttributeNames.MessageType].ToString()
+             ?? throw new InvalidOperationException("Event type is missing in message properties");
+            var contentType = msg.ContentType;
+
+            // Should this be a stream name? or topic or something
+            var streamName = msg.ApplicationProperties[Options.AttributeNames.StreamName].ToString()
+             ?? throw new InvalidOperationException("Stream name is missing in message properties");
+
+            Logger.Current = Log;
+
+            var evt = DeserializeData(contentType, eventType, msg.Body, streamName);
+
+            var applicationProperties = msg.ApplicationProperties.Concat(MessageProperties(msg));
+
+            var ctx = new MessageConsumeContext(
+                msg.MessageId,
+                eventType,
+                contentType,
+                streamName,
+                0,
+                0,
+                0,
+                Sequence++,
+                msg.EnqueuedTime.UtcDateTime,
+                evt,
+                AsMeta(applicationProperties),
+                SubscriptionId,
+                ct
+            );
+
+            try {
+                await Handler(ctx).NoContext();
+                await arg.CompleteMessageAsync(msg, ct).NoContext();
+            } catch (Exception ex) {
+                // Abandoning the message will make it available for reprocessing, or dead letter it?
+                await arg.AbandonMessageAsync(msg, null, ct).NoContext();
                 await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, arg.FullyQualifiedNamespace, arg.EntityPath, arg.Identifier, arg.CancellationToken)).NoContext();
                 Log.ErrorLog?.Log(ex, "Error processing message: {MessageId}", msg.MessageId);
             }

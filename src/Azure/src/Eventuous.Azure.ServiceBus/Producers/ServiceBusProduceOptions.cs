@@ -23,6 +23,16 @@ public class ServiceBusProduceOptions {
     public string? ReplyTo { get; set; }
 
     /// <summary>
+    /// Session ID to guarantee ordering on session-enabled entities.
+    /// </summary>
+    public string? SessionId { get; init; }
+
+    /// <summary>
+    /// The reply-to session ID attribute name for request-reply over sessions.
+    /// </summary>
+    public string? ReplyToSessionId { get; init; }
+
+    /// <summary>
     /// Gets or sets the time interval after which the message expires.
     /// </summary>
     public TimeSpan TimeToLive { get; set; } = TimeSpan.MaxValue;

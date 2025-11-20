@@ -35,8 +35,16 @@ class ServiceBusMessageBuilder(
             TimeToLive = options?.TimeToLive ?? TimeSpan.MaxValue,
             CorrelationId = message.Metadata?.GetCorrelationId(),
             To = metadata?.GetValueOrDefault(attributes.To, options?.To)?.ToString(),
-            ReplyTo = metadata?.GetValueOrDefault(attributes.ReplyTo, options?.ReplyTo)?.ToString()
+            ReplyTo = metadata?.GetValueOrDefault(attributes.ReplyTo, options?.ReplyTo)?.ToString(),
+            ReplyToSessionId = options?.ReplyToSessionId,
         };
+
+        // We set the SessionId only when a value is present because
+        // it overrides the PartitionKey, even if the SessionId is null.
+
+        if (options?.SessionId is not null) {
+            serviceBusMessage.SessionId = options.SessionId;
+        }
 
         var reservedAttributes = attributes.ReservedNames();
 
