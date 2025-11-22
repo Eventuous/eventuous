@@ -80,7 +80,7 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
         var contentType = msg.ContentType;
 
         // Should this be a stream name? or topic or something
-        var streamName = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.StreamName, out var stream)
+        var streamName = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.StreamName, out var stream) && stream is not null
             ? stream.ToString()
             : Options.QueueOrTopic switch {
                 Queue queue => queue.Name,
