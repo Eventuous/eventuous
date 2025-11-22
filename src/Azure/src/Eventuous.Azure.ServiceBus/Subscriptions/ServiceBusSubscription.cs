@@ -74,7 +74,7 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
         ) {
         if (ct.IsCancellationRequested) return;
 
-        var eventType = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.MessageType, out var messageType)
+        var eventType = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.MessageType, out var messageType) && messageType is not null
             ? messageType.ToString()
             : msg.Subject) ?? throw new InvalidOperationException("Message type is missing in message properties");
         var contentType = msg.ContentType;
