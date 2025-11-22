@@ -44,35 +44,65 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
             _sessionProcessor.ProcessMessageAsync += HandleSessionMessage;
             _sessionProcessor.ProcessErrorAsync   += _defaultErrorHandler;
 
-            return new ValueTask(_sessionProcessor.StartProcessingAsync(cancellationToken));
-        } else {
-            _processor = Options.QueueOrTopic.MakeProcessor(_client, Options);
-
-            _processor.ProcessMessageAsync += HandleMessage;
-            _processor.ProcessErrorAsync   += _defaultErrorHandler;
-
-            return new(_processor.StartProcessingAsync(cancellationToken));
+            return new(_sessionProcessor.StartProcessingAsync(cancellationToken));
         }
 
-        async Task HandleMessage(ProcessMessageEventArgs arg) {
-            var ct = arg.CancellationToken;
+        _processor = Options.QueueOrTopic.MakeProcessor(_client, Options);
 
+        _processor.ProcessMessageAsync += HandleMessage;
+        _processor.ProcessErrorAsync   += _defaultErrorHandler;
+
+        return new(_processor.StartProcessingAsync(cancellationToken));
+
+        Task HandleMessage(ProcessMessageEventArgs arg)
+            => ProcessMessageAsync(
+                arg.Message,
+                arg.CancellationToken,
+                msg => arg.CompleteMessageAsync(msg, arg.CancellationToken),
+                msg => arg.AbandonMessageAsync(msg, null, arg.CancellationToken),
+                arg.FullyQualifiedNamespace,
+                arg.EntityPath,
+                arg.Identifier
+            );
+
+        Task HandleSessionMessage(ProcessSessionMessageEventArgs arg)
+            => ProcessMessageAsync(
+                arg.Message,
+                arg.CancellationToken,
+                msg => arg.CompleteMessageAsync(msg, arg.CancellationToken),
+                msg => arg.AbandonMessageAsync(msg, null, arg.CancellationToken),
+                arg.FullyQualifiedNamespace,
+                arg.EntityPath,
+                arg.Identifier
+            );
+
+        async Task ProcessMessageAsync(
+                ServiceBusReceivedMessage             msg,
+                CancellationToken                     ct,
+                Func<ServiceBusReceivedMessage, Task> completeMessage,
+                Func<ServiceBusReceivedMessage, Task> abandonMessage,
+                string                                fullyQualifiedNamespace,
+                string                                entityPath,
+                string                                identifier
+            ) {
             if (ct.IsCancellationRequested) return;
 
-            var msg = arg.Message;
-
-            var eventType = msg.ApplicationProperties[Options.AttributeNames.MessageType].ToString()
-             ?? throw new InvalidOperationException("Event type is missing in message properties");
+            var eventType = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.MessageType, out var messageType)
+                ? messageType.ToString()
+                : msg.Subject) ?? throw new InvalidOperationException("Message type is missing in message properties");
             var contentType = msg.ContentType;
 
             // Should this be a stream name? or topic or something
-            var streamName = msg.ApplicationProperties[Options.AttributeNames.StreamName].ToString()
-             ?? throw new InvalidOperationException("Stream name is missing in message properties");
+            var streamName = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.StreamName, out var stream)
+                ? stream.ToString()
+                : Options.QueueOrTopic switch {
+                    Queue queue => queue.Name,
+                    Topic topic => topic.Name,
+                    _           => null
+                }) ?? throw new InvalidOperationException("Stream name is missing in message properties");
 
             Logger.Current = Log;
-
-            var evt = DeserializeData(contentType, eventType, msg.Body, streamName);
-
+            var evt                   = DeserializeData(contentType, eventType, msg.Body, streamName);
             var applicationProperties = msg.ApplicationProperties.Concat(MessageProperties(msg));
 
             var ctx = new MessageConsumeContext(
@@ -93,59 +123,11 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
 
             try {
                 await Handler(ctx).NoContext();
-                await arg.CompleteMessageAsync(msg, ct).NoContext();
+                await completeMessage(msg).NoContext();
             } catch (Exception ex) {
                 // Abandoning the message will make it available for reprocessing, or dead letter it?
-                await arg.AbandonMessageAsync(msg, null, ct).NoContext(); 
-                await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, arg.FullyQualifiedNamespace, arg.EntityPath, arg.Identifier, arg.CancellationToken)).NoContext();
-                Log.ErrorLog?.Log(ex, "Error processing message: {MessageId}", msg.MessageId);
-            }
-        }
-
-        async Task HandleSessionMessage(ProcessSessionMessageEventArgs arg) {
-            var ct = arg.CancellationToken;
-
-            if (ct.IsCancellationRequested) return;
-
-            var msg = arg.Message;
-
-            var eventType = msg.ApplicationProperties[Options.AttributeNames.MessageType].ToString()
-             ?? throw new InvalidOperationException("Event type is missing in message properties");
-            var contentType = msg.ContentType;
-
-            // Should this be a stream name? or topic or something
-            var streamName = msg.ApplicationProperties[Options.AttributeNames.StreamName].ToString()
-             ?? throw new InvalidOperationException("Stream name is missing in message properties");
-
-            Logger.Current = Log;
-
-            var evt = DeserializeData(contentType, eventType, msg.Body, streamName);
-
-            var applicationProperties = msg.ApplicationProperties.Concat(MessageProperties(msg));
-
-            var ctx = new MessageConsumeContext(
-                msg.MessageId,
-                eventType,
-                contentType,
-                streamName,
-                0,
-                0,
-                0,
-                Sequence++,
-                msg.EnqueuedTime.UtcDateTime,
-                evt,
-                AsMeta(applicationProperties),
-                SubscriptionId,
-                ct
-            );
-
-            try {
-                await Handler(ctx).NoContext();
-                await arg.CompleteMessageAsync(msg, ct).NoContext();
-            } catch (Exception ex) {
-                // Abandoning the message will make it available for reprocessing, or dead letter it?
-                await arg.AbandonMessageAsync(msg, null, ct).NoContext();
-                await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, arg.FullyQualifiedNamespace, arg.EntityPath, arg.Identifier, arg.CancellationToken)).NoContext();
+                await abandonMessage(msg).NoContext();
+                await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, fullyQualifiedNamespace, entityPath, identifier, ct)).NoContext();
                 Log.ErrorLog?.Log(ex, "Error processing message: {MessageId}", msg.MessageId);
             }
         }
@@ -173,12 +155,10 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     static Metadata AsMeta(IEnumerable<KeyValuePair<string, object>> applicationProperties) =>
         new(applicationProperties.ToDictionary(pair => pair.Key, object? (pair) => pair.Value));
 
-    async Task DefaultErrorHandler(ProcessErrorEventArgs arg) {
-        // Log the error
+    Task DefaultErrorHandler(ProcessErrorEventArgs arg) {
         Log.ErrorLog?.Log(arg.Exception, "Error processing message: {Identifier}", arg.Identifier);
 
-        // Optionally, you can handle the error further, e.g., by sending to a dead-letter queue
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     /// <summary>
