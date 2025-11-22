@@ -77,7 +77,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
         );
         var cmd     = ServerFixture.GetBookRoom();
         var content = await fixture.ExecuteRequest<BookRoom, BookingState>(cmd, "book", cmd.BookingId);
-        await VerifyJson(content);
+        await VerifyJson(content).IgnoreParameters();
     }
 
     static async Task Execute(ServerFixture fixture, string route) {
@@ -92,7 +92,6 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
         );
         var content = await fixture.ExecuteRequest<ImportBookingHttp, BookingState>(import, route, bookRoom.BookingId);
 
-        await VerifyJson(content)
-            .IgnoreParameters();
+        await VerifyJson(content).IgnoreParameters();
     }
 }
