@@ -9,7 +9,7 @@ using static Fixture.TestCommands;
 [ClassDataSource<WebApplicationFactory<Program>>]
 public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : TestBaseWithLogs {
     [Test]
-    public async Task MapAggregateContractToCommandExplicitly() {
+    public async Task MapContractExplicitly() {
         var fixture = new ServerFixture(
             factory,
             _ => { },
@@ -22,7 +22,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
     }
 
     [Test]
-    public async Task MapAggregateContractToCommandExplicitlyWithoutRoute() {
+    public async Task MapContractExplicitlyWithoutRoute() {
         var fixture = new ServerFixture(
             factory,
             _ => { },
@@ -35,7 +35,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
     }
 
     [Test]
-    public async Task MapAggregateContractToCommandExplicitlyWithoutRouteWithGenericAttr() {
+    public async Task MapContractExplicitlyWithoutRouteWithGenericAttr() {
         var fixture = new ServerFixture(
             factory,
             _ => { },
@@ -48,7 +48,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
     }
 
     [Test]
-    public void MapAggregateContractToCommandExplicitlyWithoutRouteWithWrongGenericAttr() {
+    public void MapContractExplicitlyWithoutRouteWithWrongGenericAttr() {
         Assert.Throws<InvalidOperationException>(Act);
 
         return;
@@ -92,6 +92,7 @@ public class AggregateCommandsTests(WebApplicationFactory<Program> factory) : Te
         );
         var content = await fixture.ExecuteRequest<ImportBookingHttp, BookingState>(import, route, bookRoom.BookingId);
 
-        await VerifyJson(content);
+        await VerifyJson(content)
+            .IgnoreParameters();
     }
 }
