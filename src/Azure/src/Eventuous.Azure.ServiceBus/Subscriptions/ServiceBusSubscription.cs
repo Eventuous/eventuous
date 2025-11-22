@@ -12,10 +12,8 @@ namespace Eventuous.Azure.ServiceBus.Subscriptions;
 /// Represents a Service Bus subscription that processes messages from a queue or topic.
 /// </summary>
 public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOptions> {
-    readonly ServiceBusClient                  _client;
     readonly Func<ProcessErrorEventArgs, Task> _defaultErrorHandler;
-    ServiceBusProcessor?                       _processor;
-    ServiceBusSessionProcessor?                _sessionProcessor;
+    readonly IServiceBusProcessorStrategy      _processorStrategy;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceBusSubscription"/> class.
@@ -27,8 +25,11 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     /// <param name="eventSerializer">Event serializer (optional)</param>
     public ServiceBusSubscription(ServiceBusClient client, ServiceBusSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory, IEventSerializer? eventSerializer) :
         base(options, consumePipe, loggerFactory, eventSerializer) {
-        _client              = client;
         _defaultErrorHandler = Options.ErrorHandler ?? DefaultErrorHandler;
+
+        _processorStrategy = Options.SessionProcessorOptions is not null
+            ? new SessionProcessorStrategy(client, Options, HandleSessionMessage, _defaultErrorHandler)
+            : new StandardProcessorStrategy(client, Options, HandleMessage, _defaultErrorHandler);
     }
 
     /// <summary>
@@ -37,99 +38,84 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    protected override ValueTask Subscribe(CancellationToken cancellationToken) {
-        if (Options.SessionProcessorOptions is not null) {
-            _sessionProcessor = Options.QueueOrTopic.MakeSessionProcessor(_client, Options);
+    protected override ValueTask Subscribe(CancellationToken cancellationToken)
+        => _processorStrategy.Start(cancellationToken);
 
-            _sessionProcessor.ProcessMessageAsync += HandleSessionMessage;
-            _sessionProcessor.ProcessErrorAsync   += _defaultErrorHandler;
+    Task HandleMessage(ProcessMessageEventArgs arg)
+        => ProcessMessageAsync(
+            arg.Message,
+            msg => arg.CompleteMessageAsync(msg, arg.CancellationToken),
+            msg => arg.AbandonMessageAsync(msg, null, arg.CancellationToken),
+            arg.FullyQualifiedNamespace,
+            arg.EntityPath,
+            arg.Identifier,
+            arg.CancellationToken
+        );
 
-            return new(_sessionProcessor.StartProcessingAsync(cancellationToken));
-        }
+    Task HandleSessionMessage(ProcessSessionMessageEventArgs arg)
+        => ProcessMessageAsync(
+            arg.Message,
+            msg => arg.CompleteMessageAsync(msg, arg.CancellationToken),
+            msg => arg.AbandonMessageAsync(msg, null, arg.CancellationToken),
+            arg.FullyQualifiedNamespace,
+            arg.EntityPath,
+            arg.Identifier,
+            arg.CancellationToken
+        );
 
-        _processor = Options.QueueOrTopic.MakeProcessor(_client, Options);
+    async Task ProcessMessageAsync(
+            ServiceBusReceivedMessage             msg,
+            Func<ServiceBusReceivedMessage, Task> completeMessage,
+            Func<ServiceBusReceivedMessage, Task> abandonMessage,
+            string                                fullyQualifiedNamespace,
+            string                                entityPath,
+            string                                identifier,
+            CancellationToken                     ct
+        ) {
+        if (ct.IsCancellationRequested) return;
 
-        _processor.ProcessMessageAsync += HandleMessage;
-        _processor.ProcessErrorAsync   += _defaultErrorHandler;
+        var eventType = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.MessageType, out var messageType)
+            ? messageType.ToString()
+            : msg.Subject) ?? throw new InvalidOperationException("Message type is missing in message properties");
+        var contentType = msg.ContentType;
 
-        return new(_processor.StartProcessingAsync(cancellationToken));
+        // Should this be a stream name? or topic or something
+        var streamName = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.StreamName, out var stream)
+            ? stream.ToString()
+            : Options.QueueOrTopic switch {
+                Queue queue => queue.Name,
+                Topic topic => topic.Name,
+                _           => null
+            }) ?? throw new InvalidOperationException("Stream name is missing in message properties");
 
-        Task HandleMessage(ProcessMessageEventArgs arg)
-            => ProcessMessageAsync(
-                arg.Message,
-                arg.CancellationToken,
-                msg => arg.CompleteMessageAsync(msg, arg.CancellationToken),
-                msg => arg.AbandonMessageAsync(msg, null, arg.CancellationToken),
-                arg.FullyQualifiedNamespace,
-                arg.EntityPath,
-                arg.Identifier
-            );
+        Logger.Current = Log;
+        var evt                   = DeserializeData(contentType, eventType, msg.Body, streamName);
+        var applicationProperties = msg.ApplicationProperties.Concat(MessageProperties(msg));
 
-        Task HandleSessionMessage(ProcessSessionMessageEventArgs arg)
-            => ProcessMessageAsync(
-                arg.Message,
-                arg.CancellationToken,
-                msg => arg.CompleteMessageAsync(msg, arg.CancellationToken),
-                msg => arg.AbandonMessageAsync(msg, null, arg.CancellationToken),
-                arg.FullyQualifiedNamespace,
-                arg.EntityPath,
-                arg.Identifier
-            );
+        var ctx = new MessageConsumeContext(
+            msg.MessageId,
+            eventType,
+            contentType,
+            streamName,
+            0,
+            0,
+            0,
+            Sequence++,
+            msg.EnqueuedTime.UtcDateTime,
+            evt,
+            AsMeta(applicationProperties),
+            SubscriptionId,
+            ct
+        );
 
-        async Task ProcessMessageAsync(
-                ServiceBusReceivedMessage             msg,
-                CancellationToken                     ct,
-                Func<ServiceBusReceivedMessage, Task> completeMessage,
-                Func<ServiceBusReceivedMessage, Task> abandonMessage,
-                string                                fullyQualifiedNamespace,
-                string                                entityPath,
-                string                                identifier
-            ) {
-            if (ct.IsCancellationRequested) return;
-
-            var eventType = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.MessageType, out var messageType)
-                ? messageType.ToString()
-                : msg.Subject) ?? throw new InvalidOperationException("Message type is missing in message properties");
-            var contentType = msg.ContentType;
-
-            // Should this be a stream name? or topic or something
-            var streamName = (msg.ApplicationProperties.TryGetValue(Options.AttributeNames.StreamName, out var stream)
-                ? stream.ToString()
-                : Options.QueueOrTopic switch {
-                    Queue queue => queue.Name,
-                    Topic topic => topic.Name,
-                    _           => null
-                }) ?? throw new InvalidOperationException("Stream name is missing in message properties");
-
-            Logger.Current = Log;
-            var evt                   = DeserializeData(contentType, eventType, msg.Body, streamName);
-            var applicationProperties = msg.ApplicationProperties.Concat(MessageProperties(msg));
-
-            var ctx = new MessageConsumeContext(
-                msg.MessageId,
-                eventType,
-                contentType,
-                streamName,
-                0,
-                0,
-                0,
-                Sequence++,
-                msg.EnqueuedTime.UtcDateTime,
-                evt,
-                AsMeta(applicationProperties),
-                SubscriptionId,
-                ct
-            );
-
-            try {
-                await Handler(ctx).NoContext();
-                await completeMessage(msg).NoContext();
-            } catch (Exception ex) {
-                // Abandoning the message will make it available for reprocessing, or dead letter it?
-                await abandonMessage(msg).NoContext();
-                await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, fullyQualifiedNamespace, entityPath, identifier, ct)).NoContext();
-                Log.ErrorLog?.Log(ex, "Error processing message: {MessageId}", msg.MessageId);
-            }
+        try {
+            await Handler(ctx).NoContext();
+            await completeMessage(msg).NoContext();
+        } catch (Exception ex) {
+            // Abandoning the message will make it available for reprocessing, or dead letter it?
+            await abandonMessage(msg).NoContext();
+            await _defaultErrorHandler(new(ex, ServiceBusErrorSource.Abandon, fullyQualifiedNamespace, entityPath, identifier, ct)).NoContext();
+            Log.ErrorLog?.Log(ex, "Error processing message: {MessageId}", msg.MessageId);
         }
     }
 
@@ -166,12 +152,56 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        if (_sessionProcessor is not null) {
-            await _sessionProcessor.StopProcessingAsync(cancellationToken).NoContext();
+    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => _processorStrategy.Stop(cancellationToken);
+
+    interface IServiceBusProcessorStrategy {
+        ValueTask Start(CancellationToken cancellationToken);
+        ValueTask Stop(CancellationToken  cancellationToken);
+    }
+
+    sealed class StandardProcessorStrategy(
+            ServiceBusClient                    client,
+            ServiceBusSubscriptionOptions       options,
+            Func<ProcessMessageEventArgs, Task> handleMessage,
+            Func<ProcessErrorEventArgs, Task>   handleError
+        )
+        : IServiceBusProcessorStrategy {
+        ServiceBusProcessor? _processor;
+
+        public ValueTask Start(CancellationToken cancellationToken) {
+            _processor                     =  options.QueueOrTopic.MakeProcessor(client, options);
+            _processor.ProcessMessageAsync += handleMessage;
+            _processor.ProcessErrorAsync   += handleError;
+
+            return new(_processor.StartProcessingAsync(cancellationToken));
         }
-        else if (_processor is not null) {
-            await _processor.StopProcessingAsync(cancellationToken).NoContext();
+
+        public ValueTask Stop(CancellationToken cancellationToken)
+            => _processor is not null
+                ? new(_processor.StopProcessingAsync(cancellationToken))
+                : ValueTask.CompletedTask;
+    }
+
+    sealed class SessionProcessorStrategy(
+            ServiceBusClient                           client,
+            ServiceBusSubscriptionOptions              options,
+            Func<ProcessSessionMessageEventArgs, Task> handleSessionMessage,
+            Func<ProcessErrorEventArgs, Task>          handleError
+        )
+        : IServiceBusProcessorStrategy {
+        ServiceBusSessionProcessor? _sessionProcessor;
+
+        public ValueTask Start(CancellationToken cancellationToken) {
+            _sessionProcessor                     =  options.QueueOrTopic.MakeSessionProcessor(client, options);
+            _sessionProcessor.ProcessMessageAsync += handleSessionMessage;
+            _sessionProcessor.ProcessErrorAsync   += handleError;
+
+            return new(_sessionProcessor.StartProcessingAsync(cancellationToken));
         }
+
+        public ValueTask Stop(CancellationToken cancellationToken)
+            => _sessionProcessor is not null
+                ? new(_sessionProcessor.StopProcessingAsync(cancellationToken))
+                : ValueTask.CompletedTask;
     }
 }
