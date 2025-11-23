@@ -9,7 +9,7 @@ public abstract partial class ServiceTestBase {
         var service = CreateService(amendEvent: AmendEvent);
         var cmd     = CreateCommand();
 
-        await service.Handle(cmd, cancellationToken);
+        var result = await service.Handle(cmd, cancellationToken);
 
         var stream = await Store.ReadStream(StreamName.For<Booking>(cmd.BookingId), StreamReadPosition.Start, cancellationToken: cancellationToken);
         await Assert.That(stream[0].Metadata["userId"]).IsEqualTo(cmd.ImportedBy);
