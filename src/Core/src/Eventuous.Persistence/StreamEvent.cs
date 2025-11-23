@@ -3,10 +3,10 @@
 
 using System.Runtime.InteropServices;
 
-namespace Eventuous; 
+namespace Eventuous;
 
 [StructLayout(LayoutKind.Auto)]
 public record struct NewStreamEvent(Guid Id, object? Payload, Metadata Metadata);
 
 [StructLayout(LayoutKind.Auto)]
-public record struct StreamEvent(Guid Id, object? Payload, Metadata Metadata, string ContentType, long Position, bool FromArchive = false);
+public record struct StreamEvent(Guid Id, object? Payload, Metadata Metadata, string ContentType, long Revision, bool FromArchive = false);

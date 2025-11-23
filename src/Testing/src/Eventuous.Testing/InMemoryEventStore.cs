@@ -92,7 +92,7 @@ class InMemoryStream(StreamName name) {
 
         if (count > 0) selected = selected.Take(count);
 
-        return selected.Select(x => x.Event with { Position = x.Position });
+        return selected.Select(x => x.Event with { Revision = x.Position });
     }
 
     public IEnumerable<StreamEvent> GetEventsBackwards(StreamReadPosition from, int count) {

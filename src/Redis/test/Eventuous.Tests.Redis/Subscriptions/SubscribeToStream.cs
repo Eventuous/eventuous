@@ -98,6 +98,6 @@ public class SubscribeToStream {
     async Task<long> GetStreamPosition(int count) {
         var readEvents = await _fixture.IntegrationFixture.EventReader.ReadEvents(_fixture.Stream, StreamReadPosition.Start, count, true, default);
 
-        return readEvents.Last().Position;
+        return readEvents.Last().Revision;
     }
 }

@@ -128,7 +128,7 @@ public static class AggregatePersistenceExtensions {
 
             try {
                 var events = await eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
-                aggregate.Load(events.Select(x => x.Payload));
+                aggregate.Load(events[^1].Revision, events.Select(x => x.Payload));
             } catch (StreamNotFound) when (!failIfNotFound) {
                 return aggregate;
             } catch (Exception e) {

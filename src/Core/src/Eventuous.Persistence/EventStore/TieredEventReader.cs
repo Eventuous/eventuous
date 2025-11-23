@@ -15,8 +15,8 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
     public async Task<StreamEvent[]> ReadEvents(StreamName streamName, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
         var hotEvents = await LoadStreamEvents(hotReader, start, count, true).NoContext();
 
-        var archivedEvents = hotEvents.Length == 0 || hotEvents[0].Position > start.Value
-            ? await LoadStreamEvents(archiveReader, start, (int)hotEvents[0].Position, !failIfNotFound).NoContext()
+        var archivedEvents = hotEvents.Length == 0 || hotEvents[0].Revision > start.Value
+            ? await LoadStreamEvents(archiveReader, start, (int)hotEvents[0].Revision, !failIfNotFound).NoContext()
             : Enumerable.Empty<StreamEvent>();
 
         return archivedEvents.Select(x => x with { FromArchive = true }).Concat(hotEvents).Distinct(Comparer).ToArray();
@@ -35,8 +35,8 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
     public async Task<StreamEvent[]> ReadEventsBackwards(StreamName streamName, StreamReadPosition start, int count, bool failIfNotFound, CancellationToken cancellationToken) {
         var hotEvents = await LoadStreamEvents(hotReader, start, count, true).NoContext();
 
-        var archivedEvents = hotEvents.Length == 0 || hotEvents[0].Position > start.Value - count
-            ? await LoadStreamEvents(archiveReader, new(hotEvents[0].Position - 1), count - hotEvents.Length, failIfNotFound).NoContext()
+        var archivedEvents = hotEvents.Length == 0 || hotEvents[0].Revision > start.Value - count
+            ? await LoadStreamEvents(archiveReader, new(hotEvents[0].Revision - 1), count - hotEvents.Length, failIfNotFound).NoContext()
             : Enumerable.Empty<StreamEvent>();
 
         return hotEvents.Concat(archivedEvents.Select(x => x with { FromArchive = true })).Distinct(Comparer).ToArray();
@@ -53,8 +53,8 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
     static readonly StreamEventPositionComparer Comparer = new();
 
     class StreamEventPositionComparer : IEqualityComparer<StreamEvent> {
-        public bool Equals(StreamEvent x, StreamEvent y) => x.Position == y.Position;
+        public bool Equals(StreamEvent x, StreamEvent y) => x.Revision == y.Revision;
 
-        public int GetHashCode(StreamEvent obj) => obj.Position.GetHashCode();
+        public int GetHashCode(StreamEvent obj) => obj.Revision.GetHashCode();
     }
 }

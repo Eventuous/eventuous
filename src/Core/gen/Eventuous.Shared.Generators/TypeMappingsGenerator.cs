@@ -163,12 +163,12 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         sb.AppendLine();
         sb.AppendLine($"internal static class {className} {{");
         sb.AppendLine("    [ModuleInitializer]");
-        sb.AppendLine("    internal static void Initialize() => Register(TypeMap.Instance);");
+        sb.AppendLine("    internal static void Initialize() => RegisterDiscoveredTypes(TypeMap.Instance);");
         sb.AppendLine();
         sb.AppendLine("    /// <summary>");
         sb.AppendLine("    /// Registers all [EventType] types discovered at compile time into the provided mapper.");
         sb.AppendLine("    /// </summary>");
-        sb.AppendLine("    public static void Register(TypeMapper mapper) {");
+        sb.AppendLine("    public static void RegisterDiscoveredTypes(this TypeMapper mapper) {");
 
         foreach (var m in distinct) {
             // Prefer passing the explicit name when we have it, so runtime reflection is avoided

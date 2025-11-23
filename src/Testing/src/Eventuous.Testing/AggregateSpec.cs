@@ -42,7 +42,8 @@ public abstract class AggregateSpec<TAggregate, TState>(AggregateFactoryRegistry
     [MemberNotNull(nameof(Instance))]
     protected TAggregate Then() {
         Instance = CreateInstance();
-        Instance.Load(GivenEvents());
+        var events = GivenEvents();
+        Instance.Load(events.Length - 1, events);
         When(Instance);
 
         return Instance;

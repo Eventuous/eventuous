@@ -12,7 +12,7 @@ public class AppServiceTests {
 
     public AppServiceTests(StoreFixture fixture) {
         _fixture = fixture;
-        _fixture.TypeMapper.AddType<BookingEvents.BookingImported>();
+        _fixture.TypeMapper.RegisterDiscoveredTypes();
     }
 
     BookingService Service { get; set; } = null!;
@@ -37,6 +37,23 @@ public class AppServiceTests {
         var result = events.Select(x => x.Payload).ToArray();
 
         result.ShouldBeEquivalentTo(expected);
+    }
+
+    [Test]
+    public async Task ProcessNewThenDeleteAndDoItAgain(CancellationToken cancellationToken) {
+        // This will create a new stream
+        var cmd = DomainFixture.CreateImportBooking();
+        await Service.Handle(cmd, cancellationToken);
+
+        var streamName = StreamName.For<Booking>(cmd.BookingId);
+        await _fixture.EventStore.DeleteStream(streamName, ExpectedStreamVersion.Any, cancellationToken);
+
+        var handlingResult = await Service.Handle(cmd, cancellationToken);
+        handlingResult.Success.ShouldBeTrue();
+
+        var cancelCmd    = new Commands.CancelBooking(new(cmd.BookingId));
+        var secondResult = await Service.Handle(cancelCmd, cancellationToken);
+        secondResult.Success.ShouldBeTrue();
     }
 
     [After(Test)]

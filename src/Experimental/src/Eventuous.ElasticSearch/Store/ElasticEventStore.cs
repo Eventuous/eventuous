@@ -62,7 +62,7 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
             cancellationToken
         );
 
-        return response.Length == 0 && failIfNotFound ? throw new StreamNotFound(stream) : response.OrderByDescending(x => x.Position).ToArray();
+        return response.Length == 0 && failIfNotFound ? throw new StreamNotFound(stream) : response.OrderByDescending(x => x.Revision).ToArray();
     }
 
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {

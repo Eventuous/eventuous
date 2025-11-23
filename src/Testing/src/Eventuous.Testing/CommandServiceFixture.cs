@@ -256,7 +256,7 @@ public class CommandServiceFixture<TState> : IServiceFixtureGiven<TState>, IServ
         /// <returns></returns>
         [StackTraceHidden]
         public FixtureResult NewStreamEventsAre(params object[] events) {
-            var stream = _streamEvents.Where(x => x.Position >= _version).Select(x => x.Payload);
+            var stream = _streamEvents.Where(x => x.Revision >= _version).Select(x => x.Payload);
             stream.ShouldBe(events);
 
             return this;

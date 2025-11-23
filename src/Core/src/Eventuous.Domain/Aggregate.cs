@@ -30,13 +30,13 @@ public abstract class Aggregate<T> where T : State<T>, new() {
     /// It is used for optimistic concurrency to check if there were no changes made to the
     /// aggregate state between load and save for the current operation.
     /// </summary>
-    public int OriginalVersion => Original.Length - 1;
+    public long OriginalVersion { get; private set; } = -1;
 
     /// <summary>
     /// The current version is set to the original version when the aggregate is loaded from the store.
     /// It should increase for each state transition performed within the scope of the current operation.
     /// </summary>
-    public int CurrentVersion => OriginalVersion + Changes.Count;
+    public long CurrentVersion => OriginalVersion + Changes.Count;
 
     readonly List<object> _changes = [];
 
@@ -78,9 +78,10 @@ public abstract class Aggregate<T> where T : State<T>, new() {
         return (previous, State);
     }
 
-    public void Load(IEnumerable<object?> events) {
-        Original = events.Where(x => x != null).ToArray()!;
-        State    = Original.Aggregate(State, Fold);
+    public void Load(long version, IEnumerable<object?> events) {
+        Original        = events.Where(x => x != null).ToArray()!;
+        OriginalVersion = version;
+        State           = Original.Aggregate(State, Fold);
 
         return;
 
