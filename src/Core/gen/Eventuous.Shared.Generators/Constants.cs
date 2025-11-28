@@ -5,6 +5,9 @@ namespace Eventuous.Shared.Generators;
 
 internal static class Constants {
     public const string BaseNamespace      = "Eventuous";
+    public const string StateType          = "State";
     public const string EventTypeAttribute = "EventTypeAttribute";
     public const string EventTypeAttrFqcn  = $"{BaseNamespace}.{EventTypeAttribute}";
+    public const string SnapshotsAttribute  = "SnapshotsAttribute";
+    public const string SnapshotsAttrFqcn   = $"{BaseNamespace}.{SnapshotsAttribute}";
 }

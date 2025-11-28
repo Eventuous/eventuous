@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Eventuous.Shared.Generators.Constants;
+using static Eventuous.Shared.Generators.Helpers;
 
 namespace Eventuous.Shared.Generators;
 
@@ -202,6 +203,4 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
 
         return sb.ToString();
     }
-
-    static string MakeGlobal(string typeName) => !typeName.StartsWith("global::") ? $"global::{typeName}" : typeName;
 }
