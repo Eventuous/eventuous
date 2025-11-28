@@ -25,8 +25,16 @@ public static class StateStoreFunctions {
                 CancellationToken cancellationToken = default
             ) where TState : State<TState>, new() {
             try {
-                var streamEvents    = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
-                var events          = streamEvents.Select(x => x.Payload!).ToArray();
+                StreamEvent[] streamEvents;
+
+                var snapshotTypes = SnapshotTypeMap.GetSnapshotTypes<TState>();
+                if (snapshotTypes.Count != 0) {
+                    streamEvents = await reader.ReadStreamAfterSnapshot(streamName, snapshotTypes, failIfNotFound, cancellationToken);
+                } else {
+                    streamEvents = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                }
+
+                var events = streamEvents.Select(x => x.Payload!).ToArray();
                 var expectedVersion = events.Length == 0 ? ExpectedStreamVersion.NoStream : new(streamEvents.Last().Revision);
 
                 return (new(streamName, expectedVersion, events));

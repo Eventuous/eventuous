@@ -93,4 +93,51 @@ public static class StoreFunctions {
 
         return streamEvents.ToArray();
     }
+
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    public static async Task<StreamEvent[]> ReadStreamAfterSnapshot(
+        this IEventReader eventReader,
+        StreamName        streamName,
+        HashSet<Type>     snapshotTypes,
+        bool              failIfNotFound = true,
+        CancellationToken cancellationToken = default
+    ) {
+        const int pageSize = 500;
+
+        var streamEvents = new List<StreamEvent>();
+
+        var position = StreamReadPosition.End;
+
+        try {
+            while (true) {
+                var events = await eventReader.ReadEventsBackwards(streamName, position, pageSize, failIfNotFound, cancellationToken).NoContext();
+
+                var indexOfSnapshot = events.Length;
+
+                while (--indexOfSnapshot >= 0) {
+                    var payload = events[indexOfSnapshot].Payload;
+                    if (payload is not null && snapshotTypes.Contains(payload.GetType())) {
+                        break;
+                    }
+                }
+
+                if (indexOfSnapshot == -1) {
+                    streamEvents.AddRange(events);
+                } else {
+                    streamEvents.AddRange(events[.. (indexOfSnapshot + 1)]);
+                    break;
+                }
+
+                if (events.Length < pageSize) break;
+
+                position = new(position.Value - events.Length);
+            }
+        } catch (StreamNotFound) when (!failIfNotFound) {
+            return [];
+        }
+
+        streamEvents.Reverse();
+        return [.. streamEvents];
+    }
 }

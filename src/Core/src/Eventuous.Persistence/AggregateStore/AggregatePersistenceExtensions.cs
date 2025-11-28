@@ -127,7 +127,15 @@ public static class AggregatePersistenceExtensions {
             var aggregate = (factoryRegistry ?? AggregateFactoryRegistry.Instance).CreateInstance<TAggregate, TState>();
 
             try {
-                var events = await eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                StreamEvent[] events;
+
+                var snapshotTypes = SnapshotTypeMap.GetSnapshotTypes<TState>();
+                if (snapshotTypes.Count != 0) {
+                    events = await eventReader.ReadStreamAfterSnapshot(streamName, snapshotTypes, failIfNotFound, cancellationToken).NoContext();
+                } else {
+                    events = await eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                }
+
                 if (events.Length == 0) return aggregate;
                 aggregate.Load(events[^1].Revision, events.Select(x => x.Payload));
             } catch (StreamNotFound) when (!failIfNotFound) {
