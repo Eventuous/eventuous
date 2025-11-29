@@ -140,6 +140,11 @@
         <Project Path="src/SqlServer/test/Eventuous.Tests.SqlServer/Eventuous.Tests.SqlServer.csproj" />
     </Folder>
     <Folder Name="/Samples/" />
+    <Folder Name="/Samples/Banking/">
+        <Project Path="samples/banking/Banking.Api/Banking.Api.csproj" />
+        <Project Path="samples/banking/Banking.AppHost/Banking.AppHost.csproj" />
+        <Project Path="samples/banking/Banking.Domain/Banking.Domain.csproj" />
+    </Folder>
     <Folder Name="/Samples/Esdb/">
         <Project Path="samples/esdb/Bookings.Domain/Bookings.Domain.csproj" />
         <Project Path="samples/esdb/Bookings.Payments/Bookings.Payments.csproj" />
