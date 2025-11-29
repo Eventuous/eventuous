@@ -15,16 +15,7 @@ public static class SnapshotTypeMap {
         }
     }
 
-    public static HashSet<Type> GetSnapshotTypes<TState>() {
-        var stateType = typeof(TState);
-
-        if (StateToSnapshots.TryGetValue(stateType, out var value)) {
-            return value;
-        }
-        else {
-            throw new InvalidOperationException();
-        }
-    }
+    public static HashSet<Type> GetSnapshotTypes<TState>() => StateToSnapshots.GetValueOrDefault(typeof(TState), []);
 }
 
 [AttributeUsage(AttributeTargets.Class)]
