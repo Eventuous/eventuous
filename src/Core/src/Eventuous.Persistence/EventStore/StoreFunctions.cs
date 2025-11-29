@@ -113,20 +113,21 @@ public static class StoreFunctions {
             while (true) {
                 var events = await eventReader.ReadEventsBackwards(streamName, position, pageSize, failIfNotFound, cancellationToken).NoContext();
 
-                var indexOfSnapshot = events.Length;
+                var snapshotIndex = (int?) null;
 
-                while (--indexOfSnapshot >= 0) {
-                    var payload = events[indexOfSnapshot].Payload;
+                for (var i = 0; i < events.Length; i++) {
+                    var payload = events[i].Payload;
                     if (payload is not null && snapshotTypes.Contains(payload.GetType())) {
+                        snapshotIndex = i;
                         break;
                     }
                 }
 
-                if (indexOfSnapshot == -1) {
-                    streamEvents.AddRange(events);
-                } else {
-                    streamEvents.AddRange(events[.. (indexOfSnapshot + 1)]);
+                if (snapshotIndex.HasValue) {
+                    streamEvents.AddRange(events[..(snapshotIndex.Value + 1)]);
                     break;
+                } else {
+                    streamEvents.AddRange(events);
                 }
 
                 if (events.Length < pageSize) break;
