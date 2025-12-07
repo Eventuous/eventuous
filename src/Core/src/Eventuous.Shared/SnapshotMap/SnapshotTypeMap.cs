@@ -17,8 +17,3 @@ public static class SnapshotTypeMap {
 
     public static HashSet<Type> GetSnapshotTypes<TState>() => StateToSnapshots.GetValueOrDefault(typeof(TState), []);
 }
-
-[AttributeUsage(AttributeTargets.Class)]
-public class SnapshotsAttribute(params Type[] snapshotTypes) : Attribute {
-    public Type[] SnapshotTypes { get; } = snapshotTypes;
-}
