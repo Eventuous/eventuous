@@ -184,16 +184,23 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
 
                 var snapshotAppend = new ProposedAppend(
                     snapshotStreamName,
-                    ExpectedStreamVersion.NoStream,
+                    ExpectedStreamVersion.Any,
                     [snapshotEvent]
                 );
 
-                var result = await writer.Store(snapshotAppend, null, cancellationToken).NoContext();
+                var result = await writer.Store(
+                    snapshotAppend,
+                    (@event) => {
+                        @event.Metadata.With("revision", streamRevision.ToString());
+                        return @event;
+                    },
+                    cancellationToken)
+                    .NoContext();
 
                 await store.TruncateStream(
                     snapshotStreamName,
                     new StreamTruncatePosition(result.NextExpectedVersion),
-                    new ExpectedStreamVersion(result.NextExpectedVersion),
+                    ExpectedStreamVersion.Any,
                     cancellationToken);
 
                     break;

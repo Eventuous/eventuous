@@ -46,13 +46,14 @@ public static class StateStoreFunctions {
                             if (snapshotEvents.Length > 0) {
                                 var candidate = snapshotEvents[0];
                                 if (candidate.Payload != null && snapshotTypes.Contains(candidate.Payload.GetType())) {
-                                    snapshotEvent = candidate;
+                                    snapshotEvent = candidate with {
+                                        Revision = long.Parse(candidate.Metadata.GetString("revision")!)
+                                    };
                                 }
                             }
 
                             if (snapshotEvent.HasValue) {
-                                var snapshotRevision = snapshotEvent.Value.Revision;
-                                var eventsAfterSnapshot = await reader.ReadStream(streamName, new(snapshotRevision + 1), failIfNotFound, cancellationToken).NoContext();
+                                var eventsAfterSnapshot = await reader.ReadStream(streamName, new(snapshotEvent.Value.Revision + 1), failIfNotFound, cancellationToken).NoContext();
                                 streamEvents = [snapshotEvent.Value, ..eventsAfterSnapshot];
                             } else {
                                 streamEvents = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();

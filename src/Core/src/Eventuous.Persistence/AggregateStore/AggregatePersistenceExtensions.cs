@@ -148,13 +148,14 @@ public static class AggregatePersistenceExtensions {
                             if (snapshotEvents.Length > 0) {
                                 var candidate = snapshotEvents[0];
                                 if (candidate.Payload != null && snapshotTypes.Contains(candidate.Payload.GetType())) {
-                                    snapshotEvent = candidate;
+                                    snapshotEvent = candidate with {
+                                        Revision = long.Parse(candidate.Metadata.GetString("revision")!)
+                                    };
                                 }
                             }
                             
                             if (snapshotEvent.HasValue) {
-                                var snapshotRevision = snapshotEvent.Value.Revision;
-                                var eventsAfterSnapshot = await eventReader.ReadStream(streamName, new(snapshotRevision + 1), failIfNotFound, cancellationToken).NoContext();
+                                var eventsAfterSnapshot = await eventReader.ReadStream(streamName, new(snapshotEvent.Value.Revision + 1), failIfNotFound, cancellationToken).NoContext();
                                 events = [snapshotEvent.Value, ..eventsAfterSnapshot];
                             } else {
                                 events = await eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
