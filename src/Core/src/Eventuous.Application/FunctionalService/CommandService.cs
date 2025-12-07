@@ -8,10 +8,10 @@ namespace Eventuous;
 using static Diagnostics.ApplicationEventSource;
 
 [Obsolete("Use CommandService<TState>")]
-public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null)
-    : CommandService<TState>(reader, writer, typeMap, amendEvent) where TState : State<TState>, new() {
-    protected FunctionalCommandService(IEventStore store, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null)
-        : this(store, store, typeMap, amendEvent) { }
+public abstract class FunctionalCommandService<TState>(IEventReader reader, IEventWriter writer, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null, ISnapshotStore? snapshotStore = null)
+    : CommandService<TState>(reader, writer, typeMap, amendEvent, snapshotStore) where TState : State<TState>, new() {
+    protected FunctionalCommandService(IEventStore store, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null, ISnapshotStore? snapshotStore = null)
+        : this(store, store, typeMap, amendEvent, snapshotStore) { }
 
     [Obsolete("Use On<TCommand>().InState(ExpectedState.New).GetStream(...).Act(...) instead")]
     protected void OnNew<TCommand>(Func<TCommand, StreamName> getStreamName, Func<TCommand, NewEvents> action) where TCommand : class
@@ -36,11 +36,13 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
 /// <param name="writer">Event writer or event store</param>
 /// <param name="typeMap"><seealso cref="ITypeMapper"/> instance or null to use the default type mapper</param>
 /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
+/// <param name="snapshotStore">Optional snapshot store for SeparateStore strategy</param>
 /// <typeparam name="TState">State object type</typeparam>
-public abstract class CommandService<TState>(IEventReader reader, IEventWriter writer, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null)
+public abstract class CommandService<TState>(IEventReader reader, IEventWriter writer, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null, ISnapshotStore? snapshotStore = null)
     : ICommandService<TState> where TState : State<TState>, new() {
     readonly ITypeMapper         _typeMap  = typeMap ?? TypeMap.Instance;
-    readonly HandlersMap<TState> _handlers = new();
+    readonly HandlersMap<TState>  _handlers = new();
+    readonly ISnapshotStore?     _snapshotStore = snapshotStore;
 
     /// <summary>
     /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
@@ -48,8 +50,9 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     /// <param name="store">Event store</param>
     /// <param name="typeMap"><seealso cref="ITypeMapper"/> instance or null to use the default type mapper</param>
     /// <param name="amendEvent">Optional function to add extra information to the event before it gets stored</param>
+    /// <param name="snapshotStore">Optional snapshot store for SeparateStore strategy</param>
     // ReSharper disable once UnusedMember.Global
-    protected CommandService(IEventStore store, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null) : this(store, store, typeMap, amendEvent) { }
+    protected CommandService(IEventStore store, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null, ISnapshotStore? snapshotStore = null) : this(store, store, typeMap, amendEvent, snapshotStore) { }
 
     /// <summary>
     /// Returns the command handler builder for the specified command type.
@@ -96,10 +99,22 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (newEvents.Length == 0) return Result<TState>.FromSuccess(newState, [], 0);
 
-            var proposed    = new ProposedAppend(streamName, loadedState.StreamVersion, newEvents);
+            // Separate snapshots from regular events based on storage strategy
+            var snapshotTypes = SnapshotTypeMap.GetSnapshotTypes<TState>();
+            var storageStrategy = SnapshotTypeMap.GetStorageStrategy<TState>();
+            var (regularEvents, snapshotEvents) = SeparateSnapshots(newEvents, snapshotTypes, storageStrategy);
+
+            // Store regular events first
+            var proposed    = new ProposedAppend(streamName, loadedState.StreamVersion, regularEvents);
             var final       = registeredHandler.AmendAppend?.Invoke(proposed, command) ?? proposed;
             var storeResult = await resolvedWriter.Store(final, Amend, cancellationToken).NoContext();
-            var changes     = result.Select(x => Change.FromEvent(x, _typeMap));
+
+            // Handle snapshots based on strategy
+            if (snapshotEvents.Length > 0 && storageStrategy != SnapshotStorageStrategy.SameStream) {
+                await HandleSnapshots(streamName, snapshotEvents, storeResult.NextExpectedVersion, storageStrategy, resolvedWriter, cancellationToken).NoContext();
+            }
+
+            var changes = result.Select(x => Change.FromEvent(x, _typeMap));
             Log.CommandHandled<TCommand>();
 
             return Result<TState>.FromSuccess(newState, changes, storeResult.GlobalPosition);
@@ -119,4 +134,83 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     protected static StreamName GetStream(string id) => StreamName.ForState<TState>(id);
 
     internal void AddHandler<TCommand>(RegisteredHandler<TState> handler) where TCommand : class => _handlers.AddHandler<TCommand>(handler);
+
+    static (ProposedEvent[] RegularEvents, ProposedEvent[] SnapshotEvents) SeparateSnapshots(
+        ProposedEvent[] events,
+        HashSet<Type> snapshotTypes,
+        SnapshotStorageStrategy strategy
+    ) {
+        if (strategy == SnapshotStorageStrategy.SameStream || snapshotTypes.Count == 0) {
+            return (events, []);
+        }
+
+        var regularEvents = new List<ProposedEvent>();
+        var snapshotEvents = new List<ProposedEvent>();
+
+        foreach (var evt in events) {
+            if (evt.Data != null && snapshotTypes.Contains(evt.Data.GetType())) {
+                snapshotEvents.Add(evt);
+            } else {
+                regularEvents.Add(evt);
+            }
+        }
+
+        return (regularEvents.ToArray(), snapshotEvents.ToArray());
+    }
+
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    async Task HandleSnapshots(
+        StreamName streamName,
+        ProposedEvent[] snapshotEvents,
+        long streamRevision,
+        SnapshotStorageStrategy strategy,
+        IEventWriter writer,
+        CancellationToken cancellationToken
+    ) {
+        if (snapshotEvents.Length == 0) return;
+
+        // Take the last snapshot if multiple
+        var snapshotEvent = snapshotEvents[^1];
+
+        switch (strategy) {
+            case SnapshotStorageStrategy.SeparateStream: {
+                var snapshotStreamName = StreamName.ForSnapshot(streamName);
+                var store = writer as IEventStore;
+                
+                if (store == null) {
+                    throw new InvalidOperationException($"IEventStore is required for {nameof(SnapshotStorageStrategy.SeparateStream)} strategy. IEventWriter must implement IEventStore.");
+                }
+
+                var snapshotAppend = new ProposedAppend(
+                    snapshotStreamName,
+                    ExpectedStreamVersion.NoStream,
+                    [snapshotEvent]
+                );
+
+                var result = await writer.Store(snapshotAppend, null, cancellationToken).NoContext();
+
+                await store.TruncateStream(
+                    snapshotStreamName,
+                    new StreamTruncatePosition(result.NextExpectedVersion),
+                    new ExpectedStreamVersion(result.NextExpectedVersion),
+                    cancellationToken);
+
+                    break;
+            }
+
+            case SnapshotStorageStrategy.SeparateStore: {
+                if (_snapshotStore == null) {
+                    throw new InvalidOperationException($"Snapshot store is required for {nameof(SnapshotStorageStrategy.SeparateStore)} strategy");
+                }
+
+                var snapshot = new Snapshot {
+                    Revision = streamRevision,
+                    Payload = snapshotEvent.Data
+                };
+                await _snapshotStore.Write(streamName, snapshot, cancellationToken).NoContext();
+                break;
+            }
+        }
+    }
 }
