@@ -76,10 +76,10 @@ public abstract partial class CommandService<[DynamicallyAccessedMembers(Dynamic
         try {
             var aggregate = registeredHandler.ExpectedState switch {
                 ExpectedState.Any => await reader
-                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, false, _factoryRegistry, cancellationToken)
+                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, false, _factoryRegistry, null, cancellationToken)
                     .NoContext(),
                 ExpectedState.Existing => await reader
-                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, true, _factoryRegistry, cancellationToken)
+                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, true, _factoryRegistry, null,cancellationToken)
                     .NoContext(),
                 ExpectedState.New     => Create(aggregateId),
                 ExpectedState.Unknown => null,
