@@ -30,6 +30,17 @@ public record struct StreamName {
     public readonly string GetId() => Value[(Value.IndexOf('-') + 1)..];
     public readonly string GetCategory() => Value[..Value.IndexOf('-')];
 
+    /// <summary>
+    /// Creates a snapshot stream name by adding "Snapshot" suffix after the category
+    /// </summary>
+    /// <param name="originalStream">Original stream name</param>
+    /// <returns>Snapshot stream name in format: {Category}Snapshot-{Id}</returns>
+    public static StreamName ForSnapshot(StreamName originalStream) {
+        var category = originalStream.GetCategory();
+        var id = originalStream.GetId();
+        return new($"{category}Snapshot-{id}");
+    }
+
     public static implicit operator string(StreamName streamName) => streamName.Value;
 
     public override readonly string ToString() => Value;

@@ -109,6 +109,7 @@ public static class AggregatePersistenceExtensions {
         /// <param name="streamName">Name of the aggregate stream</param>
         /// <param name="failIfNotFound">Either fail if the stream is not found, default is false</param>
         /// <param name="factoryRegistry">Optional: aggregate factory registry. Default instance will be used if the argument isn't provided.</param>
+        /// <param name="snapshotStore">Optional snapshot store for SeparateStore strategy</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <typeparam name="TAggregate">Aggregate type</typeparam>
         /// <typeparam name="TState">Aggregate state type</typeparam>
@@ -121,6 +122,7 @@ public static class AggregatePersistenceExtensions {
                 StreamName                streamName,
                 bool                      failIfNotFound    = true,
                 AggregateFactoryRegistry? factoryRegistry   = null,
+                ISnapshotStore?           snapshotStore     = null,
                 CancellationToken         cancellationToken = default
             )
             where TAggregate : Aggregate<TState> where TState : State<TState>, new() {
@@ -128,10 +130,65 @@ public static class AggregatePersistenceExtensions {
 
             try {
                 StreamEvent[] events;
-
                 var snapshotTypes = SnapshotTypeMap.GetSnapshotTypes<TState>();
+                var storageStrategy = SnapshotTypeMap.GetStorageStrategy<TState>();
+
                 if (snapshotTypes.Count != 0) {
-                    events = await eventReader.ReadStreamAfterSnapshot(streamName, snapshotTypes, failIfNotFound, cancellationToken).NoContext();
+                    switch (storageStrategy) {
+                        case SnapshotStorageStrategy.SameStream:
+                            events = await eventReader.ReadStreamAfterSnapshot(streamName, snapshotTypes, failIfNotFound, cancellationToken).NoContext();
+                            break;
+
+                        case SnapshotStorageStrategy.SeparateStream: {
+                            var snapshotStreamName = StreamName.ForSnapshot(streamName);
+                            var snapshotEvents = await eventReader.ReadEventsBackwards(snapshotStreamName, StreamReadPosition.End, 1, false, cancellationToken).NoContext();
+                            
+                            StreamEvent? snapshotEvent = null;
+
+                            if (snapshotEvents.Length > 0) {
+                                var candidate = snapshotEvents[0];
+                                if (candidate.Payload != null && snapshotTypes.Contains(candidate.Payload.GetType())) {
+                                    snapshotEvent = candidate;
+                                }
+                            }
+                            
+                            if (snapshotEvent.HasValue) {
+                                var snapshotRevision = snapshotEvent.Value.Revision;
+                                var eventsAfterSnapshot = await eventReader.ReadStream(streamName, new(snapshotRevision + 1), failIfNotFound, cancellationToken).NoContext();
+                                events = [snapshotEvent.Value, ..eventsAfterSnapshot];
+                            } else {
+                                events = await eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                            }
+                            break;
+                        }
+
+                        case SnapshotStorageStrategy.SeparateStore: {
+                            if (snapshotStore == null) {
+                                throw new InvalidOperationException($"Snapshot store is required for {nameof(SnapshotStorageStrategy.SeparateStore)} strategy");
+                            }
+
+                            var snapshot = await snapshotStore.Read(streamName, cancellationToken).NoContext();
+                            
+                            if (snapshot != null) {
+                                var snapshotEvent = new StreamEvent(
+                                    Guid.Empty,
+                                    snapshot.Payload,
+                                    [],
+                                    string.Empty,
+                                    snapshot.Revision
+                                );
+                                var eventsAfterSnapshot = await eventReader.ReadStream(streamName, new(snapshot.Revision + 1), failIfNotFound, cancellationToken).NoContext();
+                                events = [snapshotEvent, ..eventsAfterSnapshot];
+                            } else {
+                                events = await eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                            }
+                            break;
+                        }
+
+                        default:
+                            events = await eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                            break;
+                    }
                 } else {
                     events = await eventReader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
                 }
@@ -156,6 +213,7 @@ public static class AggregatePersistenceExtensions {
         /// <param name="streamNameMap">Optional: stream name map. Default instance is used when argument isn't provided.</param>
         /// <param name="failIfNotFound">Either fail if the stream is not found, default is false</param>
         /// <param name="factoryRegistry">Optional: aggregate factory registry. Default instance will be used if the argument isn't provided.</param>
+        /// <param name="snapshotStore">Optional snapshot store for SeparateStore strategy</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <typeparam name="TAggregate">Aggregate type</typeparam>
         /// <typeparam name="TState">Aggregate state type</typeparam>
@@ -170,12 +228,13 @@ public static class AggregatePersistenceExtensions {
                 StreamNameMap?            streamNameMap     = null,
                 bool                      failIfNotFound    = true,
                 AggregateFactoryRegistry? factoryRegistry   = null,
+                ISnapshotStore?           snapshotStore     = null,
                 CancellationToken         cancellationToken = default
             )
             where TAggregate : Aggregate<TState> where TState : State<TState>, new() where TId : Id {
             var streamName = streamNameMap?.GetStreamName<TAggregate, TState, TId>(aggregateId)
              ?? StreamNameFactory.For<TAggregate, TState, TId>(aggregateId);
-            var aggregate = await eventReader.LoadAggregate<TAggregate, TState>(streamName, failIfNotFound, factoryRegistry, cancellationToken).NoContext();
+            var aggregate = await eventReader.LoadAggregate<TAggregate, TState>(streamName, failIfNotFound, factoryRegistry, snapshotStore, cancellationToken).NoContext();
 
             return aggregate.WithId<TAggregate, TState, TId>(aggregateId);
         }
