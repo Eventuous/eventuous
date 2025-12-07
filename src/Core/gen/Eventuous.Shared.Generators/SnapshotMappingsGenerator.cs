@@ -39,12 +39,15 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
             }
         }
 
+        var storageStrategy = GetStorageStrategyFromAttribute(snapshotsAttr);
+
         var stateType = classSymbol.BaseType?.TypeArguments[0];
         if (stateType == null) return null;
 
         return new Map {
             SnapshotTypes = snapshotTypes,
-            StateType = MakeGlobal(classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+            StateType = MakeGlobal(classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
+            StorageStrategy = storageStrategy
         };
     }
 
@@ -100,7 +103,8 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
             if (attr is not null) {
                 var map = new Map {
                     SnapshotTypes = GetTypesFromSnapshotsAttribute(attr),
-                    StateType = MakeGlobal(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+                    StateType = MakeGlobal(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
+                    StorageStrategy = GetStorageStrategyFromAttribute(attr)
                 };
 
                 builder.Add(map);
@@ -139,8 +143,15 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
         sb.AppendLine("    internal static void Initialize() {");
 
         foreach (var map in maps) {
+            var strategyValue = map.StorageStrategy switch {
+                "SameStream" => "SnapshotStorageStrategy.SameStream",
+                "SeparateStream" => "SnapshotStorageStrategy.SeparateStream",
+                "SeparateStore" => "SnapshotStorageStrategy.SeparateStore",
+                _ => "SnapshotStorageStrategy.SameStream"
+            };
+
             foreach (var snapshotType in map.SnapshotTypes) {
-                sb.AppendLine($"        SnapshotTypeMap.Register(typeof({map.StateType}), typeof({snapshotType}));");
+                sb.AppendLine($"        SnapshotTypeMap.Register(typeof({map.StateType}), typeof({snapshotType}), {strategyValue});");
             }
         }
 
@@ -190,8 +201,45 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
         return null;
     }
 
+    static string GetStorageStrategyFromAttribute(AttributeData attributeData) {
+        foreach (var namedArg in attributeData.NamedArguments) {
+            if (namedArg.Key == "StorageStrategy" && namedArg.Value.Kind == TypedConstantKind.Enum) {
+                // Try to get the enum value name from the typed constant
+                var enumType = namedArg.Value.Type;
+                if (enumType != null) {
+                    // Get the enum value as a string representation
+                    var enumValue = namedArg.Value.Value;
+                    if (enumValue != null) {
+                        // Try to find the enum member with this value
+                        var enumMembers = enumType.GetMembers().OfType<IFieldSymbol>()
+                            .Where(f => f.IsStatic && f.IsDefinition && f.ConstantValue != null);
+                        
+                        foreach (var member in enumMembers) {
+                            if (Equals(member.ConstantValue, enumValue)) {
+                                return member.Name;
+                            }
+                        }
+                        
+                        // Fallback: map numeric values
+                        if (enumValue is int intValue) {
+                            return intValue switch {
+                                0 => "SameStream",
+                                1 => "SeparateStream",
+                                2 => "SeparateStore",
+                                _ => "SameStream"
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        return "SameStream"; // Default value
+    }
+
     sealed record Map {
         public string StateType { get; set; } = null!;
         public HashSet<string> SnapshotTypes { get; set; } = [];
+        public string StorageStrategy { get; set; } = "SameStream";
     }
 }
