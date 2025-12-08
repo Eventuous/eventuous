@@ -35,7 +35,9 @@ public class Schema(string schema = Schema.DefaultSchema) {
 
     public async Task CreateSchema(NpgsqlDataSource dataSource, ILogger<Schema>? log, CancellationToken cancellationToken = default) {
         log?.LogInformation("Creating schema {Schema}", schema);
-        var names = Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".sql")).OrderBy(x => x);
+        var names = Assembly.GetManifestResourceNames()
+            .Where(x => x.EndsWith(".sql") && !x.Contains("SnapshotScripts"))
+            .OrderBy(x => x);
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken).NoContext();
 

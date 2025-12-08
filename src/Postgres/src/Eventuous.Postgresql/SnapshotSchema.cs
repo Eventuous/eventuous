@@ -23,7 +23,7 @@ public class SnapshotSchema(string schema = SnapshotSchema.DefaultSchema) {
 
     public async Task CreateSchema(NpgsqlDataSource dataSource, ILogger<SnapshotSchema>? log, CancellationToken cancellationToken = default) {
         log?.LogInformation("Creating snapshot schema {Schema}", schema);
-        const string scriptName = "Eventuous.Postgresql.Scripts.1_SnapshotSchema.sql";
+        const string scriptName = "Eventuous.Postgresql.SnapshotScripts.1_SnapshotSchema.sql";
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken).NoContext();
 
