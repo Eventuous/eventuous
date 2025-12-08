@@ -14,7 +14,8 @@
     <ProjectReference Include="$(SrcRoot)\Core\src\Eventuous.Application\Eventuous.Application.csproj" />
     <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="$(SrcRoot)\KurrentDB\src\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />   
+    <ProjectReference Include="$(SrcRoot)\KurrentDB\src\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Postgres\src\Eventuous.Postgresql\Eventuous.Postgresql.csproj" />   
     <ProjectReference Include="..\Banking.Domain\Banking.Domain.csproj" />
   </ItemGroup>
 

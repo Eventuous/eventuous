@@ -10,7 +10,7 @@ public class AccountService : CommandService<AccountState> {
     public record Deposit(string AccountId, decimal Amount);
     public record Withdraw(string AccountId, decimal Amount);
 
-    public AccountService(IEventStore store) : base(store) {
+    public AccountService(IEventStore store, ISnapshotStore snapshotStore) : base(store, snapshotStore: snapshotStore) {
         On<Deposit>()
             .InState(ExpectedState.Any)
             .GetStream(cmd => StreamName.ForState<AccountState>(cmd.AccountId))

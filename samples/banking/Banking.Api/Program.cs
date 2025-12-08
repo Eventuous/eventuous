@@ -5,6 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var postgresSnapshotDbConnectionString = builder.Configuration.GetConnectionString("postgresSnapshotsDb");
+if (postgresSnapshotDbConnectionString == null) {
+    throw new InvalidOperationException("postgres snapshots db conenction string should be not null");
+}
+
+builder.Services.AddPostgresSnapshotStore(postgresSnapshotDbConnectionString, initializeDatabase: true);
+
 builder.AddKurrentDBClient("kurrentdb");
 
 builder.Services.AddEventStore<KurrentDBEventStore>();
