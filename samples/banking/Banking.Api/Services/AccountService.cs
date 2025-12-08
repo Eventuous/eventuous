@@ -11,46 +11,25 @@ public class AccountService : CommandService<AccountState> {
     public record Withdraw(string AccountId, decimal Amount);
 
     public AccountService(IEventStore store, ISnapshotStore snapshotStore) : base(store, snapshotStore: snapshotStore) {
+
+        UseSnapshotStrategy(
+            predicate: (events, _) => events.Count() >= 5,
+            produce: (_, state) => new AccountEvents.V1.Snapshot(state.Balance));
+
         On<Deposit>()
             .InState(ExpectedState.Any)
             .GetStream(cmd => StreamName.ForState<AccountState>(cmd.AccountId))
-            .Act(ApplySnapshot<Deposit>(Handle));
+            .Act((_, __, cmd) => [new AccountEvents.V1.Deposited(cmd.Amount)]);
 
         On<Withdraw>()
             .InState(ExpectedState.Any)
             .GetStream(cmd => StreamName.ForState<AccountState>(cmd.AccountId))
-            .Act(ApplySnapshot<Withdraw>(Handle));
+            .Act(static (state, __, cmd) => {
+                if (state.Balance < cmd.Amount) {
+                    throw new InvalidOperationException();
+                }
+
+                return [new AccountEvents.V1.Withdrawn(cmd.Amount)];
+            });
     }
-
-    private IEnumerable<object> Handle(AccountState state, IEnumerable<object> _, Deposit cmd) {
-        return [
-            new AccountEvents.V1.Deposited(cmd.Amount)
-        ];
-    }
-
-    private IEnumerable<object> Handle(AccountState state, IEnumerable<object> _, Withdraw cmd) {
-        if (state.Balance < cmd.Amount) {
-            throw new InvalidOperationException();
-        }
-
-        return [
-            new AccountEvents.V1.Withdrawn(cmd.Amount)
-        ];
-    }
-
-    Func<AccountState, IEnumerable<object>, TCommand, IEnumerable<object>> ApplySnapshot<TCommand>(Func<AccountState, IEnumerable<object>, TCommand, IEnumerable<object>> handler) => (state, events, command) => {
-        var newEvents = handler(state, events, command);
-
-        if (newEvents.Count() + events.Count() >= 10) {
-            foreach (var @event in newEvents) {
-                state = state.When(@event);
-            }
-            return [
-                ..newEvents,
-                    new AccountEvents.V1.Snapshot(state.Balance)
-            ];
-        }
-
-        return newEvents;
-    };
 }

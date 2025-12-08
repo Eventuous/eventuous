@@ -43,6 +43,7 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     readonly ITypeMapper         _typeMap  = typeMap ?? TypeMap.Instance;
     readonly HandlersMap<TState>  _handlers = new();
     readonly ISnapshotStore?     _snapshotStore = snapshotStore;
+    SnapshotStrategy<TState>?    _snapshotStrategy;
 
     /// <summary>
     /// Alternative constructor for the functional command service, which uses an <seealso cref="IEventStore"/> instance for both reading and writing.
@@ -60,6 +61,19 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns></returns>
     protected IDefineExpectedState<TCommand, TState> On<TCommand>() where TCommand : class => new CommandHandlerBuilder<TCommand, TState>(this, reader, writer);
+
+    /// <summary>
+    /// Configures a snapshot strategy that determines when and how to create snapshot events.
+    /// The snapshot event type must be registered in <see cref="SnapshotTypeMap"/> for the state type.
+    /// </summary>
+    /// <param name="predicate">Function that takes all events (original + new) and state, returns true if snapshot should be created</param>
+    /// <param name="produce">Function that takes all events and state, returns the snapshot event object</param>
+    protected void UseSnapshotStrategy(
+        Func<IEnumerable<object>, TState, bool> predicate,
+        Func<IEnumerable<object>, TState, object> produce
+    ) {
+        _snapshotStrategy = new SnapshotStrategy<TState>(predicate, produce);
+    }
 
     /// <summary>
     /// Function to handle a command and return the resulting state and changes.
@@ -93,8 +107,19 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
 
             var result = (await registeredHandler.Handler(loadedState.State, loadedState.Events, command, cancellationToken).NoContext()).ToArray();
 
-            var newEvents = result.Select(x => new ProposedEvent(x, new())).ToArray();
+            var newEvents = result.Select(x => new ProposedEvent(x, [])).ToArray();
             var newState  = newEvents.Aggregate(loadedState.State, (current, evt) => current.When(evt.Data));
+
+            // Apply snapshot strategy if configured
+            if (_snapshotStrategy != null) {
+                var allEvents = loadedState.Events.Concat(result);
+                if (_snapshotStrategy.Predicate(allEvents, newState)) {
+                    var snapshotEvent = _snapshotStrategy.Produce(allEvents, newState);
+                    newState = newState.When(snapshotEvent);
+                    result = [.. result, snapshotEvent];
+                    newEvents = [.. newEvents, new ProposedEvent(snapshotEvent, [])];
+                }
+            }
 
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (newEvents.Length == 0) return Result<TState>.FromSuccess(newState, [], 0);

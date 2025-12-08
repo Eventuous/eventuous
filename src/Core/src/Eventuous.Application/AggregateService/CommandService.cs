@@ -46,6 +46,7 @@ public abstract partial class CommandService<[DynamicallyAccessedMembers(Dynamic
     readonly StreamNameMap                        _streamNameMap   = streamNameMap   ?? new StreamNameMap();
     readonly ITypeMapper                          _typeMap         = typeMap         ?? TypeMap.Instance;
     readonly ISnapshotStore?                      _snapshotStore   = snapshotStore;
+    SnapshotStrategy<TState>?                    _snapshotStrategy;
 
     /// <summary>
     /// Returns the command handler builder for the specified command type.
@@ -54,6 +55,19 @@ public abstract partial class CommandService<[DynamicallyAccessedMembers(Dynamic
     /// <returns></returns>
     protected IDefineExpectedState<TCommand, TAggregate, TState, TId> On<TCommand>() where TCommand : class
         => new CommandHandlerBuilder<TCommand, TAggregate, TState, TId>(this, Reader, Writer);
+
+    /// <summary>
+    /// Configures a snapshot strategy that determines when and how to create snapshot events.
+    /// The snapshot event type must be registered in <see cref="SnapshotTypeMap"/> for the state type.
+    /// </summary>
+    /// <param name="predicate">Function that takes all events (original + new) and state, returns true if snapshot should be created</param>
+    /// <param name="produce">Function that takes all events and state, returns the snapshot event object</param>
+    protected void UseSnapshotStrategy(
+        Func<NewEvents, TState, bool> predicate,
+        Func<NewEvents, TState, object> produce
+    ) {
+        _snapshotStrategy = new SnapshotStrategy<TState>(predicate, produce);
+    }
 
     /// <summary>
     /// The command handler. Call this function from your edge (API).
@@ -73,8 +87,9 @@ public abstract partial class CommandService<[DynamicallyAccessedMembers(Dynamic
         }
 
         var aggregateId = await registeredHandler.GetId(command, cancellationToken).NoContext();
-        var reader      = registeredHandler.ResolveReader(command);
         var stream      = _streamNameMap.GetStreamName<TAggregate, TState, TId>(aggregateId);
+        var reader      = registeredHandler.ResolveReader(command);
+        var writer      = registeredHandler.ResolveWriter(command);
 
         try {
             var aggregate = registeredHandler.ExpectedState switch {
@@ -91,19 +106,30 @@ public abstract partial class CommandService<[DynamicallyAccessedMembers(Dynamic
 
             var result = await registeredHandler.Handler(aggregate!, command, cancellationToken).NoContext();
 
+            var newEvents = result.Changes.Select(x => new ProposedEvent(x, [])).ToArray();
+            var newState  = result.State;
+
+            // Apply snapshot strategy if configured
+            if (_snapshotStrategy != null) {
+                var allEvents = result.Current;
+                if (_snapshotStrategy.Predicate(allEvents, result.State)) {
+                    var snapshotEvent = _snapshotStrategy.Produce(allEvents, result.State);
+                    newState = newState.When(snapshotEvent);
+                    newEvents = [.. newEvents, new(snapshotEvent, [])];
+                }
+            }
+
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
-            if (result.Changes.Count == 0) return Result<TState>.FromSuccess(result.State, [], 0);
+            if (newEvents.Length == 0) return Result<TState>.FromSuccess(newState, [], 0);
 
             // Separate snapshots from regular events based on storage strategy
             var snapshotTypes = SnapshotTypeMap.GetSnapshotTypes<TState>();
             var storageStrategy = SnapshotTypeMap.GetStorageStrategy<TState>();
-            var allEvents = result.Changes.Select(x => new ProposedEvent(x, new())).ToArray();
-            var (regularEvents, snapshotEvents) = SeparateSnapshots(allEvents, snapshotTypes, storageStrategy);
+            var (regularEvents, snapshotEvents) = SeparateSnapshots(newEvents, snapshotTypes, storageStrategy);
 
             // Store regular events first
             var proposed    = new ProposedAppend(stream, new(result.OriginalVersion), regularEvents);
             var final       = registeredHandler.AmendAppend?.Invoke(proposed, command) ?? proposed;
-            var writer      = registeredHandler.ResolveWriter(command);
             var storeResult = await writer.Store(final, Amend, cancellationToken).NoContext();
 
             // Handle snapshots based on strategy
