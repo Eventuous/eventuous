@@ -3,7 +3,7 @@
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 
-namespace Eventuous.Postgresql;
+namespace Eventuous.Postgresql.Snapshots;
 
 public class PostgresSnapshotStoreOptions(string schema) {
     public PostgresSnapshotStoreOptions() : this(SnapshotSchema.DefaultSchema) { }

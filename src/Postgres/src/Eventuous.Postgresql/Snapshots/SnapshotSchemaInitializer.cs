@@ -4,7 +4,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.Postgresql;
+namespace Eventuous.Postgresql.Snapshots;
 
 public class SnapshotSchemaInitializer(PostgresSnapshotStoreOptions options, ILoggerFactory? loggerFactory = null) : IHostedService {
     public Task StartAsync(CancellationToken cancellationToken) {

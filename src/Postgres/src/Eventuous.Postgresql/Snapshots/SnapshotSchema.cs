@@ -4,7 +4,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 
-namespace Eventuous.Postgresql;
+namespace Eventuous.Postgresql.Snapshots;
 
 /// <summary>
 /// Instantiate a new SnapshotSchema object with the specified schema name. The default schema name is "eventuous"
@@ -23,7 +23,7 @@ public class SnapshotSchema(string schema = SnapshotSchema.DefaultSchema) {
 
     public async Task CreateSchema(NpgsqlDataSource dataSource, ILogger<SnapshotSchema>? log, CancellationToken cancellationToken = default) {
         log?.LogInformation("Creating snapshot schema {Schema}", schema);
-        const string scriptName = "Eventuous.Postgresql.SnapshotScripts.1_SnapshotSchema.sql";
+        const string scriptName = "Eventuous.Postgresql.Snapshots.Scripts.1_SnapshotSchema.sql";
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken).NoContext();
 

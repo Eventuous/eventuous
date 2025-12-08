@@ -3,6 +3,7 @@
 
 using System.Data.Common;
 using Eventuous.Postgresql;
+using Eventuous.Postgresql.Snapshots;
 using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Sql.Base;
 using Microsoft.Extensions.Configuration;

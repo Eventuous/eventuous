@@ -6,7 +6,7 @@ using System.Text;
 using Eventuous.Postgresql.Extensions;
 using static Eventuous.DeserializationResult;
 
-namespace Eventuous.Postgresql;
+namespace Eventuous.Postgresql.Snapshots;
 
 /// <summary>
 /// PostgreSQL snapshot store implementation for storing snapshots separately from event streams.
