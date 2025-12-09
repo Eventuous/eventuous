@@ -18,6 +18,7 @@
     <ProjectReference Include="$(SrcRoot)\Postgres\src\Eventuous.Postgresql\Eventuous.Postgresql.csproj" />
     <ProjectReference Include="$(SrcRoot)\SqlServer\src\Eventuous.SqlServer\Eventuous.SqlServer.csproj" />
     <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.MongoDB\Eventuous.MongoDB.csproj" />
+    <ProjectReference Include="$(SrcRoot)\Redis\src\Eventuous.Redis\Eventuous.Redis.csproj" />
     <ProjectReference Include="..\Banking.Domain\Banking.Domain.csproj" />
   </ItemGroup>
 

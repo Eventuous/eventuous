@@ -27,7 +27,14 @@ if (mongoDbSnapshotsDbConnectionString == null) {
     throw new InvalidOperationException("mongodb snapshots db connection string should be not null");
 }
 
-builder.Services.AddMongoSnapshotStore(mongoDbSnapshotsDbConnectionString, initializeIndexes: true);
+//builder.Services.AddMongoSnapshotStore(mongoDbSnapshotsDbConnectionString, initializeIndexes: true);
+
+var redisConnectionString = builder.Configuration.GetConnectionString("redis");
+if (redisConnectionString == null) {
+    throw new InvalidOperationException("redis connection string should be not null");
+}
+
+builder.Services.AddRedisSnapshotStore(redisConnectionString, database: 0);
 
 //----------------------------------------------------------------
 // Event store registration

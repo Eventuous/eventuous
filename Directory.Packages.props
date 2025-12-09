@@ -24,6 +24,7 @@
   <ItemGroup>
     <PackageVersion Include="Aspire.Hosting.MongoDB" Version="13.0.2" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.0.2" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.0.2" />
     <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.0.2" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.KurrentDB" Version="13.0.0" />

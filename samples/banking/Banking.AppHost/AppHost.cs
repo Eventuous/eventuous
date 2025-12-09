@@ -16,6 +16,9 @@ var mongodb = builder.AddMongoDB("eventuous-mongodb")
 
 var mongodbSnapshotsDb = mongodb.AddDatabase("eventuous-mongodb-snapshotsdb", "snapshots");
 
+var redis = builder.AddRedis("eventuous-redis")
+    .WithRedisInsight();
+
 builder
     .AddProject<Projects.Banking_Api>("banking-api")
     .WithReference(kurrentdb, "kurrentdb")
@@ -25,7 +28,9 @@ builder
     .WithReference(sqlServerSnapshotsDb, "sqlServerSnapshotsDb")
     .WaitFor(sqlServerSnapshotsDb)
     .WithReference(mongodbSnapshotsDb, "mongoDbSnapshotsDb")
-    .WaitFor(mongodbSnapshotsDb);
+    .WaitFor(mongodbSnapshotsDb)
+    .WithReference(redis, "redis")
+    .WaitFor(redis);
 
 builder
     .Build()

@@ -11,4 +11,8 @@ public static class EventuousRedisKeys {
     public const string Position = "position";
     public const string MessageId = "message_id";
     public const string MessageType = "message_type";
+    
+    // Snapshot keys
+    public const string Revision = "revision";
+    public const string EventType = "event_type";
 }
