@@ -30,7 +30,7 @@ public class MongoSnapshotStore : ISnapshotStore {
     [RequiresUnreferencedCode("Only works with AOT when using DefaultStaticEventSerializer")]
     public async Task<Snapshot?> Read(StreamName streamName, CancellationToken cancellationToken = default) {
         var document = await _collection
-            .Find(x => x.StreamName == streamName.ToString())
+            .Find(Builders<SnapshotDocument>.Filter.Eq(x => x.StreamName, streamName.ToString()))
             .SingleOrDefaultAsync(cancellationToken)
             .NoContext();
 
@@ -74,7 +74,7 @@ public class MongoSnapshotStore : ISnapshotStore {
         };
 
         await _collection.ReplaceOneAsync(
-                x => x.StreamName == streamName.ToString(),
+                Builders<SnapshotDocument>.Filter.Eq(x => x.StreamName, streamName.ToString()),
                 document,
                 new ReplaceOptions { IsUpsert = true },
                 cancellationToken
@@ -85,7 +85,7 @@ public class MongoSnapshotStore : ISnapshotStore {
     /// <inheritdoc />
     public async Task Delete(StreamName streamName, CancellationToken cancellationToken = default) {
         await _collection.DeleteOneAsync(
-                x => x.StreamName == streamName.ToString(),
+                Builders<SnapshotDocument>.Filter.Eq(x => x.StreamName, streamName.ToString()),
                 cancellationToken
             )
             .NoContext();

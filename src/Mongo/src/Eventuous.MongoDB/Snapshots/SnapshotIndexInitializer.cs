@@ -32,14 +32,9 @@ public class SnapshotIndexInitializer : IHostedService {
         var collection = _database.GetCollection<SnapshotDocument>(_options.CollectionName);
 
         try {
-            // Create unique index on StreamName (equivalent to primary key in SQL)
-            var streamNameIndex = new CreateIndexModel<SnapshotDocument>(
-                Builders<SnapshotDocument>.IndexKeys.Ascending(x => x.StreamName),
-                new CreateIndexOptions { Unique = true, Name = "IX_Snapshots_StreamName" }
-            );
-
-            await collection.Indexes.CreateOneAsync(streamNameIndex, cancellationToken: cancellationToken).NoContext();
-
+            // Note: StreamName is marked as [BsonId], so it's automatically indexed as _id
+            // No need to create a separate index on StreamName
+            
             // Create index on Created for potential queries/filtering
             var createdIndex = new CreateIndexModel<SnapshotDocument>(
                 Builders<SnapshotDocument>.IndexKeys.Ascending(x => x.Created),
