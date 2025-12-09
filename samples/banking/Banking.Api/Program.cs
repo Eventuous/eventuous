@@ -5,16 +5,31 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//----------------------------------------------------------------
+// Snapshot store registration
+
 var postgresSnapshotDbConnectionString = builder.Configuration.GetConnectionString("postgresSnapshotsDb");
 if (postgresSnapshotDbConnectionString == null) {
     throw new InvalidOperationException("postgres snapshots db conenction string should be not null");
 }
 
-builder.Services.AddPostgresSnapshotStore(postgresSnapshotDbConnectionString, initializeDatabase: true);
+//builder.Services.AddPostgresSnapshotStore(postgresSnapshotDbConnectionString, initializeDatabase: true);
+
+var sqlServerSnapshotsDbConnectionString = builder.Configuration.GetConnectionString("sqlServerSnapshotsDb");
+if (sqlServerSnapshotsDbConnectionString == null) {
+    throw new InvalidOperationException("sqlServer snapshots db connection string should be not null");
+}
+
+builder.Services.AddSqlServerSnapshotStore(sqlServerSnapshotsDbConnectionString, initializeDatabase: true);
+
+//----------------------------------------------------------------
+// Event store registration
 
 builder.AddKurrentDBClient("kurrentdb");
-
 builder.Services.AddEventStore<KurrentDBEventStore>();
+
+//----------------------------------------------------------------
+
 builder.Services.AddCommandService<AccountService, AccountState>();
 
 var app = builder.Build();

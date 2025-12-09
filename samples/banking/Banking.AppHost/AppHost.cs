@@ -8,12 +8,17 @@ var postgres = builder.AddPostgres("eventuous-postgres")
 
 var postgresSnapshotsDb = postgres.AddDatabase("snapshots");
 
+var sqlServer = builder.AddSqlServer("eventuous-sqlserver");
+var sqlServerSnapshotsDb = sqlServer.AddDatabase("eventuous-sqlserver-snapshotsdb", "snapshots");
+
 builder
     .AddProject<Projects.Banking_Api>("banking-api")
     .WithReference(kurrentdb, "kurrentdb")
     .WaitFor(kurrentdb)
     .WithReference(postgresSnapshotsDb, "postgresSnapshotsDb")
-    .WaitFor(postgresSnapshotsDb);
+    .WaitFor(postgresSnapshotsDb)
+    .WithReference(sqlServerSnapshotsDb, "sqlServerSnapshotsDb")
+    .WaitFor(sqlServerSnapshotsDb);
 
 builder
     .Build()
