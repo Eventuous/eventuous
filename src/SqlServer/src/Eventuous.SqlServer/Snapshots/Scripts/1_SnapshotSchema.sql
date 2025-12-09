@@ -13,8 +13,8 @@ IF OBJECT_ID('__schema__.snapshots', 'U') IS NULL
             json_data   NVARCHAR(MAX)  NOT NULL,
             created     DATETIME2(7)   NOT NULL DEFAULT GETUTCDATE(),
             CONSTRAINT PK_Snapshots PRIMARY KEY CLUSTERED (stream_name),
-            CONSTRAINT CK_RevisionGteZero CHECK (revision >= 0),
-            CONSTRAINT CK_JsonDataIsJson CHECK (ISJSON(json_data) = 1)
+            CONSTRAINT CK_Snapshots_RevisionGteZero CHECK (revision >= 0),
+            CONSTRAINT CK_Snapshots_JsonDataIsJson CHECK (ISJSON(json_data) = 1)
         );
 
         CREATE INDEX IDX_SnapshotsStreamName ON __schema__.snapshots (stream_name);
