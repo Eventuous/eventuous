@@ -20,7 +20,14 @@ if (sqlServerSnapshotsDbConnectionString == null) {
     throw new InvalidOperationException("sqlServer snapshots db connection string should be not null");
 }
 
-builder.Services.AddSqlServerSnapshotStore(sqlServerSnapshotsDbConnectionString, initializeDatabase: true);
+//builder.Services.AddSqlServerSnapshotStore(sqlServerSnapshotsDbConnectionString, initializeDatabase: true);
+
+var mongoDbSnapshotsDbConnectionString = builder.Configuration.GetConnectionString("mongoDbSnapshotsDb");
+if (mongoDbSnapshotsDbConnectionString == null) {
+    throw new InvalidOperationException("mongodb snapshots db connection string should be not null");
+}
+
+builder.Services.AddMongoSnapshotStore(mongoDbSnapshotsDbConnectionString, initializeIndexes: true);
 
 //----------------------------------------------------------------
 // Event store registration

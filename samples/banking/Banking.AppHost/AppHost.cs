@@ -11,6 +11,11 @@ var postgresSnapshotsDb = postgres.AddDatabase("snapshots");
 var sqlServer = builder.AddSqlServer("eventuous-sqlserver");
 var sqlServerSnapshotsDb = sqlServer.AddDatabase("eventuous-sqlserver-snapshotsdb", "snapshots");
 
+var mongodb = builder.AddMongoDB("eventuous-mongodb")
+    .WithMongoExpress();
+
+var mongodbSnapshotsDb = mongodb.AddDatabase("eventuous-mongodb-snapshotsdb", "snapshots");
+
 builder
     .AddProject<Projects.Banking_Api>("banking-api")
     .WithReference(kurrentdb, "kurrentdb")
@@ -18,7 +23,9 @@ builder
     .WithReference(postgresSnapshotsDb, "postgresSnapshotsDb")
     .WaitFor(postgresSnapshotsDb)
     .WithReference(sqlServerSnapshotsDb, "sqlServerSnapshotsDb")
-    .WaitFor(sqlServerSnapshotsDb);
+    .WaitFor(sqlServerSnapshotsDb)
+    .WithReference(mongodbSnapshotsDb, "mongoDbSnapshotsDb")
+    .WaitFor(mongodbSnapshotsDb);
 
 builder
     .Build()

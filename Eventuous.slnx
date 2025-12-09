@@ -114,6 +114,7 @@
     </Folder>
     <Folder Name="/Mongo/" />
     <Folder Name="/Mongo/src/">
+        <Project Path="src/Mongo/src/Eventuous.MongoDB/Eventuous.MongoDB.csproj" />
         <Project Path="src/Mongo/src/Eventuous.Projections.MongoDB/Eventuous.Projections.MongoDB.csproj" />
     </Folder>
     <Folder Name="/Mongo/test/">
