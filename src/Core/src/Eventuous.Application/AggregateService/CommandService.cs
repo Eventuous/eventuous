@@ -46,7 +46,7 @@ public abstract partial class CommandService<[DynamicallyAccessedMembers(Dynamic
     readonly StreamNameMap                        _streamNameMap   = streamNameMap   ?? new StreamNameMap();
     readonly ITypeMapper                          _typeMap         = typeMap         ?? TypeMap.Instance;
     readonly ISnapshotStore?                      _snapshotStore   = snapshotStore;
-    SnapshotStrategy<TState>?                    _snapshotStrategy;
+    SnapshotStrategy<TState>?                     _snapshotStrategy;
 
     /// <summary>
     /// Returns the command handler builder for the specified command type.
@@ -94,10 +94,10 @@ public abstract partial class CommandService<[DynamicallyAccessedMembers(Dynamic
         try {
             var aggregate = registeredHandler.ExpectedState switch {
                 ExpectedState.Any => await reader
-                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, false, _factoryRegistry, snapshotStore, cancellationToken)
+                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, false, _factoryRegistry, _snapshotStore, cancellationToken)
                     .NoContext(),
                 ExpectedState.Existing => await reader
-                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, true, _factoryRegistry, snapshotStore, cancellationToken)
+                    .LoadAggregate<TAggregate, TState, TId>(aggregateId, _streamNameMap, true, _factoryRegistry, _snapshotStore, cancellationToken)
                     .NoContext(),
                 ExpectedState.New     => Create(aggregateId),
                 ExpectedState.Unknown => null,

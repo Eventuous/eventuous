@@ -40,8 +40,8 @@ public abstract class FunctionalCommandService<TState>(IEventReader reader, IEve
 /// <typeparam name="TState">State object type</typeparam>
 public abstract class CommandService<TState>(IEventReader reader, IEventWriter writer, ITypeMapper? typeMap = null, AmendEvent? amendEvent = null, ISnapshotStore? snapshotStore = null)
     : ICommandService<TState> where TState : State<TState>, new() {
-    readonly ITypeMapper         _typeMap  = typeMap ?? TypeMap.Instance;
-    readonly HandlersMap<TState>  _handlers = new();
+    readonly ITypeMapper         _typeMap       = typeMap ?? TypeMap.Instance;
+    readonly HandlersMap<TState> _handlers      = new();
     readonly ISnapshotStore?     _snapshotStore = snapshotStore;
     SnapshotStrategy<TState>?    _snapshotStrategy;
 
@@ -99,8 +99,8 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
 
         try {
             var loadedState = registeredHandler.ExpectedState switch {
-                ExpectedState.Any      => await resolvedReader.LoadState<TState>(streamName, false, snapshotStore, cancellationToken).NoContext(),
-                ExpectedState.Existing => await resolvedReader.LoadState<TState>(streamName, true, snapshotStore, cancellationToken).NoContext(),
+                ExpectedState.Any      => await resolvedReader.LoadState<TState>(streamName, false, _snapshotStore, cancellationToken).NoContext(),
+                ExpectedState.Existing => await resolvedReader.LoadState<TState>(streamName, true, _snapshotStore, cancellationToken).NoContext(),
                 ExpectedState.New      => new(streamName, ExpectedStreamVersion.NoStream, []),
                 _                      => throw new ArgumentOutOfRangeException(null, "Unknown expected state")
             };
