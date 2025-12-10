@@ -24,7 +24,7 @@ static class ChannelExtensions {
         }
 
         public async Task ReadBatches(
-                ProcessElement<T[]> process,
+                ProcessElement<IReadOnlyList<T>> process,
                 int                 maxCount,
                 TimeSpan            maxTime,
                 CancellationToken   cancellationToken
@@ -61,7 +61,7 @@ static class ChannelExtensions {
         }
     }
 
-    static async IAsyncEnumerable<T[]> ReadAllBatches<T>(
+    static async IAsyncEnumerable<IReadOnlyList<T>> ReadAllBatches<T>(
             this ChannelReader<T>                      source,
             int                                        batchSize,
             TimeSpan                                   timeSpan,
@@ -96,7 +96,7 @@ static class ChannelExtensions {
                     if (buffer.Count < batchSize) continue;
                 }
 
-                yield return buffer.ToArray();
+                yield return buffer.AsReadOnly();
 
                 buffer.Clear();
 
@@ -107,7 +107,7 @@ static class ChannelExtensions {
             }
 
             // Emit what's left before throwing exceptions.
-            if (buffer.Count > 0) yield return buffer.ToArray();
+            if (buffer.Count > 0) yield return buffer.AsReadOnly();
 
             cancellationToken.ThrowIfCancellationRequested();
 

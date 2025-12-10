@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Benchmarks.CheckpointBenchmarks-20251203-165305</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.14.0, macOS Sequoia 15.6.1 (24G90) [Darwin 24.6.0]
+Apple M2 Ultra, 1 CPU, 24 logical and 24 physical cores
+.NET SDK 10.0.100
+  [Host]     : .NET 10.0.0 (10.0.25.52411), Arm64 RyuJIT AdvSIMD
+  Job-YEIFEC : .NET 10.0.0 (10.0.25.52411), Arm64 RyuJIT AdvSIMD
+</code></pre>
+<pre><code>InvocationCount=1  IterationCount=5  UnrollFactor=1  
+WarmupCount=3  
+</code></pre>
+
+<table>
+<thead><tr><th>Method                             </th><th>PositionCount</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>&#39;Sequential checkpoint commits&#39;</td><td>10</td><td>4.042 &mu;s</td><td>5.2251 &mu;s</td><td>0.8086 &mu;s</td><td>-</td>
+</tr><tr><td>&#39;Checkpoint commits with gaps&#39;</td><td>10</td><td>3.741 &mu;s</td><td>4.7691 &mu;s</td><td>1.2385 &mu;s</td><td>-</td>
+</tr><tr><td>&#39;CommitPositionSequence - add sequential&#39;</td><td>10</td><td>3.441 &mu;s</td><td>1.6490 &mu;s</td><td>0.4283 &mu;s</td><td>-</td>
+</tr><tr><td>&#39;CommitPositionSequence - add with gaps&#39;</td><td>10</td><td>3.157 &mu;s</td><td>3.2165 &mu;s</td><td>0.4978 &mu;s</td><td>-</td>
+</tr><tr><td>&#39;CommitPositionSequence - gap detection&#39;</td><td>10</td><td>6.442 &mu;s</td><td>3.3719 &mu;s</td><td>0.8757 &mu;s</td><td>-</td>
+</tr><tr><td>&#39;Checkpoint store operations&#39;</td><td>10</td><td>1.104 &mu;s</td><td>1.0428 &mu;s</td><td>0.1614 &mu;s</td><td>-</td>
+</tr><tr><td>&#39;Sequential checkpoint commits&#39;</td><td>100</td><td>15.635 &mu;s</td><td>10.0163 &mu;s</td><td>1.5500 &mu;s</td><td>35584 B</td>
+</tr><tr><td>&#39;Checkpoint commits with gaps&#39;</td><td>100</td><td>13.291 &mu;s</td><td>4.4320 &mu;s</td><td>1.1510 &mu;s</td><td>20072 B</td>
+</tr><tr><td>&#39;CommitPositionSequence - add sequential&#39;</td><td>100</td><td>29.325 &mu;s</td><td>7.3814 &mu;s</td><td>1.9169 &mu;s</td><td>9096 B</td>
+</tr><tr><td>&#39;CommitPositionSequence - add with gaps&#39;</td><td>100</td><td>27.450 &mu;s</td><td>3.8883 &mu;s</td><td>1.0098 &mu;s</td><td>8296 B</td>
+</tr><tr><td>&#39;CommitPositionSequence - gap detection&#39;</td><td>100</td><td>31.016 &mu;s</td><td>6.2328 &mu;s</td><td>1.6186 &mu;s</td><td>9744 B</td>
+</tr><tr><td>&#39;Checkpoint store operations&#39;</td><td>100</td><td>1.167 &mu;s</td><td>0.9212 &mu;s</td><td>0.2392 &mu;s</td><td>-</td>
+</tr></tbody></table>
+</body>
+</html>

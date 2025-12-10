@@ -1,7 +1,6 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
 namespace Eventuous.Subscriptions;
@@ -20,18 +19,47 @@ public readonly record struct EventHandlingResult(EventHandlingStatus Status, st
 }
 
 public class HandlingResults {
-    readonly ConcurrentBag<EventHandlingResult> _results = [];
-
-    EventHandlingStatus _handlingStatus = 0;
+    EventHandlingResult? _singleResult;
+    List<EventHandlingResult>? _multipleResults;
+    EventHandlingStatus _handlingStatus;
 
     public void Add(EventHandlingResult result) {
-        if (_results.Any(x => x.HandlerType == result.HandlerType)) return;
+        // Single result case (most common - optimized for zero allocation)
+        if (_singleResult == null && _multipleResults == null) {
+            _singleResult = result;
+            _handlingStatus = result.Status;
+            return;
+        }
+
+        // Transition to multiple results
+        if (_multipleResults == null && _singleResult != null) {
+            _multipleResults = [_singleResult.Value];
+            _singleResult = null;
+        }
+
+        // Check for duplicate handler (manual iteration to avoid LINQ allocation)
+        for (int i = 0; i < _multipleResults!.Count; i++) {
+            if (_multipleResults[i].HandlerType == result.HandlerType) return;
+        }
 
         _handlingStatus |= result.Status;
-        _results.Add(result);
+        _multipleResults.Add(result);
     }
 
-    public IEnumerable<EventHandlingResult> GetResultsOf(EventHandlingStatus status) => _results.Where(x => x.Status == status);
+    public IEnumerable<EventHandlingResult> GetResultsOf(EventHandlingStatus status) {
+        if (_singleResult != null) {
+            if (_singleResult.Value.Status == status) {
+                yield return _singleResult.Value;
+            }
+        }
+        else if (_multipleResults != null) {
+            for (int i = 0; i < _multipleResults.Count; i++) {
+                if (_multipleResults[i].Status == status) {
+                    yield return _multipleResults[i];
+                }
+            }
+        }
+    }
 
     public EventHandlingStatus GetFailureStatus() => _handlingStatus & EventHandlingStatus.Handled;
 
@@ -39,5 +67,19 @@ public class HandlingResults {
 
     public bool IsPending() => _handlingStatus == 0;
 
-    public Exception? GetException() => _results.FirstOrDefault(x => x.Exception != null).Exception;
+    public Exception? GetException() {
+        if (_singleResult != null) {
+            return _singleResult.Value.Exception;
+        }
+
+        if (_multipleResults != null) {
+            for (int i = 0; i < _multipleResults.Count; i++) {
+                if (_multipleResults[i].Exception != null) {
+                    return _multipleResults[i].Exception;
+                }
+            }
+        }
+
+        return null;
+    }
 }

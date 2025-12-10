@@ -29,8 +29,8 @@
         <Compile Include="..\Bookings\Infrastructure\Telemetry.cs">
             <Link>Infrastructure\Telemetry.cs</Link>
         </Compile>
-        <Compile Include="..\..\esdb\Bookings.Payments\Domain\*.cs" LinkBase="Domain"/>
-        <Compile Include="..\..\esdb\Bookings.Payments\Application\*.cs" LinkBase="Application"/>
+        <Compile Include="..\..\kurrentdb\Bookings.Payments\Domain\*.cs" LinkBase="Domain"/>
+        <Compile Include="..\..\kurrentdb\Bookings.Payments\Application\*.cs" LinkBase="Application"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
