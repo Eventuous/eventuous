@@ -10,7 +10,7 @@
       <ProjectReference Include="$(CoreRoot)\Eventuous.Shared\Eventuous.Shared.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="..\..\esdb\Bookings.Domain\*.cs" />
-        <Compile Include="..\..\esdb\Bookings.Domain\Bookings\*.cs" LinkBase="Bookings" />
+        <Compile Include="..\..\kurrentdb\Bookings.Domain\*.cs" />
+        <Compile Include="..\..\kurrentdb\Bookings.Domain\Bookings\*.cs" LinkBase="Bookings" />
     </ItemGroup>
 </Project>

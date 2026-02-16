@@ -7,7 +7,7 @@ namespace Eventuous.Subscriptions.Context;
 /// A bag to transmit the necessary arbitrary baggage through the context pipe
 /// </summary>
 public class ContextItems {
-    readonly Dictionary<string, object?> _items = new();
+    Dictionary<string, object?>? _items; // Lazy initialization - only allocate when first item is added
 
     /// <summary>
     /// Adds an item to the context baggage
@@ -16,6 +16,7 @@ public class ContextItems {
     /// <param name="value">Item instance</param>
     /// <returns></returns>
     public ContextItems AddItem(string key, object? value) {
+        _items ??= new Dictionary<string, object?>();
         _items.TryAdd(key, value);
         return this;
     }
@@ -27,9 +28,17 @@ public class ContextItems {
     /// <param name="key">Item key</param>
     /// <typeparam name="T">Item type</typeparam>
     /// <returns></returns>
-    public T? GetItem<T>(string key) => _items.TryGetValue(key, out var value) && value is T val ? val : default;
+    public T? GetItem<T>(string key) {
+        if (_items == null) return default;
+        return _items.TryGetValue(key, out var value) && value is T val ? val : default;
+    }
 
     public bool TryGetItem<T>(string key, out T? value) {
+        if (_items == null) {
+            value = default;
+            return false;
+        }
+
         if (_items.TryGetValue(key, out var val) && val is T val2) {
             value = val2;
             return true;
