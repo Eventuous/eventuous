@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <OutputType>Exe</OutputType>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations"/>
+        <PackageReference Include="Microsoft.AspNetCore.TestHost"/>
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Sample apps (their module initializers populate SpyglassRegistry) -->
+        <ProjectReference Include="$(RepoRoot)\samples\esdb\Bookings\Bookings.csproj" Aliases="BookingsApp"/>
+        <ProjectReference Include="$(RepoRoot)\samples\esdb\Bookings.Payments\Bookings.Payments.csproj" Aliases="PaymentsApp"/>
+        <!-- Spyglass runtime (for API mapping + registry types) -->
+        <ProjectReference Include="..\..\src\Eventuous.Spyglass\Eventuous.Spyglass.csproj"/>
+        <!-- In-memory event store for the test app -->
+        <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj"/>
+    </ItemGroup>
+</Project>

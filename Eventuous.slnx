@@ -85,6 +85,7 @@
     <Folder Name="/Experimental/test/">
         <Project Path="src/Redis/test/Eventuous.Tests.Redis/Eventuous.Tests.Redis.csproj" />
         <Project Path="src/Experimental/test/Eventuous.Tests.Spyglass.Generators/Eventuous.Tests.Spyglass.Generators.csproj" />
+        <Project Path="src/Experimental/test/Eventuous.Tests.Spyglass/Eventuous.Tests.Spyglass.csproj" />
     </Folder>
     <Folder Name="/Extensions/" />
     <Folder Name="/Extensions/gen/">
