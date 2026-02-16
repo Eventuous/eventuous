@@ -17,14 +17,24 @@ namespace Eventuous.Shared.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class TypeMappingsGenerator : IIncrementalGenerator {
     public void Initialize(IncrementalGeneratorInitializationContext context) {
+        // Resolve the EventTypeAttribute symbol from the compilation
+        var eventTypeAttributeSymbol = context.CompilationProvider
+            .Select(static (c, _) => c.GetTypeByMetadataName(EventTypeAttrFqcn));
+
         var syntaxCandidates = context.SyntaxProvider
             .CreateSyntaxProvider(IsCandidate, Transform)
+            .Where(static t => t is not null)
+            .Combine(eventTypeAttributeSymbol)
+            .Select(static (pair, _) => pair.Left.HasValue ? TransformWithSymbol(pair.Left.Value, pair.Right) : null)
             .Where(static t => t is not null)
             .Select(static (t, _) => t!)
             .Collect();
 
         // Additionally, discover [EventType] on symbols from referenced assemblies (metadata) via the Compilation model
-        var symbolCandidates = context.CompilationProvider.Select(static (c, _) => DiscoverFromCompilation(c));
+        var symbolCandidates = eventTypeAttributeSymbol
+            .Select(static (symbol, _) => (Symbol: symbol, Compilation: (Compilation?)null))
+            .Combine(context.CompilationProvider)
+            .Select(static (pair, _) => DiscoverFromCompilation(pair.Right, pair.Left.Symbol));
 
         var mergedCandidates = syntaxCandidates
             .Combine(symbolCandidates)
@@ -46,7 +56,17 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         public string EventTypeName      { get; set; } = null!;
     }
 
-    static Mapping? Transform(GeneratorSyntaxContext ctx, CancellationToken _) {
+    readonly struct TransformInput {
+        public GeneratorSyntaxContext Context { get; }
+        public INamedTypeSymbol? Symbol { get; }
+
+        public TransformInput(GeneratorSyntaxContext context, INamedTypeSymbol? symbol) {
+            Context = context;
+            Symbol = symbol;
+        }
+    }
+
+    static TransformInput? Transform(GeneratorSyntaxContext ctx, CancellationToken _) {
         // Get the declared symbol
         if (ctx.Node is not TypeDeclarationSyntax tds) return null;
 
@@ -55,13 +75,20 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         // Only concrete classes/records
         if (symbol?.TypeKind is not (TypeKind.Class or TypeKind.Struct)) return null;
 
-        // Look for EventTypeAttribute
-        var attr = GetEventTypeAttribute(symbol);
+        return new TransformInput(ctx, symbol);
+    }
+
+    static Mapping? TransformWithSymbol(TransformInput input, INamedTypeSymbol? eventTypeAttributeSymbol) {
+        var symbol = input.Symbol;
+        if (symbol is null) return null;
+
+        // Look for EventTypeAttribute using symbol comparison
+        var attr = GetEventTypeAttribute(symbol, eventTypeAttributeSymbol);
 
         if (attr is null) return null;
 
         // Try to get the constructor argument (event type name)
-        var evtName = TryGetEventTypeName(attr) ?? string.Empty;
+        var evtName = TryGetEventTypeName(attr, eventTypeAttributeSymbol) ?? string.Empty;
 
         // Use fully-qualified global:: name for the type
         var typeName = MakeGlobal(symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
@@ -69,22 +96,33 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         return new() { FullyQualifiedType = typeName, EventTypeName = evtName };
     }
 
-    static AttributeData? GetEventTypeAttribute(ISymbol symbol) {
-        // ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
+    static AttributeData? GetEventTypeAttribute(ISymbol symbol, INamedTypeSymbol? eventTypeAttributeSymbol) {
+        // If we have the resolved symbol, use symbol comparison (refactoring-safe)
+        if (eventTypeAttributeSymbol is not null) {
+            foreach (var a in symbol.GetAttributes()) {
+                if (SymbolEqualityComparer.Default.Equals(a.AttributeClass, eventTypeAttributeSymbol)) {
+                    return a;
+                }
+            }
+        }
+
+        // Fallback to string-based comparison if symbol resolution failed
+        // This handles cases where EventTypeAttribute is in a different assembly not yet compiled
         foreach (var a in symbol.GetAttributes()) {
             var attrClass = a.AttributeClass;
-
             if (attrClass == null) continue;
 
-            var name = attrClass.ToDisplayString();
-
-            if (name == EventTypeAttrFqcn || attrClass.Name is EventTypeAttribute) return a;
+            var fullName = attrClass.ToDisplayString();
+            if (fullName == EventTypeAttrFqcn ||
+                (attrClass.Name == EventTypeAttribute && attrClass.ContainingNamespace?.ToDisplayString() == BaseNamespace)) {
+                return a;
+            }
         }
 
         return null;
     }
 
-    static string? TryGetEventTypeName(AttributeData attr) {
+    static string? TryGetEventTypeName(AttributeData attr, INamedTypeSymbol? eventTypeAttributeSymbol) {
         // Prefer the first constructor argument if it is a constant string
         if (attr.ConstructorArguments.Length > 0) {
             var arg = attr.ConstructorArguments[0];
@@ -93,6 +131,23 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         }
 
         // Also check named argument "EventType"
+        // Note: NamedArguments uses string keys, not symbols, so we still use string comparison here
+        // However, we verify the property exists on the attribute type when we have the symbol
+        if (eventTypeAttributeSymbol is not null) {
+            var hasProperty = eventTypeAttributeSymbol.GetMembers(EventTypeAttribute)
+                .OfType<IPropertySymbol>()
+                .Any();
+
+            if (hasProperty) {
+                foreach (var kv in attr.NamedArguments) {
+                    if (kv.Key == EventTypeAttribute && kv.Value.Value is string s) {
+                        return s;
+                    }
+                }
+            }
+        }
+
+        // Fallback to string-based comparison when symbol is not available
         foreach (var kv in attr.NamedArguments) {
             if (kv is { Key: EventTypeAttribute, Value.Value: string s }) return s;
         }
@@ -100,7 +155,7 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         return null;
     }
 
-    static ImmutableArray<Mapping> DiscoverFromCompilation(Compilation compilation) {
+    static ImmutableArray<Mapping> DiscoverFromCompilation(Compilation compilation, INamedTypeSymbol? eventTypeAttributeSymbol) {
         var builder = ImmutableArray.CreateBuilder<Mapping>();
 
         // Current assembly
@@ -114,10 +169,10 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         return builder.ToImmutable();
 
         void ProcessType(INamedTypeSymbol type) {
-            var attr = GetEventTypeAttribute(type);
+            var attr = GetEventTypeAttribute(type, eventTypeAttributeSymbol);
 
             if (attr is not null) {
-                var evtName  = TryGetEventTypeName(attr) ?? string.Empty;
+                var evtName  = TryGetEventTypeName(attr, eventTypeAttributeSymbol) ?? string.Empty;
                 var typeName = MakeGlobal(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
                 builder.Add(new() { FullyQualifiedType = typeName, EventTypeName = evtName });
             }
