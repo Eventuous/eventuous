@@ -13,13 +13,4 @@
       <AdditionalFiles Remove="AnalyzerReleases.Shipped.md" />
       <AdditionalFiles Remove="AnalyzerReleases.Unshipped.md" />
     </ItemGroup>
-    <ItemGroup>
-      <Compile Remove="Polyfills\**" />
-    </ItemGroup>
-    <ItemGroup>
-      <EmbeddedResource Remove="Polyfills\**" />
-    </ItemGroup>
-    <ItemGroup>
-      <None Remove="Polyfills\**" />
-    </ItemGroup>
 </Project>
