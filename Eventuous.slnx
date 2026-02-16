@@ -140,10 +140,10 @@
         <Project Path="src/SqlServer/test/Eventuous.Tests.SqlServer/Eventuous.Tests.SqlServer.csproj" />
     </Folder>
     <Folder Name="/Samples/" />
-    <Folder Name="/Samples/Esdb/">
-        <Project Path="samples/esdb/Bookings.Domain/Bookings.Domain.csproj" />
-        <Project Path="samples/esdb/Bookings.Payments/Bookings.Payments.csproj" />
-        <Project Path="samples/esdb/Bookings/Bookings.csproj" />
+    <Folder Name="/Samples/KurrentDB/">
+        <Project Path="samples/kurrentdb/Bookings.Domain/Bookings.Domain.csproj" />
+        <Project Path="samples/kurrentdb/Bookings.Payments/Bookings.Payments.csproj" />
+        <Project Path="samples/kurrentdb/Bookings/Bookings.csproj" />
     </Folder>
     <Folder Name="/Samples/Postgres/">
         <Project Path="samples/postgres/Bookings.Domain/Bookings.Domain.csproj" />
