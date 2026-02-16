@@ -18,7 +18,7 @@ For each discovered type the generator emits a `SpyglassRegistry.Register(...)` 
 - **Aggregate name** (or `null` for standalone states)
 - **State type name**
 - **Public methods** (aggregate commands; empty for standalone states)
-- **Handled event types** — resolved by instantiating the state and reading `RegisteredEventTypes`
+- **Handled event types** — resolved by instantiating the state and calling `GetRegisteredEventTypes()`
 - **Load delegate** — a lambda that reads events from the store and rehydrates state:
   - For aggregates: creates the aggregate, calls `aggregate.Load(...)`
   - For standalone states: folds events with `state.When(e)`
@@ -31,7 +31,7 @@ SpyglassRegistry.Register(new SpyglassAggregateInfo(
     "Booking",
     "BookingState",
     new string[] { "BookRoom", "RecordPayment" },
-    new BookingState().RegisteredEventTypes.Select(t => t.Name).ToArray(),
+    new BookingState().GetRegisteredEventTypes().Select(t => t.Name).ToArray(),
     static async (eventStore, streamName, version) => {
         var aggregate = new Booking();
         var events = await eventStore.ReadStream(...);
@@ -50,7 +50,7 @@ SpyglassRegistry.Register(new SpyglassAggregateInfo(
     null,
     "PaymentState",
     System.Array.Empty<string>(),
-    new PaymentState().RegisteredEventTypes.Select(t => t.Name).ToArray(),
+    new PaymentState().GetRegisteredEventTypes().Select(t => t.Name).ToArray(),
     static async (eventStore, streamName, version) => {
         var events = await eventStore.ReadStream(...);
         var state = selected.Aggregate(new PaymentState(), (s, e) => s.When(e));

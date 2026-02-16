@@ -36,7 +36,7 @@ public abstract record State<T> where T : State<T> {
     /// <summary>
     /// Returns the event types that have registered handlers in this state.
     /// </summary>
-    public ICollection<Type> RegisteredEventTypes => _handlers.Keys;
+    public ICollection<Type> GetRegisteredEventTypes() => _handlers.Keys;
 
     readonly Dictionary<Type, Func<T, object, T>> _handlers = new();
 }
