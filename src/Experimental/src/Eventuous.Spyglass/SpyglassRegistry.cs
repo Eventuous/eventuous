@@ -5,7 +5,7 @@ namespace Eventuous.Spyglass;
 
 public delegate StreamName SpyglassGetStreamName(StreamNameMap? map, string entityId);
 
-public delegate Task<SpyglassLoadResult> SpyglassLoadDelegate(IEventStore eventStore, StreamName streamName, int version);
+public delegate Task<SpyglassLoadResult?> SpyglassLoadDelegate(IEventStore eventStore, StreamName streamName, int version);
 
 public record SpyglassAggregateInfo(
         string?                AggregateType,

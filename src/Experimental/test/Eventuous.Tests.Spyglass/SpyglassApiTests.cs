@@ -159,6 +159,29 @@ public class SpyglassApiTests {
         }
     }
 
+    [Test]
+    public async Task Load_returns_not_found_for_nonexistent_stream() {
+        RuntimeHelpers.RunModuleConstructor(typeof(BookingsApp::Bookings.Registrations).Module.ModuleHandle);
+
+        var (app, client) = await CreateTestApp();
+
+        try {
+            // Get the Booking type's registry id
+            using var aggResponse = await client.GetAsync("/spyglass/aggregates");
+            var aggJson    = await aggResponse.Content.ReadAsStringAsync();
+            var aggregates = JsonSerializer.Deserialize<AggregateEntry[]>(aggJson, JsonOptions)!;
+            var booking    = aggregates.First(a => a.AggregateType == "Booking");
+
+            // Load a non-existing entity
+            using var loadResponse = await client.GetAsync($"/spyglass/load/{booking.Id}/does-not-exist?version=-1");
+
+            await Assert.That(loadResponse.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+        } finally {
+            client.Dispose();
+            await app.DisposeAsync();
+        }
+    }
+
     [UsedImplicitly]
     record AggregateEntry(Guid Id, string? AggregateType, string StateType, string[] Methods, string[] Events);
 }

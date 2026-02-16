@@ -68,7 +68,9 @@ public static class SpyglassApi {
                     var streamName = aggInfo.GetStreamName(streamNameMap, entityId);
                     var result     = await aggInfo.LoadDelegate(eventStore, streamName, version);
 
-                    return Results.Ok(new { result.State, Events = result.Events.Select(e => new { e.EventType, e.Payload }) });
+                    return result is null
+                        ? Results.NotFound($"Stream '{streamName}' not found")
+                        : Results.Ok(new { result.State, Events = result.Events.Select(e => new { e.EventType, e.Payload }) });
                 }
             )
             .ExcludeFromDescription();
