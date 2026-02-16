@@ -7,6 +7,10 @@
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Shouldly" />
         <PackageReference Include="Testcontainers.Redis"/>
+        <PackageReference Update="coverlet.collector">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Redis\Eventuous.Redis.csproj"/>

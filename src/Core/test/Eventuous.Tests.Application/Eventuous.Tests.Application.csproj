@@ -23,4 +23,10 @@
             <DependentUpon>ServiceTestBase.cs</DependentUpon>
         </Compile>
     </ItemGroup>
+    <ItemGroup>
+      <PackageReference Update="coverlet.collector">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
 </Project>

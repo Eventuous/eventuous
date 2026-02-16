@@ -10,7 +10,7 @@ using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.Subscriptions.Base;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Testcontainers.EventStoreDb;
+using Testcontainers.KurrentDb;
 
 namespace Eventuous.Tests.KurrentDB.Subscriptions;
 
@@ -18,14 +18,14 @@ public class CustomDependenciesTests {
     readonly TestSerializer      _serializer      = new();
     readonly TestCheckpointStore _checkpointStore = new();
     IHostedService               _service         = null!;
-    EventStoreDbContainer        _container       = null!;
+    KurrentDbContainer           _container       = null!;
     readonly StreamName          _streamName      = new($"test-{Guid.NewGuid():N}");
     IProducer                    _producer        = null!;
     TestEventHandler             _handler         = null!;
 
     [Before(Test)]
     public async Task Setup(CancellationToken cancellationToken) {
-        _container = EsdbContainer.Create();
+        _container = KurrentDBContainer.Create();
         var services = new ServiceCollection();
         await _container.StartAsync(cancellationToken);
 
@@ -75,7 +75,7 @@ public class CustomDependenciesTests {
         }
 
         await Assert.That(_handler.Message).IsTypeOf<TestEvent>();
-        await Assert.That(_handler.Message).IsEqualTo(message with {Number = message.Number + 1});
+        await Assert.That(_handler.Message).IsEqualTo(message with { Number = message.Number + 1 });
     }
 
     class TestEventHandler : IEventHandler {

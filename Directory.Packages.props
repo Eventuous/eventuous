@@ -15,10 +15,10 @@
     <MicrosoftExtensionsVer>9.0.10</MicrosoftExtensionsVer>
   </PropertyGroup>
   <PropertyGroup Label="Testcontainers version">
-    <TestcontainersVersion>4.8.1</TestcontainersVersion>
+    <TestcontainersVersion>4.10.0</TestcontainersVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <NpgsqlVersion>9.0.3</NpgsqlVersion>
+    <NpgsqlVersion>10.0.1</NpgsqlVersion>
     <TUnitVersion>0.77.3</TUnitVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -60,7 +60,7 @@
   </ItemGroup>
   <ItemGroup Label="Testcontainers">
     <PackageVersion Include="Testcontainers" Version="$(TestcontainersVersion)" />
-    <PackageVersion Include="Testcontainers.EventStoreDb" Version="$(TestcontainersVersion)" />
+    <PackageVersion Include="Testcontainers.KurrentDb" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.Kafka" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.MongoDb" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="$(TestcontainersVersion)" />
@@ -83,7 +83,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(MicrosoftTestHostVer)" />
     <PackageVersion Include="RestSharp" Version="112.1.0" />
     <PackageVersion Include="Hypothesist" Version="3.0.97" />
-    <PackageVersion Include="NodaTime" Version="3.2.2" />
+    <PackageVersion Include="NodaTime" Version="3.3.0" />
     <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.2.0" />
     <PackageVersion Include="MongoDb.Bson.NodaTime" Version="3.1.0" />
     <PackageVersion Include="Verify.DiffPlex" Version="3.1.2" />

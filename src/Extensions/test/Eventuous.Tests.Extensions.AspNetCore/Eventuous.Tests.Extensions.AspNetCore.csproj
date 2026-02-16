@@ -20,6 +20,10 @@
         <PackageReference Include="System.Text.Json" />
         <PackageReference Include="Verify.DiffPlex"/>
         <PackageReference Include="Verify.TUnit" />
+        <PackageReference Update="coverlet.collector">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
     <ItemGroup>
         <Using Include="Eventuous.Sut.AspNetCore"/>

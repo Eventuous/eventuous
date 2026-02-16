@@ -18,7 +18,7 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Shouldly"/>
-        <PackageReference Include="Testcontainers.EventStoreDb"/>
+        <PackageReference Include="Testcontainers.KurrentDb"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="NodaTime"/>

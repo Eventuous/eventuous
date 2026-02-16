@@ -97,7 +97,7 @@ public class ImplementedOptimizationsValidationBenchmarks {
             { "Stream", "TestStream" },
             { "MessageType", "TestMessage" }
         };
-        return TestLogger.BeginScope(scope);
+        return TestLogger.BeginScope(scope)!;
     }
 
     [Benchmark(Description = "NEW: Logging scope with KeyValuePair array")]
@@ -107,7 +107,7 @@ public class ImplementedOptimizationsValidationBenchmarks {
             new("Stream", "TestStream"),
             new("MessageType", "TestMessage")
         };
-        return TestLogger.BeginScope(scope);
+        return TestLogger.BeginScope(scope)!;
     }
 
     // ===== Issue #6: CancellationTokenSource Guards =====

@@ -31,7 +31,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddTelemetry();
 builder.Services.AddEventuous(builder.Configuration);
-builder.Services.AddEventuousSpyglass();
 builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 
 var app = builder.Build();
