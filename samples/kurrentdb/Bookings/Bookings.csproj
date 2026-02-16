@@ -5,6 +5,7 @@
         <Platforms>AnyCPU</Platforms>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>obj/Generated</CompilerGeneratedFilesOutputPath>
+        <OutputType>exe</OutputType>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="FluentValidation"/>

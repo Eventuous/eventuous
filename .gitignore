@@ -314,3 +314,5 @@ version.txt
 /docs/.docusaurus/
 /docs/build/
 /docs/.yarn/
+
+BenchmarkDotNet.Artifacts/
