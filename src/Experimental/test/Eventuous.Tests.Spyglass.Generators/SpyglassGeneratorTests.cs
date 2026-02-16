@@ -26,6 +26,7 @@ public class SpyglassGeneratorTests {
         await Assert.That(generated).IsNotNull();
         await Assert.That(generated!).Contains("\"TestAggregate\"");
         await Assert.That(generated).Contains("\"TestState\"");
+        await Assert.That(generated).Contains("StreamName.For<global::TestAggregate>(entityId)");
         await Assert.That(generated).Contains("new global::TestAggregate()");
         await Assert.That(generated).Contains("aggregate.Load(");
     }
@@ -51,6 +52,7 @@ public class SpyglassGeneratorTests {
         await Assert.That(generated).IsNotNull();
         await Assert.That(generated!).Contains("null,");
         await Assert.That(generated).Contains("\"PaymentState\"");
+        await Assert.That(generated).Contains("StreamName.ForState<global::PaymentState>(entityId)");
         await Assert.That(generated).Contains("s.When(e)");
         await Assert.That(generated).DoesNotContain("aggregate.Load(");
     }

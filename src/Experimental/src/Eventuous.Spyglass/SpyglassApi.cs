@@ -40,10 +40,7 @@ public static class SpyglassApi {
 
         builder.MapGet(
                 "/spyglass/aggregates",
-                (HttpRequest request) => CheckAndReturn(
-                    request,
-                    () => SpyglassRegistry.GetAggregates().Select(a => new { Type = a.AggregateType, a.StateType, a.Methods, a.Events }).ToArray()
-                )
+                (HttpRequest request) => CheckAndReturn(request, SpyglassRegistry.GetAggregates)
             )
             .ExcludeFromDescription();
 
@@ -60,16 +57,16 @@ public static class SpyglassApi {
             .ExcludeFromDescription();
 
         builder.MapGet(
-                "/spyglass/load/{streamName}",
-                async (HttpRequest request, [FromServices] IEventStore eventStore, string streamName, [FromQuery] int version) => {
+                "/spyglass/load/{typeId:guid}/{entityId}",
+                async (HttpRequest request, [FromServices] IEventStore eventStore, [FromServices] StreamNameMap? streamNameMap, Guid typeId, string entityId, [FromQuery] int version) => {
                     if (!Authorized(request)) return Results.Unauthorized();
 
-                    var typeName = streamName[..streamName.IndexOf('-')];
-                    var aggInfo  = SpyglassRegistry.FindByTypeName(typeName);
+                    var aggInfo = SpyglassRegistry.FindById(typeId);
 
-                    if (aggInfo is null) return Results.NotFound($"Aggregate type '{typeName}' not found");
+                    if (aggInfo is null) return Results.NotFound($"No registered type found for id '{typeId}'");
 
-                    var result = await aggInfo.LoadDelegate(eventStore, streamName, version);
+                    var streamName = aggInfo.GetStreamName(streamNameMap, entityId);
+                    var result     = await aggInfo.LoadDelegate(eventStore, streamName, version);
 
                     return Results.Ok(new { result.State, Events = result.Events.Select(e => new { e.EventType, e.Payload }) });
                 }

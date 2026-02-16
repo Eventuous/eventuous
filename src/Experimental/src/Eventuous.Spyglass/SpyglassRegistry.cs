@@ -3,30 +3,38 @@
 
 namespace Eventuous.Spyglass;
 
-public delegate Task<SpyglassLoadResult> SpyglassLoadDelegate(IEventStore eventStore, string streamName, int version);
+public delegate StreamName SpyglassGetStreamName(StreamNameMap? map, string entityId);
 
-[PublicAPI]
+public delegate Task<SpyglassLoadResult> SpyglassLoadDelegate(IEventStore eventStore, StreamName streamName, int version);
+
 public record SpyglassAggregateInfo(
-        string?              AggregateType,
-        string               StateType,
-        string[]             Methods,
-        string[]             Events,
-        SpyglassLoadDelegate LoadDelegate
-    );
+        string?                AggregateType,
+        string                 StateType,
+        string[]               Methods,
+        string[]               Events,
+        SpyglassGetStreamName  GetStreamName,
+        SpyglassLoadDelegate   LoadDelegate
+    ) {
+    public Guid Id { get; init; }
+}
 
-[PublicAPI]
+public record SpyglassAggregateEntry(Guid Id, string? AggregateType, string StateType, string[] Methods, string[] Events);
+
 public record SpyglassLoadResult(object State, SpyglassEventInfo[] Events);
 
-[PublicAPI]
 public record SpyglassEventInfo(string EventType, object? Payload);
 
-[PublicAPI]
 public static class SpyglassRegistry {
     static readonly List<SpyglassAggregateInfo> Aggregates = [];
 
-    public static void Register(SpyglassAggregateInfo info) => Aggregates.Add(info);
+    public static void Register(SpyglassAggregateInfo info)
+        => Aggregates.Add(info with { Id = Guid.NewGuid() });
 
-    public static SpyglassAggregateInfo[] GetAggregates() => [.. Aggregates];
+    public static SpyglassAggregateEntry[] GetAggregates()
+        => Aggregates.Select(a => new SpyglassAggregateEntry(a.Id, a.AggregateType, a.StateType, a.Methods, a.Events)).ToArray();
+
+    public static SpyglassAggregateInfo? FindById(Guid id)
+        => Aggregates.FirstOrDefault(x => x.Id == id);
 
     public static SpyglassAggregateInfo? FindByTypeName(string typeName)
         => Aggregates.FirstOrDefault(x => x.AggregateType                == typeName)

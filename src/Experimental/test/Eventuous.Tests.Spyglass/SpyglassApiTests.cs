@@ -7,6 +7,7 @@ using Eventuous.Spyglass;
 using Eventuous.Testing;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.TestHost;
+using static Bookings.Domain.Bookings.BookingEvents.V1;
 
 namespace Eventuous.Tests.Spyglass;
 
@@ -62,7 +63,8 @@ public class SpyglassApiTests {
             var booking    = aggregates.FirstOrDefault(a => a.StateType == "BookingState");
 
             await Assert.That(booking).IsNotNull();
-            await Assert.That(booking!.Type).IsEqualTo("Booking");
+            await Assert.That(booking!.Id).IsNotEqualTo(Guid.Empty);
+            await Assert.That(booking.AggregateType).IsEqualTo("Booking");
             await Assert.That(booking.Methods).Contains("BookRoom");
             await Assert.That(booking.Methods).Contains("RecordPayment");
             await Assert.That(booking.Events).Contains("RoomBooked");
@@ -93,7 +95,8 @@ public class SpyglassApiTests {
             var payment    = aggregates.FirstOrDefault(a => a.StateType == "PaymentState");
 
             await Assert.That(payment).IsNotNull();
-            await Assert.That(payment!.Type).IsNull();
+            await Assert.That(payment!.Id).IsNotEqualTo(Guid.Empty);
+            await Assert.That(payment.AggregateType).IsNull();
             await Assert.That(payment.Methods).IsEmpty();
             await Assert.That(payment.Events).Contains("PaymentRecorded");
         } finally {
@@ -102,6 +105,60 @@ public class SpyglassApiTests {
         }
     }
 
+    [Test]
+    public async Task Load_returns_booking_state_and_events() {
+        RuntimeHelpers.RunModuleConstructor(typeof(BookingsApp::Bookings.Registrations).Module.ModuleHandle);
+
+        var (app, client) = await CreateTestApp();
+
+        try {
+            var eventStore = app.Services.GetRequiredService<IEventStore>();
+
+            // Get the Booking type's registry id
+            using var aggResponse = await client.GetAsync("/spyglass/aggregates");
+            var aggJson    = await aggResponse.Content.ReadAsStringAsync();
+            var aggregates = JsonSerializer.Deserialize<AggregateEntry[]>(aggJson, JsonOptions)!;
+            var booking    = aggregates.First(a => a.AggregateType == "Booking");
+
+            // Write events to the in-memory store
+            var entityId   = Guid.NewGuid().ToString();
+            var streamName = new StreamName($"Booking-{entityId}");
+
+            await eventStore.AppendEvents(
+                streamName,
+                ExpectedStreamVersion.NoStream,
+                [
+                    new(Guid.NewGuid(), new RoomBooked("guest-1", "room-42", new(2025, 1, 1), new(2025, 1, 3), 200f, 50f, 150f, "USD", DateTimeOffset.UtcNow), new()),
+                    new(Guid.NewGuid(), new PaymentRecorded(150f, 0f, "USD", "pay-1", "guest-1", DateTimeOffset.UtcNow), new())
+                ],
+                default
+            );
+
+            // Call the load endpoint
+            using var loadResponse = await client.GetAsync($"/spyglass/load/{booking.Id}/{entityId}?version=-1");
+
+            await Assert.That(loadResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
+            var loadJson = await loadResponse.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(loadJson);
+            var root = doc.RootElement;
+
+            // State should reflect the loaded events
+            var state = root.GetProperty("state");
+            await Assert.That(state.GetProperty("guestId").GetString()).IsEqualTo("guest-1");
+            await Assert.That(state.GetProperty("paid").GetBoolean()).IsEqualTo(false);
+
+            // Events should contain both events
+            var events = root.GetProperty("events");
+            await Assert.That(events.GetArrayLength()).IsEqualTo(2);
+            await Assert.That(events[0].GetProperty("eventType").GetString()).IsEqualTo("RoomBooked");
+            await Assert.That(events[1].GetProperty("eventType").GetString()).IsEqualTo("PaymentRecorded");
+        } finally {
+            client.Dispose();
+            await app.DisposeAsync();
+        }
+    }
+
     [UsedImplicitly]
-    record AggregateEntry(string? Type, string StateType, string[] Methods, string[] Events);
+    record AggregateEntry(Guid Id, string? AggregateType, string StateType, string[] Methods, string[] Events);
 }

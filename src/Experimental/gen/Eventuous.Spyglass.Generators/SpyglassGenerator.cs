@@ -171,9 +171,10 @@ public sealed class SpyglassGenerator : IIncrementalGenerator {
                 sb.AppendLine($"            \"{Escape(c.StateSimpleName)}\",");
                 EmitStringArray(sb, c.Methods);
                 sb.AppendLine($"            new {c.StateFqn}().GetRegisteredEventTypes().Select(t => t.Name).ToArray(),");
+                sb.AppendLine($"            static (_, entityId) => StreamName.For<{c.AggregateFqn}>(entityId),");
                 sb.AppendLine("            static async (eventStore, streamName, version) => {");
                 sb.AppendLine($"                var aggregate = new {c.AggregateFqn}();");
-                sb.AppendLine("                var events = await eventStore.ReadStream(new StreamName(streamName), StreamReadPosition.Start, true, default);");
+                sb.AppendLine("                var events = await eventStore.ReadStream(streamName, StreamReadPosition.Start, true, default);");
                 sb.AppendLine("                var selected = version == -1 ? events : events.Take(version + 1).ToArray();");
                 sb.AppendLine("                aggregate.Load(selected.Length > 0 ? selected[^1].Revision : -1, selected.Select(x => x.Payload));");
                 sb.AppendLine("                return new SpyglassLoadResult(");
@@ -191,8 +192,9 @@ public sealed class SpyglassGenerator : IIncrementalGenerator {
                 sb.AppendLine($"            \"{Escape(s.StateSimpleName)}\",");
                 sb.AppendLine("            System.Array.Empty<string>(),");
                 sb.AppendLine($"            new {s.StateFqn}().GetRegisteredEventTypes().Select(t => t.Name).ToArray(),");
+                sb.AppendLine($"            static (_, entityId) => StreamName.ForState<{s.StateFqn}>(entityId),");
                 sb.AppendLine("            static async (eventStore, streamName, version) => {");
-                sb.AppendLine("                var events = await eventStore.ReadStream(new StreamName(streamName), StreamReadPosition.Start, true, default);");
+                sb.AppendLine("                var events = await eventStore.ReadStream(streamName, StreamReadPosition.Start, true, default);");
                 sb.AppendLine("                var selected = version == -1 ? events : events.Take(version + 1).ToArray();");
                 sb.AppendLine($"                var state = selected.Select(x => x.Payload!).Aggregate(new {s.StateFqn}(), (s, e) => s.When(e));");
                 sb.AppendLine("                return new SpyglassLoadResult(");
