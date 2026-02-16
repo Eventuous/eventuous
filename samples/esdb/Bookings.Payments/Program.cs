@@ -1,6 +1,7 @@
 using Bookings.Payments;
 using Bookings.Payments.Domain;
 using Bookings.Payments.Infrastructure;
+using Eventuous.Spyglass;
 using Serilog;
 
 Logging.ConfigureLog();
@@ -26,5 +27,7 @@ app.UseOpenTelemetryPrometheusScrapingEndpoint();
 app.MapDiscoveredCommands<PaymentState>();
 
 app.UseSwaggerUI();
+
+app.MapEventuousSpyglass();
 
 app.Run();

@@ -73,6 +73,9 @@
         <Project Path="src/Diagnostics/test/Eventuous.Tests.OpenTelemetry/Eventuous.Tests.OpenTelemetry.csproj" />
     </Folder>
     <Folder Name="/Experimental/" />
+    <Folder Name="/Experimental/gen/">
+        <Project Path="src/Experimental/gen/Eventuous.Spyglass.Generators/Eventuous.Spyglass.Generators.csproj" />
+    </Folder>
     <Folder Name="/Experimental/src/">
         <Project Path="src/Experimental/src/ElasticPlayground/ElasticPlayground.csproj" />
         <Project Path="src/Experimental/src/Eventuous.ElasticSearch/Eventuous.ElasticSearch.csproj" />
@@ -81,6 +84,7 @@
     </Folder>
     <Folder Name="/Experimental/test/">
         <Project Path="src/Redis/test/Eventuous.Tests.Redis/Eventuous.Tests.Redis.csproj" />
+        <Project Path="src/Experimental/test/Eventuous.Tests.Spyglass.Generators/Eventuous.Tests.Spyglass.Generators.csproj" />
     </Folder>
     <Folder Name="/Extensions/" />
     <Folder Name="/Extensions/gen/">

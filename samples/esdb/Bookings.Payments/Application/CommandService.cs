@@ -5,12 +5,12 @@ using Eventuous.Extensions.AspNetCore.Http;
 
 namespace Bookings.Payments.Application;
 
-public class CommandService : CommandService<Payment, PaymentState, PaymentId> {
+public class CommandService : CommandService<PaymentState> {
     public CommandService(IEventStore store) : base(store) {
         On<PaymentCommands.RecordPayment>()
             .InState(ExpectedState.New)
-            .GetId(cmd => new(cmd.PaymentId))
-            .Act((payment, cmd) => payment.ProcessPayment(cmd.BookingId, new(cmd.Amount, cmd.Currency), cmd.Method, cmd.Provider));
+            .GetStream(cmd => GetStream(cmd.PaymentId))
+            .Act(cmd => [new PaymentEvents.PaymentRecorded(cmd.BookingId, cmd.Amount, cmd.Currency, cmd.Method, cmd.Provider)]);
     }
 }
 

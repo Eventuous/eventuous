@@ -32,6 +32,7 @@
         <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="$(SrcRoot)\Experimental\gen\Eventuous.Spyglass.Generators\Eventuous.Spyglass.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj"/>
     </ItemGroup>
     <ItemGroup>
