@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <IsTestProject>true</IsTestProject>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis" PrivateAssets="all"/>
@@ -10,6 +9,6 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Domain\Eventuous.Domain.csproj"/>
-        <ProjectReference Include="..\..\gen\Eventuous.Spyglass.Generators\Eventuous.Spyglass.Generators.csproj"/>
+        <ProjectReference Include="$(LocalGenRoot)\Eventuous.Spyglass.Generators\Eventuous.Spyglass.Generators.csproj"/>
     </ItemGroup>
 </Project>

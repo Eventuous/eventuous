@@ -3,7 +3,7 @@
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
         <ProjectReference Include="..\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-        <ProjectReference Include="..\..\gen\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true" />
+        <ProjectReference Include="$(LocalGenRoot)\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true" />
     </ItemGroup>
     <ItemGroup Label="Implicit usings">
         <Using Include="Eventuous"/>

@@ -14,6 +14,6 @@
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj"/>
-        <ProjectReference Include="..\..\gen\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" />
+        <ProjectReference Include="$(LocalGenRoot)\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" />
     </ItemGroup>
 </Project>
