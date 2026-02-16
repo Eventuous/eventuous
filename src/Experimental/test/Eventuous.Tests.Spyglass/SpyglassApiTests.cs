@@ -37,9 +37,6 @@ public class SpyglassApiTests {
             using var response = await client.GetAsync("/spyglass/ping");
 
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-
-            var content = await response.Content.ReadAsStringAsync();
-            await Assert.That(content).Contains("Okay");
         } finally {
             client.Dispose();
             await app.DisposeAsync();

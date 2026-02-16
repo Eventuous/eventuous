@@ -35,7 +35,7 @@ public static class SpyglassApi {
             logger.LogWarning("Spyglass API is not secured, ensure that it's not exposed to the Internet");
         }
 
-        builder.MapGet("/spyglass/ping", (HttpRequest request) => CheckAndReturn(request, () => "Okay"))
+        builder.MapGet("/spyglass/ping", (HttpRequest request) => CheckAndReturn(request, () => "v1.0"))
             .ExcludeFromDescription();
 
         builder.MapGet(
