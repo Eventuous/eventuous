@@ -35,6 +35,7 @@ public class Schema(string schema = Schema.DefaultSchema) {
 
     public async Task CreateSchema(NpgsqlDataSource dataSource, ILogger<Schema>? log, CancellationToken cancellationToken = default) {
         log?.LogInformation("Creating schema {Schema}", schema);
+
         var names = Assembly.GetManifestResourceNames()
             .Where(x => x.EndsWith(".sql") && !x.Contains("Snapshots.Scripts"))
             .OrderBy(x => x);
@@ -46,17 +47,11 @@ public class Schema(string schema = Schema.DefaultSchema) {
         try {
             foreach (var name in names) {
                 log?.LogInformation("Executing {Script}", name);
-                await using var stream = Assembly.GetManifestResourceStream(name);
-                using var       reader = new StreamReader(stream!);
-
-#if NET7_0_OR_GREATER
-                var script = await reader.ReadToEndAsync(cancellationToken).NoContext();
-#else
-                var script = await reader.ReadToEndAsync().NoContext();
-#endif
-                var cmdScript = script.Replace("__schema__", schema);
-
-                await using var cmd = new NpgsqlCommand(cmdScript, connection, transaction);
+                await using var stream    = Assembly.GetManifestResourceStream(name);
+                using var       reader    = new StreamReader(stream!);
+                var             script    = await reader.ReadToEndAsync(cancellationToken).NoContext();
+                var             cmdScript = script.Replace("__schema__", schema);
+                await using var cmd       = new NpgsqlCommand(cmdScript, connection, transaction);
 
                 await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
             }

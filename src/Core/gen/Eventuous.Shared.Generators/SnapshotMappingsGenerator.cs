@@ -13,40 +13,44 @@ namespace Eventuous.Shared.Generators;
 
 [Generator(LanguageNames.CSharp)]
 public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
-
     static Map? GetMapFromSnapshotsAttribute(GeneratorSyntaxContext context) {
         var classSyntax = (ClassDeclarationSyntax)context.Node;
         var classSymbol = context.SemanticModel.GetDeclaredSymbol(classSyntax);
+
         if (classSymbol == null || !IsState(classSymbol)) return null;
 
         var snapshotsAttr = classSymbol.GetAttributes()
             .FirstOrDefault(attr => attr.AttributeClass?.Name == "SnapshotsAttribute");
 
         if (snapshotsAttr == null) return null;
-        
+
         var snapshotTypes = new HashSet<string>();
 
         foreach (var arg in snapshotsAttr.ConstructorArguments) {
-            if (arg.Kind == TypedConstantKind.Array) {
-                foreach (var typeConstant in arg.Values) {
-                    if (typeConstant.Value is ITypeSymbol typeSymbol) {
-                        snapshotTypes.Add(MakeGlobal(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            switch (arg.Kind) {
+                case TypedConstantKind.Array: {
+                    foreach (var typeConstant in arg.Values) {
+                        if (typeConstant.Value is ITypeSymbol typeSymbol) {
+                            snapshotTypes.Add(MakeGlobal(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+                        }
                     }
+
+                    break;
                 }
-            }
-            else if (arg.Kind == TypedConstantKind.Type && arg.Value is ITypeSymbol singleType) {
-                snapshotTypes.Add(MakeGlobal(singleType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+                case TypedConstantKind.Type when arg.Value is ITypeSymbol singleType:
+                    snapshotTypes.Add(MakeGlobal(singleType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))); break;
             }
         }
 
         var storageStrategy = GetStorageStrategyFromAttribute(snapshotsAttr);
 
         var stateType = classSymbol.BaseType?.TypeArguments[0];
+
         if (stateType == null) return null;
 
         return new Map {
-            SnapshotTypes = snapshotTypes,
-            StateType = MakeGlobal(classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
+            SnapshotTypes   = snapshotTypes,
+            StateType       = MakeGlobal(classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
             StorageStrategy = storageStrategy
         };
     }
@@ -55,30 +59,39 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
         var result = new HashSet<string>();
 
         foreach (var arg in attributeData.ConstructorArguments) {
-            if (arg.Kind == TypedConstantKind.Array) {
-                foreach (var typeConstant in arg.Values) {
-                    if (typeConstant.Value is ITypeSymbol typeSymbol) {
+            switch (arg.Kind) {
+                case TypedConstantKind.Array: {
+                    foreach (var typeConstant in arg.Values) {
+                        if (typeConstant.Value is ITypeSymbol typeSymbol) {
+                            result.Add(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                        }
+                    }
+
+                    break;
+                }
+                case TypedConstantKind.Type: {
+                    if (arg.Value is ITypeSymbol typeSymbol) {
                         result.Add(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
                     }
-                }
-            }
-            else if (arg.Kind == TypedConstantKind.Type) {
-                if (arg.Value is ITypeSymbol typeSymbol) {
-                    result.Add(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
+                    break;
                 }
             }
         }
 
         foreach (var namedArg in attributeData.NamedArguments) {
-            if (namedArg.Value.Kind == TypedConstantKind.Array) {
-                foreach (var typeConstant in namedArg.Value.Values) {
-                    if (typeConstant.Value is ITypeSymbol typeSymbol) {
-                        result.Add(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            switch (namedArg.Value.Kind) {
+                case TypedConstantKind.Array: {
+                    foreach (var typeConstant in namedArg.Value.Values) {
+                        if (typeConstant.Value is ITypeSymbol typeSymbol) {
+                            result.Add(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                        }
                     }
+
+                    break;
                 }
-            }
-            else if (namedArg.Value.Kind == TypedConstantKind.Type && namedArg.Value.Value is ITypeSymbol typeSymbol) {
-                result.Add(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                case TypedConstantKind.Type when namedArg.Value.Value is ITypeSymbol typeSymbol:
+                    result.Add(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)); break;
             }
         }
 
@@ -100,10 +113,11 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
 
         void ProcessType(INamedTypeSymbol type) {
             var attr = GetSnapshotsAttribute(type);
+
             if (attr is not null) {
                 var map = new Map {
-                    SnapshotTypes = GetTypesFromSnapshotsAttribute(attr),
-                    StateType = MakeGlobal(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
+                    SnapshotTypes   = GetTypesFromSnapshotsAttribute(attr),
+                    StateType       = MakeGlobal(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
                     StorageStrategy = GetStorageStrategyFromAttribute(attr)
                 };
 
@@ -136,18 +150,20 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Runtime.CompilerServices;");
         sb.AppendLine();
-        sb.AppendLine("namespace Eventuous;");
+        sb.AppendLine($"namespace {BaseNamespace};");
         sb.AppendLine();
         sb.AppendLine("internal static class SnapshotTypeMappings {");
         sb.AppendLine("    [ModuleInitializer]");
         sb.AppendLine("    internal static void Initialize() {");
 
+        const string strategyEnum = nameof(SnapshotStorageStrategy);
+
         foreach (var map in maps) {
             var strategyValue = map.StorageStrategy switch {
-                "SameStream" => "SnapshotStorageStrategy.SameStream",
-                "SeparateStream" => "SnapshotStorageStrategy.SeparateStream",
-                "SeparateStore" => "SnapshotStorageStrategy.SeparateStore",
-                _ => "SnapshotStorageStrategy.SameStream"
+                SnapshotSameStream     => $"{strategyEnum}.{SnapshotSameStream}",
+                SnapshotSeparateStream => $"{strategyEnum}.{SnapshotSeparateStream}",
+                SnapshotSeparateStore  => $"{strategyEnum}.{SnapshotSeparateStore}",
+                _                      => $"{strategyEnum}.{SnapshotSameStream}"
             };
 
             foreach (var snapshotType in map.SnapshotTypes) {
@@ -165,36 +181,38 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
         var maps = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => s is ClassDeclarationSyntax,
-                transform: static (c, _) => GetMapFromSnapshotsAttribute(c))
+                transform: static (c, _) => GetMapFromSnapshotsAttribute(c)
+            )
             .Where(static m => m is not null)
             .Collect();
 
-        var mapsFromReferencedAssmeblies = context.CompilationProvider
+        var mapsFromReferencedAssemblies = context.CompilationProvider
             .Select(static (c, _) => GetMapFromSnapshotsAttribute(c));
 
         var mergedMaps = maps
-            .Combine(mapsFromReferencedAssmeblies)
+            .Combine(mapsFromReferencedAssemblies)
             .Select(static (pair, _) => pair.Left.AddRange((IEnumerable<Map>)pair.Right));
 
         context.RegisterSourceOutput(mergedMaps, Output!);
-
     }
 
     static bool IsState(INamedTypeSymbol type) {
         var baseType = type.BaseType;
 
         return baseType is not null
-            && baseType.Name == StateType
-            && baseType.ContainingNamespace.ToDisplayString() == BaseNamespace
-            && baseType.IsGenericType;
+         && baseType.Name                                  == StateType
+         && baseType.ContainingNamespace.ToDisplayString() == BaseNamespace
+         && baseType.IsGenericType;
     }
 
     static AttributeData? GetSnapshotsAttribute(ISymbol symbol) {
         foreach (var data in symbol.GetAttributes()) {
             var attrClass = data.AttributeClass;
+
             if (attrClass is null) continue;
 
             var name = attrClass.ToDisplayString();
+
             if (name == SnapshotsAttrFqcn || attrClass.Name is SnapshotsAttribute) return data;
         }
 
@@ -203,30 +221,33 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
 
     static string GetStorageStrategyFromAttribute(AttributeData attributeData) {
         foreach (var namedArg in attributeData.NamedArguments) {
-            if (namedArg.Key == "StorageStrategy" && namedArg.Value.Kind == TypedConstantKind.Enum) {
+            if (namedArg is { Key: "StorageStrategy", Value.Kind: TypedConstantKind.Enum }) {
                 // Try to get the enum value name from the typed constant
                 var enumType = namedArg.Value.Type;
+
                 if (enumType != null) {
                     // Get the enum value as a string representation
                     var enumValue = namedArg.Value.Value;
+
                     if (enumValue != null) {
                         // Try to find the enum member with this value
-                        var enumMembers = enumType.GetMembers().OfType<IFieldSymbol>()
-                            .Where(f => f.IsStatic && f.IsDefinition && f.ConstantValue != null);
-                        
+                        var enumMembers = enumType.GetMembers()
+                            .OfType<IFieldSymbol>()
+                            .Where(f => f.IsStatic && f is { IsDefinition: true, ConstantValue: not null });
+
                         foreach (var member in enumMembers) {
                             if (Equals(member.ConstantValue, enumValue)) {
                                 return member.Name;
                             }
                         }
-                        
+
                         // Fallback: map numeric values
                         if (enumValue is int intValue) {
                             return intValue switch {
-                                0 => "SameStream",
-                                1 => "SeparateStream",
-                                2 => "SeparateStore",
-                                _ => "SameStream"
+                                0 => SnapshotSameStream,
+                                1 => SnapshotSeparateStream,
+                                2 => SnapshotSeparateStore,
+                                _ => SnapshotSameStream
                             };
                         }
                     }
@@ -234,12 +255,12 @@ public sealed class SnapshotMappingsGenerator : IIncrementalGenerator {
             }
         }
 
-        return "SameStream"; // Default value
+        return SnapshotSameStream; // Default value
     }
 
     sealed record Map {
-        public string StateType { get; set; } = null!;
-        public HashSet<string> SnapshotTypes { get; set; } = [];
-        public string StorageStrategy { get; set; } = "SameStream";
+        public string          StateType       { get; set; } = null!;
+        public HashSet<string> SnapshotTypes   { get; set; } = [];
+        public string          StorageStrategy { get; set; } = SnapshotSameStream;
     }
 }

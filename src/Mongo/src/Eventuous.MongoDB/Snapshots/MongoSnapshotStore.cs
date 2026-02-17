@@ -13,12 +13,13 @@ namespace Eventuous.MongoDB.Snapshots;
 public class MongoSnapshotStore : ISnapshotStore {
     readonly IMongoCollection<SnapshotDocument> _collection;
     readonly IEventSerializer                   _serializer;
-    const    string                             ContentType = "application/json";
+
+    const string ContentType = "application/json";
 
     public MongoSnapshotStore(
-            IMongoDatabase              database,
-            MongoSnapshotStoreOptions?  options,
-            IEventSerializer?           serializer = null
+            IMongoDatabase             database,
+            MongoSnapshotStoreOptions? options,
+            IEventSerializer?          serializer = null
         ) {
         var mongoOptions = options ?? new MongoSnapshotStoreOptions();
         _collection = Ensure.NotNull(database).GetCollection<SnapshotDocument>(mongoOptions.CollectionName);
@@ -91,4 +92,3 @@ public class MongoSnapshotStore : ISnapshotStore {
             .NoContext();
     }
 }
-

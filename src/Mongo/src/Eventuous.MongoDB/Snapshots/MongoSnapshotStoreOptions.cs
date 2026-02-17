@@ -30,4 +30,3 @@ public class MongoSnapshotStoreOptions {
     /// </summary>
     public bool InitializeIndexes { get; set; }
 }
-

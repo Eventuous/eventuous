@@ -9,20 +9,15 @@ namespace Eventuous.MongoDB.Snapshots;
 /// <summary>
 /// Initializes MongoDB indexes for snapshot collection on startup.
 /// </summary>
-public class SnapshotIndexInitializer : IHostedService {
-    readonly IMongoDatabase            _database;
-    readonly MongoSnapshotStoreOptions _options;
-    readonly ILogger<SnapshotIndexInitializer>? _logger;
-
-    public SnapshotIndexInitializer(
-            IMongoDatabase              database,
-            MongoSnapshotStoreOptions   options,
-            ILoggerFactory?             loggerFactory = null
-        ) {
-        _database = Ensure.NotNull(database);
-        _options  = Ensure.NotNull(options);
-        _logger   = loggerFactory?.CreateLogger<SnapshotIndexInitializer>();
-    }
+public class SnapshotIndexInitializer(
+        IMongoDatabase            database,
+        MongoSnapshotStoreOptions options,
+        ILoggerFactory?           loggerFactory = null
+    )
+    : IHostedService {
+    readonly IMongoDatabase                     _database = Ensure.NotNull(database);
+    readonly MongoSnapshotStoreOptions          _options  = Ensure.NotNull(options);
+    readonly ILogger<SnapshotIndexInitializer>? _logger   = loggerFactory?.CreateLogger<SnapshotIndexInitializer>();
 
     public async Task StartAsync(CancellationToken cancellationToken) {
         if (!_options.InitializeIndexes) return;
@@ -34,11 +29,11 @@ public class SnapshotIndexInitializer : IHostedService {
         try {
             // Note: StreamName is marked as [BsonId], so it's automatically indexed as _id
             // No need to create a separate index on StreamName
-            
+
             // Create index on Created for potential queries/filtering
             var createdIndex = new CreateIndexModel<SnapshotDocument>(
                 Builders<SnapshotDocument>.IndexKeys.Ascending(x => x.Created),
-                new CreateIndexOptions { Name = "IX_Snapshots_Created" }
+                new() { Name = "IX_Snapshots_Created" }
             );
 
             await collection.Indexes.CreateOneAsync(createdIndex, cancellationToken: cancellationToken).NoContext();
@@ -48,10 +43,10 @@ public class SnapshotIndexInitializer : IHostedService {
             _logger?.LogWarning("Index already exists, skipping creation");
         } catch (Exception ex) {
             _logger?.LogError(ex, "Failed to initialize snapshot indexes");
+
             throw;
         }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
-

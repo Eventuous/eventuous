@@ -3,8 +3,6 @@
 
 using System.Runtime.Serialization;
 using System.Text;
-using Eventuous;
-using Eventuous.SqlServer;
 using Eventuous.SqlServer.Extensions;
 using static Eventuous.DeserializationResult;
 
@@ -14,20 +12,20 @@ namespace Eventuous.SqlServer.Snapshots;
 /// SQL Server snapshot store implementation for storing snapshots separately from event streams.
 /// </summary>
 public class SqlServerSnapshotStore : ISnapshotStore {
-    readonly string              _connectionString;
-    readonly SnapshotSchema      _schema;
-    readonly IEventSerializer    _serializer;
-    const    string              ContentType = "application/json";
+    readonly string           _connectionString;
+    readonly SnapshotSchema   _schema;
+    readonly IEventSerializer _serializer;
+    const    string           ContentType = "application/json";
 
     public SqlServerSnapshotStore(
-            string                  connectionString,
+            string                         connectionString,
             SqlServerSnapshotStoreOptions? options,
-            IEventSerializer?       serializer = null
+            IEventSerializer?              serializer = null
         ) {
         var sqlOptions = options ?? new SqlServerSnapshotStoreOptions();
-        _schema          = new SnapshotSchema(sqlOptions.Schema);
+        _schema           = new(sqlOptions.Schema);
         _connectionString = Ensure.NotEmptyString(connectionString);
-        _serializer      = serializer ?? DefaultEventSerializer.Instance;
+        _serializer       = serializer ?? DefaultEventSerializer.Instance;
     }
 
     /// <inheritdoc />
@@ -35,7 +33,8 @@ public class SqlServerSnapshotStore : ISnapshotStore {
     [RequiresUnreferencedCode("Only works with AOT when using DefaultStaticEventSerializer")]
     public async Task<Snapshot?> Read(StreamName streamName, CancellationToken cancellationToken = default) {
         await using var connection = await ConnectionFactory.GetConnection(_connectionString, cancellationToken).NoContext();
-        await using var cmd        = connection.GetTextCommand(_schema.ReadSnapshot)
+
+        await using var cmd = connection.GetTextCommand(_schema.ReadSnapshot)
             .Add("@stream_name", SqlDbType.NVarChar, streamName.ToString());
 
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
@@ -44,9 +43,9 @@ public class SqlServerSnapshotStore : ISnapshotStore {
             return null;
         }
 
-        var revision   = reader.GetInt64(0);
-        var eventType  = reader.GetString(1);
-        var jsonData   = reader.GetString(2);
+        var revision  = reader.GetInt64(0);
+        var eventType = reader.GetString(1);
+        var jsonData  = reader.GetString(2);
 
         var deserialized = _serializer.DeserializeEvent(
             Encoding.UTF8.GetBytes(jsonData),
@@ -76,7 +75,8 @@ public class SqlServerSnapshotStore : ISnapshotStore {
         var jsonData   = Encoding.UTF8.GetString(serialized.Payload);
 
         await using var connection = await ConnectionFactory.GetConnection(_connectionString, cancellationToken).NoContext();
-        await using var cmd        = connection.GetTextCommand(_schema.WriteSnapshot)
+
+        await using var cmd = connection.GetTextCommand(_schema.WriteSnapshot)
             .Add("@stream_name", SqlDbType.NVarChar, streamName.ToString())
             .Add("@revision", SqlDbType.BigInt, snapshot.Revision)
             .Add("@event_type", SqlDbType.NVarChar, serialized.EventType)
@@ -88,10 +88,10 @@ public class SqlServerSnapshotStore : ISnapshotStore {
     /// <inheritdoc />
     public async Task Delete(StreamName streamName, CancellationToken cancellationToken = default) {
         await using var connection = await ConnectionFactory.GetConnection(_connectionString, cancellationToken).NoContext();
-        await using var cmd        = connection.GetTextCommand(_schema.DeleteSnapshot)
+
+        await using var cmd = connection.GetTextCommand(_schema.DeleteSnapshot)
             .Add("@stream_name", SqlDbType.NVarChar, streamName.ToString());
 
         await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
     }
 }
-

@@ -4,15 +4,18 @@
 namespace Eventuous;
 
 [AttributeUsage(AttributeTargets.Class)]
-public class SnapshotsAttribute : Attribute {
-    public Type[] SnapshotTypes { get; }
+public class SnapshotsAttribute(params Type[] snapshotTypes) : Attribute {
+    public Type[] SnapshotTypes { get; } = snapshotTypes;
 
     /// <summary>
     /// Storage strategy for snapshot events
     /// </summary>
     public SnapshotStorageStrategy StorageStrategy { get; set; } = SnapshotStorageStrategy.SameStream;
+}
 
-    public SnapshotsAttribute(params Type[] snapshotTypes) {
-        SnapshotTypes = snapshotTypes;
+[AttributeUsage(AttributeTargets.Class)]
+public class SnapshotsAttribute<T> : SnapshotsAttribute {
+    public SnapshotsAttribute(SnapshotStorageStrategy storageStrategy = SnapshotStorageStrategy.SameStream) : base(typeof(T)) {
+        StorageStrategy = storageStrategy;
     }
 }

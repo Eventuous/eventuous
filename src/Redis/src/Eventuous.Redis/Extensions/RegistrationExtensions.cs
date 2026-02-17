@@ -4,9 +4,6 @@
 using Eventuous.Redis;
 using Eventuous.Redis.Snapshots;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
-using StackExchange.Redis;
 
 // ReSharper disable UnusedMethodReturnValue.Global
 // ReSharper disable once CheckNamespace
@@ -23,15 +20,18 @@ public static class ServiceCollectionExtensions {
         /// <returns>Services collection</returns>
         // ReSharper disable once UnusedMethodReturnValue.Global
         public IServiceCollection AddRedisSnapshotStore(
-                GetRedisDatabase              getDatabase,
-                RedisSnapshotStoreOptions?    options
+                GetRedisDatabase           getDatabase,
+                RedisSnapshotStoreOptions? options
             ) {
             var snapshotOptions = options ?? new RedisSnapshotStoreOptions();
             services.AddSingleton(snapshotOptions);
+
             services.AddSingleton<RedisSnapshotStore>(sp => {
-                var snapshotOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
-                return new RedisSnapshotStore(getDatabase, snapshotOptions, sp.GetService<IEventSerializer>());
-            });
+                    var redisSnapshotStoreOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
+
+                    return new(getDatabase, redisSnapshotStoreOptions, sp.GetService<IEventSerializer>());
+                }
+            );
             services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<RedisSnapshotStore>());
 
             return services;
@@ -56,12 +56,13 @@ public static class ServiceCollectionExtensions {
         /// <returns>Services collection</returns>
         // ReSharper disable once UnusedMethodReturnValue.Global
         public IServiceCollection AddRedisSnapshotStore(
-                IConnectionMultiplexer         connectionMultiplexer,
-                int                           database,
-                RedisSnapshotStoreOptions?    options
+                IConnectionMultiplexer     connectionMultiplexer,
+                int                        database,
+                RedisSnapshotStoreOptions? options
             ) {
-            GetRedisDatabase getDatabase = () => connectionMultiplexer.GetDatabase(database);
-            return services.AddRedisSnapshotStore(getDatabase, options);
+            return services.AddRedisSnapshotStore(GetDatabase, options);
+
+            IDatabase GetDatabase() => connectionMultiplexer.GetDatabase(database);
         }
 
         /// <summary>
@@ -71,10 +72,7 @@ public static class ServiceCollectionExtensions {
         /// <param name="database">Database number (default: 0)</param>
         /// <returns>Services collection</returns>
         // ReSharper disable once UnusedMethodReturnValue.Global
-        public IServiceCollection AddRedisSnapshotStore(
-                IConnectionMultiplexer         connectionMultiplexer,
-                int                           database = 0
-            ) {
+        public IServiceCollection AddRedisSnapshotStore(IConnectionMultiplexer connectionMultiplexer, int database = 0) {
             return services.AddRedisSnapshotStore(connectionMultiplexer, database, null);
         }
 
@@ -85,20 +83,21 @@ public static class ServiceCollectionExtensions {
         /// <param name="config">Configuration section for Redis snapshot store options</param>
         /// <returns>Services collection</returns>
         // ReSharper disable once UnusedMethodReturnValue.Global
-        public IServiceCollection AddRedisSnapshotStore(
-                GetRedisDatabase              getDatabase,
-                IConfiguration                config
-            ) {
+        public IServiceCollection AddRedisSnapshotStore(GetRedisDatabase getDatabase, IConfiguration config) {
             var options = new RedisSnapshotStoreOptions();
-            if (config["KeyPrefix"] != null) {
-                options.KeyPrefix = config["KeyPrefix"];
+
+            if (config[KeyPrefix] != null) {
+                options.KeyPrefix = config[KeyPrefix]!;
             }
+
             services.AddSingleton(options);
 
             services.AddSingleton<RedisSnapshotStore>(sp => {
-                var snapshotOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
-                return new RedisSnapshotStore(getDatabase, snapshotOptions, sp.GetService<IEventSerializer>());
-            });
+                    var snapshotOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
+
+                    return new(getDatabase, snapshotOptions, sp.GetService<IEventSerializer>());
+                }
+            );
             services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<RedisSnapshotStore>());
 
             return services;
@@ -113,21 +112,26 @@ public static class ServiceCollectionExtensions {
         /// <returns>Services collection</returns>
         // ReSharper disable once UnusedMethodReturnValue.Global
         public IServiceCollection AddRedisSnapshotStore(
-                IConnectionMultiplexer         connectionMultiplexer,
-                IConfiguration                 config,
-                int                            database = 0
+                IConnectionMultiplexer connectionMultiplexer,
+                IConfiguration         config,
+                int                    database = 0
             ) {
             var options = new RedisSnapshotStoreOptions();
-            if (config["KeyPrefix"] != null) {
-                options.KeyPrefix = config["KeyPrefix"];
+
+            if (config[KeyPrefix] != null) {
+                options.KeyPrefix = config[KeyPrefix]!;
             }
+
             services.AddSingleton(options);
 
             GetRedisDatabase getDatabase = () => connectionMultiplexer.GetDatabase(database);
+
             services.AddSingleton<RedisSnapshotStore>(sp => {
-                var snapshotOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
-                return new RedisSnapshotStore(getDatabase, snapshotOptions, sp.GetService<IEventSerializer>());
-            });
+                    var snapshotOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
+
+                    return new(getDatabase, snapshotOptions, sp.GetService<IEventSerializer>());
+                }
+            );
             services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<RedisSnapshotStore>());
 
             return services;
@@ -142,21 +146,24 @@ public static class ServiceCollectionExtensions {
         /// <returns>Services collection</returns>
         // ReSharper disable once UnusedMethodReturnValue.Global
         public IServiceCollection AddRedisSnapshotStore(
-                string                         connectionString,
-                int                            database,
-                RedisSnapshotStoreOptions?     options
+                string                     connectionString,
+                int                        database,
+                RedisSnapshotStoreOptions? options
             ) {
             services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(connectionString));
-            
+
             var snapshotOptions = options ?? new RedisSnapshotStoreOptions();
             services.AddSingleton(snapshotOptions);
-            
+
             services.AddSingleton<RedisSnapshotStore>(sp => {
-                var snapshotOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
-                var muxer = sp.GetRequiredService<IConnectionMultiplexer>();
-                GetRedisDatabase getDatabase = () => muxer.GetDatabase(database);
-                return new RedisSnapshotStore(getDatabase, snapshotOptions, sp.GetService<IEventSerializer>());
-            });
+                    var redisSnapshotStoreOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
+                    var muxer                     = sp.GetRequiredService<IConnectionMultiplexer>();
+
+                    return new(GetDatabase, redisSnapshotStoreOptions, sp.GetService<IEventSerializer>());
+
+                    IDatabase GetDatabase() => muxer.GetDatabase(database);
+                }
+            );
             services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<RedisSnapshotStore>());
 
             return services;
@@ -169,10 +176,7 @@ public static class ServiceCollectionExtensions {
         /// <param name="database">Database number (default: 0)</param>
         /// <returns>Services collection</returns>
         // ReSharper disable once UnusedMethodReturnValue.Global
-        public IServiceCollection AddRedisSnapshotStore(
-                string                         connectionString,
-                int                            database = 0
-            ) {
+        public IServiceCollection AddRedisSnapshotStore(string connectionString, int database = 0) {
             return services.AddRedisSnapshotStore(connectionString, database, null);
         }
 
@@ -185,28 +189,34 @@ public static class ServiceCollectionExtensions {
         /// <returns>Services collection</returns>
         // ReSharper disable once UnusedMethodReturnValue.Global
         public IServiceCollection AddRedisSnapshotStore(
-                string                         connectionString,
-                IConfiguration                 config,
-                int                            database = 0
+                string         connectionString,
+                IConfiguration config,
+                int            database = 0
             ) {
             services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(connectionString));
-            
+
             var options = new RedisSnapshotStoreOptions();
-            if (config["KeyPrefix"] != null) {
-                options.KeyPrefix = config["KeyPrefix"];
+
+            if (config[KeyPrefix] != null) {
+                options.KeyPrefix = config[KeyPrefix]!;
             }
+
             services.AddSingleton(options);
 
             services.AddSingleton<RedisSnapshotStore>(sp => {
-                var snapshotOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
-                var muxer = sp.GetRequiredService<IConnectionMultiplexer>();
-                GetRedisDatabase getDatabase = () => muxer.GetDatabase(database);
-                return new RedisSnapshotStore(getDatabase, snapshotOptions, sp.GetService<IEventSerializer>());
-            });
+                    var snapshotOptions = sp.GetRequiredService<RedisSnapshotStoreOptions>();
+                    var muxer           = sp.GetRequiredService<IConnectionMultiplexer>();
+
+                    return new(GetDatabase, snapshotOptions, sp.GetService<IEventSerializer>());
+
+                    IDatabase GetDatabase() => muxer.GetDatabase(database);
+                }
+            );
             services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<RedisSnapshotStore>());
 
             return services;
         }
     }
-}
 
+    const string KeyPrefix = "KeyPrefix";
+}

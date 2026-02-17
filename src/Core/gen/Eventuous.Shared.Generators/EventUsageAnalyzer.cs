@@ -46,26 +46,15 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
     /// Cache of well-known type symbols resolved from the compilation.
     /// This makes the analyzer refactoring-safe by using symbol comparison instead of string matching.
     /// </summary>
-    sealed class KnownTypeSymbols {
-        public INamedTypeSymbol? EventTypeAttribute { get; }
-        public INamedTypeSymbol? TypeMapper { get; }
-        public INamedTypeSymbol? Aggregate { get; }
-        public INamedTypeSymbol? State { get; }
-        public INamedTypeSymbol? CommandHandlerBuilder { get; }
-        public INamedTypeSymbol? IDefineExecution { get; }
-        public INamedTypeSymbol? ICommandHandlerBuilder { get; }
-        public INamedTypeSymbol? IDefineStoreOrExecution { get; }
-
-        public KnownTypeSymbols(Compilation compilation) {
-            EventTypeAttribute = compilation.GetTypeByMetadataName(EventTypeAttrFqcn);
-            TypeMapper = compilation.GetTypeByMetadataName($"{BaseNamespace}.TypeMapper");
-            Aggregate = compilation.GetTypeByMetadataName($"{BaseNamespace}.Aggregate`1");
-            State = compilation.GetTypeByMetadataName($"{BaseNamespace}.State`1");
-            CommandHandlerBuilder = compilation.GetTypeByMetadataName($"{BaseNamespace}.CommandHandlerBuilder");
-            IDefineExecution = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineExecution");
-            ICommandHandlerBuilder = compilation.GetTypeByMetadataName($"{BaseNamespace}.ICommandHandlerBuilder");
-            IDefineStoreOrExecution = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineStoreOrExecution");
-        }
+    sealed class KnownTypeSymbols(Compilation compilation) {
+        public INamedTypeSymbol? EventTypeAttribute      { get; } = compilation.GetTypeByMetadataName(EventTypeAttrFqcn);
+        public INamedTypeSymbol? TypeMapper              { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.TypeMapper");
+        public INamedTypeSymbol? Aggregate               { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.Aggregate`1");
+        public INamedTypeSymbol? State                   { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.{StateType}`1");
+        public INamedTypeSymbol? CommandHandlerBuilder   { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.CommandHandlerBuilder");
+        public INamedTypeSymbol? IDefineExecution        { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineExecution");
+        public INamedTypeSymbol? ICommandHandlerBuilder  { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.ICommandHandlerBuilder");
+        public INamedTypeSymbol? IDefineStoreOrExecution { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineStoreOrExecution");
     }
 
     static ImmutableHashSet<ITypeSymbol> GetExplicitRegistrations(OperationAnalysisContext ctx, KnownTypeSymbols knownTypes) {

@@ -2,7 +2,7 @@
 
 namespace Banking.Domain.Accounts;
 
-[Snapshots(typeof(AccountEvents.V1.Snapshot), StorageStrategy = SnapshotStorageStrategy.SeparateStore)]
+[Snapshots<AccountEvents.V1.Snapshot>(StorageStrategy = SnapshotStorageStrategy.SeparateStore)]
 public record AccountState : State<AccountState> {
     public decimal Balance { get; init; }
 

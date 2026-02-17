@@ -35,4 +35,3 @@ public class SnapshotSchemaInitializer(SqlServerSnapshotStoreOptions options, IL
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
-

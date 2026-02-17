@@ -4,14 +4,14 @@
 namespace Eventuous;
 
 public static class SnapshotTypeMap {
-
-    static readonly Dictionary<Type, HashSet<Type>> StateToSnapshots = [];
+    static readonly Dictionary<Type, HashSet<Type>>           StateToSnapshots       = [];
     static readonly Dictionary<Type, SnapshotStorageStrategy> StateToStorageStrategy = [];
 
     public static void Register(Type stateType, Type eventType, SnapshotStorageStrategy storageStrategy = SnapshotStorageStrategy.SameStream) {
         if (StateToSnapshots.TryGetValue(stateType, out var value)) {
             value.Add(eventType);
-        } else {
+        }
+        else {
             StateToSnapshots[stateType] = [eventType];
             // Store strategy for the state type when first registering snapshots for this state
             StateToStorageStrategy[stateType] = storageStrategy;

@@ -3,32 +3,24 @@
 
 using System.Runtime.Serialization;
 using System.Text;
-using Eventuous;
 using static Eventuous.DeserializationResult;
 using static Eventuous.Redis.EventuousRedisKeys;
 
 namespace Eventuous.Redis.Snapshots;
 
-using Tools;
-
 /// <summary>
 /// Redis snapshot store implementation for storing snapshots separately from event streams.
 /// </summary>
-public class RedisSnapshotStore : ISnapshotStore {
-    readonly GetRedisDatabase           _getDatabase;
-    readonly RedisSnapshotStoreOptions  _options;
-    readonly IEventSerializer           _serializer;
-    const    string                     ContentType = "application/json";
-
-    public RedisSnapshotStore(
-            GetRedisDatabase              getDatabase,
-            RedisSnapshotStoreOptions?    options = null,
-            IEventSerializer?             serializer = null
-        ) {
-        _getDatabase = Ensure.NotNull(getDatabase, "Connection factory");
-        _options     = options ?? new RedisSnapshotStoreOptions();
-        _serializer  = serializer ?? DefaultEventSerializer.Instance;
-    }
+public class RedisSnapshotStore(
+        GetRedisDatabase           getDatabase,
+        RedisSnapshotStoreOptions? options    = null,
+        IEventSerializer?          serializer = null
+    )
+    : ISnapshotStore {
+    readonly GetRedisDatabase          _getDatabase = Ensure.NotNull(getDatabase, "Connection factory");
+    readonly RedisSnapshotStoreOptions _options     = options    ?? new RedisSnapshotStoreOptions();
+    readonly IEventSerializer          _serializer  = serializer ?? DefaultEventSerializer.Instance;
+    const    string                    ContentType  = "application/json";
 
     string GetSnapshotKey(StreamName streamName) => $"{_options.KeyPrefix}:{streamName}";
 
@@ -38,7 +30,7 @@ public class RedisSnapshotStore : ISnapshotStore {
     public async Task<Snapshot?> Read(StreamName streamName, CancellationToken cancellationToken = default) {
         var database = _getDatabase();
         var key      = GetSnapshotKey(streamName);
-        
+
         var revisionValue  = await database.HashGetAsync(key, Revision).NoContext();
         var eventTypeValue = await database.HashGetAsync(key, EventType).NoContext();
         var jsonDataValue  = await database.HashGetAsync(key, JsonData).NoContext();
@@ -62,7 +54,7 @@ public class RedisSnapshotStore : ISnapshotStore {
         );
 
         return deserialized switch {
-            SuccessfullyDeserialized success => new Snapshot {
+            SuccessfullyDeserialized success => new() {
                 Revision = long.Parse(revision),
                 Payload  = success.Payload
             },

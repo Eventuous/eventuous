@@ -12,18 +12,18 @@ namespace Eventuous.Postgresql.Snapshots;
 /// PostgreSQL snapshot store implementation for storing snapshots separately from event streams.
 /// </summary>
 public class PostgresSnapshotStore : ISnapshotStore {
-    readonly NpgsqlDataSource      _dataSource;
-    readonly SnapshotSchema         _schema;
-    readonly IEventSerializer       _serializer;
-    const    string                 ContentType = "application/json";
+    readonly NpgsqlDataSource _dataSource;
+    readonly SnapshotSchema   _schema;
+    readonly IEventSerializer _serializer;
+    const    string           ContentType = "application/json";
 
     public PostgresSnapshotStore(
-            NpgsqlDataSource           dataSource,
+            NpgsqlDataSource              dataSource,
             PostgresSnapshotStoreOptions? options,
-            IEventSerializer?           serializer = null
+            IEventSerializer?             serializer = null
         ) {
         var pgOptions = options ?? new PostgresSnapshotStoreOptions();
-        _schema     = new SnapshotSchema(pgOptions.Schema);
+        _schema     = new(pgOptions.Schema);
         _dataSource = Ensure.NotNull(dataSource, "Data Source");
         _serializer = serializer ?? DefaultEventSerializer.Instance;
     }
@@ -33,7 +33,8 @@ public class PostgresSnapshotStore : ISnapshotStore {
     [RequiresUnreferencedCode("Only works with AOT when using DefaultStaticEventSerializer")]
     public async Task<Snapshot?> Read(StreamName streamName, CancellationToken cancellationToken = default) {
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
-        await using var cmd        = connection.GetCommand(_schema.ReadSnapshot)
+
+        await using var cmd = connection.GetCommand(_schema.ReadSnapshot)
             .Add("stream_name", NpgsqlDbType.Varchar, streamName.ToString());
 
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
@@ -42,9 +43,9 @@ public class PostgresSnapshotStore : ISnapshotStore {
             return null;
         }
 
-        var revision   = reader.GetInt64(0);
-        var eventType  = reader.GetString(1);
-        var jsonData   = reader.GetString(2);
+        var revision  = reader.GetInt64(0);
+        var eventType = reader.GetString(1);
+        var jsonData  = reader.GetString(2);
 
         var deserialized = _serializer.DeserializeEvent(
             Encoding.UTF8.GetBytes(jsonData),
@@ -53,7 +54,7 @@ public class PostgresSnapshotStore : ISnapshotStore {
         );
 
         return deserialized switch {
-            SuccessfullyDeserialized success => new Snapshot {
+            SuccessfullyDeserialized success => new() {
                 Revision = revision,
                 Payload  = success.Payload
             },
@@ -74,7 +75,8 @@ public class PostgresSnapshotStore : ISnapshotStore {
         var jsonData   = Encoding.UTF8.GetString(serialized.Payload);
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
-        await using var cmd        = connection.GetCommand(_schema.WriteSnapshot)
+
+        await using var cmd = connection.GetCommand(_schema.WriteSnapshot)
             .Add("stream_name", NpgsqlDbType.Varchar, streamName.ToString())
             .Add("revision", NpgsqlDbType.Bigint, snapshot.Revision)
             .Add("event_type", NpgsqlDbType.Varchar, serialized.EventType)
@@ -86,10 +88,10 @@ public class PostgresSnapshotStore : ISnapshotStore {
     /// <inheritdoc />
     public async Task Delete(StreamName streamName, CancellationToken cancellationToken = default) {
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).NoContext();
-        await using var cmd        = connection.GetCommand(_schema.DeleteSnapshot)
+
+        await using var cmd = connection.GetCommand(_schema.DeleteSnapshot)
             .Add("stream_name", NpgsqlDbType.Varchar, streamName.ToString());
 
         await cmd.ExecuteNonQueryAsync(cancellationToken).NoContext();
     }
 }
-

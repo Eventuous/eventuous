@@ -23,4 +23,3 @@ public class SqlServerSnapshotStoreOptions(string schema) {
     /// </summary>
     public bool InitializeDatabase { get; set; }
 }
-

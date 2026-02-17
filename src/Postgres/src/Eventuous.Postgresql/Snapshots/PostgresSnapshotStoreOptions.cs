@@ -23,4 +23,3 @@ public class PostgresSnapshotStoreOptions(string schema) {
     /// </summary>
     public bool InitializeDatabase { get; set; }
 }
-

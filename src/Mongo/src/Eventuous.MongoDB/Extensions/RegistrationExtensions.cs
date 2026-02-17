@@ -3,7 +3,6 @@
 
 using Eventuous.MongoDB.Snapshots;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -27,36 +26,41 @@ public static class ServiceCollectionExtensions {
         // ReSharper disable once UnusedMethodReturnValue.Global
         public IServiceCollection AddMongoSnapshotStore(
                 string connectionString,
-                string databaseName        = "eventuous",
-                string collectionName      = "snapshots",
-                bool   initializeIndexes    = false
+                string databaseName      = "eventuous",
+                string collectionName    = "snapshots",
+                bool   initializeIndexes = false
             ) {
             var options = new MongoSnapshotStoreOptions {
-                ConnectionString   = Ensure.NotEmptyString(connectionString),
-                DatabaseName       = databaseName,
-                CollectionName     = collectionName,
-                InitializeIndexes  = initializeIndexes
+                ConnectionString  = Ensure.NotEmptyString(connectionString),
+                DatabaseName      = databaseName,
+                CollectionName    = collectionName,
+                InitializeIndexes = initializeIndexes
             };
 
             services.AddSingleton(options);
+
             services.AddSingleton<MongoSnapshotStore>(sp => {
-                var opts = sp.GetRequiredService<MongoSnapshotStoreOptions>();
-                var mongoSettings = MongoClientSettings.FromConnectionString(opts.ConnectionString);
-                var client        = new MongoClient(mongoSettings);
-                var database      = client.GetDatabase(opts.DatabaseName);
-                return new MongoSnapshotStore(database, opts, sp.GetService<IEventSerializer>());
-            });
+                    var opts          = sp.GetRequiredService<MongoSnapshotStoreOptions>();
+                    var mongoSettings = MongoClientSettings.FromConnectionString(opts.ConnectionString);
+                    var client        = new MongoClient(mongoSettings);
+                    var database      = client.GetDatabase(opts.DatabaseName);
+
+                    return new(database, opts, sp.GetService<IEventSerializer>());
+                }
+            );
             services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<MongoSnapshotStore>());
 
             if (options.InitializeIndexes) {
                 services.AddHostedService<SnapshotIndexInitializer>(sp => {
-                    var opts = sp.GetRequiredService<MongoSnapshotStoreOptions>();
-                    var mongoSettings = MongoClientSettings.FromConnectionString(opts.ConnectionString);
-                    var client        = new MongoClient(mongoSettings);
-                    var database      = client.GetDatabase(opts.DatabaseName);
-                    var loggerFactory = sp.GetService<ILoggerFactory>();
-                    return new SnapshotIndexInitializer(database, opts, loggerFactory);
-                });
+                        var opts          = sp.GetRequiredService<MongoSnapshotStoreOptions>();
+                        var mongoSettings = MongoClientSettings.FromConnectionString(opts.ConnectionString);
+                        var client        = new MongoClient(mongoSettings);
+                        var database      = client.GetDatabase(opts.DatabaseName);
+                        var loggerFactory = sp.GetService<ILoggerFactory>();
+
+                        return new(database, opts, loggerFactory);
+                    }
+                );
             }
 
             return services;
@@ -73,27 +77,30 @@ public static class ServiceCollectionExtensions {
             services.AddSingleton<MongoSnapshotStoreOptions>(sp => sp.GetRequiredService<IOptions<MongoSnapshotStoreOptions>>().Value);
 
             services.AddSingleton<MongoSnapshotStore>(sp => {
-                var opts = sp.GetRequiredService<MongoSnapshotStoreOptions>();
-                var mongoSettings = MongoClientSettings.FromConnectionString(Ensure.NotEmptyString(opts.ConnectionString));
-                var client        = new MongoClient(mongoSettings);
-                var database      = client.GetDatabase(opts.DatabaseName);
-                return new MongoSnapshotStore(database, opts, sp.GetService<IEventSerializer>());
-            });
+                    var opts          = sp.GetRequiredService<MongoSnapshotStoreOptions>();
+                    var mongoSettings = MongoClientSettings.FromConnectionString(Ensure.NotEmptyString(opts.ConnectionString));
+                    var client        = new MongoClient(mongoSettings);
+                    var database      = client.GetDatabase(opts.DatabaseName);
+
+                    return new(database, opts, sp.GetService<IEventSerializer>());
+                }
+            );
             services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<MongoSnapshotStore>());
 
             // Register index initializer only if InitializeIndexes is enabled
             // The initializer will check the option and skip if false
             services.AddHostedService<SnapshotIndexInitializer>(sp => {
-                var opts = sp.GetRequiredService<MongoSnapshotStoreOptions>();
-                var mongoSettings = MongoClientSettings.FromConnectionString(Ensure.NotEmptyString(opts.ConnectionString));
-                var client        = new MongoClient(mongoSettings);
-                var database      = client.GetDatabase(opts.DatabaseName);
-                var loggerFactory = sp.GetService<ILoggerFactory>();
-                return new SnapshotIndexInitializer(database, opts, loggerFactory);
-            });
+                    var opts          = sp.GetRequiredService<MongoSnapshotStoreOptions>();
+                    var mongoSettings = MongoClientSettings.FromConnectionString(Ensure.NotEmptyString(opts.ConnectionString));
+                    var client        = new MongoClient(mongoSettings);
+                    var database      = client.GetDatabase(opts.DatabaseName);
+                    var loggerFactory = sp.GetService<ILoggerFactory>();
+
+                    return new(database, opts, loggerFactory);
+                }
+            );
 
             return services;
         }
     }
 }
-
