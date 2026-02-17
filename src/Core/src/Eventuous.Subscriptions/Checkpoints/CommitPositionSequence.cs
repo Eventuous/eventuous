@@ -20,13 +20,13 @@ public class CommitPositionSequence() : SortedSet<CommitPosition>(new PositionsC
 
     CommitPosition Get() {
         var result = this
-            .Zip(this.Skip(1), Tuple.Create)
-            .FirstOrDefault(tup => tup.Item1.Sequence + 1 != tup.Item2.Sequence);
+            .Zip(this.Skip(1), (position1, position2) => (position1, position2))
+            .FirstOrDefault(tup => tup.position1.Sequence + 1 != tup.position2.Sequence);
 
-        if (result == null) return Max;
+        if (result == default) return Max;
 
-        SubscriptionsEventSource.Log.CheckpointGapDetected(result.Item1, result.Item2);
-        return result.Item1;
+        SubscriptionsEventSource.Log.CheckpointGapDetected(result.position1, result.position2);
+        return result.position1;
     }
 
     class PositionsComparer : IComparer<CommitPosition> {

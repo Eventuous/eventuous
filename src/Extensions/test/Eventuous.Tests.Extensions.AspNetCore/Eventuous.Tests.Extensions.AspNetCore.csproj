@@ -8,7 +8,7 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
         <ProjectReference Include="..\Eventuous.Sut.AspNetCore\Eventuous.Sut.AspNetCore.csproj"/>
-        <ProjectReference Include="..\..\gen\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj">
+        <ProjectReference Include="$(LocalGenRoot)\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj">
           <OutputItemType>Analyzer</OutputItemType>
           <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
         </ProjectReference>
@@ -20,6 +20,10 @@
         <PackageReference Include="System.Text.Json" />
         <PackageReference Include="Verify.DiffPlex"/>
         <PackageReference Include="Verify.TUnit" />
+        <PackageReference Update="coverlet.collector">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
     <ItemGroup>
         <Using Include="Eventuous.Sut.AspNetCore"/>

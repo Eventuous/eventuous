@@ -3,11 +3,25 @@
 
 namespace Eventuous.Shared.Generators;
 
+/// <summary>
+/// Constants used for type and member lookups.
+/// These are primarily used for symbol resolution via Compilation.GetTypeByMetadataName()
+/// and as fallback when symbol-based comparison is not available.
+/// The generators now prefer symbol-based comparisons using SymbolEqualityComparer,
+/// which are refactoring-safe and won't break when types are renamed.
+/// </summary>
 internal static class Constants {
-    public const string BaseNamespace      = "Eventuous";
     public const string StateType          = "State";
+    /// <summary>Base namespace for Eventuous types.</summary>
+    public const string BaseNamespace = "Eventuous";
+
+    /// <summary>Name of the EventType attribute class (without namespace).</summary>
     public const string EventTypeAttribute = "EventTypeAttribute";
-    public const string EventTypeAttrFqcn  = $"{BaseNamespace}.{EventTypeAttribute}";
-    public const string SnapshotsAttribute  = "SnapshotsAttribute";
-    public const string SnapshotsAttrFqcn   = $"{BaseNamespace}.{SnapshotsAttribute}";
+
+    /// <summary>Fully qualified name of the EventType attribute for GetTypeByMetadataName().</summary>
+    public const string EventTypeAttrFqcn = $"{BaseNamespace}.{EventTypeAttribute}";
+
+
+    public const string SnapshotsAttrFqcn  = $"{BaseNamespace}.{SnapshotsAttribute}";
+    public const string SnapshotsAttribute = "SnapshotsAttribute";
 }

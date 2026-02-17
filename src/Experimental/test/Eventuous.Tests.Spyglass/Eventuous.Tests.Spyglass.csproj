@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <IncludeTestHost>true</IncludeTestHost>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations"/>
+        <PackageReference Update="coverlet.collector">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Sample apps (their module initializers populate SpyglassRegistry) -->
+        <ProjectReference Include="$(RepoRoot)\samples\kurrentdb\Bookings\Bookings.csproj" Aliases="BookingsApp"/>
+        <ProjectReference Include="$(RepoRoot)\samples\kurrentdb\Bookings.Payments\Bookings.Payments.csproj" Aliases="PaymentsApp"/>
+        <!-- Spyglass runtime (for API mapping + registry types) -->
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Spyglass\Eventuous.Spyglass.csproj"/>
+        <!-- In-memory event store for the test app -->
+        <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj"/>
+    </ItemGroup>
+</Project>

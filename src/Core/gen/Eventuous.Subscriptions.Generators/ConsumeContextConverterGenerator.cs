@@ -12,10 +12,18 @@ namespace Eventuous.Subscriptions.Generators;
 public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
     const string InterfaceNamespace = "Eventuous.Subscriptions.Context";
     const string InterfaceName      = "IMessageConsumeContext";
+    const string InterfaceFqn       = $"{InterfaceNamespace}.{InterfaceName}`1";
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
+        // Resolve the IMessageConsumeContext<> symbol from the compilation
+        var messageConsumeContextSymbol = context.CompilationProvider
+            .Select(static (c, _) => c.GetTypeByMetadataName(InterfaceFqn));
+
         var candidateTypes = context.SyntaxProvider
             .CreateSyntaxProvider(IsPotentialUsage, Transform)
+            .Where(static t => t is not null)
+            .Combine(messageConsumeContextSymbol)
+            .Select(static (pair, _) => TransformWithSymbol(pair.Left, pair.Right))
             .Where(static t => t is not null)
             .Select(static (t, _) => t!)
             .Collect();
@@ -35,16 +43,23 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         };
     }
 
-    static string? Transform(GeneratorSyntaxContext ctx, CancellationToken _) {
+    static GeneratorSyntaxContext? Transform(GeneratorSyntaxContext ctx, CancellationToken _) {
+        // Just return the context for further processing
+        return ctx;
+    }
+
+    static string? TransformWithSymbol(GeneratorSyntaxContext? ctx, INamedTypeSymbol? messageConsumeContextSymbol) {
+        if (ctx is not { } context) return null;
+
         // Explicit generic type usage: IMessageConsumeContext<T>
-        if (ctx.Node is GenericNameSyntax g) {
+        if (context.Node is GenericNameSyntax g) {
             // Case 1: explicit IMessageConsumeContext<T>
-            var symbol = ctx.SemanticModel.GetSymbolInfo(g).Symbol as INamedTypeSymbol
-                         ?? ctx.SemanticModel.GetTypeInfo(g).Type as INamedTypeSymbol;
+            var symbol = context.SemanticModel.GetSymbolInfo(g).Symbol as INamedTypeSymbol
+                         ?? context.SemanticModel.GetTypeInfo(g).Type as INamedTypeSymbol;
 
             if (symbol != null) {
                 var def = symbol.OriginalDefinition;
-                if (IsTargetInterface(def) && symbol.TypeArguments.Length == 1) {
+                if (IsTargetInterface(def, messageConsumeContextSymbol) && symbol.TypeArguments.Length == 1) {
                     var arg = symbol.TypeArguments[0];
                     return GetTypeSyntax(arg);
                 }
@@ -55,7 +70,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
                 // Try to get T from the generic method symbol On<T>(...)
                 var inv = g.Parent as InvocationExpressionSyntax ?? g.Parent?.Parent as InvocationExpressionSyntax;
                 if (inv != null) {
-                    var symbolInfo = ctx.SemanticModel.GetSymbolInfo(inv).Symbol;
+                    var symbolInfo = context.SemanticModel.GetSymbolInfo(inv).Symbol;
                     var method = symbolInfo as IMethodSymbol;
                     if (method?.TypeArguments.Length == 1 && ShouldTreatGenericOnAsEvent(method)) {
                         var tArg = method.TypeArguments[0];
@@ -67,13 +82,13 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         }
 
         // Qualified explicit usage: Namespace.IMessageConsumeContext<T>
-        if (ctx.Node is QualifiedNameSyntax { Right: GenericNameSyntax g2 }) {
-            var symbol = ctx.SemanticModel.GetSymbolInfo(g2).Symbol as INamedTypeSymbol
-                         ?? ctx.SemanticModel.GetTypeInfo(g2).Type as INamedTypeSymbol;
+        if (context.Node is QualifiedNameSyntax { Right: GenericNameSyntax g2 }) {
+            var symbol = context.SemanticModel.GetSymbolInfo(g2).Symbol as INamedTypeSymbol
+                         ?? context.SemanticModel.GetTypeInfo(g2).Type as INamedTypeSymbol;
 
             if (symbol != null) {
                 var def = symbol.OriginalDefinition;
-                if (IsTargetInterface(def) && symbol.TypeArguments.Length == 1) {
+                if (IsTargetInterface(def, messageConsumeContextSymbol) && symbol.TypeArguments.Length == 1) {
                     var arg = symbol.TypeArguments[0];
                     return GetTypeSyntax(arg);
                 }
@@ -81,13 +96,13 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         }
 
         // Implicit usage via lambda parameter type inference
-        if (ctx.Node is LambdaExpressionSyntax lambda) {
-            var typeInfo = ctx.SemanticModel.GetTypeInfo(lambda);
+        if (context.Node is LambdaExpressionSyntax lambda) {
+            var typeInfo = context.SemanticModel.GetTypeInfo(lambda);
             var delegateType = typeInfo.ConvertedType as INamedTypeSymbol;
             var invoke = delegateType?.DelegateInvokeMethod;
             if (invoke is not null) {
                 foreach (var p in invoke.Parameters) {
-                    if (TryExtractTypeArgFromIMessageConsumeContext(p.Type, out var typeArg)) {
+                    if (TryExtractTypeArgFromIMessageConsumeContext(p.Type, messageConsumeContextSymbol, out var typeArg)) {
                         return GetTypeSyntax(typeArg);
                     }
                 }
@@ -103,8 +118,16 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         return name.StartsWith("global::", StringComparison.Ordinal) ? name : $"global::{name}";
     }
 
-    static bool IsTargetInterface(INamedTypeSymbol def) =>
-        def is { Arity: 1, Name: InterfaceName } && def.ContainingNamespace?.ToDisplayString() == InterfaceNamespace;
+    static bool IsTargetInterface(INamedTypeSymbol def, INamedTypeSymbol? messageConsumeContextSymbol) {
+        // Prefer symbol comparison (refactoring-safe)
+        if (messageConsumeContextSymbol is not null) {
+            return SymbolEqualityComparer.Default.Equals(def, messageConsumeContextSymbol);
+        }
+
+        // Fallback to string-based comparison
+        return def is { Arity: 1, Name: InterfaceName } &&
+               def.ContainingNamespace?.ToDisplayString() == InterfaceNamespace;
+    }
 
     static bool ShouldTreatGenericOnAsEvent(IMethodSymbol method) {
         if (method is not { Name: "On" }) return false;
@@ -116,10 +139,13 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         return paramName.IndexOf("Event", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    static bool TryExtractTypeArgFromIMessageConsumeContext(ITypeSymbol type, out ITypeSymbol typeArg) {
+    static bool TryExtractTypeArgFromIMessageConsumeContext(
+        ITypeSymbol type,
+        INamedTypeSymbol? messageConsumeContextSymbol,
+        out ITypeSymbol typeArg) {
         if (type is INamedTypeSymbol named) {
             var def = named.OriginalDefinition;
-            if (IsTargetInterface(def) && named.TypeArguments.Length == 1) {
+            if (IsTargetInterface(def, messageConsumeContextSymbol) && named.TypeArguments.Length == 1) {
                 typeArg = named.TypeArguments[0];
                 return true;
             }

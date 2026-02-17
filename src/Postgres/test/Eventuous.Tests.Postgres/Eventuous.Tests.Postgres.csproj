@@ -10,6 +10,10 @@
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="Testcontainers"/>
         <PackageReference Include="Testcontainers.PostgreSql"/>
+        <PackageReference Update="coverlet.collector">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Postgresql\Eventuous.Postgresql.csproj"/>

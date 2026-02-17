@@ -13,5 +13,9 @@
         <PackageReference Include="Confluent.Kafka"/>
         <PackageReference Include="Testcontainers"/>
         <PackageReference Include="Testcontainers.Kafka" />
+        <PackageReference Update="coverlet.collector">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 </Project>

@@ -30,6 +30,6 @@
         <ProjectReference Include="$(SrcRoot)\Postgres\src\Eventuous.Postgresql\Eventuous.Postgresql.csproj"/>
         <ProjectReference Include="$(SrcRoot)\RabbitMq\src\Eventuous.RabbitMq\Eventuous.RabbitMq.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-        <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj"/>
+        <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj" />
     </ItemGroup>
 </Project>

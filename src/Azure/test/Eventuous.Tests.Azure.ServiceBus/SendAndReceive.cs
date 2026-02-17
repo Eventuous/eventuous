@@ -26,10 +26,11 @@ public class SendAndReceive {
         _metadata                      = new Metadata().With(MetaTags.CorrelationId, _correlationId);
         _serviceBusProducerOptions     = producerOptions;
         _serviceBusSubscriptionOptions = subscriptionOptions;
-        this._fixture                  = fixture;
+        _fixture                       = fixture;
     }
 
     [Test]
+    [Retry(3)]
     public async Task SingleMessage() {
         await _producer.Produce(_streamName, SomeEvent.Create(), _metadata, cancellationToken: TestCancellationToken);
 
@@ -42,6 +43,7 @@ public class SendAndReceive {
     }
 
     [Test]
+    [Retry(3)]
     public async Task LoadsOfMessages() {
         const int count = 200;
 

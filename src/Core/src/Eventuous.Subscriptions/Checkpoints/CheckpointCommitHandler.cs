@@ -61,7 +61,7 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         return;
 
-        async ValueTask Process(CommitPosition[] list, CancellationToken cancellationToken) {
+        async ValueTask Process(IReadOnlyList<CommitPosition> list, CancellationToken cancellationToken) {
             _positions.UnionWith(list);
             var next = GetCommitPosition(false);
 

@@ -6,6 +6,8 @@
     <ItemGroup>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Application\Eventuous.Application.csproj"/>
         <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet"/>
@@ -13,5 +15,7 @@
     <ItemGroup>
       <Compile Remove="GapDetectionBenchmarks.cs" />
       <Compile Remove="TypeMapBenchmark.cs" />
+      <Compile Remove="FilterPipelineBenchmarks.cs" />
+      <Compile Remove="CheckpointBenchmarks.cs" />
     </ItemGroup>
 </Project>

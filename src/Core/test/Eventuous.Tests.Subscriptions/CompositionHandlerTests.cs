@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
+#pragma warning disable CS9113 // Parameter is unread.
 
 namespace Eventuous.Tests.Subscriptions;
 

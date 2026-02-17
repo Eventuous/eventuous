@@ -5,11 +5,11 @@ using Eventuous.Tests.Persistence.Base.Fixtures;
 using KurrentDB.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Testcontainers.EventStoreDb;
+using Testcontainers.KurrentDb;
 
 namespace Eventuous.Tests.KurrentDB.Fixtures;
 
-public class StoreFixture : StoreFixtureBase<EventStoreDbContainer> {
+public class StoreFixture : StoreFixtureBase<KurrentDbContainer> {
     public KurrentDBClient Client { get; private set; } = null!;
 #pragma warning disable CS0618 // Type or member is obsolete
     public IAggregateStore AggregateStore { get; private set; } = null!;
@@ -33,7 +33,7 @@ public class StoreFixture : StoreFixtureBase<EventStoreDbContainer> {
 #pragma warning restore CS0618 // Type or member is obsolete
     }
 
-    protected override EventStoreDbContainer CreateContainer() => EsdbContainer.Create();
+    protected override KurrentDbContainer CreateContainer() => KurrentDBContainer.Create();
 
     protected override void GetDependencies(IServiceProvider provider) {
         Client = provider.GetRequiredService<KurrentDBClient>();

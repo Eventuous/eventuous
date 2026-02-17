@@ -3,13 +3,10 @@
 
 namespace Eventuous;
 
-[Obsolete("Use State<T> instead")]
-public abstract record AggregateState<T> : State<T> where T : AggregateState<T>;
-
 [PublicAPI]
 public abstract record State<T> where T : State<T> {
     /// <summary>
-    /// Function to apply event to the state object.
+    /// Function to apply an event to the state object.
     /// </summary>
     /// <param name="event">Event to apply</param>
     /// <returns>New instance of state</returns>
@@ -24,7 +21,7 @@ public abstract record State<T> where T : State<T> {
     /// <summary>
     /// Event handler that uses the event payload and creates a new instance of state using the data from the event.
     /// </summary>
-    /// <param name="handle">Function to return new state instance after the event is applied</param>
+    /// <param name="handle">Function to return a new state instance after the event is applied</param>
     /// <typeparam name="TEvent">Event type</typeparam>
     /// <exception cref="Exceptions.DuplicateTypeException{T}">Thrown if another function already handles this event type</exception>
     [PublicAPI]
@@ -35,6 +32,11 @@ public abstract record State<T> where T : State<T> {
             throw new Exceptions.DuplicateTypeException<TEvent>();
         }
     }
+
+    /// <summary>
+    /// Returns the event types that have registered handlers in this state.
+    /// </summary>
+    public ICollection<Type> GetRegisteredEventTypes() => _handlers.Keys;
 
     readonly Dictionary<Type, Func<T, object, T>> _handlers = new();
 }

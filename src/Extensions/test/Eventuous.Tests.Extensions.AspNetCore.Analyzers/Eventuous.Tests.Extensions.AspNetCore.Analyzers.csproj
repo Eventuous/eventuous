@@ -7,10 +7,14 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis" PrivateAssets="all"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
+        <PackageReference Update="coverlet.collector">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
         <ProjectReference Include="$(RepoRoot)\src\Core\src\Eventuous.Shared\Eventuous.Shared.csproj"/>
-        <ProjectReference Include="..\..\gen\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj"/>
+        <ProjectReference Include="$(LocalGenRoot)\Eventuous.Extensions.AspNetCore.Generators\Eventuous.Extensions.AspNetCore.Generators.csproj"/>
     </ItemGroup>
 </Project>

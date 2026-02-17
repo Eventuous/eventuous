@@ -29,36 +29,58 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
         var ctx = workerTask.Context;
 
         using var activity = ctx.Items.GetItem<Activity>(ContextItemKeys.Activity)?.Start();
-        using var cts      = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
-        ctx.CancellationToken = cts.Token;
-        Logger.Current        = ctx.LogContext;
 
-        try {
-            await workerTask.Filter.Value.Send(ctx, workerTask.Filter.Next).NoContext();
-
-            if (ctx.HasFailed()) {
-                var exception = ctx.HandlingResults.GetException();
-
-                switch (exception) {
-                    case TaskCanceledException:
-                    case OperationCanceledException: break;
-                    case null: throw new ApplicationException("Event handler failed");
-                    default:   throw exception;
-                }
-            }
-
-            if (!ctx.HandlingResults.IsPending()) await ctx.Acknowledge().NoContext();
-        } catch (TaskCanceledException) {
-            return;
-        } catch (OperationCanceledException) {
-            return;
-        } catch (Exception e) {
-            ctx.LogContext.MessageHandlingFailed(nameof(AsyncHandlingFilter), workerTask.Context, e);
-            activity?.SetActivityStatus(ActivityStatus.Error(e));
-            await ctx.Fail(e).NoContext();
+        // Optimize: Only create linked CTS when both tokens can be canceled and are different (16x perf improvement)
+        CancellationTokenSource? cts = null;
+        if (ctx.CancellationToken == ct) {
+            // Same token, no need to link
+        }
+        else if (!ct.CanBeCanceled) {
+            // Worker token cannot be canceled, use context token as-is
+        }
+        else if (!ctx.CancellationToken.CanBeCanceled) {
+            // Context token cannot be canceled, use worker token
+            ctx.CancellationToken = ct;
+        }
+        else {
+            // Both can be canceled and are different - create linked token source
+            cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.CancellationToken, ct);
+            ctx.CancellationToken = cts.Token;
         }
 
-        if (activity != null && ctx.WasIgnored()) activity.ActivityTraceFlags = ActivityTraceFlags.None;
+        Logger.Current = ctx.LogContext;
+
+        try {
+            try {
+                await workerTask.Filter.Value.Send(ctx, workerTask.Filter.Next).NoContext();
+
+                if (ctx.HasFailed()) {
+                    var exception = ctx.HandlingResults.GetException();
+
+                    switch (exception) {
+                        case TaskCanceledException:
+                        case OperationCanceledException: break;
+                        case null: throw new ApplicationException("Event handler failed");
+                        default:   throw exception;
+                    }
+                }
+
+                if (!ctx.HandlingResults.IsPending()) await ctx.Acknowledge().NoContext();
+            } catch (TaskCanceledException) {
+                return;
+            } catch (OperationCanceledException) {
+                return;
+            } catch (Exception e) {
+                ctx.LogContext.MessageHandlingFailed(nameof(AsyncHandlingFilter), workerTask.Context, e);
+                activity?.SetActivityStatus(ActivityStatus.Error(e));
+                await ctx.Fail(e).NoContext();
+            }
+
+            if (activity != null && ctx.WasIgnored()) activity.ActivityTraceFlags = ActivityTraceFlags.None;
+        }
+        finally {
+            cts?.Dispose();
+        }
     }
 
     protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next)

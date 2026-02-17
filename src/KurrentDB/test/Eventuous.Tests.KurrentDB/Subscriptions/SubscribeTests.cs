@@ -1,14 +1,14 @@
 using Eventuous.KurrentDB.Subscriptions;
 using Eventuous.Tests.KurrentDB.Subscriptions.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
-using Testcontainers.EventStoreDb;
+using Testcontainers.KurrentDb;
 
 // ReSharper disable UnusedType.Global
 
 namespace Eventuous.Tests.KurrentDB.Subscriptions;
 
     public class SubscribeToAllFromEnd()
-    : SubscribeToAllBase<EventStoreDbContainer, AllStreamSubscription, AllStreamSubscriptionOptions, TestCheckpointStore>(
+    : SubscribeToAllBase<KurrentDbContainer, AllStreamSubscription, AllStreamSubscriptionOptions, TestCheckpointStore>(
         new CatchUpSubscriptionFixture<AllStreamSubscription, AllStreamSubscriptionOptions, TestEventHandler>(opt => opt.StartFrom = InitialPosition.Latest, new("$all"), false)
     ) {
     [Test]
@@ -19,7 +19,7 @@ namespace Eventuous.Tests.KurrentDB.Subscriptions;
 }
 
     public class SubscribeToAll()
-    : SubscribeToAllBase<EventStoreDbContainer, AllStreamSubscription, AllStreamSubscriptionOptions, TestCheckpointStore>(
+    : SubscribeToAllBase<KurrentDbContainer, AllStreamSubscription, AllStreamSubscriptionOptions, TestCheckpointStore>(
         new CatchUpSubscriptionFixture<AllStreamSubscription, AllStreamSubscriptionOptions, TestEventHandler>(_ => { }, new("$all"), false)
     ) {
     [Test]
@@ -43,7 +43,7 @@ namespace Eventuous.Tests.KurrentDB.Subscriptions;
 
 [ClassDataSource<StreamNameFixture>(Shared = SharedType.None)]
 public class SubscribeToStream(StreamNameFixture streamNameFixture)
-    : SubscribeToStreamBase<EventStoreDbContainer, StreamSubscription, StreamSubscriptionOptions, TestCheckpointStore>(
+    : SubscribeToStreamBase<KurrentDbContainer, StreamSubscription, StreamSubscriptionOptions, TestCheckpointStore>(
         streamNameFixture.StreamName,
         new CatchUpSubscriptionFixture<StreamSubscription, StreamSubscriptionOptions, TestEventHandler>(
             opt => ConfigureOptions(opt, streamNameFixture),

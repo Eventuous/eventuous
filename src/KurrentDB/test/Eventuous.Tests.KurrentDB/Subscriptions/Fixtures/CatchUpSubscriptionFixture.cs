@@ -3,7 +3,7 @@ using Eventuous.KurrentDB.Subscriptions;
 using Eventuous.Tests.Subscriptions.Base;
 using KurrentDB.Client;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.EventStoreDb;
+using Testcontainers.KurrentDb;
 
 namespace Eventuous.Tests.KurrentDB.Subscriptions.Fixtures;
 
@@ -13,11 +13,11 @@ public class CatchUpSubscriptionFixture<TSubscription, TSubscriptionOptions, TEv
         bool                         autoStart         = true,
         Action<IServiceCollection>?  configureServices = null,
         LogLevel                     logLevel          = LogLevel.Information
-    ) : SubscriptionFixtureBase<EventStoreDbContainer, TSubscription, TSubscriptionOptions, TestCheckpointStore, TEventHandler>(autoStart, logLevel)
+    ) : SubscriptionFixtureBase<KurrentDbContainer, TSubscription, TSubscriptionOptions, TestCheckpointStore, TEventHandler>(autoStart, logLevel)
     where TSubscription : KurrentDBCatchUpSubscriptionBase<TSubscriptionOptions>
     where TSubscriptionOptions : CatchUpSubscriptionOptions
     where TEventHandler : class, IEventHandler {
-    protected override EventStoreDbContainer CreateContainer() => EsdbContainer.Create();
+    protected override KurrentDbContainer CreateContainer() => KurrentDBContainer.Create();
 
     protected override TestCheckpointStore GetCheckpointStore(IServiceProvider sp) => new();
 

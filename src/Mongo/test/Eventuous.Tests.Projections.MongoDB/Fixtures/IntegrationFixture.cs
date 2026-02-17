@@ -4,16 +4,16 @@ using Eventuous.TestHelpers;
 using KurrentDB.Client;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Driver;
-using Testcontainers.EventStoreDb;
+using Testcontainers.KurrentDb;
 using Testcontainers.MongoDb;
 using TUnit.Core.Interfaces;
 
 namespace Eventuous.Tests.Projections.MongoDB.Fixtures;
 
 public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
-    public IEventStore      EventStore { get; set; }         = null!;
+    public IEventStore     EventStore { get; set; }         = null!;
     public KurrentDBClient Client     { get; private set; } = null!;
-    public IMongoDatabase   Mongo      { get; private set; } = null!;
+    public IMongoDatabase  Mongo      { get; private set; } = null!;
 
     static IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
 
@@ -30,14 +30,14 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
         NodaTimeSerializers.Register();
     }
 
-    EventStoreDbContainer _esdbContainer  = null!;
-    MongoDbContainer      _mongoContainer = null!;
+    KurrentDbContainer _esdbContainer  = null!;
+    MongoDbContainer   _mongoContainer = null!;
 
     public async Task InitializeAsync() {
         var image = RuntimeInformation.ProcessArchitecture == Architecture.Arm64
-            ? "eventstore/eventstore:24.6.0-alpha-arm64v8"
-            : "eventstore/eventstore:24.6";
-        _esdbContainer = new EventStoreDbBuilder().WithImage(image).Build();
+            ? "kurrentplatform/kurrentdb:25.1.3-experimental-arm64-8.0-jammy"
+            : "kurrentplatform/kurrentdb:25.1.3";
+        _esdbContainer = new KurrentDbBuilder().WithImage(image).Build();
         await _esdbContainer.StartAsync();
         var settings = KurrentDBClientSettings.Create(_esdbContainer.GetConnectionString());
         Client          = new(settings);
