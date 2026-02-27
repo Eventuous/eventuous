@@ -30,8 +30,8 @@ static class GatewayMetaHelper {
 [PublicAPI]
 public static class ProducedMessageExtensions {
     extension(ProducedMessage message) {
-        public Stream? GetOriginalStream()
-            => message.AdditionalHeaders?.Get<Stream>(GatewayContextItems.OriginalStream);
+        public StreamName? GetOriginalStream()
+            => message.AdditionalHeaders?.Get<StreamName>(GatewayContextItems.OriginalStream);
 
         public object? GetOriginalMessage()
             => message.AdditionalHeaders?.Get<object>(GatewayContextItems.OriginalMessage);

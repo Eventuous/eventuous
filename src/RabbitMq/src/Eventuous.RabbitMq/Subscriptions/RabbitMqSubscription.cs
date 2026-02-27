@@ -123,10 +123,10 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Options.QueueOptions.Arguments
         );
 
-        Log.InfoLog?.Log("Binding exchange {Exchange} to queue {Queue}", exchange, Options.SubscriptionId);
+        Log.InfoLog?.Log("Binding exchange {Exchange} to queue {Queue}", exchange, queue);
 
         _channel.QueueBind(
-            Options.SubscriptionId,
+            queue,
             exchange,
             Options.BindingOptions.RoutingKey,
             Options.BindingOptions.Arguments
