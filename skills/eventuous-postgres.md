@@ -26,8 +26,9 @@ Register PostgreSQL infrastructure with `AddEventuousPostgres`. This configures 
 **Option 1: Connection string directly**
 
 ```csharp
+// Do not hardcode credentials; use secret storage or environment variables
 services.AddEventuousPostgres(
-    connectionString: "Host=localhost;Username=postgres;Password=secret;Database=eventuous;",
+    connectionString: configuration["Postgres:ConnectionString"]!,
     schema: "eventuous",           // default: "eventuous"
     initializeDatabase: true,      // default: false; creates schema tables on startup
     configureBuilder: null,        // Action<IServiceProvider, NpgsqlDataSourceBuilder>?
@@ -36,18 +37,18 @@ services.AddEventuousPostgres(
 );
 ```
 
-**Option 2: From IConfiguration section**
+**Option 2: From IConfiguration section (recommended)**
 
 ```csharp
 services.AddEventuousPostgres(configuration.GetSection("Postgres"));
 ```
 
-The configuration section binds to `PostgresStoreOptions`:
+The configuration section binds to `PostgresStoreOptions`. Store the connection string in user secrets, environment variables, or a vault — not in `appsettings.json`:
 
 ```json
 {
   "Postgres": {
-    "ConnectionString": "Host=localhost;Username=postgres;Password=secret;Database=eventuous;",
+    "ConnectionString": "Host=localhost;Username=postgres;Password=...;Database=eventuous;",
     "Schema": "eventuous",
     "InitializeDatabase": true
   }

@@ -13,7 +13,8 @@ Depends on `MongoDB.Driver` and `Eventuous.Subscriptions`.
 Register `IMongoDatabase` as a singleton. The projectors and checkpoint store both depend on it.
 
 ```csharp
-var settings = MongoClientSettings.FromConnectionString("mongodb://localhost:27017");
+// Do not hardcode credentials; use secret storage or environment variables
+var settings = MongoClientSettings.FromConnectionString(configuration["MongoDB:ConnectionString"]!);
 var database = new MongoClient(settings).GetDatabase("mydb");
 
 services.AddSingleton(database);

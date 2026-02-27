@@ -15,8 +15,9 @@ Both producer and subscription require a `RabbitMQ.Client.ConnectionFactory` reg
 ```csharp
 using RabbitMQ.Client;
 
+// Do not hardcode credentials; use secret storage or environment variables
 var connectionFactory = new ConnectionFactory {
-    Uri                    = new("amqp://guest:guest@localhost:5672"),
+    Uri                    = new(configuration["RabbitMq:ConnectionString"]!),
     DispatchConsumersAsync = true
 };
 services.AddSingleton(connectionFactory);

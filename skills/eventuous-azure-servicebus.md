@@ -144,7 +144,8 @@ public class ServiceBusMessageAttributeNames {
 
 ```csharp
 // Register the Azure SDK client
-services.AddSingleton(new ServiceBusClient("Endpoint=sb://..."));
+// Do not hardcode credentials; use secret storage or environment variables
+services.AddSingleton(new ServiceBusClient(configuration["AzureServiceBus:ConnectionString"]!));
 
 // Register producer
 services.AddProducer<ServiceBusProducer>(sp =>
