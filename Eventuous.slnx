@@ -144,6 +144,11 @@
     <Folder Name="/Relational/SqlServer/test/">
         <Project Path="src/SqlServer/test/Eventuous.Tests.SqlServer/Eventuous.Tests.SqlServer.csproj" />
     </Folder>
+    <Folder Name="/Relational/Sqlite/" />
+    <Folder Name="/Relational/Sqlite/src/">
+        <Project Path="src/Sqlite/src/Eventuous.Sqlite/Eventuous.Sqlite.csproj" />
+    </Folder>
+    <Folder Name="/Relational/Sqlite/test/" />
     <Folder Name="/Samples/" />
     <Folder Name="/Samples/KurrentDB/">
         <Project Path="samples/kurrentdb/Bookings.Domain/Bookings.Domain.csproj" />
