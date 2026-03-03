@@ -33,7 +33,15 @@ const config: Config = {
             docs: {
                 sidebarPath: require.resolve('./sidebars.js'),
                 editUrl: "https://github.com/eventuous/eventuous/docs/edit/master",
-                includeCurrentVersion: false
+                includeCurrentVersion: true,
+                lastVersion: '0.15',
+                versions: {
+                    current: {
+                        label: 'Latest',
+                        path: 'next',
+                        banner: 'unreleased',
+                    },
+                },
             },
             blog: {
                 showReadingTime: true,
