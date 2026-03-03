@@ -49,6 +49,7 @@
     <PackageVersion Include="Npgsql.DependencyInjection" Version="$(NpgsqlVersion)" />
     <PackageVersion Include="RabbitMQ.Client" Version="6.8.1" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.0.2" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="9.0.6" />
     <PackageVersion Include="NEST" Version="7.17.5" />
     <PackageVersion Include="Polly" Version="8.5.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />

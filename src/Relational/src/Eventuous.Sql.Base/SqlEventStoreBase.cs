@@ -18,8 +18,8 @@ namespace Eventuous.Sql.Base;
 /// <typeparam name="TTransaction">Database transaction type</typeparam>
 public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSerializer? serializer, IMetadataSerializer? metaSerializer) : IEventStore
     where TConnection : DbConnection where TTransaction : DbTransaction {
-    readonly IEventSerializer    _serializer     = serializer     ?? DefaultEventSerializer.Instance;
-    readonly IMetadataSerializer _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
+    protected IEventSerializer    Serializer     { get; } = serializer     ?? DefaultEventSerializer.Instance;
+    protected IMetadataSerializer MetaSerializer { get; } = metaSerializer ?? DefaultMetadataSerializer.Instance;
 
     const string ContentType = "application/json";
 
@@ -134,9 +134,9 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     [RequiresDynamicCode("Calls Eventuous.IEventSerializer.DeserializeEvent(ReadOnlySpan<Byte>, String, String)")]
     [RequiresUnreferencedCode("Calls Eventuous.IEventSerializer.DeserializeEvent(ReadOnlySpan<Byte>, String, String)")]
     StreamEvent ToStreamEvent(PersistedEvent evt) {
-        var deserialized = _serializer.DeserializeEvent(Encoding.UTF8.GetBytes(evt.JsonData), evt.MessageType, ContentType);
+        var deserialized = Serializer.DeserializeEvent(Encoding.UTF8.GetBytes(evt.JsonData), evt.MessageType, ContentType);
 
-        var meta = evt.JsonMetadata == null ? new() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
+        var meta = evt.JsonMetadata == null ? new() : MetaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
 
         return deserialized switch {
             SuccessfullyDeserialized success => AsStreamEvent(success.Payload),
@@ -149,7 +149,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
     /// <inheritdoc />
     [RequiresDynamicCode(Constants.DynamicSerializationMessage)]
     [RequiresUnreferencedCode(Constants.DynamicSerializationMessage)]
-    public async Task<AppendEventsResult> AppendEvents(
+    public virtual async Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,
             IReadOnlyCollection<NewStreamEvent> events,
@@ -182,8 +182,8 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         [RequiresUnreferencedCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
         [RequiresDynamicCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
         NewPersistedEvent Convert(NewStreamEvent evt) {
-            var data = _serializer.SerializeEvent(evt.Payload!);
-            var meta = _metaSerializer.Serialize(evt.Metadata);
+            var data = Serializer.SerializeEvent(evt.Payload!);
+            var meta = MetaSerializer.Serialize(evt.Metadata);
 
             return new(evt.Id, data.EventType, AsString(data.Payload), AsString(meta));
         }
