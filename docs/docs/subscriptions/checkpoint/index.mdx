@@ -91,10 +91,14 @@ The Postgres checkpoint store will create and use the `checkpoint` table, and th
 
 ```sql
 create table if not exists __schema__.checkpoints (
-    id varchar primary key, 
-    position bigint null 
+    id varchar primary key,
+    position bigint null
 );
 ```
+
+#### SQLite
+
+The SQLite checkpoint store uses a `{schema}_checkpoints` table (default: `eventuous_checkpoints`), with the subscription id as the row key. The table is created automatically when `initializeDatabase: true` is set.
 
 #### Other stores
 

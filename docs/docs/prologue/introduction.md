@@ -12,8 +12,8 @@ Eventuous is a (relatively) lightweight library, which allows building productio
 The base library has a set of abstractions, following Domain-Driven Design tactical patterns, like `Aggregate`.
 
 Additional components include:
-- [Aggregate persistence](../persistence) using [EventStoreDB](https://eventstore.com), PostgreSQL, and Microsoft SQL Server
-- [Real-time subscriptions](../subscriptions) for EventStoreDB, PostgreSQL, Microsoft SQL Server, RabbitMQ, and Google PubSub
+- [Aggregate persistence](../persistence) using [EventStoreDB](https://eventstore.com), PostgreSQL, Microsoft SQL Server, and SQLite
+- [Real-time subscriptions](../subscriptions) for EventStoreDB, PostgreSQL, Microsoft SQL Server, SQLite, RabbitMQ, and Google PubSub
 - [Command services](../application) and HTTP-based commands
 - Extensive observability, including Open Telemetry support
 - Integration with ASP.NET Core dependency injection, logging, and Web API
@@ -45,6 +45,7 @@ You can find all the NuGet packages by visiting the [Eventuous profile](https://
 | `Eventuous.EventStore`                | Support for [EventStoreDB](../infra/esdb) (event store, subscriptions, producers)                          |
 | `Eventuous.Postgresql`                | Support for [PostgreSQL](../infra/postgres) (event store, subscriptions, producers)                        |
 | `Eventuous.SqlServer`                 | Support for [Microsoft SQL Server](../infra/mssql) (event store, subscriptions, producers)                 |
+| `Eventuous.Sqlite`                    | Support for [SQLite](../infra/sqlite) (event store, subscriptions, projections)                            |
 | `Eventuous.RabbitMq`                  | Support for RabbitMQ (subscriptions, producers)                                                            |
 | `Eventuous.GooglePubSub`              | Support for Google PubSub (subscriptions, producers)                                                       |
 | `Eventuous.Kafka`                     | Support for Apache Kafka (producers)                                                                       |

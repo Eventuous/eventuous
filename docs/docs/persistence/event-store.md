@@ -37,7 +37,8 @@ Eventuous has several implementations of the event store:
  * [EventStoreDB](../infra/esdb)
  * [PostgreSQL](../infra/postgres)
  * [Microsoft SQL Server](../infra/mssql)
- * [Elasticsearch](../infra/elastic) 
+ * [SQLite](../infra/sqlite)
+ * [Elasticsearch](../infra/elastic)
 
 If you use one of the implementations provided, you won't need to know about the event store abstraction. It is required though if you want to implement it for your preferred database. 
 
