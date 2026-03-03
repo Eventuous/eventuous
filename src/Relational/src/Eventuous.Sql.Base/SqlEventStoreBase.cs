@@ -198,7 +198,7 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
 
         var result = await cmd.ExecuteScalarAsync(cancellationToken).NoContext();
 
-        return (bool)result!;
+        return Convert.ToBoolean(result);
     }
 
     /// <inheritdoc />

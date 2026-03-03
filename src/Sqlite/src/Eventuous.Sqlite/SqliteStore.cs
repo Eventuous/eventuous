@@ -117,7 +117,7 @@ public class SqliteStore : SqlEventStoreBase<SqliteConnection, SqliteTransaction
                 throw new AppendToStreamException(
                     stream,
                     new InvalidOperationException(
-                        $"Expected version {expectedVersion.Value} but current version is {currentVersion}"
+                        $"WrongExpectedVersion {expectedVersion.Value}, current version {currentVersion}"
                     )
                 );
             }

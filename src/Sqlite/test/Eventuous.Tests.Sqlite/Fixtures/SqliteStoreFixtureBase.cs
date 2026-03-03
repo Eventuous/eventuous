@@ -1,36 +1,30 @@
 using System.Text.RegularExpressions;
 using Bogus;
-using DotNet.Testcontainers.Containers;
 using Eventuous.TestHelpers;
 using Eventuous.TestHelpers.TUnit.Logging;
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using TUnit.Core.Interfaces;
 
-namespace Eventuous.Tests.Persistence.Base.Fixtures;
+namespace Eventuous.Tests.Sqlite.Fixtures;
 
-public interface IStartableFixture : IAsyncInitializer, IAsyncDisposable;
+public abstract partial class SqliteStoreFixtureBase(LogLevel logLevel = LogLevel.Information)
+    : StoreFixtureBase, IStartableFixture {
+    string _dbPath = null!;
 
-public abstract class StoreFixtureBase {
-    public           IEventStore     EventStore { get; protected set; } = null!;
-    protected static Faker           Faker      { get; }                        = new();
-    protected        ServiceProvider Provider   { get; set; }                   = null!;
-    protected        bool            AutoStart  { get; init; }                  = true;
-    public           TypeMapper      TypeMapper { get; }                        = new();
-}
+    public string ConnectionString { get; private set; } = null!;
 
-public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : StoreFixtureBase, IStartableFixture where TContainer : DockerContainer {
     public virtual async Task InitializeAsync() {
-        Container = CreateContainer();
-        await Container.StartAsync();
+        _dbPath = Path.Combine(Path.GetTempPath(), $"eventuous_test_{Guid.NewGuid():N}.db");
+        ConnectionString = $"Data Source={_dbPath}";
 
         var services = new ServiceCollection();
 
         Serializer = new DefaultEventSerializer(TestPrimitives.DefaultOptions, TypeMapper);
         services.AddSingleton(Serializer);
         services.AddSingleton(TypeMapper);
-        services.AddLogging(b => ConfigureLogging(b.ForTests(logLevel)).SetMinimumLevel(logLevel));
+        services.AddLogging(b => b.ForTests(logLevel).SetMinimumLevel(logLevel));
         SetupServices(services);
 
         Provider   = services.BuildServiceProvider();
@@ -50,8 +44,6 @@ public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : 
         }
     }
 
-    protected virtual ILoggingBuilder ConfigureLogging(ILoggingBuilder builder) => builder;
-
     public virtual async ValueTask DisposeAsync() {
         if (_disposed) return;
 
@@ -63,17 +55,22 @@ public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : 
         }
 
         await Provider.DisposeAsync();
-        await Container.DisposeAsync();
+
+        // Clean up temp database files
+        TryDeleteFile(_dbPath);
+        TryDeleteFile(_dbPath + "-wal");
+        TryDeleteFile(_dbPath + "-shm");
+
         GC.SuppressFinalize(this);
+    }
+
+    static void TryDeleteFile(string path) {
+        try { if (File.Exists(path)) File.Delete(path); } catch { /* best effort */ }
     }
 
     protected abstract void SetupServices(IServiceCollection services);
 
-    protected abstract TContainer CreateContainer();
-
     protected virtual void GetDependencies(IServiceProvider provider) { }
-
-    public TContainer Container { get; private set; } = null!;
 
     public IEventSerializer Serializer { get; private set; } = null!;
 
@@ -81,10 +78,6 @@ public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : 
 
     protected static string GetSchemaName() => NormaliseRegex().Replace(new Faker().Internet.UserName(), "").ToLower();
 
-#if NET8_0_OR_GREATER
     [GeneratedRegex(@"[\.\-\s]")]
     private static partial Regex NormaliseRegex();
-#else
-    static Regex NormaliseRegex() => new(@"[\.\-\s]");
-#endif
 }
