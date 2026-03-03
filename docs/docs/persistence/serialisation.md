@@ -122,6 +122,6 @@ DefaultEventSerializer.SetDefaultSerializer(serializer);
 
 In many cases you might want to store event metadata in addition to the event payload. Normally, you'd use the same way to serialize both the event payload and its metadata, but it's not always the case. For example, you might store your events in Protobuf, but keep metadata as JSON.
 
-Eventuous only uses the metadata serializer when the event store implementation, or a producer can store metadata as a byte array. For example, EventStoreDB supports that, but Google PubSub doesn't. Therefore, the event store and producer that use EventStoreDB will use the metadata serializer, but the Google PubSub producer will add metadata to events as headers, and won't use the metadata serializer.
+Eventuous only uses the metadata serializer when the event store implementation, or a producer can store metadata as a byte array. For example, KurrentDB supports that, but Google PubSub doesn't. Therefore, the event store and producer that use KurrentDB will use the metadata serializer, but the Google PubSub producer will add metadata to events as headers, and won't use the metadata serializer.
 
 For the metadata serializer the same principles apply as for the event serializer. Eventuous has a separate interface `IMetadataSerializer`, which has a default instance created on startup by implicitly. You can register a custom metadata serializer as a singleton or override the default one by calling `DefaultMetadataSerializer.SetDefaultSerializer` function. 

@@ -74,7 +74,7 @@ eventuous_service_errors_count_total{otel_scope_name="eventuous.application",ote
 When Eventuous diagnostics is enabled (by default), registering any persistence component like event reader, writer or store will wrap it in a diagnostic decorator. The decorator collects persistence metrics. The metrics are tagged by:
 
 - `operation`: the operation type (`append`, `read`, etc)
-- `component`: the persistence implementation type, for example `EsdbEventStore`
+- `component`: the persistence implementation type, for example `KurrentDBEventStore`
 
 Persistence operation duration is collected as a histogram with the name `eventuous_persistence_duration` with measure unit `milliseconds`. The number of errors that occurred when executing persistence operations is collected as a counter with the name `eventuous_persistence_errors_count`.
 
@@ -84,28 +84,28 @@ Here's an example of persistence metrics exported in Prometheus format:
 # TYPE eventuous_persistence_duration_milliseconds histogram
 # UNIT eventuous_persistence_duration_milliseconds milliseconds
 # HELP eventuous_persistence_duration_milliseconds Event store operation duration, milliseconds
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="0"} 0 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="5"} 0 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="10"} 0 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="25"} 0 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="50"} 0 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="75"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="100"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="250"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="500"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="750"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="1000"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="2500"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="5000"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="7500"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="10000"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append",le="+Inf"} 1 1725888603727
-eventuous_persistence_duration_milliseconds_sum{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append"} 66.672 1725888603727
-eventuous_persistence_duration_milliseconds_count{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="0"} 0 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="5"} 0 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="10"} 0 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="25"} 0 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="50"} 0 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="75"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="100"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="250"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="500"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="750"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="1000"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="2500"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="5000"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="7500"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="10000"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_bucket{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append",le="+Inf"} 1 1725888603727
+eventuous_persistence_duration_milliseconds_sum{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append"} 66.672 1725888603727
+eventuous_persistence_duration_milliseconds_count{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append"} 1 1725888603727
 # TYPE eventuous_persistence_errors_count_total counter
 # UNIT eventuous_persistence_errors_count_total errors
 # HELP eventuous_persistence_errors_count_total Number of failed event store operations
-eventuous_persistence_errors_count_total{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="EsdbEventStore",operation="append"} 1 1725888603727
+eventuous_persistence_errors_count_total{otel_scope_name="eventuous.persistence",otel_scope_version="0.15.0.0",component="KurrentDBEventStore",operation="append"} 1 1725888603727
 ```
 
 ### Subscription metrics

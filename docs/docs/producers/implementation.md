@@ -58,10 +58,10 @@ As base producer is responsible for tracing, it creates the produce span and set
 
 Eventuous provides several extensions to the `IServiceCollection` interface to register producers. You can provide a pre-made producer instance, a function to resolve the producer from the `IServiceProvider`, or simply the producer type if its dependencies can be resolved automatically.
 
-For instance, if you have already registered the `EventStoreClient` instance, you can register the `EventStoreProducer` as follows:
+For instance, if you have already registered the `KurrentDBClient` instance, you can register the `KurrentDBProducer` as follows:
 
 ```csharp title="Program.cs"
-builder.Services.AddProducer<EventStoreProducer>();
+builder.Services.AddProducer<KurrentDBProducer>();
 ```
 
 If a producer requires some work to be done before it is ready, it should implement the `IHostedProducer` interface, allowing it to perform necessary startup tasks in its `StartAsync` method. When using any of the `AddProducer` extensions, if the producer implements `IHostedProducer`, it will be registered as such.

@@ -1,25 +1,25 @@
 ---
-title: "EventStoreDB"
-description: "EventStoreDB is a database for event-sourced applications"
+title: "KurrentDB"
+description: "KurrentDB is a database for event-sourced applications"
 sidebar_position: 1
 ---
 
-Eventuous uses [EventStoreDB][1] as the default event store. It's a great product, and we're happy to provide first-class support for it. It's also a great product for learning about Event Sourcing and CQRS.
+Eventuous uses [KurrentDB][1] as the default event store. It's a great product, and we're happy to provide first-class support for it. It's also a great product for learning about Event Sourcing and CQRS.
 
-Below, you can find Eventuous components that are implemented for EventStoreDB. 
+Below, you can find Eventuous components that are implemented for KurrentDB.
 
 :::tip
-Remember to check [Event Store Cloud](https://www.eventstore.com/event-store-cloud).
+Remember to check [Kurrent Cloud](https://kurrent.io/cloud).
 :::
 
 ## Events persistence
 
-The `EsdbEventStore` is an implementation of `IEventStore` interface. It uses the EventStoreDB gRPC client, so the legacy TCP protocol isn't supported. Therefore, Eventuous only works with EventStoreDB 20+, which has gRPC support.
+The `KurrentDBEventStore` is an implementation of `IEventStore` interface. It uses the KurrentDB gRPC client, so the legacy TCP protocol isn't supported. Therefore, Eventuous only works with KurrentDB 20+, which has gRPC support.
 
-The easiest way to use it is to register it in the DI container. As `EsdbEventStore` needs an EventStoreDB client as a dependency, you'd need to register the client first. The client package has DI registration extensions that allow you to register the client using a single line of code:
+The easiest way to use it is to register it in the DI container. As `KurrentDBEventStore` needs a KurrentDB client as a dependency, you'd need to register the client first. The client package has DI registration extensions that allow you to register the client using a single line of code:
 
 ```csharp
-services.AddEventStoreClient(connectionString);
+services.AddKurrentDBClient(connectionString);
 ```
 
 The connection string usually comes from the application configuration. When running locally using Docker, you might use a connection string like:
@@ -28,19 +28,19 @@ The connection string usually comes from the application configuration. When run
 var connectionString = "esdb://localhost:2113?tls=false";
 ```
 
-When running in production, you'd use a secure connection string, which contains a username and password. You can find more information about connection strings in the [EventStoreDB documentation][3].
+When running in production, you'd use a secure connection string, which contains a username and password. You can find more information about connection strings in the [KurrentDB documentation][3].
 
-Further, you need to tell Eventuous to use the `EsdbEventStore` for its aggregate store. We have a simple extension that allows you to do that:
+Further, you need to tell Eventuous to use the `KurrentDBEventStore` for its aggregate store. We have a simple extension that allows you to do that:
 
 ```csharp
-services.AddEventStore<EsdbEventStore>();
+services.AddEventStore<KurrentDBEventStore>();
 ```
 
-When that's done, Eventuous would persist aggregates using EventStoreDB when you use the [command service](../../application/app-service).
+When that's done, Eventuous would persist aggregates using KurrentDB when you use the [command service](../../application/app-service).
 
 ## Subscriptions
 
-EventStoreDB supports multiple [subscription](../../subscriptions/subs-concept) types, and all of them are supported by Eventuous. The main choice you'd need to make is to use [catch-up][4] or [persistent subscription][5].
+KurrentDB supports multiple [subscription](../../subscriptions/subs-concept) types, and all of them are supported by Eventuous. The main choice you'd need to make is to use [catch-up][4] or [persistent subscription][5].
 
 ### All stream subscription
 
@@ -69,7 +69,7 @@ Subscription options for `AllStreamSubscription` are defined in `AllStreamSubscr
 | `ThrowOnError`       | If `true`, an exception will be thrown if the subscription fails, otherwise the subscription continues to run. Default is `false`.                                                                                                                                 |
 | `EventSerilizer`     | Serializer for events, if `null` the default serializer will be used.                                                                                                                                                                                              |                                                                                                                                                                  
 | `MetadataSerilizer`  | Serializer for metadata, if `null` the default serializer will be used.                                                                                                                                                                                            |                                                                                
-| `Credentials`        | EventStoreDB user credentials. If not specified, the credentials specified in the `EventStoreClientSettings` will be used.                                                                                                                                         |                                                                              
+| `Credentials`        | KurrentDB user credentials. If not specified, the credentials specified in the `KurrentDBClientSettings` will be used.                                                                                                                                         |                                                                              
 | `ResolveLinkTos`     | If `true`, the subscription will automatically resolve the event link to the event that caused the event. Default is `false`.                                                                                                                                      |
 | `ConcurrencyLimit`   | Maximum number of events to be processed in parallel. Default is `1`.                                                                                                                                                                                              |                                                                                             
 | `EventFilter`        | Filter for events, if `null`, the subscription will filter out system events.                                                                                                                                                                                      |                                                                                                                                                                         
@@ -128,7 +128,7 @@ Although subscribing to `$all` using [`AllStreamSubscription`](#all-stream-subsc
 
 For example, you can subscribe to the `$ce-Booking` stream to project all events for all the aggregates of type `Booking`, and create some representation of the state of the aggregate in a queryable store.
 
-Another scenario is to subscribe to an integration stream, when you use EventStoreDB as a backend for a messaging system.
+Another scenario is to subscribe to an integration stream, when you use KurrentDB as a backend for a messaging system.
 
 For that purpose you can use the `StreamSubscription` class.
 
@@ -155,7 +155,7 @@ Subscription options for `StreamSubscription` are defined in `StreamSubscription
 | `ThrowOnError`       | If `true`, an exception will be thrown if the subscription fails, otherwise the subscription continues to run. Default is `false`. |
 | `EventSerilizer`     | Serializer for events, if `null` the default serializer will be used.                                                              |
 | `MetadataSerilizer`  | Serializer for metadata, if `null` the default serializer will be used.                                                            |
-| `Credentials`        | EventStoreDB user credentials. If not specified, the credentials specified in the `EventStoreClientSettings` will be used.         |
+| `Credentials`        | KurrentDB user credentials. If not specified, the credentials specified in the `KurrentDBClientSettings` will be used.         |
 | `ResolveLinkTos`     | If `true`, the subscription will automatically resolve the event link to the event that caused the event. Default is `false`.      |
 | `IgnoreSystemEvents` | Set to true to ignore system events. Default is `true`.                                                                            |
 | `ConcurrencyLimit`   | Maximum number of events to be processed in parallel. Default is `1`.                                                              |
@@ -183,16 +183,16 @@ Read more about concurrent event processing on the [all stream subscription](#co
 ### Persistent subscriptions
 
 :::caution Ordered events
-EventStoreDB persistent subscriptions do not guarantee ordered event processing. Therefore, we only recommend using them for integration purposes (reactions).
+KurrentDB persistent subscriptions do not guarantee ordered event processing. Therefore, we only recommend using them for integration purposes (reactions).
 :::
 
 :::note
-Persistent subscription to $all stream is only supported from EventStoreDB version 21.10.0.
+Persistent subscription to $all stream is only supported from KurrentDB version 21.10.0.
 :::
 
 Unlike catch-up subscriptions, persistent subscriptions are fully managed by the database server. It is also possible to have multiple consumers for the same subscription, and the events will be distributed between them. The server also manages retries when a consumer fails to acknowledge the event. Because of the retries, batched delivery, and multiple consumers, persistent subscriptions don't guarantee ordered event processing.
 
-Read more about persistent subscriptions in the [EventStoreDB documentation](https://developers.eventstore.com/server/v21.10/persistent-subscriptions.html).
+Read more about persistent subscriptions in the [KurrentDB documentation](https://docs.kurrent.io/server/latest/features/persistent-subscriptions.html).
 
 There are some operations that must be completed before a persistent subscription starts working, In particular, the consumer group must be created on the server before a consumer can start consuming events. Eventuous implicitly creates a consumer group if necessary. The consumer group name is the same as the subscription id.
 
@@ -222,13 +222,13 @@ There's no need to use a checkpoint store as persistent subscription checkpoint 
 
 ## Producer
 
-In a prototype or small-scale production application, you can use EventStoreDB as a message broker. In that case, you can use the `EventStoreProducer` to publish events to the database. Unlike the aggregate store, [producers](../../producers) allow publishing events that aren't necessarily domain events.
+In a prototype or small-scale production application, you can use KurrentDB as a message broker. In that case, you can use the `KurrentDBProducer` to publish events to the database. Unlike the aggregate store, [producers](../../producers) allow publishing events that aren't necessarily domain events.
 
-You can then register the `EventStoreProducer` in the DI container. As the producer needs the `EventStoreClient` or `EventStoreClientSettings` as a dependency, you need to register those as well.
+You can then register the `KurrentDBProducer` in the DI container. As the producer needs the `KurrentDBClient` or `KurrentDBClientSettings` as a dependency, you need to register those as well.
 
 ```csharp
-builder.Services.AddEventStoreClient("esdb://localhost:2113?tls=false");
-builder.Services.AddEventProducer<EventStoreProducer>();
+builder.Services.AddKurrentDBClient("esdb://localhost:2113?tls=false");
+builder.Services.AddEventProducer<KurrentDBProducer>();
 ```
 
 To produce an event, the producer needs a stream name, a message, and (optionally) the message metadata:
@@ -248,8 +248,8 @@ var messages = events.Select(x => new ProducedMessage(x, new Metadata()));
 await producer.Produce("test-stream", messages);
 ```
 
-[1]: https://eventstore.com
-[2]: https://www.eventstore.com/event-store-cloud
-[3]: https://developers.eventstore.com/clients/grpc/
-[4]: https://developers.eventstore.com/clients/grpc/subscriptions.html
-[5]: https://developers.eventstore.com/clients/grpc/persistent-subscriptions.html
+[1]: https://kurrent.io
+[2]: https://kurrent.io/cloud
+[3]: https://docs.kurrent.io/clients/grpc/
+[4]: https://docs.kurrent.io/clients/grpc/subscriptions.html
+[5]: https://docs.kurrent.io/clients/grpc/persistent-subscriptions.html

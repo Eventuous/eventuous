@@ -111,7 +111,7 @@ If the operation was not successful, the command service will return an instance
 
 ### Bootstrap
 
-If you registered the `EsdbEventStore` and the `AggregateStore` in your `Startup` as described on the [Aggregate store](../persistence/aggregate-store) page, you can also register the command service:
+If you registered the `KurrentDBEventStore` and the `AggregateStore` in your `Startup` as described on the [Aggregate store](../persistence/aggregate-store) page, you can also register the command service:
 
 ```csharp title="Program.cs"
 builder.Services.AddCommandService<BookingCommandService, BookingState>();

@@ -61,11 +61,11 @@ record GatewayMessage<TProduceOptions>(
 
 There's no other component to implement for getting a working gateway. You need to register a gateway using one subscription, one producer, and one transformation function or class.
 
-To register a gateway, use one of the `AddGateway` methods. For example, the sample application uses this gateway registration for publishing integration events to EventStoreDB integration stream:
+To register a gateway, use one of the `AddGateway` methods. For example, the sample application uses this gateway registration for publishing integration events to KurrentDB integration stream:
 
 ```csharp
 services
-    .AddGateway<AllStreamSubscription, AllStreamSubscriptionOptions, EventStoreProducer>(
+    .AddGateway<AllStreamSubscription, AllStreamSubscriptionOptions, KurrentDBProducer>(
         "IntegrationSubscription",
         PaymentsGateway.Transform
     );

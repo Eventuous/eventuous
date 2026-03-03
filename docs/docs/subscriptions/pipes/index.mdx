@@ -25,7 +25,7 @@ Eventuous consume pipe can be customised by adding filters to it, but normally y
     }}
 />
 
-Some subscriptions conditionally or unconditionally add filters to the pipe, when they detect the default pipe. For example, EventStoreDB catch-up subscription might add the concurrent filter and partitioning filter, and RabbitMQ subscription uses the concurrent filter.
+Some subscriptions conditionally or unconditionally add filters to the pipe, when they detect the default pipe. For example, KurrentDB catch-up subscription might add the concurrent filter and partitioning filter, and RabbitMQ subscription uses the concurrent filter.
 
 ## Available filters
 
@@ -71,7 +71,7 @@ The tracing filter gets added automatically when Eventuous diagnostics is enable
 
 When using the concurrent filter, the pipe gets separated in two parts: before the concurrent filter and after it. The filter itself creates a channel of a given size (100 by default), where it puts all the messages in order. Then, the pipeline returns to the subscription as if the message was already consumed. A parallel process fetches messages from the channel continuously, and sends them to the second part of the pipe where messages actually gets consumed.
 
-Because of such a split, the result returned to the subscription doesn't contain the actual handling result. Therefore, the concurrent filter can only be used in combination with `DelayedAckConsumeContext`. It's the responsibility of a subscription to create such a context type, so only some subscription types support using the concurrent filter. This context type has two additional functions to Ack (`Acknowledge` function) or Nack (`Fail` function) each message. The subscription provides specific implementations of those functions. For example, an EventStoreDB catch-up subscription would commit the checkpoint when the event is acknowledged. The filter calls these functions itself, based on the result returned by the second part of the pipe (delayed consume).
+Because of such a split, the result returned to the subscription doesn't contain the actual handling result. Therefore, the concurrent filter can only be used in combination with `DelayedAckConsumeContext`. It's the responsibility of a subscription to create such a context type, so only some subscription types support using the concurrent filter. This context type has two additional functions to Ack (`Acknowledge` function) or Nack (`Fail` function) each message. The subscription provides specific implementations of those functions. For example, a KurrentDB catch-up subscription would commit the checkpoint when the event is acknowledged. The filter calls these functions itself, based on the result returned by the second part of the pipe (delayed consume).
 
 <ThemedImage
     alt="Pipe with concurrent filter"

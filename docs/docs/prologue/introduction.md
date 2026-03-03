@@ -12,12 +12,12 @@ Eventuous is a (relatively) lightweight library, which allows building productio
 The base library has a set of abstractions, following Domain-Driven Design tactical patterns, like `Aggregate`.
 
 Additional components include:
-- [Aggregate persistence](../persistence) using [EventStoreDB](https://eventstore.com), PostgreSQL, Microsoft SQL Server, and SQLite
-- [Real-time subscriptions](../subscriptions) for EventStoreDB, PostgreSQL, Microsoft SQL Server, SQLite, RabbitMQ, and Google PubSub
+- [Aggregate persistence](../persistence) using [KurrentDB](https://kurrent.io), PostgreSQL, Microsoft SQL Server, and SQLite
+- [Real-time subscriptions](../subscriptions) for KurrentDB, PostgreSQL, Microsoft SQL Server, SQLite, RabbitMQ, and Google PubSub
 - [Command services](../application) and HTTP-based commands
 - Extensive observability, including Open Telemetry support
 - Integration with ASP.NET Core dependency injection, logging, and Web API
-- [Producers](../producers) for EventStoreDB, RabbitMQ, Google PubSub, and Apache Kafka
+- [Producers](../producers) for KurrentDB, RabbitMQ, Google PubSub, and Apache Kafka
 - [Read model](../read-models) projections for MongoDB
 - [Gateway](../gateway) for producing events to other services (Event-Driven Architecture support)
 
@@ -42,7 +42,7 @@ You can find all the NuGet packages by visiting the [Eventuous profile](https://
 | `Eventuous.Diagnostics.OpenTelemetry` | Diagnostics integration with [OpenTelemetry](https://opentelemetry.io/)                                    |
 | `Eventuous.Diagnostics.Logging`       | Eventuous internal logs adapter for ASP.NET Core logging                                                   |
 | `Eventuous.Gateway`                   | Eventuous [gateway](../gateway) for connecting subscriptions with producers                                |
-| `Eventuous.EventStore`                | Support for [EventStoreDB](../infra/esdb) (event store, subscriptions, producers)                          |
+| `Eventuous.KurrentDB`                 | Support for [KurrentDB](../infra/esdb) (event store, subscriptions, producers)                             |
 | `Eventuous.Postgresql`                | Support for [PostgreSQL](../infra/postgres) (event store, subscriptions, producers)                        |
 | `Eventuous.SqlServer`                 | Support for [Microsoft SQL Server](../infra/mssql) (event store, subscriptions, producers)                 |
 | `Eventuous.Sqlite`                    | Support for [SQLite](../infra/sqlite) (event store, subscriptions, projections)                            |

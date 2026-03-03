@@ -35,7 +35,7 @@ Eventuous collects two types of metrics for subscriptions:
 
 For the subscription gap, Eventuous collects the time and count of the gap between the last event in the stream, which the subscription listens to, and the event, which is currently being processed.
 
-Keep in mind that due to the limitation of EventStoreDB, the gap event count is not accurate when subscribing to `$all` stream. It's because the `$all` stream position is the commit position of the event in the global log, not the position of the event in the stream. Unfortunately, as per today, it is impossible to translate the commit position gap to the number of events.
+Keep in mind that due to the limitation of KurrentDB, the gap event count is not accurate when subscribing to `$all` stream. It's because the `$all` stream position is the commit position of the event in the global log, not the position of the event in the stream. Unfortunately, as per today, it is impossible to translate the commit position gap to the number of events.
 
 Here is an example of the subscription gap metric exported to Prometheus:
 

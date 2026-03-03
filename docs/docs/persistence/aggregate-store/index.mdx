@@ -26,17 +26,17 @@ The `AggregateStore` constructor needs two arguments:
 
 Our [`CommandService`](../../application/app-service.md) uses the `AggregateStore` in its command-handling flow.
 
-## Using EventStoreDB
+## Using KurrentDB
 
-Eventuous supports [EventStoreDB](https://eventstore.com) out of the box, but only v20+ with gRPC protocol.
+Eventuous supports [KurrentDB](https://kurrent.io) out of the box, but only v20+ with gRPC protocol.
 
 Using this pre-made event persistence is easy. You can register the necessary dependencies in your startup code:
 
 ```csharp title="Program.cs"
-var esdbSettings = EventStoreClientSettings.Create(connectionString);
+var esdbSettings = KurrentDBClientSettings.Create(connectionString);
 builder.Services
-    .AddSingleton(new EventStoreClient(esdbSettings))
-    .AddAggregateStore<EsdbEventStore>();
+    .AddSingleton(new KurrentDBClient(esdbSettings))
+    .AddAggregateStore<KurrentDBEventStore>();
 ```
 
 The `AddAggregateStore` extension is available in the `Eventuous.AspNetCore` NuGet package.
@@ -77,7 +77,7 @@ As the connector replicates all the events, there's no need to perform an explic
 
 ### Delete events from the hot store
 
-Then, to ensure that old events get removed from the hot store, you need to do so on the infrastructure level. For example, you can use the EventStoreDB feature to define the [stream TTL](https://developers.eventstore.com/server/v21.10/streams.html#stream-metadata) (time to live), after which the events are removed from the hot store during the [scavenge](https://developers.eventstore.com/server/v21.10/operations.html#scavenging-events) process.
+Then, to ensure that old events get removed from the hot store, you need to do so on the infrastructure level. For example, you can use the KurrentDB feature to define the [stream TTL](https://docs.kurrent.io/server/latest/features/streams.html#stream-metadata) (time to live), after which the events are removed from the hot store during the [scavenge](https://docs.kurrent.io/server/latest/operations/scavenge.html) process.
 
 > Right now, there's no built-in support for setting the stream metadata using Eventuous, but it is [being built](https://github.com/Eventuous/eventuous/issues/85).
 
@@ -85,14 +85,14 @@ When all the bits and pieces are in place, old events will be disappearing from 
 
 ### Aggregate store with archive
 
-Now, we need to tell Eventuous to use the archive store. It's done using the `AggregateStore<T>` class, where `T` is the archive event reader. To register an aggregate store that uses EventStoreDB as the hot store and Elastic for archive, use the following code:
+Now, we need to tell Eventuous to use the archive store. It's done using the `AggregateStore<T>` class, where `T` is the archive event reader. To register an aggregate store that uses KurrentDB as the hot store and Elastic for archive, use the following code:
 
 > Elastic is a particularly good candidate for the archive store because it has multi-tier architecture as a native feature, and you can easily set up a cluster with warm, cold, and frozen tiers, so that you pay less to keep the historical events.
 
 ```csharp title="Program.cs"
-// register EventStoreClient
+// register KurrentDBClient
 // register IElasticClient
-builder.Services.AddAggregateStore<EsdbEventStore, ElasticEventStore>();
+builder.Services.AddAggregateStore<KurrentDBEventStore, ElasticEventStore>();
 ```
 
 The Elastic event reader needs to have a pre-configured index. You'd need to call the following from the bootstrap code:
