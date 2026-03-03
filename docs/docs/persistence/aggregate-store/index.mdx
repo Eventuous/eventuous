@@ -24,7 +24,7 @@ The `AggregateStore` constructor needs two arguments:
 - [Event store](../event-store.md) (`IEventStore`)
 - [Event serializer](../serialisation.md) (`IEventSerializer`)
 
-Our [`CommandService`](../../application/app-service.md) uses the `AggregateStore` in its command-handling flow.
+Our [`CommandService`](../../application/app-service.md) uses the `IEventStore` in its command-handling flow.
 
 ## Using KurrentDB
 
@@ -33,13 +33,9 @@ Eventuous supports [KurrentDB](https://kurrent.io) out of the box, but only v20+
 Using this pre-made event persistence is easy. You can register the necessary dependencies in your startup code:
 
 ```csharp title="Program.cs"
-var esdbSettings = KurrentDBClientSettings.Create(connectionString);
-builder.Services
-    .AddSingleton(new KurrentDBClient(esdbSettings))
-    .AddAggregateStore<KurrentDBEventStore>();
+builder.Services.AddKurrentDBClient(connectionString);
+builder.Services.AddEventStore<KurrentDBEventStore>();
 ```
-
-The `AddAggregateStore` extension is available in the `Eventuous.AspNetCore` NuGet package.
 
 :::note
 Make sure to read about [events serialisation](../serialisation.md).

@@ -74,7 +74,7 @@ eventuous_service_errors_count_total{otel_scope_name="eventuous.application",ote
 When Eventuous diagnostics is enabled (by default), registering any persistence component like event reader, writer or store will wrap it in a diagnostic decorator. The decorator collects persistence metrics. The metrics are tagged by:
 
 - `operation`: the operation type (`append`, `read`, etc)
-- `component`: the persistence implementation type, for example `KurrentDBEventStore`
+- `component`: the persistence implementation type (derived from the concrete class name at runtime), for example `KurrentDBEventStore`
 
 Persistence operation duration is collected as a histogram with the name `eventuous_persistence_duration` with measure unit `milliseconds`. The number of errors that occurred when executing persistence operations is collected as a counter with the name `eventuous_persistence_errors_count`.
 

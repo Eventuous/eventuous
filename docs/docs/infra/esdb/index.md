@@ -228,7 +228,7 @@ You can then register the `KurrentDBProducer` in the DI container. As the produc
 
 ```csharp
 builder.Services.AddKurrentDBClient("esdb://localhost:2113?tls=false");
-builder.Services.AddEventProducer<KurrentDBProducer>();
+builder.Services.AddProducer<KurrentDBProducer>();
 ```
 
 To produce an event, the producer needs a stream name, a message, and (optionally) the message metadata:
