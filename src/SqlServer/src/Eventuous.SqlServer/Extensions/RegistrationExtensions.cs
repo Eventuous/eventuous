@@ -3,6 +3,7 @@
 
 using Eventuous.SqlServer;
 using Eventuous.SqlServer.Projections;
+using Eventuous.SqlServer.Snapshots;
 using Eventuous.SqlServer.Subscriptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -84,5 +85,55 @@ public static class ServiceCollectionExtensions {
                     return new(Ensure.NotNull(connectionString), schema, loggerFactory);
                 }
             );
+
+        /// <summary>
+        /// Adds SQL Server snapshot store and the necessary schema to the DI container.
+        /// </summary>
+        /// <param name="connectionString">Connection string</param>
+        /// <param name="schema">Schema name</param>
+        /// <param name="initializeDatabase">Set to true if you want the schema to be created on startup</param>
+        /// <returns>Services collection</returns>
+        // ReSharper disable once UnusedMethodReturnValue.Global
+        public IServiceCollection AddSqlServerSnapshotStore(
+                string connectionString,
+                string schema             = SnapshotSchema.DefaultSchema,
+                bool   initializeDatabase = false
+            ) {
+            var options = new SqlServerSnapshotStoreOptions {
+                Schema             = schema,
+                ConnectionString   = connectionString,
+                InitializeDatabase = initializeDatabase
+            };
+
+            services.AddSingleton(options);
+            services.AddSingleton<SqlServerSnapshotStore>(sp => {
+                var snapshotOptions = sp.GetRequiredService<SqlServerSnapshotStoreOptions>();
+                return new SqlServerSnapshotStore(snapshotOptions.ConnectionString, snapshotOptions, sp.GetService<IEventSerializer>());
+            });
+            services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<SqlServerSnapshotStore>());
+            services.AddHostedService<SnapshotSchemaInitializer>();
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds SQL Server snapshot store and the necessary schema to the DI container using the configuration.
+        /// </summary>
+        /// <param name="config">Configuration section for SQL Server snapshot store options</param>
+        /// <returns>Services collection</returns>
+        // ReSharper disable once UnusedMethodReturnValue.Global
+        public IServiceCollection AddSqlServerSnapshotStore(IConfiguration config) {
+            services.Configure<SqlServerSnapshotStoreOptions>(config);
+            services.AddSingleton<SqlServerSnapshotStoreOptions>(sp => sp.GetRequiredService<IOptions<SqlServerSnapshotStoreOptions>>().Value);
+
+            services.AddSingleton<SqlServerSnapshotStore>(sp => {
+                var options = sp.GetRequiredService<SqlServerSnapshotStoreOptions>();
+                return new SqlServerSnapshotStore(options.ConnectionString, options, sp.GetService<IEventSerializer>());
+            });
+            services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<SqlServerSnapshotStore>());
+            services.AddHostedService<SnapshotSchemaInitializer>();
+
+            return services;
+        }
     }
 }

@@ -22,7 +22,13 @@
     <TUnitVersion>0.77.3</TUnitVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting.MongoDB" Version="13.0.2" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.0.2" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.0.2" />
+    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.0.2" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.KurrentDB" Version="13.0.0" />
+    <PackageVersion Include="CommunityToolkit.Aspire.KurrentDB" Version="13.0.0" />
     <PackageVersion Include="FluentValidation" Version="12.0.0" />
     <PackageVersion Include="IsExternalInit" Version="1.0.3" />
     <PackageVersion Include="KurrentDB.Client" Version="1.3.0" />

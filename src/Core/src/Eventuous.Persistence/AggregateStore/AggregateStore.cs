@@ -43,7 +43,7 @@ public class AggregateStore : IAggregateStore {
     [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<T> Load<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TState>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate<TState> where TState : State<TState>, new()
-        => _eventReader.LoadAggregate<T, TState>(streamName, true, _factoryRegistry, cancellationToken);
+        => _eventReader.LoadAggregate<T, TState>(streamName, true, _factoryRegistry, null, cancellationToken);
 
     /// <inheritdoc/>
     [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
@@ -51,5 +51,5 @@ public class AggregateStore : IAggregateStore {
     [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<T> LoadOrNew<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TState>(StreamName streamName, CancellationToken cancellationToken)
         where T : Aggregate<TState> where TState : State<TState>, new()
-        => _eventReader.LoadAggregate<T, TState>(streamName, false, _factoryRegistry, cancellationToken);
+        => _eventReader.LoadAggregate<T, TState>(streamName, false, _factoryRegistry, null, cancellationToken);
 }

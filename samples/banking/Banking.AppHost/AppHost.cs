@@ -1,0 +1,37 @@
+var builder = DistributedApplication.CreateBuilder(args);
+
+var kurrentdb = builder.AddKurrentDB("eventuous-kurrentdb", 2113)
+    .WithEnvironment("EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP", "true");
+
+var postgres = builder.AddPostgres("eventuous-postgres")
+    .WithPgWeb();
+
+var postgresSnapshotsDb = postgres.AddDatabase("snapshots");
+
+var sqlServer = builder.AddSqlServer("eventuous-sqlserver");
+var sqlServerSnapshotsDb = sqlServer.AddDatabase("eventuous-sqlserver-snapshotsdb", "snapshots");
+
+var mongodb = builder.AddMongoDB("eventuous-mongodb")
+    .WithMongoExpress();
+
+var mongodbSnapshotsDb = mongodb.AddDatabase("eventuous-mongodb-snapshotsdb", "snapshots");
+
+var redis = builder.AddRedis("eventuous-redis")
+    .WithRedisInsight();
+
+builder
+    .AddProject<Projects.Banking_Api>("banking-api")
+    .WithReference(kurrentdb, "kurrentdb")
+    .WaitFor(kurrentdb)
+    .WithReference(postgresSnapshotsDb, "postgresSnapshotsDb")
+    .WaitFor(postgresSnapshotsDb)
+    .WithReference(sqlServerSnapshotsDb, "sqlServerSnapshotsDb")
+    .WaitFor(sqlServerSnapshotsDb)
+    .WithReference(mongodbSnapshotsDb, "mongoDbSnapshotsDb")
+    .WaitFor(mongodbSnapshotsDb)
+    .WithReference(redis, "redis")
+    .WaitFor(redis);
+
+builder
+    .Build()
+    .Run();

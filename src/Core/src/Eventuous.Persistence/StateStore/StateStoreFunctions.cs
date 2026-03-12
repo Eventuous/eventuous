@@ -13,6 +13,7 @@ public static class StateStoreFunctions {
         /// </summary>
         /// <param name="streamName">Name of the stream to read from</param>
         /// <param name="failIfNotFound">When set to false and there's no stream, the function will return an empty instance.</param>
+        /// <param name="snapshotStore">Optional snapshot store for SeparateStore strategy</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <typeparam name="TState">State object type</typeparam>
         /// <returns>Instance of <seealso cref="FoldedEventStream{T}"/> containing events and folded state</returns>
@@ -22,11 +23,76 @@ public static class StateStoreFunctions {
         public async Task<FoldedEventStream<TState>> LoadState<TState>(
                 StreamName        streamName,
                 bool              failIfNotFound    = true,
+                ISnapshotStore?   snapshotStore     = null,
                 CancellationToken cancellationToken = default
             ) where TState : State<TState>, new() {
             try {
-                var streamEvents    = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
-                var events          = streamEvents.Select(x => x.Payload!).ToArray();
+                StreamEvent[] streamEvents;
+                var snapshotTypes = SnapshotTypeMap.GetSnapshotTypes<TState>();
+                var storageStrategy = SnapshotTypeMap.GetStorageStrategy<TState>();
+
+                if (snapshotTypes.Count != 0) {
+                    switch (storageStrategy) {
+                        case SnapshotStorageStrategy.SameStream:
+                            streamEvents = await reader.ReadStreamAfterSnapshot(streamName, snapshotTypes, failIfNotFound, cancellationToken);
+                            break;
+
+                        case SnapshotStorageStrategy.SeparateStream: {
+                            var snapshotStreamName = StreamName.ForSnapshot(streamName);
+                            var snapshotEvents = await reader.ReadEventsBackwards(snapshotStreamName, StreamReadPosition.End, 1, false, cancellationToken).NoContext();
+
+                            StreamEvent? snapshotEvent = null;
+
+                            if (snapshotEvents.Length > 0) {
+                                var candidate = snapshotEvents[0];
+                                if (candidate.Payload != null && snapshotTypes.Contains(candidate.Payload.GetType())) {
+                                    snapshotEvent = candidate with {
+                                        Revision = long.Parse(candidate.Metadata.GetString("revision")!)
+                                    };
+                                }
+                            }
+
+                            if (snapshotEvent.HasValue) {
+                                var eventsAfterSnapshot = await reader.ReadStream(streamName, new(snapshotEvent.Value.Revision + 1), failIfNotFound, cancellationToken).NoContext();
+                                streamEvents = [snapshotEvent.Value, ..eventsAfterSnapshot];
+                            } else {
+                                streamEvents = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                            }
+                            break;
+                        }
+
+                        case SnapshotStorageStrategy.SeparateStore: {
+                            if (snapshotStore == null) {
+                                throw new InvalidOperationException($"Snapshot store is required for {nameof(SnapshotStorageStrategy.SeparateStore)} strategy");
+                            }
+
+                            var snapshot = await snapshotStore.Read(streamName, cancellationToken).NoContext();
+
+                            if (snapshot != null) {
+                                var snapshotEvent = new StreamEvent(
+                                    Guid.Empty,
+                                    snapshot.Payload,
+                                    [],
+                                    string.Empty,
+                                    snapshot.Revision
+                                );
+                                var eventsAfterSnapshot = await reader.ReadStream(streamName, new(snapshot.Revision + 1), failIfNotFound, cancellationToken).NoContext();
+                                streamEvents = [snapshotEvent, ..eventsAfterSnapshot];
+                            } else {
+                                streamEvents = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                            }
+                            break;
+                        }
+
+                        default:
+                            streamEvents = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                            break;
+                    }
+                } else {
+                    streamEvents = await reader.ReadStream(streamName, StreamReadPosition.Start, failIfNotFound, cancellationToken).NoContext();
+                }
+
+                var events = streamEvents.Select(x => x.Payload!).ToArray();
                 var expectedVersion = events.Length == 0 ? ExpectedStreamVersion.NoStream : new(streamEvents.Last().Revision);
 
                 return (new(streamName, expectedVersion, events));
@@ -44,6 +110,7 @@ public static class StateStoreFunctions {
         /// </summary>
         /// <param name="id">State identity value</param>
         /// <param name="failIfNotFound">When set to false and there's no stream, the function will return an empty instance.</param>
+        /// <param name="snapshotStore">Optional snapshot store for SeparateStore strategy</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <param name="streamNameMap">Mapper between identity and stream name</param>
         /// <typeparam name="TState">State object type</typeparam>
@@ -55,10 +122,11 @@ public static class StateStoreFunctions {
                 StreamNameMap     streamNameMap,
                 TId               id,
                 bool              failIfNotFound    = true,
+                ISnapshotStore?   snapshotStore    = null,
                 CancellationToken cancellationToken = default
             )
             where TState : State<TState>, new() where TId : Id {
-            var foldedStream = await reader.LoadState<TState>(streamNameMap.GetStreamName(id), failIfNotFound, cancellationToken).NoContext();
+            var foldedStream = await reader.LoadState<TState>(streamNameMap.GetStreamName(id), failIfNotFound, snapshotStore, cancellationToken).NoContext();
 
             return foldedStream with { State = foldedStream.State.WithId(id) };
         }

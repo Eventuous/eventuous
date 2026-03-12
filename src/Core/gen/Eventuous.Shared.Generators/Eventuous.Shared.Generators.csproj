@@ -13,4 +13,9 @@
       <AdditionalFiles Remove="AnalyzerReleases.Shipped.md" />
       <AdditionalFiles Remove="AnalyzerReleases.Unshipped.md" />
     </ItemGroup>
+    <ItemGroup>
+      <Compile Include="..\..\src\Eventuous.Shared\SnapshotMap\SnapshotStorageStrategy.cs">
+        <Link>SnapshotStorageStrategy.cs</Link>
+      </Compile>
+    </ItemGroup>
 </Project>

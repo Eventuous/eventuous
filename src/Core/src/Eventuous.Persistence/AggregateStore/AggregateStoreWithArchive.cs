@@ -26,12 +26,12 @@ public class AggregateStore<TReader>(
     [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<TAggregate> Load<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new()
-        => _tieredEventStore.LoadAggregate<TAggregate, TState>(streamName, true, _factoryRegistry, cancellationToken);
+        => _tieredEventStore.LoadAggregate<TAggregate, TState>(streamName, true, _factoryRegistry, null, cancellationToken);
 
     /// <inheritdoc/>
     [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<TAggregate> LoadOrNew<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new()
-        => _tieredEventStore.LoadAggregate<TAggregate, TState>(streamName, false, _factoryRegistry, cancellationToken);
+        => _tieredEventStore.LoadAggregate<TAggregate, TState>(streamName, false, _factoryRegistry, null, cancellationToken);
 }

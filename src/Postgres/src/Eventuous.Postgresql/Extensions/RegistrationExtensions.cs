@@ -3,6 +3,7 @@
 
 using System.Data.Common;
 using Eventuous.Postgresql;
+using Eventuous.Postgresql.Snapshots;
 using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Sql.Base;
 using Microsoft.Extensions.Configuration;
@@ -135,5 +136,109 @@ public static class ServiceCollectionExtensions {
                 }
             );
         }
+
+        /// <summary>
+        /// Adds PostgreSQL snapshot store and the necessary schema to the DI container.
+        /// </summary>
+        /// <param name="connectionString">Connection string</param>
+        /// <param name="schema">Schema name</param>
+        /// <param name="initializeDatabase">Set to true if you want the schema to be created on startup</param>
+        /// <param name="configureBuilder">Optional: function to configure the data source builder</param>
+        /// <param name="connectionLifetime">Optional: lifetime of the connection, default is transient</param>
+        /// <param name="dataSourceLifetime">Optional: lifetime of the data source, default is singleton</param>
+        /// <returns>Services collection</returns>
+        // ReSharper disable once UnusedMethodReturnValue.Global
+        public IServiceCollection AddPostgresSnapshotStore(
+                string                                             connectionString,
+                string                                             schema             = SnapshotSchema.DefaultSchema,
+                bool                                               initializeDatabase = false,
+                Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureBuilder   = null,
+                ServiceLifetime                                    connectionLifetime = ServiceLifetime.Transient,
+                ServiceLifetime                                    dataSourceLifetime = ServiceLifetime.Singleton
+            ) {
+            var options = new PostgresSnapshotStoreOptions {
+                Schema             = schema,
+                ConnectionString   = connectionString,
+                InitializeDatabase = initializeDatabase
+            };
+
+            services.AddNpgsqlSnapshotDataSourceCore(
+                _ => connectionString,
+                configureBuilder,
+                connectionLifetime,
+                dataSourceLifetime
+            );
+            services.AddSingleton(options);
+            services.AddSingleton<PostgresSnapshotStore>(sp => {
+                var snapshotDataSource = sp.GetRequiredService<PostgresSnapshotDataSource>();
+                return new PostgresSnapshotStore(snapshotDataSource.DataSource, options, sp.GetService<IEventSerializer>());
+            });
+            services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<PostgresSnapshotStore>());
+            services.AddHostedService<SnapshotSchemaInitializer>();
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds PostgreSQL snapshot store and the necessary schema to the DI container.
+        /// </summary>
+        /// <param name="config">Configuration section for PostgreSQL snapshot store options</param>
+        /// <param name="configureBuilder">Optional: function to configure the data source builder</param>
+        /// <param name="connectionLifetime">Optional: lifetime of the connection, default is transient</param>
+        /// <param name="dataSourceLifetime">Optional: lifetime of the data source, default is singleton</param>
+        /// <returns>Services collection</returns>
+        // ReSharper disable once UnusedMethodReturnValue.Global
+        public IServiceCollection AddPostgresSnapshotStore(
+                IConfiguration                                     config,
+                Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureBuilder   = null,
+                ServiceLifetime                                    connectionLifetime = ServiceLifetime.Transient,
+                ServiceLifetime                                    dataSourceLifetime = ServiceLifetime.Singleton
+            ) {
+            services.Configure<PostgresSnapshotStoreOptions>(config);
+            services.AddSingleton<PostgresSnapshotStoreOptions>(sp => sp.GetRequiredService<IOptions<PostgresSnapshotStoreOptions>>().Value);
+
+            services.AddNpgsqlSnapshotDataSourceCore(
+                sp => Ensure.NotEmptyString(sp.GetRequiredService<PostgresSnapshotStoreOptions>().ConnectionString),
+                configureBuilder,
+                connectionLifetime,
+                dataSourceLifetime
+            );
+
+            services.AddSingleton<PostgresSnapshotStore>(sp => {
+                var options = sp.GetRequiredService<PostgresSnapshotStoreOptions>();
+                var snapshotDataSource = sp.GetRequiredService<PostgresSnapshotDataSource>();
+                return new PostgresSnapshotStore(snapshotDataSource.DataSource, options, sp.GetService<IEventSerializer>());
+            });
+            services.AddSingleton<ISnapshotStore>(sp => sp.GetRequiredService<PostgresSnapshotStore>());
+            services.AddHostedService<SnapshotSchemaInitializer>();
+
+            return services;
+        }
+
+        void AddNpgsqlSnapshotDataSourceCore(
+                Func<IServiceProvider, string>                     getConnectionString,
+                Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureDataSource,
+                ServiceLifetime                                    connectionLifetime,
+                ServiceLifetime                                    dataSourceLifetime
+            ) {
+            // Register snapshot-specific data source as singleton
+            services.TryAdd(
+                new ServiceDescriptor(
+                    typeof(PostgresSnapshotDataSource),
+                    sp => {
+                        var dataSourceBuilder = new NpgsqlDataSourceBuilder(getConnectionString(sp));
+                        dataSourceBuilder.UseLoggerFactory(sp.GetService<ILoggerFactory>());
+                        configureDataSource?.Invoke(sp, dataSourceBuilder);
+                        return new PostgresSnapshotDataSource(dataSourceBuilder.Build());
+                    },
+                    dataSourceLifetime
+                )
+            );
+        }
+    }
+
+    // Wrapper to distinguish snapshot data source from event store data source
+    internal class PostgresSnapshotDataSource(NpgsqlDataSource dataSource) {
+        public NpgsqlDataSource DataSource { get; } = dataSource;
     }
 }
