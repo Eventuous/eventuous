@@ -9,13 +9,11 @@ namespace Eventuous;
 [Obsolete("Use IEventReader extension functions to load state")]
 public class StateStore(IEventReader eventReader, IEventSerializer? serializer = null) : IStateStore {
     readonly IEventReader     _eventReader = Ensure.NotNull(eventReader);
-    readonly IEventSerializer _serializer  = serializer ?? DefaultEventSerializer.Instance;
+    readonly IEventSerializer _serializer  = serializer ?? EventSerializer.Default;
 
     const int PageSize = 500;
 
     [Obsolete("Use IEventReader.LoadState<T> instead")]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task<T> LoadState<T>(StreamName stream, CancellationToken cancellationToken) where T : State<T>, new() {
         var state = new T();
 

@@ -13,8 +13,6 @@ public interface IEventWriter {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Append result, which contains the global position of the last written event,
     /// as well as the next stream version</returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,
@@ -30,8 +28,6 @@ public interface IEventWriter {
     /// <param name="appends">Collection of stream appends to perform</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Array of append results, one per stream in the same order as input</returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     async Task<AppendEventsResult[]> AppendEvents(IReadOnlyCollection<NewStreamAppend> appends, CancellationToken cancellationToken) {
         var results = new AppendEventsResult[appends.Count];
         var i       = 0;

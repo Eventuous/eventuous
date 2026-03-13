@@ -14,13 +14,9 @@ public class TracedEventReader(IEventReader reader) : BaseTracer, IEventReader {
 
     IEventReader Inner { get; } = reader;
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => TraceEnumerable(stream, Operations.ReadEvents, Inner.ReadEvents(stream, start, count, cancellationToken));
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => TraceEnumerable(stream, Operations.ReadEvents, Inner.ReadEventsBackwards(stream, start, count, cancellationToken));
 

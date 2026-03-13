@@ -14,18 +14,12 @@ namespace Eventuous;
 public class TieredEventStore(IEventStore hotStore, IEventReader archiveReader) : IEventStore {
     readonly TieredEventReader _tieredReader = new(Ensure.NotNull(hotStore), Ensure.NotNull(archiveReader));
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => _tieredReader.ReadEvents(stream, start, count, cancellationToken);
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => _tieredReader.ReadEventsBackwards(stream, start, count, cancellationToken);
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,
@@ -33,8 +27,6 @@ public class TieredEventStore(IEventStore hotStore, IEventReader archiveReader) 
             CancellationToken                   cancellationToken
         ) => hotStore.AppendEvents(stream, expectedVersion, events, cancellationToken);
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult[]> AppendEvents(IReadOnlyCollection<NewStreamAppend> appends, CancellationToken cancellationToken)
         => hotStore.AppendEvents(appends, cancellationToken);
 

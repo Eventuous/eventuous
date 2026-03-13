@@ -76,8 +76,6 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     private record DetectedGap(long Position, DateTime FirstSeen);
 
-    [RequiresUnreferencedCode("Calls ExecutePollCycle()")]
-    [RequiresDynamicCode("Calls ExecutePollCycle()")]
     async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
         var start = position.HasValue ? (long)position : -1;
 
@@ -94,8 +92,6 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
         return;
 
-        [RequiresUnreferencedCode("Calls Eventuous.Sql.Base.Subscriptions.SqlSubscriptionBase<TOptions, TConnection>.ToConsumeContext(PersistedEvent, CancellationToken)")]
-        [RequiresDynamicCode("Calls Eventuous.Sql.Base.Subscriptions.SqlSubscriptionBase<TOptions, TConnection>.ToConsumeContext(PersistedEvent, CancellationToken)")]
         async Task<PollingResult> Poll() {
             try {
                 await using var connection = await OpenConnection(cancellationToken).NoContext();
@@ -153,8 +149,6 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
             }
         }
 
-        [RequiresDynamicCode("Calls Poll()")]
-        [RequiresUnreferencedCode("Calls Poll()")]
         async Task ExecutePollCycle() {
             while (!cancellationToken.IsCancellationRequested) {
                 var result = await Poll().NoContext();
@@ -208,8 +202,6 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     /// Starts the subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
-    [RequiresDynamicCode(Constants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(Constants.DynamicSerializationMessage)]
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         await BeforeSubscribe(cancellationToken).NoContext();
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
@@ -250,8 +242,6 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         SubscriptionKind.Stream => evt.StreamPosition
     };
 
-    [RequiresDynamicCode(Constants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(Constants.DynamicSerializationMessage)]
     MessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
 

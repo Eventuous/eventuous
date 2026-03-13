@@ -18,7 +18,7 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
 
     IEventSerializer Serializer { get; } = new DefaultEventSerializer(TestPrimitives.DefaultOptions);
 
-    public IntegrationFixture() => DefaultEventSerializer.SetDefaultSerializer(Serializer);
+    public IntegrationFixture() => EventSerializer.SetDefault(Serializer);
 
     public async Task InitializeAsync() {
         _redisContainer = new RedisBuilder().WithImage("redis:7.0.12-alpine").Build();

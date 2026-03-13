@@ -32,23 +32,17 @@ public class AggregateStore : IAggregateStore {
 
     /// <inheritdoc/>
     [Obsolete("Use IEventWriter.StoreAggregate<TAggregate, TState> instead.")]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult> Store<TAggregate, TState>(StreamName streamName, TAggregate aggregate, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new()
         => _eventWriter.StoreAggregate<TAggregate, TState>(streamName, aggregate, _amendEvent, cancellationToken);
 
     /// <inheritdoc/>
     [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<T> Load<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TState>(StreamName streamName, CancellationToken cancellationToken) where T : Aggregate<TState> where TState : State<TState>, new()
         => _eventReader.LoadAggregate<T, TState>(streamName, true, _factoryRegistry, cancellationToken);
 
     /// <inheritdoc/>
     [Obsolete("Use IEventReader.LoadAggregate<TAggregate, TState> instead.")]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<T> LoadOrNew<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TState>(StreamName streamName, CancellationToken cancellationToken)
         where T : Aggregate<TState> where TState : State<TState>, new()
         => _eventReader.LoadAggregate<T, TState>(streamName, false, _factoryRegistry, cancellationToken);

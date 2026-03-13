@@ -12,8 +12,6 @@ namespace Eventuous;
 /// <param name="hotReader">Event reader pointing to hot store</param>
 /// <param name="archiveReader">Event reader pointing to archive store</param>
 public class TieredEventReader(IEventReader hotReader, IEventReader archiveReader) : IEventReader {
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName streamName, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         var hotEvents = await LoadStreamEvents(hotReader, streamName, start, count, cancellationToken).NoContext();
 
@@ -42,8 +40,6 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
         if (!any) throw new StreamNotFound(streamName);
     }
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName streamName, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         var hotEvents = await LoadStreamEvents(hotReader, streamName, start, count, cancellationToken, backwards: true).NoContext();
 

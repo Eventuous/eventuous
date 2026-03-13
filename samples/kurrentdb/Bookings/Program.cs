@@ -22,7 +22,7 @@ Log.Logger = new LoggerConfiguration()
     // .WriteTo.Seq("http://localhost:5341")
     .CreateLogger();
 
-DefaultEventSerializer.SetDefaultSerializer(new DefaultStaticEventSerializer(new SourceGenerationContext()));
+EventSerializer.SetDefault(new DefaultStaticEventSerializer(new SourceGenerationContext()));
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 

@@ -5,7 +5,7 @@ using Eventuous.Testing;
 using Microsoft.AspNetCore.Http.Json;
 using BookingService = Eventuous.Sut.AspNetCore.BookingService;
 
-DefaultEventSerializer.SetDefaultSerializer(new DefaultEventSerializer(TestPrimitives.DefaultOptions));
+EventSerializer.SetDefault(new DefaultEventSerializer(TestPrimitives.DefaultOptions));
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCommandService<BookingService, BookingState>();

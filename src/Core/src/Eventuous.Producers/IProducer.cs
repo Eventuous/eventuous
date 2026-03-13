@@ -13,8 +13,6 @@ public interface IProducer {
     /// <param name="messages">Collection of messages to produce</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -23,8 +21,6 @@ public interface IProducer {
     /// <param name="requests">Collection of produce requests, one per target stream</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task Produce(IReadOnlyCollection<ProduceRequest> requests, CancellationToken cancellationToken = default)
         => Task.WhenAll(requests.Select(r => Produce(r.Stream, r.Messages, cancellationToken)));
 }
@@ -39,8 +35,6 @@ public interface IProducer<in TProduceOptions> : IProducer where TProduceOptions
     /// <param name="options">Produce options</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
 }
 

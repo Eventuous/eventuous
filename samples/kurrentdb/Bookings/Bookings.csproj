@@ -35,6 +35,7 @@
         <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="$(SrcRoot)\Experimental\gen\Eventuous.Spyglass.Generators\Eventuous.Spyglass.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj"/>
+        <ProjectReference Include="..\..\..\src\Core\src\Eventuous.Serialization.Json\Eventuous.Serialization.Json.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <Content Update="Properties\launchSettings.json">

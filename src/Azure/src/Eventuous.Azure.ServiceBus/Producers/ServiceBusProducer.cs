@@ -40,7 +40,7 @@ public class ServiceBusProducer : BaseProducer<ServiceBusProduceOptions>, IHoste
         _options             = options;
         _log                 = log;
         _sender              = client.CreateSender(options.QueueOrTopicName, options.SenderOptions);
-        _serializer          = serializer ?? DefaultEventSerializer.Instance;
+        _serializer          = serializer ?? EventSerializer.Default;
         _messageBatchBuilder = new(_sender, this._serializer, options.AttributeNames, SetActivityMessageType);
         log?.LogInformation("ServiceBusProducer created for {QueueOrTopicName}", options.QueueOrTopicName);
     }

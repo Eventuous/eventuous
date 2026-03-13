@@ -13,8 +13,6 @@ public interface IEventReader {
     /// <param name="count">How many events to read</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An async enumerable of events retrieved from the stream</returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken);
 
     /// <summary>
@@ -26,7 +24,5 @@ public interface IEventReader {
     /// <param name="count">How many events to read</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An async enumerable of events retrieved from the stream</returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken);
 }

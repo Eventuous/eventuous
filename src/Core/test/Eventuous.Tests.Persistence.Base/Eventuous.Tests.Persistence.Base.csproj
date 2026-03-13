@@ -17,5 +17,6 @@
     <ItemGroup>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json\Eventuous.Serialization.Json.csproj"/>
     </ItemGroup>
 </Project>

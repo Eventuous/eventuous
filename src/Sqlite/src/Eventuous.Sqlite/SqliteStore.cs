@@ -74,8 +74,6 @@ public class SqliteStore : SqlEventStoreBase<SqliteConnection, SqliteTransaction
         )
         => throw new NotSupportedException("SQLite does not use GetAppendCommand. AppendEvents is overridden directly.");
 
-    [RequiresDynamicCode("Only works with AOT when using DefaultStaticEventSerializer")]
-    [RequiresUnreferencedCode("Only works with AOT when using DefaultStaticEventSerializer")]
     public override async Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,
@@ -107,8 +105,6 @@ public class SqliteStore : SqlEventStoreBase<SqliteConnection, SqliteTransaction
     }
 
     /// <inheritdoc />
-    [RequiresDynamicCode("Only works with AOT when using DefaultStaticEventSerializer")]
-    [RequiresUnreferencedCode("Only works with AOT when using DefaultStaticEventSerializer")]
     public override async Task<AppendEventsResult[]> AppendEvents(IReadOnlyCollection<NewStreamAppend> appends, CancellationToken cancellationToken) {
         if (appends.Count == 0) return [];
 
@@ -230,8 +226,6 @@ public class SqliteStore : SqlEventStoreBase<SqliteConnection, SqliteTransaction
         return new((ulong)lastGlobalPosition, newVersion);
     }
 
-    [RequiresUnreferencedCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
-    [RequiresDynamicCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
     NewPersistedEvent Convert(NewStreamEvent evt) {
         var data = Serializer.SerializeEvent(evt.Payload!);
         var meta = MetaSerializer.Serialize(evt.Metadata);

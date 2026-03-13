@@ -11,7 +11,6 @@ using static Eventuous.DeserializationResult;
 
 namespace Eventuous.Subscriptions;
 
-using System.Diagnostics.CodeAnalysis;
 using Context;
 using Diagnostics;
 using Filters;
@@ -44,7 +43,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
         LoggerFactory   = loggerFactory;
         Pipe            = Ensure.NotNull(consumePipe);
-        EventSerializer = eventSerializer ?? DefaultEventSerializer.Instance;
+        EventSerializer = eventSerializer ?? Eventuous.EventSerializer.Default;
         Options         = options;
         Log             = Logger.CreateContext(options.SubscriptionId, loggerFactory);
     }
@@ -54,8 +53,6 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
     public string SubscriptionId => Options.SubscriptionId;
 
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     public async ValueTask Subscribe(OnSubscribed onSubscribed, OnDropped onDropped, CancellationToken cancellationToken) {
         if (IsRunning) return;
 
@@ -149,8 +146,6 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         }
     }
 
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected object? DeserializeData(string eventContentType, string eventType, ReadOnlyMemory<byte> data, string stream, ulong position = 0) {
         if (data.IsEmpty) return null;
 
@@ -181,15 +176,11 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     }
 
     // TODO: Passing the handler function would allow decoupling subscribers from handlers
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected abstract ValueTask Subscribe(CancellationToken cancellationToken);
 
     protected abstract ValueTask Unsubscribe(CancellationToken cancellationToken);
 
     [PublicAPI]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected virtual async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
         await Task.Delay(delay, cancellationToken).NoContext();
 
@@ -210,8 +201,6 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         }
     }
 
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning) return;
 

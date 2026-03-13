@@ -17,8 +17,6 @@ public static class StoreFunctions {
         /// <returns>Append events result</returns>
         /// <exception cref="Exception">Any exception that occurred in the event store</exception>
         /// <exception cref="OptimisticConcurrencyException">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<AppendEventsResult> Store(
                 StreamName                  streamName,
                 ExpectedStreamVersion       expectedStreamVersion,
@@ -53,8 +51,6 @@ public static class StoreFunctions {
             }
         }
 
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<AppendEventsResult[]> Store(
                 IReadOnlyCollection<(StreamName StreamName, ExpectedStreamVersion ExpectedVersion, IReadOnlyCollection<object> Changes)> streams,
                 AmendEvent?                                                                                                              amendEvent        = null,
@@ -104,8 +100,6 @@ public static class StoreFunctions {
     /// <param name="failIfNotFound">Throw an exception if the stream is not found</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An array with events retrieved from the stream</returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public static async Task<StreamEvent[]> ReadEvents(
             this IEventReader  eventReader,
             StreamName         stream,
@@ -138,8 +132,6 @@ public static class StoreFunctions {
     /// <param name="failIfNotFound">Throw an exception if the stream is not found</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An array with events retrieved from the stream</returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public static async Task<StreamEvent[]> ReadEventsBackwards(
             this IEventReader  eventReader,
             StreamName         stream,
@@ -171,8 +163,6 @@ public static class StoreFunctions {
     /// stream with the given name found in the store, the function will return an empty collection.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Collection of events wrapped in <seealso cref="StreamEvent"/></returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public static async Task<StreamEvent[]> ReadStream(
             this IEventReader  eventReader,
             StreamName         streamName,

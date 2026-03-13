@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>Eventuous</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj"/>
+    </ItemGroup>
+</Project>

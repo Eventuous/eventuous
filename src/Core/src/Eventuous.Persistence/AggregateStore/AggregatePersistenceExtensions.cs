@@ -20,8 +20,6 @@ public static class AggregatePersistenceExtensions {
         /// <typeparam name="TState">Aggregate state type</typeparam>
         /// <returns>Append event result</returns>
         /// <exception cref="OptimisticConcurrencyException{T, TState}">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<AppendEventsResult> StoreAggregate<TAggregate, TState>(
                 StreamName        streamName,
                 TAggregate        aggregate,
@@ -52,8 +50,6 @@ public static class AggregatePersistenceExtensions {
         /// <typeparam name="TId">Aggregate identity type</typeparam>
         /// <returns>Append event result</returns>
         /// <exception cref="OptimisticConcurrencyException{T, TState}">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public Task<AppendEventsResult> StoreAggregate<TAggregate, TState, TId>(
                 TAggregate        aggregate,
                 TId               id,
@@ -84,8 +80,6 @@ public static class AggregatePersistenceExtensions {
         /// <typeparam name="TId">Aggregate identity type</typeparam>
         /// <returns>Append event result</returns>
         /// <exception cref="OptimisticConcurrencyException{T, TState}">Gets thrown if the expected stream version mismatches with the given original stream version</exception>
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public Task<AppendEventsResult> StoreAggregate<TAggregate, TState, TId>(
                 TAggregate        aggregate,
                 StreamNameMap?    streamNameMap     = null,
@@ -115,8 +109,6 @@ public static class AggregatePersistenceExtensions {
         /// <returns>Aggregate instance</returns>
         /// <exception cref="AggregateNotFoundException{T,TState}">If failIfNotFound set to true, this exception is thrown if there's no stream</exception>
         /// <exception cref="Exception"></exception>
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<TAggregate> LoadAggregate<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState>(
                 StreamName                streamName,
                 bool                      failIfNotFound    = true,
@@ -155,8 +147,6 @@ public static class AggregatePersistenceExtensions {
         /// <returns>Aggregate instance</returns>
         /// <exception cref="AggregateNotFoundException{T,TState}">If failIfNotFound set to true, this exception is thrown if there's no stream</exception>
         /// <exception cref="Exception"></exception>
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<TAggregate> LoadAggregate<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState, TId>(
                 TId                       aggregateId,
                 StreamNameMap?            streamNameMap     = null,
