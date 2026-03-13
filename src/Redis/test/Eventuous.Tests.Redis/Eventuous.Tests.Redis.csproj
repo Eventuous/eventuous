@@ -16,6 +16,6 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.Redis\Eventuous.Redis.csproj"/>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
-        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json\Eventuous.Serialization.Json.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json.Dynamic\Eventuous.Serialization.Json.Dynamic.csproj"/>
     </ItemGroup>
 </Project>

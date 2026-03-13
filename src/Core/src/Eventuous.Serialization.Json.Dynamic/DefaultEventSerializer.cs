@@ -19,8 +19,6 @@ public class DefaultEventSerializer : IEventSerializer {
         EventSerializer.TrySetDefault(this);
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This class is not intended for AOT use.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This class is not intended for AOT use.")]
     public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType) {
         var typeMapped = _typeMapper.TryGetType(eventType, out var dataType);
 
@@ -34,8 +32,6 @@ public class DefaultEventSerializer : IEventSerializer {
             : new FailedToDeserialize(DeserializationError.PayloadEmpty);
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This class is not intended for AOT use.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This class is not intended for AOT use.")]
     public SerializationResult SerializeEvent(object evt)
         => new(_typeMapper.GetTypeName(evt), ContentType, JsonSerializer.SerializeToUtf8Bytes(evt, _options));
 
