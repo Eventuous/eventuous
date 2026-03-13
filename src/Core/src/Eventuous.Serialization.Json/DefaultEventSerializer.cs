@@ -16,7 +16,7 @@ public class DefaultEventSerializer : IEventSerializer {
         _typeMapper = typeMapper ?? TypeMap.Instance;
 
         // Auto-register as default if none is set
-        EventSerializer.SetDefault(this);
+        EventSerializer.TrySetDefault(this);
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This class is not intended for AOT use.")]

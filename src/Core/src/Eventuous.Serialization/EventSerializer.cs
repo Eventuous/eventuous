@@ -26,4 +26,14 @@ public static class EventSerializer {
     /// </summary>
     public static void SetDefault(IEventSerializer serializer)
         => _default = serializer ?? throw new ArgumentNullException(nameof(serializer));
+
+    /// <summary>
+    /// Sets the default event serializer only if one has not already been configured.
+    /// Returns true if the default was set, false if it was already configured.
+    /// </summary>
+    public static bool TrySetDefault(IEventSerializer serializer) {
+        ArgumentNullException.ThrowIfNull(serializer);
+
+        return Interlocked.CompareExchange(ref _default, serializer, null) == null;
+    }
 }
