@@ -92,28 +92,57 @@ With the source generator in place, calling `RegisterKnownEventTypes()` is typic
 
 ### Default serializer
 
-Eventuous provides a default serializer implementation, which uses `System.Text.Json`. You just need to register it in the `Startup` to make it available for the infrastructure components, like [aggregate store](../aggregate-store) and [subscriptions](../../subscriptions/subs-concept).
+Eventuous provides two built-in serializer implementations, both using `System.Text.Json`:
 
-Normally, you don't need to register or provide the serializer instance to any of the Eventuous classes that perform serialization and deserialization work. It's because they will use the default serializer instance instead.
+- **`DefaultStaticEventSerializer`** — uses a `JsonSerializerContext` for source-generated, AOT-compatible serialization. This is the recommended choice for new applications and is required for Native AOT.
+- **`DefaultEventSerializer`** — uses reflection-based serialization. Available in the `Eventuous.Serialization.Json.Dynamic` package.
 
-However, you can register the default serializer with different options, or a custom serializer instead:
+The `IEventSerializer` interface itself has no AOT restrictions, so custom serializer implementations work cleanly in AOT scenarios.
+
+#### AOT-compatible serializer (recommended)
+
+For AOT applications, use `DefaultStaticEventSerializer` with a `JsonSerializerContext`:
 
 ```csharp title="Program.cs"
-builder.Services.AddSingleton<IEventSerializer>(
+// Define a JsonSerializerContext with your event types
+[JsonSerializable(typeof(RoomBooked))]
+[JsonSerializable(typeof(BookingPaid))]
+[JsonSerializable(typeof(BookingCancelled))]
+public partial class BookingSerializerContext : JsonSerializerContext;
+
+// Register at startup
+EventSerializer.SetDefault(
+    new DefaultStaticEventSerializer(BookingSerializerContext.Default)
+);
+```
+
+#### Reflection-based serializer
+
+For non-AOT applications, the `DefaultEventSerializer` from the `Eventuous.Serialization.Json.Dynamic` package provides a simpler setup that doesn't require a `JsonSerializerContext`:
+
+```csharp title="Program.cs"
+EventSerializer.SetDefault(
     new DefaultEventSerializer(
         new JsonSerializerOptions(JsonSerializerDefaults.Default)
     )
 );
 ```
 
-You might want to avoid registering the serializer and override the one that Eventuous uses as the default instance:
+:::caution
+`DefaultEventSerializer` uses reflection-based JSON serialization and is not compatible with Native AOT. If you plan to publish your application as AOT, use `DefaultStaticEventSerializer` instead.
+:::
+
+#### Configuring via DI
+
+You can also register the serializer in the DI container:
 
 ```csharp title="Program.cs"
-var defaultSerializer = new DefaultEventSerializer(
-    new JsonSerializerOptions(JsonSerializerDefaults.Default)
+builder.Services.AddSingleton<IEventSerializer>(
+    new DefaultStaticEventSerializer(BookingSerializerContext.Default)
 );
-DefaultEventSerializer.SetDefaultSerializer(serializer);
 ```
+
+Infrastructure components like event stores, subscriptions, and producers will resolve `IEventSerializer` from DI when available. If no serializer is registered in DI, they fall back to `EventSerializer.Default`, which must be configured explicitly at startup.
 
 ### Metadata serializer
 
