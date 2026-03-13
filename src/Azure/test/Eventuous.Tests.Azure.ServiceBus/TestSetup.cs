@@ -6,5 +6,5 @@ namespace Eventuous.Tests.Azure.ServiceBus;
 static class TestSetup {
     [ModuleInitializer]
     internal static void Initialize()
-        => new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        => EventSerializer.SetDefault(new DefaultEventSerializer(new(JsonSerializerDefaults.Web)));
 }
