@@ -90,12 +90,18 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     ValueTask Ack(IMessageConsumeContext context) {
+        // Capture locally — CheckpointCommitHandler can be nulled by Resubscribe/DisposeCommitHandler
+        // on another thread while the async worker is still completing a message.
+        var handler = CheckpointCommitHandler;
+
+        if (handler is null) return default;
+
         var eventPosition = GetPositionFromContext(context);
         LastProcessed = eventPosition;
 
         context.LogContext.MessageAcked(context.MessageType, context.GlobalPosition);
 
-        return CheckpointCommitHandler!.Commit(
+        return handler.Commit(
             new(eventPosition.Position!.Value, context.Sequence, eventPosition.Created) { LogContext = context.LogContext },
             context.CancellationToken
         );

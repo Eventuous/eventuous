@@ -156,6 +156,101 @@ public class ResubscribeOnHandlerFailureTests {
         }
     }
 
+    /// <summary>
+    /// Reproduces a race condition during resubscribe: the AsyncHandlingFilter worker thread
+    /// calls Acknowledge() → Ack() → CheckpointCommitHandler!.Commit() after Resubscribe()
+    /// has already set CheckpointCommitHandler to null via DisposeCommitHandler().
+    /// The null-forgiving operator on line 98 causes a NullReferenceException.
+    /// </summary>
+    [Test]
+    [Retry(3)]
+    public async Task Should_not_throw_nre_when_ack_races_with_resubscribe(CancellationToken ct) {
+        // Arrange
+        var loggerFactory = LoggingExtensions.GetLoggerFactory();
+        var nreTcs        = new TaskCompletionSource<Exception>();
+        var ackStarted    = new TaskCompletionSource();
+        var proceedToAck  = new TaskCompletionSource();
+
+        var options = new TestSubscriptionOptions {
+            SubscriptionId            = "test-ack-race",
+            ThrowOnError              = true,
+            CheckpointCommitBatchSize = 1,
+            CheckpointCommitDelayMs   = 100
+        };
+
+        // A handler that signals when it's about to ack, then waits for the test to
+        // trigger resubscribe before the ack path runs.
+        var handler = new SlowAckHandler(ackStarted, proceedToAck);
+        var pipe    = new ConsumePipe().AddDefaultConsumer(handler);
+
+        var checkpointStore = new NoOpCheckpointStore();
+
+        var subscription = new TestPollingSubscription(
+            options,
+            checkpointStore,
+            pipe,
+            loggerFactory,
+            eventCount: 20
+        );
+
+        // Act
+        await subscription.Subscribe(
+            _ => { },
+            (_, _, ex) => {
+                if (ex is NullReferenceException nre) nreTcs.TrySetResult(nre);
+            },
+            ct
+        );
+
+        // Wait until the handler has processed an event and is about to ack
+        var started = await Task.WhenAny(ackStarted.Task, Task.Delay(TimeSpan.FromSeconds(10), ct));
+        started.ShouldBe(ackStarted.Task, "Handler should have started processing an event");
+
+        // Now trigger Dropped → Resubscribe, which will null CheckpointCommitHandler
+        subscription.TriggerDropped();
+
+        // Give Resubscribe a moment to dispose the commit handler
+        await Task.Delay(200, ct);
+
+        // Let the handler complete — the AsyncHandlingFilter worker will now call Acknowledge,
+        // which calls Ack → CheckpointCommitHandler!.Commit(). If the handler is already null,
+        // this is the NRE.
+        proceedToAck.TrySetResult();
+
+        // Assert — wait for either the NRE or a timeout
+        var result = await Task.WhenAny(nreTcs.Task, Task.Delay(TimeSpan.FromSeconds(5), ct));
+
+        if (result == nreTcs.Task) {
+            var exception = await nreTcs.Task;
+            Assert.Fail(
+                $"NullReferenceException in Ack path during resubscribe race: {exception}. " +
+                "CheckpointCommitHandler was null when Ack tried to call Commit()."
+            );
+        }
+
+        // Cleanup
+        await subscription.Unsubscribe(_ => { }, ct);
+    }
+
+    /// <summary>
+    /// A handler that signals the test when processing is happening,
+    /// then blocks until the test allows it to complete. This creates the
+    /// window for the race between Ack and Resubscribe.
+    /// </summary>
+    class SlowAckHandler(TaskCompletionSource ackStarted, TaskCompletionSource proceedToAck) : BaseEventHandler {
+        int _signaled;
+
+        public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
+            // Signal only on the first event to avoid double-signaling
+            if (Interlocked.CompareExchange(ref _signaled, 1, 0) == 0) {
+                ackStarted.TrySetResult();
+                await proceedToAck.Task;
+            }
+
+            return EventHandlingStatus.Success;
+        }
+    }
+
     record TestSubscriptionOptions : SubscriptionWithCheckpointOptions;
 
     /// <summary>
@@ -181,6 +276,12 @@ public class ResubscribeOnHandlerFailureTests {
             null
         ) {
         TaskRunner? _runner;
+
+        /// <summary>
+        /// Exposes the protected Dropped method so the test can trigger a resubscribe.
+        /// </summary>
+        public void TriggerDropped()
+            => Dropped(DropReason.SubscriptionError, new InvalidOperationException("Simulated drop for race test"));
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) {
             _runner = new TaskRunner(token => PollEvents(token)).Start();
