@@ -157,19 +157,18 @@ public class ResubscribeOnHandlerFailureTests {
     }
 
     /// <summary>
-    /// Reproduces a race condition during resubscribe: the AsyncHandlingFilter worker thread
-    /// calls Acknowledge() → Ack() → CheckpointCommitHandler!.Commit() after Resubscribe()
-    /// has already set CheckpointCommitHandler to null via DisposeCommitHandler().
-    /// The null-forgiving operator on line 98 causes a NullReferenceException.
+    /// Validates that Ack does not throw when CheckpointCommitHandler is concurrently
+    /// nulled by Resubscribe/DisposeCommitHandler on another thread while the
+    /// AsyncHandlingFilter worker is still completing a message.
     /// </summary>
     [Test]
     [Retry(3)]
     public async Task Should_not_throw_nre_when_ack_races_with_resubscribe(CancellationToken ct) {
         // Arrange
         var loggerFactory = LoggingExtensions.GetLoggerFactory();
-        var nreTcs        = new TaskCompletionSource<Exception>();
-        var ackStarted    = new TaskCompletionSource();
-        var proceedToAck  = new TaskCompletionSource();
+        var nreTcs        = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ackStarted    = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var proceedToAck  = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var options = new TestSubscriptionOptions {
             SubscriptionId            = "test-ack-race",
@@ -212,9 +211,8 @@ public class ResubscribeOnHandlerFailureTests {
         // Give Resubscribe a moment to dispose the commit handler
         await Task.Delay(200, ct);
 
-        // Let the handler complete — the AsyncHandlingFilter worker will now call Acknowledge,
-        // which calls Ack → CheckpointCommitHandler!.Commit(). If the handler is already null,
-        // this is the NRE.
+        // Let the handler complete — the AsyncHandlingFilter worker will now call Acknowledge → Ack.
+        // Without the fix, the commit handler is already null at this point, causing an NRE.
         proceedToAck.TrySetResult();
 
         // Assert — wait for either the NRE or a timeout
