@@ -3,6 +3,7 @@ using Eventuous.Azure.ServiceBus.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Filters;
 using Microsoft.Extensions.Logging.Abstractions;
+using DotNet.Testcontainers.Builders;
 using Testcontainers.ServiceBus;
 using TUnit.Core.Interfaces;
 
@@ -14,6 +15,8 @@ public class AzureServiceBusFixture : IAsyncInitializer, IAsyncDisposable {
     public ServiceBusContainer Container { get; } = new ServiceBusBuilder()
         .WithImage("mcr.microsoft.com/azure-messaging/servicebus-emulator:latest")
         .WithAcceptLicenseAgreement(true)
+        .WithWaitStrategy(Wait.ForUnixContainer()
+            .UntilMessageIsLogged("Emulator Service is Successfully Up!", w => w.WithTimeout(TimeSpan.FromMinutes(5))))
         .Build();
 
     public async Task InitializeAsync() {
