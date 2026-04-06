@@ -88,7 +88,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
                 }
             }
 
-            // Case 2: On<TSomething>(...) where generic parameter name indicates an Event (e.g., TEvent, TIntegrationEvent)
+            // Case 2: On<T>(...) on BaseEventHandler-derived types (EventHandler, projectors, etc.)
             if (g.Identifier.Text == "On" && g.TypeArgumentList.Arguments.Count == 1) {
                 // Try to get T from the generic method symbol On<T>(...)
                 var inv = g.Parent as InvocationExpressionSyntax ?? g.Parent?.Parent as InvocationExpressionSyntax;
