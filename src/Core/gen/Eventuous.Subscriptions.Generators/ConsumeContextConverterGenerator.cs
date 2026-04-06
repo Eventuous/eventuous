@@ -139,9 +139,26 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         // Skip unresolved generic type parameters (e.g. T in IMessageConsumeContext<T>)
         if (symbol.TypeKind == TypeKind.TypeParameter) return null;
 
+        // Skip types that are inaccessible from module-level generated code
+        // (e.g. private nested classes can't be referenced from the generated converter)
+        if (!IsAccessibleFromGeneratedCode(symbol)) return null;
+
         // Use fully qualified name with global:: prefix
         var name = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         return name.StartsWith("global::", StringComparison.Ordinal) ? name : $"global::{name}";
+    }
+
+    static bool IsAccessibleFromGeneratedCode(ITypeSymbol symbol) {
+        // Walk the type and all containing types to ensure none is private or protected
+        for (var current = symbol; current != null; current = current.ContainingType) {
+            switch (current.DeclaredAccessibility) {
+                case Accessibility.Private:
+                case Accessibility.Protected:
+                case Accessibility.ProtectedAndInternal:
+                    return false;
+            }
+        }
+        return true;
     }
 
     static bool IsTargetInterface(INamedTypeSymbol def, INamedTypeSymbol? messageConsumeContextSymbol) {
