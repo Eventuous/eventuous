@@ -27,6 +27,9 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         var baseEventHandlerSymbol = context.CompilationProvider
             .Select(static (c, _) => c.GetTypeByMetadataName("Eventuous.Subscriptions.BaseEventHandler"));
 
+        var eventTypeAttributeSymbol = context.CompilationProvider
+            .Select(static (c, _) => c.GetTypeByMetadataName("Eventuous.EventTypeAttribute"));
+
         var knownSymbols = messageConsumeContextSymbol
             .Combine(baseEventHandlerSymbol)
             .Select(static (pair, _) => new KnownSymbols(pair.Left, pair.Right));
@@ -40,7 +43,15 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
             .Select(static (t, _) => t!)
             .Collect();
 
-        context.RegisterSourceOutput(candidateTypes, Generate);
+        var eventTypeCandidates = eventTypeAttributeSymbol
+            .Combine(context.CompilationProvider)
+            .Select(static (pair, _) => DiscoverEventTypes(pair.Right, pair.Left));
+
+        var mergedCandidates = candidateTypes
+            .Combine(eventTypeCandidates)
+            .Select(static (pair, _) => pair.Left.AddRange(pair.Right));
+
+        context.RegisterSourceOutput(mergedCandidates, Generate);
     }
 
     static bool IsPotentialUsage(SyntaxNode node, CancellationToken _) {
@@ -219,5 +230,46 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         sb.AppendLine("}");
 
         context.AddSource("MessageConsumeContext_Converters.g.cs", sb.ToString());
+    }
+
+    static ImmutableArray<string> DiscoverEventTypes(Compilation compilation, INamedTypeSymbol? eventTypeAttributeSymbol) {
+        if (eventTypeAttributeSymbol is null) return ImmutableArray<string>.Empty;
+
+        var builder = ImmutableArray.CreateBuilder<string>();
+
+        ProcessNamespace(compilation.Assembly.GlobalNamespace);
+
+        foreach (var ra in compilation.SourceModule.ReferencedAssemblySymbols) {
+            ProcessNamespace(ra.GlobalNamespace);
+        }
+
+        return builder.ToImmutable();
+
+        void ProcessType(INamedTypeSymbol type) {
+            if (HasEventTypeAttribute(type)) {
+                var name = GetTypeSyntax(type);
+                if (name is not null) builder.Add(name);
+            }
+
+            foreach (var nt in type.GetTypeMembers()) {
+                ProcessType(nt);
+            }
+        }
+
+        void ProcessNamespace(INamespaceSymbol ns) {
+            foreach (var member in ns.GetMembers()) {
+                switch (member) {
+                    case INamespaceSymbol cns:
+                        ProcessNamespace(cns);
+                        break;
+                    case INamedTypeSymbol type:
+                        ProcessType(type);
+                        break;
+                }
+            }
+        }
+
+        bool HasEventTypeAttribute(INamedTypeSymbol type) =>
+            type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, eventTypeAttributeSymbol));
     }
 }
