@@ -14,15 +14,27 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
     const string InterfaceName      = "IMessageConsumeContext";
     const string InterfaceFqn       = $"{InterfaceNamespace}.{InterfaceName}`1";
 
+    readonly struct KnownSymbols(INamedTypeSymbol? messageConsumeContext, INamedTypeSymbol? baseEventHandler) {
+        public INamedTypeSymbol? MessageConsumeContext { get; } = messageConsumeContext;
+        public INamedTypeSymbol? BaseEventHandler      { get; } = baseEventHandler;
+    }
+
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         // Resolve the IMessageConsumeContext<> symbol from the compilation
         var messageConsumeContextSymbol = context.CompilationProvider
             .Select(static (c, _) => c.GetTypeByMetadataName(InterfaceFqn));
 
+        var baseEventHandlerSymbol = context.CompilationProvider
+            .Select(static (c, _) => c.GetTypeByMetadataName("Eventuous.Subscriptions.BaseEventHandler"));
+
+        var knownSymbols = messageConsumeContextSymbol
+            .Combine(baseEventHandlerSymbol)
+            .Select(static (pair, _) => new KnownSymbols(pair.Left, pair.Right));
+
         var candidateTypes = context.SyntaxProvider
             .CreateSyntaxProvider(IsPotentialUsage, Transform)
             .Where(static t => t is not null)
-            .Combine(messageConsumeContextSymbol)
+            .Combine(knownSymbols)
             .Select(static (pair, _) => TransformWithSymbol(pair.Left, pair.Right))
             .Where(static t => t is not null)
             .Select(static (t, _) => t!)
@@ -48,7 +60,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         return ctx;
     }
 
-    static string? TransformWithSymbol(GeneratorSyntaxContext? ctx, INamedTypeSymbol? messageConsumeContextSymbol) {
+    static string? TransformWithSymbol(GeneratorSyntaxContext? ctx, KnownSymbols known) {
         if (ctx is not { } context) return null;
 
         // Explicit generic type usage: IMessageConsumeContext<T>
@@ -59,7 +71,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
 
             if (symbol != null) {
                 var def = symbol.OriginalDefinition;
-                if (IsTargetInterface(def, messageConsumeContextSymbol) && symbol.TypeArguments.Length == 1) {
+                if (IsTargetInterface(def, known.MessageConsumeContext) && symbol.TypeArguments.Length == 1) {
                     var arg = symbol.TypeArguments[0];
                     return GetTypeSyntax(arg);
                 }
@@ -72,7 +84,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
                 if (inv != null) {
                     var symbolInfo = context.SemanticModel.GetSymbolInfo(inv).Symbol;
                     var method = symbolInfo as IMethodSymbol;
-                    if (method?.TypeArguments.Length == 1 && ShouldTreatGenericOnAsEvent(method)) {
+                    if (method?.TypeArguments.Length == 1 && IsEventHandlerOnMethod(method, known.BaseEventHandler)) {
                         var tArg = method.TypeArguments[0];
                         if (tArg.IsReferenceType) return GetTypeSyntax(tArg);
                     }
@@ -88,7 +100,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
 
             if (symbol != null) {
                 var def = symbol.OriginalDefinition;
-                if (IsTargetInterface(def, messageConsumeContextSymbol) && symbol.TypeArguments.Length == 1) {
+                if (IsTargetInterface(def, known.MessageConsumeContext) && symbol.TypeArguments.Length == 1) {
                     var arg = symbol.TypeArguments[0];
                     return GetTypeSyntax(arg);
                 }
@@ -102,7 +114,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
             var invoke = delegateType?.DelegateInvokeMethod;
             if (invoke is not null) {
                 foreach (var p in invoke.Parameters) {
-                    if (TryExtractTypeArgFromIMessageConsumeContext(p.Type, messageConsumeContextSymbol, out var typeArg)) {
+                    if (TryExtractTypeArgFromIMessageConsumeContext(p.Type, known.MessageConsumeContext, out var typeArg)) {
                         return GetTypeSyntax(typeArg);
                     }
                 }
@@ -132,14 +144,27 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
                def.ContainingNamespace?.ToDisplayString() == InterfaceNamespace;
     }
 
-    static bool ShouldTreatGenericOnAsEvent(IMethodSymbol method) {
+    static bool IsEventHandlerOnMethod(IMethodSymbol method, INamedTypeSymbol? baseEventHandlerSymbol) {
         if (method is not { Name: "On" }) return false;
         var def = method.OriginalDefinition;
         if (def.TypeParameters.Length != 1) return false;
-        var paramName = def.TypeParameters[0].Name;
-        // Heuristic: only treat as event when the generic parameter name indicates an Event
-        // e.g., TEvent, TIntegrationEvent, etc. Skip TCommand, T, etc.
-        return paramName.IndexOf("Event", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        var containingType = def.ContainingType;
+
+        for (var t = containingType; t != null; t = t.BaseType) {
+            if (baseEventHandlerSymbol != null) {
+                if (SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, baseEventHandlerSymbol)) {
+                    return true;
+                }
+            }
+            else {
+                if (t is { Name: "BaseEventHandler", Arity: 0 } && t.ContainingNamespace?.ToDisplayString() == "Eventuous.Subscriptions") {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     static bool TryExtractTypeArgFromIMessageConsumeContext(
