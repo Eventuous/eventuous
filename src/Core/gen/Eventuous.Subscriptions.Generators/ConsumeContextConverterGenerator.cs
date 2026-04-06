@@ -254,36 +254,43 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
 
         var builder = ImmutableArray.CreateBuilder<string>();
 
-        ProcessNamespace(compilation.Assembly.GlobalNamespace);
+        ProcessNamespace(compilation.Assembly.GlobalNamespace, isReferenced: false);
 
         foreach (var ra in compilation.SourceModule.ReferencedAssemblySymbols) {
-            ProcessNamespace(ra.GlobalNamespace);
+            ProcessNamespace(ra.GlobalNamespace, isReferenced: true);
         }
 
         return builder.ToImmutable();
 
-        void ProcessType(INamedTypeSymbol type) {
-            if (HasEventTypeAttribute(type)) {
+        void ProcessType(INamedTypeSymbol type, bool isReferenced) {
+            if (HasEventTypeAttribute(type) && (!isReferenced || IsPublicType(type))) {
                 var name = GetTypeSyntax(type);
                 if (name is not null) builder.Add(name);
             }
 
             foreach (var nt in type.GetTypeMembers()) {
-                ProcessType(nt);
+                ProcessType(nt, isReferenced);
             }
         }
 
-        void ProcessNamespace(INamespaceSymbol ns) {
+        void ProcessNamespace(INamespaceSymbol ns, bool isReferenced) {
             foreach (var member in ns.GetMembers()) {
                 switch (member) {
                     case INamespaceSymbol cns:
-                        ProcessNamespace(cns);
+                        ProcessNamespace(cns, isReferenced);
                         break;
                     case INamedTypeSymbol type:
-                        ProcessType(type);
+                        ProcessType(type, isReferenced);
                         break;
                 }
             }
+        }
+
+        static bool IsPublicType(INamedTypeSymbol type) {
+            for (var t = (ITypeSymbol)type; t != null; t = t.ContainingType) {
+                if (t.DeclaredAccessibility != Accessibility.Public) return false;
+            }
+            return true;
         }
 
         bool HasEventTypeAttribute(INamedTypeSymbol type) =>
