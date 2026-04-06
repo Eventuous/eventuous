@@ -19,7 +19,7 @@ Two generators fail to detect event types registered via `EventHandler.On<T>()` 
 
 Add `BaseEventHandler` (or `EventHandler`) to `KnownTypeSymbols`:
 ```csharp
-public INamedTypeSymbol? BaseEventHandler { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.BaseEventHandler");
+public INamedTypeSymbol? BaseEventHandler { get; } = compilation.GetTypeByMetadataName("Eventuous.Subscriptions.BaseEventHandler");
 ```
 
 Add `IsEventHandler()` helper mirroring the existing `IsState()` pattern (lines 270-290) — walk the `ContainingType` base type chain checking against the resolved symbol, with string-based fallback.
