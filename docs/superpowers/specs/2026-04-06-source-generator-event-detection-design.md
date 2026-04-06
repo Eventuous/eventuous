@@ -38,9 +38,7 @@ Same diagnostic (`MissingEventTypeAttribute`) and same `IsExplicitlyRegistered` 
 
 Replace the type-parameter-name heuristic with a containing-type check. Resolve `BaseEventHandler` symbol via `CompilationProvider` alongside the existing `IMessageConsumeContext` symbol. Pass it through the pipeline to `TransformWithSymbol`.
 
-In `ShouldTreatGenericOnAsEvent` (or its replacement), walk `method.ContainingType.BaseType` chain checking against the resolved `BaseEventHandler` symbol, with string-based fallback.
-
-Keep the existing `TEvent` name check as a secondary fallback for third-party base classes.
+Replace `ShouldTreatGenericOnAsEvent` entirely — the type parameter name is irrelevant. The only check needed: is this an `On` method with 1 type argument whose containing type derives from `BaseEventHandler`? Walk `method.ContainingType.BaseType` chain against the resolved symbol, with string-based fallback. Remove all parameter name heuristics.
 
 ### Change 3: Add `[EventType]` discovery to `ConsumeContextConverterGenerator`
 
