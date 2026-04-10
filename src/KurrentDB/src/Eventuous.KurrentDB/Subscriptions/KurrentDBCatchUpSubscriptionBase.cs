@@ -45,10 +45,17 @@ public abstract class KurrentDBCatchUpSubscriptionBase<T> : EventSubscriptionWit
     /// Stops the subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
+    protected override ValueTask StopCurrentRun(CancellationToken cancellationToken) {
+        Subscription?.Dispose();
+        Subscription = null;
+
+        return default;
+    }
+
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         try {
             Stopping.Cancel(false);
-            Subscription?.Dispose();
+            await StopCurrentRun(cancellationToken);
             await Task.Delay(100, cancellationToken);
         } catch (Exception) {
             // Nothing to see here

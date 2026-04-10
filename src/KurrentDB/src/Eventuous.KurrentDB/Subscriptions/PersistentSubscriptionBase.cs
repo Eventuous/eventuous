@@ -187,11 +187,11 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
 
         ctx.LogContext.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
 
-        if (Options.ThrowOnError) throw exception;
-
         var re           = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
         var subscription = ctx.Items.GetItem<PersistentSubscription>(SubscriptionKey)!;
         await _handleEventProcessingFailure(Client, subscription, re, exception).NoContext();
+
+        if (Options.ThrowOnError) throw exception;
     }
 
     [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
@@ -229,13 +229,20 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// <returns></returns>
     protected abstract ulong GetContextStreamPosition(ResolvedEvent re);
 
+    protected override ValueTask StopCurrentRun(CancellationToken cancellationToken) {
+        _subscription?.Dispose();
+        _subscription = null;
+
+        return default;
+    }
+
     /// <summary>
     /// Unsubscribe from a persistent subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         try {
-            _subscription?.Dispose();
+            await StopCurrentRun(cancellationToken).NoContext();
             Stopping.Cancel(false);
             await Task.Delay(100, cancellationToken);
         } catch (Exception) {

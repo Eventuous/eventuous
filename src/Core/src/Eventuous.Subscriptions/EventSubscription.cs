@@ -34,6 +34,8 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
     protected ulong Sequence;
 
+    int _resubscribing;
+
     protected EventSubscription(
             T                    options,
             ConsumePipe          consumePipe,
@@ -187,26 +189,39 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
     protected abstract ValueTask Unsubscribe(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Stops the current subscription run (transport/runner) without affecting the overall lifecycle.
+    /// Override in derived classes to stop provider-specific transports.
+    /// </summary>
+    protected virtual ValueTask StopCurrentRun(CancellationToken cancellationToken) => default;
+
     [PublicAPI]
     [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected virtual async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
-        await Task.Delay(delay, cancellationToken).NoContext();
+        try {
+            // Stop the previous subscription run if it's still alive (e.g. when dropped from async worker path)
+            await StopCurrentRun(cancellationToken).NoContext();
 
-        while (IsRunning && IsDropped && !cancellationToken.IsCancellationRequested) {
-            try {
-                Log.SubscriptionResubscribing();
+            await Task.Delay(delay, cancellationToken).NoContext();
 
-                await Subscribe(cancellationToken).NoContext();
+            while (IsRunning && IsDropped && !cancellationToken.IsCancellationRequested) {
+                try {
+                    Log.SubscriptionResubscribing();
 
-                IsDropped = false;
-                _onSubscribed?.Invoke(Options.SubscriptionId);
+                    await Subscribe(cancellationToken).NoContext();
 
-                Log.SubscriptionResubscribed();
-            } catch (OperationCanceledException) { } catch (Exception e) {
-                Log.SubscriptionResubscribeFailed(e);
-                await Task.Delay(1000, cancellationToken).NoContext();
+                    IsDropped = false;
+                    _onSubscribed?.Invoke(Options.SubscriptionId);
+
+                    Log.SubscriptionResubscribed();
+                } catch (OperationCanceledException) { } catch (Exception e) {
+                    Log.SubscriptionResubscribeFailed(e);
+                    await Task.Delay(1000, cancellationToken).NoContext();
+                }
             }
+        } finally {
+            Interlocked.Exchange(ref _resubscribing, 0);
         }
     }
 
@@ -214,6 +229,9 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning) return;
+
+        // Prevent concurrent resubscribe attempts (e.g. NackOnAsyncWorker + transport drop callback)
+        if (Interlocked.CompareExchange(ref _resubscribing, 1, 0) != 0) return;
 
         Log.SubscriptionDropped(reason, exception);
 

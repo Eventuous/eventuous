@@ -44,13 +44,16 @@ public abstract class RedisSubscriptionBase<T>(
         _runner = new TaskRunner(token => PollingQuery(position + 1, token)).Start();
     }
 
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
+    protected override async ValueTask StopCurrentRun(CancellationToken cancellationToken) {
         if (_runner == null) return;
 
         await _runner.Stop(cancellationToken);
         _runner.Dispose();
         _runner = null;
     }
+
+    protected override ValueTask Unsubscribe(CancellationToken cancellationToken)
+        => StopCurrentRun(cancellationToken);
 
     const string ContentType = "application/json";
 

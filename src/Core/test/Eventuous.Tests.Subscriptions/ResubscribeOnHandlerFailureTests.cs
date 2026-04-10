@@ -287,13 +287,16 @@ public class ResubscribeOnHandlerFailureTests {
             return default;
         }
 
-        protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
+        protected override async ValueTask StopCurrentRun(CancellationToken cancellationToken) {
             if (_runner == null) return;
 
             await _runner.Stop(cancellationToken);
             _runner.Dispose();
             _runner = null;
         }
+
+        protected override ValueTask Unsubscribe(CancellationToken cancellationToken)
+            => StopCurrentRun(cancellationToken);
 
         async Task PollEvents(CancellationToken cancellationToken) {
             var checkpoint = await GetCheckpoint(cancellationToken);

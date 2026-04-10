@@ -230,13 +230,16 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     /// Stops the subscription.
     /// </summary>
     /// <param name="cancellationToken"></param>
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
+    protected override async ValueTask StopCurrentRun(CancellationToken cancellationToken) {
         if (_runner == null) return;
 
         await _runner.Stop(cancellationToken);
         _runner.Dispose();
         _runner = null;
     }
+
+    protected override ValueTask Unsubscribe(CancellationToken cancellationToken)
+        => StopCurrentRun(cancellationToken);
 
     /// <summary>
     /// This function is called before the subscription starts.
