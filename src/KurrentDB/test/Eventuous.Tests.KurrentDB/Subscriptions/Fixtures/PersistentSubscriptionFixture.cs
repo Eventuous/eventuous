@@ -45,5 +45,6 @@ public class PersistentSubscriptionFixture<TSubscription, TOptions, THandler>(
     public async ValueTask DisposeAsync() {
         if (autoStart) await Stop();
         _listener.Dispose();
+        await Fixture.DisposeAsync();
     }
 }
