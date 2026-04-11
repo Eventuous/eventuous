@@ -3,7 +3,6 @@
 
 using Eventuous.KurrentDB.Subscriptions;
 using Eventuous.Producers;
-using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Subscriptions.Filters;
 using Eventuous.Tests.KurrentDB.Subscriptions.Fixtures;
