@@ -230,8 +230,13 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     protected void Dropped(DropReason reason, Exception? exception) {
         if (!IsRunning) return;
 
-        // Prevent concurrent resubscribe attempts (e.g. NackOnAsyncWorker + transport drop callback)
-        if (Interlocked.CompareExchange(ref _resubscribing, 1, 0) != 0) return;
+        // Prevent concurrent resubscribe attempts (e.g. NackOnAsyncWorker + transport drop callback).
+        // Still record the drop so the running Resubscribe loop can detect it and retry.
+        if (Interlocked.CompareExchange(ref _resubscribing, 1, 0) != 0) {
+            IsDropped = true;
+
+            return;
+        }
 
         Log.SubscriptionDropped(reason, exception);
 

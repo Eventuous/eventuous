@@ -80,7 +80,7 @@ public class PersistentSubscriptionNackTests {
         await Assert.That(handler.SuccessCount).IsGreaterThanOrEqualTo(4);
 
         // Verify that the failed event was actually parked in KurrentDB
-        var psClient = new KurrentDBPersistentSubscriptionsClient(KurrentDBClientSettings.Create(connectionString!));
+        using var psClient = new KurrentDBPersistentSubscriptionsClient(KurrentDBClientSettings.Create(connectionString!));
         var info     = await psClient.GetInfoToStreamAsync(fixture.Stream, subscriptionId!, cancellationToken: cancellationToken);
 
         await Assert.That(info.Stats.ParkedMessageCount).IsGreaterThanOrEqualTo(1);
