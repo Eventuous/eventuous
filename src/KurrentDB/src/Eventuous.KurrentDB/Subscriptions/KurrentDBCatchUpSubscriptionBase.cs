@@ -3,6 +3,7 @@
 
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Filters;
+using Eventuous.Tools;
 
 namespace Eventuous.KurrentDB.Subscriptions;
 
@@ -52,11 +53,12 @@ public abstract class KurrentDBCatchUpSubscriptionBase<T> : EventSubscriptionWit
         return default;
     }
 
+    /// <inheritdoc />
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         try {
             Stopping.Cancel(false);
-            await StopCurrentRun(cancellationToken);
-            await Task.Delay(100, cancellationToken);
+            await StopCurrentRun(cancellationToken).NoContext();
+            await Task.Delay(100, cancellationToken).NoContext();
         } catch (Exception) {
             // Nothing to see here
         }
