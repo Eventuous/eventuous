@@ -185,10 +185,6 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             return;
         }
 
-        ctx.LogContext.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
-
-        if (Options.ThrowOnError) throw exception;
-
         var re           = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
         var subscription = ctx.Items.GetItem<PersistentSubscription>(SubscriptionKey)!;
         await _handleEventProcessingFailure(Client, subscription, re, exception).NoContext();
