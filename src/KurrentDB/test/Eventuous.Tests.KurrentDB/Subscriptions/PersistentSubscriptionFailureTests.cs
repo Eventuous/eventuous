@@ -19,21 +19,25 @@ public class PersistentSubscriptionFailureTests {
         );
 
         await fixture.InitializeAsync();
+        var started = false;
 
         try {
             await fixture.Start();
+            started = true;
 
             var testEvent = TestEvent.Create();
             await fixture.Producer.Produce(fixture.Stream, testEvent, new(), cancellationToken: cancellationToken);
 
             var parkedStream = $"$persistentsubscription-{fixture.Stream}::{fixture.SubscriptionId}-parked";
-            var parked       = await ReadFirstParkedEvent(fixture.Client, parkedStream, TimeSpan.FromSeconds(20), cancellationToken);
+            var parked       = await ReadFirstParkedEvent(fixture.Client, parkedStream, TimeSpan.FromSeconds(20), cancellationToken)
+                            ?? throw new TimeoutException($"No event was parked on {parkedStream} within the timeout");
 
-            await Assert.That(parked).IsNotNull();
-            await Assert.That(parked!.Value.Event.EventStreamId).IsEqualTo(fixture.Stream.ToString());
-            await Assert.That(parked.Value.Event.EventType).IsEqualTo(TestEvent.TypeName);
+            await Assert.That(parked.Event.EventStreamId).IsEqualTo(fixture.Stream.ToString());
+            await Assert.That(parked.Event.EventType).IsEqualTo(TestEvent.TypeName);
             await Assert.That(fixture.Handler.Failures).IsGreaterThan(0);
         } finally {
+            // Fixture only auto-stops when autoStart is true, so stop explicitly to avoid leaking the subscription.
+            if (started) await fixture.Stop();
             await fixture.DisposeAsync();
         }
     }

@@ -41,6 +41,7 @@
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="System.Linq.AsyncEnumerable" Version="10.0.0" />
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
     <PackageVersion Include="MongoDB.Driver" Version="3.4.0" />
     <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.19.0" />
