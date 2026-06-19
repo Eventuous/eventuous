@@ -36,14 +36,17 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     protected void On<TEvent>(Func<T, T> handler) where TEvent : class
         => On<TEvent>((ctx, state) => new ValueTask<T>(handler(state)));
 
-    protected void On<TEvent>(Func<IMessageConsumeContext, T, T> handler) where TEvent : class
+    protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, T> handler) where TEvent : class
         => On<TEvent>((ctx, state) => new ValueTask<T>(handler(ctx, state)));
 
     protected void On<TEvent>(Func<T, ValueTask<T>> handler) where TEvent : class
         => On<TEvent>((ctx, state) => handler(state));
 
-    protected void On<TEvent>(Func<IMessageConsumeContext, T, ValueTask<T>> wrapped) where TEvent : class {
-        if (!_handlers.TryAdd(typeof(TEvent), wrapped)) {
+    protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler) where TEvent : class {
+        if (!_handlers.TryAdd(typeof(TEvent), (context, state) => {
+            var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
+            return handler(typedContext, state);
+        })) {
             throw new ArgumentException($"Type {typeof(TEvent).Name} already has a handler");
         }
 
