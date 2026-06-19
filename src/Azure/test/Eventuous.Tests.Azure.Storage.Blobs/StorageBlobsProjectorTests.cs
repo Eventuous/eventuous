@@ -1,253 +1,253 @@
 using System.Text.Json;
-using Azure;
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Eventuous.Azure.Storage.Blobs;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Eventuous.Tests.Azure.Storage.Blobs.Fixtures;
-using RequestFailedException = Azure.RequestFailedException;
 
 namespace Eventuous.Tests.Azure.Storage.Blobs;
 
 [ClassDataSource<IntegrationFixture>]
 public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
-    [Test]
-    public async Task On_SyncStateHandler_ShouldHandleNewBlob() {
-        // Arrange
-        var containerName = "test-sync-state-new";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+    const string DefaultStream = "stream";
 
-        var projector = new TestProjectorWithSyncStateHandler(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 10 });
+    // ========== HELPER METHODS (surface intent through naming) ==========
+
+    /// <summary>
+    /// Creates a test container for the given scenario, surfacing the handler type and test case
+    /// </summary>
+    async Task<BlobContainerClient> SetupContainer(string scenarioName) {
+        var containerName = $"test-{scenarioName}";
+        var client = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
+        await client.CreateAsync();
+        return client;
+    }
+
+    /// <summary>
+    /// Sets up initial blob state for update scenarios
+    /// </summary>
+    async Task SetupExistingBlob<TState>(BlobContainerClient container, string blobName, TState initialState) {
+        var blobClient = container.GetBlobClient(blobName);
+        var json = JsonSerializer.SerializeToUtf8Bytes(initialState);
+        await blobClient.UploadAsync(new MemoryStream(json), overwrite: true);
+    }
+
+    /// <summary>
+    /// Gets the state from blob, surfacing the expected state type
+    /// </summary>
+    async Task<TState> GetBlobState<TState>(BlobContainerClient container, string blobName) {
+        var blobClient = container.GetBlobClient(blobName);
+        var blob = await blobClient.DownloadContentAsync();
+        return blob.Value.Content.ToObjectFromJson<TState>(JsonSerializerOptions.Web)!;
+    }
+
+    /// <summary>
+    /// Asserts that the projector result is Success
+    /// </summary>
+    async Task AssertSuccess(EventHandlingStatus result) {
+        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
+    }
+
+    /// <summary>
+    /// Asserts that the projector result is Ignored
+    /// </summary>
+    async Task AssertIgnored(EventHandlingStatus result) {
+        await Assert.That(result).IsEqualTo(EventHandlingStatus.Ignored);
+    }
+
+    // ========== SYNC STATE HANDLER TESTS ==========
+
+    [Test]
+    public async Task SyncStateHandler_NewBlob_ShouldCreateAndStoreState() {
+        // Arrange
+        var container = await SetupContainer("sync-state-new");
+        var projector = new SyncStateProjector(container);
+        var context = CreateContext(new TestEvent { Value = 10 });
 
         // Act
         var result = await projector.HandleEvent(context);
 
         // Assert
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
+        await AssertSuccess(result);
 
-        var blobClient = containerClient.GetBlobClient("test-stream/SyncState.json");
-        var blob = await blobClient.DownloadContentAsync();
-        var state = JsonSerializer.Deserialize<SyncState>(blob.Value.Content.ToString())!;
-
+        var state = await GetBlobState<SyncState>(container, $"{DefaultStream}/SyncState.json");
         await Assert.That(state.Value).IsEqualTo(10);
     }
 
     [Test]
-    public async Task On_SyncStateHandler_ShouldUpdateExistingBlob() {
+    public async Task SyncStateHandler_ExistingBlob_ShouldUpdateState() {
         // Arrange
-        var containerName = "test-sync-state-existing";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+        var container = await SetupContainer("sync-state-existing");
+        var blobName = $"{DefaultStream}/SyncState.json";
 
-        // Create initial blob
-        var blobClient = containerClient.GetBlobClient("test-stream/SyncState.json");
-        var initialState = new SyncState { Value = 5 };
-        var json = JsonSerializer.SerializeToUtf8Bytes(initialState);
-        await blobClient.UploadAsync(new MemoryStream(json), overwrite: true);
+        await SetupExistingBlob(container, blobName, new SyncState { Value = 5 });
 
-        var projector = new TestProjectorWithSyncStateHandler(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 10 });
+        var projector = new SyncStateProjector(container);
+        var context = CreateContext(new TestEvent { Value = 10 });
 
         // Act
         var result = await projector.HandleEvent(context);
 
         // Assert
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
+        await AssertSuccess(result);
 
-        var blob = await blobClient.DownloadContentAsync();
-        var state = JsonSerializer.Deserialize<SyncState>(blob.Value.Content.ToString())!;
-
+        var state = await GetBlobState<SyncState>(container, blobName);
         await Assert.That(state.Value).IsEqualTo(15); // 5 + 10
         await Assert.That(state.Counter).IsEqualTo(1);
     }
 
-    [Test]
-    public async Task On_SyncContextStateHandler_ShouldHandleNewBlob() {
-        // Arrange
-        var containerName = "test-sync-context-new";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+    // ========== SYNC CONTEXT-AWARE HANDLER TESTS ==========
 
-        var projector = new TestProjectorWithSyncContextStateHandler(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 20 });
+    [Test]
+    public async Task SyncContextAwareHandler_NewBlob_ShouldUseContextAndStoreState() {
+        // Arrange
+        var container = await SetupContainer("sync-context-new");
+        var projector = new SyncContextAwareProjector(container);
+        var context = CreateContext(new TestEvent { Value = 20 });
 
         // Act
         var result = await projector.HandleEvent(context);
 
         // Assert
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
+        await AssertSuccess(result);
 
-        var blobClient = containerClient.GetBlobClient("test-stream/SyncContextState.json");
-        var blob = await blobClient.DownloadContentAsync();
-        var state = JsonSerializer.Deserialize<SyncContextState>(blob.Value.Content.ToString())!;
-
+        var state = await GetBlobState<SyncContextState>(container, $"{DefaultStream}/SyncContextState.json");
         await Assert.That(state.Value).IsEqualTo(20);
-        await Assert.That(state.StreamId).IsEqualTo("test-stream");
+        await Assert.That(state.StreamId).IsEqualTo(DefaultStream);
     }
 
-    [Test]
-    public async Task On_AsyncStateHandler_ShouldHandleNewBlob() {
-        // Arrange
-        var containerName = "test-async-state-new";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+    // ========== ASYNC STATE HANDLER TESTS ==========
 
-        var projector = new TestProjectorWithAsyncStateHandler(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 30 });
+    [Test]
+    public async Task AsyncStateHandler_NewBlob_ShouldCreateAndStoreState() {
+        // Arrange
+        var container = await SetupContainer("async-state-new");
+        var projector = new AsyncStateProjector(container);
+        var context = CreateContext(new TestEvent { Value = 30 });
 
         // Act
         var result = await projector.HandleEvent(context);
 
         // Assert
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
+        await AssertSuccess(result);
 
-        var blobClient = containerClient.GetBlobClient("test-stream/AsyncState.json");
-        var blob = await blobClient.DownloadContentAsync();
-        var state = JsonSerializer.Deserialize<AsyncState>(blob.Value.Content.ToString())!;
-
+        var state = await GetBlobState<AsyncState>(container, $"{DefaultStream}/AsyncState.json");
         await Assert.That(state.Value).IsEqualTo(30);
     }
 
     [Test]
-    public async Task On_AsyncStateHandler_ShouldUpdateExistingBlob() {
+    public async Task AsyncStateHandler_ExistingBlob_ShouldUpdateState() {
         // Arrange
-        var containerName = "test-async-state-existing";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+        var container = await SetupContainer("async-state-existing");
+        var blobName = $"{DefaultStream}/AsyncState.json";
 
-        // Create initial blob
-        var blobClient = containerClient.GetBlobClient("test-stream/AsyncState.json");
-        var initialState = new AsyncState { Value = 5 };
-        var json = JsonSerializer.SerializeToUtf8Bytes(initialState);
-        await blobClient.UploadAsync(new MemoryStream(json), overwrite: true);
+        await SetupExistingBlob(container, blobName, new AsyncState { Value = 5 });
 
-        var projector = new TestProjectorWithAsyncStateHandler(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 35 });
+        var projector = new AsyncStateProjector(container);
+        var context = CreateContext(new TestEvent { Value = 35 });
 
         // Act
         var result = await projector.HandleEvent(context);
 
         // Assert
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
+        await AssertSuccess(result);
 
-        var blob = await blobClient.DownloadContentAsync();
-        var state = JsonSerializer.Deserialize<AsyncState>(blob.Value.Content.ToString())!;
-
+        var state = await GetBlobState<AsyncState>(container, blobName);
         await Assert.That(state.Value).IsEqualTo(40); // 5 + 35
     }
 
-    [Test]
-    public async Task On_AsyncContextStateHandler_ShouldHandleNewBlob() {
-        // Arrange
-        var containerName = "test-async-context-new";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+    // ========== ASYNC CONTEXT-AWARE HANDLER TESTS ==========
 
-        var projector = new TestProjectorWithAsyncContextStateHandler(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 40, Name = "AsyncContext" });
+    [Test]
+    public async Task AsyncContextAwareHandler_NewBlob_ShouldUseContextAndStoreState() {
+        // Arrange
+        var container = await SetupContainer("async-context-new");
+        var projector = new AsyncContextAwareProjector(container);
+        var context = CreateContext(new TestEvent { Value = 40, Name = "AsyncContext" });
 
         // Act
         var result = await projector.HandleEvent(context);
 
         // Assert
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
+        await AssertSuccess(result);
 
-        var blobClient = containerClient.GetBlobClient("test-stream/AsyncContextState.json");
-        var blob = await blobClient.DownloadContentAsync();
-        var state = JsonSerializer.Deserialize<AsyncContextState>(blob.Value.Content.ToString())!;
-
+        var state = await GetBlobState<AsyncContextState>(container, $"{DefaultStream}/AsyncContextState.json");
         await Assert.That(state.Value).IsEqualTo(40);
         await Assert.That(state.EventName).IsEqualTo("AsyncContext");
     }
 
     [Test]
-    public async Task On_AsyncContextStateHandler_ShouldUpdateExistingBlob() {
+    public async Task AsyncContextAwareHandler_ExistingBlob_ShouldUpdateStateAndContext() {
         // Arrange
-        var containerName = "test-async-context-existing";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+        var container = await SetupContainer("async-context-existing");
+        var blobName = $"{DefaultStream}/AsyncContextState.json";
 
-        // Create initial blob
-        var blobClient = containerClient.GetBlobClient("test-stream/AsyncContextState.json");
-        var initialState = new AsyncContextState { Value = 10, EventName = "Initial" };
-        var json = JsonSerializer.SerializeToUtf8Bytes(initialState);
-        await blobClient.UploadAsync(new MemoryStream(json), overwrite: true);
+        await SetupExistingBlob(container, blobName, new AsyncContextState { Value = 10, EventName = "Initial" });
 
-        var projector = new TestProjectorWithAsyncContextStateHandler(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 50, Name = "Update" });
+        var projector = new AsyncContextAwareProjector(container);
+        var context = CreateContext(new TestEvent { Value = 50, Name = "Update" });
 
         // Act
         var result = await projector.HandleEvent(context);
 
         // Assert
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
+        await AssertSuccess(result);
 
-        var blob = await blobClient.DownloadContentAsync();
-        var state = JsonSerializer.Deserialize<AsyncContextState>(blob.Value.Content.ToString())!;
-
+        var state = await GetBlobState<AsyncContextState>(container, blobName);
         await Assert.That(state.Value).IsEqualTo(60); // 10 + 50
         await Assert.That(state.EventName).IsEqualTo("Update");
     }
 
-    [Test]
-    public async Task HandleEvent_NoHandler_ShouldReturnIgnored() {
-        // Arrange
-        var containerName = "test-no-handler";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+    // ========== EDGE CASE TESTS ==========
 
-        var projector = new TestProjectorNoHandler(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 100 });
+    [Test]
+    public async Task NoHandler_ShouldReturnIgnored() {
+        // Arrange
+        var container = await SetupContainer("no-handler");
+        var projector = new NoHandlerProjector(container);
+        var context = CreateContext(new TestEvent { Value = 100 });
 
         // Act
         var result = await projector.HandleEvent(context);
 
         // Assert
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Ignored);
+        await AssertIgnored(result);
     }
 
     [Test]
-    public async Task HandleInternal_ConcurrentModification_ShouldReturnIgnored() {
+    public async Task ConcurrentModification_ShouldReturnIgnored() {
         // Arrange
-        var containerName = "test-concurrent";
-        var containerClient = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateAsync();
+        var container = await SetupContainer("concurrent");
+        var blobName = "concurrent-stream/ConcurrentState.json";
 
-        // Create initial blob
-        var blobClient = containerClient.GetBlobClient("concurrent-stream/ConcurrentState.json");
-        var initialState = new ConcurrentState { Value = 1 };
-        var json = JsonSerializer.SerializeToUtf8Bytes(initialState);
-        await blobClient.UploadAsync(new MemoryStream(json), overwrite: true);
+        await SetupExistingBlob(container, blobName, new ConcurrentState { Value = 1 });
 
-        var projector = new TestProjectorConcurrent(containerClient);
-        var context = CreateContext(fixture, new TestEvent { Value = 10 });
+        var projector = new ConcurrentModificationProjector(container);
+        var context = CreateContext(new TestEvent { Value = 10 });
 
         // First update should succeed
         var result1 = await projector.HandleEvent(context);
-        await Assert.That(result1).IsEqualTo(EventHandlingStatus.Success);
+        await AssertSuccess(result1);
 
-        // Now simulate concurrent modification: modify the blob directly with a different value
+        // Simulate concurrent modification: modify the blob directly with a different value
         var modifiedState = new ConcurrentState { Value = 999 };
         var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
+        var blobClient = container.GetBlobClient(blobName);
         await blobClient.UploadAsync(new MemoryStream(modifiedJson), overwrite: true);
 
         // This should now fail with 412 because the ETag won't match
         var result2 = await projector.HandleEvent(context);
-        await Assert.That(result2).IsEqualTo(EventHandlingStatus.Ignored);
+        await AssertIgnored(result2);
     }
 
-    // Note: GetBlobName is protected, so we can't test it directly
-    // But we can verify it works by checking the blob names used in other tests
+    // ========== TEST CONTEXT FACTORY ==========
 
-    static IMessageConsumeContext CreateContext(IntegrationFixture fixture, object message) =>
+    static IMessageConsumeContext CreateContext(object message) =>
         new MessageConsumeContext(
             eventId: Guid.NewGuid().ToString(),
             eventType: message.GetType().Name,
             contentType: "application/json",
-            stream: "test-stream",
+            stream: DefaultStream,
             eventNumber: 0,
             streamPosition: 0,
             globalPosition: 0,
@@ -259,7 +259,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
             cancellationToken: CancellationToken.None
         );
 
-    // Test state classes
+    // ========== TEST STATE CLASSES ==========
+
     class SyncState {
         public int Value { get; set; }
         public int Counter { get; set; }
@@ -285,9 +286,14 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
 
     class NoHandlerState { }
 
-    // Test projector classes - one for each On method variant
-    class TestProjectorWithSyncStateHandler : StorageBlobsProjector<SyncState> {
-        public TestProjectorWithSyncStateHandler(BlobContainerClient container) : base(container) {
+    // ========== TEST PROJECTOR CLASSES
+    // Intent: Each class name explicitly surfaces the handler pattern being tested ==========
+
+    /// <summary>
+    /// Tests sync handler: On<TEvent>(Func<Context, State, State>)
+    /// </summary>
+    class SyncStateProjector : StorageBlobsProjector<SyncState> {
+        public SyncStateProjector(BlobContainerClient container) : base(container) {
             On<TestEvent>((ctx, state) => {
                 state.Value += ((TestEvent)ctx.Message).Value;
                 state.Counter++;
@@ -296,8 +302,11 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         }
     }
 
-    class TestProjectorWithSyncContextStateHandler : StorageBlobsProjector<SyncContextState> {
-        public TestProjectorWithSyncContextStateHandler(BlobContainerClient container) : base(container) {
+    /// <summary>
+    /// Tests sync context-aware handler: On<TEvent>(Func<Context, State, State>) with context access
+    /// </summary>
+    class SyncContextAwareProjector : StorageBlobsProjector<SyncContextState> {
+        public SyncContextAwareProjector(BlobContainerClient container) : base(container) {
             On<TestEvent>((ctx, state) => {
                 state.Value += ((TestEvent)ctx.Message).Value;
                 state.StreamId = ctx.Stream.GetId();
@@ -306,8 +315,11 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         }
     }
 
-    class TestProjectorWithAsyncStateHandler : StorageBlobsProjector<AsyncState> {
-        public TestProjectorWithAsyncStateHandler(BlobContainerClient container) : base(container) {
+    /// <summary>
+    /// Tests async handler: On<TEvent>(Func<Context, State, ValueTask<State>>)
+    /// </summary>
+    class AsyncStateProjector : StorageBlobsProjector<AsyncState> {
+        public AsyncStateProjector(BlobContainerClient container) : base(container) {
             On<TestEvent>(async (ctx, state) => {
                 await Task.Delay(1);
                 state.Value += ((TestEvent)ctx.Message).Value;
@@ -316,8 +328,11 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         }
     }
 
-    class TestProjectorWithAsyncContextStateHandler : StorageBlobsProjector<AsyncContextState> {
-        public TestProjectorWithAsyncContextStateHandler(BlobContainerClient container) : base(container) {
+    /// <summary>
+    /// Tests async context-aware handler: On<TEvent>(Func<Context, State, ValueTask<State>>) with context access
+    /// </summary>
+    class AsyncContextAwareProjector : StorageBlobsProjector<AsyncContextState> {
+        public AsyncContextAwareProjector(BlobContainerClient container) : base(container) {
             On<TestEvent>(async (ctx, state) => {
                 await Task.Delay(1);
                 state.Value += ((TestEvent)ctx.Message).Value;
@@ -327,14 +342,20 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         }
     }
 
-    class TestProjectorNoHandler : StorageBlobsProjector<NoHandlerState> {
-        public TestProjectorNoHandler(BlobContainerClient container) : base(container) {
-            // No handlers registered
+    /// <summary>
+    /// Tests scenario with no handlers registered
+    /// </summary>
+    class NoHandlerProjector : StorageBlobsProjector<NoHandlerState> {
+        public NoHandlerProjector(BlobContainerClient container) : base(container) {
+            // No handlers registered - all events should be ignored
         }
     }
 
-    class TestProjectorConcurrent : StorageBlobsProjector<ConcurrentState> {
-        public TestProjectorConcurrent(BlobContainerClient container) : base(container) {
+    /// <summary>
+    /// Tests concurrent modification scenario (ETag mismatch)
+    /// </summary>
+    class ConcurrentModificationProjector : StorageBlobsProjector<ConcurrentState> {
+        public ConcurrentModificationProjector(BlobContainerClient container) : base(container) {
             On<TestEvent>((ctx, state) => {
                 state.Value += ((TestEvent)ctx.Message).Value;
                 return state;
