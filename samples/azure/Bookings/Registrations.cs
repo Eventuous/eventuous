@@ -27,9 +27,9 @@ public static class Registrations {
             builder.AddBlobServiceClient(blobConnectionString);
         });
 
-        var connectionString = configuration.GetConnectionString("database") ?? throw new InvalidOperationException("Connection string 'database' not found.");
+        var connectionString = configuration.GetConnectionString("bookings-db") ?? throw new InvalidOperationException("Connection string 'bookings-db' not found.");
 
-        services.AddEventuousSqlServer(connectionString, "b", true);
+        services.AddEventuousSqlServer(connectionString, initializeDatabase: true);
         services.AddEventStore<SqlServerStore>();
         services.AddSqlServerCheckpointStore();
         services.AddCommandService<BookingsCommandService, BookingState>();
@@ -43,7 +43,6 @@ public static class Registrations {
         services.AddSubscription<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions>(
             "BookingsProjections",
             builder => builder
-                .Configure(x => x.Schema = "b")
                 .AddEventHandler<BookingStateProjection>()
                 .AddEventHandler<MyBookingsProjection>()
         );

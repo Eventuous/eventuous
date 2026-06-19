@@ -1,29 +1,30 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 var sql = builder.AddAzureSqlServer("sql").RunAsContainer();
-var db = sql.AddDatabase("database");
+var bookingsDb = sql.AddDatabase("bookings-db");
+var paymentsDb = sql.AddDatabase("payments-db");
 
 var serviceBus = builder.AddAzureServiceBus("sbemulators").RunAsEmulator();
 var queue = serviceBus.AddServiceBusQueue("PaymentsIntegration");
 
-var blobs = builder.AddAzureStorage("storage").RunAsEmulator()
-    .AddBlobs("blobs");
+var blobs = builder.AddAzureStorage("storage").RunAsEmulator().AddBlobs("blobs");
+var containers = blobs.AddBlobContainer("bookings-container");
 
 var bookings = builder.AddProject<Projects.Bookings>("bookings")
     .WithExternalHttpEndpoints()
-    .WithReference(db)
+    .WithReference(bookingsDb)
     .WithReference(serviceBus)
     .WithReference(blobs)
-    .WaitFor(db)
+    .WaitFor(bookingsDb)
     .WaitFor(serviceBus)
     .WaitFor(blobs);
 
 var payments = builder.AddProject<Projects.Bookings_Payments>("payments")
     .WithExternalHttpEndpoints()
-    .WithReference(db)
+    .WithReference(paymentsDb)
     .WithReference(serviceBus)
     .WithReference(blobs)
-    .WaitFor(db)
+    .WaitFor(paymentsDb)
     .WaitFor(serviceBus)
     .WaitFor(blobs);
 

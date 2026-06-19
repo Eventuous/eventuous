@@ -17,9 +17,9 @@ public static class Registrations {
             builder.AddBlobServiceClient(blobConnectionString);
         });
 
-        var connectionString = configuration.GetConnectionString("database") ?? throw new InvalidOperationException("Connection string 'database' not found.");
+        var connectionString = configuration.GetConnectionString("payments-db") ?? throw new InvalidOperationException("Connection string 'payments-db' not found.");
 
-        services.AddEventuousSqlServer(connectionString, "bp", true);
+        services.AddEventuousSqlServer(connectionString, initializeDatabase: true);
         services.AddEventStore<SqlServerStore>();
         services.AddSqlServerCheckpointStore();
         services.AddCommandService<CommandService, PaymentState>();
