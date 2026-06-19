@@ -300,55 +300,50 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// Tests sync handler: On<TEvent>(Func<Context, State, State>)
     /// </summary>
     class SyncStateProjector : StorageBlobsProjector<SyncState> {
-        public SyncStateProjector(BlobContainerClient container) : base(container) {
+        public SyncStateProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) {
             On<TestEvent>((ctx, state) => {
                 state.Value += ((TestEvent)ctx.Message).Value;
                 state.Counter++;
                 return state;
             });
         }
-
-        public SyncStateProjector(BlobServiceClient serviceClient, string containerName)
-            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
     /// Tests sync context-aware handler: On<TEvent>(Func<Context, State, State>) with context access
     /// </summary>
     class SyncContextAwareProjector : StorageBlobsProjector<SyncContextState> {
-        public SyncContextAwareProjector(BlobContainerClient container) : base(container) {
+        public SyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) {
             On<TestEvent>((ctx, state) => {
                 state.Value += ((TestEvent)ctx.Message).Value;
                 state.StreamId = ctx.Stream.GetId();
                 return state;
             });
         }
-
-        public SyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
-            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
     /// Tests async handler: On<TEvent>(Func<Context, State, ValueTask<State>>)
     /// </summary>
     class AsyncStateProjector : StorageBlobsProjector<AsyncState> {
-        public AsyncStateProjector(BlobContainerClient container) : base(container) {
+        public AsyncStateProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) {
             On<TestEvent>(async (ctx, state) => {
                 await Task.Delay(1);
                 state.Value += ((TestEvent)ctx.Message).Value;
                 return state;
             });
         }
-
-        public AsyncStateProjector(BlobServiceClient serviceClient, string containerName)
-            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
     /// Tests async context-aware handler: On<TEvent>(Func<Context, State, ValueTask<State>>) with context access
     /// </summary>
     class AsyncContextAwareProjector : StorageBlobsProjector<AsyncContextState> {
-        public AsyncContextAwareProjector(BlobContainerClient container) : base(container) {
+        public AsyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
+           : base(serviceClient, containerName) {
             On<TestEvent>(async (ctx, state) => {
                 await Task.Delay(1);
                 state.Value += ((TestEvent)ctx.Message).Value;
@@ -356,19 +351,12 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
                 return state;
             });
         }
-
-        public AsyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
-            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
     /// Tests scenario with no handlers registered
     /// </summary>
     class NoHandlerProjector : StorageBlobsProjector<NoHandlerState> {
-        public NoHandlerProjector(BlobContainerClient container) : base(container) {
-            // No handlers registered - all events should be ignored
-        }
-
         public NoHandlerProjector(BlobServiceClient serviceClient, string containerName)
             : base(serviceClient, containerName) { }
     }
@@ -377,14 +365,12 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// Tests concurrent modification scenario (ETag mismatch)
     /// </summary>
     class ConcurrentModificationProjector : StorageBlobsProjector<ConcurrentState> {
-        public ConcurrentModificationProjector(BlobContainerClient container) : base(container) {
+        public ConcurrentModificationProjector(BlobServiceClient serviceClient, string containerName)
+             : base(serviceClient, containerName) {
             On<TestEvent>((ctx, state) => {
                 state.Value += ((TestEvent)ctx.Message).Value;
                 return state;
             });
         }
-
-        public ConcurrentModificationProjector(BlobServiceClient serviceClient, string containerName)
-            : base(serviceClient, containerName) { }
     }
 }
