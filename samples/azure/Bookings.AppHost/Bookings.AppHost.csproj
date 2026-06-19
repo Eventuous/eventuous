@@ -1,0 +1,24 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.4.5">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>301020ec-674b-4bcd-ba8f-2eddd4c017df</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bookings\Bookings.csproj" />
+    <ProjectReference Include="..\Bookings.Payments\Bookings.Payments.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" />
+    <PackageReference Include="Aspire.Hosting.Azure.Sql" />
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+  </ItemGroup>
+</Project>
