@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup Label="Testcontainers">
     <PackageVersion Include="Testcontainers" Version="$(TestcontainersVersion)" />
+    <PackageVersion Include="Testcontainers.Azurite" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.KurrentDb" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.Kafka" Version="$(TestcontainersVersion)" />
     <PackageVersion Include="Testcontainers.MongoDb" Version="$(TestcontainersVersion)" />
