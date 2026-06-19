@@ -14,20 +14,27 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     // ========== HELPER METHODS (surface intent through naming) ==========
 
     /// <summary>
-    /// Creates a test container for the given scenario, surfacing the handler type and test case
+    /// Creates a test container for the given scenario, surfacing the handler type and test case.
+    /// Returns the container name for use with the new constructor.
     /// </summary>
-    async Task<BlobContainerClient> SetupContainer(string scenarioName) {
+    async Task<string> SetupContainer(string scenarioName) {
         var containerName = $"test-{scenarioName}";
         var client = fixture.BlobServiceClient.GetBlobContainerClient(containerName);
         await client.CreateAsync();
-        return client;
+        return containerName;
     }
+
+    /// <summary>
+    /// Gets a BlobContainerClient for the given container name
+    /// </summary>
+    BlobContainerClient GetContainer(string containerName) =>
+        fixture.BlobServiceClient.GetBlobContainerClient(containerName);
 
     /// <summary>
     /// Sets up initial blob state for update scenarios
     /// </summary>
-    async Task SetupExistingBlob<TState>(BlobContainerClient container, string blobName, TState initialState) {
-        var blobClient = container.GetBlobClient(blobName);
+    async Task SetupExistingBlob<TState>(string containerName, string blobName, TState initialState) {
+        var blobClient = GetContainer(containerName).GetBlobClient(blobName);
         var json = JsonSerializer.SerializeToUtf8Bytes(initialState);
         await blobClient.UploadAsync(new MemoryStream(json), overwrite: true);
     }
@@ -35,8 +42,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Gets the state from blob, surfacing the expected state type
     /// </summary>
-    async Task<TState> GetBlobState<TState>(BlobContainerClient container, string blobName) {
-        var blobClient = container.GetBlobClient(blobName);
+    async Task<TState> GetBlobState<TState>(string containerName, string blobName) {
+        var blobClient = GetContainer(containerName).GetBlobClient(blobName);
         var blob = await blobClient.DownloadContentAsync();
         return blob.Value.Content.ToObjectFromJson<TState>(JsonSerializerOptions.Web)!;
     }
@@ -60,8 +67,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     [Test]
     public async Task SyncStateHandler_NewBlob_ShouldCreateAndStoreState() {
         // Arrange
-        var container = await SetupContainer("sync-state-new");
-        var projector = new SyncStateProjector(container);
+        var containerName = await SetupContainer("sync-state-new");
+        var projector = new SyncStateProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 10 });
 
         // Act
@@ -70,19 +77,19 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Assert
         await AssertSuccess(result);
 
-        var state = await GetBlobState<SyncState>(container, $"{DefaultStream}/SyncState.json");
+        var state = await GetBlobState<SyncState>(containerName, $"{DefaultStream}/SyncState.json");
         await Assert.That(state.Value).IsEqualTo(10);
     }
 
     [Test]
     public async Task SyncStateHandler_ExistingBlob_ShouldUpdateState() {
         // Arrange
-        var container = await SetupContainer("sync-state-existing");
+        var containerName = await SetupContainer("sync-state-existing");
         var blobName = $"{DefaultStream}/SyncState.json";
 
-        await SetupExistingBlob(container, blobName, new SyncState { Value = 5 });
+        await SetupExistingBlob(containerName, blobName, new SyncState { Value = 5 });
 
-        var projector = new SyncStateProjector(container);
+        var projector = new SyncStateProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 10 });
 
         // Act
@@ -91,7 +98,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Assert
         await AssertSuccess(result);
 
-        var state = await GetBlobState<SyncState>(container, blobName);
+        var state = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state.Value).IsEqualTo(15); // 5 + 10
         await Assert.That(state.Counter).IsEqualTo(1);
     }
@@ -101,8 +108,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     [Test]
     public async Task SyncContextAwareHandler_NewBlob_ShouldUseContextAndStoreState() {
         // Arrange
-        var container = await SetupContainer("sync-context-new");
-        var projector = new SyncContextAwareProjector(container);
+        var containerName = await SetupContainer("sync-context-new");
+        var projector = new SyncContextAwareProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 20 });
 
         // Act
@@ -111,7 +118,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Assert
         await AssertSuccess(result);
 
-        var state = await GetBlobState<SyncContextState>(container, $"{DefaultStream}/SyncContextState.json");
+        var state = await GetBlobState<SyncContextState>(containerName, $"{DefaultStream}/SyncContextState.json");
         await Assert.That(state.Value).IsEqualTo(20);
         await Assert.That(state.StreamId).IsEqualTo(DefaultStream);
     }
@@ -121,8 +128,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     [Test]
     public async Task AsyncStateHandler_NewBlob_ShouldCreateAndStoreState() {
         // Arrange
-        var container = await SetupContainer("async-state-new");
-        var projector = new AsyncStateProjector(container);
+        var containerName = await SetupContainer("async-state-new");
+        var projector = new AsyncStateProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 30 });
 
         // Act
@@ -131,19 +138,19 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Assert
         await AssertSuccess(result);
 
-        var state = await GetBlobState<AsyncState>(container, $"{DefaultStream}/AsyncState.json");
+        var state = await GetBlobState<AsyncState>(containerName, $"{DefaultStream}/AsyncState.json");
         await Assert.That(state.Value).IsEqualTo(30);
     }
 
     [Test]
     public async Task AsyncStateHandler_ExistingBlob_ShouldUpdateState() {
         // Arrange
-        var container = await SetupContainer("async-state-existing");
+        var containerName = await SetupContainer("async-state-existing");
         var blobName = $"{DefaultStream}/AsyncState.json";
 
-        await SetupExistingBlob(container, blobName, new AsyncState { Value = 5 });
+        await SetupExistingBlob(containerName, blobName, new AsyncState { Value = 5 });
 
-        var projector = new AsyncStateProjector(container);
+        var projector = new AsyncStateProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 35 });
 
         // Act
@@ -152,7 +159,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Assert
         await AssertSuccess(result);
 
-        var state = await GetBlobState<AsyncState>(container, blobName);
+        var state = await GetBlobState<AsyncState>(containerName, blobName);
         await Assert.That(state.Value).IsEqualTo(40); // 5 + 35
     }
 
@@ -161,8 +168,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     [Test]
     public async Task AsyncContextAwareHandler_NewBlob_ShouldUseContextAndStoreState() {
         // Arrange
-        var container = await SetupContainer("async-context-new");
-        var projector = new AsyncContextAwareProjector(container);
+        var containerName = await SetupContainer("async-context-new");
+        var projector = new AsyncContextAwareProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 40, Name = "AsyncContext" });
 
         // Act
@@ -171,7 +178,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Assert
         await AssertSuccess(result);
 
-        var state = await GetBlobState<AsyncContextState>(container, $"{DefaultStream}/AsyncContextState.json");
+        var state = await GetBlobState<AsyncContextState>(containerName, $"{DefaultStream}/AsyncContextState.json");
         await Assert.That(state.Value).IsEqualTo(40);
         await Assert.That(state.EventName).IsEqualTo("AsyncContext");
     }
@@ -179,12 +186,12 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     [Test]
     public async Task AsyncContextAwareHandler_ExistingBlob_ShouldUpdateStateAndContext() {
         // Arrange
-        var container = await SetupContainer("async-context-existing");
+        var containerName = await SetupContainer("async-context-existing");
         var blobName = $"{DefaultStream}/AsyncContextState.json";
 
-        await SetupExistingBlob(container, blobName, new AsyncContextState { Value = 10, EventName = "Initial" });
+        await SetupExistingBlob(containerName, blobName, new AsyncContextState { Value = 10, EventName = "Initial" });
 
-        var projector = new AsyncContextAwareProjector(container);
+        var projector = new AsyncContextAwareProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 50, Name = "Update" });
 
         // Act
@@ -193,7 +200,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Assert
         await AssertSuccess(result);
 
-        var state = await GetBlobState<AsyncContextState>(container, blobName);
+        var state = await GetBlobState<AsyncContextState>(containerName, blobName);
         await Assert.That(state.Value).IsEqualTo(60); // 10 + 50
         await Assert.That(state.EventName).IsEqualTo("Update");
     }
@@ -203,8 +210,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     [Test]
     public async Task NoHandler_ShouldReturnIgnored() {
         // Arrange
-        var container = await SetupContainer("no-handler");
-        var projector = new NoHandlerProjector(container);
+        var containerName = await SetupContainer("no-handler");
+        var projector = new NoHandlerProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 100 });
 
         // Act
@@ -217,12 +224,12 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     [Test]
     public async Task ConcurrentModification_ShouldReturnIgnored() {
         // Arrange
-        var container = await SetupContainer("concurrent");
+        var containerName = await SetupContainer("concurrent");
         var blobName = "concurrent-stream/ConcurrentState.json";
 
-        await SetupExistingBlob(container, blobName, new ConcurrentState { Value = 1 });
+        await SetupExistingBlob(containerName, blobName, new ConcurrentState { Value = 1 });
 
-        var projector = new ConcurrentModificationProjector(container);
+        var projector = new ConcurrentModificationProjector(fixture.BlobServiceClient, containerName);
         var context = CreateContext(new TestEvent { Value = 10 });
 
         // First update should succeed
@@ -232,7 +239,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Simulate concurrent modification: modify the blob directly with a different value
         var modifiedState = new ConcurrentState { Value = 999 };
         var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
-        var blobClient = container.GetBlobClient(blobName);
+        var blobClient = GetContainer(containerName).GetBlobClient(blobName);
         await blobClient.UploadAsync(new MemoryStream(modifiedJson), overwrite: true);
 
         // This should now fail with 412 because the ETag won't match
@@ -300,6 +307,9 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
                 return state;
             });
         }
+
+        public SyncStateProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
@@ -313,6 +323,9 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
                 return state;
             });
         }
+
+        public SyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
@@ -326,6 +339,9 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
                 return state;
             });
         }
+
+        public AsyncStateProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
@@ -340,6 +356,9 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
                 return state;
             });
         }
+
+        public AsyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
@@ -349,6 +368,9 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         public NoHandlerProjector(BlobContainerClient container) : base(container) {
             // No handlers registered - all events should be ignored
         }
+
+        public NoHandlerProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) { }
     }
 
     /// <summary>
@@ -361,5 +383,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
                 return state;
             });
         }
+
+        public ConcurrentModificationProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) { }
     }
 }

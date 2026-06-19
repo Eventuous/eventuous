@@ -22,9 +22,16 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         ITypeMapper? mapper = null
     ) {
         _container = container;
-        _jsonOptions = options?.Value ?? JsonSerializerOptions.Web;
+        _jsonOptions = options?.Value ?? new(JsonSerializerOptions.Web);
         _map = mapper ?? TypeMap.Instance;
     }
+
+    public StorageBlobsProjector(
+        BlobServiceClient serviceClient,
+        string containerName,
+        IOptions<JsonSerializerOptions>? options = null,
+        ITypeMapper? mapper = null
+    ) : this(serviceClient.GetBlobContainerClient(containerName), options, mapper) { }
 
     protected void On<TEvent>(Func<T, T> handler) where TEvent : class
         => On<TEvent>((ctx, state) => new ValueTask<T>(handler(state)));

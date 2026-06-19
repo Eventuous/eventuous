@@ -1,12 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <IncludeTestHost>true</IncludeTestHost>
-    <IncludeTestHelpers>true</IncludeTestHelpers>
-    <IncludeSutApp>true</IncludeSutApp>
-    <OutputType>Exe</OutputType>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="$(LocalRoot)\Eventuous.Azure.Storage.Blobs\Eventuous.Azure.Storage.Blobs.csproj" />
     <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj" />

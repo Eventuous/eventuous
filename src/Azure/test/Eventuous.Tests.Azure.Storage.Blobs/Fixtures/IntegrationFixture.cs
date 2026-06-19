@@ -40,6 +40,7 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
         // Start Azurite container for blob storage
         _azuriteContainer = new AzuriteBuilder()
             .WithImage("mcr.microsoft.com/azure-storage/azurite:latest")
+            .WithCommand("--skipApiVersionCheck")
             .Build();
         await _azuriteContainer.StartAsync();
 
