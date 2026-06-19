@@ -1,10 +1,10 @@
-using Eventuous.Projections.MongoDB.Tools;
+using System.Collections.Immutable;
 using NodaTime;
 
 namespace Bookings.Application.Queries;
 
-public record MyBookings(string Id) : ProjectedDocument(Id) {
-    public List<Booking> Bookings { get; init; } = [];
+public record MyBookings {
+    public ImmutableList<Booking> Bookings { get; init; } = [];
 
     public record Booking(string BookingId, LocalDate CheckInDate, LocalDate CheckOutDate, float Price);
 }

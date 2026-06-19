@@ -25,12 +25,13 @@ var app = builder.Build();
 
 app.UseSerilogRequestLogging();
 app.UseEventuousLogs();
-app.UseSwagger().UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 app.MapControllers();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 try {
-    app.Run("http://*:5051");
+    app.Run();
     return 0;
 }
 catch (Exception e) {

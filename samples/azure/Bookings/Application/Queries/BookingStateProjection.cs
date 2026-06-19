@@ -1,43 +1,27 @@
-using Eventuous.Projections.MongoDB;
-using Eventuous.Subscriptions.Context;
-using MongoDB.Driver;
+using Azure.Storage.Blobs;
+using Eventuous.Azure.Storage.Blobs;
 using static Bookings.Domain.Bookings.BookingEvents;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Bookings.Application.Queries;
 
-public class BookingStateProjection : MongoProjector<BookingDocument> {
-    public BookingStateProjection(IMongoDatabase database) : base(database) {
-        On<V1.RoomBooked>(stream => stream.GetId(), HandleRoomBooked);
+public class BookingStateProjection : StorageBlobsProjector<BookingDocument> {
+    public BookingStateProjection(BlobServiceClient client) : base(client, "bookings-container") {
+        On<V1.RoomBooked>(HandleRoomBooked);
 
-        On<V1.PaymentRecorded>(
-            b => b
-                .UpdateOne
-                .DefaultId()
-                .Update((evt, update) =>
-                    update.Set(x => x.Outstanding, evt.Outstanding)
-                )
-        );
+        On<V1.PaymentRecorded>((b, evt) => b with { Outstanding = evt.Outstanding });
 
-        On<V1.BookingFullyPaid>(b => b
-            .UpdateOne
-            .DefaultId()
-            .Update((_, update) => update.Set(x => x.Paid, true))
-        );
+        On<V1.BookingFullyPaid>((b, evt) => b with { Paid = true });
     }
 
-    static UpdateDefinition<BookingDocument> HandleRoomBooked(
-        IMessageConsumeContext<V1.RoomBooked> ctx, UpdateDefinitionBuilder<BookingDocument> update
-    ) {
-        var evt = ctx.Message;
-
-        return update.SetOnInsert(x => x.Id, ctx.Stream.GetId())
-            .Set(x => x.GuestId, evt.GuestId)
-            .Set(x => x.RoomId, evt.RoomId)
-            .Set(x => x.CheckInDate, evt.CheckInDate)
-            .Set(x => x.CheckOutDate, evt.CheckOutDate)
-            .Set(x => x.BookingPrice, evt.BookingPrice)
-            .Set(x => x.Outstanding, evt.OutstandingAmount);
-    }
+    static BookingDocument HandleRoomBooked(BookingDocument bookingDocument, V1.RoomBooked evt) =>
+        bookingDocument with {
+            GuestId      = evt.GuestId,
+            RoomId       = evt.RoomId,
+            CheckInDate  = evt.CheckInDate,
+            CheckOutDate = evt.CheckOutDate,
+            BookingPrice = evt.BookingPrice,
+            Outstanding  = evt.OutstandingAmount
+        };
 }

@@ -6,8 +6,6 @@
     <ItemGroup>
         <PackageReference Include="Azure.Storage.Blobs" />
         <PackageReference Include="Microsoft.Extensions.Azure" />
-        <PackageReference Include="MongoDb.Bson.NodaTime" />
-        <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
@@ -27,9 +25,9 @@
         <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
         <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
         <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Mongo\src\Eventuous.Projections.MongoDB\Eventuous.Projections.MongoDB.csproj" />
         <ProjectReference Include="$(SrcRoot)\SqlServer\src\Eventuous.SqlServer\Eventuous.SqlServer.csproj" />
         <ProjectReference Include="$(SrcRoot)\Azure\src\Eventuous.Azure.ServiceBus\Eventuous.Azure.ServiceBus.csproj" />
+        <ProjectReference Include="$(SrcRoot)\Azure\src\Eventuous.Azure.Storage.Blobs\Eventuous.Azure.Storage.Blobs.csproj" />
         <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\Bookings.Domain\Bookings.Domain.csproj" />
     </ItemGroup>

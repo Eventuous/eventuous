@@ -1,5 +1,4 @@
 using Eventuous.Diagnostics.OpenTelemetry;
-using MongoDB.Driver.Core.Extensions.DiagnosticSources;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -30,8 +29,7 @@ public static class Telemetry {
                     builder
                         .AddAspNetCoreInstrumentation()
                         // .AddSqlClientInstrumentation() puzzle out why
-                        .AddEventuousTracing()
-                        .AddSource(typeof(DiagnosticsActivityEventSubscriber).Assembly.GetName().Name!);
+                        .AddEventuousTracing();
 
                     if (otelEnabled)
                         builder.AddOtlpExporter();

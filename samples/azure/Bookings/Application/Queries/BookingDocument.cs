@@ -1,11 +1,10 @@
-using Eventuous.Projections.MongoDB.Tools;
 using NodaTime;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Bookings.Application.Queries;
 
-public record BookingDocument(string Id) : ProjectedDocument(Id) {
+public record BookingDocument {
     public string?   GuestId      { get; init; }
     public string?   RoomId       { get; init; }
     public LocalDate CheckInDate  { get; init; }

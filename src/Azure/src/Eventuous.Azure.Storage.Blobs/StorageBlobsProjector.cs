@@ -33,14 +33,14 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         ITypeMapper? mapper = null
     ) : this(serviceClient.GetBlobContainerClient(containerName), options, mapper) { }
 
-    protected void On<TEvent>(Func<T, T> handler) where TEvent : class
-        => On<TEvent>((ctx, state) => new ValueTask<T>(handler(state)));
+    protected void On<TEvent>(Func<T, TEvent, T> handler) where TEvent : class
+        => On<TEvent>((ctx, state) => new ValueTask<T>(handler(state, ctx.Message)));
 
     protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, T> handler) where TEvent : class
         => On<TEvent>((ctx, state) => new ValueTask<T>(handler(ctx, state)));
 
-    protected void On<TEvent>(Func<T, ValueTask<T>> handler) where TEvent : class
-        => On<TEvent>((ctx, state) => handler(state));
+    protected void On<TEvent>(Func<T, TEvent, ValueTask<T>> handler) where TEvent : class
+        => On<TEvent>((ctx, state) => handler(state, ctx.Message));
 
     protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler) where TEvent : class {
         if (!_handlers.TryAdd(typeof(TEvent), (context, state) => {

@@ -19,14 +19,15 @@ builder.Services.AddEventuous(builder.Configuration);
 var app = builder.Build();
 
 app.Services.AddEventuousLogs();
-app.UseSwagger().UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 // Here we discover commands by their annotations
 app.MapDiscoveredCommands<PaymentState>();
 
 try {
-    app.Run("http://*:5052");
+    app.Run();
 
     return 0;
 } catch (Exception e) {

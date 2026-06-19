@@ -1,4 +1,3 @@
-using Bookings.Infrastructure;
 using Bookings.Payments.Application;
 using Bookings.Payments.Domain;
 using Bookings.Payments.Integration;
@@ -24,7 +23,6 @@ public static class Registrations {
         services.AddEventStore<SqlServerStore>();
         services.AddSqlServerCheckpointStore();
         services.AddCommandService<CommandService, PaymentState>();
-        services.AddSingleton(Mongo.ConfigureMongo(configuration));
         services.AddProducer<ServiceBusProducer>();
         services.AddSingleton(new ServiceBusProducerOptions {
             QueueOrTopicName = "PaymentsIntegration",

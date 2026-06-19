@@ -4,12 +4,13 @@ var sql = builder.AddAzureSqlServer("sql").RunAsContainer();
 var db = sql.AddDatabase("database");
 
 var serviceBus = builder.AddAzureServiceBus("sbemulators").RunAsEmulator();
-var queue = serviceBus.AddQueue("PaymentsIntegration");
+var queue = serviceBus.AddServiceBusQueue("PaymentsIntegration");
 
 var blobs = builder.AddAzureStorage("storage").RunAsEmulator()
     .AddBlobs("blobs");
 
 var bookings = builder.AddProject<Projects.Bookings>("bookings")
+    .WithExternalHttpEndpoints()
     .WithReference(db)
     .WithReference(serviceBus)
     .WithReference(blobs)
@@ -18,6 +19,7 @@ var bookings = builder.AddProject<Projects.Bookings>("bookings")
     .WaitFor(blobs);
 
 var payments = builder.AddProject<Projects.Bookings_Payments>("payments")
+    .WithExternalHttpEndpoints()
     .WithReference(db)
     .WithReference(serviceBus)
     .WithReference(blobs)

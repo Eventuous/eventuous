@@ -3,7 +3,6 @@ using Bookings.Application;
 using Bookings.Application.Queries;
 using Bookings.Domain;
 using Bookings.Domain.Bookings;
-using Bookings.Infrastructure;
 using Bookings.Integration;
 using Eventuous;
 using Eventuous.Azure.ServiceBus.Subscriptions;
@@ -41,11 +40,10 @@ public static class Registrations {
             (from, currency) => new(from.Amount * 2, currency)
         );
 
-        services.AddSingleton(Mongo.ConfigureMongo(configuration));
-
         services.AddSubscription<SqlServerAllStreamSubscription, SqlServerAllStreamSubscriptionOptions>(
             "BookingsProjections",
             builder => builder
+                .Configure(x => x.Schema = "b")
                 .AddEventHandler<BookingStateProjection>()
                 .AddEventHandler<MyBookingsProjection>()
         );
