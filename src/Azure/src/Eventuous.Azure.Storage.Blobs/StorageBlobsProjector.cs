@@ -83,7 +83,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
         BlobDownloadResult blobContent;
         ETag eTag;
-        
+
         try {
             blobContent = await blobClient.DownloadContentAsync();
             eTag = blobContent.Details.ETag;
@@ -100,18 +100,17 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         var json = JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
 
         using var stream = new MemoryStream(json);
-        
-        if (eTag == default) {
-            await blobClient.UploadAsync(stream, overwrite: true, cancellationToken: context.CancellationToken);
-            return EventHandlingStatus.Success;
-        }
-        
+
+
         try {
-            var response = await blobClient.UploadAsync(stream, new BlobUploadOptions {
-                Conditions = new BlobRequestConditions { IfMatch = eTag }
-            }, context.CancellationToken);
+            var response = eTag == default
+            ? await blobClient.UploadAsync(stream, overwrite: false, cancellationToken: context.CancellationToken)
+            : await blobClient.UploadAsync(stream, new BlobUploadOptions 
+                {
+                    Conditions = new BlobRequestConditions { IfMatch = eTag }
+                }, context.CancellationToken);
             return EventHandlingStatus.Success;
-        } catch (RequestFailedException ex) when (ex.Status == 412) {
+        } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
             return EventHandlingStatus.Ignored;
         }
     }

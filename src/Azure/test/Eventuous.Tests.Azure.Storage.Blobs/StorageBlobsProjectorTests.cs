@@ -222,25 +222,47 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     }
 
     [Test]
-    public async Task ConcurrentModification_ShouldReturnIgnored() {
+    public async Task ConcurrentAdditionOfNewBlob_ShouldReturnIgnored() {
         // Arrange
-        var containerName = await SetupContainer("concurrent");
-        var blobName = "concurrent-stream/ConcurrentState.json";
+        var containerName = await SetupContainer("concurrent-new");
+        var blobName = "stream/ConcurrentState.json";
+
+        var projector = new ConcurrentModificationProjector(fixture.BlobServiceClient, containerName,
+        messWithState: () => {
+            // Simulate concurrent modification: modify the blob directly with a different value
+            var modifiedState = new ConcurrentState { Value = 999 };
+            var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
+            var blobClient = GetContainer(containerName).GetBlobClient(blobName);
+            blobClient.Upload(new MemoryStream(modifiedJson), overwrite: true);
+        }, onCall: 1);
+        var context = CreateContext(new TestEvent { Value = 10 });
+
+        // This should now fail with 412 because the ETag won't match
+        var result2 = await projector.HandleEvent(context);
+        await AssertIgnored(result2);
+    }
+
+    [Test]
+    public async Task ConcurrentModificationOfExistingBlob_ShouldReturnIgnored() {
+        // Arrange
+        var containerName = await SetupContainer("concurrent-existing");
+        var blobName = "stream/ConcurrentState.json";
 
         await SetupExistingBlob(containerName, blobName, new ConcurrentState { Value = 1 });
 
-        var projector = new ConcurrentModificationProjector(fixture.BlobServiceClient, containerName);
+        var projector = new ConcurrentModificationProjector(fixture.BlobServiceClient, containerName,
+        messWithState: () => {
+            // Simulate concurrent modification: modify the blob directly with a different value
+            var modifiedState = new ConcurrentState { Value = 999 };
+            var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
+            var blobClient = GetContainer(containerName).GetBlobClient(blobName);
+            blobClient.Upload(new MemoryStream(modifiedJson), overwrite: true);
+        }, onCall: 2);
         var context = CreateContext(new TestEvent { Value = 10 });
 
         // First update should succeed
         var result1 = await projector.HandleEvent(context);
         await AssertSuccess(result1);
-
-        // Simulate concurrent modification: modify the blob directly with a different value
-        var modifiedState = new ConcurrentState { Value = 999 };
-        var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
-        var blobClient = GetContainer(containerName).GetBlobClient(blobName);
-        await blobClient.UploadAsync(new MemoryStream(modifiedJson), overwrite: true);
 
         // This should now fail with 412 because the ETag won't match
         var result2 = await projector.HandleEvent(context);
@@ -303,7 +325,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         public SyncStateProjector(BlobServiceClient serviceClient, string containerName)
             : base(serviceClient, containerName) {
             On<TestEvent>((ctx, state) => {
-                state.Value += ((TestEvent)ctx.Message).Value;
+                state.Value += ctx.Message.Value;
                 state.Counter++;
                 return state;
             });
@@ -317,7 +339,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         public SyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
             : base(serviceClient, containerName) {
             On<TestEvent>((ctx, state) => {
-                state.Value += ((TestEvent)ctx.Message).Value;
+                state.Value += ctx.Message.Value;
                 state.StreamId = ctx.Stream.GetId();
                 return state;
             });
@@ -332,7 +354,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
             : base(serviceClient, containerName) {
             On<TestEvent>(async (ctx, state) => {
                 await Task.Delay(1);
-                state.Value += ((TestEvent)ctx.Message).Value;
+                state.Value += ctx.Message.Value;
                 return state;
             });
         }
@@ -346,8 +368,8 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
            : base(serviceClient, containerName) {
             On<TestEvent>(async (ctx, state) => {
                 await Task.Delay(1);
-                state.Value += ((TestEvent)ctx.Message).Value;
-                state.EventName = ((TestEvent)ctx.Message).Name;
+                state.Value += ctx.Message.Value;
+                state.EventName = ctx.Message.Name;
                 return state;
             });
         }
@@ -365,10 +387,13 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// Tests concurrent modification scenario (ETag mismatch)
     /// </summary>
     class ConcurrentModificationProjector : StorageBlobsProjector<ConcurrentState> {
-        public ConcurrentModificationProjector(BlobServiceClient serviceClient, string containerName)
+        private int _callCount = 0;
+        public ConcurrentModificationProjector(BlobServiceClient serviceClient, string containerName, Action messWithState, int onCall)
              : base(serviceClient, containerName) {
             On<TestEvent>((ctx, state) => {
-                state.Value += ((TestEvent)ctx.Message).Value;
+                if (++_callCount == onCall)
+                    messWithState();
+                state.Value += ctx.Message.Value;
                 return state;
             });
         }

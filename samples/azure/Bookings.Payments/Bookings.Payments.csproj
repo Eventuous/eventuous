@@ -22,16 +22,23 @@
         <Compile Include="..\Bookings\Infrastructure\Telemetry.cs">
             <Link>Infrastructure\Telemetry.cs</Link>
         </Compile>
-        <Compile Include="..\..\kurrentdb\Bookings.Payments\Domain\*.cs" LinkBase="Domain" />
-        <Compile Include="..\..\kurrentdb\Bookings.Payments\Application\*.cs" LinkBase="Application" />
+        <Compile Include="..\..\kurrentdb\Bookings.Payments\Domain\*.cs">
+            <Link>Domain\%(Filename)%(Extension)</Link>
+        </Compile>
+        <Compile Include="..\..\kurrentdb\Bookings.Payments\Application\*.cs">
+            <Link>Application\%(Filename)%(Extension)</Link>
+        </Compile>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
+        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.AspNetCore\Eventuous.Extensions.AspNetCore.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Extensions\src\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.OpenTelemetry\Eventuous.Diagnostics.OpenTelemetry.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Shared.Generators\Eventuous.Shared.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="$(SrcRoot)\Experimental\src\Eventuous.Spyglass\Eventuous.Spyglass.csproj"/>
+        <ProjectReference Include="$(SrcRoot)\Experimental\gen\Eventuous.Spyglass.Generators\Eventuous.Spyglass.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="$(SrcRoot)\SqlServer\src\Eventuous.SqlServer\Eventuous.SqlServer.csproj" />
         <ProjectReference Include="$(SrcRoot)\Azure\src\Eventuous.Azure.ServiceBus\Eventuous.Azure.ServiceBus.csproj" />
-        <ProjectReference Include="$(SrcRoot)\Core\gen\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 </Project>
