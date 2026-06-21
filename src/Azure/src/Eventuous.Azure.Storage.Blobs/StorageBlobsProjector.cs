@@ -15,24 +15,30 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     readonly JsonSerializerOptions _jsonOptions;
     readonly Dictionary<Type, Handler> _handlers = new();
     readonly ITypeMapper _map;
+    readonly Func<BinaryData, T> _deserialize;
+    readonly Func<T, byte[]> _serialize;
     public delegate ValueTask<T> Handler(IMessageConsumeContext context, T state);
 
     public StorageBlobsProjector(
         BlobContainerClient container,
+        StorageBlobProjectorOptions<T>? projectorOptions = null,
         IOptions<JsonSerializerOptions>? options = null,
         ITypeMapper? mapper = null
     ) {
         _container = container;
-        _jsonOptions = options?.Value ?? new(JsonSerializerOptions.Web);
+        _jsonOptions = projectorOptions?.JsonOptions ?? options?.Value ?? new(JsonSerializerOptions.Web);
         _map = mapper ?? TypeMap.Instance;
+        _deserialize = projectorOptions?.Deserialize ?? ToObjectFromJson;
+        _serialize = projectorOptions?.Serialize ?? SerializeToUtf8Bytes;
     }
 
     public StorageBlobsProjector(
         BlobServiceClient serviceClient,
         string containerName,
         IOptions<JsonSerializerOptions>? options = null,
-        ITypeMapper? mapper = null
-    ) : this(serviceClient.GetBlobContainerClient(containerName), options, mapper) { }
+        ITypeMapper? mapper = null,
+        StorageBlobProjectorOptions<T>? projectorOptions = null
+    ) : this(serviceClient.GetBlobContainerClient(containerName), projectorOptions, options, mapper) { }
 
     protected void On<TEvent>(Func<T, TEvent, T> handler) where TEvent : class
         => On<TEvent>((ctx, state) => new ValueTask<T>(handler(state, ctx.Message)));
@@ -69,7 +75,8 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
             try {
                 BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
 
-                var current = blobContent?.Content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
+                var content = blobContent.Content;
+                var current = _deserialize(content);
 
                 var uploadOptions = new BlobUploadOptions {
                     Conditions = new BlobRequestConditions { IfMatch = blobContent!.Details.ETag }
@@ -90,13 +97,15 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
         async Task UploadUpdated(BlobClient blobClient, T current, BlobUploadOptions uploadOptions) {
             var updated = await handler(context, current);
-            var json = JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
+            var json = _serialize(updated);
 
             using var stream = new MemoryStream(json);
             var response = await blobClient.UploadAsync(stream, uploadOptions, context.CancellationToken);
         }
     }
 
+    private T ToObjectFromJson(BinaryData content) => content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
+    private byte[] SerializeToUtf8Bytes(T updated) => JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
     protected virtual string GetBlobName(StreamName stream, IMessageConsumeContext context) => GetBlobName(stream.ToString());
     protected virtual string GetBlobName(string id) => $"{id}/{typeof(T).Name}.json";
 }
