@@ -13,8 +13,9 @@ namespace Eventuous.Azure.Storage.Blobs;
 public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() {
     readonly BlobContainerClient _container;
     readonly JsonSerializerOptions _jsonOptions;
-    readonly Dictionary<Type, Func<IMessageConsumeContext, T, ValueTask<T>>> _handlers = new();
+    readonly Dictionary<Type, Handler> _handlers = new();
     readonly ITypeMapper _map;
+    public delegate ValueTask<T> Handler(IMessageConsumeContext context, T state);
 
     public StorageBlobsProjector(
         BlobContainerClient container,
@@ -55,65 +56,47 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         }
     }
 
-    protected virtual ValueTask<Func<IMessageConsumeContext, T, ValueTask<T>>> GetUpdate(IMessageConsumeContext context)
-        => NoOp;
+    public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) =>
+        _handlers.TryGetValue(context.Message!.GetType(), out var handler)
+            ? HandleInternal(context, handler)
+            : new ValueTask<EventHandlingStatus>(EventHandlingStatus.Ignored);
 
-    ValueTask<Func<IMessageConsumeContext, T, ValueTask<T>>> NoOp => new((Func<IMessageConsumeContext, T, ValueTask<T>>?)null!);
-
-    public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        var updateTask = _handlers.TryGetValue(context.Message!.GetType(), out var handler)
-            ? new ValueTask<Func<IMessageConsumeContext, T, ValueTask<T>>>(handler)
-            : GetUpdate(context);
-
-        var update = updateTask.IsCompletedSuccessfully
-            ? updateTask.Result
-            : await updateTask.NoContext();
-
-        if (update == null) {
-            return EventHandlingStatus.Ignored;
-        }
-
-        var result = await HandleInternal(context, update);
-        return result;
-    }
-
-    public async ValueTask<EventHandlingStatus> HandleInternal(IMessageConsumeContext context, Func<IMessageConsumeContext, T, ValueTask<T>> handler) {
-        var blobName = GetBlobName(context.Stream, context);
-        var blobClient = _container.GetBlobClient(blobName);
-
-        BlobDownloadResult blobContent;
-        ETag eTag;
-
+    public async ValueTask<EventHandlingStatus> HandleInternal(IMessageConsumeContext context, Handler handler) {
         try {
-            blobContent = await blobClient.DownloadContentAsync();
-            eTag = blobContent.Details.ETag;
-        } catch (RequestFailedException ex) when (ex.Status == 404) {
-            // Blob doesn't exist, start with a new instance
-            eTag = default;
-            blobContent = default!;
-        }
+            var blobName = GetBlobName(context.Stream, context);
+            var blobClient = _container.GetBlobClient(blobName);
 
-        var current = blobContent?.Content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
+            try {
+                BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
 
-        var updated = await handler(context, current);
+                var current = blobContent?.Content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
 
-        var json = JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
+                var uploadOptions = new BlobUploadOptions {
+                    Conditions = new BlobRequestConditions { IfMatch = blobContent!.Details.ETag }
+                };
+                await UploadUpdated(blobClient, current, uploadOptions);
+            } catch (RequestFailedException ex) when (ex.Status == 404) {
+                // Blob doesn't exist, start with a new instance
+                var insertOptions = new BlobUploadOptions {
+                    Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
+                };
+                await UploadUpdated(blobClient, new T(), insertOptions);
+            }
 
-        using var stream = new MemoryStream(json);
-
-
-        try {
-            var response = eTag == default
-            ? await blobClient.UploadAsync(stream, overwrite: false, cancellationToken: context.CancellationToken)
-            : await blobClient.UploadAsync(stream, new BlobUploadOptions 
-                {
-                    Conditions = new BlobRequestConditions { IfMatch = eTag }
-                }, context.CancellationToken);
             return EventHandlingStatus.Success;
         } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
             return EventHandlingStatus.Ignored;
         }
+
+        async Task UploadUpdated(BlobClient blobClient, T current, BlobUploadOptions uploadOptions) {
+            var updated = await handler(context, current);
+            var json = JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
+
+            using var stream = new MemoryStream(json);
+            var response = await blobClient.UploadAsync(stream, uploadOptions, context.CancellationToken);
+        }
     }
 
-    protected virtual string GetBlobName(StreamName stream, IMessageConsumeContext context) => $"{stream.GetId()}/{typeof(T).Name}.json";
+    protected virtual string GetBlobName(StreamName stream, IMessageConsumeContext context) => GetBlobName(stream.ToString());
+    protected virtual string GetBlobName(string id) => $"{id}/{typeof(T).Name}.json";
 }
