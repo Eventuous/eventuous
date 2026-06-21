@@ -11,13 +11,16 @@ using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
 namespace Eventuous.Azure.Storage.Blobs;
 
 public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() {
-    readonly BlobContainerClient _container;
+    protected readonly BlobContainerClient ContainerClient;
     readonly JsonSerializerOptions _jsonOptions;
-    readonly Dictionary<Type, Handler> _handlers = new();
+    readonly Dictionary<Type, HandlerWithBlobId> _handlers = new();
     readonly ITypeMapper _map;
-    readonly Func<BinaryData, T> _deserialize;
-    readonly Func<T, byte[]> _serialize;
-    public delegate ValueTask<T> Handler(IMessageConsumeContext context, T state);
+    protected readonly Func<BinaryData, T> Deserialize;
+    protected readonly Func<T, byte[]> Serialize;
+    public delegate ValueTask<T> Handler(IMessageConsumeContext context, T state, string blobName);
+    public delegate ValueTask<string> GetBlobId<TEvent>(IMessageConsumeContext<TEvent> context) where TEvent : class;
+
+    protected internal record HandlerWithBlobId(Handler Handler, Func<IMessageConsumeContext, ValueTask<string>>? GetBlobId);
 
     public StorageBlobsProjector(
         BlobContainerClient container,
@@ -25,11 +28,11 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         IOptions<JsonSerializerOptions>? options = null,
         ITypeMapper? mapper = null
     ) {
-        _container = container;
+        ContainerClient = container;
         _jsonOptions = projectorOptions?.JsonOptions ?? options?.Value ?? new(JsonSerializerOptions.Web);
         _map = mapper ?? TypeMap.Instance;
-        _deserialize = projectorOptions?.Deserialize ?? ToObjectFromJson;
-        _serialize = projectorOptions?.Serialize ?? SerializeToUtf8Bytes;
+        Deserialize = projectorOptions?.Deserialize ?? ToObjectFromJson;
+        Serialize = projectorOptions?.Serialize ?? SerializeToUtf8Bytes;
     }
 
     public StorageBlobsProjector(
@@ -40,20 +43,24 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         StorageBlobProjectorOptions<T>? projectorOptions = null
     ) : this(serviceClient.GetBlobContainerClient(containerName), projectorOptions, options, mapper) { }
 
-    protected void On<TEvent>(Func<T, TEvent, T> handler) where TEvent : class
-        => On<TEvent>((ctx, state) => new ValueTask<T>(handler(state, ctx.Message)));
+    protected void On<TEvent>(Func<T, TEvent, T> handler, GetBlobId<TEvent>? getBlobId = null) where TEvent : class
+        => On((ctx, state) => new ValueTask<T>(handler(state, ctx.Message)), getBlobId);
 
-    protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, T> handler) where TEvent : class
-        => On<TEvent>((ctx, state) => new ValueTask<T>(handler(ctx, state)));
+    protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, T> handler, GetBlobId<TEvent>? getBlobId = null) where TEvent : class
+        => On((ctx, state) => new ValueTask<T>(handler(ctx, state)), getBlobId);
 
-    protected void On<TEvent>(Func<T, TEvent, ValueTask<T>> handler) where TEvent : class
-        => On<TEvent>((ctx, state) => handler(state, ctx.Message));
+    protected void On<TEvent>(Func<T, TEvent, ValueTask<T>> handler, GetBlobId<TEvent>? getBlobId = null) where TEvent : class
+        => On((ctx, state) => handler(state, ctx.Message), getBlobId);
 
-    protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler) where TEvent : class {
-        if (!_handlers.TryAdd(typeof(TEvent), (context, state) => {
+    protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler, GetBlobId<TEvent>? getBlobId = null) where TEvent : class {
+        Func<IMessageConsumeContext, ValueTask<string>>? blobIdGetter = getBlobId != null
+            ? async ctx => await getBlobId(new MessageConsumeContext<TEvent>(ctx))
+            : null;
+        
+        if (!_handlers.TryAdd(typeof(TEvent), new HandlerWithBlobId(async (context, state, blobName) => {
             var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
-            return handler(typedContext, state);
-        })) {
+            return await handler(typedContext, state);
+        }, blobIdGetter))) {
             throw new ArgumentException($"Type {typeof(TEvent).Name} already has a handler");
         }
 
@@ -62,32 +69,42 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         }
     }
 
+    protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler) where TEvent : class
+        => On<TEvent>(handler, default);
+
     public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) =>
-        _handlers.TryGetValue(context.Message!.GetType(), out var handler)
-            ? HandleInternal(context, handler)
+        _handlers.TryGetValue(context.Message!.GetType(), out var handlerInfo)
+            ? HandleInternal(context, handlerInfo)
             : new ValueTask<EventHandlingStatus>(EventHandlingStatus.Ignored);
 
-    public async ValueTask<EventHandlingStatus> HandleInternal(IMessageConsumeContext context, Handler handler) {
+    protected async ValueTask<EventHandlingStatus> HandleInternal(IMessageConsumeContext context, HandlerWithBlobId handlerInfo) {
         try {
-            var blobName = GetBlobName(context.Stream, context);
-            var blobClient = _container.GetBlobClient(blobName);
+            string blobId;
+            if (handlerInfo.GetBlobId != null) {
+                blobId = await handlerInfo.GetBlobId(context);
+            } else {
+                blobId = context.Stream.ToString();
+            }
+            var blobName = GetBlobName(context.Stream, blobId);
+            
+            var blobClient = ContainerClient.GetBlobClient(blobName);
 
             try {
                 BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
 
                 var content = blobContent.Content;
-                var current = _deserialize(content);
+                var current = Deserialize(content);
 
                 var uploadOptions = new BlobUploadOptions {
                     Conditions = new BlobRequestConditions { IfMatch = blobContent!.Details.ETag }
                 };
-                await UploadUpdated(blobClient, current, uploadOptions);
+                await UploadUpdated(blobClient, current, uploadOptions, handlerInfo.Handler, blobName);
             } catch (RequestFailedException ex) when (ex.Status == 404) {
                 // Blob doesn't exist, start with a new instance
                 var insertOptions = new BlobUploadOptions {
                     Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
                 };
-                await UploadUpdated(blobClient, new T(), insertOptions);
+                await UploadUpdated(blobClient, new T(), insertOptions, handlerInfo.Handler, blobName);
             }
 
             return EventHandlingStatus.Success;
@@ -95,9 +112,9 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
             return EventHandlingStatus.Ignored;
         }
 
-        async Task UploadUpdated(BlobClient blobClient, T current, BlobUploadOptions uploadOptions) {
-            var updated = await handler(context, current);
-            var json = _serialize(updated);
+        async Task UploadUpdated(BlobClient blobClient, T current, BlobUploadOptions uploadOptions, Handler handler, string blobName) {
+            var updated = await handler(context, current, blobName);
+            var json = Serialize(updated);
 
             using var stream = new MemoryStream(json);
             var response = await blobClient.UploadAsync(stream, uploadOptions, context.CancellationToken);
@@ -107,5 +124,6 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     private T ToObjectFromJson(BinaryData content) => content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
     private byte[] SerializeToUtf8Bytes(T updated) => JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
     protected virtual string GetBlobName(StreamName stream, IMessageConsumeContext context) => GetBlobName(stream.ToString());
+    protected virtual string GetBlobName(StreamName stream, string id) => GetBlobName($"{stream}/{id}.json");
     protected virtual string GetBlobName(string id) => $"{id}/{typeof(T).Name}.json";
 }

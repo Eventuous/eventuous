@@ -53,5 +53,7 @@ public static class Registrations {
                 .Configure(x => x.QueueOrTopic = new Queue(PaymentsIntegrationHandler.Stream))
                 .AddEventHandler<PaymentsIntegrationHandler>()
         );
+
+        services.AddSingleton<BookingsQueryService>();
     }
 }

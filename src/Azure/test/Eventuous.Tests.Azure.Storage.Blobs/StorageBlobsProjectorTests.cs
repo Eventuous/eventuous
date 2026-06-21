@@ -221,6 +221,49 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         await AssertIgnored(result);
     }
 
+    // ========== CUSTOM BLOB ID TESTS ==========
+
+    [Test]
+    public async Task CustomBlobId_NewBlob_ShouldUseEventIdForBlobName() {
+        // Arrange
+        var containerName = await SetupContainer("custom-blobid-new");
+        var eventId = Guid.NewGuid().ToString();
+        var projector = new CustomBlobIdProjector(fixture.BlobServiceClient, containerName);
+        var context = CreateContext(new TestEvent { Id = eventId, Value = 100 });
+
+        // Act
+        var result = await projector.HandleEvent(context);
+
+        // Assert
+        await AssertSuccess(result);
+
+        var blobName = $"{DefaultStream}/{eventId}.json";
+        var state = await GetBlobState<CustomBlobIdState>(containerName, blobName);
+        await Assert.That(state.Value).IsEqualTo(100);
+    }
+
+    [Test]
+    public async Task CustomBlobId_ExistingBlob_ShouldUpdateWithEventId() {
+        // Arrange
+        var containerName = await SetupContainer("custom-blobid-existing");
+        var eventId = Guid.NewGuid().ToString();
+        var blobName = $"{DefaultStream}/{eventId}.json";
+
+        await SetupExistingBlob(containerName, blobName, new CustomBlobIdState { Value = 5 });
+
+        var projector = new CustomBlobIdProjector(fixture.BlobServiceClient, containerName);
+        var context = CreateContext(new TestEvent { Id = eventId, Value = 100 });
+
+        // Act
+        var result = await projector.HandleEvent(context);
+
+        // Assert
+        await AssertSuccess(result);
+
+        var state = await GetBlobState<CustomBlobIdState>(containerName, blobName);
+        await Assert.That(state.Value).IsEqualTo(105); // 5 + 100
+    }
+
     [Test]
     public async Task ConcurrentAdditionOfNewBlob_ShouldReturnIgnored() {
         // Arrange
@@ -315,6 +358,10 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
 
     class NoHandlerState { }
 
+    class CustomBlobIdState {
+        public int Value { get; set; }
+    }
+
     // ========== TEST PROJECTOR CLASSES
     // Intent: Each class name explicitly surfaces the handler pattern being tested ==========
 
@@ -396,6 +443,19 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
                 state.Value += ctx.Message.Value;
                 return state;
             });
+        }
+    }
+
+    /// <summary>
+    /// Tests custom blob ID using getBlobId parameter
+    /// </summary>
+    class CustomBlobIdProjector : StorageBlobsProjector<CustomBlobIdState> {
+        public CustomBlobIdProjector(BlobServiceClient serviceClient, string containerName)
+            : base(serviceClient, containerName) {
+            On<TestEvent>(async (ctx, state) => {
+                state.Value += ctx.Message.Value;
+                return state;
+            }, getBlobId: ctx => new ValueTask<string>(ctx.Message.Id));
         }
     }
 }

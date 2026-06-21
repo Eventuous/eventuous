@@ -1,7 +1,9 @@
 using Bookings;
+using Bookings.Application;
 using Bookings.Domain.Bookings;
 using Bookings.Infrastructure;
 using Eventuous;
+using Eventuous.Spyglass;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Serilog;
@@ -29,6 +31,16 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
+app.MapEventuousSpyglass();
+
+app.MapGet(
+    "/bookings/my/{userId}",
+    async (string userId, BookingsQueryService queryService) => {
+        var userBookings = await queryService.GetUserBookings(userId);
+
+        return userBookings == null ? Results.NotFound() : Results.Ok(userBookings);
+    }
+);
 
 try {
     app.Run();
