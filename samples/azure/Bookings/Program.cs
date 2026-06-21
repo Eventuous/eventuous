@@ -40,7 +40,7 @@ app.MapGet(
 
         return userBookings == null ? Results.NotFound() : Results.Ok(userBookings);
     }
-);
+).WithTags("QueryApi");
 
 try {
     app.Run();

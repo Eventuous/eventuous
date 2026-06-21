@@ -70,7 +70,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     }
 
     protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler) where TEvent : class
-        => On<TEvent>(handler, default);
+        => On(handler, default);
 
     public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) =>
         _handlers.TryGetValue(context.Message!.GetType(), out var handlerInfo)
@@ -79,13 +79,10 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
     protected async ValueTask<EventHandlingStatus> HandleInternal(IMessageConsumeContext context, HandlerWithBlobId handlerInfo) {
         try {
-            string blobId;
-            if (handlerInfo.GetBlobId != null) {
-                blobId = await handlerInfo.GetBlobId(context);
-            } else {
-                blobId = context.Stream.ToString();
-            }
-            var blobName = GetBlobName(context.Stream, blobId);
+            var blobId = handlerInfo.GetBlobId == null
+                ? context.Stream.GetId()
+                : await handlerInfo.GetBlobId(context);
+            var blobName = GetBlobName(blobId, context);
             
             var blobClient = ContainerClient.GetBlobClient(blobName);
 
@@ -123,7 +120,6 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
     private T ToObjectFromJson(BinaryData content) => content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
     private byte[] SerializeToUtf8Bytes(T updated) => JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
-    protected virtual string GetBlobName(StreamName stream, IMessageConsumeContext context) => GetBlobName(stream.ToString());
-    protected virtual string GetBlobName(StreamName stream, string id) => GetBlobName($"{stream}/{id}.json");
+    protected virtual string GetBlobName(string id, IMessageConsumeContext context) => GetBlobName(id);
     protected virtual string GetBlobName(string id) => $"{id}/{typeof(T).Name}.json";
 }

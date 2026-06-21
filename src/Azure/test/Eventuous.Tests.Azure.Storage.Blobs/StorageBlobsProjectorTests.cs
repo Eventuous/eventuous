@@ -237,7 +237,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Assert
         await AssertSuccess(result);
 
-        var blobName = $"{DefaultStream}/{eventId}.json";
+        var blobName = $"{eventId}/CustomBlobIdState.json";
         var state = await GetBlobState<CustomBlobIdState>(containerName, blobName);
         await Assert.That(state.Value).IsEqualTo(100);
     }
@@ -247,7 +247,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         // Arrange
         var containerName = await SetupContainer("custom-blobid-existing");
         var eventId = Guid.NewGuid().ToString();
-        var blobName = $"{DefaultStream}/{eventId}.json";
+        var blobName = $"{eventId}/CustomBlobIdState.json";
 
         await SetupExistingBlob(containerName, blobName, new CustomBlobIdState { Value = 5 });
 
