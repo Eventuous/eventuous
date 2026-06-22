@@ -13,14 +13,11 @@ namespace Eventuous.Azure.Storage.Blobs;
 public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() {
     protected readonly BlobContainerClient ContainerClient;
     readonly JsonSerializerOptions _jsonOptions;
-    readonly Dictionary<Type, HandlerWithBlobId> _handlers = new();
+    readonly Dictionary<Type, Func<IMessageConsumeContext, ValueTask>> _handlers = new();
     readonly ITypeMapper _map;
     protected readonly Func<BinaryData, T> Deserialize;
     protected readonly Func<T, byte[]> Serialize;
-    public delegate ValueTask<T> Handler(IMessageConsumeContext context, T state, string blobName);
     public delegate ValueTask<string> GetBlobId<TEvent>(IMessageConsumeContext<TEvent> context) where TEvent : class;
-
-    protected internal record HandlerWithBlobId(Handler Handler, Func<IMessageConsumeContext, ValueTask<string>>? GetBlobId);
 
     public StorageBlobsProjector(
         BlobContainerClient container,
@@ -53,14 +50,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         => On((ctx, state) => handler(state, ctx.Message), getBlobId);
 
     protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler, GetBlobId<TEvent>? getBlobId = null) where TEvent : class {
-        Func<IMessageConsumeContext, ValueTask<string>>? blobIdGetter = getBlobId != null
-            ? async ctx => await getBlobId(new MessageConsumeContext<TEvent>(ctx))
-            : null;
-        
-        if (!_handlers.TryAdd(typeof(TEvent), new HandlerWithBlobId(async (context, state, blobName) => {
-            var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
-            return await handler(typedContext, state);
-        }, blobIdGetter))) {
+        if (!_handlers.TryAdd(typeof(TEvent), HandleInternal(handler, getBlobId))) {
             throw new ArgumentException($"Type {typeof(TEvent).Name} already has a handler");
         }
 
@@ -69,52 +59,56 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         }
     }
 
+    private Func<IMessageConsumeContext, ValueTask> HandleInternal<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler, GetBlobId<TEvent>? getBlobId) where TEvent : class => async context => {
+        var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
+        var blobId = getBlobId == null
+            ? context.Stream.GetId()
+            : await getBlobId(typedContext);
+        var blobName = GetBlobName(blobId, typedContext);
+
+        var blobClient = ContainerClient.GetBlobClient(blobName);
+
+        try {
+            BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
+
+            var content = blobContent.Content;
+            var current = Deserialize(content);
+
+            var uploadOptions = new BlobUploadOptions {
+                Conditions = new BlobRequestConditions { IfMatch = blobContent!.Details.ETag }
+            };
+            await UploadUpdated(current, uploadOptions);
+        } catch (RequestFailedException ex) when (ex.Status == 404) {
+            // Blob doesn't exist, start with a new instance
+            var insertOptions = new BlobUploadOptions {
+                Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
+            };
+            await UploadUpdated(new T(), insertOptions);
+        }
+
+        async Task UploadUpdated(T current, BlobUploadOptions uploadOptions) {
+            var updated = await handler(typedContext, current);
+            var json = Serialize(updated);
+
+            using var stream = new MemoryStream(json);
+            var response = await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken);
+        }
+    };
+    
     protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler) where TEvent : class
         => On(handler, default);
 
     public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) =>
-        _handlers.TryGetValue(context.Message!.GetType(), out var handlerInfo)
-            ? HandleInternal(context, handlerInfo)
+        _handlers.TryGetValue(context.Message!.GetType(), out var handler)
+            ? HandleEventInternal(context, handler)
             : new ValueTask<EventHandlingStatus>(EventHandlingStatus.Ignored);
 
-    protected async ValueTask<EventHandlingStatus> HandleInternal(IMessageConsumeContext context, HandlerWithBlobId handlerInfo) {
+    protected async ValueTask<EventHandlingStatus> HandleEventInternal(IMessageConsumeContext context, Func<IMessageConsumeContext, ValueTask>  handler) {
         try {
-            var blobId = handlerInfo.GetBlobId == null
-                ? context.Stream.GetId()
-                : await handlerInfo.GetBlobId(context);
-            var blobName = GetBlobName(blobId, context);
-            
-            var blobClient = ContainerClient.GetBlobClient(blobName);
-
-            try {
-                BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
-
-                var content = blobContent.Content;
-                var current = Deserialize(content);
-
-                var uploadOptions = new BlobUploadOptions {
-                    Conditions = new BlobRequestConditions { IfMatch = blobContent!.Details.ETag }
-                };
-                await UploadUpdated(blobClient, current, uploadOptions, handlerInfo.Handler, blobName);
-            } catch (RequestFailedException ex) when (ex.Status == 404) {
-                // Blob doesn't exist, start with a new instance
-                var insertOptions = new BlobUploadOptions {
-                    Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
-                };
-                await UploadUpdated(blobClient, new T(), insertOptions, handlerInfo.Handler, blobName);
-            }
-
+            await handler(context);
             return EventHandlingStatus.Success;
         } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
             return EventHandlingStatus.Ignored;
-        }
-
-        async Task UploadUpdated(BlobClient blobClient, T current, BlobUploadOptions uploadOptions, Handler handler, string blobName) {
-            var updated = await handler(context, current, blobName);
-            var json = Serialize(updated);
-
-            using var stream = new MemoryStream(json);
-            var response = await blobClient.UploadAsync(stream, uploadOptions, context.CancellationToken);
         }
     }
 
