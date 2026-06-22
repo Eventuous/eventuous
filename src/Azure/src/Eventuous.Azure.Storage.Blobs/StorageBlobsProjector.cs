@@ -13,6 +13,17 @@ namespace Eventuous.Azure.Storage.Blobs;
 /// <summary>
 /// Projects event store events to Azure Blob Storage as state objects of type T.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This projector works by maintaining a state object of type T in Azure Blob Storage for each event stream.
+/// When an event is received, it retrieves the current state blob (or creates a new state instance if the blob doesn't exist),
+/// applies the event to the state using the registered event handler, and uploads the updated state back to Blob Storage.
+/// The projector uses optimistic concurrency control via ETags to handle concurrent updates, and provides virtual methods
+/// for customizing blob naming conventions. Multiple event types can be handled by registering handlers using the On(TEvent) methods.
+/// The optional getBlobId parameter in event registration allows custom blob ID generation, which is useful when the default
+/// stream ID from context.Stream.GetId() needs to be overridden, such as using event metadata or custom business logic.
+/// </para>
+/// </remarks>
 public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() {
     /// <summary>Azure Blob Storage container client.</summary>
     protected readonly BlobContainerClient ContainerClient;
