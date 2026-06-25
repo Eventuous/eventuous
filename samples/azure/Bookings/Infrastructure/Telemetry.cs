@@ -15,7 +15,7 @@ public static class Telemetry {
                 builder => {
                     builder
                         .AddAspNetCoreInstrumentation()
-                        // .AddSqlClientInstrumentation() puzzle out why
+                        .AddSqlClientInstrumentation()
                         .AddEventuous()
                         .AddEventuousSubscriptions()
                         .AddPrometheusExporter();
@@ -28,7 +28,7 @@ public static class Telemetry {
                 builder => {
                     builder
                         .AddAspNetCoreInstrumentation()
-                        // .AddSqlClientInstrumentation() puzzle out why
+                        .AddSqlClientInstrumentation()
                         .AddEventuousTracing();
 
                     if (otelEnabled)

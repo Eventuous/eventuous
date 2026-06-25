@@ -25,14 +25,4 @@ app.UseOpenTelemetryPrometheusScrapingEndpoint();
 // Here we discover commands by their annotations
 app.MapDiscoveredCommands<PaymentState>();
 
-try {
-    app.Run();
-
-    return 0;
-} catch (Exception e) {
-    Log.Fatal(e, "Host terminated unexpectedly");
-
-    return 1;
-} finally {
-    Log.CloseAndFlush();
-}
+app.Run();

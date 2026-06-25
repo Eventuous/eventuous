@@ -201,7 +201,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
             }
         }
 
-        async Task UploadUpdated(T current, BlobUploadOptions uploadOptions) {
+        private async Task UploadUpdated(T current, BlobUploadOptions uploadOptions) {
             var task = EventHandler(typedContext, current);
             var updated = task.IsCompletedSuccessfully
                 ? task.Result
