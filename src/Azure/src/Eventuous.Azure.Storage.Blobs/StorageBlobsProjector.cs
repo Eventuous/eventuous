@@ -127,10 +127,10 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     /// <summary>Handles incoming event by dispatching to registered handler.</summary>
     /// <param name="context">Event consume context.</param>
     /// <returns>Event handling status indicating success, failure, or ignore.</returns>
-    public override ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) =>
+    public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) =>
         _handlers.TryGetValue(context.Message!.GetType(), out var handler)
-            ? handler(context)
-            : new ValueTask<EventHandlingStatus>(EventHandlingStatus.Ignored);
+            ? await handler(context).NoContext()
+            : EventHandlingStatus.Ignored;
 
     private T ToObjectFromJson(BinaryData content) => content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
     private byte[] SerializeToUtf8Bytes(T updated) => JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
@@ -151,8 +151,6 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         private readonly StorageBlobsProjector<T> projector;
         private readonly Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> EventHandler;
         private readonly GetBlobId<TEvent>? GetBlobId;
-        private MessageConsumeContext<TEvent> typedContext = null!;
-        private BlobClient blobClient = null!;
 
         public Handler(StorageBlobsProjector<T> storageBlobsProjector, Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler, GetBlobId<TEvent>? getBlobId) {
             projector = storageBlobsProjector;
@@ -161,55 +159,55 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         }
 
         public async ValueTask<EventHandlingStatus> Handle(IMessageConsumeContext context) {
-            typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
+            var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
             var blobId = GetBlobId == null
                 ? context.Stream.GetId()
                 : await GetBlobId(typedContext);
             var blobName = projector.GetBlobName(blobId, typedContext);
 
-            blobClient = projector.GetBlobContainerClient(blobName);
+            var blobClient = projector.GetBlobContainerClient(blobName);
 
             return await ModifyBlobWithRetries(projector._raceRetries);
-        }
 
-        private async Task<EventHandlingStatus> ModifyBlobWithRetries(int retries) {
-            try {
-                await ModifyBlob();
-                return EventHandlingStatus.Success;
-            } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
-                return retries > 0 ? await ModifyBlobWithRetries(retries - 1) : EventHandlingStatus.Failure;
+            async Task<EventHandlingStatus> ModifyBlobWithRetries(int retries) {
+                try {
+                    await ModifyBlob();
+                    return EventHandlingStatus.Success;
+                } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
+                    return retries > 0 ? await ModifyBlobWithRetries(retries - 1) : EventHandlingStatus.Failure;
+                }
             }
-        }
 
-        private async Task ModifyBlob() {
-            try {
-                BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
+            async Task ModifyBlob() {
+                try {
+                    var blobContent = await blobClient.DownloadContentAsync();
 
-                var content = blobContent.Content;
-                var current = projector.Deserialize(content);
+                    var content = blobContent.Value.Content;
+                    var current = projector.Deserialize(content);
 
-                var uploadOptions = new BlobUploadOptions {
-                    Conditions = new BlobRequestConditions { IfMatch = blobContent!.Details.ETag }
-                };
-                await UploadUpdated(current, uploadOptions);
-            } catch (RequestFailedException ex) when (ex.Status == 404) {
-                // Blob doesn't exist, start with a new instance
-                var insertOptions = new BlobUploadOptions {
-                    Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
-                };
-                await UploadUpdated(new T(), insertOptions);
+                    var uploadOptions = new BlobUploadOptions {
+                        Conditions = new BlobRequestConditions { IfMatch = blobContent.Value.Details.ETag }
+                    };
+                    await UploadUpdated(current, uploadOptions);
+                } catch (RequestFailedException ex) when (ex.Status == 404) {
+                    // Blob doesn't exist, start with a new instance
+                    var insertOptions = new BlobUploadOptions {
+                        Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
+                    };
+                    await UploadUpdated(new T(), insertOptions);
+                }
             }
-        }
 
-        private async Task UploadUpdated(T current, BlobUploadOptions uploadOptions) {
-            var task = EventHandler(typedContext, current);
-            var updated = task.IsCompletedSuccessfully
-                ? task.Result
-                : await task;
-            var json = projector.Serialize(updated);
+            async Task UploadUpdated(T current, BlobUploadOptions uploadOptions) {
+                var task = EventHandler(typedContext, current);
+                var updated = task.IsCompletedSuccessfully
+                    ? task.Result
+                    : await task;
+                var json = projector.Serialize(updated);
 
-            using var stream = new MemoryStream(json);
-            var response = await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken);
+                using var stream = new MemoryStream(json);
+                var response = await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken);
+            }
         }
     }
 }

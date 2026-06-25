@@ -7,8 +7,10 @@ using Eventuous.Spyglass;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Serilog;
+using static Bookings.Integration.IntegrationEvents;
 
 TypeMap.RegisterKnownEventTypes(typeof(BookingEvents.V1.RoomBooked).Assembly);
+TypeMap.RegisterKnownEventTypes(typeof(BookingPaymentRecorded).Assembly);
 Logging.ConfigureLog();
 
 var builder = WebApplication.CreateBuilder(args);
