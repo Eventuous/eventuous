@@ -265,6 +265,38 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         await Assert.That(state.Value).IsEqualTo(105); // 5 + 100
     }
 
+    // ========== RACE RETRY TESTS ==========
+
+    [Test]
+    public async Task RaceRetries_WithOneRetry_ShouldSucceedAfterRaceCondition() {
+        // Arrange
+        var containerName = await SetupContainer("race-retry");
+        var blobName = $"{DefaultStream}/ConcurrentState.json";
+
+        await SetupExistingBlob(containerName, blobName, new ConcurrentState { Value = 1 });
+
+        var projector = new RaceRetryProjector(fixture.BlobServiceClient, containerName,
+            messWithState: () => {
+                // Simulate concurrent modification: modify the blob directly with a different value
+                var modifiedState = new ConcurrentState { Value = 999 };
+                var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
+                var blobClient = GetContainer(containerName).GetBlobClient(blobName);
+                blobClient.Upload(new MemoryStream(modifiedJson), overwrite: true);
+            });
+        var context = CreateContext(new TestEvent { Value = 10 });
+
+        // Act
+        var result = await projector.HandleEvent(context);
+
+        // Assert - with retry, this should succeed
+        await AssertSuccess(result);
+
+        var state = await GetBlobState<ConcurrentState>(containerName, blobName);
+        // First attempt: concurrent modification sets value to 999, causing 412
+        // Retry: reads 999, adds 10, succeeds
+        await Assert.That(state.Value).IsEqualTo(1009); // 999 + 10 (retry succeeded)
+    }
+
     [Test]
     public async Task ConcurrentAdditionOfNewBlob_ShouldReturnFailure() {
         // Arrange
@@ -457,6 +489,29 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
                 state.Value += ctx.Message.Value;
                 return state;
             }, getBlobId: ctx => new ValueTask<string>(ctx.Message.Id));
+        }
+    }
+
+    /// <summary>
+    /// Tests race condition retry with RaceRetries = 1
+    /// </summary>
+    class RaceRetryProjector : StorageBlobsProjector<ConcurrentState> {
+        private int _callCount = 0;
+        private readonly Action _messWithState;
+
+        public RaceRetryProjector(
+            BlobServiceClient serviceClient, 
+            string containerName,
+            Action messWithState
+        ) : base(serviceClient, containerName, projectorOptions: new StorageBlobProjectorOptions<ConcurrentState> { RaceRetries = 1 }) {
+            _messWithState = messWithState;
+
+            On<TestEvent>((ctx, state) => {
+                if (++_callCount == 1)
+                    _messWithState();
+                state.Value += ctx.Message.Value;
+                return state;
+            });
         }
     }
 }

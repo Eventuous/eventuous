@@ -36,6 +36,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
     /// <summary>Serialization function for T to byte array.</summary>
     protected readonly Func<T, byte[]> Serialize;
+    private readonly int _raceRetries;
 
     /// <summary>Delegate for custom blob ID generation from consume context.</summary>
     /// <typeparam name="TEvent">Event type being consumed.</typeparam>
@@ -61,6 +62,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         _map = mapper ?? TypeMap.Instance;
         Deserialize = projectorOptions?.Deserialize ?? ToObjectFromJson;
         Serialize = projectorOptions?.Serialize ?? SerializeToUtf8Bytes;
+        _raceRetries = projectorOptions?.RaceRetries ?? 0;
     }
 
     /// <summary>
@@ -167,11 +169,15 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
             blobClient = projector.GetBlobContainerClient(blobName);
 
+            return await ModifyBlobWithRetries(projector._raceRetries);
+        }
+
+        private async Task<EventHandlingStatus> ModifyBlobWithRetries(int retries) {
             try {
                 await ModifyBlob();
                 return EventHandlingStatus.Success;
             } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
-                return EventHandlingStatus.Failure;
+                return retries > 0 ? await ModifyBlobWithRetries(retries - 1) : EventHandlingStatus.Failure;
             }
         }
 
