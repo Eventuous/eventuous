@@ -51,16 +51,17 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Asserts that the projector result is Success
     /// </summary>
-    async Task AssertSuccess(EventHandlingStatus result) {
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
-    }
+    static async Task AssertSuccess(EventHandlingStatus result) => await Assert.That(result).IsEqualTo(EventHandlingStatus.Success);
 
     /// <summary>
     /// Asserts that the projector result is Ignored
     /// </summary>
-    async Task AssertIgnored(EventHandlingStatus result) {
-        await Assert.That(result).IsEqualTo(EventHandlingStatus.Ignored);
-    }
+    static async Task AssertIgnored(EventHandlingStatus result) => await Assert.That(result).IsEqualTo(EventHandlingStatus.Ignored);
+
+    /// <summary>
+    /// Asserts that the projector result is Failure
+    /// </summary>
+    static async Task AssertFailure(EventHandlingStatus result) => await Assert.That(result).IsEqualTo(EventHandlingStatus.Failure);
 
     // ========== SYNC STATE HANDLER TESTS ==========
 
@@ -265,7 +266,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     }
 
     [Test]
-    public async Task ConcurrentAdditionOfNewBlob_ShouldReturnIgnored() {
+    public async Task ConcurrentAdditionOfNewBlob_ShouldReturnFailure() {
         // Arrange
         var containerName = await SetupContainer("concurrent-new");
         var blobName = "stream/ConcurrentState.json";
@@ -282,11 +283,11 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
 
         // This should now fail with 412 because the ETag won't match
         var result2 = await projector.HandleEvent(context);
-        await AssertIgnored(result2);
+        await StorageBlobsProjectorTests.AssertFailure(result2);
     }
 
     [Test]
-    public async Task ConcurrentModificationOfExistingBlob_ShouldReturnIgnored() {
+    public async Task ConcurrentModificationOfExistingBlob_ShouldReturnFailure() {
         // Arrange
         var containerName = await SetupContainer("concurrent-existing");
         var blobName = "stream/ConcurrentState.json";
@@ -309,7 +310,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
 
         // This should now fail with 412 because the ETag won't match
         var result2 = await projector.HandleEvent(context);
-        await AssertIgnored(result2);
+        await StorageBlobsProjectorTests.AssertFailure(result2);
     }
 
     // ========== TEST CONTEXT FACTORY ==========
