@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c => c.SwaggerDoc("v1", new() { Title = "Bookings Payments API", Version = "v1" }));
 // OpenTelemetry instrumentation must be added before adding Eventuous services
 builder.Services.AddTelemetry();
 builder.Services.AddEventuous(builder.Configuration);
@@ -19,8 +19,7 @@ builder.Services.AddEventuous(builder.Configuration);
 var app = builder.Build();
 
 app.Services.AddEventuousLogs();
-app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwagger(c=>c.RouteTemplate = "openapi/{documentName}.json");
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 // Here we discover commands by their annotations

@@ -42,6 +42,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.11.0" />
     <PackageVersion Include="Shouldly" Version="4.2.1" />
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="System.Linq.AsyncEnumerable" Version="10.0.0" />

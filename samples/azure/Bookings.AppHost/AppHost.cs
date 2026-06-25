@@ -1,3 +1,5 @@
+using Scalar.Aspire;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 var sql = builder.AddAzureSqlServer("sql").RunAsContainer();
@@ -27,5 +29,11 @@ var payments = builder.AddProject<Projects.Bookings_Payments>("payments")
     .WaitFor(paymentsDb)
     .WaitFor(serviceBus)
     .WaitFor(blobs);
+
+var scalar = builder.AddScalarApiReference()
+    .WithApiReference(bookings)
+    .WithApiReference(payments)
+    .WaitFor(bookings)
+    .WaitFor(payments);
 
 builder.Build().Run();

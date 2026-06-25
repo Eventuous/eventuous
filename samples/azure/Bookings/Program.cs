@@ -19,7 +19,7 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(cfg => cfg.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c => c.SwaggerDoc("v1", new() { Title = "Bookings API", Version = "v1" }));
 builder.Services.AddTelemetry();
 builder.Services.AddEventuous(builder.Configuration);
 
@@ -27,8 +27,7 @@ var app = builder.Build();
 
 app.UseSerilogRequestLogging();
 app.UseEventuousLogs();
-app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwagger(c=>c.RouteTemplate = "openapi/{documentName}.json");
 app.MapControllers();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 app.MapEventuousSpyglass();
