@@ -162,25 +162,25 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
             var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
             var blobId = GetBlobId == null
                 ? context.Stream.GetId()
-                : await GetBlobId(typedContext);
+                : await GetBlobId(typedContext).NoContext();
             var blobName = projector.GetBlobName(blobId, typedContext);
 
             var blobClient = projector.GetBlobContainerClient(blobName);
 
-            return await ModifyBlobWithRetries(projector._raceRetries);
+            return await ModifyBlobWithRetries(projector._raceRetries).NoContext();
 
             async Task<EventHandlingStatus> ModifyBlobWithRetries(int retries) {
                 try {
-                    await ModifyBlob();
+                    await ModifyBlob().NoContext();
                     return EventHandlingStatus.Success;
                 } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
-                    return retries > 0 ? await ModifyBlobWithRetries(retries - 1) : EventHandlingStatus.Failure;
+                    return retries > 0 ? await ModifyBlobWithRetries(retries - 1).NoContext() : EventHandlingStatus.Failure;
                 }
             }
 
             async Task ModifyBlob() {
                 try {
-                    var blobContent = await blobClient.DownloadContentAsync();
+                    var blobContent = await blobClient.DownloadContentAsync().NoContext();
 
                     var content = blobContent.Value.Content;
                     var current = projector.Deserialize(content);
@@ -188,13 +188,13 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
                     var uploadOptions = new BlobUploadOptions {
                         Conditions = new BlobRequestConditions { IfMatch = blobContent.Value.Details.ETag }
                     };
-                    await UploadUpdated(current, uploadOptions);
+                    await UploadUpdated(current, uploadOptions).NoContext();
                 } catch (RequestFailedException ex) when (ex.Status == 404) {
                     // Blob doesn't exist, start with a new instance
                     var insertOptions = new BlobUploadOptions {
                         Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
                     };
-                    await UploadUpdated(new T(), insertOptions);
+                    await UploadUpdated(new T(), insertOptions).NoContext();
                 }
             }
 
@@ -202,11 +202,11 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
                 var task = EventHandler(typedContext, current);
                 var updated = task.IsCompletedSuccessfully
                     ? task.Result
-                    : await task;
+                    : await task.NoContext();
                 var json = projector.Serialize(updated);
 
                 using var stream = new MemoryStream(json);
-                var response = await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken);
+                var response = await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken).NoContext();
             }
         }
     }
