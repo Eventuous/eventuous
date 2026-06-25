@@ -15,7 +15,7 @@
     <MicrosoftExtensionsVer>9.0.10</MicrosoftExtensionsVer>
   </PropertyGroup>
   <PropertyGroup Label="Testcontainers version">
-    <TestcontainersVersion>4.10 .0</TestcontainersVersion>
+    <TestcontainersVersion>4.10.0</TestcontainersVersion>
   </PropertyGroup>
   <PropertyGroup>
     <NpgsqlVersion>10.0.1</NpgsqlVersion>
