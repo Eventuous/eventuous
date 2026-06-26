@@ -3,6 +3,7 @@ using Bookings.Payments;
 using Bookings.Payments.Domain;
 using Eventuous;
 using Serilog;
+using static Bookings.Payments.Application.PaymentCommands;
 
 TypeMap.RegisterKnownEventTypes();
 Logging.ConfigureLog();
@@ -23,6 +24,6 @@ app.UseSwagger(c=>c.RouteTemplate = "openapi/{documentName}.json");
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 // Here we discover commands by their annotations
-app.MapDiscoveredCommands<PaymentState>();
+app.MapCommands<PaymentState>().MapCommand<RecordPayment>();
 
 app.Run();

@@ -13,7 +13,7 @@ var blobs = builder.AddAzureStorage("storage").RunAsEmulator().AddBlobs("blobs")
 var containers = blobs.AddBlobContainer("bookings-container");
 
 var bookings = builder.AddProject<Projects.Bookings>("bookings")
-    .WithExternalHttpEndpoints()
+    .WithHttpEndpoint()
     .WithReference(bookingsDb)
     .WithReference(serviceBus)
     .WithReference(blobs)
@@ -22,7 +22,7 @@ var bookings = builder.AddProject<Projects.Bookings>("bookings")
     .WaitFor(blobs);
 
 var payments = builder.AddProject<Projects.Bookings_Payments>("payments")
-    .WithExternalHttpEndpoints()
+    .WithHttpEndpoint()
     .WithReference(paymentsDb)
     .WithReference(serviceBus)
     .WithReference(blobs)
