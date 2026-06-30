@@ -1,6 +1,7 @@
 using DotNet.Testcontainers.Containers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,9 +31,31 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
     IMessageSubscription                Subscription    { get; set; }         = null!;
     protected internal ILoggerFactory   LoggerFactory   { get; set; }         = null!;
 
+    /// <summary>
+    /// Health check fed by the subscription's subscribed/dropped callbacks. Lets tests assert that a dropped
+    /// subscription reports unhealthy and that it recovers to healthy after resubscription.
+    /// </summary>
+    protected internal SubscriptionHealthCheck Health { get; } = new();
+
+    /// <summary>
+    /// True when the subscription has detected a drop and is trying to resubscribe.
+    /// </summary>
+    public bool IsDropped => ((EventSubscription<TSubscriptionOptions>)Subscription).IsDropped;
+
     public string SubscriptionId { get; } = $"test-{Guid.NewGuid():N}";
 
-    protected internal ValueTask StartSubscription() => Subscription.SubscribeWithLog(Log);
+    protected internal ValueTask StartSubscription()
+        => Subscription.Subscribe(
+            id => {
+                Health.ReportHealthy(id);
+                Log.LogInformation("{Subscription} subscribed", id);
+            },
+            (id, reason, ex) => {
+                Health.ReportUnhealthy(id, ex);
+                Log.LogWarning(ex, "{Subscription} dropped {Reason}", id, reason);
+            },
+            CancellationToken.None
+        );
 
     protected internal ValueTask StopSubscription() => Subscription.UnsubscribeWithLog(Log);
 
