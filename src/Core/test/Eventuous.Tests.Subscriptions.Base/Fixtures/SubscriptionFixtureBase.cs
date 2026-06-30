@@ -42,6 +42,11 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
     /// </summary>
     public bool IsDropped => ((EventSubscription<TSubscriptionOptions>)Subscription).IsDropped;
 
+    /// <summary>
+    /// Returns the subscription's end-of-stream measure delegate (requires an <see cref="IMeasuredSubscription"/>).
+    /// </summary>
+    protected internal GetSubscriptionEndOfStream GetMeasure() => ((IMeasuredSubscription)Subscription).GetMeasure();
+
     public string SubscriptionId { get; } = $"test-{Guid.NewGuid():N}";
 
     protected internal ValueTask StartSubscription()
