@@ -345,17 +345,172 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
         await StorageBlobsProjectorTests.AssertFailure(result2);
     }
 
+    // ========== IDEMPOTENCY TESTS ==========
+
+    [Test]
+    public async Task Idempotency_ByMessageId_ShouldIgnoreDuplicateMessage() {
+        // Arrange
+        var containerName = await SetupContainer("idempotency-messageid");
+        var blobName = $"{DefaultStream}/SyncState.json";
+        
+        var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.ByMessageId);
+        var messageId = Guid.NewGuid().ToString();
+        
+        // First context with specific message ID
+        var context1 = CreateContext(new TestEvent { Value = 10 }, messageId: messageId);
+        
+        // Act - first processing should succeed
+        var result1 = await projector.HandleEvent(context1);
+        await AssertSuccess(result1);
+        
+        var state1 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state1.Value).IsEqualTo(10);
+        
+        // Second context with SAME message ID (duplicate)
+        var context2 = CreateContext(new TestEvent { Value = 20 }, messageId: messageId);
+        
+        // Act - second processing should be ignored
+        var result2 = await projector.HandleEvent(context2);
+        await AssertIgnored(result2);
+        
+        // State should NOT have been updated (still 10, not 30)
+        var state2 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state2.Value).IsEqualTo(10);
+    }
+
+    [Test]
+    public async Task Idempotency_ByMessageId_ShouldProcessDifferentMessageId() {
+        // Arrange
+        var containerName = await SetupContainer("idempotency-messageid-different");
+        var blobName = $"{DefaultStream}/SyncState.json";
+        
+        var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.ByMessageId);
+        
+        var messageId1 = Guid.NewGuid().ToString();
+        var context1 = CreateContext(new TestEvent { Value = 10 }, messageId: messageId1);
+        
+        // Act - first message
+        var result1 = await projector.HandleEvent(context1);
+        await AssertSuccess(result1);
+        
+        var state1 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state1.Value).IsEqualTo(10);
+        
+        // Different message ID
+        var messageId2 = Guid.NewGuid().ToString();
+        var context2 = CreateContext(new TestEvent { Value = 20 }, messageId: messageId2);
+        
+        // Act - different message should be processed
+        var result2 = await projector.HandleEvent(context2);
+        await AssertSuccess(result2);
+        
+        // State should have been updated (10 + 20 = 30)
+        var state2 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state2.Value).IsEqualTo(30);
+    }
+
+    [Test]
+    public async Task Idempotency_ByGlobalPosition_ShouldIgnoreDuplicatePosition() {
+        // Arrange
+        var containerName = await SetupContainer("idempotency-globalposition");
+        var blobName = $"{DefaultStream}/SyncState.json";
+        
+        var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.ByGlobalPosition);
+        
+        // First context with specific global position
+        var context1 = CreateContext(new TestEvent { Value = 10 }, globalPosition: 100u);
+        
+        // Act - first processing should succeed
+        var result1 = await projector.HandleEvent(context1);
+        await AssertSuccess(result1);
+        
+        var state1 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state1.Value).IsEqualTo(10);
+        
+        // Second context with SAME global position (duplicate)
+        var context2 = CreateContext(new TestEvent { Value = 20 }, globalPosition: 100u);
+        
+        // Act - second processing should be ignored
+        var result2 = await projector.HandleEvent(context2);
+        await AssertIgnored(result2);
+        
+        // State should NOT have been updated (still 10, not 30)
+        var state2 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state2.Value).IsEqualTo(10);
+    }
+
+    [Test]
+    public async Task Idempotency_ByGlobalPosition_ShouldProcessDifferentPosition() {
+        // Arrange
+        var containerName = await SetupContainer("idempotency-globalposition-different");
+        var blobName = $"{DefaultStream}/SyncState.json";
+        
+        var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.ByGlobalPosition);
+        
+        // First context with specific global position
+        var context1 = CreateContext(new TestEvent { Value = 10 }, globalPosition: 100);
+        
+        // Act - first processing should succeed
+        var result1 = await projector.HandleEvent(context1);
+        await AssertSuccess(result1);
+        
+        var state1 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state1.Value).IsEqualTo(10);
+        
+        // Different global position
+        var context2 = CreateContext(new TestEvent { Value = 20 }, globalPosition: 101u);
+        
+        // Act - different position should be processed
+        var result2 = await projector.HandleEvent(context2);
+        await AssertSuccess(result2);
+        
+        // State should have been updated (10 + 20 = 30)
+        var state2 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state2.Value).IsEqualTo(30);
+    }
+
+    [Test]
+    public async Task Idempotency_None_ShouldAlwaysProcess() {
+        // Arrange - explicitly set to None (which is also the default)
+        var containerName = await SetupContainer("idempotency-none");
+        var blobName = $"{DefaultStream}/SyncState.json";
+        
+        var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.None);
+        var messageId = Guid.NewGuid().ToString();
+        
+        // First context
+        var context1 = CreateContext(new TestEvent { Value = 10 }, messageId: messageId);
+        
+        // Act
+        var result1 = await projector.HandleEvent(context1);
+        await AssertSuccess(result1);
+        
+        var state1 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state1.Value).IsEqualTo(10);
+        
+        // Second context with SAME message ID - should still process
+        var context2 = CreateContext(new TestEvent { Value = 20 }, messageId: messageId);
+        
+        // Act - should process even with same message ID
+        var result2 = await projector.HandleEvent(context2);
+        await AssertSuccess(result2);
+        
+        // State should have been updated (10 + 20 = 30) - no idempotency
+        var state2 = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state2.Value).IsEqualTo(30);
+    }
+
     // ========== TEST CONTEXT FACTORY ==========
 
-    static IMessageConsumeContext CreateContext(object message) =>
+    static IMessageConsumeContext CreateContext(object message, string? messageId = null, ulong globalPosition = 0) =>
         new MessageConsumeContext(
-            eventId: Guid.NewGuid().ToString(),
+            eventId: messageId ?? Guid.NewGuid().ToString(),
             eventType: message.GetType().Name,
             contentType: "application/json",
             stream: DefaultStream,
             eventNumber: 0,
             streamPosition: 0,
-            globalPosition: 0,
+            globalPosition: globalPosition,
             sequence: 0,
             created: DateTime.UtcNow,
             message: message,
@@ -509,6 +664,19 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
             On<TestEvent>(async (ctx, state) => {
                 if (++_callCount == 1)
                     await _messWithState();
+                state.Value += ctx.Message.Value;
+                return state;
+            });
+        }
+    }
+
+    /// <summary>
+    /// Tests idempotency with configurable mode
+    /// </summary>
+    class IdempotencyProjector : StorageBlobsProjector<SyncState> {
+        public IdempotencyProjector(BlobServiceClient serviceClient, string containerName, IdempotencyMode mode)
+            : base(serviceClient, containerName, projectorOptions: new StorageBlobProjectorOptions<SyncState> { IdempotencyMode = mode }) {
+            On<TestEvent>((ctx, state) => {
                 state.Value += ctx.Message.Value;
                 return state;
             });

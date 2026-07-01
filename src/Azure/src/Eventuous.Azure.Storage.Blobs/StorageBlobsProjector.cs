@@ -37,6 +37,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     /// <summary>Serialization function for T to byte array.</summary>
     protected readonly Func<T, byte[]> Serialize;
     private readonly int _raceRetries;
+    private readonly IdempotencyMode _idempotencyMode;
 
     /// <summary>Delegate for custom blob ID generation from consume context.</summary>
     /// <typeparam name="TEvent">Event type being consumed.</typeparam>
@@ -63,6 +64,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         Deserialize = projectorOptions?.Deserialize ?? ToObjectFromJson;
         Serialize = projectorOptions?.Serialize ?? SerializeToUtf8Bytes;
         _raceRetries = projectorOptions?.RaceRetries ?? 0;
+        _idempotencyMode = projectorOptions?.IdempotencyMode ?? IdempotencyMode.None;
     }
 
     /// <summary>
@@ -171,39 +173,67 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
             async Task<EventHandlingStatus> ModifyBlobWithRetries(int retries) {
                 try {
-                    await ModifyBlob().NoContext();
-                    return EventHandlingStatus.Success;
+                    var status = await ModifyBlob().NoContext();
+                    return status == EventHandlingStatus.Ignored ? EventHandlingStatus.Ignored : EventHandlingStatus.Success;
                 } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
                     return retries > 0 ? await ModifyBlobWithRetries(retries - 1).NoContext() : EventHandlingStatus.Failure;
                 }
             }
 
-            async Task ModifyBlob() {
+            async Task<EventHandlingStatus> ModifyBlob() {
                 try {
-                    var blobContent = await blobClient.DownloadContentAsync().NoContext();
+                    var blobContent = await blobClient.DownloadContentAsync(typedContext.CancellationToken).NoContext();
+
+                    // Check idempotency if enabled
+                    if (projector._idempotencyMode != IdempotencyMode.None) {
+                        if (IsDuplicate(blobContent.Value.Details.Metadata)) {
+                            return EventHandlingStatus.Ignored;
+                        }
+                    }
 
                     var content = blobContent.Value.Content;
                     var current = projector.Deserialize(content);
 
-                    var uploadOptions = new BlobUploadOptions {
-                        Conditions = new BlobRequestConditions { IfMatch = blobContent.Value.Details.ETag }
-                    };
-                    await UploadUpdated(current, uploadOptions).NoContext();
+                    await UploadUpdated(current, new BlobRequestConditions { IfMatch = blobContent.Value.Details.ETag }).NoContext();
+                    return EventHandlingStatus.Success;
                 } catch (RequestFailedException ex) when (ex.Status == 404) {
                     // Blob doesn't exist, start with a new instance
-                    var insertOptions = new BlobUploadOptions {
-                        Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All }
-                    };
-                    await UploadUpdated(new T(), insertOptions).NoContext();
+                    await UploadUpdated(new T(), new BlobRequestConditions { IfNoneMatch = ETag.All }).NoContext();
+                    return EventHandlingStatus.Success;
                 }
             }
 
-            async Task UploadUpdated(T current, BlobUploadOptions uploadOptions) {
+            bool IsDuplicate(IDictionary<string, string> metadata) {
+                return projector._idempotencyMode switch {
+                    IdempotencyMode.ByGlobalPosition =>
+                        metadata.TryGetValue("GlobalPosition", out var storedPosition) &&
+                        storedPosition == typedContext.GlobalPosition.ToString(),
+                    IdempotencyMode.ByMessageId =>
+                        metadata.TryGetValue("MessageId", out var storedId) &&
+                        storedId == typedContext.MessageId,
+                    _ => false
+                };
+            }
+
+            async Task UploadUpdated(T current, BlobRequestConditions conditions) {
                 var task = EventHandler(typedContext, current);
                 var updated = task.IsCompletedSuccessfully
                     ? task.Result
                     : await task.NoContext();
                 var json = projector.Serialize(updated);
+
+                var uploadOptions = new BlobUploadOptions {
+                    Conditions = conditions,
+                    HttpHeaders = new BlobHttpHeaders {
+                        ContentType = "application/json"
+                    },
+                    Metadata = new Dictionary<string, string> {
+                        ["Stream"] = typedContext.Stream.ToString(),
+                        ["MessageId"] = typedContext.MessageId,
+                        ["StreamPosition"] = typedContext.StreamPosition.ToString(),
+                        ["GlobalPosition"] = typedContext.GlobalPosition.ToString()
+                    }
+                };
 
                 using var stream = new MemoryStream(json);
                 var response = await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken).NoContext();
