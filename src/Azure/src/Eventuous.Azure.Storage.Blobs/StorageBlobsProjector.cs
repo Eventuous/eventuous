@@ -173,8 +173,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
             async Task<EventHandlingStatus> ModifyBlobWithRetries(int retries) {
                 try {
-                    var status = await ModifyBlob().NoContext();
-                    return status == EventHandlingStatus.Ignored ? EventHandlingStatus.Ignored : EventHandlingStatus.Success;
+                    return await ModifyBlob().NoContext();
                 } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
                     return retries > 0 ? await ModifyBlobWithRetries(retries - 1).NoContext() : EventHandlingStatus.Failure;
                 }
