@@ -203,17 +203,15 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
                 }
             }
 
-            bool IsDuplicate(IDictionary<string, string> metadata) {
-                return projector._idempotencyMode switch {
-                    IdempotencyMode.ByGlobalPosition =>
-                        metadata.TryGetValue("GlobalPosition", out var storedPosition) &&
-                        storedPosition == typedContext.GlobalPosition.ToString(),
-                    IdempotencyMode.ByMessageId =>
-                        metadata.TryGetValue("MessageId", out var storedId) &&
-                        storedId == typedContext.MessageId,
-                    _ => false
-                };
-            }
+            bool IsDuplicate(IDictionary<string, string> metadata) => projector._idempotencyMode switch {
+                IdempotencyMode.ByGlobalPosition =>
+                    metadata.TryGetValue("GlobalPosition", out var storedPosition) &&
+                    storedPosition == typedContext.GlobalPosition.ToString(),
+                IdempotencyMode.ByMessageId =>
+                    metadata.TryGetValue("MessageId", out var storedId) &&
+                    storedId == typedContext.MessageId,
+                _ => false
+            };
 
             async Task UploadUpdated(T current, BlobRequestConditions conditions) {
                 var task = EventHandler(typedContext, current);
