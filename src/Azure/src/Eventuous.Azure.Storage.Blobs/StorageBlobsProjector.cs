@@ -50,16 +50,16 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     /// </summary>
     /// <param name="container">Azure Blob Storage container client.</param>
     /// <param name="projectorOptions">Optional projector configuration.</param>
-    /// <param name="options">Optional JSON serializer options.</param>
+    /// <param name="serializerOptions">Optional JSON serializer options.</param>
     /// <param name="mapper">Optional type mapper for event type resolution.</param>
     public StorageBlobsProjector(
         BlobContainerClient container,
+        IOptions<JsonSerializerOptions>? serializerOptions = null,
         StorageBlobProjectorOptions<T>? projectorOptions = null,
-        IOptions<JsonSerializerOptions>? options = null,
         ITypeMapper? mapper = null
     ) {
         ContainerClient = container;
-        _jsonOptions = projectorOptions?.JsonOptions ?? options?.Value ?? new(JsonSerializerOptions.Web);
+        _jsonOptions = new(projectorOptions?.JsonOptions ?? serializerOptions?.Value ?? JsonSerializerOptions.Web);
         _map = mapper ?? TypeMap.Instance;
         Deserialize = projectorOptions?.Deserialize ?? ToObjectFromJson;
         Serialize = projectorOptions?.Serialize ?? SerializeToUtf8Bytes;
@@ -72,16 +72,16 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     /// </summary>
     /// <param name="serviceClient">Azure Blob Storage service client.</param>
     /// <param name="containerName">Name of the container to use.</param>
-    /// <param name="options">Optional JSON serializer options.</param>
+    /// <param name="serializerOptions">Optional JSON serializer options.</param>
     /// <param name="mapper">Optional type mapper for event type resolution.</param>
     /// <param name="projectorOptions">Optional projector configuration.</param>
     public StorageBlobsProjector(
         BlobServiceClient serviceClient,
         string containerName,
-        IOptions<JsonSerializerOptions>? options = null,
+        IOptions<JsonSerializerOptions>? serializerOptions = null,
         ITypeMapper? mapper = null,
         StorageBlobProjectorOptions<T>? projectorOptions = null
-    ) : this(serviceClient.GetBlobContainerClient(containerName), projectorOptions, options, mapper) { }
+    ) : this(serviceClient.GetBlobContainerClient(containerName), serializerOptions, projectorOptions, mapper) { }
 
     /// <summary>Registers event handler with sync state update.</summary>
     /// <typeparam name="TEvent">Event type to handle.</typeparam>

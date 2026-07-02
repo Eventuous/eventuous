@@ -8,12 +8,19 @@ Create your own projection class that inherits from `StorageBlobsProjector<T>` w
 
 Register event handlers using the `On<TEvent>` methods. When an event is received, the projector retrieves the current state blob (or creates a new state instance if the blob doesn't exist), applies the event to the state using the registered event handler, and uploads the updated state back to Blob Storage.
 
+The class provides two constructors:
+
+* `StorageBlobsProjector(BlobContainerClient container, ...` where the container client is passed directly
+* `StorageBlobsProjector(BlobServiceClient serviceClient, string containerName, ...` where the service client is set up by Azure DI and the container name is set by the projection
+
+By using `IOptions<JsonSerializerOptions>` we can also use the Json serialization options as set in ASP DI.
+
 By default, the blob ID is extracted from the stream using `context.Stream.GetId()`. You can override this by providing a custom `getBlobId` function in the event registration:
 
 ```csharp
 public class BookingProjection : StorageBlobsProjector<BookingState> {
-    public BookingProjection(BlobContainerClient containerClient)
-        : base(containerClient) {
+    public BookingProjection(BlobServiceClient client, IOptions<JsonSerializerOptions> serializerOptions)
+        : base(client, "bookings-container", serializerOptions.Value) {
         
         // Uses default blob ID from stream
         On<BookingImported>((state, evt) => {
@@ -30,18 +37,6 @@ public class BookingProjection : StorageBlobsProjector<BookingState> {
             },
             context => new ValueTask<string>($"custom-{context.Message.BookingId}")
         );
-    }
-}
-```
-
-Use the constructor that accepts a `BlobContainerClient`, or use the one that accepts a `BlobServiceClient` and container name:
-
-```csharp
-// Using BlobServiceClient and container name
-public class BookingProjection : StorageBlobsProjector<BookingState> {
-    public BookingProjection(BlobServiceClient serviceClient)
-        : base(serviceClient, "bookings-container") {
-        // Event handlers...
     }
 }
 ```
