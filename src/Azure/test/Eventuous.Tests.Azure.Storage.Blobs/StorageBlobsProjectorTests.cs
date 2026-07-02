@@ -641,7 +641,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
             Func<Task>? messWithState = null,
             int onCall = 1,
             int raceRetries = 0
-        ) : base(serviceClient, containerName, projectorOptions: new StorageBlobProjectorOptions<ConcurrentState> { RaceRetries = raceRetries }) {
+        ) : base(serviceClient, containerName, projectorOptions: new StorageBlobProjectorOptions { RaceRetries = raceRetries }) {
             _messWithState = messWithState;
             _onCall = onCall;
 
@@ -672,7 +672,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// </summary>
     class IdempotencyProjector : StorageBlobsProjector<SyncState> {
         public IdempotencyProjector(BlobServiceClient serviceClient, string containerName, IdempotencyMode mode)
-            : base(serviceClient, containerName, projectorOptions: new StorageBlobProjectorOptions<SyncState> { IdempotencyMode = mode }) {
+            : base(serviceClient, containerName, projectorOptions: new StorageBlobProjectorOptions { IdempotencyMode = mode }) {
             On<TestEvent>((ctx, state) => {
                 state.Value += ctx.Message.Value;
                 return state;

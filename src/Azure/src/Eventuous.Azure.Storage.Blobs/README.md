@@ -48,8 +48,6 @@ The `StorageBlobProjectorOptions<T>` class provides several configuration option
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `JsonOptions` | `JsonSerializerOptions?` | `null` (uses `JsonSerializerOptions.Web`) | JSON serializer options for state serialization/deserialization. Controls formatting, naming policies, etc. |
-| `Deserialize` | `Func<BinaryData, T>?` | `null` (uses JSON deserialization) | Custom function to deserialize blob content to state type. Override for custom deserialization logic. |
-| `Serialize` | `Func<T, byte[]>?` | `null` (uses JSON serialization) | Custom function to serialize state to byte array. Override for custom serialization logic. |
 | `RaceRetries` | `int` | `0` | Number of retry attempts for optimistic concurrency conflicts. Increase when concurrent updates are likely. |
 | `IdempotencyMode` | `IdempotencyMode` | `IdempotencyMode.None` | Controls duplicate message detection behavior. |
 

@@ -31,11 +31,6 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     readonly Dictionary<Type, Func<IMessageConsumeContext, ValueTask<EventHandlingStatus>>> _handlers = new();
     readonly ITypeMapper _map;
 
-    /// <summary>Deserialization function for blob content to T.</summary>
-    protected readonly Func<BinaryData, T> Deserialize;
-
-    /// <summary>Serialization function for T to byte array.</summary>
-    protected readonly Func<T, byte[]> Serialize;
     private readonly int _raceRetries;
     private readonly IdempotencyMode _idempotencyMode;
 
@@ -55,14 +50,12 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     public StorageBlobsProjector(
         BlobContainerClient container,
         IOptions<JsonSerializerOptions>? serializerOptions = null,
-        StorageBlobProjectorOptions<T>? projectorOptions = null,
+        StorageBlobProjectorOptions? projectorOptions = null,
         ITypeMapper? mapper = null
     ) {
         ContainerClient = container;
         _jsonOptions = new(projectorOptions?.JsonOptions ?? serializerOptions?.Value ?? JsonSerializerOptions.Web);
         _map = mapper ?? TypeMap.Instance;
-        Deserialize = projectorOptions?.Deserialize ?? ToObjectFromJson;
-        Serialize = projectorOptions?.Serialize ?? SerializeToUtf8Bytes;
         _raceRetries = projectorOptions?.RaceRetries ?? 0;
         _idempotencyMode = projectorOptions?.IdempotencyMode ?? IdempotencyMode.None;
     }
@@ -80,7 +73,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         string containerName,
         IOptions<JsonSerializerOptions>? serializerOptions = null,
         ITypeMapper? mapper = null,
-        StorageBlobProjectorOptions<T>? projectorOptions = null
+        StorageBlobProjectorOptions? projectorOptions = null
     ) : this(serviceClient.GetBlobContainerClient(containerName), serializerOptions, projectorOptions, mapper) { }
 
     /// <summary>Registers event handler with sync state update.</summary>
@@ -191,7 +184,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
                     }
 
                     var content = blobContent.Value.Content;
-                    var current = projector.Deserialize(content);
+                    var current = projector.ToObjectFromJson(content);
 
                     await UploadUpdated(current, new BlobRequestConditions { IfMatch = blobContent.Value.Details.ETag }).NoContext();
                     return EventHandlingStatus.Success;
@@ -217,7 +210,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
                 var updated = task.IsCompletedSuccessfully
                     ? task.Result
                     : await task.NoContext();
-                var json = projector.Serialize(updated);
+                var json = projector.SerializeToUtf8Bytes(updated);
 
                 var uploadOptions = new BlobUploadOptions {
                     Conditions = conditions,
