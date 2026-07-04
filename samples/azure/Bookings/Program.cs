@@ -21,6 +21,7 @@ builder.Host.UseSerilog();
 builder.Services
     .AddControllers()
     .AddJsonOptions(cfg => cfg.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+builder.Services.ConfigureHttpJsonOptions(cfg => cfg.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => {
     c.SwaggerDoc("v1", new() { Title = "Bookings API", Version = "v1" });

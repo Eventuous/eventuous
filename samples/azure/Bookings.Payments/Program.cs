@@ -3,6 +3,8 @@ using Bookings.Payments;
 using Bookings.Payments.Domain;
 using Eventuous;
 using Microsoft.OpenApi.Models;
+using NodaTime;
+using NodaTime.Serialization.SystemTextJson;
 using Serilog;
 using static Bookings.Payments.Application.PaymentCommands;
 
@@ -13,6 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(cfg => cfg.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+builder.Services.ConfigureHttpJsonOptions(cfg => cfg.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 builder.Services.AddSwaggerGen(c => {
     c.SwaggerDoc("v1", new() { Title = "Bookings API", Version = "v1" });
     c.AddServer(new OpenApiServer { Url = "/" }); // Relative path

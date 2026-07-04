@@ -5,6 +5,7 @@
     <ItemGroup>
         <PackageReference Include="Azure.Storage.Blobs" />
         <PackageReference Include="Microsoft.Extensions.Azure" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
         <PackageReference Include="OpenTelemetry.Exporter.Zipkin" />
