@@ -18,5 +18,6 @@ public static class Logging {
                 outputTemplate:
                 "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} <s:{SourceContext}>{NewLine}{Exception}"
             )
+            .WriteTo.OpenTelemetry()
             .CreateLogger();
 }

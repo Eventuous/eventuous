@@ -1,4 +1,5 @@
 using Eventuous.Diagnostics.OpenTelemetry;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -7,35 +8,26 @@ namespace Bookings.Infrastructure;
 
 public static class Telemetry {
     public static void AddTelemetry(this IServiceCollection services) {
-        var otelEnabled = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") != null;
+        if (Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") == null)
+            return;
 
         services.AddOpenTelemetry()
             .ConfigureResource(builder => builder.AddService("bookings"))
             .WithMetrics(
-                builder => {
-                    builder
+                builder => builder
                         .AddAspNetCoreInstrumentation()
                         .AddSqlClientInstrumentation()
+                        .AddHttpClientInstrumentation()
                         .AddEventuous()
                         .AddEventuousSubscriptions()
-                        .AddPrometheusExporter();
-                    if (otelEnabled) builder.AddOtlpExporter();
-                }
-            );
-
-        services.AddOpenTelemetry()
+                        .AddPrometheusExporter()
+                        .AddOtlpExporter())
             .WithTracing(
-                builder => {
-                    builder
+                builder => builder
                         .AddAspNetCoreInstrumentation()
                         .AddSqlClientInstrumentation()
-                        .AddEventuousTracing();
-
-                    if (otelEnabled)
-                        builder.AddOtlpExporter();
-                    else
-                        builder.AddZipkinExporter();
-                }
-            );
+                        .AddHttpClientInstrumentation()
+                        .AddEventuousTracing()
+                        .AddOtlpExporter());
     }
 }
