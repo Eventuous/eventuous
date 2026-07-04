@@ -71,8 +71,8 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         BlobServiceClient serviceClient,
         string containerName,
         JsonSerializerOptions? serializerOptions = null,
-        ITypeMapper? mapper = null,
-        StorageBlobProjectorOptions? projectorOptions = null
+        StorageBlobProjectorOptions? projectorOptions = null,
+        ITypeMapper? mapper = null
     ) : this(serviceClient.GetBlobContainerClient(containerName), serializerOptions, projectorOptions, mapper) { }
 
     /// <summary>Registers event handler with sync state update.</summary>
