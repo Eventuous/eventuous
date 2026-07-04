@@ -4,6 +4,7 @@ using Bookings.Domain.Bookings;
 using Bookings.Infrastructure;
 using Eventuous;
 using Eventuous.Spyglass;
+using Microsoft.OpenApi.Models;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Serilog;
@@ -21,9 +22,14 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(cfg => cfg.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c => c.SwaggerDoc("v1", new() { Title = "Bookings API", Version = "v1" }));
+builder.Services.AddSwaggerGen(c => {
+    c.SwaggerDoc("v1", new() { Title = "Bookings API", Version = "v1" });
+    c.AddServer(new OpenApiServer { Url = "/" }); // Relative path
+});
 builder.Services.AddTelemetry();
 builder.Services.AddEventuous(builder.Configuration);
+
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -33,6 +39,8 @@ app.UseSwagger(c=>c.RouteTemplate = "openapi/{documentName}.json");
 app.MapControllers();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 app.MapEventuousSpyglass();
+
+app.MapHealthChecks("/health");
 
 app.MapGet(
     "/bookings/my/{userId}",

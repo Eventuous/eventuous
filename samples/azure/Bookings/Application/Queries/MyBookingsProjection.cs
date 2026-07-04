@@ -1,6 +1,4 @@
-using Azure;
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Bookings.Domain.Bookings;
 using Eventuous;
 using Eventuous.Azure.Storage.Blobs;
@@ -31,15 +29,4 @@ public class MyBookingsProjection : StorageBlobsProjector<MyBookings> {
     private static MyBookings CancelBooking(IMessageConsumeContext<V1.BookingCancelled> ctx, MyBookings b) => b with {
         Bookings = b.Bookings.RemoveAll(booking => booking.BookingId == ctx.Stream.GetId())
     };
-
-    public async Task<MyBookings?> LoadDocument(string userId) {
-        try {
-            var blobName = GetBlobName(userId);
-            var blobClient = ContainerClient.GetBlobClient(blobName);
-            BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
-            return Deserialize(blobContent.Content);
-        } catch (RequestFailedException ex) when (ex.Status == 404) {
-            return null;
-        }
-    }
 }

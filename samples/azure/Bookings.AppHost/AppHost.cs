@@ -14,6 +14,7 @@ var containers = blobs.AddBlobContainer("bookings-container");
 
 var bookings = builder.AddProject<Projects.Bookings>("bookings")
     .WithHttpEndpoint()
+    .WithHttpHealthCheck("/health")
     .WithReference(bookingsDb)
     .WithReference(serviceBus)
     .WithReference(blobs)
@@ -23,6 +24,7 @@ var bookings = builder.AddProject<Projects.Bookings>("bookings")
 
 var payments = builder.AddProject<Projects.Bookings_Payments>("payments")
     .WithHttpEndpoint()
+    .WithHttpHealthCheck("/health")
     .WithReference(paymentsDb)
     .WithReference(serviceBus)
     .WithReference(blobs)

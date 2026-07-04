@@ -28,7 +28,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     protected readonly BlobContainerClient ContainerClient;
 
     readonly JsonSerializerOptions _jsonOptions;
-    readonly Dictionary<Type, Func<IMessageConsumeContext, ValueTask<EventHandlingStatus>>> _handlers = new();
+    readonly Dictionary<Type, Func<IMessageConsumeContext, ValueTask<EventHandlingStatus>>> _handlers = [];
     readonly ITypeMapper _map;
 
     private readonly int _raceRetries;
@@ -126,6 +126,17 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
         _handlers.TryGetValue(context.Message!.GetType(), out var handler)
             ? await handler(context).NoContext()
             : EventHandlingStatus.Ignored;
+
+    public async Task<T?> LoadDocument(string id) {
+        try {
+            var blobName = GetBlobName(id);
+            var blobClient = ContainerClient.GetBlobClient(blobName);
+            BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
+            return ToObjectFromJson(blobContent.Content);
+        } catch (RequestFailedException ex) when (ex.Status == 404) {
+            return null;
+        }
+    }
 
     private T ToObjectFromJson(BinaryData content) => content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
     private byte[] SerializeToUtf8Bytes(T updated) => JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
