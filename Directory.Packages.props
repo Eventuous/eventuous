@@ -17,14 +17,17 @@
   <PropertyGroup Label="Testcontainers version">
     <TestcontainersVersion>4.10.0</TestcontainersVersion>
   </PropertyGroup>
+  <PropertyGroup Label="Aspire SDK version">
+    <AspireSdkVersion>13.4.6</AspireSdkVersion>
+  </PropertyGroup>
   <PropertyGroup>
     <NpgsqlVersion>10.0.1</NpgsqlVersion>
     <TUnitVersion>0.77.3</TUnitVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="13.4.5" />
-    <PackageVersion Include="Aspire.Hosting.Azure.Sql" Version="13.4.5" />
-    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.4.5" />
+    <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="$(AspireSdkVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Sql" Version="$(AspireSdkVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="$(AspireSdkVersion)" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="FluentValidation" Version="12.0.0" />
