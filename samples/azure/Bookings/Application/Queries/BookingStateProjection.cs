@@ -1,5 +1,7 @@
 using Azure.Storage.Blobs;
 using Eventuous.Azure.Storage.Blobs;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Options;
 using static Bookings.Domain.Bookings.BookingEvents;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
@@ -7,7 +9,10 @@ using static Bookings.Domain.Bookings.BookingEvents;
 namespace Bookings.Application.Queries;
 
 public class BookingStateProjection : StorageBlobsProjector<BookingDocument> {
-    public BookingStateProjection(BlobServiceClient client) : base(client, "bookings-container") {
+    public BookingStateProjection(
+        BlobServiceClient client,
+        IOptions<JsonOptions> serializerOptions
+    ) : base(client, "bookings-container", serializerOptions.Value.SerializerOptions) {
         On<V1.RoomBooked>(HandleRoomBooked);
 
         On<V1.PaymentRecorded>((b, evt) => b with { Outstanding = evt.Outstanding });

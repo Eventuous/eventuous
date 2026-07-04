@@ -3,6 +3,8 @@ using Bookings.Domain.Bookings;
 using Eventuous;
 using Eventuous.Azure.Storage.Blobs;
 using Eventuous.Subscriptions.Context;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Options;
 using static Bookings.Domain.Bookings.BookingEvents;
 
 namespace Bookings.Application.Queries;
@@ -10,7 +12,11 @@ namespace Bookings.Application.Queries;
 public class MyBookingsProjection : StorageBlobsProjector<MyBookings> {
     readonly IEventReader eventReader;
 
-    public MyBookingsProjection(BlobServiceClient client, IEventReader eventReader) : base(client, "bookings-container") {
+    public MyBookingsProjection(
+        BlobServiceClient client,
+        IEventReader eventReader,
+        IOptions<JsonOptions> serializerOptions
+    ) : base(client, "bookings-container", serializerOptions.Value.SerializerOptions) {
         this.eventReader = eventReader;
         
         On<V1.RoomBooked>(AddBooking, ctx => new ValueTask<string>(ctx.Message.GuestId));

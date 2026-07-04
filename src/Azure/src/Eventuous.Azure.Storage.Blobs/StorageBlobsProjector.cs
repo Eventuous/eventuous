@@ -2,7 +2,6 @@ using Azure;
 using Azure.Storage.Blobs.Models;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
-using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
@@ -49,12 +48,12 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     /// <param name="mapper">Optional type mapper for event type resolution.</param>
     public StorageBlobsProjector(
         BlobContainerClient container,
-        IOptions<JsonSerializerOptions>? serializerOptions = null,
+        JsonSerializerOptions? serializerOptions = null,
         StorageBlobProjectorOptions? projectorOptions = null,
         ITypeMapper? mapper = null
     ) {
         ContainerClient = container;
-        _jsonOptions = new(projectorOptions?.JsonOptions ?? serializerOptions?.Value ?? JsonSerializerOptions.Web);
+        _jsonOptions = new(projectorOptions?.JsonOptions ?? serializerOptions ?? JsonSerializerOptions.Web);
         _map = mapper ?? TypeMap.Instance;
         _raceRetries = projectorOptions?.RaceRetries ?? 0;
         _idempotencyMode = projectorOptions?.IdempotencyMode ?? IdempotencyMode.None;
@@ -71,7 +70,7 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     public StorageBlobsProjector(
         BlobServiceClient serviceClient,
         string containerName,
-        IOptions<JsonSerializerOptions>? serializerOptions = null,
+        JsonSerializerOptions? serializerOptions = null,
         ITypeMapper? mapper = null,
         StorageBlobProjectorOptions? projectorOptions = null
     ) : this(serviceClient.GetBlobContainerClient(containerName), serializerOptions, projectorOptions, mapper) { }
