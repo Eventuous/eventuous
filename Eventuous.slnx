@@ -164,6 +164,12 @@
         <Project Path="samples/postgres/Bookings.Payments/Bookings.Payments.csproj" />
         <Project Path="samples/postgres/Bookings/Bookings.csproj" />
     </Folder>
+    <Folder Name="/Samples/Azure/">
+        <Project Path="samples/azure/Bookings.AppHost/Bookings.AppHost.csproj" />
+        <Project Path="samples/azure/Bookings.Domain/Bookings.Domain.csproj" />
+        <Project Path="samples/azure/Bookings.Payments/Bookings.Payments.csproj" />
+        <Project Path="samples/azure/Bookings/Bookings.csproj" />
+    </Folder>
     <Folder Name="/SignalR/" />
     <Folder Name="/SignalR/src/">
         <Project Path="src/SignalR/src/Eventuous.SignalR.Server/Eventuous.SignalR.Server.csproj" />
