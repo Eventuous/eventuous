@@ -8,7 +8,7 @@ using Eventuous.Tests.Azure.Storage.Blobs.Fixtures;
 namespace Eventuous.Tests.Azure.Storage.Blobs;
 
 [ClassDataSource<IntegrationFixture>]
-public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
+public class BlobStorageProjectorTests(IntegrationFixture fixture) {
     const string DefaultStream = "stream";
 
     // ========== HELPER METHODS (surface intent through naming) ==========
@@ -321,7 +321,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
 
         // This should now fail with 412 because the ETag won't match
         var result2 = await projector.HandleEvent(context);
-        await StorageBlobsProjectorTests.AssertFailure(result2);
+        await BlobStorageProjectorTests.AssertFailure(result2);
     }
 
     [Test]
@@ -351,7 +351,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
 
         // This should now fail with 412 because the ETag won't match
         var result2 = await projector.HandleEvent(context);
-        await StorageBlobsProjectorTests.AssertFailure(result2);
+        await BlobStorageProjectorTests.AssertFailure(result2);
     }
 
     // ========== IDEMPOTENCY TESTS ==========
@@ -565,7 +565,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Tests sync handler: On<TEvent>(Func<Context, State, State>)
     /// </summary>
-    class SyncStateProjector : StorageBlobsProjector<SyncState> {
+    class SyncStateProjector : BlobStorageProjector<SyncState> {
         public SyncStateProjector(BlobServiceClient serviceClient, string containerName)
             : base(serviceClient, containerName) {
             On<TestEvent>((ctx, state) => {
@@ -579,7 +579,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Tests sync context-aware handler: On<TEvent>(Func<Context, State, State>) with context access
     /// </summary>
-    class SyncContextAwareProjector : StorageBlobsProjector<SyncContextState> {
+    class SyncContextAwareProjector : BlobStorageProjector<SyncContextState> {
         public SyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
             : base(serviceClient, containerName) {
             On<TestEvent>((ctx, state) => {
@@ -593,7 +593,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Tests async handler: On<TEvent>(Func<Context, State, ValueTask<State>>)
     /// </summary>
-    class AsyncStateProjector : StorageBlobsProjector<AsyncState> {
+    class AsyncStateProjector : BlobStorageProjector<AsyncState> {
         public AsyncStateProjector(BlobServiceClient serviceClient, string containerName)
             : base(serviceClient, containerName) {
             On<TestEvent>(async (ctx, state) => {
@@ -607,7 +607,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Tests async context-aware handler: On<TEvent>(Func<Context, State, ValueTask<State>>) with context access
     /// </summary>
-    class AsyncContextAwareProjector : StorageBlobsProjector<AsyncContextState> {
+    class AsyncContextAwareProjector : BlobStorageProjector<AsyncContextState> {
         public AsyncContextAwareProjector(BlobServiceClient serviceClient, string containerName)
            : base(serviceClient, containerName) {
             On<TestEvent>(async (ctx, state) => {
@@ -622,7 +622,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Tests scenario with no handlers registered
     /// </summary>
-    class NoHandlerProjector : StorageBlobsProjector<NoHandlerState> {
+    class NoHandlerProjector : BlobStorageProjector<NoHandlerState> {
         public NoHandlerProjector(BlobServiceClient serviceClient, string containerName)
             : base(serviceClient, containerName) { }
     }
@@ -630,7 +630,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Tests concurrent modification scenario with configurable race retries and onCall
     /// </summary>
-    class ConcurrentModificationProjector : StorageBlobsProjector<ConcurrentState> {
+    class ConcurrentModificationProjector : BlobStorageProjector<ConcurrentState> {
         private int _callCount = 0;
         private readonly Func<Task>? _messWithState;
         private readonly int _onCall;
@@ -641,7 +641,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
             Func<Task>? messWithState = null,
             int onCall = 1,
             int raceRetries = 0
-        ) : base(serviceClient, containerName, projectorOptions: new StorageBlobProjectorOptions { RaceRetries = raceRetries }) {
+        ) : base(serviceClient, containerName, projectorOptions: new BlobStorageProjectorOptions { RaceRetries = raceRetries }) {
             _messWithState = messWithState;
             _onCall = onCall;
 
@@ -657,7 +657,7 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Tests custom blob ID using getBlobId parameter
     /// </summary>
-    class CustomBlobIdProjector : StorageBlobsProjector<CustomBlobIdState> {
+    class CustomBlobIdProjector : BlobStorageProjector<CustomBlobIdState> {
         public CustomBlobIdProjector(BlobServiceClient serviceClient, string containerName)
             : base(serviceClient, containerName) {
             On<TestEvent>(async (ctx, state) => {
@@ -670,9 +670,9 @@ public class StorageBlobsProjectorTests(IntegrationFixture fixture) {
     /// <summary>
     /// Tests idempotency with configurable mode
     /// </summary>
-    class IdempotencyProjector : StorageBlobsProjector<SyncState> {
+    class IdempotencyProjector : BlobStorageProjector<SyncState> {
         public IdempotencyProjector(BlobServiceClient serviceClient, string containerName, IdempotencyMode mode)
-            : base(serviceClient, containerName, projectorOptions: new StorageBlobProjectorOptions { IdempotencyMode = mode }) {
+            : base(serviceClient, containerName, projectorOptions: new BlobStorageProjectorOptions { IdempotencyMode = mode }) {
             On<TestEvent>((ctx, state) => {
                 state.Value += ctx.Message.Value;
                 return state;

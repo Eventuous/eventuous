@@ -5,7 +5,7 @@ namespace Eventuous.Azure.Storage.Blobs;
 /// <summary>
 /// Options for configuring the storage blob projector.
 /// </summary>
-public class StorageBlobProjectorOptions {
+public class BlobStorageProjectorOptions {
     /// <summary>
     /// Gets or sets the JSON serializer options to use when serializing or deserializing projection state.
     /// By default, the default JSON serializer options will be used if this property is not set.

@@ -4,21 +4,21 @@ This package adds Azure Blob Storage projections to applications built with Even
 
 ## Using projections
 
-Create your own projection class that inherits from `StorageBlobsProjector<T>` where `T` is your state type. The state type must be a class with a parameterless constructor.
+Create your own projection class that inherits from `BlobStorageProjector<T>` where `T` is your state type. The state type must be a class with a parameterless constructor.
 
 Register event handlers using the `On<TEvent>` methods. When an event is received, the projector retrieves the current state blob (or creates a new state instance if the blob doesn't exist), applies the event to the state using the registered event handler, and uploads the updated state back to Blob Storage.
 
 The class provides two constructors:
 
-* `StorageBlobsProjector(BlobContainerClient container, ...` where the container client is passed directly
-* `StorageBlobsProjector(BlobServiceClient serviceClient, string containerName, ...` where the service client is set up by Azure DI and the container name is set by the projection
+* `BlobStorageProjector(BlobContainerClient container, ...` where the container client is passed directly
+* `BlobStorageProjector(BlobServiceClient serviceClient, string containerName, ...` where the service client is set up by Azure DI and the container name is set by the projection
 
 By using `IOptions<JsonSerializerOptions>` we can also use the Json serialization options as set in ASP DI.
 
 By default, the blob ID is extracted from the stream using `context.Stream.GetId()`. You can override this by providing a custom `getBlobId` function in the event registration:
 
 ```csharp
-public class BookingProjection : StorageBlobsProjector<BookingState> {
+public class BookingProjection : BlobStorageProjector<BookingState> {
     public BookingProjection(BlobServiceClient client, IOptions<JsonSerializerOptions> serializerOptions)
         : base(client, "bookings-container", serializerOptions.Value) {
         
@@ -43,7 +43,7 @@ public class BookingProjection : StorageBlobsProjector<BookingState> {
 
 ## Projector options
 
-The `StorageBlobProjectorOptions<T>` class provides several configuration options for fine-tuning the projector behavior.
+The `BlobStorageProjectorOptions<T>` class provides several configuration options for fine-tuning the projector behavior.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
