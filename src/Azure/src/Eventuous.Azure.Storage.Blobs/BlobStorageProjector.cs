@@ -22,7 +22,7 @@ namespace Eventuous.Azure.Storage.Blobs;
 /// stream ID from context.Stream.GetId() needs to be overridden, such as using event metadata or custom business logic.
 /// </para>
 /// </remarks>
-public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() {
+public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
     /// <summary>Azure Blob Storage container client.</summary>
     protected readonly BlobContainerClient ContainerClient;
 
@@ -46,10 +46,10 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     /// <param name="projectorOptions">Optional projector configuration.</param>
     /// <param name="serializerOptions">Optional JSON serializer options.</param>
     /// <param name="mapper">Optional type mapper for event type resolution.</param>
-    public StorageBlobsProjector(
+    public BlobStorageProjector(
         BlobContainerClient container,
         JsonSerializerOptions? serializerOptions = null,
-        StorageBlobProjectorOptions? projectorOptions = null,
+        BlobStorageProjectorOptions? projectorOptions = null,
         ITypeMapper? mapper = null
     ) {
         ContainerClient = container;
@@ -67,11 +67,11 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
     /// <param name="serializerOptions">Optional JSON serializer options.</param>
     /// <param name="mapper">Optional type mapper for event type resolution.</param>
     /// <param name="projectorOptions">Optional projector configuration.</param>
-    public StorageBlobsProjector(
+    public BlobStorageProjector(
         BlobServiceClient serviceClient,
         string containerName,
         JsonSerializerOptions? serializerOptions = null,
-        StorageBlobProjectorOptions? projectorOptions = null,
+        BlobStorageProjectorOptions? projectorOptions = null,
         ITypeMapper? mapper = null
     ) : this(serviceClient.GetBlobContainerClient(containerName), serializerOptions, projectorOptions, mapper) { }
 
@@ -153,12 +153,12 @@ public class StorageBlobsProjector<T> : BaseEventHandler where T : class, new() 
 
     private class Handler<TEvent>
         where TEvent : class {
-        private readonly StorageBlobsProjector<T> projector;
+        private readonly BlobStorageProjector<T> projector;
         private readonly Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> EventHandler;
         private readonly GetBlobId<TEvent>? GetBlobId;
 
-        public Handler(StorageBlobsProjector<T> storageBlobsProjector, Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler, GetBlobId<TEvent>? getBlobId) {
-            projector = storageBlobsProjector;
+        public Handler(BlobStorageProjector<T> blobStorageProjector, Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler, GetBlobId<TEvent>? getBlobId) {
+            projector = blobStorageProjector;
             EventHandler = handler;
             GetBlobId = getBlobId;
         }
