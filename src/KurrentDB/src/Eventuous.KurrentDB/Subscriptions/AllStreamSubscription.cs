@@ -71,6 +71,14 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
         ) : base(client, options, checkpointStore, consumePipe, SubscriptionKind.All, loggerFactory, eventSerializer, metaSerializer) { }
 
     /// <summary>
+    /// Message type used for the synthetic, payload-less context created when the server reports
+    /// a checkpoint position for a filtered subscription that hasn't matched any event in a while.
+    /// This lets the checkpoint advance past long unmatched stretches instead of parking at the
+    /// last matched event.
+    /// </summary>
+    internal const string CheckpointReachedMessageType = "$checkpoint-reached";
+
+    /// <summary>
     /// Starts the subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
@@ -79,7 +87,8 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var filterOptions = new SubscriptionFilterOptions(
             Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(),
-            Options.CheckpointInterval
+            Options.CheckpointInterval,
+            (_, position, ct) => HandleCheckpointReached(position, ct)
         );
 
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
@@ -138,6 +147,36 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             SubscriptionId,
             cancellationToken
         );
+    }
+
+    /// <summary>
+    /// Handles a server-reported checkpoint position for the filtered subscription by routing it
+    /// through the same ordered commit machinery as real events, as a payload-less context. Without
+    /// this, the stored checkpoint would only advance when a filter-matched event is processed, so a
+    /// long unmatched stretch (sparse filters, quiet servers) leaves the checkpoint parked at the last
+    /// matched event: restarts re-scan everything since then, and consumers comparing the checkpoint to
+    /// the $all head see a phantom, never-closing lag.
+    /// </summary>
+    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
+    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
+    Task HandleCheckpointReached(global::KurrentDB.Client.Position position, CancellationToken cancellationToken) {
+        var context = new MessageConsumeContext(
+            position.CommitPosition.ToString(),
+            CheckpointReachedMessageType,
+            "",
+            "$all",
+            position.CommitPosition,
+            position.CommitPosition,
+            position.CommitPosition,
+            Sequence++,
+            DateTime.UtcNow,
+            null,
+            null,
+            SubscriptionId,
+            cancellationToken
+        );
+
+        return HandleInternal(context).AsTask();
     }
 
     /// <summary>
