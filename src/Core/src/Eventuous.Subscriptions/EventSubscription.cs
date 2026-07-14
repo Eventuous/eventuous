@@ -95,7 +95,10 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         Logger.Current ??= Log;
 
         using (Log.Logger.BeginScope(scope)) {
-            var activity = EventuousDiagnostics.Enabled
+            // No activity for payload-less contexts: they are ignored and acknowledged below without
+            // entering the pipe, so an activity would never be started or disposed on the async path —
+            // a pure allocation leak, hot since checkpoint-reached contexts arrive payload-less.
+            var activity = EventuousDiagnostics.Enabled && context.Message != null
                 ? SubscriptionActivity.Create(
                     $"{Constants.Components.Subscription}.{SubscriptionId}/{context.MessageType}",
                     ActivityKind.Internal,
