@@ -52,7 +52,12 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
         _loggerFactory    = loggerFactory;
         var channel = Channel.CreateBounded<CommitPosition>(batchSize * 1000);
 
-        _worker = new(channel, Process, batchSize, delay, true);
+        // Backpressure, never throw: a dropped CommitPosition is poison — GetCommitPosition refuses
+        // to commit past a sequence gap, so one lost sequence number stalls checkpoint progression
+        // permanently (the throw is swallowed by the subscription's handler-error path). Awaiting
+        // capacity merely throttles the producer while the checkpoint store is slow, and only after
+        // the batchSize*1000 buffer is exhausted.
+        _worker = new(channel, Process, batchSize, delay);
 
         _worker.OnDispose = async _ => {
             if (_lastCommit.Valid)
