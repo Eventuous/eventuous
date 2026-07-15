@@ -34,44 +34,88 @@ public abstract class SubscriptionDropBase<TContainer, TSubscription, TSubscript
     /// healthy again, and resumes processing newly produced events.
     /// </summary>
     protected async Task ShouldResubscribeAfterConnectionDrop(CancellationToken cancellationToken) {
-        // 1. Produce and consume an initial batch; the subscription must be healthy.
-        await GenerateAndHandleCommands(BatchSize);
-        await fixture.StartSubscription();
-        var consumedInitial = await WaitUntil(() => fixture.Handler.Count >= BatchSize, DropTimeout, cancellationToken);
-        await Assert.That(consumedInitial).IsTrue();
-        await Assert.That(await GetHealthStatus(cancellationToken)).IsEqualTo(HealthStatus.Healthy);
+        var subscriptionStarted = false;
+        var containerPaused     = false;
 
-        // 2. Drop the connection by pausing the container.
-        WriteLine("Pausing the container to drop the connection");
-        await fixture.Container.PauseAsync(cancellationToken);
+        try {
+            // 1. Produce and consume an initial batch; the subscription must be healthy.
+            await GenerateAndHandleCommands(BatchSize);
+            await fixture.StartSubscription();
+            subscriptionStarted = true;
+            var consumedInitial = await WaitUntil(() => fixture.Handler.Count >= BatchSize, DropTimeout, cancellationToken);
+            await Assert.That(consumedInitial).IsTrue();
+            await Assert.That(await GetHealthStatus(cancellationToken)).IsEqualTo(HealthStatus.Healthy);
 
-        // 3. The subscription must detect the drop and report unhealthy.
-        var dropped = await WaitUntil(() => fixture.IsDropped, DropTimeout, cancellationToken);
-        await Assert.That(dropped).IsTrue();
-        var unhealthy = await WaitUntil(async () => await GetHealthStatus(cancellationToken) == HealthStatus.Unhealthy, DropTimeout, cancellationToken);
-        await Assert.That(unhealthy).IsTrue();
-        WriteLine("Subscription dropped and reported unhealthy");
+            // Wait until the initial batch is committed to the checkpoint. Otherwise the subscription
+            // replays those uncommitted events on resubscribe, and the replay could satisfy the
+            // post-recovery assertion below without any newly produced event ever being processed.
+            var lastPosition = await fixture.GetLastPosition();
+            var checkpointed = await WaitUntil(
+                async () => {
+                    var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
 
-        // 4. Restore the connection.
-        WriteLine("Unpausing the container to restore the connection");
-        await fixture.Container.UnpauseAsync(cancellationToken);
+                    return checkpoint.Position >= lastPosition;
+                },
+                DropTimeout,
+                cancellationToken
+            );
+            await Assert.That(checkpointed).IsTrue();
 
-        // 5. The subscription must resubscribe and report healthy again.
-        var recovered = await WaitUntil(() => !fixture.IsDropped, DropTimeout, cancellationToken);
-        await Assert.That(recovered).IsTrue();
-        var healthy = await WaitUntil(async () => await GetHealthStatus(cancellationToken) == HealthStatus.Healthy, DropTimeout, cancellationToken);
-        await Assert.That(healthy).IsTrue();
-        WriteLine("Subscription resubscribed and reported healthy");
+            // 2. Drop the connection by pausing the container.
+            WriteLine("Pausing the container to drop the connection");
+            await fixture.Container.PauseAsync(cancellationToken);
+            containerPaused = true;
 
-        // 6. Events produced after recovery must be processed.
-        var countBeforeRecovery = fixture.Handler.Count;
-        await GenerateAndHandleCommands(BatchSize);
-        var resumed = await WaitUntil(() => fixture.Handler.Count >= countBeforeRecovery + BatchSize, DropTimeout, cancellationToken);
+            // 3. The subscription must detect the drop and report unhealthy.
+            var dropped = await WaitUntil(() => fixture.IsDropped, DropTimeout, cancellationToken);
+            await Assert.That(dropped).IsTrue();
+            var unhealthy = await WaitUntil(async () => await GetHealthStatus(cancellationToken) == HealthStatus.Unhealthy, DropTimeout, cancellationToken);
+            await Assert.That(unhealthy).IsTrue();
+            WriteLine("Subscription dropped and reported unhealthy");
 
-        await fixture.StopSubscription();
+            // 4. Restore the connection.
+            WriteLine("Unpausing the container to restore the connection");
+            await fixture.Container.UnpauseAsync(cancellationToken);
+            containerPaused = false;
 
-        await Assert.That(resumed).IsTrue();
-        WriteLine("Processed {0} events after recovery", fixture.Handler.Count - countBeforeRecovery);
+            // 5. The subscription must resubscribe and report healthy again.
+            var recovered = await WaitUntil(() => !fixture.IsDropped, DropTimeout, cancellationToken);
+            await Assert.That(recovered).IsTrue();
+            var healthy = await WaitUntil(async () => await GetHealthStatus(cancellationToken) == HealthStatus.Healthy, DropTimeout, cancellationToken);
+            await Assert.That(healthy).IsTrue();
+            WriteLine("Subscription resubscribed and reported healthy");
+
+            // 6. Events produced after recovery must be processed. The initial batch is already
+            // checkpointed, so it cannot be replayed and this count only advances for new events.
+            var countBeforeRecovery = fixture.Handler.Count;
+            await GenerateAndHandleCommands(BatchSize);
+            var resumed = await WaitUntil(() => fixture.Handler.Count >= countBeforeRecovery + BatchSize, DropTimeout, cancellationToken);
+
+            await fixture.StopSubscription();
+            subscriptionStarted = false;
+
+            await Assert.That(resumed).IsTrue();
+            WriteLine("Processed {0} events after recovery", fixture.Handler.Count - countBeforeRecovery);
+        } finally {
+            // Undo the destructive steps even if an assertion fails or the test is cancelled mid-flight:
+            // a container left paused, or a subscription left resubscribing, would contaminate later tests.
+            // These fixtures use autoStart=false, so fixture disposal won't stop the subscription either.
+            if (containerPaused) {
+                try {
+                    await fixture.Container.UnpauseAsync(CancellationToken.None);
+                } catch (Exception ex) {
+                    WriteLine("Cleanup: failed to unpause the container: {0}", ex.Message);
+                }
+            }
+
+            if (subscriptionStarted) {
+                try {
+                    await fixture.StopSubscription();
+                } catch (Exception ex) {
+                    WriteLine("Cleanup: failed to stop the subscription: {0}", ex.Message);
+                }
+            }
+        }
     }
 
     async Task<HealthStatus> GetHealthStatus(CancellationToken cancellationToken) {
