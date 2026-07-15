@@ -335,9 +335,9 @@ sealed class CommitDiagnosticCounter : IObserver<DiagnosticListener>, IObserver<
     void IObserver<KeyValuePair<string, object?>>.OnNext(KeyValuePair<string, object?> evt) {
         if (evt.Key != CheckpointCommitHandler.CommitOperation) return;
 
-        var payload = evt.Value;
+        if (evt.Value is not { } payload) return;
 
-        if (payload?.GetType().GetProperty("Id")?.GetValue(payload) is not string id || id != _subscriptionId) return;
+        if (payload.GetType().GetProperty("Id")?.GetValue(payload) is not string id || id != _subscriptionId) return;
 
         if (payload.GetType().GetProperty("CommitPosition")?.GetValue(payload) is not { } commitPosition) return;
 
