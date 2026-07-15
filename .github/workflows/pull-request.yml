@@ -24,9 +24,9 @@ jobs:
     strategy:
       matrix:
         dotnet-version: [ '8.0', '9.0', '10.0' ]
-    env:
-      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
-      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
+#    env:
+#      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
+#      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
     steps:
       -
         name: Checkout
