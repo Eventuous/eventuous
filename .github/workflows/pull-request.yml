@@ -18,15 +18,54 @@ jobs:
           path: ${{ github.event_path }}
 
   build-and-test:
-    name: "Build and test"
+    # One job per test suite so a single runner only ever starts one container family.
+    # Running the whole solution on one runner stacked KurrentDB + Postgres + SQL Server +
+    # Mongo + Kafka + RabbitMQ containers at once, saturating the GitHub-hosted runner and
+    # making container startup (and thus the integration tests) flaky. Each integration
+    # provider now gets its own runner; all container-less unit tests share the `core` suite.
+    # When adding a new integration test project (one that uses Testcontainers), add a suite
+    # entry for it here — otherwise it won't run in CI.
+    name: "Build and test ${{ matrix.suite.name }} (${{ matrix.dotnet-version }})"
     runs-on: ubuntu-latest
-#    runs-on: [ self-hosted, type-cpx52, setup-docker, volume-cache-50GB ]
     strategy:
+      fail-fast: false
       matrix:
         dotnet-version: [ '8.0', '9.0', '10.0' ]
-#    env:
-#      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
-#      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
+        suite:
+          - name: core
+            projects: >-
+              src/Core/test/Eventuous.Tests/Eventuous.Tests.csproj
+              src/Core/test/Eventuous.Tests.Application/Eventuous.Tests.Application.csproj
+              src/Core/test/Eventuous.Tests.Subscriptions/Eventuous.Tests.Subscriptions.csproj
+              src/Core/test/Eventuous.Tests.Shared.Analyzers/Eventuous.Tests.Shared.Analyzers.csproj
+              src/Extensions/test/Eventuous.Tests.DependencyInjection/Eventuous.Tests.DependencyInjection.csproj
+              src/Extensions/test/Eventuous.Tests.Extensions.AspNetCore/Eventuous.Tests.Extensions.AspNetCore.csproj
+              src/Extensions/test/Eventuous.Tests.Extensions.AspNetCore.Analyzers/Eventuous.Tests.Extensions.AspNetCore.Analyzers.csproj
+              src/Gateway/test/Eventuous.Tests.Gateway/Eventuous.Tests.Gateway.csproj
+              src/Experimental/test/Eventuous.Tests.Spyglass/Eventuous.Tests.Spyglass.csproj
+              src/Experimental/test/Eventuous.Tests.Spyglass.Generators/Eventuous.Tests.Spyglass.Generators.csproj
+              src/Sqlite/test/Eventuous.Tests.Sqlite/Eventuous.Tests.Sqlite.csproj
+              src/SignalR/test/Eventuous.Tests.SignalR/Eventuous.Tests.SignalR.csproj
+          - name: kurrentdb
+            projects: src/KurrentDB/test/Eventuous.Tests.KurrentDB/Eventuous.Tests.KurrentDB.csproj
+          - name: postgres
+            projects: src/Postgres/test/Eventuous.Tests.Postgres/Eventuous.Tests.Postgres.csproj
+          - name: sqlserver
+            projects: src/SqlServer/test/Eventuous.Tests.SqlServer/Eventuous.Tests.SqlServer.csproj
+          - name: mongo
+            projects: src/Mongo/test/Eventuous.Tests.Projections.MongoDB/Eventuous.Tests.Projections.MongoDB.csproj
+          - name: kafka
+            projects: src/Kafka/test/Eventuous.Tests.Kafka/Eventuous.Tests.Kafka.csproj
+          - name: rabbitmq
+            projects: src/RabbitMq/test/Eventuous.Tests.RabbitMq/Eventuous.Tests.RabbitMq.csproj
+          - name: redis
+            projects: src/Redis/test/Eventuous.Tests.Redis/Eventuous.Tests.Redis.csproj
+          - name: azure-servicebus
+            projects: src/Azure/test/Eventuous.Tests.Azure.ServiceBus/Eventuous.Tests.Azure.ServiceBus.csproj
+          - name: googlepubsub
+            projects: src/GooglePubSub/test/Eventuous.Tests.GooglePubSub/Eventuous.Tests.GooglePubSub.csproj
+          - name: signalr-integration
+            projects: src/SignalR/test/Eventuous.Tests.SignalR.Integration/Eventuous.Tests.SignalR.Integration.csproj
     steps:
       -
         name: Checkout
@@ -49,13 +88,18 @@ jobs:
       -
         name: Run tests
         run: |
-          dotnet test -c "Debug CI" -f net${{ matrix.dotnet-version }}
+          set -euo pipefail
+          for proj in ${{ matrix.suite.projects }}; do
+            echo "::group::dotnet test $proj (net${{ matrix.dotnet-version }})"
+            dotnet test "$proj" -c "Debug CI" -f net${{ matrix.dotnet-version }}
+            echo "::endgroup::"
+          done
       -
         name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results ${{ matrix.dotnet-version }}
+          name: Test Results ${{ matrix.suite.name }} ${{ matrix.dotnet-version }}
           path: |
             test-results/**/*.xml
             test-results/**/*.trx
