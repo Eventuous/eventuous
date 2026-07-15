@@ -4,6 +4,8 @@ using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Sut.App;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using static Eventuous.Sut.App.Commands;
+using static Eventuous.Sut.Domain.BookingEvents;
 
 namespace Eventuous.Tests.Subscriptions.Base;
 
@@ -46,21 +48,6 @@ public abstract class SubscriptionDropBase<TContainer, TSubscription, TSubscript
             await Assert.That(consumedInitial).IsTrue();
             await Assert.That(await GetHealthStatus(cancellationToken)).IsEqualTo(HealthStatus.Healthy);
 
-            // Wait until the initial batch is committed to the checkpoint. Otherwise the subscription
-            // replays those uncommitted events on resubscribe, and the replay could satisfy the
-            // post-recovery assertion below without any newly produced event ever being processed.
-            var lastPosition = await fixture.GetLastPosition();
-            var checkpointed = await WaitUntil(
-                async () => {
-                    var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
-
-                    return checkpoint.Position >= lastPosition;
-                },
-                DropTimeout,
-                cancellationToken
-            );
-            await Assert.That(checkpointed).IsTrue();
-
             // 2. Drop the connection by pausing the container.
             WriteLine("Pausing the container to drop the connection");
             await fixture.Container.PauseAsync(cancellationToken);
@@ -85,17 +72,27 @@ public abstract class SubscriptionDropBase<TContainer, TSubscription, TSubscript
             await Assert.That(healthy).IsTrue();
             WriteLine("Subscription resubscribed and reported healthy");
 
-            // 6. Events produced after recovery must be processed. The initial batch is already
-            // checkpointed, so it cannot be replayed and this count only advances for new events.
-            var countBeforeRecovery = fixture.Handler.Count;
-            await GenerateAndHandleCommands(BatchSize);
-            var resumed = await WaitUntil(() => fixture.Handler.Count >= countBeforeRecovery + BatchSize, DropTimeout, cancellationToken);
+            // 6. Events produced after recovery must be processed. Assert the specific post-recovery
+            // events are handled (by identity), so a replay of the initial batch on resubscribe can't
+            // satisfy this — only genuinely new events count. This is provider-agnostic, unlike comparing
+            // the committed checkpoint to GetLastPosition ($all includes system events the subscription
+            // skips, so its checkpoint never reaches that head).
+            var expected = (await GenerateAndHandleCommands(BatchSize)).Select(ToEvent).ToList();
+            var resumed = await WaitUntil(
+                () => {
+                    var handled = fixture.Handler.Handled;
+
+                    return expected.All(e => handled.Contains(e));
+                },
+                DropTimeout,
+                cancellationToken
+            );
 
             await fixture.StopSubscription();
             subscriptionStarted = false;
 
             await Assert.That(resumed).IsTrue();
-            WriteLine("Processed {0} events after recovery", fixture.Handler.Count - countBeforeRecovery);
+            WriteLine("Processed {0} events after recovery", expected.Count);
         } finally {
             // Undo the destructive steps even if an assertion fails or the test is cancelled mid-flight:
             // a container left paused, or a subscription left resubscribing, would contaminate later tests.
@@ -142,7 +139,7 @@ public abstract class SubscriptionDropBase<TContainer, TSubscription, TSubscript
         }
     }
 
-    async Task GenerateAndHandleCommands(int count) {
+    async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
         var commands = Enumerable
             .Range(0, count)
             .Select(_ => DomainFixture.CreateImportBooking())
@@ -154,5 +151,9 @@ public abstract class SubscriptionDropBase<TContainer, TSubscription, TSubscript
             var result = await service.Handle(cmd, default);
             result.ThrowIfError();
         }
+
+        return commands;
     }
+
+    static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 }
