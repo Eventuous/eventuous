@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Bogus;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
@@ -28,22 +29,33 @@ public class TestEventHandler(TestEventHandlerOptions? options) : BaseEventHandl
 
     public int Count { get; private set; }
 
-    readonly Observer<object> _observer = new();
+    readonly Observer<object>       _observer = new();
+    readonly ConcurrentQueue<object> _handled = new();
 
     public On<object> AssertThat() => Hypothesis.On(_observer);
 
     public Hypothesis<object> AssertCollection(TimeSpan deadline, List<object> collection)
         => Hypothesis.On(_observer).Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
 
+    /// <summary>
+    /// Messages handled so far. Backed by a concurrent queue so tests can poll it while the subscription
+    /// keeps handling on background threads.
+    /// </summary>
+    public IReadOnlyCollection<object> Handled => _handled.ToArray();
+
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         await Task.Delay(_delay);
         await _observer.Add(context.Message!, context.CancellationToken);
+        _handled.Enqueue(context.Message!);
         Count++;
 
         return EventHandlingStatus.Success;
     }
 
-    public void Reset() => Count = 0;
+    public void Reset() {
+        Count = 0;
+        _handled.Clear();
+    }
 }
 
 public record TestEventHandlerOptions(TimeSpan? Delay = null);
