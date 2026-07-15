@@ -341,16 +341,20 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
             cmd.CommandType = CommandType.Text;
 
             cmd.CommandText = Kind switch {
-                SubscriptionKind.All    => GetEndOfStream,
-                SubscriptionKind.Stream => GetEndOfAll
+                SubscriptionKind.All    => GetEndOfAll,
+                SubscriptionKind.Stream => GetEndOfStream
             };
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
-            var position = await reader.ReadAsync(cancellationToken).NoContext() ? reader.GetInt64(0) : 0;
+            // MAX(...) returns NULL on an empty table, and providers may return the position column as either
+            // Int32 or Int64, so guard against DBNull and convert rather than calling the strict GetInt64.
+            var position = await reader.ReadAsync(cancellationToken).NoContext() && reader[0] is not DBNull
+                ? Convert.ToInt64(reader[0])
+                : 0;
 
             return new(SubscriptionId, (ulong)position, DateTime.UtcNow);
-        } catch (Exception) {
-            Log.WarnLog?.Log("Failed to get end of stream");
+        } catch (Exception e) {
+            Log.WarnLog?.Log(e, "Failed to get end of stream");
 
             return EndOfStream.Invalid;
         }
