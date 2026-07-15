@@ -61,8 +61,17 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
 
         return;
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Diagnostics only")]
         async ValueTask Process(IReadOnlyList<CommitPosition> list, CancellationToken cancellationToken) {
             _positions.UnionWith(list);
+
+            // Emit the commit diagnostic here, on the single worker thread that owns _positions. It used
+            // to be written from Commit() on the ACK caller thread, whose _positions.Min read raced this
+            // loop's UnionWith/RemoveWhere on the non-thread-safe SortedSet — a data race that threw
+            // NullReferenceException out of the ack path and wedged the subscription (AI-1329).
+            if (Diagnostic.IsEnabled(CommitOperation))
+                Diagnostic.Write(CommitOperation, new CommitEvent(_subscriptionId, _positions.Max, _positions.Min));
+
             var next = GetCommitPosition(false);
 
             if (!next.Valid) return;
@@ -78,9 +87,9 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
     [PublicAPI]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Diagnostics only")]
     public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken) {
-        if (Diagnostic.IsEnabled(CommitOperation)) Diagnostic.Write(CommitOperation, new CommitEvent(_subscriptionId, position, _positions.Min));
+        // No _positions access here — that read moved to the worker thread's Process (AI-1329). This
+        // runs on the ack caller thread and must never touch the worker-owned, non-thread-safe set.
         position.LogContext?.PositionReceived(position);
 
         return _worker.Write(position, cancellationToken);
