@@ -8,7 +8,7 @@ using static Bookings.Domain.Bookings.BookingEvents;
 
 namespace Bookings.Application.Queries;
 
-public class BookingStateProjection : StorageBlobsProjector<BookingDocument> {
+public class BookingStateProjection : BlobStorageProjector<BookingDocument> {
     public BookingStateProjection(
         BlobServiceClient client,
         IOptions<JsonOptions> serializerOptions

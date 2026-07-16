@@ -9,7 +9,7 @@ using static Bookings.Domain.Bookings.BookingEvents;
 
 namespace Bookings.Application.Queries;
 
-public class MyBookingsProjection : StorageBlobsProjector<MyBookings> {
+public class MyBookingsProjection : BlobStorageProjector<MyBookings> {
     readonly IEventReader eventReader;
 
     public MyBookingsProjection(
