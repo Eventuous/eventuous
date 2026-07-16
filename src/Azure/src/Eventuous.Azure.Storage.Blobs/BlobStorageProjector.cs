@@ -130,7 +130,7 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
         try {
             var blobName = GetBlobName(id);
             var blobClient = ContainerClient.GetBlobClient(blobName);
-            BlobDownloadResult blobContent = await blobClient.DownloadContentAsync();
+            BlobDownloadResult blobContent = await blobClient.DownloadContentAsync().NoContext();
             return ToObjectFromJson(blobContent.Content);
         } catch (RequestFailedException ex) when (ex.Status == 404) {
             return null;
