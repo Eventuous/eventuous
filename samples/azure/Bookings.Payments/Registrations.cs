@@ -10,7 +10,7 @@ namespace Bookings.Payments;
 
 public static class Registrations {
     public static void AddEventuous(this IServiceCollection services, IConfiguration configuration) {
-        services.AddAzureClients(async builder => {
+        services.AddAzureClients(builder => {
             var sbConnectionString = configuration.GetConnectionString("sbemulators") ?? throw new InvalidOperationException("Connection string 'sbemulators' not found.");
             builder.AddServiceBusClient(sbConnectionString);
             var blobConnectionString = configuration.GetConnectionString("blobs") ?? throw new InvalidOperationException("Connection string 'blobs' not found.");

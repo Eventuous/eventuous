@@ -20,7 +20,7 @@ public static class Registrations {
             new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
         );
 
-        services.AddAzureClients(async builder => {
+        services.AddAzureClients(builder => {
             var sbConnectionString = configuration.GetConnectionString("sbemulators") ?? throw new InvalidOperationException("Connection string 'sbemulators' not found.");
             builder.AddServiceBusClient(sbConnectionString);
             var blobConnectionString = configuration.GetConnectionString("blobs") ?? throw new InvalidOperationException("Connection string 'blobs' not found.");
