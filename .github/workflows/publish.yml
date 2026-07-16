@@ -10,14 +10,15 @@ on:
 
 jobs:
   nuget:
-    runs-on: [ self-hosted, type-cpx52, setup-docker, volume-cache-50GB ]
+    runs-on: ubuntu-latest
+#    runs-on: [ self-hosted, type-cpx52, setup-docker, volume-cache-50GB ]
     permissions:
       id-token: write
       contents: read
       checks: write
-    env:
-      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
-      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
+#    env:
+#      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
+#      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
     steps:
       -
         name: Setup Python
