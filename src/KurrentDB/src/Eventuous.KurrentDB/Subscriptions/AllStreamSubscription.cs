@@ -146,26 +146,30 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
         ) {
         try {
             while (await messages.MoveNextAsync().NoContext()) {
+                // Falling behind re-enters catch-up mode, making the current head the new caught-up
+                // commit candidate: every match at or below it is delivered before the next caught-up
+                // notification, exactly like the pre-subscribe head on the initial catch-up. Reading the
+                // head on the caught-up message instead would be unsafe — matches between the server's
+                // live transition and the read could still be in flight, and committing past them skips
+                // them on restart. Handled outside the inner try because the read is a server call: its
+                // failures are transport failures and must reach the outer catch, not get labelled as
+                // consumer errors.
+                if (messages.Current is StreamMessage.FellBehind) {
+                    headPosition = await GetAllStreamHead(cancellationToken).NoContext();
+
+                    continue;
+                }
+
                 try {
                     switch (messages.Current) {
                         case StreamMessage.Event(var resolvedEvent):
-                            _lastScannedPosition = resolvedEvent.Event.Position.CommitPosition;
+                            _lastScannedPosition = GetContextPosition(resolvedEvent);
                             await HandleInternal(CreateContext(resolvedEvent, cancellationToken)).NoContext();
 
                             break;
                         case StreamMessage.AllStreamCheckpointReached(var checkpointPosition):
                             _lastScannedPosition = checkpointPosition.CommitPosition;
                             await HandleCheckpointReached(checkpointPosition, cancellationToken).NoContext();
-
-                            break;
-                        case StreamMessage.FellBehind:
-                            // Falling behind re-enters catch-up mode, making the current head the new
-                            // caught-up commit candidate: every match at or below it is delivered before
-                            // the next caught-up notification, exactly like the pre-subscribe head on the
-                            // initial catch-up. Reading the head on the caught-up message instead would
-                            // be unsafe — matches between the server's live transition and the read could
-                            // still be in flight, and committing past them skips them on restart.
-                            headPosition = await GetAllStreamHead(cancellationToken).NoContext();
 
                             break;
                         case StreamMessage.CaughtUp:
@@ -237,6 +241,15 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
         }
     }
 
+    /// <summary>
+    /// The delivered record's own position in $all — the link's position for a resolved link event,
+    /// never the resolved target's. The target can be arbitrarily older than the subscription cursor
+    /// (a link created after the caught-up commit can point far behind the committed head), and this
+    /// position flows into the checkpoint on ack, so using the target's position would regress the
+    /// stored checkpoint.
+    /// </summary>
+    static ulong GetContextPosition(ResolvedEvent re) => (re.OriginalPosition ?? re.OriginalEvent.Position).CommitPosition;
+
     [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
@@ -255,7 +268,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             re.Event.EventStreamId,
             re.Event.EventNumber,
             re.OriginalEventNumber,
-            re.Event.Position.CommitPosition,
+            GetContextPosition(re),
             Sequence++,
             re.Event.Created,
             evt,
