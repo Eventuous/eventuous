@@ -6,7 +6,7 @@ namespace Eventuous.Tests.KurrentDB.Fixtures;
 public static class KurrentDBContainer {
     public static KurrentDbContainer Create() {
         var image = RuntimeInformation.ProcessArchitecture == Architecture.Arm64
-            ? "kurrentplatform/kurrentdb:26.1.1-experimental-arm64-8.0-jammy"
+            ? "kurrentplatform/kurrentdb:26.1.1-experimental-arm64-10.0-noble"
             : "kurrentplatform/kurrentdb:26.1.1";
 
         return new KurrentDbBuilder()
