@@ -129,7 +129,7 @@ EventSerializer.SetDefault(
 ```
 
 :::caution
-`DefaultEventSerializer` uses reflection-based JSON serialization and is not compatible with Native AOT. If you plan to publish your application as AOT, use `DefaultStaticEventSerializer` instead.
+`DefaultEventSerializer` uses reflection-based JSON serialization and is not compatible with Native AOT. Its constructor is annotated with `RequiresUnreferencedCode` and `RequiresDynamicCode`, so creating an instance in a trimmed or AOT-published application produces `IL2026` and `IL3050` build warnings at the construction site. If you plan to publish your application as AOT, use `DefaultStaticEventSerializer` instead.
 :::
 
 #### Configuring via DI

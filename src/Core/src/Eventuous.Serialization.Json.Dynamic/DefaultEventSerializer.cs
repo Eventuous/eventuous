@@ -8,9 +8,14 @@ namespace Eventuous;
 
 [PublicAPI]
 public class DefaultEventSerializer : IEventSerializer {
+    const string DynamicSerializationMessage =
+        "DefaultEventSerializer uses reflection-based System.Text.Json serialization. Use DefaultStaticEventSerializer with a JsonSerializerContext in trimmed or AOT applications.";
+
     readonly JsonSerializerOptions _options;
     readonly ITypeMapper           _typeMapper;
 
+    [RequiresUnreferencedCode(DynamicSerializationMessage)]
+    [RequiresDynamicCode(DynamicSerializationMessage)]
     public DefaultEventSerializer(JsonSerializerOptions options, ITypeMapper? typeMapper = null) {
         _options    = options;
         _typeMapper = typeMapper ?? TypeMap.Instance;
@@ -19,6 +24,8 @@ public class DefaultEventSerializer : IEventSerializer {
         EventSerializer.TrySetDefault(this);
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is annotated with RequiresUnreferencedCode, so an instance only exists if the caller acknowledged the requirement")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "The constructor is annotated with RequiresDynamicCode, so an instance only exists if the caller acknowledged the requirement")]
     public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType) {
         var typeMapped = _typeMapper.TryGetType(eventType, out var dataType);
 
@@ -32,6 +39,8 @@ public class DefaultEventSerializer : IEventSerializer {
             : new FailedToDeserialize(DeserializationError.PayloadEmpty);
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is annotated with RequiresUnreferencedCode, so an instance only exists if the caller acknowledged the requirement")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "The constructor is annotated with RequiresDynamicCode, so an instance only exists if the caller acknowledged the requirement")]
     public SerializationResult SerializeEvent(object evt)
         => new(_typeMapper.GetTypeName(evt), ContentType, JsonSerializer.SerializeToUtf8Bytes(evt, _options));
 

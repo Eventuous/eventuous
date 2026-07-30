@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <RootNamespace>Eventuous</RootNamespace>
+        <!-- Correctly annotated for trimming/AOT: the reflection-based serializer carries RequiresUnreferencedCode/RequiresDynamicCode on its constructor -->
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Eventuous.Serialization\Eventuous.Serialization.csproj"/>
