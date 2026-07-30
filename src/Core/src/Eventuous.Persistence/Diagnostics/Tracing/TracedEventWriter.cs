@@ -13,8 +13,6 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
 
     readonly string _componentName = writer.GetType().Name;
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,
@@ -42,8 +40,6 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
         }
     }
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task<AppendEventsResult[]> AppendEvents(IReadOnlyCollection<NewStreamAppend> appends, CancellationToken cancellationToken) {
         if (appends.Count == 0) return [];
 

@@ -19,7 +19,7 @@ namespace Bookings;
 
 public static class Registrations {
     public static void AddEventuous(this IServiceCollection services, IConfiguration configuration) {
-        DefaultEventSerializer.SetDefaultSerializer(
+        EventSerializer.SetDefault(
             new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
         );
 

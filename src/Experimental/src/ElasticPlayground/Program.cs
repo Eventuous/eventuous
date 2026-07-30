@@ -26,7 +26,7 @@ await elasticClient.ConfigureIndex();
 
 var kurrentDBClientSettings = KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false");
 var kurrentDBClient         = new KurrentDBClient(kurrentDBClientSettings);
-DefaultEventSerializer.SetDefaultSerializer(new DefaultEventSerializer(options));
+EventSerializer.SetDefault(new DefaultEventSerializer(options));
 
 // var elasticOnly = new ElasticOnly(client);
 // await elasticOnly.Execute();

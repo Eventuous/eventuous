@@ -12,8 +12,6 @@ namespace Eventuous.SignalR.Server;
 public class SignalRProducer<THub>(IHubContext<THub> hubContext)
     : BaseProducer<SignalRProduceOptions>(new() { MessagingSystem = "signalr" })
     where THub : Hub {
-    [RequiresDynamicCode("Only works with AOT when using DefaultStaticEventSerializer")]
-    [RequiresUnreferencedCode("Only works with AOT when using DefaultStaticEventSerializer")]
     protected override async Task ProduceMessages(
             StreamName                   stream,
             IEnumerable<ProducedMessage> messages,

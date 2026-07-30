@@ -89,8 +89,6 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// Starts the subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var filterOptions = new SubscriptionFilterOptions(Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(), Options.CheckpointInterval);
 
@@ -136,8 +134,6 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// handlers as before, plus the caught-up notification, which the callback-based client API
     /// silently discards. The message-based API is used precisely to observe that notification.
     /// </summary>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     async Task PumpMessages(
             KurrentDBClient.StreamSubscriptionResult subscription,
             IAsyncEnumerator<StreamMessage>          messages,
@@ -250,8 +246,6 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// </summary>
     static ulong GetContextPosition(ResolvedEvent re) => (re.OriginalPosition ?? re.OriginalEvent.Position).CommitPosition;
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
@@ -287,8 +281,6 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// everything since then, and consumers comparing the checkpoint to the $all head see a phantom,
     /// never-closing lag.
     /// </summary>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     Task HandleCheckpointReached(global::KurrentDB.Client.Position position, CancellationToken cancellationToken) {
         var context = new MessageConsumeContext(
             position.CommitPosition.ToString(),

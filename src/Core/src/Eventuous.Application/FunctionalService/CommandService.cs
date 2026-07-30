@@ -66,8 +66,6 @@ public abstract class CommandService<TState>(IEventReader reader, IEventWriter w
     /// <typeparam name="TCommand">Command type</typeparam>
     /// <returns><seealso cref="Result{TState}"/> instance</returns>
     /// <exception cref="ArgumentOutOfRangeException">Throws when there's no command handler was registered for the command type</exception>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task<Result<TState>> Handle<TCommand>(TCommand command, CancellationToken cancellationToken) where TCommand : class {
         if (!_handlers.TryGet<TCommand>(out var registeredHandler)) {
             Log.CommandHandlerNotFound<TCommand>();

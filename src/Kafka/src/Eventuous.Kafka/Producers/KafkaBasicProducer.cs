@@ -19,7 +19,7 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
         : base(TracingOptions) {
         _producerWithKey    = new ProducerBuilder<string, byte[]>(options.ProducerConfig).Build();
         _producerWithoutKey = new DependentProducerBuilder<Null, byte[]>(_producerWithKey.Handle).Build();
-        _serializer         = serializer ?? DefaultEventSerializer.Instance;
+        _serializer         = serializer ?? EventSerializer.Default;
     }
 
     static readonly ProducerTracingOptions TracingOptions = new() {

@@ -29,7 +29,7 @@ public class RedisStore : IEventReader, IEventWriter {
             IEventSerializer?    serializer     = null,
             IMetadataSerializer? metaSerializer = null
         ) {
-        _serializer     = serializer     ?? DefaultEventSerializer.Instance;
+        _serializer     = serializer     ?? EventSerializer.Default;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         _getDatabase    = Ensure.NotNull(getDatabase, "Connection factory");
     }

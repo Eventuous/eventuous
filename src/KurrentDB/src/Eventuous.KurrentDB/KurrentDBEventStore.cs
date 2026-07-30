@@ -79,7 +79,7 @@ public partial class KurrentDBEventStore : IEventStore {
             ILogger<KurrentDBEventStore>? logger         = null
         ) {
         _client         = Ensure.NotNull(client);
-        _serializer     = serializer     ?? DefaultEventSerializer.Instance;
+        _serializer     = serializer     ?? EventSerializer.Default;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         _logger         = logger         ?? NullLogger<KurrentDBEventStore>.Instance;
     }
@@ -110,8 +110,6 @@ public partial class KurrentDBEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,
             ExpectedStreamVersion               expectedVersion,
@@ -140,8 +138,6 @@ public partial class KurrentDBEventStore : IEventStore {
             }
         );
 
-        [RequiresDynamicCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
-        [RequiresUnreferencedCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
         EventData ToEventData(NewStreamEvent streamEvent) {
             var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
@@ -156,8 +152,6 @@ public partial class KurrentDBEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult[]> AppendEvents(
             IReadOnlyCollection<NewStreamAppend> appends,
             CancellationToken                    cancellationToken = default
@@ -207,8 +201,6 @@ public partial class KurrentDBEventStore : IEventStore {
             }
         }
 
-        [RequiresDynamicCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
-        [RequiresUnreferencedCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
         EventData ToEventData(NewStreamEvent streamEvent) {
             var (eventType, contentType, payload) = _serializer.SerializeEvent(streamEvent.Payload!);
 
@@ -223,8 +215,6 @@ public partial class KurrentDBEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken);
 
@@ -244,8 +234,6 @@ public partial class KurrentDBEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
         var read = _client.ReadStreamAsync(
             Direction.Backwards,
@@ -334,8 +322,6 @@ public partial class KurrentDBEventStore : IEventStore {
                 : StreamState.StreamRevision((ulong)version.Value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     StreamEvent? ToStreamEvent(ResolvedEvent resolvedEvent) {
         var deserialized = _serializer.DeserializeEvent(
             resolvedEvent.Event.Data.Span,
@@ -375,8 +361,6 @@ public partial class KurrentDBEventStore : IEventStore {
             );
     }
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
         => resolvedEvents
             .Select(ToStreamEvent)

@@ -11,8 +11,6 @@ namespace Eventuous;
 public class DefaultStaticEventSerializer(JsonSerializerContext context, ITypeMapper? typeMapper = null) : IEventSerializer {
     readonly ITypeMapper _typeMapper = typeMapper ?? TypeMap.Instance;
 
-    [UnconditionalSuppressMessage("Trimming", "IL2046", Justification = "This implementation is not using reflection.")]
-    [UnconditionalSuppressMessage("Trimming", "IL3051", Justification = "This implementation is not using reflection.")]
     public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType) {
         var typeMapped = _typeMapper.TryGetType(eventType, out var dataType);
 
@@ -26,8 +24,6 @@ public class DefaultStaticEventSerializer(JsonSerializerContext context, ITypeMa
             : new FailedToDeserialize(DeserializationError.PayloadEmpty);
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2046", Justification = "This implementation is not using reflection.")]
-    [UnconditionalSuppressMessage("Trimming", "IL3051", Justification = "This implementation is not using reflection.")]
     public SerializationResult SerializeEvent(object evt)
         => new(_typeMapper.GetTypeName(evt), ContentType, JsonSerializer.SerializeToUtf8Bytes(evt, evt.GetType(), context));
 

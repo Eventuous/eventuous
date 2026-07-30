@@ -25,7 +25,7 @@ public class KurrentDBProducer : BaseProducer<KurrentDBProduceOptions> {
     public KurrentDBProducer(KurrentDBClient client, IEventSerializer? serializer = null, IMetadataSerializer? metaSerializer = null)
         : base(TracingOptions) {
         _client         = Ensure.NotNull(client);
-        _serializer     = serializer     ?? DefaultEventSerializer.Instance;
+        _serializer     = serializer     ?? EventSerializer.Default;
         _metaSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
     }
 
@@ -51,8 +51,6 @@ public class KurrentDBProducer : BaseProducer<KurrentDBProduceOptions> {
     /// <param name="messages">Batch of messages</param>
     /// <param name="produceOptions">Options for the produce operation</param>
     /// <param name="cancellationToken"></param>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected override async Task ProduceMessages(
             StreamName                   stream,
             IEnumerable<ProducedMessage> messages,
@@ -89,8 +87,6 @@ public class KurrentDBProducer : BaseProducer<KurrentDBProduceOptions> {
         }
     }
 
-    [RequiresUnreferencedCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
-    [RequiresDynamicCode("Calls Eventuous.IEventSerializer.SerializeEvent(Object)")]
     EventData CreateMessage(ProducedMessage message, bool setMessageType) {
         var msg = Ensure.NotNull(message.Message);
         var (eventType, contentType, payload) = _serializer.SerializeEvent(msg);

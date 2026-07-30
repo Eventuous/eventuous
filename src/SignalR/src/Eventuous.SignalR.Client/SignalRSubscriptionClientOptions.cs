@@ -8,7 +8,7 @@ namespace Eventuous.SignalR.Client;
 /// </summary>
 public class SignalRSubscriptionClientOptions {
     /// <summary>
-    /// Optional event serializer. When not set, <see cref="DefaultEventSerializer.Instance"/> is used.
+    /// Optional event serializer. When not set, <see cref="EventSerializer.Default"/> is used.
     /// </summary>
     public IEventSerializer? Serializer { get; set; }
 
