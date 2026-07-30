@@ -110,7 +110,7 @@ public class ContextAllocationBenchmarks {
 
     [Benchmark(Description = "ContextItems - no usage (empty)")]
     public ContextItems EmptyContextItems() {
-        return new ContextItems();
+        return new();
     }
 
     [Benchmark(Description = "ContextItems - add and retrieve")]

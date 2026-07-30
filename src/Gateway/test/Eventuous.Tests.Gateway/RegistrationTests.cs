@@ -37,7 +37,7 @@ public class RegistrationTests {
 
         static ValueTask<GatewayMessage<TestProduceOptions>[]> RouteAndTransform(object message) => new();
 
-        public void Configure(IApplicationBuilder app) { }
+        public static void Configure(IApplicationBuilder app) { }
     }
 
     class TestTransform : IGatewayTransform<TestProduceOptions> {

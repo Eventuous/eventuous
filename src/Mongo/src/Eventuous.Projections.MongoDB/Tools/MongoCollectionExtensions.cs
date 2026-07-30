@@ -10,10 +10,10 @@ namespace Eventuous.Projections.MongoDB.Tools;
 public static class MongoCollectionExtensions {
     extension(IMongoDatabase database) {
         public IMongoCollection<T> GetDocumentCollection<T>(MongoCollectionName? collectionName = null) where T : Document
-            => GetDocumentCollection<T>(database, collectionName ?? MongoCollectionName.For<T>(), null);
+            => database.GetDocumentCollection<T>(collectionName ?? MongoCollectionName.For<T>(), null);
 
         public IMongoCollection<T> GetDocumentCollection<T>(MongoCollectionSettings settings) where T : Document
-            => GetDocumentCollection<T>(database, MongoCollectionName.For<T>(), settings);
+            => database.GetDocumentCollection<T>(MongoCollectionName.For<T>(), settings);
 
         public IMongoCollection<T> GetDocumentCollection<T>(MongoCollectionName? collectionName, MongoCollectionSettings? settings)
             where T : Document

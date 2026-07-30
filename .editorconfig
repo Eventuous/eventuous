@@ -6,6 +6,7 @@ indent_style = space
 max_line_length = 200
 brace_style = end_of_line
 trim_trailing_whitespace = true
+dotnet_diagnostic.IDE0005.severity = error
 
 # IntelliJ IDEA properties
 ij_any_block_brace_style = end_of_line

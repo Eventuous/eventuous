@@ -12,8 +12,8 @@ namespace Eventuous.Azure.ServiceBus.Producers;
 public class ServiceBusProducer : BaseProducer<ServiceBusProduceOptions>, IHostedProducer, IAsyncDisposable {
     // maybe want something a bit more focused on Azure Service Bus?
     static readonly ProducerTracingOptions TracingOptions = new() {
-        MessagingSystem = "azure-service-bus", 
-        DestinationKind = "topic", 
+        MessagingSystem  = "azure-service-bus",
+        DestinationKind  = "topic",
         ProduceOperation = "publish"
     };
 

@@ -18,34 +18,6 @@ using System.Diagnostics.CodeAnalysis;
 
 [PublicAPI]
 public static class SubscriptionRegistrationExtensions {
-    public static IServiceCollection AddSubscription<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
-            this IServiceCollection                  services,
-            string                                   subscriptionId,
-            Action<SubscriptionBuilder<T, TOptions>> configureSubscription
-        ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
-        Ensure.NotNull(configureSubscription);
-        var builder = new SubscriptionBuilder<T, TOptions>(Ensure.NotNull(services), Ensure.NotEmptyString(subscriptionId));
-        configureSubscription(builder);
-        TryAddSubscriptionHealthCheck(services);
-
-        if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T))) services.AddSingleton(GetEndOfStream);
-
-        return services
-            .AddSubscriptionBuilder(builder)
-            .AddSingleton(sp => GetBuilder(sp).ResolveSubscription(sp))
-            .AddSingleton<IHostedService, SubscriptionHostedService>(
-                sp => new(GetBuilder(sp).ResolveSubscription(sp), sp.GetService<ISubscriptionHealth>(), sp.GetService<ILoggerFactory>())
-            );
-
-        SubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp) => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);
-
-        GetSubscriptionEndOfStream GetEndOfStream(IServiceProvider sp) {
-            var subscription = GetBuilder(sp).ResolveSubscription(sp) as IMeasuredSubscription;
-
-            return subscription!.GetMeasure();
-        }
-    }
-
     /// <summary>
     /// Adds a health check for subscriptions. All subscriptions will be monitored by one check.
     /// </summary>
@@ -78,6 +50,33 @@ public static class SubscriptionRegistrationExtensions {
             services.AddSingleton(getStore);
 
             return AddCheckpointStoreInternal<T>(services);
+        }
+
+        public IServiceCollection AddSubscription<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
+                string                                   subscriptionId,
+                Action<SubscriptionBuilder<T, TOptions>> configureSubscription
+            ) where T : EventSubscription<TOptions> where TOptions : SubscriptionOptions {
+            Ensure.NotNull(configureSubscription);
+            var builder = new SubscriptionBuilder<T, TOptions>(Ensure.NotNull(services), Ensure.NotEmptyString(subscriptionId));
+            configureSubscription(builder);
+            TryAddSubscriptionHealthCheck(services);
+
+            if (typeof(IMeasuredSubscription).IsAssignableFrom(typeof(T))) services.AddSingleton(GetEndOfStream);
+
+            return services
+                .AddSubscriptionBuilder(builder)
+                .AddSingleton(sp => GetBuilder(sp).ResolveSubscription(sp))
+                .AddSingleton<IHostedService, SubscriptionHostedService>(
+                    sp => new(GetBuilder(sp).ResolveSubscription(sp), sp.GetService<ISubscriptionHealth>(), sp.GetService<ILoggerFactory>())
+                );
+
+            SubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp) => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);
+
+            GetSubscriptionEndOfStream GetEndOfStream(IServiceProvider sp) {
+                var subscription = GetBuilder(sp).ResolveSubscription(sp) as IMeasuredSubscription;
+
+                return subscription!.GetMeasure();
+            }
         }
     }
 

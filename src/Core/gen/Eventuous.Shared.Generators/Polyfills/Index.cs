@@ -1,4 +1,6 @@
 using System.Runtime.CompilerServices;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
 // ReSharper disable once CheckNamespace
 namespace System;
@@ -44,34 +46,17 @@ readonly struct Index : IEquatable<Index> {
     /// <summary>Create an Index from the start at the position indicated by the value.</summary>
     /// <param name="value">The index value from the start.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Index FromStart(int value) {
-        if (value < 0) {
-            throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
-        }
-
-        return new Index(value);
+    static Index FromStart(int value) {
+        return value < 0 ? throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative") : new(value);
     }
 
     /// <summary>Create an Index from the end at the position indicated by the value.</summary>
     /// <param name="value">The index value from the end.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Index FromEnd(int value) {
-        if (value < 0) {
-            throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
-        }
-
-        return new Index(~value);
-    }
+    public static Index FromEnd(int value) => value < 0 ? throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative") : new Index(~value);
 
     /// <summary>Returns the index value.</summary>
-    public int Value {
-        get {
-            if (_value < 0)
-                return ~_value;
-            else
-                return _value;
-        }
-    }
+    public int Value => _value < 0 ? ~_value : _value;
 
     /// <summary>Indicates whether the index is from the start or the end.</summary>
     public bool IsFromEnd => _value < 0;
@@ -101,7 +86,7 @@ readonly struct Index : IEquatable<Index> {
 
     /// <summary>Indicates whether the current Index object is equal to another object of the same type.</summary>
     /// <param name="value">An object to compare with this object</param>
-    public override bool Equals(object? value) => value is Index && _value == ((Index)value)._value;
+    public override bool Equals(object? value) => value is Index index && _value == index._value;
 
     /// <summary>Indicates whether the current Index object is equal to another Index object.</summary>
     /// <param name="other">An object to compare with this object</param>
@@ -114,10 +99,5 @@ readonly struct Index : IEquatable<Index> {
     public static implicit operator Index(int value) => FromStart(value);
 
     /// <summary>Converts the value of the current Index object to its equivalent string representation.</summary>
-    public override string ToString() {
-        if (IsFromEnd)
-            return "^" + ((uint)Value).ToString();
-
-        return ((uint)Value).ToString();
-    }
+    public override string ToString() => IsFromEnd ? $"^{((uint)Value)}" : ((uint)Value).ToString();
 }

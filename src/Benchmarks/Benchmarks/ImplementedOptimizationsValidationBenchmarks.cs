@@ -112,8 +112,8 @@ public class ImplementedOptimizationsValidationBenchmarks {
 
     // ===== Issue #6: CancellationTokenSource Guards =====
 
-    private static readonly CancellationToken SampleToken1 = new CancellationToken(false);
-    private static readonly CancellationToken SampleToken2 = new CancellationToken(false);
+    private static readonly CancellationToken SampleToken1 = new(false);
+    private static readonly CancellationToken SampleToken2 = new(false);
 
     [Benchmark(Description = "OLD: Always create linked CTS")]
     public void OldCancellationTokenSource() {

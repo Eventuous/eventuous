@@ -163,6 +163,15 @@
         <Project Path="samples/postgres/Bookings.Payments/Bookings.Payments.csproj" />
         <Project Path="samples/postgres/Bookings/Bookings.csproj" />
     </Folder>
+    <Folder Name="/SignalR/" />
+    <Folder Name="/SignalR/src/">
+        <Project Path="src/SignalR/src/Eventuous.SignalR.Server/Eventuous.SignalR.Server.csproj" />
+        <Project Path="src/SignalR/src/Eventuous.SignalR.Client/Eventuous.SignalR.Client.csproj" />
+    </Folder>
+    <Folder Name="/SignalR/test/">
+        <Project Path="src/SignalR/test/Eventuous.Tests.SignalR/Eventuous.Tests.SignalR.csproj" />
+        <Project Path="src/SignalR/test/Eventuous.Tests.SignalR.Integration/Eventuous.Tests.SignalR.Integration.csproj" />
+    </Folder>
     <Folder Name="/Testing/" />
     <Folder Name="/Testing/src/">
         <Project Path="src/Testing/src/Eventuous.Testing/Eventuous.Testing.csproj" />

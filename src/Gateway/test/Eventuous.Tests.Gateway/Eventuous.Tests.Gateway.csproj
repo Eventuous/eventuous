@@ -8,6 +8,7 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json.Dynamic\Eventuous.Serialization.Json.Dynamic.csproj"/>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
         <PackageReference Update="coverlet.collector">
           <PrivateAssets>all</PrivateAssets>

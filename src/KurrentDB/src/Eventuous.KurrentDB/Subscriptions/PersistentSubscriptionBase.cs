@@ -183,9 +183,11 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             return;
         }
 
-        ctx.LogContext.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
-
-        if (Options.ThrowOnError) throw exception;
+        // Handler-pipeline failures are already logged via context.Nack inside EventSubscription.Handler.
+        // Anything else reaching here (e.g. an Ack failure after the handler returned) needs its own log entry.
+        if (!ctx.HasFailed()) {
+            ctx.LogContext.MessageHandlingFailed(Options.SubscriptionId, ctx, exception);
+        }
 
         var re           = ctx.Items.GetItem<ResolvedEvent>(ResolvedEventKey);
         var subscription = ctx.Items.GetItem<PersistentSubscription>(SubscriptionKey)!;
@@ -244,6 +246,12 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             PersistentSubscription subscription,
             ResolvedEvent          resolvedEvent,
             Exception              exception
-        )
-        => subscription.Nack(PersistentSubscriptionNakEventAction.Retry, exception.Message, resolvedEvent);
+        ) {
+        // When ThrowOnError is enabled, Handler wraps the original exception in SubscriptionException;
+        // unwrap it so the parked-message reason carries the actual handler error rather than a generic
+        // "Error processing event ..." string.
+        var cause = exception is SubscriptionException { InnerException: { } inner } ? inner : exception;
+
+        return subscription.Nack(PersistentSubscriptionNakEventAction.Retry, cause.Message, resolvedEvent);
+    }
 }

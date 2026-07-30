@@ -19,7 +19,14 @@ namespace Eventuous.Sql.Base;
 /// <typeparam name="TTransaction">Database transaction type</typeparam>
 public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSerializer? serializer, IMetadataSerializer? metaSerializer) : IEventStore
     where TConnection : DbConnection where TTransaction : DbTransaction {
-    protected IEventSerializer    Serializer     { get; } = serializer     ?? EventSerializer.Default;
+    /// <summary>
+    /// Message serializer instance
+    /// </summary>
+    protected IEventSerializer Serializer { get; } = serializer ?? EventSerializer.Default;
+
+    /// <summary>
+    /// Metadata serializer instance
+    /// </summary>
     protected IMetadataSerializer MetaSerializer { get; } = metaSerializer ?? DefaultMetadataSerializer.Instance;
 
     const string ContentType = "application/json";

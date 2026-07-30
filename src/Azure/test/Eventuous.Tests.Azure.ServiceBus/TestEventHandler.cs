@@ -21,7 +21,7 @@ public class TestEventHandler(TimeSpan? delay = null) : BaseEventHandler {
         _messages.Add(data);
         await _observer.Add(data, context.CancellationToken);
         Count++;
-        
+
         await TestContext.Current!.OutputWriter.WriteLineAsync($"Handled {Count} messages");
 
         return EventHandlingStatus.Success;

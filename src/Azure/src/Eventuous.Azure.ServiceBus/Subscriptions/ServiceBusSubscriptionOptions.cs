@@ -68,7 +68,7 @@ public record Queue(string Name) : IQueueOrTopic {
     /// <param name="client">The Service Bus client.</param>
     /// <param name="options">The subscription options.</param>
     /// <returns>A configured <see cref="ServiceBusProcessor"/> for the queue.</returns>
-    public ServiceBusProcessor MakeProcessor(ServiceBusClient client, ServiceBusSubscriptionOptions options) 
+    public ServiceBusProcessor MakeProcessor(ServiceBusClient client, ServiceBusSubscriptionOptions options)
         => client.CreateProcessor(Name, options.ProcessorOptions);
 
     /// <summary>
@@ -91,7 +91,7 @@ public record Topic(string Name) : IQueueOrTopic {
     /// <param name="client">The Service Bus client.</param>
     /// <param name="options">The subscription options.</param>
     /// <returns>A configured <see cref="ServiceBusProcessor"/> for the topic.</returns>
-    public ServiceBusProcessor MakeProcessor(ServiceBusClient client, ServiceBusSubscriptionOptions options) 
+    public ServiceBusProcessor MakeProcessor(ServiceBusClient client, ServiceBusSubscriptionOptions options)
         => client.CreateProcessor(Name, options.SubscriptionId, options.ProcessorOptions);
 
     /// <summary>

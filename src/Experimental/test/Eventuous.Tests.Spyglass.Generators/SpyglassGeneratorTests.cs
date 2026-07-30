@@ -80,9 +80,7 @@ public class SpyglassGeneratorTests {
 
     [Test]
     public async Task Should_emit_marker_when_no_types_found() {
-        const string source = """
-            public class Nothing {}
-            """;
+        const string source = "public class Nothing {}";
 
         var compilation = CompilationHelper.CreateCompilation(source);
         var (generated, diagnostics) = CompilationHelper.RunGenerator(compilation);

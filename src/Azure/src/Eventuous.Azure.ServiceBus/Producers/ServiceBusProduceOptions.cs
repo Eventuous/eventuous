@@ -36,4 +36,9 @@ public class ServiceBusProduceOptions {
     /// Gets or sets the time interval after which the message expires.
     /// </summary>
     public TimeSpan TimeToLive { get; set; } = TimeSpan.MaxValue;
+
+    /// <summary>
+    /// Gets or sets the date and time, in UTC, when service bus makes the message available to receivers
+    /// </summary>
+    public DateTimeOffset? ScheduledEnqueueTime { get; set; }
 }

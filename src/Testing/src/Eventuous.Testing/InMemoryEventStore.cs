@@ -39,7 +39,7 @@ public class InMemoryEventStore : IEventStore {
             var existing = _storage.GetOrAdd(append.StreamName, s => new(s));
             existing.AppendEvents(append.ExpectedVersion, append.Events);
             _global.AddRange(append.Events.Select((x, j) => new StreamEvent(x.Id, x.Payload, x.Metadata, "application/json", _global.Count + j, now)));
-            results[i++] = new AppendEventsResult((ulong)(_global.Count - 1), existing.Version);
+            results[i++] = new((ulong)(_global.Count - 1), existing.Version);
         }
 
         return Task.FromResult(results);
@@ -47,6 +47,7 @@ public class InMemoryEventStore : IEventStore {
 
     /// <inheritdoc />
 #pragma warning disable CS1998 // Async method lacks 'await' operators
+    // ReSharper disable once AsyncMethodWithoutAwait
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         foreach (var evt in FindStream(stream, true).GetEvents(start, count)) {
             yield return evt;

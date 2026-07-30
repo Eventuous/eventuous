@@ -316,3 +316,5 @@ version.txt
 /docs/.yarn/
 
 BenchmarkDotNet.Artifacts/
+
+.worktrees/

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Shared\Eventuous.Shared.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization\Eventuous.Serialization.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\Eventuous.SignalR.Server\Contracts\*.cs" LinkBase="Contracts" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
+            <Link>Tools\TaskExtensions.cs</Link>
+        </Compile>
+        <Using Include="Eventuous.Tools" />
+    </ItemGroup>
+</Project>

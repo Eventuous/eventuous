@@ -9,19 +9,43 @@ namespace Eventuous.Producers;
 
 using Diagnostics;
 
+/// <summary>
+/// Base class for all producers
+/// </summary>
+/// <typeparam name="TProduceOptions">Produce options type</typeparam>
 public abstract class BaseProducer<TProduceOptions> : IProducer<TProduceOptions> where TProduceOptions : class {
+    /// <summary>
+    /// Creates a new instance of the producer
+    /// </summary>
+    /// <param name="tracingOptions">Tracing options for the producer</param>
     protected BaseProducer(ProducerTracingOptions? tracingOptions = null) {
         var options = tracingOptions ?? new ProducerTracingOptions();
         DefaultTags = options.AllTags.Concat(EventuousDiagnostics.Tags).ToArray();
     }
 
+    /// <summary>
+    /// Default tags for the producer activity
+    /// </summary>
     // ReSharper disable once MemberCanBePrivate.Global
     protected KeyValuePair<string, object?>[] DefaultTags { get; }
 
-    protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
-
+    /// <summary>
+    /// Sets the message type tag for the current activity
+    /// </summary>
+    /// <param name="messageType">Message type string</param>
     protected void SetActivityMessageType(string messageType) => Activity.Current?.SetTag(Message.Type, messageType);
 
+    /// <summary>
+    /// Internal method to produce messages to the store. Must be implemented by the actual producer.
+    /// </summary>
+    /// <param name="stream">Stream name where the messages should be produced</param>
+    /// <param name="messages">Collection of messages to produce</param>
+    /// <param name="options">Produce options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns></returns>
+    protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
+
+    /// <inheritdoc />
     public Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default)
         => Produce(stream, messages, null, cancellationToken);
 
@@ -49,17 +73,18 @@ public abstract class BaseProducer<TProduceOptions> : IProducer<TProduceOptions>
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Produces a collection of requests in parallel
+    /// </summary>
+    /// <param name="requests">Collection of produce requests</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns></returns>
     public Task Produce(IReadOnlyCollection<ProduceRequest<TProduceOptions>> requests, CancellationToken cancellationToken = default) {
-        if (requests.Count == 0) return Task.CompletedTask;
-
-        return Task.WhenAll(requests.Select(r => Produce(r.Stream, r.Messages, r.Options, cancellationToken)));
+        return requests.Count == 0 ? Task.CompletedTask : Task.WhenAll(requests.Select(r => Produce(r.Stream, r.Messages, r.Options, cancellationToken)));
     }
 
     /// <inheritdoc />
     public Task Produce(IReadOnlyCollection<ProduceRequest> requests, CancellationToken cancellationToken = default) {
-        if (requests.Count == 0) return Task.CompletedTask;
-
-        return Task.WhenAll(requests.Select(r => Produce(r.Stream, r.Messages, cancellationToken)));
+        return requests.Count == 0 ? Task.CompletedTask : Task.WhenAll(requests.Select(r => Produce(r.Stream, r.Messages, cancellationToken)));
     }
 }

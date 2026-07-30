@@ -13,10 +13,11 @@ public class ConvertEventToMessage {
             "test-stream",
             new(),
             new() {
-                Subject    = "test-subject",
-                To         = "test-to",
-                ReplyTo    = "test-reply-to",
-                TimeToLive = TimeSpan.FromMinutes(5)
+                Subject              = "test-subject",
+                To                   = "test-to",
+                ReplyTo              = "test-reply-to",
+                TimeToLive           = TimeSpan.FromMinutes(5),
+                ScheduledEnqueueTime = new DateTimeOffset(2026, 3, 23, 16, 31, 0, TimeSpan.Zero)
             }
         );
 
@@ -71,6 +72,10 @@ public class ConvertEventToMessage {
     public async Task CorrelationId() {
         await Assert.That(_message.CorrelationId).IsEqualTo("correlation-id");
     }
+
+    [Test]
+    public async Task ScheduledEnqueueTime() =>
+        await Assert.That(_message.ScheduledEnqueueTime).IsEqualTo(new DateTimeOffset(2026, 3, 23, 16, 31, 0, TimeSpan.Zero));
 
     [Test]
     [Arguments("MessageId")]

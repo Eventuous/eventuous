@@ -106,7 +106,9 @@ public class CompositionHandlerTests {
     }
 
     public class TestDependency {
+#pragma warning disable CA1822
         public string Value => "test-value";
+#pragma warning restore CA1822
     }
 
     class TestHandler(TestDependency dependency, TestHandlerLogger logger) : BaseEventHandler {

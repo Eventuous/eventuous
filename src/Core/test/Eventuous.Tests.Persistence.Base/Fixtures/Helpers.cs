@@ -8,12 +8,6 @@ public static class Helpers {
 
     public static BookingImported CreateEvent() => ToEvent(DomainFixture.CreateImportBooking());
 
-    public static IEnumerable<BookingImported> CreateEvents(this StoreFixtureBase fixture, int count) {
-        for (var i = 0; i < count; i++) {
-            yield return CreateEvent();
-        }
-    }
-
     static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
     extension(StoreFixtureBase fixture) {
@@ -34,5 +28,11 @@ public static class Helpers {
 
         public Task<AppendEventsResult[]> AppendEventsToMultipleStreams(IReadOnlyCollection<NewStreamAppend> appends)
             => fixture.EventStore.AppendEvents(appends, default);
+
+        public IEnumerable<BookingImported> CreateEvents(int count) {
+            for (var i = 0; i < count; i++) {
+                yield return CreateEvent();
+            }
+        }
     }
 }

@@ -12,15 +12,15 @@ public delegate ValueTask<GatewayMessage<TProduceOptions>[]> RouteAndTransform<T
 
 /// <inheritdoc />
 class GatewayHandler<TProduceOptions>(
-        IProducer<TProduceOptions>    producer,
+        IProducer<TProduceOptions>         producer,
         RouteAndTransform<TProduceOptions> transform,
         bool                               awaitProduce
     ) : BaseEventHandler
     where TProduceOptions : class {
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-        var shovelMessages = await transform(context).NoContext();
+        var transformedMessages = await transform(context).NoContext();
 
-        if (shovelMessages.Length == 0) return EventHandlingStatus.Ignored;
+        if (transformedMessages.Length == 0) return EventHandlingStatus.Ignored;
 
         AcknowledgeProduce?  onAck  = null;
         ReportFailedProduce? onFail = null;
@@ -37,13 +37,14 @@ class GatewayHandler<TProduceOptions>(
         try {
             var contextMeta = GatewayMetaHelper.GetContextMeta(context);
 
-            var requests = shovelMessages
+            var requests = transformedMessages
                 .GroupBy(x => (x.TargetStream, x.ProduceOptions))
                 .Select(g => new ProduceRequest<TProduceOptions>(
-                    g.Key.TargetStream,
-                    g.Select(x => new ProducedMessage(x.Message, x.GetMeta(context), contextMeta) { OnAck = onAck, OnNack = onFail }),
-                    g.Key.ProduceOptions
-                ))
+                        g.Key.TargetStream,
+                        g.Select(x => new ProducedMessage(x.Message, x.GetMeta(context), contextMeta) { OnAck = onAck, OnNack = onFail }),
+                        g.Key.ProduceOptions
+                    )
+                )
                 .ToArray();
 
             if (producer is GatewayProducer<TProduceOptions> gp)
@@ -58,8 +59,8 @@ class GatewayHandler<TProduceOptions>(
 
 class GatewayHandler<TTransform, TProduceOptions>(
         IProducer<TProduceOptions> producer,
-        TTransform                      transform,
-        bool                            awaitProduce
+        TTransform                 transform,
+        bool                       awaitProduce
     ) : GatewayHandler<TProduceOptions>(producer, transform.RouteAndTransform, awaitProduce)
     where TProduceOptions : class
     where TTransform : class, IGatewayTransform<TProduceOptions>;

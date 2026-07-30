@@ -95,29 +95,12 @@ test/                 Shared test helpers (Eventuous.Sut.App, Eventuous.Sut.Doma
 samples/              Sample apps (esdb, postgres, kurrentdb, banking)
 ```
 
-## Documentation Site
+## External Repos to Update
 
-The `docs/` directory is an Astro + Starlight site (https://eventuous.dev). Requires Node >=20.0.0 and pnpm.
+When making public API changes or adding new components, the following separate repos may need updates:
 
-```bash
-cd docs
-
-# Install dependencies
-pnpm install
-
-# Local dev server with hot reload
-pnpm dev
-
-# Production build (output to docs/dist/)
-pnpm build
-
-# Serve the production build locally
-pnpm preview
-```
-
-Docs content lives in `docs/src/content/docs/` as `.md` and `.mdx` files organized by topic: `domain/`, `persistence/`, `application/`, `subscriptions/`, `read-models/`, `producers/`, `gateway/`, `diagnostics/`, and `infra/` (per-provider: esdb, postgres, mongodb, mssql, sqlite, kafka, rabbitmq, pubsub, azure-service-bus, elastic). MDX files can use Astro components. Mermaid diagrams are supported via `starlight-client-mermaid` plugin. Sidebar is auto-generated from directories in `astro.config.mjs`. Frontmatter uses Starlight format (`sidebar.order` for ordering, not `sidebar_position`).
-
-For detailed docs versioning and authoring rules, see `docs/DOCS_VERSIONING.md`.
+- **Documentation site**: https://github.com/Eventuous/eventuous-docs — public API additions, removals, or changes must be reflected in the docs.
+- **Claude Code plugin**: https://github.com/Eventuous/eventuous-plugin — skills and agent instructions may need updating to reflect new patterns, components, or conventions.
 
 ## Code Style
 

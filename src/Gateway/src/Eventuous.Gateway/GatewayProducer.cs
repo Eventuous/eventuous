@@ -23,7 +23,7 @@ class GatewayProducer<T>(IProducer<T> inner) : IProducer<T> where T : class {
     public async Task Produce(IReadOnlyCollection<ProduceRequest> requests, CancellationToken cancellationToken = default) {
         await WaitForInner(inner, cancellationToken).NoContext();
 
-        await ((IProducer)inner).Produce(requests, cancellationToken).NoContext();
+        await inner.Produce(requests, cancellationToken).NoContext();
     }
 
     static async ValueTask WaitForInner(IProducer<T> inner, CancellationToken cancellationToken) {

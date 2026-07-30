@@ -20,10 +20,10 @@ public class SubscriptionMessageProcessingBenchmarks {
 
     [GlobalSetup]
     public void Setup() {
-        _handler = new TestEventHandler();
+        _handler = new();
 
         // Create a sample message context
-        _context = new MessageConsumeContext(
+        _context = new(
             eventId: Guid.NewGuid().ToString(),
             eventType: nameof(TestEvent),
             contentType: "application/json",

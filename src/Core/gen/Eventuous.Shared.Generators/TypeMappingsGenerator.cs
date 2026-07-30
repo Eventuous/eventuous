@@ -56,14 +56,9 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
         public string EventTypeName      { get; set; } = null!;
     }
 
-    readonly struct TransformInput {
-        public GeneratorSyntaxContext Context { get; }
-        public INamedTypeSymbol? Symbol { get; }
-
-        public TransformInput(GeneratorSyntaxContext context, INamedTypeSymbol? symbol) {
-            Context = context;
-            Symbol = symbol;
-        }
+    readonly struct TransformInput(GeneratorSyntaxContext context, INamedTypeSymbol? symbol) {
+        public GeneratorSyntaxContext Context { get; } = context;
+        public INamedTypeSymbol?      Symbol  { get; } = symbol;
     }
 
     static TransformInput? Transform(GeneratorSyntaxContext ctx, CancellationToken _) {
@@ -140,7 +135,7 @@ public sealed class TypeMappingsGenerator : IIncrementalGenerator {
 
             if (hasProperty) {
                 foreach (var kv in attr.NamedArguments) {
-                    if (kv.Key == EventTypeAttribute && kv.Value.Value is string s) {
+                    if (kv is { Key: EventTypeAttribute, Value.Value: string s }) {
                         return s;
                     }
                 }

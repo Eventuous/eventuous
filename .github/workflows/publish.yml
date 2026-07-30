@@ -10,10 +10,15 @@ on:
 
 jobs:
   nuget:
-    runs-on: [ self-hosted, type-cpx52, setup-docker, volume-cache-50GB ]
-    env:
-      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
-      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
+    runs-on: ubuntu-latest
+#    runs-on: [ self-hosted, type-cpx52, setup-docker, volume-cache-50GB ]
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+#    env:
+#      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
+#      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
     steps:
       -
         name: Setup Python
@@ -24,10 +29,10 @@ jobs:
         name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '10.0.200'
+          dotnet-version: '10.0.x'
       -
         name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       -
@@ -49,10 +54,13 @@ jobs:
             test-results/**/*.xml
             test-results/**/*.trx
       -
+        name: NuGet trusted publishing login
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      -
         name: Create and push NuGet package
         run: |
           dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
-          dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.MYGET_API_KEY }} --source https://www.myget.org/F/${{ vars.MYGET_FEED_NAME || 'eventuous' }}/api/v2/package --skip-duplicate
-        env:
-          NUGET_AUTH_TOKEN: ${{ github.token }}
+          dotnet nuget push nuget/**/*.nupkg --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

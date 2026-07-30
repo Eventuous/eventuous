@@ -46,26 +46,16 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
     /// Cache of well-known type symbols resolved from the compilation.
     /// This makes the analyzer refactoring-safe by using symbol comparison instead of string matching.
     /// </summary>
-    sealed class KnownTypeSymbols {
-        public INamedTypeSymbol? EventTypeAttribute { get; }
-        public INamedTypeSymbol? TypeMapper { get; }
-        public INamedTypeSymbol? Aggregate { get; }
-        public INamedTypeSymbol? State { get; }
-        public INamedTypeSymbol? CommandHandlerBuilder { get; }
-        public INamedTypeSymbol? IDefineExecution { get; }
-        public INamedTypeSymbol? ICommandHandlerBuilder { get; }
-        public INamedTypeSymbol? IDefineStoreOrExecution { get; }
-
-        public KnownTypeSymbols(Compilation compilation) {
-            EventTypeAttribute = compilation.GetTypeByMetadataName(EventTypeAttrFqcn);
-            TypeMapper = compilation.GetTypeByMetadataName($"{BaseNamespace}.TypeMapper");
-            Aggregate = compilation.GetTypeByMetadataName($"{BaseNamespace}.Aggregate`1");
-            State = compilation.GetTypeByMetadataName($"{BaseNamespace}.State`1");
-            CommandHandlerBuilder = compilation.GetTypeByMetadataName($"{BaseNamespace}.CommandHandlerBuilder");
-            IDefineExecution = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineExecution");
-            ICommandHandlerBuilder = compilation.GetTypeByMetadataName($"{BaseNamespace}.ICommandHandlerBuilder");
-            IDefineStoreOrExecution = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineStoreOrExecution");
-        }
+    sealed class KnownTypeSymbols(Compilation compilation) {
+        public INamedTypeSymbol? EventTypeAttribute      { get; } = compilation.GetTypeByMetadataName(EventTypeAttrFqcn);
+        public INamedTypeSymbol? TypeMapper              { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.TypeMapper");
+        public INamedTypeSymbol? Aggregate               { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.Aggregate`1");
+        public INamedTypeSymbol? State                   { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.State`1");
+        public INamedTypeSymbol? CommandHandlerBuilder   { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.CommandHandlerBuilder");
+        public INamedTypeSymbol? IDefineExecution        { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineExecution");
+        public INamedTypeSymbol? ICommandHandlerBuilder  { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.ICommandHandlerBuilder");
+        public INamedTypeSymbol? IDefineStoreOrExecution { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineStoreOrExecution");
+        public INamedTypeSymbol? BaseEventHandler       { get; } = compilation.GetTypeByMetadataName("Eventuous.Subscriptions.BaseEventHandler");
     }
 
     static ImmutableHashSet<ITypeSymbol> GetExplicitRegistrations(OperationAnalysisContext ctx, KnownTypeSymbols knownTypes) {
@@ -152,6 +142,16 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             }
             // Case 1c: State<T>.On<TEvent>(...) handler registrations
             case { Name: "On", TypeArguments.Length: 1 } when IsState(method.ContainingType, knownTypes): {
+                var eventType = method.TypeArguments[0];
+
+                if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType, knownTypes) && !IsExplicitlyRegistered(eventType, ctx, knownTypes)) {
+                    ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, inv.Syntax.GetLocation(), eventType.ToDisplayString()));
+                }
+
+                return;
+            }
+            // Case 1d: EventHandler.On<T>(...) handler registrations
+            case { Name: "On", TypeArguments.Length: 1 } when IsEventHandler(method.ContainingType, knownTypes): {
                 var eventType = method.TypeArguments[0];
 
                 if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType, knownTypes) && !IsExplicitlyRegistered(eventType, ctx, knownTypes)) {
@@ -292,6 +292,25 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             else {
                 // Fallback to string comparison
                 if (t is { Name: "State", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == BaseNamespace) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    static bool IsEventHandler(INamedTypeSymbol? type, KnownTypeSymbols knownTypes) {
+        if (type == null) return false;
+
+        for (var t = type; t != null; t = t.BaseType) {
+            if (knownTypes.BaseEventHandler != null) {
+                if (SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, knownTypes.BaseEventHandler)) {
+                    return true;
+                }
+            }
+            else {
+                if (t is { Name: "BaseEventHandler", Arity: 0 } && t.ContainingNamespace?.ToDisplayString() == "Eventuous.Subscriptions") {
                     return true;
                 }
             }

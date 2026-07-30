@@ -1,4 +1,5 @@
 using Eventuous.Producers;
+using JetBrains.Annotations;
 
 namespace Eventuous.Tests.Gateway;
 
@@ -86,5 +87,6 @@ public class MultiStreamProduceTests {
         }
     }
 
+    [UsedImplicitly]
     record TestProduceOptions;
 }

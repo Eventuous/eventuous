@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.SignalR.Server\Eventuous.SignalR.Server.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.SignalR.Client\Eventuous.SignalR.Client.csproj" Aliases="SignalRClient" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json.Dynamic\Eventuous.Serialization.Json.Dynamic.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="NSubstitute" />
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Eventuous.Producers" />
+        <Using Include="Eventuous.SignalR" />
+    </ItemGroup>
+</Project>

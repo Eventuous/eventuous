@@ -65,19 +65,19 @@ public static class RegistrationExtensions {
             services.TryAddSingleton<T>();
             AddCommon<T>(services);
         }
+
+        public void AddHostedServiceIfSupported<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] T>() where T : class {
+            if (typeof(T).GetInterfaces().Contains(typeof(IHostedService))) {
+                // ReSharper disable once ConvertToLocalFunction
+                Func<IServiceProvider, T> factory    = sp => sp.GetRequiredService<T>();
+                var                       descriptor = ServiceDescriptor.Describe(typeof(IHostedService), factory, ServiceLifetime.Singleton);
+                services.TryAddEnumerable(descriptor);
+            }
+        }
     }
 
     static void AddCommon<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] T>(IServiceCollection services) where T : class, IProducer {
         services.TryAddSingleton<IProducer>(sp => sp.GetRequiredService<T>());
         services.AddHostedServiceIfSupported<T>();
-    }
-
-    public static void AddHostedServiceIfSupported<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] T>(this IServiceCollection services) where T : class {
-        if (typeof(T).GetInterfaces().Contains(typeof(IHostedService))) {
-            // ReSharper disable once ConvertToLocalFunction
-            Func<IServiceProvider, T> factory    = sp => sp.GetRequiredService<T>();
-            var                       descriptor = ServiceDescriptor.Describe(typeof(IHostedService), factory, ServiceLifetime.Singleton);
-            services.TryAddEnumerable(descriptor);
-        }
     }
 }

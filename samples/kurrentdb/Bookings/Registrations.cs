@@ -27,7 +27,7 @@ public static class Registrations {
                 new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
             );
 
-            services.AddKurrentDBClient(configuration["EventStore:ConnectionString"]!);
+            services.AddKurrentDBClient(configuration["KurrentDB:ConnectionString"]!);
             services.AddEventStore<KurrentDBEventStore>();
             services.AddCommandService<BookingsCommandService, BookingState>();
 

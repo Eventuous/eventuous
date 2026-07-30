@@ -5,9 +5,6 @@ using System.Threading.Channels;
 
 namespace Eventuous.Subscriptions.Channels;
 
-class ChannelWorker<T>(Channel<T> channel, ProcessElement<T> process, bool throwOnFull = false)
-    : ChannelWorkerBase<T>(channel, token => channel.Read(process, token), 1, throwOnFull);
-
 /// <summary>
 /// Creates a new instance of the channel worker, starts a task for background reads
 /// </summary>

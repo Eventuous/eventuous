@@ -1,6 +1,7 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Eventuous.Subscriptions.Diagnostics;
@@ -12,7 +13,10 @@ public interface ISubscriptionHealth {
 }
 
 public class SubscriptionHealthCheck : ISubscriptionHealth, IHealthCheck {
-    readonly Dictionary<string, HealthReport> _healthReports = new();
+    // Reports are written from subscription subscribed/dropped callbacks (background threads) while
+    // CheckHealthAsync enumerates them from the health endpoint. A plain Dictionary throws
+    // "Collection was modified" on concurrent access; ConcurrentDictionary makes both sides safe.
+    readonly ConcurrentDictionary<string, HealthReport> _healthReports = new();
 
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default) {
         var        unhealthy  = new List<string>();

@@ -18,7 +18,7 @@ public class ChannelBatchingBenchmarks {
 
     [GlobalSetup]
     public void Setup() {
-        _buffer = new List<int>(BatchSize);
+        _buffer = new(BatchSize);
         for (int i = 0; i < BatchSize; i++) {
             _buffer.Add(i);
         }

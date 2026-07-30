@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eventuous.Tests.Sqlite.Store;
 
-public sealed class StoreFixture() : SqliteStoreFixtureBase(LogLevel.Information) {
+public sealed class StoreFixture() : SqliteStoreFixtureBase() {
     readonly string _schemaName = GetSchemaName();
 
     protected override void SetupServices(IServiceCollection services) {

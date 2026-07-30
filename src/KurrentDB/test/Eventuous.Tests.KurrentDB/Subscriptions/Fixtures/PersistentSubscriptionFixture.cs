@@ -2,6 +2,7 @@ using Eventuous.Diagnostics.Logging;
 using Eventuous.KurrentDB.Producers;
 using Eventuous.KurrentDB.Subscriptions;
 using Eventuous.Tests.Subscriptions.Base;
+using KurrentDB.Client;
 using LoggingExtensions = Eventuous.TestHelpers.TUnit.Logging.LoggingExtensions;
 
 namespace Eventuous.Tests.KurrentDB.Subscriptions.Fixtures;
@@ -15,12 +16,14 @@ public class PersistentSubscriptionFixture<TSubscription, TOptions, THandler>(
     where THandler : class, IEventHandler
     where TSubscription : PersistentSubscriptionBase<TOptions>
     where TOptions : PersistentSubscriptionOptions {
-    public    StreamName         Stream       { get; }              = new($"test-{Guid.NewGuid():N}");
-    public    THandler           Handler      { get; }              = handler;
-    public    KurrentDBProducer Producer     { get; private set; } = null!;
-    protected ILogger            Log          { get; set; }         = null!;
-    protected StoreFixture       Fixture      { get; }              = new(logLevel);
-    TSubscription                Subscription { get; set; }         = null!;
+    public    StreamName         Stream         { get; }              = new($"test-{Guid.NewGuid():N}");
+    public    THandler           Handler        { get; }              = handler;
+    public    KurrentDBProducer  Producer       { get; private set; } = null!;
+    public    string             SubscriptionId { get; private set; } = null!;
+    public    KurrentDBClient    Client         => Fixture.Client;
+    protected ILogger            Log            { get; set; }         = null!;
+    protected StoreFixture       Fixture        { get; }              = new(logLevel);
+    TSubscription                Subscription   { get; set; }         = null!;
 
     public ValueTask Start() => Subscription.SubscribeWithLog(Log);
 
@@ -32,13 +35,13 @@ public class PersistentSubscriptionFixture<TSubscription, TOptions, THandler>(
         Fixture.TypeMapper.RegisterKnownEventTypes(typeof(TestEvent).Assembly);
         await Fixture.InitializeAsync();
         Producer = new(Fixture.Client);
-        var loggerFactory  = LoggingExtensions.GetLoggerFactory(logLevel);
-        var subscriptionId = $"test-{Guid.NewGuid():N}";
-        Log = loggerFactory.CreateLogger(GetType());
+        var loggerFactory = LoggingExtensions.GetLoggerFactory(logLevel);
+        SubscriptionId = $"test-{Guid.NewGuid():N}";
+        Log            = loggerFactory.CreateLogger(GetType());
 
         _listener = new(loggerFactory);
 
-        Subscription = subscriptionFactory(subscriptionId, Fixture.Container.GetConnectionString(), Stream, Handler, loggerFactory);
+        Subscription = subscriptionFactory(SubscriptionId, Fixture.Container.GetConnectionString(), Stream, Handler, loggerFactory);
         if (autoStart) await Start();
     }
 

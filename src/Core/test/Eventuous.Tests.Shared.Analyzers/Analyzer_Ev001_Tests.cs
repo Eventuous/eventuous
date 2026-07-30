@@ -21,12 +21,13 @@ public class Analyzer_Ev001_Tests {
 
         var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
 
-        // We expect at least two EV001 diagnostics:
+        // We expect at least three EV001 diagnostics:
         // - State<TestState>.On<Events.RoomBooked>(...)
         // - Aggregate.Apply(new Events.RoomBooked(...))
+        // - EventHandler.On<Events.RoomBooked>(...)
         var ev001 = diagnostics.Where(d => d.Id == EventUsageAnalyzer.DiagnosticId).ToArray();
 
-        await Assert.That(ev001.Length).IsGreaterThanOrEqualTo(2);
+        await Assert.That(ev001.Length).IsGreaterThanOrEqualTo(3);
 
         // Optional: verify diagnostic messages mention the event type name
         await Assert.That(ev001.Any(d => d.GetMessage().Contains("RoomBooked"))).IsTrue();
@@ -53,14 +54,17 @@ public class Analyzer_Ev001_Tests {
             MetadataReference.CreateFromFile(typeof(Enumerable).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(State<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Aggregate<>).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(EventTypeAttribute).Assembly.Location)
+            MetadataReference.CreateFromFile(typeof(EventTypeAttribute).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Eventuous.Subscriptions.EventHandler).Assembly.Location)
         };
 
-        // Some frameworks need additional facades depending on runtime; try to add them if present
-        TryAddRef(refs, "System.Runtime");
-        TryAddRef(refs, "System.Collections");
-        TryAddRef(refs, "System.Linq");
-        TryAddRef(refs, "System.Private.CoreLib");
+        // Add runtime assemblies to resolve core types (DateTime, ValueTask, etc.)
+        var runtimeDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+        foreach (var dll in Directory.GetFiles(runtimeDir, "System.*.dll")) {
+            refs.Add(MetadataReference.CreateFromFile(dll));
+        }
+
+        TryAddRef(refs, "netstandard");
 
         var compilation = CSharpCompilation.Create(
             assemblyName: "Analyzer_Ev001_Tests_Assembly",

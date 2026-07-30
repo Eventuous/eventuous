@@ -19,9 +19,7 @@ public class TopicAndQueueSourceAttribute : DataSourceGeneratorAttribute<AzureSe
 
             return (
                 f,
-                new() {
-                    QueueOrTopicName = QueueName
-                },
+                new() { QueueOrTopicName = QueueName },
                 new() {
                     QueueOrTopic   = new Queue(QueueName),
                     SubscriptionId = SubscriptionName
@@ -34,9 +32,7 @@ public class TopicAndQueueSourceAttribute : DataSourceGeneratorAttribute<AzureSe
 
             return (
                 f,
-                new() {
-                    QueueOrTopicName = TopicName
-                },
+                new() { QueueOrTopicName = TopicName },
                 new() {
                     QueueOrTopic   = new Topic(TopicName),
                     SubscriptionId = SubscriptionName
@@ -49,9 +45,7 @@ public class TopicAndQueueSourceAttribute : DataSourceGeneratorAttribute<AzureSe
 
             return (
                 f,
-                new() {
-                    QueueOrTopicName = TopicName
-                },
+                new() { QueueOrTopicName = TopicName },
                 new() {
                     QueueOrTopic   = new TopicAndSubscription(TopicName, SubscriptionName),
                     SubscriptionId = "some-subscription" // Random id to show SubscriptionId is not used in this case

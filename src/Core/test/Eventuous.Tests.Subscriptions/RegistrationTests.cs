@@ -144,7 +144,7 @@ public class RegistrationTests {
             services.AddHealthChecks().AddSubscriptionsHealthCheck("subscriptions", HealthStatus.Unhealthy, ["tag"]);
         }
 
-        public void Configure(IApplicationBuilder app) { }
+        public static void Configure(IApplicationBuilder app) { }
     }
 
     record TestOptions : SubscriptionOptions {

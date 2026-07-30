@@ -14,21 +14,44 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
     const string InterfaceName      = "IMessageConsumeContext";
     const string InterfaceFqn       = $"{InterfaceNamespace}.{InterfaceName}`1";
 
+    readonly struct KnownSymbols(INamedTypeSymbol? messageConsumeContext, INamedTypeSymbol? baseEventHandler) {
+        public INamedTypeSymbol? MessageConsumeContext { get; } = messageConsumeContext;
+        public INamedTypeSymbol? BaseEventHandler      { get; } = baseEventHandler;
+    }
+
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         // Resolve the IMessageConsumeContext<> symbol from the compilation
         var messageConsumeContextSymbol = context.CompilationProvider
             .Select(static (c, _) => c.GetTypeByMetadataName(InterfaceFqn));
 
+        var baseEventHandlerSymbol = context.CompilationProvider
+            .Select(static (c, _) => c.GetTypeByMetadataName("Eventuous.Subscriptions.BaseEventHandler"));
+
+        var eventTypeAttributeSymbol = context.CompilationProvider
+            .Select(static (c, _) => c.GetTypeByMetadataName("Eventuous.EventTypeAttribute"));
+
+        var knownSymbols = messageConsumeContextSymbol
+            .Combine(baseEventHandlerSymbol)
+            .Select(static (pair, _) => new KnownSymbols(pair.Left, pair.Right));
+
         var candidateTypes = context.SyntaxProvider
             .CreateSyntaxProvider(IsPotentialUsage, Transform)
             .Where(static t => t is not null)
-            .Combine(messageConsumeContextSymbol)
+            .Combine(knownSymbols)
             .Select(static (pair, _) => TransformWithSymbol(pair.Left, pair.Right))
             .Where(static t => t is not null)
             .Select(static (t, _) => t!)
             .Collect();
 
-        context.RegisterSourceOutput(candidateTypes, Generate);
+        var eventTypeCandidates = eventTypeAttributeSymbol
+            .Combine(context.CompilationProvider)
+            .Select(static (pair, _) => DiscoverEventTypes(pair.Right, pair.Left));
+
+        var mergedCandidates = candidateTypes
+            .Combine(eventTypeCandidates)
+            .Select(static (pair, _) => pair.Left.AddRange(pair.Right));
+
+        context.RegisterSourceOutput(mergedCandidates, Generate);
     }
 
     static bool IsPotentialUsage(SyntaxNode node, CancellationToken _) {
@@ -48,7 +71,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         return ctx;
     }
 
-    static string? TransformWithSymbol(GeneratorSyntaxContext? ctx, INamedTypeSymbol? messageConsumeContextSymbol) {
+    static string? TransformWithSymbol(GeneratorSyntaxContext? ctx, KnownSymbols known) {
         if (ctx is not { } context) return null;
 
         // Explicit generic type usage: IMessageConsumeContext<T>
@@ -59,20 +82,20 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
 
             if (symbol != null) {
                 var def = symbol.OriginalDefinition;
-                if (IsTargetInterface(def, messageConsumeContextSymbol) && symbol.TypeArguments.Length == 1) {
+                if (IsTargetInterface(def, known.MessageConsumeContext) && symbol.TypeArguments.Length == 1) {
                     var arg = symbol.TypeArguments[0];
                     return GetTypeSyntax(arg);
                 }
             }
 
-            // Case 2: On<TSomething>(...) where generic parameter name indicates an Event (e.g., TEvent, TIntegrationEvent)
+            // Case 2: On<T>(...) on BaseEventHandler-derived types (EventHandler, projectors, etc.)
             if (g.Identifier.Text == "On" && g.TypeArgumentList.Arguments.Count == 1) {
                 // Try to get T from the generic method symbol On<T>(...)
                 var inv = g.Parent as InvocationExpressionSyntax ?? g.Parent?.Parent as InvocationExpressionSyntax;
                 if (inv != null) {
                     var symbolInfo = context.SemanticModel.GetSymbolInfo(inv).Symbol;
                     var method = symbolInfo as IMethodSymbol;
-                    if (method?.TypeArguments.Length == 1 && ShouldTreatGenericOnAsEvent(method)) {
+                    if (method?.TypeArguments.Length == 1 && IsEventHandlerOnMethod(method, known.BaseEventHandler)) {
                         var tArg = method.TypeArguments[0];
                         if (tArg.IsReferenceType) return GetTypeSyntax(tArg);
                     }
@@ -88,7 +111,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
 
             if (symbol != null) {
                 var def = symbol.OriginalDefinition;
-                if (IsTargetInterface(def, messageConsumeContextSymbol) && symbol.TypeArguments.Length == 1) {
+                if (IsTargetInterface(def, known.MessageConsumeContext) && symbol.TypeArguments.Length == 1) {
                     var arg = symbol.TypeArguments[0];
                     return GetTypeSyntax(arg);
                 }
@@ -102,7 +125,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
             var invoke = delegateType?.DelegateInvokeMethod;
             if (invoke is not null) {
                 foreach (var p in invoke.Parameters) {
-                    if (TryExtractTypeArgFromIMessageConsumeContext(p.Type, messageConsumeContextSymbol, out var typeArg)) {
+                    if (TryExtractTypeArgFromIMessageConsumeContext(p.Type, known.MessageConsumeContext, out var typeArg)) {
                         return GetTypeSyntax(typeArg);
                     }
                 }
@@ -116,9 +139,26 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         // Skip unresolved generic type parameters (e.g. T in IMessageConsumeContext<T>)
         if (symbol.TypeKind == TypeKind.TypeParameter) return null;
 
+        // Skip types that are inaccessible from module-level generated code
+        // (e.g. private nested classes can't be referenced from the generated converter)
+        if (!IsAccessibleFromGeneratedCode(symbol)) return null;
+
         // Use fully qualified name with global:: prefix
         var name = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         return name.StartsWith("global::", StringComparison.Ordinal) ? name : $"global::{name}";
+    }
+
+    static bool IsAccessibleFromGeneratedCode(ITypeSymbol symbol) {
+        // Walk the type and all containing types to ensure none is private or protected
+        for (var current = symbol; current != null; current = current.ContainingType) {
+            switch (current.DeclaredAccessibility) {
+                case Accessibility.Private:
+                case Accessibility.Protected:
+                case Accessibility.ProtectedAndInternal:
+                    return false;
+            }
+        }
+        return true;
     }
 
     static bool IsTargetInterface(INamedTypeSymbol def, INamedTypeSymbol? messageConsumeContextSymbol) {
@@ -132,14 +172,27 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
                def.ContainingNamespace?.ToDisplayString() == InterfaceNamespace;
     }
 
-    static bool ShouldTreatGenericOnAsEvent(IMethodSymbol method) {
+    static bool IsEventHandlerOnMethod(IMethodSymbol method, INamedTypeSymbol? baseEventHandlerSymbol) {
         if (method is not { Name: "On" }) return false;
         var def = method.OriginalDefinition;
         if (def.TypeParameters.Length != 1) return false;
-        var paramName = def.TypeParameters[0].Name;
-        // Heuristic: only treat as event when the generic parameter name indicates an Event
-        // e.g., TEvent, TIntegrationEvent, etc. Skip TCommand, T, etc.
-        return paramName.IndexOf("Event", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        var containingType = def.ContainingType;
+
+        for (var t = containingType; t != null; t = t.BaseType) {
+            if (baseEventHandlerSymbol != null) {
+                if (SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, baseEventHandlerSymbol)) {
+                    return true;
+                }
+            }
+            else {
+                if (t is { Name: "BaseEventHandler", Arity: 0 } && t.ContainingNamespace?.ToDisplayString() == "Eventuous.Subscriptions") {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     static bool TryExtractTypeArgFromIMessageConsumeContext(
@@ -194,5 +247,53 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         sb.AppendLine("}");
 
         context.AddSource("MessageConsumeContext_Converters.g.cs", sb.ToString());
+    }
+
+    static ImmutableArray<string> DiscoverEventTypes(Compilation compilation, INamedTypeSymbol? eventTypeAttributeSymbol) {
+        if (eventTypeAttributeSymbol is null) return ImmutableArray<string>.Empty;
+
+        var builder = ImmutableArray.CreateBuilder<string>();
+
+        ProcessNamespace(compilation.Assembly.GlobalNamespace, isReferenced: false);
+
+        foreach (var ra in compilation.SourceModule.ReferencedAssemblySymbols) {
+            ProcessNamespace(ra.GlobalNamespace, isReferenced: true);
+        }
+
+        return builder.ToImmutable();
+
+        void ProcessType(INamedTypeSymbol type, bool isReferenced) {
+            if (HasEventTypeAttribute(type) && (!isReferenced || IsPublicType(type))) {
+                var name = GetTypeSyntax(type);
+                if (name is not null) builder.Add(name);
+            }
+
+            foreach (var nt in type.GetTypeMembers()) {
+                ProcessType(nt, isReferenced);
+            }
+        }
+
+        void ProcessNamespace(INamespaceSymbol ns, bool isReferenced) {
+            foreach (var member in ns.GetMembers()) {
+                switch (member) {
+                    case INamespaceSymbol cns:
+                        ProcessNamespace(cns, isReferenced);
+                        break;
+                    case INamedTypeSymbol type:
+                        ProcessType(type, isReferenced);
+                        break;
+                }
+            }
+        }
+
+        static bool IsPublicType(INamedTypeSymbol type) {
+            for (var t = (ITypeSymbol)type; t != null; t = t.ContainingType) {
+                if (t.DeclaredAccessibility != Accessibility.Public) return false;
+            }
+            return true;
+        }
+
+        bool HasEventTypeAttribute(INamedTypeSymbol type) =>
+            type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, eventTypeAttributeSymbol));
     }
 }

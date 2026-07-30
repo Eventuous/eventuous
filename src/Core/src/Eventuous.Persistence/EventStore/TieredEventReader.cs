@@ -15,25 +15,19 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName streamName, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         var hotEvents = await LoadStreamEvents(hotReader, streamName, start, count, cancellationToken).NoContext();
 
-        IEnumerable<StreamEvent> archivedEvents;
-
-        if (hotEvents.Length > 0 && hotEvents[0].Revision > start.Value) {
-            // Hot store has events but they start after the requested position, fill the gap from archive
-            archivedEvents = (await LoadStreamEvents(archiveReader, streamName, start, (int)hotEvents[0].Revision, cancellationToken).NoContext())
-                .Select(x => x with { FromArchive = true });
-        } else if (hotEvents.Length == 0) {
-            // Hot store has no events, try archive for the full range
-            archivedEvents = (await LoadStreamEvents(archiveReader, streamName, start, count, cancellationToken).NoContext())
-                .Select(x => x with { FromArchive = true });
-        } else {
-            archivedEvents = [];
-        }
+        var archivedEvents = hotEvents.Length switch {
+            > 0 when hotEvents[0].Revision > start.Value
+                => (await LoadStreamEvents(archiveReader, streamName, start, (int)hotEvents[0].Revision, cancellationToken).NoContext()).Select(x => x with { FromArchive = true }),
+            0 => (await LoadStreamEvents(archiveReader, streamName, start, count, cancellationToken).NoContext()).Select(x => x with { FromArchive = true }),
+            _ => []
+        };
 
         var combined = archivedEvents.Concat(hotEvents).Distinct(Comparer);
         var any      = false;
 
         foreach (var evt in combined) {
             any = true;
+
             yield return evt;
         }
 
@@ -45,17 +39,22 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
 
         IEnumerable<StreamEvent> archivedEvents;
 
-        if (hotEvents.Length > 0 && hotEvents.Length < count) {
-            // Hot store returned fewer events than requested, fill the gap from archive
-            var lastHotRevision = hotEvents[^1].Revision;
-            archivedEvents = (await LoadStreamEvents(archiveReader, streamName, new(lastHotRevision - 1), count - hotEvents.Length, cancellationToken, backwards: true).NoContext())
-                .Select(x => x with { FromArchive = true });
-        } else if (hotEvents.Length == 0) {
-            // Hot store has no events, try archive for the full range
-            archivedEvents = (await LoadStreamEvents(archiveReader, streamName, start, count, cancellationToken, backwards: true).NoContext())
-                .Select(x => x with { FromArchive = true });
-        } else {
-            archivedEvents = [];
+        switch (hotEvents.Length) {
+            case > 0 when hotEvents.Length < count: {
+                // Hot store returned fewer events than requested, fill the gap from archive
+                var lastHotRevision = hotEvents[^1].Revision;
+
+                archivedEvents = (await LoadStreamEvents(archiveReader, streamName, new(lastHotRevision - 1), count - hotEvents.Length, cancellationToken, backwards: true).NoContext())
+                    .Select(x => x with { FromArchive = true });
+
+                break;
+            }
+            case 0:
+                // Hot store has no events, try archive for the full range
+                archivedEvents = (await LoadStreamEvents(archiveReader, streamName, start, count, cancellationToken, backwards: true).NoContext())
+                    .Select(x => x with { FromArchive = true }); break;
+            default:
+                archivedEvents = []; break;
         }
 
         var combined = hotEvents.Concat(archivedEvents).Distinct(Comparer);
@@ -63,6 +62,7 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
 
         foreach (var evt in combined) {
             any = true;
+
             yield return evt;
         }
 
@@ -70,12 +70,12 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
     }
 
     static async Task<StreamEvent[]> LoadStreamEvents(
-            IEventReader      reader,
-            StreamName        streamName,
+            IEventReader       reader,
+            StreamName         streamName,
             StreamReadPosition startPosition,
-            int               localCount,
-            CancellationToken cancellationToken,
-            bool              backwards = false
+            int                localCount,
+            CancellationToken  cancellationToken,
+            bool               backwards = false
         ) {
         try {
             return backwards

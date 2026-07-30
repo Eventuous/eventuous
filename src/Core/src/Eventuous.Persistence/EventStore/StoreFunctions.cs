@@ -74,10 +74,7 @@ public static class StoreFunctions {
                 return await eventWriter.AppendEvents(appends, cancellationToken).NoContext();
             } catch (Exception e) {
                 throw e.InnerException?.Message.Contains("WrongExpectedVersion") == true
-                    ? new OptimisticConcurrencyException(
-                        new StreamName(string.Join(", ", streams.Select(s => s.StreamName.ToString()))),
-                        e
-                    )
+                    ? new OptimisticConcurrencyException(new(string.Join(", ", streams.Select(s => s.StreamName.ToString()))), e)
                     : e;
             }
 

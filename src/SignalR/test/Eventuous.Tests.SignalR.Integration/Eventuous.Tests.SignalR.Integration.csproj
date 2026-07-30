@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <IncludeTestHost>true</IncludeTestHost>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.SignalR.Server\Eventuous.SignalR.Server.csproj" />
+        <ProjectReference Include="$(LocalRoot)\Eventuous.SignalR.Client\Eventuous.SignalR.Client.csproj" Aliases="SignalRClient" />
+        <ProjectReference Include="$(KurrentDBRoot)\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
+        <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Testcontainers.KurrentDb" />
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Eventuous.Producers" />
+        <Using Include="Eventuous.SignalR" />
+        <Using Include="Eventuous.Subscriptions" />
+        <Using Include="Eventuous.Subscriptions.Checkpoints" />
+    </ItemGroup>
+</Project>

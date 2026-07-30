@@ -19,4 +19,6 @@ config?.Invoke(app);
 
 app.Run();
 
+#pragma warning disable ASP0027
 public partial class Program;
+#pragma warning restore ASP0027

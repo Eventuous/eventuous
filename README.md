@@ -33,9 +33,7 @@ This work leads to many breaking changes, and the documentation will get updated
 
 ## Packages
 
-Stable versions and release candidates are available on [NuGet](https://www.nuget.org/profiles/Eventuous).
-
-In addition, latest dev versions are available on MyGet under the public feed `https://www.myget.org/F/eventuous/api/v3/index.json`.
+Stable versions, release candidates, and preview builds from the `dev` branch are all published to [NuGet](https://www.nuget.org/profiles/Eventuous).
 
 ## Stats
 

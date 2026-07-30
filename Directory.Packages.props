@@ -41,7 +41,8 @@
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(MicrosoftExtensionsVer)" />
     <PackageVersion Include="System.Linq.AsyncEnumerable" Version="10.0.0" />
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
     <PackageVersion Include="MongoDB.Driver" Version="3.4.0" />
     <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.19.0" />
     <PackageVersion Include="Confluent.Kafka" Version="2.6.1" />
@@ -95,17 +96,22 @@
     <PackageVersion Include="Verify.TUnit" Version="31.0.5" />
     <PackageVersion Include="NodaTime.Bogus" Version="3.0.2" />
     <PackageVersion Include="System.Text.Json" Version="9.0.6" />
+    <PackageVersion Include="NSubstitute" Version="5.3.0" />
+  </ItemGroup>
+  <ItemGroup Label="SignalR packages">
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Common" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
   </ItemGroup>
   <ItemGroup Label="Packages for samples">
     <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.1.0" />
     <PackageVersion Include="MongoDB.Driver.Core" Version="2.30.0" />
     <PackageVersion Include="Npgsql.OpenTelemetry" Version="$(NpgsqlVersion)" />
-    <PackageVersion Include="OpenTelemetry" Version="1.13.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.13.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.13.1-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Zipkin" Version="1.13.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.13.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.13.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.3-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Zipkin" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.15.1-beta.1" />
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />

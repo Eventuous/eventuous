@@ -16,7 +16,7 @@ public class ContextItems {
     /// <param name="value">Item instance</param>
     /// <returns></returns>
     public ContextItems AddItem(string key, object? value) {
-        _items ??= new Dictionary<string, object?>();
+        _items ??= new();
         _items.TryAdd(key, value);
         return this;
     }

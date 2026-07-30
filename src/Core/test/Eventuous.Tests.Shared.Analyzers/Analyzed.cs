@@ -17,6 +17,12 @@ file class TestAggregate : Aggregate<TestState> {
     public void Process() => Apply(new Events.RoomBooked("1", DateTime.Now, DateTime.Now.AddDays(1), 100));
 }
 
+file class TestEventHandler : Eventuous.Subscriptions.EventHandler {
+    public TestEventHandler() {
+        On<Events.RoomBooked>(ctx => new System.Threading.Tasks.ValueTask());
+    }
+}
+
 file static class Events {
     [PublicAPI]
     public record RoomBooked(string RoomId, DateTime CheckIn, DateTime CheckOut, decimal Price);

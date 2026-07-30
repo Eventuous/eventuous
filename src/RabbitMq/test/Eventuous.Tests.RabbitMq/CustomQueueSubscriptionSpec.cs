@@ -53,7 +53,7 @@ public class CustomQueueSubscriptionSpec {
                 SubscriptionId   = subscriptionId,
                 Exchange         = _exchange,
                 ThrowOnError     = true,
-                QueueOptions     = new RabbitMqSubscriptionOptions.RabbitMqQueueOptions { Queue = customQueue }
+                QueueOptions     = new() { Queue = customQueue }
             },
             new ConsumePipe().AddDefaultConsumer(_handler),
             _loggerFactory

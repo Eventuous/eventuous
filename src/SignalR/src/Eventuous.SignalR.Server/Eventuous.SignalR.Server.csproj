@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Producers\Eventuous.Producers.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+        <ProjectReference Include="$(SrcRoot)\Gateway\src\Eventuous.Gateway\Eventuous.Gateway.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Eventuous.Producers" />
+        <Using Include="Eventuous.Subscriptions" />
+        <Using Include="Eventuous.Gateway" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(CoreRoot)\Eventuous.Shared\Tools\TaskExtensions.cs">
+            <Link>Tools\TaskExtensions.cs</Link>
+        </Compile>
+        <Using Include="Eventuous.Tools" />
+    </ItemGroup>
+</Project>

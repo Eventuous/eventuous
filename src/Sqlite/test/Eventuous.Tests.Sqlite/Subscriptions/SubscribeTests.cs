@@ -45,7 +45,7 @@ public class SubscribeToAll() : SubscriptionTestBase(Fixture) {
 
     static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
-    async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
+    static async Task<List<ImportBooking>> GenerateAndHandleCommands(int count) {
         var commands = Enumerable
             .Range(0, count)
             .Select(_ => DomainFixture.CreateImportBooking())
@@ -98,7 +98,7 @@ public class SubscribeToStream() : SubscriptionTestBase(Fixture) {
 
     static BookingImported ToEvent(ImportBooking cmd) => new(cmd.RoomId, cmd.Price, cmd.CheckIn, cmd.CheckOut);
 
-    async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
+    static async Task<List<BookingImported>> GenerateAndProduceEvents(int count) {
         var commands = Enumerable
             .Range(0, count)
             .Select(_ => DomainFixture.CreateImportBooking())

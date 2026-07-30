@@ -16,7 +16,7 @@ namespace Bookings.Payments;
 public static class Registrations {
     extension(IServiceCollection services) {
         public void AddServices(IConfiguration configuration) {
-            services.AddKurrentDBClient(configuration["EventStore:ConnectionString"]!);
+            services.AddKurrentDBClient(configuration["KurrentDB:ConnectionString"]!);
             services.AddEventStore<KurrentDBEventStore>();
             services.AddCommandService<CommandService, PaymentState>();
             services.AddSingleton(Mongo.ConfigureMongo(configuration));
