@@ -5,6 +5,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Gateway\Eventuous.Gateway.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json.Dynamic\Eventuous.Serialization.Json.Dynamic.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" />

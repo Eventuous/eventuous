@@ -22,7 +22,7 @@ public class SubscriptionGateway<THub>(
     : IAsyncDisposable
     where THub : Hub {
     readonly SubscriptionFactory                                                           _subscriptionFactory = options.SubscriptionFactory;
-    readonly IEventSerializer                                                              _eventSerializer     = eventSerializer ?? DefaultEventSerializer.Instance;
+    readonly IEventSerializer                                                              _eventSerializer     = eventSerializer ?? EventSerializer.Default;
     readonly ILogger                                                                       _logger              = loggerFactory.CreateLogger<SubscriptionGateway<THub>>();
     readonly ConcurrentDictionary<(string ConnectionId, string Stream), SubscriptionState> _subscriptions       = new();
 

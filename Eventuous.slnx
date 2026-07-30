@@ -54,6 +54,7 @@
         <Project Path="src/Core/src/Eventuous.Persistence/Eventuous.Persistence.csproj" />
         <Project Path="src/Core/src/Eventuous.Producers/Eventuous.Producers.csproj" />
         <Project Path="src/Core/src/Eventuous.Serialization/Eventuous.Serialization.csproj" />
+        <Project Path="src/Core/src/Eventuous.Serialization.Json.Dynamic/Eventuous.Serialization.Json.Dynamic.csproj" />
         <Project Path="src/Core/src/Eventuous.Shared/Eventuous.Shared.csproj" />
         <Project Path="src/Core/src/Eventuous.Subscriptions/Eventuous.Subscriptions.csproj" />
         <Project Path="src/Core/src/Eventuous/Eventuous.csproj" />

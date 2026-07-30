@@ -8,6 +8,7 @@
     <ItemGroup>
         <ProjectReference Include="$(KurrentDBRoot)\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
         <ProjectReference Include="..\Eventuous.ElasticSearch\Eventuous.ElasticSearch.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json.Dynamic\Eventuous.Serialization.Json.Dynamic.csproj"/>
         <Using Include="Eventuous" />
     </ItemGroup>
     <ItemGroup>

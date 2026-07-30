@@ -116,8 +116,6 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// Subscribe to a persistent subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var settings = Options.SubscriptionSettings ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
 
@@ -196,8 +194,6 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
         await _handleEventProcessingFailure(Client, subscription, re, exception).NoContext();
     }
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,

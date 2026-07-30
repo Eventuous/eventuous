@@ -70,7 +70,7 @@ public class BasicProducerTests {
             var messageType = meta[KafkaHeaderKeys.MessageTypeHeader] as string;
             var contentType = meta[KafkaHeaderKeys.ContentTypeHeader] as string;
 
-            var result = DefaultEventSerializer.Instance.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as SuccessfullyDeserialized;
+            var result = EventSerializer.Default.DeserializeEvent(msg.Message.Value, messageType!, contentType!) as SuccessfullyDeserialized;
 
             var evt = (result!.Payload as TestEvent)!;
             TestContext.Current?.OutputWriter.WriteLine($"Consumed {evt}");

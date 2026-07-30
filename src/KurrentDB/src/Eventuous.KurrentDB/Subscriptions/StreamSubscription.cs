@@ -86,8 +86,6 @@ public class StreamSubscription : KurrentDBCatchUpSubscriptionBase<StreamSubscri
     /// Starts a catch-up subscription
     /// </summary>
     /// <param name="cancellationToken"></param>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
         var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
 
@@ -128,8 +126,6 @@ public class StreamSubscription : KurrentDBCatchUpSubscriptionBase<StreamSubscri
             => Dropped(KurrentDBMappings.AsDropReason(reason), ex);
     }
 
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,

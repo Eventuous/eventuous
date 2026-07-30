@@ -81,7 +81,7 @@ public class SignalRSubscriptionClient : IAsyncDisposable {
         }
     }
 
-    internal IEventSerializer GetSerializer() => _options.Serializer ?? DefaultEventSerializer.Instance;
+    internal IEventSerializer GetSerializer() => _options.Serializer ?? EventSerializer.Default;
 
     internal bool TracingEnabled => _options.EnableTracing;
 

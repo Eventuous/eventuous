@@ -10,7 +10,7 @@ public class SignalRTransformTests {
     [Test]
     public async Task Transform_CreatesCorrectEnvelope() {
         TypeMap.RegisterKnownEventTypes(typeof(TransformTestEvent).Assembly);
-        var serializer = DefaultEventSerializer.Instance;
+        var serializer = EventSerializer.Default;
         var transform  = SignalRTransform.Create("conn-1", "Test-1", serializer);
 
         var ctx = new MessageConsumeContext(
@@ -44,7 +44,7 @@ public class SignalRTransformTests {
     [Test]
     public async Task Transform_IncludesMetadataWhenPresent() {
         TypeMap.RegisterKnownEventTypes(typeof(TransformTestEvent).Assembly);
-        var serializer = DefaultEventSerializer.Instance;
+        var serializer = EventSerializer.Default;
         var transform  = SignalRTransform.Create("conn-2", "Test-2", serializer);
 
         var meta = new Metadata { ["key1"] = "value1" };
