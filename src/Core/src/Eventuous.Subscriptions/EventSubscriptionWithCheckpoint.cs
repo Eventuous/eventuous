@@ -146,6 +146,6 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         var handler = CheckpointCommitHandler;
         CheckpointCommitHandler = null;
 
-        if (handler != null) await handler.DisposeAsync();
+        if (handler != null) await handler.DisposeAsync().NoContext();
     }
 }

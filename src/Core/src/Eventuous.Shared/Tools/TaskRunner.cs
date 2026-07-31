@@ -33,7 +33,7 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
             try {
                 await Task.WhenAny(_runner, state.Task).NoContext();
             } finally {
-                await registration.DisposeAsync();
+                await registration.DisposeAsync().NoContext();
             }
 
             // ReSharper disable once RedundantAssignment

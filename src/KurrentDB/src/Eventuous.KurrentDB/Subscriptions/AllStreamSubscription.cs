@@ -112,7 +112,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             }
         } catch {
             await messages.DisposeAsync().NoContext();
-            await subscription.DisposeAsync();
+            await subscription.DisposeAsync().NoContext();
 
             throw;
         }
@@ -205,7 +205,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             // Double disposal on the unsubscribe path is fine; on the dropped path this is the only
             // cleanup of the underlying call before Resubscribe replaces the subscription.
             await messages.DisposeAsync().NoContext();
-            await subscription.DisposeAsync();
+            await subscription.DisposeAsync().NoContext();
         }
     }
 
@@ -227,7 +227,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             Stopping.Cancel(false);
 
             if (_subscription != null)
-                await _subscription.DisposeAsync();
+                await _subscription.DisposeAsync().NoContext();
             _subscription = null;
 
             if (_messagePump is { } pump) {
