@@ -55,7 +55,7 @@ public class ResolvedLinkCheckpointTests : StoreFixture {
         var linkResult = await Client.AppendToStreamAsync(
             _linkStream,
             StreamState.Any,
-            [new EventData(Uuid.NewUuid(), "$>", Encoding.UTF8.GetBytes($"0@{_stream}"), contentType: "application/octet-stream")],
+            [new(Uuid.NewUuid(), "$>", Encoding.UTF8.GetBytes($"0@{_stream}"), contentType: "application/octet-stream")],
             cancellationToken: cancellationToken
         );
 

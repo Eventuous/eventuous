@@ -82,7 +82,7 @@ public abstract class SubscriptionDropBase<TContainer, TSubscription, TSubscript
                 () => {
                     var handled = fixture.Handler.Handled;
 
-                    return expected.All(e => handled.Contains(e));
+                    return expected.All(handled.Contains);
                 },
                 DropTimeout,
                 cancellationToken

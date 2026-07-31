@@ -28,8 +28,8 @@ public class RedisStreamSubscription(
     protected override async Task<ReceivedEvent[]> ReadEvents(IDatabase database, long position) {
         var events = await database.StreamReadAsync(_streamName, position.ToRedisValue(), Options.MaxPageSize).NoContext();
 
-        return events.Select(
-                evt => new ReceivedEvent(
+        return [
+            .. events.Select(evt => new ReceivedEvent(
                     Guid.Parse(evt[MessageId].ToString()),
                     evt[MessageType]!,
                     evt.Id.ToLong(),
@@ -40,7 +40,7 @@ public class RedisStreamSubscription(
                     _streamName
                 )
             )
-            .ToArray();
+        ];
     }
 
     readonly string _streamName = options.Stream.ToString();

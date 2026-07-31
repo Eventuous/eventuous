@@ -37,7 +37,7 @@ public class Analyzer_Ev001_Tests {
         var withAnalyzers = compilation.WithAnalyzers([analyzer]);
         var diagnostics   = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
         // Filter out anything not from our analyzer id just in case
-        return diagnostics.Where(d => d.Id == EventUsageAnalyzer.DiagnosticId).ToArray();
+        return [.. diagnostics.Where(d => d.Id == EventUsageAnalyzer.DiagnosticId)];
     }
 
     static string LoadAnalyzedSource([CallerFilePath] string? caller = null) {
@@ -60,9 +60,7 @@ public class Analyzer_Ev001_Tests {
 
         // Add runtime assemblies to resolve core types (DateTime, ValueTask, etc.)
         var runtimeDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-        foreach (var dll in Directory.GetFiles(runtimeDir, "System.*.dll")) {
-            refs.Add(MetadataReference.CreateFromFile(dll));
-        }
+        refs.AddRange(Directory.GetFiles(runtimeDir, "System.*.dll").Select(dll => MetadataReference.CreateFromFile(dll)).Cast<MetadataReference>());
 
         TryAddRef(refs, "netstandard");
 

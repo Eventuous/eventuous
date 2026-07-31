@@ -27,7 +27,7 @@ public static class Helpers {
             ) {
             var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
-            return fixture.EventWriter.AppendEvents(stream, version, streamEvents.ToArray(), cancellationToken);
+            return fixture.EventWriter.AppendEvents(stream, version, [.. streamEvents], cancellationToken);
         }
 
         public Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version, CancellationToken cancellationToken) {

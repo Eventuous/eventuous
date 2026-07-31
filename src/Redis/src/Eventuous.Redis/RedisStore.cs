@@ -46,7 +46,7 @@ public class RedisStore : IEventReader, IEventWriter {
                 throw new StreamNotFound(stream);
             }
 
-            events = result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer)).ToArray();
+            events = [.. result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer))];
         } catch (InvalidOperationException e) when (e.Message.Contains("Reading is not allowed after reader was completed") ||
                                                     cancellationToken.IsCancellationRequested) {
             throw new OperationCanceledException("Redis read operation terminated", e, cancellationToken);

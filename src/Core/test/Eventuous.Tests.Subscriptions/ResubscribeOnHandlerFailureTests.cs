@@ -282,7 +282,7 @@ public class ResubscribeOnHandlerFailureTests {
             => Dropped(DropReason.SubscriptionError, new InvalidOperationException("Simulated drop for race test"));
 
         protected override ValueTask Subscribe(CancellationToken cancellationToken) {
-            _runner = new TaskRunner(token => PollEvents(token)).Start();
+            _runner = new TaskRunner(PollEvents).Start();
 
             return default;
         }

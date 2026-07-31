@@ -25,11 +25,7 @@ public sealed class TaskRunner(Func<CancellationToken, Task> taskFactory) : IDis
         if (_runner == null) return;
 
         try {
-#if NET8_0_OR_GREATER
             await _stopSource.CancelAsync();
-#else
-            _stopSource.Cancel();
-#endif
         } finally {
             var state        = new TaskCompletionSource<object>();
             var registration = cancellationToken.Register((s => (((TaskCompletionSource<object>)s!)).SetCanceled(cancellationToken)), state);

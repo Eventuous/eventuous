@@ -48,7 +48,7 @@ public sealed class CommandServiceMetrics : IWithCustomTags, IDisposable {
         _meter.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
+    public void SetCustomTags(TagList customTags) => _customTags = [.. customTags];
 }
 
 record CommandServiceMetricsContext(string ServiceName, string CommandName);

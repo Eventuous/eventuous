@@ -22,7 +22,7 @@ public sealed class TestEventListener(Action<EventWrittenEventArgs>? act = null,
 
 #nullable disable
     protected override void OnEventWritten(EventWrittenEventArgs evt) {
-        var message = evt.Message != null && (evt.Payload?.Count ?? 0) > 0 ? string.Format(evt.Message, evt.Payload.ToArray()) : evt.Message;
+        var message = evt.Message != null && (evt.Payload?.Count ?? 0) > 0 ? string.Format(evt.Message, [.. evt.Payload]) : evt.Message;
         TestContext.Current?.OutputWriter.WriteLine($"{evt.EventSource.Name} - EventId: [{evt.EventId}], EventName: [{evt.EventName}], Message: [{message}]");
         act?.Invoke(evt);
     }

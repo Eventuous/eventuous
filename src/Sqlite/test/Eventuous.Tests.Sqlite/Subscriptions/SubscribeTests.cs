@@ -22,7 +22,7 @@ public class SubscribeToAll() : SubscriptionTestBase(Fixture) {
         var testEvents = commands.Select(ToEvent).ToList();
 
         await Fixture.StartSubscription();
-        await Fixture.Handler.AssertCollection(TimeSpan.FromSeconds(5), [..testEvents]).Validate(cancellationToken);
+        await Fixture.Handler.AssertCollection(TimeSpan.FromSeconds(5), [.. testEvents]).Validate(cancellationToken);
         await Fixture.StopSubscription();
         await Assert.That(Fixture.Handler.Count).IsEqualTo(10);
     }
@@ -76,7 +76,7 @@ public class SubscribeToStream() : SubscriptionTestBase(Fixture) {
         var testEvents = await GenerateAndProduceEvents(count);
 
         await Fixture.StartSubscription();
-        await Fixture.Handler.AssertCollection(TimeSpan.FromSeconds(5), [..testEvents]).Validate(cancellationToken);
+        await Fixture.Handler.AssertCollection(TimeSpan.FromSeconds(5), [.. testEvents]).Validate(cancellationToken);
         await Fixture.StopSubscription();
         await Assert.That(Fixture.Handler.Count).IsEqualTo(10);
     }
@@ -106,7 +106,7 @@ public class SubscribeToStream() : SubscriptionTestBase(Fixture) {
 
         var events       = commands.Select(ToEvent).ToList();
         var streamEvents = events.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
-        await Fixture.EventStore.AppendEvents(StreamName, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
+        await Fixture.EventStore.AppendEvents(StreamName, ExpectedStreamVersion.Any, [.. streamEvents], default);
 
         return events;
     }

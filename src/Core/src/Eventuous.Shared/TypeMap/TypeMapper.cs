@@ -110,7 +110,7 @@ public class TypeMapper : ITypeMapperExt {
         Assembly[] GetDefaultAssemblies() {
             var firstLevel = AppDomain.CurrentDomain.GetAssemblies().Where(x => !x.IsDynamic && NamePredicate(x.GetName())).ToArray();
 
-            return firstLevel.SelectMany(Get).Concat(firstLevel).Distinct().ToArray();
+            return [.. firstLevel.SelectMany(Get).Concat(firstLevel).Distinct()];
 
             [RequiresUnreferencedCode("Calls System.Reflection.Assembly.GetReferencedAssemblies()")]
             IEnumerable<Assembly> Get(Assembly assembly) {

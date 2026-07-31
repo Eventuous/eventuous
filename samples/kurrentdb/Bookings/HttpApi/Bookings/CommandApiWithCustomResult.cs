@@ -51,7 +51,7 @@ public class CommandApiWithCustomResult(ICommandService<BookingState> service) :
         var groupFailures = exception.Errors.GroupBy(v => v.PropertyName);
 
         foreach (var groupFailure in groupFailures) {
-            problemDetails.Errors.Add(groupFailure.Key, groupFailure.Select(s => s.ErrorMessage).ToArray());
+            problemDetails.Errors.Add(groupFailure.Key, [.. groupFailure.Select(s => s.ErrorMessage)]);
         }
 
         return new(problemDetails);

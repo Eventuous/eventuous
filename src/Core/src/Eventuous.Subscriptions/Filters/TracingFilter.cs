@@ -16,7 +16,7 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
     public TracingFilter(string consumerName) {
         var tags = new KeyValuePair<string, object?>[] { new(TelemetryTags.Eventuous.Consumer, consumerName) };
 
-        _defaultTags = tags.Concat(EventuousDiagnostics.Tags).ToArray();
+        _defaultTags = [.. tags, .. EventuousDiagnostics.Tags];
     }
 
     protected override async ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) {

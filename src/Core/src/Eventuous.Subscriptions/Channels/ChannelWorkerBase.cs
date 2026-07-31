@@ -21,17 +21,13 @@ abstract class ChannelWorkerBase<T> : IAsyncDisposable {
     protected ChannelWorkerBase(Channel<T> channel, Func<CancellationToken, Task> processor, int concurrencyLevel, bool throwOnFull = false) {
         _channel     = channel;
         _throwOnFull = throwOnFull;
-        _readerTasks = Enumerable.Range(0, concurrencyLevel).Select(_ => Task.Run(() => processor(_cts.Token))).ToArray();
+        _readerTasks = [.. Enumerable.Range(0, concurrencyLevel).Select(_ => Task.Run(() => processor(_cts.Token)))];
     }
 
     public async ValueTask DisposeAsync() {
         _stopping = true;
         await _channel.Stop(_cts, _readerTasks, OnDispose).NoContext();
-#if NET8_0_OR_GREATER
         await _cts.CancelAsync().NoContext();
-#else
-        _cts.Cancel();
-#endif
         await Task.WhenAll(_readerTasks).NoThrow();
         _cts.Dispose();
         GC.SuppressFinalize(this);

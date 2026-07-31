@@ -49,9 +49,9 @@ public abstract class BaseTracer {
     }
 
     protected async IAsyncEnumerable<T> TraceEnumerable<T>(
-            StreamName             stream,
-            string                 operation,
-            IAsyncEnumerable<T>    source,
+            StreamName                                 stream,
+            string                                     operation,
+            IAsyncEnumerable<T>                        source,
             [EnumeratorCancellation] CancellationToken cancellationToken = default
         ) {
         using var activity = StartActivity(stream, operation);

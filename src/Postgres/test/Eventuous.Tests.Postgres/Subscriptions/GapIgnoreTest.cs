@@ -15,12 +15,12 @@ public class GapIgnoreTest() : SubscriptionTestBase(Fixture) {
     public async Task ShouldIgnoreOldGaps(CancellationToken cancellationToken) {
         var streamName = new StreamName("test-stream-gap-ignore");
 
-        await Fixture.AppendEvents(streamName, Fixture.CreateEvents(2).Cast<object>().ToArray(), ExpectedStreamVersion.NoStream);
+        await Fixture.AppendEvents(streamName, [.. Fixture.CreateEvents(2)], ExpectedStreamVersion.NoStream);
 
         // Create a gap that will become "old"
         await Fixture.InsertGap(streamName, 1);
 
-        await Fixture.AppendEvents(streamName, Fixture.CreateEvents(3).Cast<object>().ToArray(), ExpectedStreamVersion.Any);
+        await Fixture.AppendEvents(streamName, [.. Fixture.CreateEvents(3)], ExpectedStreamVersion.Any);
 
         await Task.Delay(1000, cancellationToken);
 

@@ -29,7 +29,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task ShouldReadMany(CancellationToken cancellationToken) {
-        object[] events     = _fixture.CreateEvents(20).ToArray();
+        object[] events     = [.. _fixture.CreateEvents(20)];
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -42,7 +42,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task ShouldReadTail(CancellationToken cancellationToken) {
-        object[] events     = _fixture.CreateEvents(20).ToArray();
+        object[] events     = [.. _fixture.CreateEvents(20)];
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -55,7 +55,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task ShouldReadHead(CancellationToken cancellationToken) {
-        object[] events     = _fixture.CreateEvents(20).ToArray();
+        object[] events     = [.. _fixture.CreateEvents(20)];
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -87,7 +87,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task ShouldThrowWhenReadingForwardsFromNegativePosition(CancellationToken cancellationToken) {
-        object[] events     = _fixture.CreateEvents(10).ToArray();
+        object[] events     = [.. _fixture.CreateEvents(10)];
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -102,7 +102,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task ShouldReadBackwardsFromEnd(CancellationToken cancellationToken) {
-        object[] events     = _fixture.CreateEvents(10).ToArray();
+        object[] events     = [.. _fixture.CreateEvents(10)];
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -118,7 +118,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task ShouldReadBackwardsFromMiddle(CancellationToken cancellationToken) {
-        object[] events     = _fixture.CreateEvents(20).ToArray();
+        object[] events     = [.. _fixture.CreateEvents(20)];
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -136,7 +136,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task ShouldReturnWhenReadingBackwards(CancellationToken cancellationToken) {
-        object[] events     = _fixture.CreateEvents(10).ToArray();
+        object[] events     = [.. _fixture.CreateEvents(10)];
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
@@ -149,7 +149,7 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
     [Test]
     [Category("Store")]
     public async Task ShouldThrowWhenReadingBackwardsFromNegativePosition(CancellationToken cancellationToken) {
-        object[] events     = _fixture.CreateEvents(10).ToArray();
+        object[] events     = [.. _fixture.CreateEvents(10)];
         var      streamName = Helpers.GetStreamName();
         await _fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream);
 
