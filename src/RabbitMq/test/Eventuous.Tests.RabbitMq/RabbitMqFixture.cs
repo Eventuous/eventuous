@@ -11,7 +11,7 @@ public class RabbitMqFixture : IAsyncInitializer, IAsyncDisposable {
     public async Task InitializeAsync() {
         _rabbitMq = new RabbitMqBuilder().Build();
         await _rabbitMq.StartAsync();
-        ConnectionFactory = new() { Uri = new(_rabbitMq.GetConnectionString()), DispatchConsumersAsync = true };
+        ConnectionFactory = new() { Uri = new(_rabbitMq.GetConnectionString()) };
     }
 
     public async ValueTask DisposeAsync() => await _rabbitMq.DisposeAsync();

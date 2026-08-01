@@ -8,5 +8,5 @@ public class RabbitMqExchangeOptions {
     public bool   Durable    { get; init; } = true;
     public bool   AutoDelete { get; init; }
 
-    public IDictionary<string, object>? Arguments { get; init; }
+    public IDictionary<string, object?> Arguments { get; init; } = new Dictionary<string, object?>();
 }

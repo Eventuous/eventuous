@@ -75,7 +75,7 @@
     <ItemGroup Condition="'$(IncludeTestHelpers)' == 'true'">
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers\Eventuous.TestHelpers.csproj"/>
     </ItemGroup>
-    <Target Name="CustomVersion" AfterTargets="MinVer">
+    <Target Name="CustomVersion" AfterTargets="MinVer" Condition="'$(MinVerMajor)' != ''">
         <PropertyGroup>
             <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</FileVersion>
             <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</AssemblyVersion>

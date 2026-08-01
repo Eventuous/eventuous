@@ -33,7 +33,7 @@ public class SignalRProducerTests {
         await clientProxy.Received(1)
             .SendCoreAsync(
                 SignalRSubscriptionMethods.StreamEvent,
-                Arg.Is<object?[]>(args => args.Length == 1 && args[0] is StreamEventEnvelope),
+                Arg.Is<object?[]>(args => args != null && args.Length == 1 && args[0] is StreamEventEnvelope),
                 Arg.Any<CancellationToken>()
             )
             .ConfigureAwait(false);

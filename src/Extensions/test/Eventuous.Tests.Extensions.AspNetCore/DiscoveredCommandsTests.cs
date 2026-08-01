@@ -29,7 +29,7 @@ public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : T
 
         await using var app = builder.Build();
 
-        var b = app.MapDiscoveredCommands(typeof(TestCommands.DuplicateCommand));
+        var b = app.MapDiscoveredCommands([typeof(TestCommands.DuplicateCommand)]);
 
         IEnumerable<string> actual = [.. b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order()!];
 
@@ -43,7 +43,7 @@ public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : T
         var fixture = new ServerFixture(
             factory,
             _ => { },
-            app => app.MapDiscoveredCommands(typeof(TestCommands.ImportBookingHttp3))
+            app => app.MapDiscoveredCommands([typeof(TestCommands.ImportBookingHttp3)])
         );
 
         var cmd          = ServerFixture.GetNestedBookRoom(new DateTime(2023, 10, 1));

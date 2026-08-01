@@ -6,12 +6,12 @@ using Microsoft.Extensions.Logging;
 namespace Eventuous.RabbitMq.Producers;
 
 class ExchangeCache(ILogger? log) {
-    public void EnsureExchange(string name, Action createExchange) {
+    public async Task EnsureExchange(string name, Func<Task> createExchange) {
         if (_exchanges.Contains(name)) return;
 
         try {
             log?.LogInformation("Ensuring exchange {ExchangeName}", name);
-            createExchange();
+            await createExchange().NoContext();
         }
         catch (Exception e) {
             log?.LogError(e, "Failed to ensure exchange {ExchangeName}: {ErrorMessage}", name, e.Message);

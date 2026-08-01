@@ -55,13 +55,13 @@ public record RabbitMqSubscriptionOptions : SubscriptionOptions {
         public bool    Exclusive  { get; set; }
         public bool    AutoDelete { get; set; }
 
-        public IDictionary<string, object>? Arguments { get; set; }
+        public IDictionary<string, object?> Arguments { get; set; } =  new Dictionary<string, object?>();
     }
 
     [PublicAPI]
     public record RabbitMqBindingOptions {
         public string RoutingKey { get; set; } = "";
 
-        public IDictionary<string, object>? Arguments { get; set; }
+        public IDictionary<string, object?> Arguments { get; set; } = new Dictionary<string, object?>();
     }
 }

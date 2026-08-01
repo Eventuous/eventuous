@@ -12,10 +12,7 @@ namespace Bookings.Payments;
 
 public static class Registrations {
     public static void AddEventuous(this IServiceCollection services, IConfiguration configuration) {
-        var connectionFactory = new ConnectionFactory {
-            Uri                    = new(configuration["RabbitMq:ConnectionString"]!),
-            DispatchConsumersAsync = true
-        };
+        var connectionFactory = new ConnectionFactory { Uri = new(configuration["RabbitMq:ConnectionString"]!) };
         services.AddSingleton(connectionFactory);
         services.AddEventuousPostgres(configuration.GetSection("Postgres"));
         services.AddEventStore<PostgresStore>();
