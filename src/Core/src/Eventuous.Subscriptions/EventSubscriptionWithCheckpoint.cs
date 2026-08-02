@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
 
-using System.Diagnostics.CodeAnalysis;
 using Checkpoints;
 using Context;
 using Filters;
@@ -53,8 +52,6 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
             SubscriptionKind.Stream => EventPosition.FromContext(context)
         };
 
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected async ValueTask HandleInternal(IMessageConsumeContext context) {
         try {
             Logger.Current = Log;
@@ -76,8 +73,6 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     /// that throw would silently kill the channel worker without triggering Dropped/Resubscribe.
     /// This wrapper catches the throw and calls Dropped instead.
     /// </summary>
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     ValueTask NackOnAsyncWorker(IMessageConsumeContext context, Exception exception) {
         try {
             return Nack(context, exception);
@@ -133,8 +128,6 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         return checkpoint;
     }
 
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
     protected override async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
         // Reset checkpoint state so the new run reads from the committed checkpoint,
         // not from LastProcessed (which may be ahead of the failed event).

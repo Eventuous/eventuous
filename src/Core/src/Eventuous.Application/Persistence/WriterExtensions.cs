@@ -5,8 +5,6 @@ namespace Eventuous.Persistence;
 
 static class WriterExtensions {
     extension(IEventWriter writer) {
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<AppendEventsResult> Store(ProposedAppend append, AmendEvent? amendEvent, CancellationToken cancellationToken) {
             Ensure.NotNull(append.Events);
 
@@ -33,8 +31,6 @@ static class WriterExtensions {
             }
         }
 
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<AppendEventsResult[]> Store(
                 IReadOnlyCollection<ProposedAppend> appends,
                 AmendEvent?                         amendEvent,

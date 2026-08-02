@@ -419,7 +419,9 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
     }
 
     [Test]
-    public async Task Idempotency_ByGlobalPosition_ShouldIgnoreDuplicatePosition() {
+    [Arguments(100u)]
+    [Arguments(99u)]
+    public async Task Idempotency_ByGlobalPosition_ShouldIgnoreDuplicatePosition(ulong duplicatePosition) {
         // Arrange
         var containerName = await SetupContainer("idempotency-globalposition");
         var blobName = $"{DefaultStream}/SyncState.json";
@@ -437,7 +439,7 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         await Assert.That(state1.Value).IsEqualTo(10);
         
         // Second context with SAME global position (duplicate)
-        var context2 = CreateContext(new TestEvent { Value = 20 }, globalPosition: 100u);
+        var context2 = CreateContext(new TestEvent { Value = 20 }, globalPosition: duplicatePosition);
         
         // Act - second processing should be ignored
         var result2 = await projector.HandleEvent(context2);

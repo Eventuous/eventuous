@@ -42,7 +42,7 @@ public class GooglePubSubProducer : BaseProducer<PubSubProduceOptions>, IHostedP
     public GooglePubSubProducer(PubSubProducerOptions options, IEventSerializer? serializer = null, ILogger<GooglePubSubProducer>? log = null) : base(TracingOptions) {
         Ensure.NotNull(options);
 
-        _serializer  = serializer ?? DefaultEventSerializer.Instance;
+        _serializer  = serializer ?? EventSerializer.Default;
         _clientCache = new(options, log);
         _attributes  = options.Attributes;
         _log         = log;

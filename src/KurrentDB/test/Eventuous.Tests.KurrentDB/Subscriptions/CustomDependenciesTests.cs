@@ -106,7 +106,7 @@ public class CustomDependenciesTests {
 
     class TestSerializer : IEventSerializer {
         public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType) {
-            var result = DefaultEventSerializer.Instance.DeserializeEvent(data, eventType, contentType);
+            var result = EventSerializer.Default.DeserializeEvent(data, eventType, contentType);
 
             if (result is not DeserializationResult.SuccessfullyDeserialized { Payload: var evt }) {
                 return result;

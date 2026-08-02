@@ -15,22 +15,16 @@ public class AggregateStore<TReader>(
     readonly TieredEventStore         _tieredEventStore = new(eventStore, archiveReader);
 
     /// <inheritdoc/>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<AppendEventsResult> Store<TAggregate, TState>(StreamName streamName, TAggregate aggregate, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new()
         => eventStore.StoreAggregate<TAggregate, TState>(streamName, aggregate, amendEvent, cancellationToken);
 
     /// <inheritdoc/>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<TAggregate> Load<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new()
         => _tieredEventStore.LoadAggregate<TAggregate, TState>(streamName, true, _factoryRegistry, cancellationToken);
 
     /// <inheritdoc/>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task<TAggregate> LoadOrNew<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState>(StreamName streamName, CancellationToken cancellationToken)
         where TAggregate : Aggregate<TState> where TState : State<TState>, new()
         => _tieredEventStore.LoadAggregate<TAggregate, TState>(streamName, false, _factoryRegistry, cancellationToken);

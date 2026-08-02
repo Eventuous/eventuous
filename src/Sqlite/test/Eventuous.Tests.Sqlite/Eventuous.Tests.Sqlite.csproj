@@ -20,5 +20,6 @@
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Diagnostics\test\Eventuous.Tests.OpenTelemetry\Eventuous.Tests.OpenTelemetry.csproj"/>
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Subscriptions.Base\Eventuous.Tests.Subscriptions.Base.csproj"/>
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json.Dynamic\Eventuous.Serialization.Json.Dynamic.csproj"/>
     </ItemGroup>
 </Project>

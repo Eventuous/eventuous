@@ -8,6 +8,7 @@
         <ProjectReference Include="$(LocalRoot)\Eventuous.SignalR.Client\Eventuous.SignalR.Client.csproj" Aliases="SignalRClient" />
         <ProjectReference Include="$(KurrentDBRoot)\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+        <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json.Dynamic\Eventuous.Serialization.Json.Dynamic.csproj" />
     </ItemGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />

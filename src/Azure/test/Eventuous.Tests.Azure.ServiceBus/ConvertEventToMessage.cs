@@ -9,7 +9,7 @@ public class ConvertEventToMessage {
 
     public ConvertEventToMessage() {
         var builder = new ServiceBusMessageBuilder(
-            DefaultEventSerializer.Instance,
+            EventSerializer.Default,
             "test-stream",
             new(),
             new() {
@@ -97,7 +97,7 @@ public class ConvertEventToMessage {
 
         public WithMessagePropertiesInMetaData() {
             var attributeNames = new ServiceBusMessageAttributeNames();
-            var builder        = new ServiceBusMessageBuilder(DefaultEventSerializer.Instance, "test-stream", attributeNames, new());
+            var builder        = new ServiceBusMessageBuilder(EventSerializer.Default, "test-stream", attributeNames, new());
 
             _message = builder.CreateServiceBusMessage(
                 new(

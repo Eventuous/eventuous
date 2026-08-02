@@ -17,8 +17,6 @@ public static class AggregateStoreExtensions {
         /// <typeparam name="TId">Aggregate id type</typeparam>
         /// <returns></returns>
         [Obsolete("Use IEventReader.LoadAggregates instead.")]
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<T> Load
             <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TState, TId>(StreamNameMap streamNameMap, TId id, CancellationToken cancellationToken)
             where T : Aggregate<TState> where TId : Id where TState : State<TState>, new() {
@@ -39,8 +37,6 @@ public static class AggregateStoreExtensions {
         /// <typeparam name="TId">Aggregate id type</typeparam>
         /// <returns></returns>
         [Obsolete("Use IEventReader.LoadAggregates instead.")]
-        [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-        [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
         public async Task<TAggregate> LoadOrNew<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TAggregate, TState, TId>(
                 StreamNameMap     streamNameMap,
                 TId               id,

@@ -43,19 +43,13 @@ public abstract class BaseProducer<TProduceOptions> : IProducer<TProduceOptions>
     /// <param name="options">Produce options</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     protected abstract Task ProduceMessages(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default);
 
     /// <inheritdoc />
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, CancellationToken cancellationToken = default)
         => Produce(stream, messages, null, cancellationToken);
 
     /// <inheritdoc />
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public async Task Produce(StreamName stream, IEnumerable<ProducedMessage> messages, TProduceOptions? options, CancellationToken cancellationToken = default) {
         var messagesArray = messages.ToArray();
         if (messagesArray.Length == 0) return;
@@ -85,15 +79,11 @@ public abstract class BaseProducer<TProduceOptions> : IProducer<TProduceOptions>
     /// <param name="requests">Collection of produce requests</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task Produce(IReadOnlyCollection<ProduceRequest<TProduceOptions>> requests, CancellationToken cancellationToken = default) {
         return requests.Count == 0 ? Task.CompletedTask : Task.WhenAll(requests.Select(r => Produce(r.Stream, r.Messages, r.Options, cancellationToken)));
     }
 
     /// <inheritdoc />
-    [RequiresDynamicCode(AttrConstants.DynamicSerializationMessage)]
-    [RequiresUnreferencedCode(AttrConstants.DynamicSerializationMessage)]
     public Task Produce(IReadOnlyCollection<ProduceRequest> requests, CancellationToken cancellationToken = default) {
         return requests.Count == 0 ? Task.CompletedTask : Task.WhenAll(requests.Select(r => Produce(r.Stream, r.Messages, cancellationToken)));
     }
