@@ -6,8 +6,11 @@ using System.Threading.Channels;
 namespace Eventuous.Subscriptions.Channels;
 
 abstract class ChannelWorkerBase<T> : IAsyncDisposable {
-    readonly CancellationTokenSource _cts = new();
+    readonly CancellationTokenSource _cts      = new();
+    readonly TaskCompletionSource    _disposed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     readonly Task[]                  _readerTasks;
+
+    int _disposing;
 
     public Func<CancellationToken, ValueTask>? OnDispose { get; set; }
 
@@ -24,16 +27,33 @@ abstract class ChannelWorkerBase<T> : IAsyncDisposable {
         _readerTasks = Enumerable.Range(0, concurrencyLevel).Select(_ => Task.Run(() => processor(_cts.Token))).ToArray();
     }
 
-    public async ValueTask DisposeAsync() {
-        _stopping = true;
-        await _channel.Stop(_cts, _readerTasks, OnDispose).NoContext();
+    /// <summary>
+    /// Idempotent. The commit handler worker is disposed by both the resubscribe and the shutdown
+    /// paths, which can run concurrently, so a second call is expected rather than a programming
+    /// error. It must not re-enter the shutdown: by then the CTS is disposed, and cancelling it
+    /// again throws <see cref="ObjectDisposedException"/> out of host shutdown. The second caller
+    /// awaits the first call's shutdown, so it can't return before the final checkpoint flush.
+    /// </summary>
+    public ValueTask DisposeAsync() => Interlocked.Exchange(ref _disposing, 1) == 0 ? new(StopWorker()) : new(_disposed.Task);
+
+    async Task StopWorker() {
+        try {
+            _stopping = true;
+            await _channel.Stop(_cts, _readerTasks, OnDispose).NoContext();
 #if NET8_0_OR_GREATER
-        await _cts.CancelAsync().NoContext();
+            await _cts.CancelAsync().NoContext();
 #else
-        _cts.Cancel();
+            _cts.Cancel();
 #endif
-        await Task.WhenAll(_readerTasks).NoThrow();
-        _cts.Dispose();
-        GC.SuppressFinalize(this);
+            await Task.WhenAll(_readerTasks).NoThrow();
+            _cts.Dispose();
+            GC.SuppressFinalize(this);
+            _disposed.TrySetResult();
+        } catch (Exception e) {
+            // Don't let a waiter see a clean shutdown that didn't happen.
+            _disposed.TrySetException(e);
+
+            throw;
+        }
     }
 }
