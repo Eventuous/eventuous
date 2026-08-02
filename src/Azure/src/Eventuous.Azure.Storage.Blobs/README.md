@@ -55,10 +55,13 @@ The `BlobStorageProjectorOptions` class provides several configuration options f
 
 The `IdempotencyMode` enum controls how the projector handles duplicate messages:
 
-- **`None`** - No idempotency checks. Always processes messages and updates blobs.
+- **`None`** - No idempotency checks. Will process messages and updates blob, without
+checking for duplicates.
 - **`ByGlobalPosition`** - Skips processing if the existing blob has a global position set in
-its metadata that indicates it has already been processed, ie the event global position must be greater than that stored in the blob.
-- **`ByMessageId`** - Skips processing if existing blob has matching message ID metadata.
+its metadata that indicates it has already been processed. The event global position must be greater than that stored in the blob.
+- **`ByMessageId`** - Use this when building projections directly from integration events. Skips
+processing if the message ID in the blob metadata matches that in the event.
+Note, this means the idempotency is weaker as only the last message ID is checked. Older messages that are replayed will be processed as normal.
 
 ### Custom blob naming
 
