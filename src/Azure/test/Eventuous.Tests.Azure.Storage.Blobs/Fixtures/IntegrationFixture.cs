@@ -27,7 +27,7 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
     }
 
     static IntegrationFixture() {
-        DefaultEventSerializer.SetDefaultSerializer(Serializer);
+        EventSerializer.SetDefault(Serializer);
     }
 
     public async Task InitializeAsync() {

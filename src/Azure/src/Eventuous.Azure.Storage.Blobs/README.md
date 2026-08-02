@@ -43,7 +43,7 @@ public class BookingProjection : BlobStorageProjector<BookingState> {
 
 ## Projector options
 
-The `BlobStorageProjectorOptions<T>` class provides several configuration options for fine-tuning the projector behavior.
+The `BlobStorageProjectorOptions` class provides several configuration options for fine-tuning the projector behavior.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
