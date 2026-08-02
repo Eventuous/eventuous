@@ -197,7 +197,8 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
             bool IsDuplicate(IDictionary<string, string> metadata) => projector._idempotencyMode switch {
                 IdempotencyMode.ByGlobalPosition =>
                     metadata.TryGetValue("GlobalPosition", out var storedPosition) &&
-                    storedPosition == typedContext.GlobalPosition.ToString(),
+                    ulong.TryParse(storedPosition, out var currentGlobalPosition) &&
+                    typedContext.GlobalPosition <= currentGlobalPosition,
                 IdempotencyMode.ByMessageId =>
                     metadata.TryGetValue("MessageId", out var storedId) &&
                     storedId == typedContext.MessageId,
