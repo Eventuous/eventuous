@@ -33,10 +33,10 @@ public static class SpyglassRegistry {
     // are loaded by parallel test fixtures (or any parallel host startup), so the backing store has to
     // be thread-safe. Reads also enumerate the snapshot, so we publish a fresh array on every write.
     static          SpyglassAggregateInfo[] aggregates = [];
-    static readonly Lock                    Lock       = new();
+    static readonly Lock                    SyncRoot   = new();
 
     public static void Register(SpyglassAggregateInfo info) {
-        lock (Lock) {
+        lock (SyncRoot) {
             var entry = info with { Id = Guid.NewGuid() };
             var next  = new SpyglassAggregateInfo[aggregates.Length + 1];
             Array.Copy(aggregates, next, aggregates.Length);

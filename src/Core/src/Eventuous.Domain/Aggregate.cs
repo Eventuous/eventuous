@@ -79,7 +79,7 @@ public abstract class Aggregate<T> where T : State<T>, new() {
     }
 
     public void Load(long version, IEnumerable<object?> events) {
-        Original        = [.. events.Where(x => x != null)!];
+        Original        = [.. events.OfType<object>()];
         OriginalVersion = version;
         State           = Original.Aggregate(State, Fold);
 
