@@ -35,7 +35,9 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
         return;
 
         IDatabase GetDb() {
-            var muxer = ConnectionMultiplexer.Connect(connString);
+            // FLUSHDB in test teardown is an admin command; StackExchange.Redis 3.x enforces the
+            // admin gate for raw commands issued through Execute as well.
+            var muxer = ConnectionMultiplexer.Connect($"{connString},allowAdmin=true");
 
             return muxer.GetDatabase();
         }

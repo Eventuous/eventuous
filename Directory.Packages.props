@@ -94,7 +94,7 @@
     <PackageVersion Include="TUnit.Core" Version="$(TUnitVersion)" />
     <PackageVersion Include="TUnit.Assertions" Version="$(TUnitVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.3.3" />
-    <PackageVersion Include="Verify.TUnit" Version="31.0.5" />
+    <PackageVersion Include="Verify.TUnit" Version="31.28.0" />
     <PackageVersion Include="NodaTime.Bogus" Version="3.0.2" />
     <PackageVersion Include="System.Text.Json" Version="10.0.10" />
     <PackageVersion Include="NSubstitute" Version="6.0.0" />
