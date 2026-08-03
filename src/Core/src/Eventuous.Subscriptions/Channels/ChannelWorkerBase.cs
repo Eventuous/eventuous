@@ -58,6 +58,10 @@ abstract class ChannelWorkerBase<T> : IAsyncDisposable {
             }
 
             _disposed.TrySetResult();
-        } catch (Exception e) { _disposed.TrySetException(e); }
+        } catch (Exception e) {
+            // Broad on purpose. DisposeAsync hands _disposed.Task to every caller, so completing it is the
+            // only thing that ever releases them; an exception escaping here would strand all of them.
+            _disposed.TrySetException(e);
+        }
     }
 }
