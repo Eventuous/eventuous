@@ -229,6 +229,11 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 
         Task.Run(
             async () => {
+                // Check again: Unsubscribe may have cancelled between the check above and this task
+                // getting scheduled. It doesn't close the race — Resubscribe still disposes the commit
+                // handler before it looks at the token — but it keeps the common case out of it.
+                if (stopping.IsCancellationRequested) return;
+
                 var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2);
                 Log.SubscriptionWillResubscribe(delay);
 
