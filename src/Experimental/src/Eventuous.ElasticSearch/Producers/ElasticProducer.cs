@@ -42,7 +42,7 @@ public class ElasticProducer(IElasticClient elasticClient, ILogger<ElasticProduc
                     await error.Nack<ElasticProducer>(result.DebugInformation, result.OriginalException).NoContext();
                 }
 
-                messagesList = messagesList.Except(errors).ToList();
+                messagesList = [.. messagesList.Except(errors)];
             }
         }
 

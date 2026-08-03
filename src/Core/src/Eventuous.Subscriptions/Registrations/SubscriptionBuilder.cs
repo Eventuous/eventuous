@@ -24,7 +24,7 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     protected ConsumePipe     Pipe            { get; }      = new();
     protected ResolveConsumer ResolveConsumer { get; set; } = null!;
 
-    protected IEventHandler[] ResolveHandlers(IServiceProvider sp) => _handlers.Select(x => x(sp)).ToArray();
+    protected IEventHandler[] ResolveHandlers(IServiceProvider sp) => [.. _handlers.Select(x => x(sp))];
 
     /// <summary>
     /// Adds an event handler to the subscription

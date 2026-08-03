@@ -91,7 +91,7 @@ public abstract class SubscribeToStreamBase<TContainer, TSub, TSubOptions, TChec
 
         var events       = commands.Select(ToEvent).ToList();
         var streamEvents = events.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
-        await fixture.EventStore.AppendEvents(streamName, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
+        await fixture.EventStore.AppendEvents(streamName, ExpectedStreamVersion.Any, [.. streamEvents], default);
 
         return events;
     }

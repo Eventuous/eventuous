@@ -20,7 +20,7 @@ public abstract class BaseProducer<TProduceOptions> : IProducer<TProduceOptions>
     /// <param name="tracingOptions">Tracing options for the producer</param>
     protected BaseProducer(ProducerTracingOptions? tracingOptions = null) {
         var options = tracingOptions ?? new ProducerTracingOptions();
-        DefaultTags = options.AllTags.Concat(EventuousDiagnostics.Tags).ToArray();
+        DefaultTags = [.. options.AllTags, .. EventuousDiagnostics.Tags];
     }
 
     /// <summary>

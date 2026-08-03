@@ -51,7 +51,7 @@ public class PersistentSubscriptionFailureTests {
                 StreamName     = stream,
                 SubscriptionId = id,
                 ThrowOnError   = true,
-                SubscriptionSettings = new PersistentSubscriptionSettings(
+                SubscriptionSettings = new(
                     resolveLinkTos: false,
                     messageTimeout: TimeSpan.FromSeconds(2),
                     maxRetryCount: 0

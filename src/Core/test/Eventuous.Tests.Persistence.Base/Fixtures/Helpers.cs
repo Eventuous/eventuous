@@ -14,7 +14,7 @@ public static class Helpers {
         public Task<AppendEventsResult> AppendEvents(StreamName stream, object[] evt, ExpectedStreamVersion version) {
             var streamEvents = evt.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
-            return fixture.EventStore.AppendEvents(stream, version, streamEvents.ToArray(), default);
+            return fixture.EventStore.AppendEvents(stream, version, [.. streamEvents], default);
         }
 
         public Task<AppendEventsResult> AppendEvent(StreamName stream, object evt, ExpectedStreamVersion version, Metadata? metadata = null) {

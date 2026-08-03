@@ -23,10 +23,7 @@ public static class Registrations {
             new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
         );
 
-        var connectionFactory = new ConnectionFactory {
-            Uri                    = new(configuration["RabbitMq:ConnectionString"]!),
-            DispatchConsumersAsync = true
-        };
+        var connectionFactory = new ConnectionFactory { Uri = new(configuration["RabbitMq:ConnectionString"]!) };
 
         services.AddSingleton(connectionFactory);
 

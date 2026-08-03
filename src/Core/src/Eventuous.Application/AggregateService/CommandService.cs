@@ -89,7 +89,7 @@ public abstract partial class CommandService<[DynamicallyAccessedMembers(Dynamic
             // Zero in the global position would mean nothing, so the receiver needs to check the Changes.Length
             if (result.Changes.Count == 0) return Result<TState>.FromSuccess(result.State, [], 0);
 
-            var proposed    = new ProposedAppend(stream, new(result.OriginalVersion), result.Changes.Select(x => new ProposedEvent(x, new())).ToArray());
+            var proposed    = new ProposedAppend(stream, new(result.OriginalVersion), [.. result.Changes.Select(x => new ProposedEvent(x, new()))]);
             var final       = registeredHandler.AmendAppend?.Invoke(proposed, command) ?? proposed;
             var writer      = registeredHandler.ResolveWriter(command);
             var storeResult = await writer.Store(final, Amend, cancellationToken).NoContext();

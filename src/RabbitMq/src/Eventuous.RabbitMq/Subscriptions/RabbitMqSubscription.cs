@@ -15,11 +15,13 @@ namespace Eventuous.RabbitMq.Subscriptions;
 /// </summary>
 [PublicAPI]
 public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOptions> {
-    public delegate void HandleEventProcessingFailure(IModel channel, BasicDeliverEventArgs message, Exception? exception);
+    public delegate ValueTask HandleEventProcessingFailure(IChannel channel, BasicDeliverEventArgs message, Exception? exception);
 
     readonly HandleEventProcessingFailure _failureHandler;
-    readonly IConnection                  _connection;
-    readonly IModel                       _channel;
+    readonly ConnectionFactory            _connectionFactory;
+
+    IConnection? _connection;
+    IChannel?    _channel;
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
@@ -58,13 +60,8 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             loggerFactory,
             eventSerializer
         ) {
-        _failureHandler = options.FailureHandler ?? DefaultEventFailureHandler;
-        _connection     = Ensure.NotNull(connectionFactory).CreateConnection();
-        _channel        = _connection.CreateModel();
-
-        var prefetch = options.PrefetchCount > 0 ? options.PrefetchCount : options.ConcurrencyLimit * 2;
-
-        _channel.BasicQos(0, (ushort)prefetch, false);
+        _failureHandler    = options.FailureHandler ?? DefaultEventFailureHandler;
+        _connectionFactory = Ensure.NotNull(connectionFactory);
 
         if (options is { FailureHandler: not null, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
     }
@@ -93,7 +90,13 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         eventSerializer
     ) { }
 
-    protected override ValueTask Subscribe(CancellationToken cancellationToken) {
+    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
+        _connection = await _connectionFactory.CreateConnectionAsync(cancellationToken).NoContext();
+        _channel    = await _connection.CreateChannelAsync(cancellationToken: cancellationToken).NoContext();
+
+        var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount : Options.ConcurrencyLimit * 2;
+        await _channel.BasicQosAsync(0, (ushort)prefetch, false, cancellationToken).NoContext();
+
         var exchange = Ensure.NotEmptyString(Options.Exchange);
 
         Log.InfoLog?.Log("Ensuring exchange {Exchange}", exchange);
@@ -102,40 +105,44 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Log.WarnLog?.Log("Fan-out exchange doesn't support routing keys");
         }
 
-        _channel.ExchangeDeclare(
-            exchange,
-            Options.ExchangeOptions.Type,
-            Options.ExchangeOptions.Durable,
-            Options.ExchangeOptions.AutoDelete,
-            Options.ExchangeOptions.Arguments
-        );
+        await _channel.ExchangeDeclareAsync(
+                exchange,
+                Options.ExchangeOptions.Type,
+                Options.ExchangeOptions.Durable,
+                Options.ExchangeOptions.AutoDelete,
+                Options.ExchangeOptions.Arguments,
+                cancellationToken: cancellationToken
+            )
+            .NoContext();
 
         var queue = Options.QueueOptions.Queue ?? Options.SubscriptionId;
         Log.InfoLog?.Log("Ensuring queue {Queue}", queue);
 
-        _channel.QueueDeclare(
-            queue,
-            Options.QueueOptions.Durable,
-            Options.QueueOptions.Exclusive,
-            Options.QueueOptions.AutoDelete,
-            Options.QueueOptions.Arguments
-        );
+        await _channel.QueueDeclareAsync(
+                queue,
+                Options.QueueOptions.Durable,
+                Options.QueueOptions.Exclusive,
+                Options.QueueOptions.AutoDelete,
+                Options.QueueOptions.Arguments,
+                cancellationToken: cancellationToken
+            )
+            .NoContext();
 
         Log.InfoLog?.Log("Binding exchange {Exchange} to queue {Queue}", exchange, queue);
 
-        _channel.QueueBind(
-            queue,
-            exchange,
-            Options.BindingOptions.RoutingKey,
-            Options.BindingOptions.Arguments
-        );
+        await _channel.QueueBindAsync(
+                queue,
+                exchange,
+                Options.BindingOptions.RoutingKey,
+                Options.BindingOptions.Arguments,
+                cancellationToken: cancellationToken
+            )
+            .NoContext();
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.Received += HandleReceived;
+        consumer.ReceivedAsync += HandleReceived;
 
-        _channel.BasicConsume(consumer, queue);
-
-        return default;
+        await _channel.BasicConsumeAsync(queue, false, consumer, cancellationToken).NoContext();
     }
 
     const string ReceivedMessageKey = "receivedMessage";
@@ -152,33 +159,29 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         }
     }
 
-    ValueTask Ack(IMessageConsumeContext ctx) {
+    async ValueTask Ack(IMessageConsumeContext ctx) {
         var received = ctx.Items.GetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
-        _channel.BasicAck(received.DeliveryTag, false);
-
-        return default;
+        await _channel!.BasicAckAsync(received.DeliveryTag, false).NoContext();
     }
 
-    ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
+    async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
         if (Options.ThrowOnError) throw exception;
 
         var received = ctx.Items.GetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
-        _failureHandler(_channel, received, exception);
-
-        return default;
+        await _failureHandler(_channel!, received, exception).NoContext();
     }
 
     MessageConsumeContext CreateContext(object sender, BasicDeliverEventArgs received) {
-        var evt = DeserializeData(received.BasicProperties.ContentType, received.BasicProperties.Type, received.Body, received.Exchange);
+        var evt = DeserializeData(received.BasicProperties.ContentType!, received.BasicProperties.Type!, received.Body, received.Exchange);
 
         var meta = received.BasicProperties.Headers != null
             ? new Metadata(received.BasicProperties.Headers.ToDictionary(x => x.Key, x => x.Value)!)
             : null;
 
         return new(
-            received.BasicProperties.MessageId,
-            received.BasicProperties.Type,
-            received.BasicProperties.ContentType,
+            received.BasicProperties.MessageId!,
+            received.BasicProperties.Type!,
+            received.BasicProperties.ContentType!,
             received.Exchange,
             0,
             0,
@@ -192,18 +195,23 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         );
     }
 
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        _channel.Close();
-        _channel.Dispose();
-        _connection.Close();
-        _connection.Dispose();
+    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
+        if (_channel != null) {
+            await _channel.CloseAsync(cancellationToken).NoContext();
+            _channel.Dispose();
+            _channel = null;
+        }
 
-        return default;
+        if (_connection != null) {
+            await _connection.CloseAsync(cancellationToken: cancellationToken).NoContext();
+            _connection.Dispose();
+            _connection = null;
+        }
     }
 
-    void DefaultEventFailureHandler(IModel channel, BasicDeliverEventArgs message, Exception? exception) {
+    async ValueTask DefaultEventFailureHandler(IChannel channel, BasicDeliverEventArgs message, Exception? exception) {
         Log.WarnLog?.Log("Error in the consumer, will redeliver", exception?.ToString() ?? "Unknown error");
-        _channel.BasicReject(message.DeliveryTag, true);
+        await channel.BasicRejectAsync(message.DeliveryTag, true).NoContext();
     }
 
     record Event(BasicDeliverEventArgs Original, IMessageConsumeContext Context);

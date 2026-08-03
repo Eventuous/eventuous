@@ -122,7 +122,7 @@ public class SignalRSubscriptionClient : IAsyncDisposable {
 
     void OnStreamError(StreamSubscriptionError error) {
         if (_subscriptions.TryRemove(error.Stream, out var state)) {
-            state.Channel.Writer.TryComplete(new Exception(error.Message));
+            state.Channel.Writer.TryComplete(new(error.Message));
         }
     }
 

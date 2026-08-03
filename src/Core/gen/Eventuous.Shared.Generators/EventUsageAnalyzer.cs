@@ -141,15 +141,7 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
                 return;
             }
             // Case 1c: State<T>.On<TEvent>(...) handler registrations
-            case { Name: "On", TypeArguments.Length: 1 } when IsState(method.ContainingType, knownTypes): {
-                var eventType = method.TypeArguments[0];
-
-                if (IsConcreteEvent(eventType) && !HasEventTypeAttribute(eventType, knownTypes) && !IsExplicitlyRegistered(eventType, ctx, knownTypes)) {
-                    ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, inv.Syntax.GetLocation(), eventType.ToDisplayString()));
-                }
-
-                return;
-            }
+            case { Name: "On", TypeArguments.Length: 1 } when IsState(method.ContainingType, knownTypes):
             // Case 1d: EventHandler.On<T>(...) handler registrations
             case { Name: "On", TypeArguments.Length: 1 } when IsEventHandler(method.ContainingType, knownTypes): {
                 var eventType = method.TypeArguments[0];

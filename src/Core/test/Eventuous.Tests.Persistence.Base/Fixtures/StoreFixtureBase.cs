@@ -81,10 +81,6 @@ public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : 
 
     protected static string GetSchemaName() => NormaliseRegex().Replace(new Faker().Internet.UserName(), "").ToLower();
 
-#if NET8_0_OR_GREATER
     [GeneratedRegex(@"[\.\-\s]")]
     private static partial Regex NormaliseRegex();
-#else
-    static Regex NormaliseRegex() => new(@"[\.\-\s]");
-#endif
 }

@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace Benchmarks;
 
@@ -26,12 +27,12 @@ public class ChannelBatchingBenchmarks {
 
     [Benchmark(Baseline = true, Description = "Current: List.ToArray()")]
     public int[] CurrentApproach_ToArray() {
-        return _buffer.ToArray();
+        return [.. _buffer];
     }
 
     [Benchmark(Description = "Alternative 1: CollectionsMarshal.AsSpan()")]
     public ReadOnlySpan<int> Alternative1_CollectionsMarshalAsSpan() {
-        return System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_buffer);
+        return CollectionsMarshal.AsSpan(_buffer);
     }
 
     [Benchmark(Description = "Alternative 2: ArrayPool rent/copy")]

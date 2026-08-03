@@ -90,18 +90,18 @@ public class ElasticEventStore(IElasticClient client, ElasticEventStoreOptions? 
 
         if (!response.IsValid) throw new ApplicationException($"Unable to read events: {response.DebugInformation}");
 
-        return response.Documents
-            .Select(
-                x => new StreamEvent(
-                    Guid.Parse(x.MessageId),
-                    x.Message,
-                    Metadata.FromHeaders(x.Metadata),
-                    x.ContentType,
-                    x.StreamPosition,
-                    x.Created
+        return [
+            .. response.Documents
+                .Select(x => new StreamEvent(
+                        Guid.Parse(x.MessageId),
+                        x.Message,
+                        Metadata.FromHeaders(x.Metadata),
+                        x.ContentType,
+                        x.StreamPosition,
+                        x.Created
+                    )
                 )
-            )
-            .ToArray();
+        ];
     }
 
     public Task TruncateStream(

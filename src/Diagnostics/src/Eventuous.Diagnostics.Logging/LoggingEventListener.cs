@@ -48,7 +48,7 @@ public sealed class LoggingEventListener : EventListener {
 #pragma warning disable CA2254
         if (evt.Payload != null)
             // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
-            _log.Log(level, evt.Message, evt.Payload.ToArray());
+            _log.Log(level, evt.Message, [.. evt.Payload]);
         else
             // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             _log.Log(level, evt.Message);

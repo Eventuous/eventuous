@@ -30,7 +30,7 @@ static class TaskExtensions {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask WhenAll(this IEnumerable<ValueTask> tasks) {
-        return tasks is ValueTask[] array ? AwaitArray(array) : AwaitArray(tasks.ToArray());
+        return tasks is ValueTask[] array ? AwaitArray(array) : AwaitArray([.. tasks]);
 
         // ReSharper disable once SuggestBaseTypeForParameter
         async ValueTask AwaitArray(ValueTask[] t) {
@@ -54,14 +54,6 @@ static class TaskExtensions {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ConfiguredTaskAwaitable NoThrow(this Task task) {
-#if NET8_0_OR_GREATER
         return task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
-#else
-        return Try(task.ConfigureAwait(false)).ConfigureAwait(false);
-
-        async Task Try(ConfiguredTaskAwaitable awaitable) {
-            try { await awaitable; } catch (OperationCanceledException) { }
-        }
-#endif
     }
 }

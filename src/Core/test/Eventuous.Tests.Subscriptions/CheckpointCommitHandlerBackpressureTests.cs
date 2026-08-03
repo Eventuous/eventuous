@@ -20,14 +20,6 @@ public class CheckpointCommitHandlerBackpressureTests {
         TaskCompletionSource storeGate    = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource storeEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        async ValueTask<Checkpoint> CommitFn(Checkpoint checkpoint, bool force, CancellationToken ct) {
-            storeEntered.TrySetResult();
-            await storeGate.Task.WaitAsync(ct);
-            lock (committed) committed.Add(checkpoint.Position!.Value);
-
-            return checkpoint;
-        }
-
         await using var handler = new CheckpointCommitHandler("backpressure-sub", CommitFn, TimeSpan.FromMilliseconds(10), batchSize: 1);
 
         // The gate must open no matter how the test body ends: a failed assertion with the gate
@@ -72,9 +64,19 @@ public class CheckpointCommitHandlerBackpressureTests {
                 await Task.Delay(50, cancellationToken);
             }
 
-            snapshot.ShouldBe(Enumerable.Range(0, 1002).Select(i => (ulong)i).ToList());
+            snapshot.ShouldBe([.. Enumerable.Range(0, 1002).Select(i => (ulong)i)]);
         } finally {
             storeGate.TrySetResult();
+        }
+
+        return;
+
+        async ValueTask<Checkpoint> CommitFn(Checkpoint checkpoint, bool force, CancellationToken ct) {
+            storeEntered.TrySetResult();
+            await storeGate.Task.WaitAsync(ct);
+            lock (committed) committed.Add(checkpoint.Position!.Value);
+
+            return checkpoint;
         }
     }
 
@@ -84,14 +86,6 @@ public class CheckpointCommitHandlerBackpressureTests {
         List<(ulong Position, bool Force)> committed    = [];
         TaskCompletionSource               storeGate    = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource               storeEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        async ValueTask<Checkpoint> CommitFn(Checkpoint checkpoint, bool force, CancellationToken ct) {
-            storeEntered.TrySetResult();
-            await storeGate.Task.WaitAsync(ct);
-            lock (committed) committed.Add((checkpoint.Position!.Value, force));
-
-            return checkpoint;
-        }
 
         var handler = new CheckpointCommitHandler("backpressure-dispose-sub", CommitFn, TimeSpan.FromMilliseconds(10), batchSize: 1);
 
@@ -146,7 +140,7 @@ public class CheckpointCommitHandlerBackpressureTests {
             // The queued positions (0..1000) drained normally, in order, during dispose; the parked
             // overflow write (1001) never entered the channel, so it must not appear.
             var normal = snapshot.Where(x => !x.Force).Select(x => x.Position).ToList();
-            normal.ShouldBe(Enumerable.Range(0, 1001).Select(i => (ulong)i).ToList());
+            normal.ShouldBe([.. Enumerable.Range(0, 1001).Select(i => (ulong)i)]);
 
             // CheckpointCommitHandler's OnDispose force-recommits whatever it last successfully stored —
             // it should match the highest position that drained normally, not something stale or ahead
@@ -160,6 +154,16 @@ public class CheckpointCommitHandlerBackpressureTests {
             // Bounded so a genuinely hung disposal surfaces the original assertion failure instead
             // of stalling the finally block until the test timeout.
             await Task.WhenAny(disposeTask ?? handler.DisposeAsync().AsTask(), Task.Delay(TimeSpan.FromSeconds(10)));
+        }
+
+        return;
+
+        async ValueTask<Checkpoint> CommitFn(Checkpoint checkpoint, bool force, CancellationToken ct) {
+            storeEntered.TrySetResult();
+            await storeGate.Task.WaitAsync(ct);
+            lock (committed) committed.Add((checkpoint.Position!.Value, force));
+
+            return checkpoint;
         }
     }
 }

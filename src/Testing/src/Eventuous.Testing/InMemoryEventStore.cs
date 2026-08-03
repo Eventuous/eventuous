@@ -55,6 +55,7 @@ public class InMemoryEventStore : IEventStore {
     }
 
     /// <inheritdoc />
+    // ReSharper disable once AsyncMethodWithoutAwait
     public async IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         foreach (var evt in FindStream(stream, true).GetEventsBackwards(start, count)) {
             yield return evt;

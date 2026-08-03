@@ -195,6 +195,7 @@ public partial class KurrentDBEventStore : IEventStore {
             }
         );
 
+        // ReSharper disable once AsyncMethodWithoutAwait
         static async IAsyncEnumerable<AppendStreamRequest> ToAsyncEnumerable(IEnumerable<AppendStreamRequest> source) {
             foreach (var item in source) {
                 yield return item;
@@ -362,11 +363,12 @@ public partial class KurrentDBEventStore : IEventStore {
     }
 
     StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
-        => resolvedEvents
-            .Select(ToStreamEvent)
-            .Where(x => x != null)
-            .Select(x => x!.Value)
-            .ToArray();
+        => [
+            .. resolvedEvents
+                .Select(ToStreamEvent)
+                .Where(x => x != null)
+                .Select(x => x!.Value)
+        ];
 
     record ErrorInfo(string Message, params object[] Args);
 

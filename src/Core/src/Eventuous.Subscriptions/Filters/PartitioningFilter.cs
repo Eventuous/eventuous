@@ -20,7 +20,7 @@ public sealed class PartitioningFilter : ConsumeFilter<AsyncConsumeContext>, IAs
         _partitionCount = partitionCount;
         _partitioner    = partitioner ?? (ctx => ctx.Stream);
 
-        _filters = Enumerable.Range(0, _partitionCount).Select(_ => new AsyncHandlingFilter(1)).ToArray();
+        _filters = [.. Enumerable.Range(0, _partitionCount).Select(_ => new AsyncHandlingFilter(1))];
     }
 
     protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next) {

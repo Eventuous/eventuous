@@ -3,6 +3,9 @@ using static Eventuous.Azure.ServiceBus.Shared.ServiceBusHelper;
 namespace Eventuous.Tests.Azure.ServiceBus;
 
 public class IsSerialisableByServiceBus {
+    // TUnit0046 is a false positive: the data sources already return Func<object?> for test isolation,
+    // and the runtime invokes the Func, but the analyzer can't detect the wrapper when the test parameter is object
+#pragma warning disable TUnit0046
     public static IEnumerable<Func<object?>> PassingTestData() {
         yield return () => "string";
         yield return () => 123;
@@ -34,12 +37,13 @@ public class IsSerialisableByServiceBus {
         yield return () => new Action(() => { });                              // delegate
         yield return () => new WeakReference(new());                           // complex type
     }
+#pragma warning restore TUnit0046
 
     [Test]
     [MethodDataSource(nameof(PassingTestData))]
-    public async Task Passes(object value) => await Assert.That(IsSerialisableByServiceBus(value)).IsTrue();
+    public async Task Passes(object? value) => await Assert.That(IsSerialisableByServiceBus(value)).IsTrue();
 
     [Test]
     [MethodDataSource(nameof(FailingTestData))]
-    public async Task Fails(object value) => await Assert.That(IsSerialisableByServiceBus(value)).IsFalse();
+    public async Task Fails(object? value) => await Assert.That(IsSerialisableByServiceBus(value)).IsFalse();
 }

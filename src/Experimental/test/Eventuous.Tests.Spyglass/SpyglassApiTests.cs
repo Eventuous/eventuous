@@ -143,7 +143,7 @@ public class SpyglassApiTests {
             // State should reflect the loaded events
             var state = root.GetProperty("state");
             await Assert.That(state.GetProperty("guestId").GetString()).IsEqualTo("guest-1");
-            await Assert.That(state.GetProperty("paid").GetBoolean()).IsEqualTo(false);
+            await Assert.That(state.GetProperty("paid").GetBoolean()).IsFalse();
 
             // Events should contain both events
             var events = root.GetProperty("events");

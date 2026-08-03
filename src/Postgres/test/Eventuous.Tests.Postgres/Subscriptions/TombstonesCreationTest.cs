@@ -16,20 +16,20 @@ public class TombstonesCreationTest() : SubscriptionTestBase(Fixture) {
         var streamName = new StreamName("test-stream");
 
         // create 2 events
-        await Fixture.AppendEvents(streamName, Fixture.CreateEvents(2).Cast<object>().ToArray(), ExpectedStreamVersion.NoStream);
+        await Fixture.AppendEvents(streamName, [.. Fixture.CreateEvents(2)], ExpectedStreamVersion.NoStream);
 
         // create gap
         await Fixture.InsertGap(streamName, 1);
 
         // create other 2 events
-        await Fixture.AppendEvents(streamName, Fixture.CreateEvents(2).Cast<object>().ToArray(), ExpectedStreamVersion.Any);
+        await Fixture.AppendEvents(streamName, [.. Fixture.CreateEvents(2)], ExpectedStreamVersion.Any);
 
         // create gaps
         await Fixture.InsertGap(streamName, 3);
         await Fixture.InsertGap(streamName, 3);
 
         // create other 2 events
-        await Fixture.AppendEvents(streamName, Fixture.CreateEvents(2).Cast<object>().ToArray(), ExpectedStreamVersion.Any);
+        await Fixture.AppendEvents(streamName, [.. Fixture.CreateEvents(2)], ExpectedStreamVersion.Any);
 
         await Fixture.StartSubscription();
 

@@ -50,7 +50,7 @@ public class CheckpointCommitHandlerConcurrencyTests {
         var callerThreadId = 0;
         var caller = new Thread(() => {
             callerThreadId = Environment.CurrentManagedThreadId;
-            handler.Commit(new CommitPosition(0, 0, DateTime.UtcNow), ct).AsTask().GetAwaiter().GetResult();
+            handler.Commit(new(0, 0, DateTime.UtcNow), ct).AsTask().GetAwaiter().GetResult();
         }) { IsBackground = true };
         caller.Start();
         caller.Join();

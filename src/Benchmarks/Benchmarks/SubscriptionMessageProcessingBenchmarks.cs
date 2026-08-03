@@ -1,4 +1,5 @@
 using BenchmarkDotNet.Attributes;
+using Eventuous;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 
@@ -93,7 +94,8 @@ public class SubscriptionMessageProcessingBenchmarks {
         await _handler.HandleEvent(ctx);
     }
 
-    class TestEvent {
+    [EventType("benchmark-test-event")]
+    internal class TestEvent {
         public string Value { get; set; } = string.Empty;
     }
 

@@ -90,7 +90,7 @@ public class SubscribeToStream {
         var events       = commands.Select(ToEvent).ToList();
         var streamEvents = events.Select(x => new NewStreamEvent(Guid.NewGuid(), x, new()));
 
-        await _fixture.IntegrationFixture.EventWriter.AppendEvents(_fixture.Stream, ExpectedStreamVersion.Any, streamEvents.ToArray(), default);
+        await _fixture.IntegrationFixture.EventWriter.AppendEvents(_fixture.Stream, ExpectedStreamVersion.Any, [.. streamEvents], default);
 
         return events;
     }

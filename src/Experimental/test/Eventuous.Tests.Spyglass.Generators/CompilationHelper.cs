@@ -42,7 +42,7 @@ static class CompilationHelper {
 
         var generatedTree = outputCompilation.SyntaxTrees.FirstOrDefault(t => t.FilePath.Contains("SpyglassModule_"));
 
-        return (generatedTree?.GetText().ToString(), diagnostics.ToArray());
+        return (generatedTree?.GetText().ToString(), [.. diagnostics]);
     }
 
     static void TryAddRef(List<MetadataReference> refs, string asmName) {

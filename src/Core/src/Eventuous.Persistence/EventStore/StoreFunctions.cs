@@ -32,7 +32,7 @@ public static class StoreFunctions {
                 var result = await eventWriter.AppendEvents(
                         streamName,
                         expectedStreamVersion,
-                        changes.Select(ToStreamEvent).ToArray(),
+                        [.. changes.Select(ToStreamEvent)],
                         cancellationToken
                     )
                     .NoContext();
@@ -64,7 +64,7 @@ public static class StoreFunctions {
                         return new NewStreamAppend(
                             s.StreamName,
                             s.ExpectedVersion,
-                            s.Changes.Select(evt => ToStreamEvent(evt, amendEvent)).ToArray()
+                            [.. s.Changes.Select(evt => ToStreamEvent(evt, amendEvent))]
                         );
                     }
                 )
@@ -86,106 +86,103 @@ public static class StoreFunctions {
         }
     }
 
-    /// <summary>
-    /// Read a fixed number of events from an existing stream to an array.
-    /// Returns an empty array when the stream is not found and <paramref name="failIfNotFound"/> is false.
-    /// </summary>
     /// <param name="eventReader">Event reader or event store</param>
-    /// <param name="stream">Stream name</param>
-    /// <param name="start">Where to start reading events</param>
-    /// <param name="count">How many events to read</param>
-    /// <param name="failIfNotFound">Throw an exception if the stream is not found</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>An array with events retrieved from the stream</returns>
-    public static async Task<StreamEvent[]> ReadEvents(
-            this IEventReader  eventReader,
-            StreamName         stream,
-            StreamReadPosition start,
-            int                count,
-            bool               failIfNotFound,
-            CancellationToken  cancellationToken
-        ) {
-        try {
-            var result = new List<StreamEvent>();
+    extension(IEventReader eventReader) {
+        /// <summary>
+        /// Read a fixed number of events from an existing stream to an array.
+        /// Returns an empty array when the stream is not found and <paramref name="failIfNotFound"/> is false.
+        /// </summary>
+        /// <param name="stream">Stream name</param>
+        /// <param name="start">Where to start reading events</param>
+        /// <param name="count">How many events to read</param>
+        /// <param name="failIfNotFound">Throw an exception if the stream is not found</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>An array with events retrieved from the stream</returns>
+        public async Task<StreamEvent[]> ReadEvents(
+                StreamName         stream,
+                StreamReadPosition start,
+                int                count,
+                bool               failIfNotFound,
+                CancellationToken  cancellationToken
+            ) {
+            try {
+                var result = new List<StreamEvent>();
 
-            await foreach (var evt in eventReader.ReadEvents(stream, start, count, cancellationToken).ConfigureAwait(false)) {
-                result.Add(evt);
+                await foreach (var evt in eventReader.ReadEvents(stream, start, count, cancellationToken).NoContext(cancellationToken)) {
+                    result.Add(evt);
+                }
+
+                return [.. result];
+            } catch (StreamNotFound) when (!failIfNotFound) {
+                return [];
             }
-
-            return result.ToArray();
-        } catch (StreamNotFound) when (!failIfNotFound) {
-            return [];
-        }
-    }
-
-    /// <summary>
-    /// Read a number of events from a given stream, backwards (from the stream end), to an array.
-    /// Returns an empty array when the stream is not found and <paramref name="failIfNotFound"/> is false.
-    /// </summary>
-    /// <param name="eventReader">Event reader or event store</param>
-    /// <param name="stream">Stream name</param>
-    /// <param name="start">Where to start reading events</param>
-    /// <param name="count">How many events to read</param>
-    /// <param name="failIfNotFound">Throw an exception if the stream is not found</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>An array with events retrieved from the stream</returns>
-    public static async Task<StreamEvent[]> ReadEventsBackwards(
-            this IEventReader  eventReader,
-            StreamName         stream,
-            StreamReadPosition start,
-            int                count,
-            bool               failIfNotFound,
-            CancellationToken  cancellationToken
-        ) {
-        try {
-            var result = new List<StreamEvent>();
-
-            await foreach (var evt in eventReader.ReadEventsBackwards(stream, start, count, cancellationToken).ConfigureAwait(false)) {
-                result.Add(evt);
-            }
-
-            return result.ToArray();
-        } catch (StreamNotFound) when (!failIfNotFound) {
-            return [];
-        }
-    }
-
-    /// <summary>
-    /// Reads a stream from the event store to a collection of <seealso cref="StreamEvent"/>
-    /// </summary>
-    /// <param name="eventReader">Event reader or event store</param>
-    /// <param name="streamName">Name of the stream to read from</param>
-    /// <param name="start">Stream version to start reading from</param>
-    /// <param name="failIfNotFound">Set to true if the function needs to throw when the stream isn't found. Default is false, and if there's no
-    /// stream with the given name found in the store, the function will return an empty collection.</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Collection of events wrapped in <seealso cref="StreamEvent"/></returns>
-    public static async Task<StreamEvent[]> ReadStream(
-            this IEventReader  eventReader,
-            StreamName         streamName,
-            StreamReadPosition start,
-            bool               failIfNotFound    = true,
-            CancellationToken  cancellationToken = default
-        ) {
-        const int pageSize = 500;
-
-        var streamEvents = new List<StreamEvent>();
-
-        var position = start;
-
-        try {
-            while (true) {
-                var events = await eventReader.ReadEvents(streamName, position, pageSize, failIfNotFound, cancellationToken).NoContext();
-                streamEvents.AddRange(events);
-
-                if (events.Length < pageSize) break;
-
-                position = new(position.Value + events.Length);
-            }
-        } catch (StreamNotFound) when (!failIfNotFound) {
-            return [];
         }
 
-        return streamEvents.ToArray();
+        /// <summary>
+        /// Read a number of events from a given stream, backwards (from the stream end), to an array.
+        /// Returns an empty array when the stream is not found and <paramref name="failIfNotFound"/> is false.
+        /// </summary>
+        /// <param name="stream">Stream name</param>
+        /// <param name="start">Where to start reading events</param>
+        /// <param name="count">How many events to read</param>
+        /// <param name="failIfNotFound">Throw an exception if the stream is not found</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>An array with events retrieved from the stream</returns>
+        public async Task<StreamEvent[]> ReadEventsBackwards(
+                StreamName         stream,
+                StreamReadPosition start,
+                int                count,
+                bool               failIfNotFound,
+                CancellationToken  cancellationToken
+            ) {
+            try {
+                var result = new List<StreamEvent>();
+
+                await foreach (var evt in eventReader.ReadEventsBackwards(stream, start, count, cancellationToken).ConfigureAwait(false)) {
+                    result.Add(evt);
+                }
+
+                return [.. result];
+            } catch (StreamNotFound) when (!failIfNotFound) {
+                return [];
+            }
+        }
+
+        /// <summary>
+        /// Reads a stream from the event store to a collection of <seealso cref="StreamEvent"/>
+        /// </summary>
+        /// <param name="streamName">Name of the stream to read from</param>
+        /// <param name="start">Stream version to start reading from</param>
+        /// <param name="failIfNotFound">Set to true if the function needs to throw when the stream isn't found. Default is false, and if there's no
+        /// stream with the given name found in the store, the function will return an empty collection.</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Collection of events wrapped in <seealso cref="StreamEvent"/></returns>
+        public async Task<StreamEvent[]> ReadStream(
+                StreamName         streamName,
+                StreamReadPosition start,
+                bool               failIfNotFound    = true,
+                CancellationToken  cancellationToken = default
+            ) {
+            const int pageSize = 500;
+
+            var streamEvents = new List<StreamEvent>();
+
+            var position = start;
+
+            try {
+                while (true) {
+                    var events = await eventReader.ReadEvents(streamName, position, pageSize, failIfNotFound, cancellationToken).NoContext();
+                    streamEvents.AddRange(events);
+
+                    if (events.Length < pageSize) break;
+
+                    position = new(position.Value + events.Length);
+                }
+            } catch (StreamNotFound) when (!failIfNotFound) {
+                return [];
+            }
+
+            return [.. streamEvents];
+        }
     }
 }
