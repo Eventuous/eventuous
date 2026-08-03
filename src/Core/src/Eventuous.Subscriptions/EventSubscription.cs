@@ -212,12 +212,32 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         IsDropped = true;
         _onDropped?.Invoke(Options.SubscriptionId, reason, exception);
 
+        // Read the token here rather than inside the background task below: Unsubscribe disposes
+        // Stopping, and reading .Token from a disposed source throws, which the task would surface as
+        // a spurious warning plus an unobserved exception. A token captured before the dispose stays
+        // usable afterwards, so hoisting the read is what makes the resubscribe safe. Losing the race
+        // outright means shutdown already got there, and there's nothing left to resubscribe to.
+        CancellationToken stopping;
+
+        try { stopping = Stopping.Token; } catch (ObjectDisposedException) { return; }
+
+        // Same reasoning for a token that's merely cancelled, which is the state Unsubscribe leaves it
+        // in for most of shutdown. Resubscribing from there can't succeed, and it isn't free: the
+        // checkpoint subscription's Resubscribe disposes the commit handler before it ever looks at the
+        // token, putting a second disposer in the race with Finalize.
+        if (stopping.IsCancellationRequested) return;
+
         Task.Run(
             async () => {
+                // Check again: Unsubscribe may have cancelled between the check above and this task
+                // getting scheduled. It doesn't close the race — Resubscribe still disposes the commit
+                // handler before it looks at the token — but it keeps the common case out of it.
+                if (stopping.IsCancellationRequested) return;
+
                 var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2);
                 Log.SubscriptionWillResubscribe(delay);
 
-                try { await Resubscribe(delay, Stopping.Token).NoContext(); } catch (Exception e) {
+                try { await Resubscribe(delay, stopping).NoContext(); } catch (Exception e) {
                     Log.WarnLog?.Log(e.Message);
 
                     throw;

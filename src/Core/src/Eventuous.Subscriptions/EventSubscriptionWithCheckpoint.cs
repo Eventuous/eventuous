@@ -142,7 +142,10 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     protected override async ValueTask Finalize(CancellationToken cancellationToken) => await DisposeCommitHandler();
 
     async ValueTask DisposeCommitHandler() {
-        // Swap to null first so the concurrent path (Resubscribe vs Finalize) sees null.
+        // Swap to null first so the concurrent path (Resubscribe vs Finalize) sees null. The read and
+        // the write aren't atomic, so both paths can still come away with the same handler — that stays
+        // safe because the commit worker's dispose is idempotent, and the second caller awaits the first
+        // one's shutdown rather than re-entering it and cancelling an already-disposed CTS (AI-1699).
         var handler = CheckpointCommitHandler;
         CheckpointCommitHandler = null;
 
