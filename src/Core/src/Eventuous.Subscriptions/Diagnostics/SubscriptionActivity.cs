@@ -43,7 +43,14 @@ static class SubscriptionActivity {
     }
 
     static ActivityContext? GetParentContext(IBaseConsumeContext context) {
-        if (Activity.Current != null) return Activity.Current.Context;
+        // The current activity is only trusted as a parent when Eventuous created it: that's the
+        // message's own pipeline activity (handler, then filters nested under it). A foreign ambient
+        // activity — a test framework's per-test span, a client library's delivery span — must not
+        // override the remote context propagated in the message metadata, or the consumer span gets
+        // detached from the producer trace.
+        if (Activity.Current?.Source.Name.StartsWith(EventuousDiagnostics.InstrumentationName, StringComparison.Ordinal) == true) {
+            return Activity.Current.Context;
+        }
 
         if (context.Items.TryGetItem<Activity>(ContextItemKeys.Activity, out var parentActivity)) {
             return parentActivity?.Context;
@@ -51,7 +58,9 @@ static class SubscriptionActivity {
 
         var tracingData = context.Metadata?.GetTracingMeta();
 
-        return tracingData?.ToActivityContext(true);
+        if (tracingData?.ToActivityContext(true) is { } remoteContext) return remoteContext;
+
+        return Activity.Current?.Context;
     }
 
     public static Activity? Create(

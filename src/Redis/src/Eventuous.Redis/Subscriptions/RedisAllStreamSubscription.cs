@@ -45,7 +45,7 @@ public class RedisAllStreamSubscription(
             );
         }
 
-        return persistentEvents.ToArray();
+        return [.. persistentEvents];
     }
 }
 

@@ -115,7 +115,7 @@ public class KafkaBasicProducer : BaseProducer<KafkaProduceOptions>, IHostedProd
 
         static async ValueTask CastAndDispose(IDisposable resource) {
             if (resource is IAsyncDisposable resourceAsyncDisposable)
-                await resourceAsyncDisposable.DisposeAsync();
+                await resourceAsyncDisposable.DisposeAsync().NoContext();
             else
                 resource.Dispose();
         }

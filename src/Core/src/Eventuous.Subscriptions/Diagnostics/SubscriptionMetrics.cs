@@ -147,7 +147,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
 
     KeyValuePair<string, object?>[] _customTags = EventuousDiagnostics.Tags;
 
-    public void SetCustomTags(TagList customTags) => _customTags = _customTags.Concat(customTags).ToArray();
+    public void SetCustomTags(TagList customTags) => _customTags = [.. _customTags, .. customTags];
 
     public void Dispose() {
         _listener.Dispose();

@@ -11,7 +11,7 @@ public partial class HttpCommandAnnotationTests {
         var withAnalyzers = compilation.WithAnalyzers([analyzer]);
         var diagnostics   = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
 
-        return diagnostics.Where(d => d.Id is Diags.DiagnosticId or Diags.RouteDiagnosticId).ToArray();
+        return [.. diagnostics.Where(d => d.Id is Diags.DiagnosticId or Diags.RouteDiagnosticId)];
     }
 
     static CSharpCompilation CreateCompilation(string source) {

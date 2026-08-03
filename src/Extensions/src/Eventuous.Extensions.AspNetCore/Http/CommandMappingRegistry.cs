@@ -47,7 +47,7 @@ public static class CommandMappingRegistry {
         if (!PerState.TryGetValue(stateType, out var list)) yield break;
 
         List<Bound> copy;
-        lock (list) copy = list.ToList();
+        lock (list) copy = [.. list];
 
         foreach (var a in copy) {
             yield return a;
@@ -56,7 +56,7 @@ public static class CommandMappingRegistry {
 
     public static IEnumerable<Bound> GetAll() {
         List<Bound> copy;
-        lock (All) copy = All.ToList();
+        lock (All) copy = [.. All];
 
         foreach (var a in copy) {
             yield return a;

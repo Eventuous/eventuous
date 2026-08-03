@@ -75,7 +75,7 @@ public class ConvertEventToMessage {
 
     [Test]
     public async Task ScheduledEnqueueTime() =>
-        await Assert.That(_message.ScheduledEnqueueTime).IsEqualTo(new DateTimeOffset(2026, 3, 23, 16, 31, 0, TimeSpan.Zero));
+        await Assert.That(_message.ScheduledEnqueueTime).IsEqualTo(new(2026, 3, 23, 16, 31, 0, TimeSpan.Zero));
 
     [Test]
     [Arguments("MessageId")]

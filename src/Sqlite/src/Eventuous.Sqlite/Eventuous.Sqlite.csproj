@@ -7,6 +7,8 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.Sqlite"/>
+        <!-- Direct reference overrides the transitive 2.1.11, which has a known vulnerability (GHSA-2m69-gcr7-jv3q) -->
+        <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3"/>
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions"/>
         <Using Include="Microsoft.Data.Sqlite"/>
         <Using Include="Eventuous.Tools"/>

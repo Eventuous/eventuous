@@ -41,7 +41,7 @@ public class TestEventHandler(TestEventHandlerOptions? options) : BaseEventHandl
     /// Messages handled so far. Backed by a concurrent queue so tests can poll it while the subscription
     /// keeps handling on background threads.
     /// </summary>
-    public IReadOnlyCollection<object> Handled => _handled.ToArray();
+    public IReadOnlyCollection<object> Handled => [.. _handled];
 
     public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         await Task.Delay(_delay);

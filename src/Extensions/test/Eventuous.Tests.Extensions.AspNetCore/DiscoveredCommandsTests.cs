@@ -16,7 +16,7 @@ public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : T
 
         var b = app.MapDiscoveredCommands<BookingState>();
 
-        IEnumerable<string> actual = b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order().ToList()!;
+        IEnumerable<string> actual = [.. b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order()!];
 
         var expected = new[] { "HTTP: POST nested-book", "HTTP: POST import2" };
 
@@ -29,9 +29,9 @@ public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : T
 
         await using var app = builder.Build();
 
-        var b = app.MapDiscoveredCommands(typeof(TestCommands.DuplicateCommand));
+        var b = app.MapDiscoveredCommands([typeof(TestCommands.DuplicateCommand)]);
 
-        IEnumerable<string> actual = b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order().ToList()!;
+        IEnumerable<string> actual = [.. b.DataSources.First().Endpoints.Select(x => x.DisplayName).Order()!];
 
         var expected = new[] { "HTTP: POST nested-book", "HTTP: POST import2", "HTTP: POST import-wrong" };
 
@@ -43,7 +43,7 @@ public class DiscoveredCommandsTests(WebApplicationFactory<Program> factory) : T
         var fixture = new ServerFixture(
             factory,
             _ => { },
-            app => app.MapDiscoveredCommands(typeof(TestCommands.ImportBookingHttp3))
+            app => app.MapDiscoveredCommands([typeof(TestCommands.ImportBookingHttp3)])
         );
 
         var cmd          = ServerFixture.GetNestedBookRoom(new DateTime(2023, 10, 1));

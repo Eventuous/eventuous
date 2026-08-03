@@ -287,7 +287,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         }
 
         static bool IsPublicType(INamedTypeSymbol type) {
-            for (var t = (ITypeSymbol)type; t != null; t = t.ContainingType) {
+            for (ITypeSymbol? t = type; t != null; t = t.ContainingType) {
                 if (t.DeclaredAccessibility != Accessibility.Public) return false;
             }
             return true;

@@ -16,8 +16,8 @@ public class TypedStreamSubscriptionTests {
     [Test]
     public async Task On_BeforeStart_RegistersHandler() {
         var connection = BuildFakeConnection();
-        var client     = new SignalRSubscriptionClient(connection);
-        var sub        = client.SubscribeTyped("test-stream", null);
+        var client = new SignalRSubscriptionClient(connection);
+        var sub = client.SubscribeTyped("test-stream", null);
 
         // Register two handlers before start — should not throw
         sub.On<TypedEvent1>((_, _) => ValueTask.CompletedTask);
@@ -34,8 +34,8 @@ public class TypedStreamSubscriptionTests {
         // Since we can't actually start without a server, we test the object
         // construction and pre-start handler registration.
         var connection = BuildFakeConnection();
-        var client     = new SignalRSubscriptionClient(connection);
-        var sub        = client.SubscribeTyped("test-stream", null);
+        var client = new SignalRSubscriptionClient(connection);
+        var sub = client.SubscribeTyped("test-stream", null);
 
         // Should work fine before start
         await Assert.That(() => sub.On<TypedEvent1>((_, _) => ValueTask.CompletedTask)).ThrowsNothing();
@@ -46,8 +46,8 @@ public class TypedStreamSubscriptionTests {
     [Test]
     public async Task OnError_CanBeChained() {
         var connection = BuildFakeConnection();
-        var client     = new SignalRSubscriptionClient(connection);
-        var sub        = client.SubscribeTyped("test-stream", null);
+        var client = new SignalRSubscriptionClient(connection);
+        var sub = client.SubscribeTyped("test-stream", null);
 
         // Fluent chaining should work
         var result = sub
@@ -61,8 +61,8 @@ public class TypedStreamSubscriptionTests {
     [Test]
     public async Task DisposeAsync_WithoutStart_IsNoOp() {
         var connection = BuildFakeConnection();
-        var client     = new SignalRSubscriptionClient(connection);
-        var sub        = client.SubscribeTyped("test-stream", null);
+        var client = new SignalRSubscriptionClient(connection);
+        var sub = client.SubscribeTyped("test-stream", null);
 
         // Should not throw even though StartAsync was never called
         await Assert.That(async () => await sub.DisposeAsync()).ThrowsNothing();
@@ -72,7 +72,7 @@ public class TypedStreamSubscriptionTests {
     [Test]
     public async Task SubscribeTyped_ReturnsNewInstanceEachTime() {
         var connection = BuildFakeConnection();
-        var client     = new SignalRSubscriptionClient(connection);
+        var client = new SignalRSubscriptionClient(connection);
 
         var sub1 = client.SubscribeTyped("stream-a", null);
         var sub2 = client.SubscribeTyped("stream-b", null);

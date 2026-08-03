@@ -14,7 +14,7 @@ static class WriterExtensions {
                 return await writer.AppendEvents(
                         append.StreamName,
                         append.ExpectedVersion,
-                        append.Events.Select(ToStreamEvent).ToArray(),
+                        [.. append.Events.Select(ToStreamEvent)],
                         cancellationToken
                     )
                     .NoContext();
@@ -44,7 +44,7 @@ static class WriterExtensions {
                         return new NewStreamAppend(
                             a.StreamName,
                             a.ExpectedVersion,
-                            a.Events.Select(evt => ToStreamEvent(evt, amendEvent)).ToArray()
+                            [.. a.Events.Select(evt => ToStreamEvent(evt, amendEvent))]
                         );
                     }
                 )

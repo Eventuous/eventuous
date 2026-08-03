@@ -7,8 +7,6 @@ namespace Eventuous.Tests.Azure.ServiceBus;
 [NotInParallel]
 [TopicAndQueueSource]
 public class SendAndReceive {
-    static CancellationToken TestCancellationToken => TestContext.Current!.CancellationToken;
-
     ServiceBusProducer     _producer     = null!;
     ServiceBusSubscription _subscription = null!;
 
@@ -31,31 +29,31 @@ public class SendAndReceive {
 
     [Test]
     [Retry(3)]
-    public async Task SingleMessage() {
-        await _producer.Produce(_streamName, SomeEvent.Create(), _metadata, cancellationToken: TestCancellationToken);
+    public async Task SingleMessage(CancellationToken cancellationToken) {
+        await _producer.Produce(_streamName, SomeEvent.Create(), _metadata, cancellationToken: cancellationToken);
 
         // Assert
         await _handler.AssertThat()
             .Timebox(TimeSpan.FromSeconds(5))
             .Single()
             .Match(evt => evt is SomeEvent)
-            .Validate(TestCancellationToken);
+            .Validate(cancellationToken);
     }
 
     [Test]
     [Retry(3)]
-    public async Task LoadsOfMessages() {
+    public async Task LoadsOfMessages(CancellationToken cancellationToken) {
         const int count = 200;
 
         var events = Enumerable.Range(0, count).Select(SomeEvent.Create).ToList();
-        await _producer.Produce(_streamName, events, _metadata, cancellationToken: TestCancellationToken);
+        await _producer.Produce(_streamName, events, _metadata, cancellationToken: cancellationToken);
 
         // Assert
         await _handler.AssertThat()
             .Timebox(TimeSpan.FromSeconds(20))
             .Exactly(count)
             .Match(evt => evt is SomeEvent)
-            .Validate(TestCancellationToken);
+            .Validate(cancellationToken);
 
         var handledMessageIds = _handler.Messages
             .OfType<SomeEvent>()
@@ -66,19 +64,19 @@ public class SendAndReceive {
     }
 
     [After(Test)]
-    public async ValueTask CleanUpProducerAndSubscription() {
-        await _producer.StopAsync(TestCancellationToken);
-        await _subscription.Unsubscribe(_ => { }, TestCancellationToken);
+    public async ValueTask CleanUpProducerAndSubscription(CancellationToken cancellationToken) {
+        await _producer.StopAsync(cancellationToken);
+        await _subscription.Unsubscribe(_ => { }, cancellationToken);
         await _subscription.DisposeAsync();
         await _producer.DisposeAsync();
     }
 
     [Before(Test)]
-    public async Task StartProducerAndSubscription() {
+    public async Task StartProducerAndSubscription(CancellationToken cancellationToken) {
         _producer     = _fixture.CreateProducer(_serviceBusProducerOptions);
         _subscription = _fixture.CreateSubscription(_serviceBusSubscriptionOptions, _handler, _correlationId);
 
-        await _producer.StartAsync(TestCancellationToken);
-        await _subscription.Subscribe(_ => { }, (_, _, _) => { }, TestCancellationToken);
+        await _producer.StartAsync(cancellationToken);
+        await _subscription.Subscribe(_ => { }, (_, _, _) => { }, cancellationToken);
     }
 }

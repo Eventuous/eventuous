@@ -42,7 +42,7 @@ public sealed class PersistenceMetrics : IWithCustomTags, IDisposable {
         _meter.Dispose();
     }
 
-    public void SetCustomTags(TagList customTags) => _customTags = customTags.ToArray();
+    public void SetCustomTags(TagList customTags) => _customTags = [.. customTags];
 }
 
 record PersistenceMetricsContext(string Component, string Operation);

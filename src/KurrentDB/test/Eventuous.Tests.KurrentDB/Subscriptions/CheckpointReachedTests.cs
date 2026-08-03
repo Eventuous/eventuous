@@ -270,7 +270,7 @@ public class CheckpointGatedByPendingMatchTests : StoreFixture {
 public record UnmatchedEvent(int Number) {
     public const string TypeName = "unmatched-event";
 
-    public static List<UnmatchedEvent> CreateMany(int count) => Enumerable.Range(0, count).Select(i => new UnmatchedEvent(i)).ToList();
+    public static List<UnmatchedEvent> CreateMany(int count) => [.. Enumerable.Range(0, count).Select(i => new UnmatchedEvent(i))];
 }
 
 /// <summary>

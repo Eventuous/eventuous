@@ -48,13 +48,7 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
 
         using var measure = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, Operations.AppendEvents));
 
-        var tracedAppends = appends.Select(a => new NewStreamAppend(
-                    a.StreamName,
-                    a.ExpectedVersion,
-                    a.Events.Select(x => x with { Metadata = x.Metadata.AddActivityTags(activity) }).ToArray()
-                )
-            )
-            .ToArray();
+        var tracedAppends = appends.Select(a => a with { Events = [.. a.Events.Select(x => x with { Metadata = x.Metadata.AddActivityTags(activity) })] }).ToArray();
 
         try {
             var results = await writer.AppendEvents(tracedAppends, cancellationToken).NoContext();

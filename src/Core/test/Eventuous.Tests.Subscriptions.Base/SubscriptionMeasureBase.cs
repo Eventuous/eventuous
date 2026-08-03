@@ -1,7 +1,6 @@
 using DotNet.Testcontainers.Containers;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
-using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Sut.App;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 

@@ -9,7 +9,7 @@ namespace Eventuous.Tests.KurrentDB.Subscriptions.Fixtures;
 
 public abstract class LegacySubscriptionFixture<T> : IAsyncInitializer, IAsyncDisposable where T : class, IEventHandler {
     protected StreamName          Stream          { get; } = new($"test-{Guid.NewGuid():N}");
-    protected StoreFixture        StoreFixture    { get; }
+    public    StoreFixture        StoreFixture    { get; }
     protected T                   Handler         { get; }
     protected KurrentDBProducer  Producer        { get; private set; } = null!;
     protected ILogger             Log             { get; }

@@ -20,7 +20,7 @@ public static class EventuousDiagnostics {
 
     public static void AddDefaultTag(string key, object? value) {
         var tags = new List<KeyValuePair<string, object?>>(Tags) { new(key, value) };
-        Tags = tags.ToArray();
+        Tags = [.. tags];
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

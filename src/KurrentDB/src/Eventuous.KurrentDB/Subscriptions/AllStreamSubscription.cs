@@ -59,7 +59,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// <param name="eventSerializer">Event serializer</param>
     /// <param name="metaSerializer">Metadata serializer</param>
     public AllStreamSubscription(
-            KurrentDBClient             client,
+            KurrentDBClient              client,
             AllStreamSubscriptionOptions options,
             ICheckpointStore             checkpointStore,
             ConsumePipe                  consumePipe,
@@ -112,7 +112,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             }
         } catch {
             await messages.DisposeAsync().NoContext();
-            subscription.Dispose();
+            await subscription.DisposeAsync().NoContext();
 
             throw;
         }
@@ -205,7 +205,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             // Double disposal on the unsubscribe path is fine; on the dropped path this is the only
             // cleanup of the underlying call before Resubscribe replaces the subscription.
             await messages.DisposeAsync().NoContext();
-            subscription.Dispose();
+            await subscription.DisposeAsync().NoContext();
         }
     }
 
@@ -225,7 +225,9 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
         try {
             Stopping.Cancel(false);
-            _subscription?.Dispose();
+
+            if (_subscription != null)
+                await _subscription.DisposeAsync().NoContext();
             _subscription = null;
 
             if (_messagePump is { } pump) {
