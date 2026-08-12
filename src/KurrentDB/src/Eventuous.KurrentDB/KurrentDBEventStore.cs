@@ -216,48 +216,63 @@ public partial class KurrentDBEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
-        var read = _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken);
-
-        var events = await TryExecute(
-            async () => {
-                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
-
-                return ToStreamEvents(resolvedEvents);
-            },
+    public IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default)
+        => EnumerateStream(
+            () => _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken),
             stream,
-            true,
             () => new("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream),
-            (s, ex) => new ReadFromStreamException(s, ex)
+            cancellationToken
         );
-
-        foreach (var evt in events) yield return evt;
-    }
 
     /// <inheritdoc/>
-    public async IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
-        var read = _client.ReadStreamAsync(
-            Direction.Backwards,
+    public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default)
+        => EnumerateStream(
+            () => _client.ReadStreamAsync(Direction.Backwards, stream, start.AsStreamPosition(), count, resolveLinkTos: true, cancellationToken: cancellationToken),
             stream,
-            start.AsStreamPosition(),
-            count,
-            resolveLinkTos: true,
-            cancellationToken: cancellationToken
-        );
-
-        var events = await TryExecute(
-            async () => {
-                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
-
-                return ToStreamEvents(resolvedEvents);
-            },
-            stream,
-            true,
             () => new("Unable to read {Count} events backwards from {Stream}", count, stream),
-            (s, ex) => new ReadFromStreamException(s, ex)
+            cancellationToken
         );
 
-        foreach (var evt in events) yield return evt;
+    // Events are yielded as they arrive from the server, so a read holds at most one
+    // deserialized event at a time, regardless of the requested count.
+    // The exception mapping wraps each advance of the source enumerator instead of the whole
+    // loop because iterators can't yield from inside a try block with a catch clause.
+    async IAsyncEnumerable<StreamEvent> EnumerateStream(
+            Func<IAsyncEnumerable<ResolvedEvent>>      read,
+            string                                     stream,
+            Func<ErrorInfo>                            getError,
+            [EnumeratorCancellation] CancellationToken cancellationToken
+        ) {
+        await using var enumerator = read().GetAsyncEnumerator(cancellationToken);
+
+        while (true) {
+            var          moved       = false;
+            StreamEvent? streamEvent = null;
+
+            try {
+                moved = await enumerator.MoveNextAsync().NoContext();
+
+                if (moved) streamEvent = ToStreamEvent(enumerator.Current);
+            } catch (StreamNotFoundException) {
+                LogStreamStreamNotFound(stream);
+
+                throw new StreamNotFound(stream);
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (Exception ex) {
+                var (message, args) = getError();
+                // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
+#pragma warning disable CA2254
+                _logger.LogWarning(ex, message, args);
+#pragma warning restore CA2254
+
+                throw new ReadFromStreamException(stream, ex);
+            }
+
+            if (!moved) yield break;
+
+            if (streamEvent != null) yield return streamEvent.Value;
+        }
     }
 
     /// <inheritdoc/>
@@ -361,14 +376,6 @@ public partial class KurrentDBEventStore : IEventStore {
                 resolvedEvent.Event.Created
             );
     }
-
-    StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
-        => [
-            .. resolvedEvents
-                .Select(ToStreamEvent)
-                .Where(x => x != null)
-                .Select(x => x!.Value)
-        ];
 
     record ErrorInfo(string Message, params object[] Args);
 

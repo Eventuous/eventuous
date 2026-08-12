@@ -7,6 +7,10 @@ public interface IEventReader {
     /// <summary>
     /// Read a fixed number of events from an existing stream as an async enumerable.
     /// Throws <see cref="StreamNotFound"/> if the stream does not exist.
+    /// Implementations either stream events as they arrive from the store, or buffer up to <paramref name="count"/>
+    /// events before yielding, so memory usage can grow with <paramref name="count"/>. To read a whole stream,
+    /// use <see cref="StoreFunctions.ReadStreamToEnd"/>, which reads in pages, instead of passing
+    /// <see cref="int.MaxValue"/> as the count.
     /// </summary>
     /// <param name="stream">Stream name</param>
     /// <param name="start">Where to start reading events</param>
@@ -18,6 +22,8 @@ public interface IEventReader {
     /// <summary>
     /// Read a number of events from a given stream, backwards (from the stream end).
     /// Throws <see cref="StreamNotFound"/> if the stream does not exist.
+    /// Implementations either stream events as they arrive from the store, or buffer up to <paramref name="count"/>
+    /// events before yielding, so memory usage can grow with <paramref name="count"/>.
     /// </summary>
     /// <param name="stream">Stream name</param>
     /// <param name="start">Where to start reading events</param>

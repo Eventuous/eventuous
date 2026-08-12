@@ -1,6 +1,8 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Runtime.CompilerServices;
+
 namespace Eventuous;
 
 public static class StoreFunctions {
@@ -149,6 +151,59 @@ public static class StoreFunctions {
         }
 
         /// <summary>
+        /// Reads a stream from the given position to the end, as an async enumerable.
+        /// Events are read in pages of <paramref name="pageSize"/> and yielded as they arrive, so the whole stream
+        /// is never buffered in memory. Use this instead of calling <see cref="IEventReader.ReadEvents"/>
+        /// with <see cref="int.MaxValue"/> as the count.
+        /// </summary>
+        /// <param name="streamName">Name of the stream to read from</param>
+        /// <param name="start">Stream position to start reading from</param>
+        /// <param name="pageSize">Number of events to read per page. It caps the amount of events a buffering
+        /// implementation of <see cref="IEventReader"/> holds in memory at a time.</param>
+        /// <param name="failIfNotFound">Set to false to complete without yielding anything when the stream isn't found,
+        /// instead of throwing <see cref="StreamNotFound"/>. Default is true.</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>An async enumerable of events retrieved from the stream</returns>
+        public async IAsyncEnumerable<StreamEvent> ReadStreamToEnd(
+                StreamName                                 streamName,
+                StreamReadPosition                         start,
+                int                                        pageSize          = 500,
+                bool                                       failIfNotFound    = true,
+                [EnumeratorCancellation] CancellationToken cancellationToken = default
+            ) {
+            var position = start;
+
+            while (true) {
+                var  yielded      = 0;
+                long lastRevision = 0;
+
+                await using var enumerator = eventReader.ReadEvents(streamName, position, pageSize, cancellationToken).GetAsyncEnumerator(cancellationToken);
+
+                while (true) {
+                    bool moved;
+
+                    try {
+                        moved = await enumerator.MoveNextAsync().NoContext();
+                    } catch (StreamNotFound) when (!failIfNotFound) {
+                        yield break;
+                    }
+
+                    if (!moved) break;
+
+                    var evt = enumerator.Current;
+                    yielded++;
+                    lastRevision = evt.Revision;
+
+                    yield return evt;
+                }
+
+                if (yielded < pageSize) yield break;
+
+                position = new(lastRevision + 1);
+            }
+        }
+
+        /// <summary>
         /// Reads a stream from the event store to a collection of <seealso cref="StreamEvent"/>
         /// </summary>
         /// <param name="streamName">Name of the stream to read from</param>
@@ -163,23 +218,10 @@ public static class StoreFunctions {
                 bool               failIfNotFound    = true,
                 CancellationToken  cancellationToken = default
             ) {
-            const int pageSize = 500;
-
             var streamEvents = new List<StreamEvent>();
 
-            var position = start;
-
-            try {
-                while (true) {
-                    var events = await eventReader.ReadEvents(streamName, position, pageSize, failIfNotFound, cancellationToken).NoContext();
-                    streamEvents.AddRange(events);
-
-                    if (events.Length < pageSize) break;
-
-                    position = new(position.Value + events.Length);
-                }
-            } catch (StreamNotFound) when (!failIfNotFound) {
-                return [];
+            await foreach (var evt in eventReader.ReadStreamToEnd(streamName, start, failIfNotFound: failIfNotFound, cancellationToken: cancellationToken).NoContext(cancellationToken)) {
+                streamEvents.Add(evt);
             }
 
             return [.. streamEvents];
