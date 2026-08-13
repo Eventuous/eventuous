@@ -117,23 +117,38 @@ public class TypedStreamSubscription : IAsyncDisposable {
         }
     }
 
-    static Activity? StartTraceActivity(string jsonMetadata) {
+    internal static Activity? StartTraceActivity(string jsonMetadata) {
         try {
             var metaDict = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonMetadata);
 
             if (metaDict == null) return null;
 
-            var metadata      = new Metadata(metaDict);
-            var tracingMeta   = metadata.GetTracingMeta();
-            var parentContext = tracingMeta.ToActivityContext(isRemote: true);
+            var metadata        = new Metadata(metaDict);
+            var tracingMeta     = metadata.GetTracingMeta();
+            var producerContext = tracingMeta.ToActivityContext(isRemote: true);
 
-            if (parentContext == null) return null;
+            if (producerContext == null) return null;
 
-            return EventuousDiagnostics.ActivitySource.StartActivity(
-                "signalr.consume",
-                ActivityKind.Consumer,
-                parentContext.Value
-            );
+            // The restored context is durable data on the event, so parenting to it would put every redelivery
+            // into the trace the producer started, without any bound. Linking records the same causality while
+            // the consume span roots its own trace. Suppressing the ambient activity keeps .NET from adopting it
+            // as the parent, since a default parent context means "use Activity.Current".
+            var ambient = Activity.Current;
+
+            if (ambient != null) Activity.Current = null;
+
+            try {
+                return EventuousDiagnostics.ActivitySource.StartActivity(
+                    "signalr.consume",
+                    ActivityKind.Consumer,
+                    parentContext: default,
+                    tags: null,
+                    links: [new ActivityLink(producerContext.Value)]
+                );
+            }
+            finally {
+                if (ambient != null) Activity.Current = ambient;
+            }
         } catch (Exception) {
             // Tracing is the best effort; malformed metadata must not break event consumption
             return null;
