@@ -28,21 +28,39 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
         _defaultErrorHandler = Options.ErrorHandler ?? DefaultErrorHandler;
 
         _processorStrategy = Options.SessionProcessorOptions is not null
-            ? new SessionProcessorStrategy(client, Options, HandleSessionMessage, _defaultErrorHandler)
-            : new StandardProcessorStrategy(client, Options, HandleMessage, _defaultErrorHandler);
+            ? new SessionProcessorStrategy(client, Options, HandleSessionMessage, HandleError)
+            : new StandardProcessorStrategy(client, Options, HandleMessage, HandleError);
     }
 
     /// <summary>
-    /// Subscribes to the Service Bus queue or topic.
+    /// Runs the configured error handler, then ends the run if the processor has stopped receiving for good.
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    protected override ValueTask Subscribe(CancellationToken cancellationToken)
-        => _processorStrategy.Start(cancellationToken);
+    /// <remarks>
+    /// The SDK's receive loop exits on a dead connection, raises this once and never restarts — untranslated,
+    /// the supervisor parks forever. In a finally so a throwing user handler can't suppress the recovery.
+    /// </remarks>
+    async Task HandleError(SubscriptionRun run, ProcessErrorEventArgs arg) {
+        try {
+            await _defaultErrorHandler(arg).NoContext();
+        } finally {
+            if (arg is { ErrorSource: ServiceBusErrorSource.Receive, Exception: ObjectDisposedException }) {
+                run.Fail(DropReason.ServerError, arg.Exception);
+            }
+        }
+    }
 
-    Task HandleMessage(ProcessMessageEventArgs arg)
+    /// <summary>
+    /// Starts processing the Service Bus queue or topic. The processor is recreated on every call, so its
+    /// message handler is wired up here, closing over this run rather than looking one up later.
+    /// </summary>
+    /// <param name="run"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    protected override ValueTask Connect(SubscriptionRun run)
+        => _processorStrategy.Start(run);
+
+    Task HandleMessage(SubscriptionRun run, ProcessMessageEventArgs arg)
         => ProcessMessageAsync(
+            run,
             arg.Message,
             msg => arg.CompleteMessageAsync(msg, arg.CancellationToken),
             msg => arg.AbandonMessageAsync(msg, null, arg.CancellationToken),
@@ -52,8 +70,9 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
             arg.CancellationToken
         );
 
-    Task HandleSessionMessage(ProcessSessionMessageEventArgs arg)
+    Task HandleSessionMessage(SubscriptionRun run, ProcessSessionMessageEventArgs arg)
         => ProcessMessageAsync(
+            run,
             arg.Message,
             msg => arg.CompleteMessageAsync(msg, arg.CancellationToken),
             msg => arg.AbandonMessageAsync(msg, null, arg.CancellationToken),
@@ -64,6 +83,7 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
         );
 
     async Task ProcessMessageAsync(
+            SubscriptionRun                        run,
             ServiceBusReceivedMessage             msg,
             Func<ServiceBusReceivedMessage, Task> completeMessage,
             Func<ServiceBusReceivedMessage, Task> abandonMessage,
@@ -100,7 +120,7 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
             0,
             0,
             0,
-            Sequence++,
+            run.NextSequence(),
             msg.EnqueuedTime.UtcDateTime,
             evt,
             AsMeta(applicationProperties),
@@ -147,61 +167,61 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Unsubscribes from the Service Bus queue or topic and stops processing messages.
-    /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => _processorStrategy.Stop(cancellationToken);
-
     interface IServiceBusProcessorStrategy {
-        ValueTask Start(CancellationToken cancellationToken);
-        ValueTask Stop(CancellationToken  cancellationToken);
+        ValueTask Start(SubscriptionRun run);
     }
 
     sealed class StandardProcessorStrategy(
-            ServiceBusClient                    client,
-            ServiceBusSubscriptionOptions       options,
-            Func<ProcessMessageEventArgs, Task> handleMessage,
-            Func<ProcessErrorEventArgs, Task>   handleError
+            ServiceBusClient                                     client,
+            ServiceBusSubscriptionOptions                        options,
+            Func<SubscriptionRun, ProcessMessageEventArgs, Task> handleMessage,
+            Func<SubscriptionRun, ProcessErrorEventArgs, Task>   handleError
         )
         : IServiceBusProcessorStrategy {
-        ServiceBusProcessor? _processor;
+        public ValueTask Start(SubscriptionRun run) {
+            var processor = options.QueueOrTopic.MakeProcessor(client, options);
+            processor.ProcessMessageAsync += arg => handleMessage(run, arg);
+            processor.ProcessErrorAsync   += arg => handleError(run, arg);
 
-        public ValueTask Start(CancellationToken cancellationToken) {
-            _processor                     =  options.QueueOrTopic.MakeProcessor(client, options);
-            _processor.ProcessMessageAsync += handleMessage;
-            _processor.ProcessErrorAsync   += handleError;
+            run.OnDisconnect(ct => Stop(processor, ct));
 
-            return new(_processor.StartProcessingAsync(cancellationToken));
+            return new(processor.StartProcessingAsync(run.Token));
         }
 
-        public ValueTask Stop(CancellationToken cancellationToken)
-            => _processor is not null
-                ? new(_processor.StopProcessingAsync(cancellationToken))
-                : ValueTask.CompletedTask;
+        // Disposed in a finally because it releases the AMQP link, even if StopProcessingAsync throws.
+        static async ValueTask Stop(ServiceBusProcessor processor, CancellationToken cancellationToken) {
+            try {
+                await processor.StopProcessingAsync(cancellationToken).NoContext();
+            } finally {
+                await processor.DisposeAsync().NoContext();
+            }
+        }
     }
 
     sealed class SessionProcessorStrategy(
-            ServiceBusClient                           client,
-            ServiceBusSubscriptionOptions              options,
-            Func<ProcessSessionMessageEventArgs, Task> handleSessionMessage,
-            Func<ProcessErrorEventArgs, Task>          handleError
+            ServiceBusClient                                            client,
+            ServiceBusSubscriptionOptions                               options,
+            Func<SubscriptionRun, ProcessSessionMessageEventArgs, Task> handleSessionMessage,
+            Func<SubscriptionRun, ProcessErrorEventArgs, Task>          handleError
         )
         : IServiceBusProcessorStrategy {
-        ServiceBusSessionProcessor? _sessionProcessor;
+        public ValueTask Start(SubscriptionRun run) {
+            var sessionProcessor = options.QueueOrTopic.MakeSessionProcessor(client, options);
+            sessionProcessor.ProcessMessageAsync += arg => handleSessionMessage(run, arg);
+            sessionProcessor.ProcessErrorAsync   += arg => handleError(run, arg);
 
-        public ValueTask Start(CancellationToken cancellationToken) {
-            _sessionProcessor                     =  options.QueueOrTopic.MakeSessionProcessor(client, options);
-            _sessionProcessor.ProcessMessageAsync += handleSessionMessage;
-            _sessionProcessor.ProcessErrorAsync   += handleError;
+            run.OnDisconnect(ct => Stop(sessionProcessor, ct));
 
-            return new(_sessionProcessor.StartProcessingAsync(cancellationToken));
+            return new(sessionProcessor.StartProcessingAsync(run.Token));
         }
 
-        public ValueTask Stop(CancellationToken cancellationToken)
-            => _sessionProcessor is not null
-                ? new(_sessionProcessor.StopProcessingAsync(cancellationToken))
-                : ValueTask.CompletedTask;
+        // Same as the standard processor: dispose in finally, left unbounded since teardown bounds it centrally.
+        static async ValueTask Stop(ServiceBusSessionProcessor sessionProcessor, CancellationToken cancellationToken) {
+            try {
+                await sessionProcessor.StopProcessingAsync(cancellationToken).NoContext();
+            } finally {
+                await sessionProcessor.DisposeAsync().NoContext();
+            }
+        }
     }
 }

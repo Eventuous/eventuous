@@ -63,7 +63,27 @@ public class PubSubTests {
         var testEvents = TestEvent.CreateMany(count);
 
         await _producer.Produce(_pubsubTopic, testEvents, null, cancellationToken: cancellationToken);
-        await _handler.AssertCollection(TimeSpan.FromSeconds(40), [..testEvents]).Validate(cancellationToken);
+
+        // The expectation watches the whole window, so this is the test's runtime, not just its bound. The
+        // emulator delivers all 10k in well under a second; the rest is headroom for a slower machine.
+        await _handler.AssertCollection(TimeSpan.FromSeconds(15), [..testEvents]).Validate(cancellationToken);
+    }
+
+    [Test]
+    [Retry(3)]
+    public async Task StopsAndStartsAgain(CancellationToken cancellationToken) {
+        // A SubscriberClient can be started and stopped once, so the second run has to build its own. That is
+        // why the client is released through the run rather than held on the subscription, and why it is only
+        // registered once StartAsync succeeded. Delivery after the restart is what shows the replacement
+        // client is the one receiving.
+        await _subscription.UnsubscribeWithLog(_log, cancellationToken);
+        await _subscription.SubscribeWithLog(_log, cancellationToken);
+
+        var testEvent = TestEvent.Create();
+
+        await _producer.Produce(_pubsubTopic, testEvent, null, cancellationToken: cancellationToken);
+
+        await _handler.AssertThat().Timebox(TimeSpan.FromSeconds(10)).Any().Match(x => x as TestEvent == testEvent).Validate(cancellationToken);
     }
 
     [Before(Test)]

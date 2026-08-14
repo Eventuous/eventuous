@@ -76,35 +76,24 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// </summary>
     internal const string CheckpointReachedMessageType = "$checkpoint-reached";
 
-    KurrentDBClient.StreamSubscriptionResult? _subscription;
-    Task?                                     _messagePump;
-
-    // The highest $all position known to be scanned by the server in the current run: seeded from the
-    // stored checkpoint on (re)subscribe, advanced by every received event and checkpoint message. The
-    // caught-up commit must never go below it — the commit machinery is gated by sequence, not by
-    // position, so an older position submitted later would regress the stored checkpoint.
-    ulong? _lastScannedPosition;
-
     /// <summary>
     /// Starts the subscription
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
+    protected override async ValueTask Connect(SubscriptionRun run) {
         var filterOptions = new SubscriptionFilterOptions(Options.EventFilter ?? EventTypeFilter.ExcludeSystemEvents(), Options.CheckpointInterval);
 
-        var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
+        var (_, position) = await GetCheckpoint(run).NoContext();
 
         // The $all head, read before subscribing: by the time the server reports the subscription as
         // caught up, everything at or below this position has provably been scanned, so it can be
         // committed even if no event or checkpoint message ever surfaced it (small stores never cross
         // the checkpoint interval, idle tails park up to one interval below the head).
-        var headPosition = await GetAllStreamHead(cancellationToken).NoContext();
-        _lastScannedPosition = position;
+        var head = await GetAllStreamHead(run.Token).NoContext();
 
         var fromAll = GetPosition();
 
-        var subscription = Client.SubscribeToAll(fromAll, Options.ResolveLinkTos, filterOptions, Options.Credentials, cancellationToken);
-        var messages     = subscription.Messages.GetAsyncEnumerator(cancellationToken);
+        var subscription = Client.SubscribeToAll(fromAll, Options.ResolveLinkTos, filterOptions, Options.Credentials, run.Token);
+        var messages     = subscription.Messages.GetAsyncEnumerator(run.Token);
 
         try {
             if (!await messages.MoveNextAsync().NoContext() || messages.Current is not StreamMessage.SubscriptionConfirmation) {
@@ -117,8 +106,28 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             throw;
         }
 
-        _subscription = subscription;
-        _messagePump  = Task.Run(() => PumpMessages(subscription, messages, headPosition, cancellationToken), CancellationToken.None);
+        // Runs on its own task so Connect never blocks; classified here because nothing else observes this task.
+        var pumping = Task.Run(
+            async () => {
+                try {
+                    await Consume(run, messages, head, position).NoContext();
+                } catch (Exception) when (run.Token.IsCancellationRequested) {
+                    // Normal shutdown: the token cancelled the read, which is what teardown waits on.
+                } catch (Exception e) {
+                    run.Fail(DropReason.ServerError, e);
+                }
+            },
+            CancellationToken.None
+        );
+
+        // Join the pump first, then the enumerator, then the subscription: the enumerator's generated
+        // iterator shares one value-task source with an in-flight read, so disposing it before the pump
+        // has stopped reading would re-enter that source and fault on a pool thread.
+        run.OnDisconnect(async _ => {
+            await pumping.NoContext();
+            await messages.DisposeAsync().NoContext();
+            await subscription.DisposeAsync().NoContext();
+        });
 
         return;
 
@@ -134,79 +143,65 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// handlers as before, plus the caught-up notification, which the callback-based client API
     /// silently discards. The message-based API is used precisely to observe that notification.
     /// </summary>
-    async Task PumpMessages(
-            KurrentDBClient.StreamSubscriptionResult subscription,
-            IAsyncEnumerator<StreamMessage>          messages,
-            ulong?                                   headPosition,
-            CancellationToken                        cancellationToken
+    /// <remarks>
+    /// Returns only after reporting a consumer error; every other exit throws, leaving drop-vs-shutdown
+    /// classification to the caller.
+    /// </remarks>
+    async Task Consume(
+            SubscriptionRun                 run,
+            IAsyncEnumerator<StreamMessage> messages,
+            ulong?                          headPosition,
+            ulong?                          lastScannedPosition
         ) {
-        try {
-            while (await messages.MoveNextAsync().NoContext()) {
-                // Falling behind re-enters catch-up mode, making the current head the new caught-up
-                // commit candidate: every match at or below it is delivered before the next caught-up
-                // notification, exactly like the pre-subscribe head on the initial catch-up. Reading the
-                // head on the caught-up message instead would be unsafe — matches between the server's
-                // live transition and the read could still be in flight, and committing past them skips
-                // them on restart. Handled outside the inner try because the read is a server call: its
-                // failures are transport failures and must reach the outer catch, not get labelled as
-                // consumer errors.
-                if (messages.Current is StreamMessage.FellBehind) {
-                    headPosition = await GetAllStreamHead(cancellationToken).NoContext();
+        while (await messages.MoveNextAsync().NoContext()) {
+            // Falling behind re-enters catch-up mode: re-read the head as the new commit candidate, since
+            // reading it later from the caught-up message could race matches still in flight. Kept outside
+            // the inner try because a failure here is a transport failure, not a consumer error.
+            if (messages.Current is StreamMessage.FellBehind) {
+                headPosition = await GetAllStreamHead(run.Token).NoContext();
 
-                    continue;
-                }
-
-                try {
-                    switch (messages.Current) {
-                        case StreamMessage.Event(var resolvedEvent):
-                            _lastScannedPosition = GetContextPosition(resolvedEvent);
-                            await HandleInternal(CreateContext(resolvedEvent, cancellationToken)).NoContext();
-
-                            break;
-                        case StreamMessage.AllStreamCheckpointReached(var checkpointPosition):
-                            _lastScannedPosition = checkpointPosition.CommitPosition;
-                            await HandleCheckpointReached(checkpointPosition, cancellationToken).NoContext();
-
-                            break;
-                        case StreamMessage.CaughtUp:
-                            // The server reached the live edge, so the commit candidate — the head read
-                            // before (re-)entering catch-up mode — has been scanned even though no
-                            // checkpoint message reported it. The client's caught-up message carries no
-                            // position, so that read is the best provably scanned position available;
-                            // skip it once something newer is already known.
-                            if (headPosition is { } head && (_lastScannedPosition is not { } lastScanned || head > lastScanned)) {
-                                _lastScannedPosition = head;
-                                await HandleCheckpointReached(new(head, head), cancellationToken).NoContext();
-                            }
-
-                            break;
-                    }
-                } catch (Exception ex) when (!cancellationToken.IsCancellationRequested) {
-                    // Handling a message failed: the transport is fine, the consumer is not — same
-                    // classification the callback-based API gave to errors thrown by its callbacks.
-                    // DeserializeData rethrows the raw serializer exception, so matching on exception
-                    // types here would misattribute malformed payloads to the server.
-                    Dropped(DropReason.SubscriptionError, ex);
-
-                    return;
-                }
+                continue;
             }
 
-            // The server ended the message stream without an error and without being asked to stop:
-            // treat it as a drop, so the subscription resubscribes instead of staying silently dead
-            if (!cancellationToken.IsCancellationRequested) {
-                Dropped(DropReason.ServerError, new InvalidOperationException($"Subscription {Options.SubscriptionId} message stream ended unexpectedly"));
+            try {
+                switch (messages.Current) {
+                    case StreamMessage.Event(var resolvedEvent):
+                        lastScannedPosition = GetContextPosition(resolvedEvent);
+                        await HandleInternal(run, CreateContext(run, resolvedEvent, run.Token)).NoContext();
+
+                        break;
+                    case StreamMessage.AllStreamCheckpointReached(var checkpointPosition):
+                        lastScannedPosition = checkpointPosition.CommitPosition;
+                        await HandleCheckpointReached(run, checkpointPosition, run.Token).NoContext();
+
+                        break;
+                    case StreamMessage.CaughtUp:
+                        // The server reached the live edge, so the commit candidate — the head read
+                        // before (re-)entering catch-up mode — has been scanned even though no
+                        // checkpoint message reported it. The client's caught-up message carries no
+                        // position, so that read is the best provably scanned position available;
+                        // skip it once something newer is already known.
+                        if (headPosition is { } head && (lastScannedPosition is not { } lastScanned || head > lastScanned)) {
+                            lastScannedPosition = head;
+                            await HandleCheckpointReached(run, new(head, head), run.Token).NoContext();
+                        }
+
+                        break;
+                }
+            } catch (Exception ex) when (!run.Token.IsCancellationRequested) {
+                // Handling a message failed: the transport is fine, the consumer is not — same
+                // classification the callback-based API gave to errors thrown by its callbacks.
+                // DeserializeData rethrows the raw serializer exception, so matching on exception
+                // types here would misattribute malformed payloads to the server.
+                run.Fail(DropReason.SubscriptionError, ex);
+
+                return;
             }
-        } catch (Exception) when (cancellationToken.IsCancellationRequested) {
-            // Normal shutdown: the subscription got disposed or the token got cancelled mid-read
-        } catch (Exception ex) {
-            Dropped(DropReason.ServerError, ex);
-        } finally {
-            // Double disposal on the unsubscribe path is fine; on the dropped path this is the only
-            // cleanup of the underlying call before Resubscribe replaces the subscription.
-            await messages.DisposeAsync().NoContext();
-            await subscription.DisposeAsync().NoContext();
         }
+
+        // Server closed the stream; thrown rather than reported, so shutdown-vs-drop is classified by the
+        // same filter that covers a read failing mid-shutdown.
+        throw new InvalidOperationException($"Subscription {Options.SubscriptionId} to $all: message stream ended unexpectedly");
     }
 
     async Task<ulong?> GetAllStreamHead(CancellationToken cancellationToken) {
@@ -219,27 +214,6 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     }
 
     /// <summary>
-    /// Stops the subscription
-    /// </summary>
-    /// <param name="cancellationToken"></param>
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        try {
-            Stopping.Cancel(false);
-
-            if (_subscription != null)
-                await _subscription.DisposeAsync().NoContext();
-            _subscription = null;
-
-            if (_messagePump is { } pump) {
-                await Task.WhenAny(pump, Task.Delay(100, cancellationToken)).NoContext();
-                _messagePump = null;
-            }
-        } catch (Exception) {
-            // Nothing to see here
-        }
-    }
-
-    /// <summary>
     /// The delivered record's own position in $all — the link's position for a resolved link event,
     /// never the resolved target's. The target can be arbitrarily older than the subscription cursor
     /// (a link created after the caught-up commit can point far behind the committed head), and this
@@ -248,7 +222,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// </summary>
     static ulong GetContextPosition(ResolvedEvent re) => (re.OriginalPosition ?? re.OriginalEvent.Position).CommitPosition;
 
-    MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
+    MessageConsumeContext CreateContext(SubscriptionRun run, ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -265,7 +239,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             re.Event.EventNumber,
             re.OriginalEventNumber,
             GetContextPosition(re),
-            Sequence++,
+            run.NextSequence(),
             re.Event.Created,
             evt,
             MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId),
@@ -283,7 +257,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
     /// everything since then, and consumers comparing the checkpoint to the $all head see a phantom,
     /// never-closing lag.
     /// </summary>
-    Task HandleCheckpointReached(global::KurrentDB.Client.Position position, CancellationToken cancellationToken) {
+    Task HandleCheckpointReached(SubscriptionRun run, global::KurrentDB.Client.Position position, CancellationToken cancellationToken) {
         var context = new MessageConsumeContext(
             position.CommitPosition.ToString(),
             CheckpointReachedMessageType,
@@ -292,7 +266,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             position.CommitPosition,
             position.CommitPosition,
             position.CommitPosition,
-            Sequence++,
+            run.NextSequence(),
             DateTime.UtcNow,
             null,
             null,
@@ -300,7 +274,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             cancellationToken
         );
 
-        return HandleInternal(context).AsTask();
+        return HandleInternal(run, context).AsTask();
     }
 
     /// <summary>

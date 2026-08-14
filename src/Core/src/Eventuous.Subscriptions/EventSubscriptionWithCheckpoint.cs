@@ -1,7 +1,6 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace Eventuous.Subscriptions;
@@ -35,9 +34,6 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     static ConsumePipe ConfigurePipe(ConsumePipe pipe, int concurrencyLimit)
         => PipelineIsAsync(pipe) ? pipe : pipe.AddFilterFirst(new AsyncHandlingFilter((uint)concurrencyLimit));
 
-    EventPosition?           LastProcessed           { get; set; }
-    CheckpointCommitHandler? CheckpointCommitHandler { get; set; }
-
     protected ICheckpointStore CheckpointStore { get; } = Ensure.NotNull(checkpointStore);
 
     protected SubscriptionKind Kind { get; } = kind;
@@ -52,14 +48,56 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
             SubscriptionKind.Stream => EventPosition.FromContext(context)
         };
 
-    protected async ValueTask HandleInternal(IMessageConsumeContext context) {
+    /// <summary>
+    /// A run carrying this attempt's own commit handler, so an acknowledgement reaches the handler that
+    /// dispatched it, and the base class never has to know checkpoints exist.
+    /// </summary>
+    sealed class CheckpointedRun(CancellationToken lifetime, CheckpointCommitHandler checkpoint) : SubscriptionRun(lifetime) {
+        internal CheckpointCommitHandler Checkpoint { get; } = checkpoint;
+    }
+
+    /// <summary>
+    /// Sealed so every run reaching this class carries a commit handler, letting <see cref="Ack"/> find one
+    /// without a lookup or a null check.
+    /// </summary>
+    protected sealed override SubscriptionRun CreateRun(CancellationToken lifetime) {
+        var run = new CheckpointedRun(
+            lifetime,
+            new(
+                Options.SubscriptionId,
+                CheckpointStore,
+                TimeSpan.FromMilliseconds(Options.CheckpointCommitDelayMs),
+                Options.CheckpointCommitBatchSize,
+                LoggerFactory
+            )
+        );
+
+        // Registered first, before Connect, so it's the first OnDisconnect registration — and since release
+        // order reverses registration order, it releases LAST, after every transport handle. That's
+        // checkpoint durability: acks in flight must land before the handler that commits them stops.
+        // Moving this into or after Connect would release the handler too early.
+        run.OnDisconnect(_ => run.Checkpoint.DisposeAsync());
+
+        return run;
+    }
+
+    /// <summary>
+    /// Cast holds by construction: every run reaching this class comes from the sealed <see cref="CreateRun"/>.
+    /// </summary>
+    static CheckpointCommitHandler Checkpoint(SubscriptionRun run) => ((CheckpointedRun)run).Checkpoint;
+
+    /// <summary>
+    /// Run is passed explicitly, not looked up, so a message that completes after its run ended acknowledges
+    /// into that (refusing) run, not into whichever replaced it.
+    /// </summary>
+    protected async ValueTask HandleInternal(SubscriptionRun run, IMessageConsumeContext context) {
         try {
             Logger.Current = Log;
-            var ctx = new AsyncConsumeContext(context, Ack, NackOnAsyncWorker);
+
+            var ctx = new AsyncConsumeContext(context, c => Ack(run, c), (c, e) => NackOnAsyncWorker(run, c, e));
             await Handler(ctx).NoContext();
         } catch (OperationCanceledException e) when (context.CancellationToken.IsCancellationRequested) {
             context.LogContext.MessageHandlingFailed(Options.SubscriptionId, context, e);
-            Dropped(DropReason.Stopped, e);
         } catch (Exception e) {
             context.LogContext.MessageHandlingFailed(Options.SubscriptionId, context, e);
 
@@ -68,87 +106,51 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     }
 
     /// <summary>
-    /// Wraps the Nack callback for the async worker path. When ThrowOnError is true,
-    /// Nack throws to signal a fatal error. On the async worker thread (AsyncHandlingFilter),
-    /// that throw would silently kill the channel worker without triggering Dropped/Resubscribe.
-    /// This wrapper catches the throw and calls Dropped instead.
+    /// Nack throws under <c>ThrowOnError</c>; on the <see cref="AsyncHandlingFilter"/> channel worker that
+    /// would silently kill the reader, so it's turned into this run's failure instead.
     /// </summary>
-    ValueTask NackOnAsyncWorker(IMessageConsumeContext context, Exception exception) {
+    ValueTask NackOnAsyncWorker(SubscriptionRun run, IMessageConsumeContext context, Exception exception) {
         try {
-            return Nack(context, exception);
+            return Nack(run, context, exception);
         } catch (Exception) {
-            Dropped(DropReason.SubscriptionError, exception);
+            run.Fail(DropReason.SubscriptionError, exception);
 
             return default;
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    ValueTask Ack(IMessageConsumeContext context) {
-        // Capture locally — CheckpointCommitHandler can be nulled by Resubscribe/DisposeCommitHandler
-        // on another thread while the async worker is still completing a message.
-        var handler = CheckpointCommitHandler;
+    async ValueTask Ack(SubscriptionRun run, IMessageConsumeContext context) {
+        var position = GetPositionFromContext(context);
 
-        if (handler is null) return default;
+        // Committed through the dispatching run, never whichever run is current: another run's counter
+        // could collide with a live sequence or let the checkpoint advance over a message it never handled.
+        //
+        // Uncancellable on purpose: a dropped CommitPosition is poison — the handler won't commit past the
+        // gap it leaves.
+        var commit = new CommitPosition(position.Position!.Value, context.Sequence, position.Created) { LogContext = context.LogContext };
 
-        var eventPosition = GetPositionFromContext(context);
-        LastProcessed = eventPosition;
+        if (!await Checkpoint(run).Commit(commit, CancellationToken.None).NoContext()) {
+            context.LogContext.MessageFromPreviousRunIgnored(context);
+
+            return;
+        }
 
         context.LogContext.MessageAcked(context.MessageType, context.GlobalPosition);
-
-        return handler.Commit(
-            new(eventPosition.Position!.Value, context.Sequence, eventPosition.Created) { LogContext = context.LogContext },
-            context.CancellationToken
-        );
     }
 
-    ValueTask Nack(IMessageConsumeContext context, Exception exception) {
+    ValueTask Nack(SubscriptionRun run, IMessageConsumeContext context, Exception exception) {
         context.LogContext.MessageNacked(context.MessageType, context.GlobalPosition, exception);
 
-        return Options.ThrowOnError ? throw exception : Ack(context);
+        return Options.ThrowOnError ? throw exception : Ack(run, context);
     }
 
-    protected async Task<Checkpoint> GetCheckpoint(CancellationToken cancellationToken) {
-        CheckpointCommitHandler ??= new(
-            options.SubscriptionId,
-            checkpointStore,
-            TimeSpan.FromMilliseconds(options.CheckpointCommitDelayMs),
-            options.CheckpointCommitBatchSize,
-            LoggerFactory
-        );
-
-        if (IsRunning && LastProcessed != null) { return new(Options.SubscriptionId, LastProcessed?.Position); }
-
+    /// <summary>
+    /// Called by <c>Connect</c> once per run, before any dispatch. Always reads the store — correct, since
+    /// the run being replaced flushed before it ended.
+    /// </summary>
+    protected async Task<Checkpoint> GetCheckpoint(SubscriptionRun run) {
         Logger.Current = Log;
 
-        var checkpoint = await CheckpointStore.GetLastCheckpoint(Options.SubscriptionId, cancellationToken).NoContext();
-
-        LastProcessed = new EventPosition(checkpoint.Position, DateTime.Now);
-
-        return checkpoint;
-    }
-
-    protected override async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
-        // Reset checkpoint state so the new run reads from the committed checkpoint,
-        // not from LastProcessed (which may be ahead of the failed event).
-        LastProcessed = null;
-        Sequence = 0;
-
-        await DisposeCommitHandler();
-
-        await base.Resubscribe(delay, cancellationToken);
-    }
-
-    protected override async ValueTask Finalize(CancellationToken cancellationToken) => await DisposeCommitHandler();
-
-    async ValueTask DisposeCommitHandler() {
-        // Swap to null first so the concurrent path (Resubscribe vs Finalize) sees null. The read and
-        // the write aren't atomic, so both paths can still come away with the same handler — that stays
-        // safe because the commit worker's dispose is idempotent, and the second caller awaits the first
-        // one's shutdown rather than re-entering it and cancelling an already-disposed CTS (AI-1699).
-        var handler = CheckpointCommitHandler;
-        CheckpointCommitHandler = null;
-
-        if (handler != null) await handler.DisposeAsync().NoContext();
+        return await CheckpointStore.GetLastCheckpoint(Options.SubscriptionId, run.Token).NoContext();
     }
 }

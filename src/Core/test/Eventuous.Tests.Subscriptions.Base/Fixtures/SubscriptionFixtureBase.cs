@@ -38,9 +38,12 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
     protected internal SubscriptionHealthCheck Health { get; } = new();
 
     /// <summary>
-    /// True when the subscription has detected a drop and is trying to resubscribe.
+    /// True between a drop and the next resubscription, tracked from the callbacks below rather than asked
+    /// of the subscription.
     /// </summary>
-    public bool IsDropped => ((EventSubscription<TSubscriptionOptions>)Subscription).IsDropped;
+    public bool IsDropped => _dropped;
+
+    volatile bool _dropped;
 
     /// <summary>
     /// Returns the subscription's end-of-stream measure delegate (requires an <see cref="IMeasuredSubscription"/>).
@@ -52,10 +55,12 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
     protected internal ValueTask StartSubscription()
         => Subscription.Subscribe(
             id => {
+                _dropped = false;
                 Health.ReportHealthy(id);
                 Log.LogInformation("{Subscription} subscribed", id);
             },
             (id, reason, ex) => {
+                _dropped = true;
                 Health.ReportUnhealthy(id, ex);
                 Log.LogWarning(ex, "{Subscription} dropped {Reason}", id, reason);
             },
@@ -103,7 +108,14 @@ public abstract class SubscriptionFixtureBase<TContainer, TSubscription, TSubscr
     }
 
     public override async ValueTask DisposeAsync() {
-        if (_autoStart) await StopSubscription();
-        await base.DisposeAsync();
+        // Guarded so an initialisation failure before GetDependencies (e.g. a container never ready) still
+        // reaches the base's teardown, which releases it.
+        try {
+            if (_autoStart) await StopSubscription();
+        } catch (Exception) {
+            // Must not cost us the container the base holds.
+        } finally {
+            await base.DisposeAsync();
+        }
     }
 }

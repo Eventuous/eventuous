@@ -9,10 +9,8 @@ using static Eventuous.Sut.Domain.BookingEvents;
 namespace Eventuous.Tests.Subscriptions.Base;
 
 /// <summary>
-/// The two properties the resubscribe path relies on from every transport. Since a drop now stops the
-/// previous run before starting the next, teardown runs on a connection that will be used again, and a
-/// transport whose resources are single-use has to rebuild them rather than restart them. Stated here so
-/// each provider suite can assert it against real infrastructure.
+/// Asserts against real infrastructure the two properties the resubscribe path relies on from every
+/// transport: teardown may run more than once, and a stopped subscription must reconnect cleanly.
 /// </summary>
 public abstract class SubscriptionRestartBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore>(
         SubscriptionFixtureBase<TContainer, TSubscription, TSubscriptionOptions, TCheckpointStore, TestEventHandler> fixture
@@ -26,9 +24,8 @@ public abstract class SubscriptionRestartBase<TContainer, TSubscription, TSubscr
     static readonly TimeSpan ConsumeTimeout = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// Unsubscribing twice must not throw. The framework only calls transport teardown for a live run, but
-    /// a provider may still be asked to release resources it has already released — through an explicit
-    /// stop, or by a drop landing while shutdown is in flight.
+    /// Unsubscribing twice must not throw, even though a provider may be asked to release resources it has
+    /// already released.
     /// </summary>
     protected async Task ShouldTolerateRepeatedUnsubscribe() {
         await fixture.StartSubscription();
@@ -37,7 +34,7 @@ public abstract class SubscriptionRestartBase<TContainer, TSubscription, TSubscr
     }
 
     /// <summary>
-    /// Subscribing again after a full stop must consume newly produced events. Asserts by event identity,
+    /// Subscribing again after a full stop must consume newly produced events, asserted by event identity
     /// so a replay of the first batch can't pass for the second.
     /// </summary>
     protected async Task ShouldConsumeAfterResubscribe(CancellationToken cancellationToken) {

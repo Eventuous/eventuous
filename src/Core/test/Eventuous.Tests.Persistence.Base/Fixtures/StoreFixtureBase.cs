@@ -22,7 +22,12 @@ public abstract class StoreFixtureBase {
 
 public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : StoreFixtureBase, IStartableFixture where TContainer : DockerContainer {
     public virtual async Task InitializeAsync() {
-        Container = CreateContainer();
+        // Initialising twice is a restart, and tests do it — the previous round's container and provider
+        // must be released before these properties are overwritten, or they're abandoned.
+        if (_initialized) await Teardown();
+
+        _initialized = true;
+        Container    = CreateContainer();
         await Container.StartAsync();
 
         var services = new ServiceCollection();
@@ -56,15 +61,33 @@ public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : 
         if (_disposed) return;
 
         _disposed = true;
-        var inits = Provider.GetServices<IHostedService>();
-
-        foreach (var hostedService in inits) {
-            await hostedService.StopAsync(CancellationToken.None);
-        }
-
-        await Provider.DisposeAsync();
-        await Container.DisposeAsync();
+        await Teardown();
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases one round's container and provider. Tolerant of a half-built fixture — a failed
+    /// <see cref="InitializeAsync"/> may need to release a container without ever having built a provider.
+    /// </summary>
+    async ValueTask Teardown() {
+        var provider  = Provider;
+        var container = Container;
+
+        // Cleared before releasing, so a partial failure here doesn't find round one's disposed state again.
+        Provider  = null!;
+        Container = null!;
+
+        try {
+            if (provider is not null) {
+                foreach (var hostedService in provider.GetServices<IHostedService>()) {
+                    await hostedService.StopAsync(CancellationToken.None);
+                }
+
+                await provider.DisposeAsync();
+            }
+        } finally {
+            if (container is not null) await container.DisposeAsync();
+        }
     }
 
     protected abstract void SetupServices(IServiceCollection services);
@@ -78,6 +101,7 @@ public abstract partial class StoreFixtureBase<TContainer>(LogLevel logLevel) : 
     public IEventSerializer Serializer { get; private set; } = null!;
 
     bool _disposed;
+    bool _initialized;
 
     protected static string GetSchemaName() => NormaliseRegex().Replace(new Faker().Internet.UserName(), "").ToLower();
 

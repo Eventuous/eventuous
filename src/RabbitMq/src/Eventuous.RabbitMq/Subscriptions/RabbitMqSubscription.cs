@@ -7,6 +7,7 @@ using Eventuous.Subscriptions.Filters;
 using Eventuous.Subscriptions.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RabbitMQ.Client.Exceptions;
 
 namespace Eventuous.RabbitMq.Subscriptions;
 
@@ -19,9 +20,6 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
 
     readonly HandleEventProcessingFailure _failureHandler;
     readonly ConnectionFactory            _connectionFactory;
-
-    IConnection? _connection;
-    IChannel?    _channel;
 
     /// <summary>
     /// Creates RabbitMQ subscription service instance
@@ -90,12 +88,17 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         eventSerializer
     ) { }
 
-    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
-        _connection = await _connectionFactory.CreateConnectionAsync(cancellationToken).NoContext();
-        _channel    = await _connection.CreateChannelAsync(cancellationToken: cancellationToken).NoContext();
+    protected override async ValueTask Connect(SubscriptionRun run) {
+        // Registered as each handle opens, so a partial Connect still leaves teardown able to close what
+        // it opened, channel before connection.
+        var connection = await _connectionFactory.CreateConnectionAsync(run.Token).NoContext();
+        run.OnDisconnect(CloseConnection);
+
+        var channel = await connection.CreateChannelAsync(cancellationToken: run.Token).NoContext();
+        run.OnDisconnect(CloseChannel);
 
         var prefetch = Options.PrefetchCount > 0 ? Options.PrefetchCount : Options.ConcurrencyLimit * 2;
-        await _channel.BasicQosAsync(0, (ushort)prefetch, false, cancellationToken).NoContext();
+        await channel.BasicQosAsync(0, (ushort)prefetch, false, run.Token).NoContext();
 
         var exchange = Ensure.NotEmptyString(Options.Exchange);
 
@@ -105,73 +108,108 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             Log.WarnLog?.Log("Fan-out exchange doesn't support routing keys");
         }
 
-        await _channel.ExchangeDeclareAsync(
+        await channel.ExchangeDeclareAsync(
                 exchange,
                 Options.ExchangeOptions.Type,
                 Options.ExchangeOptions.Durable,
                 Options.ExchangeOptions.AutoDelete,
                 Options.ExchangeOptions.Arguments,
-                cancellationToken: cancellationToken
+                cancellationToken: run.Token
             )
             .NoContext();
 
         var queue = Options.QueueOptions.Queue ?? Options.SubscriptionId;
         Log.InfoLog?.Log("Ensuring queue {Queue}", queue);
 
-        await _channel.QueueDeclareAsync(
+        await channel.QueueDeclareAsync(
                 queue,
                 Options.QueueOptions.Durable,
                 Options.QueueOptions.Exclusive,
                 Options.QueueOptions.AutoDelete,
                 Options.QueueOptions.Arguments,
-                cancellationToken: cancellationToken
+                cancellationToken: run.Token
             )
             .NoContext();
 
         Log.InfoLog?.Log("Binding exchange {Exchange} to queue {Queue}", exchange, queue);
 
-        await _channel.QueueBindAsync(
+        await channel.QueueBindAsync(
                 queue,
                 exchange,
                 Options.BindingOptions.RoutingKey,
                 Options.BindingOptions.Arguments,
-                cancellationToken: cancellationToken
+                cancellationToken: run.Token
             )
             .NoContext();
 
-        var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.ReceivedAsync += HandleReceived;
+        // Channel captured as a local rather than looked up at ack time, since a delivery tag only means
+        // something on the channel it came from, and a resubscribe would have moved on to a different one.
+        var consumer = new AsyncEventingBasicConsumer(channel);
+        consumer.ReceivedAsync += (_, received) => HandleReceived(channel, received, run.Token);
 
-        await _channel.BasicConsumeAsync(queue, false, consumer, cancellationToken).NoContext();
+        await channel.BasicConsumeAsync(queue, false, consumer, run.Token).NoContext();
+
+        return;
+
+        // Each disposal is in its own finally: closes tend to fail exactly when the broker is unhealthy,
+        // which is when a leak costs most, and a throwing channel close must not skip the connection close.
+        async ValueTask CloseChannel(CancellationToken cancellationToken) {
+            try {
+                await channel.CloseAsync(cancellationToken).NoContext();
+            } finally {
+                channel.Dispose();
+            }
+        }
+
+        async ValueTask CloseConnection(CancellationToken cancellationToken) {
+            try {
+                await connection.CloseAsync(cancellationToken: cancellationToken).NoContext();
+            } finally {
+                connection.Dispose();
+            }
+        }
     }
 
     const string ReceivedMessageKey = "receivedMessage";
 
-    async Task HandleReceived(object sender, BasicDeliverEventArgs received) {
+    async Task HandleReceived(IChannel channel, BasicDeliverEventArgs received, CancellationToken cancellationToken) {
         Logger.Current = Log;
 
         try {
-            var ctx = CreateContext(sender, received).WithItem(ReceivedMessageKey, received);
+            var ctx = CreateContext(received, cancellationToken).WithItem(ReceivedMessageKey, received);
             await Handler(new AsyncConsumeContext(ctx, Ack, Nack)).NoContext();
         } catch (Exception) {
             // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
             if (Options.ThrowOnError) throw;
         }
+
+        return;
+
+        async ValueTask Ack(IMessageConsumeContext _) {
+            try {
+                await channel.BasicAckAsync(received.DeliveryTag, false).NoContext();
+            } catch (Exception e) when (IsChannelGone(e)) { LogDeliveryUndecided(e); }
+        }
+
+        async ValueTask Nack(IMessageConsumeContext _, Exception exception) {
+            if (Options.ThrowOnError) throw exception;
+
+            try {
+                await _failureHandler(channel, received, exception).NoContext();
+            } catch (Exception e) when (IsChannelGone(e)) { LogDeliveryUndecided(e); }
+        }
+
+        void LogDeliveryUndecided(Exception e)
+            => Log.WarnLog?.Log(e, "Delivery {DeliveryTag} left undecided, its channel is already closed", received.DeliveryTag);
     }
 
-    async ValueTask Ack(IMessageConsumeContext ctx) {
-        var received = ctx.Items.GetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
-        await _channel!.BasicAckAsync(received.DeliveryTag, false).NoContext();
-    }
+    /// <summary>
+    /// Whether a failed ack/nack means the channel is gone (a buffered handler finishing after teardown
+    /// closed it) rather than a broker refusal. Safe to swallow: an unacked delivery just gets redelivered.
+    /// </summary>
+    static bool IsChannelGone(Exception exception) => exception is AlreadyClosedException or ObjectDisposedException;
 
-    async ValueTask Nack(IMessageConsumeContext ctx, Exception exception) {
-        if (Options.ThrowOnError) throw exception;
-
-        var received = ctx.Items.GetItem<BasicDeliverEventArgs>(ReceivedMessageKey)!;
-        await _failureHandler(_channel!, received, exception).NoContext();
-    }
-
-    MessageConsumeContext CreateContext(object sender, BasicDeliverEventArgs received) {
+    MessageConsumeContext CreateContext(BasicDeliverEventArgs received, CancellationToken cancellationToken) {
         var evt = DeserializeData(received.BasicProperties.ContentType!, received.BasicProperties.Type!, received.Body, received.Exchange);
 
         var meta = received.BasicProperties.Headers != null
@@ -191,22 +229,8 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
             evt,
             meta,
             SubscriptionId,
-            default
+            cancellationToken
         );
-    }
-
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        if (_channel != null) {
-            await _channel.CloseAsync(cancellationToken).NoContext();
-            _channel.Dispose();
-            _channel = null;
-        }
-
-        if (_connection != null) {
-            await _connection.CloseAsync(cancellationToken: cancellationToken).NoContext();
-            _connection.Dispose();
-            _connection = null;
-        }
     }
 
     async ValueTask DefaultEventFailureHandler(IChannel channel, BasicDeliverEventArgs message, Exception? exception) {

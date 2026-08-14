@@ -1,4 +1,3 @@
-using Eventuous.Redis;
 using Eventuous.Redis.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
@@ -10,8 +9,7 @@ using StackExchange.Redis;
 namespace Eventuous.Tests.Redis.Subscriptions;
 
 /// <summary>
-/// The polling loop is the whole subscription: nothing else reads Redis. These tests need no server —
-/// ReadEvents is the seam, and a failure there is the same shape as a failure from the driver.
+/// The polling loop is the whole subscription, so these tests fail at the ReadEvents seam and need no server.
 /// </summary>
 public class PollFailureTests {
     /// <summary>

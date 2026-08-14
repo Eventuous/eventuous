@@ -24,8 +24,6 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
     readonly SubscriptionName             _subscriptionName;
     readonly TopicName                    _topicName;
 
-    SubscriberClient? _client;
-
     /// <summary>
     /// Creates a Google PubSub subscription service
     /// </summary>
@@ -78,22 +76,52 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
         if (options is { FailureHandler: not null, ThrowOnError: false }) Log.ThrowOnErrorIncompatible();
     }
 
-    Task _subscriberTask = null!;
-    Task _monitorTask    = null!;
-
-    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
+    protected override async ValueTask Connect(SubscriptionRun run) {
         var builder = new SubscriberClientBuilder { Logger = Log.Logger };
         Options.ConfigureClientBuilder?.Invoke(builder);
         builder.SubscriptionName = _subscriptionName;
 
         if (Options.CreateSubscription) {
-            await CreateSubscription(_subscriptionName, _topicName, builder.EmulatorDetection, Options.ConfigureSubscription, cancellationToken).NoContext();
+            await CreateSubscription(_subscriptionName, _topicName, builder.EmulatorDetection, Options.ConfigureSubscription, run.Token).NoContext();
         }
 
-        _client = await builder.BuildAsync(cancellationToken).NoContext();
+        var client = await builder.BuildAsync(run.Token).NoContext();
 
-        _subscriberTask = _client.StartAsync(Handle);
-        _monitorTask    = MonitorSubscriberTask(_subscriberTask, cancellationToken);
+        Task pumping;
+
+        try {
+            // Started inline, not on its own task: StartAsync must have run before teardown can call StopAsync,
+            // which otherwise throws on a client that never started.
+            pumping = client.StartAsync(Handle);
+        } catch {
+            // Nothing is registered to release the client yet, and its StopAsync would throw, so dispose it here.
+            await client.DisposeAsync().NoContext();
+
+            throw;
+        }
+
+        // Nothing else observes this task, so wire its end to Fail explicitly: any end other than a clean
+        // StopAsync-driven stop is a drop.
+        var reporting = pumping.ContinueWith(
+            t => {
+                if (t.IsCompletedSuccessfully && run.Token.IsCancellationRequested) return;
+
+                run.Fail(
+                    DropReason.ServerError,
+                    t.Exception?.GetBaseException() ?? new InvalidOperationException("Google Pub/Sub client task ended before it was stopped")
+                );
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+        );
+
+        // StopAsync first, then join: the client's task only ends once StopAsync has run, so joining first
+        // would deadlock until the graceful budget expires.
+        run.OnDisconnect(async ct => {
+            await client.StopAsync(ct).NoContext();
+            await reporting.NoContext();
+        });
 
         return;
 
@@ -113,7 +141,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
                 0,
                 0,
                 0,
-                Sequence++,
+                run.NextSequence(),
                 msg.PublishTime.ToDateTime(),
                 evt,
                 AsMeta(msg.Attributes),
@@ -125,32 +153,10 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
                 await Handler(ctx).NoContext();
 
                 return Reply.Ack;
-            } catch (Exception ex) { return await _failureHandler(_client, msg, ex).NoContext(); }
+            } catch (Exception ex) { return await _failureHandler(client, msg, ex).NoContext(); }
         }
 
         Metadata AsMeta(MapField<string, string> attributes) => new(attributes.ToDictionary(x => x.Key, object (x) => x.Value)!);
-    }
-
-    async Task MonitorSubscriberTask(Task subscriberTask, CancellationToken cancellationToken) {
-        try {
-            await subscriberTask.NoContext();
-
-            // If the task completes without cancellation, the subscription was dropped
-            if (!cancellationToken.IsCancellationRequested) {
-                Dropped(DropReason.Stopped, null);
-            }
-        } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
-            // Expected when shutting down
-        } catch (Exception ex) {
-            // Subscriber task failed with an unrecoverable error
-            Dropped(DropReason.ServerError, ex);
-        }
-    }
-
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        if (_client != null) await _client.StopAsync(cancellationToken).NoContext();
-        await _subscriberTask.NoContext();
-        await _monitorTask.NoContext();
     }
 
     public async Task CreateSubscription(

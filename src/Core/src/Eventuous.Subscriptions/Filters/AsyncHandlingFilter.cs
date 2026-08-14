@@ -58,17 +58,23 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
                     var exception = ctx.HandlingResults.GetException();
 
                     switch (exception) {
-                        case TaskCanceledException:
-                        case OperationCanceledException: break;
+                        // Stopping, not failing: the message was never decided, so don't ack it — the next
+                        // run redelivers it from the checkpoint, or the broker once its lock lapses.
+                        case OperationCanceledException when ctx.CancellationToken.IsCancellationRequested:
+                            return;
+
                         case null: throw new ApplicationException("Event handler failed");
-                        default:   throw exception;
+
+                        // Anything else — including a self-inflicted cancellation such as an HTTP timeout
+                        // (TaskCanceledException) — is an ordinary failure and goes to Nack; what Nack does
+                        // with it is the subscription's policy, not this filter's.
+                        default: throw exception;
                     }
                 }
 
                 if (!ctx.HandlingResults.IsPending()) await ctx.Acknowledge().NoContext();
-            } catch (TaskCanceledException) {
-                return;
-            } catch (OperationCanceledException) {
+            } catch (OperationCanceledException) when (ctx.CancellationToken.IsCancellationRequested) {
+                // Same rule: don't acknowledge.
                 return;
             } catch (Exception e) {
                 ctx.LogContext.MessageHandlingFailed(nameof(AsyncHandlingFilter), workerTask.Context, e);
@@ -83,10 +89,15 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
         }
     }
 
-    protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next)
-        => next == null
-            ? throw new InvalidOperationException("Concurrent context must have a next filer")
-            : _worker.Write(new(context, next), context.CancellationToken);
+    protected override async ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
+        if (next == null) throw new InvalidOperationException("Concurrent context must have a next filer");
+
+        // Refused means the worker is stopping — logged so a message vanishing between the pipe and a
+        // handler isn't silent.
+        if (!await _worker.Write(new(context, next), context.CancellationToken).NoContext()) {
+            context.LogContext.MessageNotQueued(context);
+        }
+    }
 
     readonly record struct WorkerTask(AsyncConsumeContext Context, LinkedListNode<IConsumeFilter> Filter);
 

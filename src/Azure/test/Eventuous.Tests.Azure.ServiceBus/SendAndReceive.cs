@@ -1,9 +1,13 @@
 using Eventuous.Azure.ServiceBus.Producers;
 using Eventuous.Azure.ServiceBus.Subscriptions;
 using Eventuous.Producers;
+using TUnit.Core.Enums;
 
 namespace Eventuous.Tests.Azure.ServiceBus;
 
+// The Service Bus emulator brings its own SQL Server along, so it cannot start on macOS for the same reason
+// the SQL Server suite cannot.
+[ExcludeOn(OS.MacOs)]
 [NotInParallel]
 [TopicAndQueueSource]
 public class SendAndReceive {

@@ -6,10 +6,9 @@ using Shouldly;
 namespace Eventuous.Tests.Subscriptions;
 
 /// <summary>
-/// A transport's Unsubscribe releases whatever its Subscribe built, and some of what it releases is
-/// single-use: a Google Pub/Sub SubscriberClient cannot be started twice, and an Azure Service Bus
-/// processor is replaced rather than reused. So teardown has to run once per run, and it is the
-/// framework's job to make sure of it — otherwise every transport has to be defensively idempotent.
+/// Teardown must run exactly once per run — some transport resources are single-use (a Google Pub/Sub
+/// SubscriberClient can't be started twice), and it's the framework's job, not every transport's, to
+/// guarantee that.
 /// </summary>
 public class TransportTeardownTests {
     [Test]
@@ -35,8 +34,7 @@ public class TransportTeardownTests {
     record TestOptions : SubscriptionOptions;
 
     /// <summary>
-    /// Counts what the framework asks of a transport. It holds no resources, because the point is the
-    /// call pattern rather than what a real transport would do with it.
+    /// Counts what the framework asks of a transport, without holding any real resources of its own.
     /// </summary>
     sealed class CountingSubscription()
         : EventSubscription<TestOptions>(
@@ -45,20 +43,12 @@ public class TransportTeardownTests {
             null,
             null
         ) {
-        int _starts;
         int _stops;
 
-        public int Starts => Volatile.Read(ref _starts);
-        public int Stops  => Volatile.Read(ref _stops);
+        public int Stops => Volatile.Read(ref _stops);
 
-        protected override ValueTask Subscribe(CancellationToken cancellationToken) {
-            Interlocked.Increment(ref _starts);
-
-            return default;
-        }
-
-        protected override ValueTask Unsubscribe(CancellationToken cancellationToken) {
-            Interlocked.Increment(ref _stops);
+        protected override ValueTask Connect(SubscriptionRun run) {
+            run.OnDisconnect(_ => { Interlocked.Increment(ref _stops); return default; });
 
             return default;
         }

@@ -76,9 +76,11 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     private record DetectedGap(long Position, DateTime FirstSeen);
 
-    async Task PollingQuery(ulong? position, CancellationToken cancellationToken) {
-        var start = position.HasValue ? (long)position : -1;
-
+    /// <summary>
+    /// The polling loop. Its only clean exit is a stop request; every other exit is a fault the pump in
+    /// <see cref="Connect"/> reads as a drop.
+    /// </summary>
+    async Task Poll(SubscriptionRun run, long start, CancellationToken cancellationToken) {
         DetectedGap? gap = null;
 
         var retryCount   = 0;
@@ -92,7 +94,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
         return;
 
-        async Task<PollingResult> Poll() {
+        async Task<PollingResult> PollOnce() {
             try {
                 await using var connection = await OpenConnection(cancellationToken).NoContext();
                 await using var cmd        = PrepareCommand(connection, start);
@@ -114,7 +116,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                     }
 
                     if (!ShouldSkipEvent(persistedEvent)) {
-                        await HandleInternal(ToConsumeContext(persistedEvent, cancellationToken)).NoContext();
+                        await HandleInternal(run, ToConsumeContext(run, persistedEvent, cancellationToken)).NoContext();
                     }
 
                     start = MoveStart(persistedEvent);
@@ -133,27 +135,24 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
                 return new(true, gap != null, received);
             } catch (Exception e) {
-                if (IsStopping(e)) {
-                    IsDropped = true;
-
-                    return new(false, false, 0);
-                }
+                // IsStopping alone isn't enough: providers can report unrelated aborts (e.g. SQL Server's
+                // "Operation cancelled by user.") with the same shape, so only trust it once the token agrees.
+                if (IsStopping(e) && cancellationToken.IsCancellationRequested) return new(false, false, 0);
 
                 if (IsTransient(e)) {
                     return new(true, true, 0);
                 }
 
-                Dropped(DropReason.ServerError, e);
-
-                return new(false, false, 0);
+                // Let it propagate instead of reporting here too — a faulted pump is already a drop.
+                throw;
             }
         }
 
         async Task ExecutePollCycle() {
             while (!cancellationToken.IsCancellationRequested) {
-                var result = await Poll().NoContext();
+                var result = await PollOnce().NoContext();
 
-                if (!result.Continue) break;
+                if (!result.Continue) return;
 
                 if (result.Retry) {
                     await Task.Delay(Options.Retry.InitialDelayMs * retryCount++, cancellationToken).NoContext();
@@ -201,33 +200,42 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     /// <summary>
     /// Starts the subscription
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
-        await BeforeSubscribe(cancellationToken).NoContext();
-        var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
+    /// <param name="run">The run being connected; reassigned every call, since a run is repeatable on this instance.</param>
+    protected override async ValueTask Connect(SubscriptionRun run) {
+        await BeforeSubscribe(run.Token).NoContext();
+        var checkpoint = await GetCheckpoint(run).NoContext();
+        var position   = checkpoint.Position;
 
         if (position == null && Options.StartFrom == InitialPosition.Latest) {
-            var endOfStream = await GetSubscriptionEndOfStream(cancellationToken).NoContext();
+            var endOfStream = await GetSubscriptionEndOfStream(run.Token).NoContext();
             if (endOfStream == EndOfStream.Invalid) {
                 throw new InvalidOperationException($"Could not get the end of the stream for subscription {SubscriptionId}");
             }
-            await CheckpointStore.StoreCheckpoint(new(SubscriptionId, endOfStream.Position), true, cancellationToken).NoContext();
+            await CheckpointStore.StoreCheckpoint(new(SubscriptionId, endOfStream.Position), true, run.Token).NoContext();
             position = endOfStream.Position;
         }
 
-        _runner = new TaskRunner(token => PollingQuery(position, token)).Start();
-    }
+        // Local rather than a field: a later Connect on this instance must not move the position under a
+        // loop that is still winding down.
+        var start = position.HasValue ? (long)position : -1;
 
-    /// <summary>
-    /// Stops the subscription.
-    /// </summary>
-    /// <param name="cancellationToken"></param>
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        if (_runner == null) return;
+        // Runs on its own task so Connect never blocks; classified here because nothing else observes this task.
+        var pumping = Task.Run(
+            async () => {
+                try {
+                    await Poll(run, start, run.Token).NoContext();
+                } catch (Exception) when (run.Token.IsCancellationRequested) {
+                    // This run's own token asked for it: graceful, not a drop.
+                } catch (Exception e) {
+                    // Any other cancellation (an inner deadline, a WaitAsync timeout) is a real drop cause.
+                    run.Fail(DropReason.ServerError, e);
+                }
+            },
+            CancellationToken.None
+        );
 
-        await _runner.Stop(cancellationToken);
-        _runner.Dispose();
-        _runner = null;
+        // No handle of its own to release: registered purely to join the loop before the next Connect starts.
+        run.OnDisconnect(_ => new(pumping));
     }
 
     /// <summary>
@@ -242,17 +250,17 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         SubscriptionKind.Stream => evt.StreamPosition
     };
 
-    MessageConsumeContext ToConsumeContext(PersistedEvent evt, CancellationToken cancellationToken) {
+    MessageConsumeContext ToConsumeContext(SubscriptionRun run, PersistedEvent evt, CancellationToken cancellationToken) {
         Logger.Current = Log;
 
         var data = DeserializeData(ContentType, evt.MessageType, Encoding.UTF8.GetBytes(evt.JsonData), evt.StreamName!, (ulong)evt.StreamPosition);
 
         var meta = evt.JsonMetadata == null ? new() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
 
-        return AsContext(evt, data, meta, cancellationToken);
+        return AsContext(run, evt, data, meta, cancellationToken);
     }
 
-    MessageConsumeContext AsContext(PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
+    MessageConsumeContext AsContext(SubscriptionRun run, PersistedEvent evt, object? e, Metadata? meta, CancellationToken cancellationToken)
         => Kind switch {
             SubscriptionKind.Stream => new(
                 evt.MessageId.ToString(),
@@ -262,7 +270,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                 (ulong)evt.StreamPosition,
                 (ulong)evt.StreamPosition,
                 (ulong)evt.GlobalPosition,
-                Sequence++,
+                run.NextSequence(),
                 evt.Created,
                 e,
                 meta,
@@ -277,7 +285,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                 (ulong)evt.StreamPosition,
                 (ulong)evt.StreamPosition,
                 (ulong)evt.GlobalPosition,
-                Sequence++,
+                run.NextSequence(),
                 evt.Created,
                 e,
                 meta,
@@ -285,8 +293,6 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
                 cancellationToken
             )
         };
-
-    TaskRunner? _runner;
 
     const string ContentType = "application/json";
 

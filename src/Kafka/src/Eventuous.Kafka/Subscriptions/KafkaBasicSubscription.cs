@@ -9,9 +9,6 @@ namespace Eventuous.Kafka.Subscriptions;
 
 public class KafkaBasicSubscription(KafkaSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory, IEventSerializer? eventSerializer)
     : EventSubscription<KafkaSubscriptionOptions>(options, consumePipe, loggerFactory, eventSerializer) {
-    protected override ValueTask Subscribe(CancellationToken cancellationToken)
-        => throw new NotImplementedException();
-
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken)
+    protected override ValueTask Connect(SubscriptionRun run)
         => throw new NotImplementedException();
 }

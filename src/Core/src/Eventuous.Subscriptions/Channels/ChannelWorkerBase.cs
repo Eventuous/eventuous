@@ -14,26 +14,38 @@ abstract class ChannelWorkerBase<T> : IAsyncDisposable {
 
     public Func<CancellationToken, ValueTask>? OnDispose { get; set; }
 
-    public ValueTask Write(T element, CancellationToken cancellationToken)
-        => _stopping ? default : _channel.Write(element, _throwOnFull, cancellationToken);
-
-    bool                _stopping;
+    volatile bool       _stopping;
     readonly Channel<T> _channel;
-    readonly bool       _throwOnFull;
 
-    protected ChannelWorkerBase(Channel<T> channel, Func<CancellationToken, Task> processor, int concurrencyLevel, bool throwOnFull = false) {
+    protected ChannelWorkerBase(Channel<T> channel, Func<CancellationToken, Task> processor, int concurrencyLevel) {
         _channel     = channel;
-        _throwOnFull = throwOnFull;
         _readerTasks = [.. Enumerable.Range(0, concurrencyLevel).Select(_ => Task.Run(() => processor(_cts.Token)))];
     }
 
     /// <summary>
-    /// Idempotent. The commit handler worker is disposed by both the resubscribe and the shutdown
-    /// paths, which can run concurrently, so a second call is expected rather than a programming
-    /// error. It must not re-enter the shutdown: by then the CTS is disposed, and cancelling it
-    /// again throws <see cref="ObjectDisposedException"/> out of host shutdown. Every caller awaits
-    /// the same task, so none of them returns before the final checkpoint flush, and a shutdown that
-    /// failed is reported to whoever awaits it instead of being left on a task nobody observes.
+    /// Queues an element and reports whether the worker took it. A stopping worker takes nothing — the
+    /// caller must not count a refused element as processed.
+    /// </summary>
+    public async ValueTask<bool> Write(T element, CancellationToken cancellationToken) {
+        if (_stopping) return false;
+
+        try {
+            await _channel.Writer.WriteAsync(element, cancellationToken).NoContext();
+
+            return true;
+        } catch (ChannelClosedException) {
+            // The flag is set just before the channel completes, so a writer that got past it can still
+            // find it closed — same event, caught here rather than propagated.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Idempotent: a worker can outlive the thing disposing it (the handling filter's worker is released
+    /// with the pipe, a commit handler's with its run), so a second call is expected, not a bug. Must not
+    /// re-enter shutdown — cancelling an already-disposed CTS throws <see cref="ObjectDisposedException"/>
+    /// out of host shutdown. Every caller awaits the same task, so a failed shutdown is reported to all of
+    /// them rather than left unobserved.
     /// </summary>
     public ValueTask DisposeAsync() {
         if (Interlocked.Exchange(ref _disposing, 1) == 0) _ = StopWorker();
@@ -48,9 +60,9 @@ abstract class ChannelWorkerBase<T> : IAsyncDisposable {
                 await _channel.Stop(_cts, _readerTasks, OnDispose).NoContext();
             }
             finally {
-                // Release the readers even when the graceful stop above failed: they hold _cts.Token,
-                // and Stop armed a ten-second timer on it, so both outlive the worker unless cancelled
-                // here. Cancelling runs their callbacks, which is why this can't be allowed to throw.
+                // Runs even if the graceful stop failed: readers hold _cts.Token (Stop armed a ten-second
+                // timer on it) and outlive the worker unless cancelled here. Cancelling runs their
+                // callbacks, so this can't be allowed to throw.
                 await _cts.CancelAsync().NoThrow();
                 await Task.WhenAll(_readerTasks).NoThrow();
                 _cts.Dispose();
@@ -59,8 +71,8 @@ abstract class ChannelWorkerBase<T> : IAsyncDisposable {
 
             _disposed.TrySetResult();
         } catch (Exception e) {
-            // Broad on purpose. DisposeAsync hands _disposed.Task to every caller, so completing it is the
-            // only thing that ever releases them; an exception escaping here would strand all of them.
+            // Broad on purpose: every caller awaits _disposed.Task, so an escaping exception here would
+            // strand all of them.
             _disposed.TrySetException(e);
         }
     }
