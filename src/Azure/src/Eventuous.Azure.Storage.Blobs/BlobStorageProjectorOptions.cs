@@ -1,0 +1,58 @@
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
+using System.Text.Json;
+
+namespace Eventuous.Azure.Storage.Blobs;
+
+/// <summary>
+/// Options for configuring the storage blob projector.
+/// </summary>
+public class BlobStorageProjectorOptions {
+    /// <summary>
+    /// Gets or sets the JSON serializer options to use when serializing or deserializing projection state.
+    /// When not set, <see cref="JsonSerializerOptions.Web"/> is used.
+    /// </summary>
+    public JsonSerializerOptions? JsonOptions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of retry attempts for race condition handling when saving projection state.
+    /// Default is 0 (no retries).
+    /// </summary>
+    public int RaceRetries { get; set; }
+
+    /// <summary>
+    /// Gets or sets the idempotency mode for the projector. When enabled, the projector will skip processing
+    /// if the blob already exists with a matching identifier (message ID or global position), preventing duplicate processing.
+    /// Default is <see cref="IdempotencyMode.None"/> (no idempotency checking).
+    /// </summary>
+    public IdempotencyMode IdempotencyMode { get; set; } = IdempotencyMode.None;
+}
+
+/// <summary>
+/// Controls how the projection handles idempotency to prevent duplicate message processing.
+/// </summary>
+public enum IdempotencyMode {
+    /// <summary>
+    /// No idempotency checks. The projector will always process messages and update blobs.
+    /// Use when duplicate processing is acceptable or when external mechanisms ensure message uniqueness.
+    /// </summary>
+    None,
+
+    /// <summary>
+    /// Skips processing if the existing blob was created from a message at the same or later global position.
+    /// Uses the <c>GlobalPosition</c> metadata stored with the blob for comparison.
+    /// Requires a subscription that provides real global positions, such as an all-stream subscription.
+    /// Do not use with message broker subscriptions where the global position is always 0 — every event
+    /// after the first would be treated as a duplicate and ignored. Use <see cref="ByMessageId"/> instead.
+    /// </summary>
+    ByGlobalPosition,
+
+    /// <summary>
+    /// Skips processing if the existing blob was created from the same message ID.
+    /// Uses the <c>MessageId</c> metadata stored with the blob for comparison.
+    /// More precise than position-based checks, works even if messages are processed out of order.
+    /// Especially from external message queues where global position may not be available or reliable.
+    /// </summary>
+    ByMessageId
+}
