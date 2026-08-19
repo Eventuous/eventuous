@@ -1,21 +1,19 @@
 services:
 
-#  esdb:
-#    container_name: esdemo-esdb
-#    image: eventstore/eventstore:23.10.2-alpha-arm64v8
-#    #    image: eventstore/eventstore:latest #23.10.2-buster-slim
-#    ports:
-#      - '2113:2113'
-#      - '1113:1113'
-#    environment:
-#      EVENTSTORE_INSECURE: 'true'
-#      EVENTSTORE_CLUSTER_SIZE: 1
-#      EVENTSTORE_EXT_TCP_PORT: 1113
-#      EVENTSTORE_HTTP_PORT: 2113
-#      EVENTSTORE_ENABLE_EXTERNAL_TCP: 'true'
-#      EVENTSTORE_RUN_PROJECTIONS: all
-#      EVENTSTORE_START_STANDARD_PROJECTIONS: "true"
-#      EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP: "true"
+  kurrentdb:
+    container_name: esdemo-kurrentdb
+    # On Apple Silicon, use kurrentplatform/kurrentdb:26.1.1-experimental-arm64-10.0-noble
+    image: kurrentplatform/kurrentdb:26.1.1
+    command: --insecure --run-projections=All --enable-atom-pub-over-http
+    ports:
+      - '2113:2113'
+
+  azurite:
+    container_name: esdemo-azurite
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+    ports:
+      - '10000:10000'
 
   mongo:
     container_name: esdemo-mongo

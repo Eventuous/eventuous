@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Azure.Storage.Blobs;
 using Bookings.Application;
 using Bookings.Application.Queries;
 using Bookings.Domain;
@@ -6,6 +7,7 @@ using Bookings.Domain.Bookings;
 using Bookings.Infrastructure;
 using Bookings.Integration;
 using Eventuous;
+using Eventuous.Azure.Storage.Blobs;
 using Eventuous.Diagnostics.OpenTelemetry;
 using Eventuous.KurrentDB;
 using Eventuous.KurrentDB.Subscriptions;
@@ -23,9 +25,8 @@ namespace Bookings;
 public static class Registrations {
     extension(IServiceCollection services) {
         public void AddEventuous(IConfiguration configuration) {
-            EventSerializer.SetDefault(
-                new DefaultEventSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
-            );
+            var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web).ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            EventSerializer.SetDefault(new DefaultEventSerializer(jsonOptions));
 
             services.AddKurrentDBClient(configuration["KurrentDB:ConnectionString"]!);
             services.AddEventStore<KurrentDBEventStore>();
@@ -36,12 +37,22 @@ public static class Registrations {
 
             services.AddSingleton(Mongo.ConfigureMongo(configuration));
 
+            services.AddSingleton(new BlobServiceClient(configuration.GetConnectionString("blobs")));
+            services.AddSingleton(
+                new BlobStorageProjectorOptions {
+                    JsonOptions     = jsonOptions,
+                    RaceRetries     = 3,
+                    IdempotencyMode = IdempotencyMode.ByGlobalPosition
+                }
+            );
+
             services.AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
                 "BookingsProjections",
                 builder => builder
                     .UseCheckpointStore<MongoCheckpointStore>()
                     .AddEventHandler<BookingStateProjection>()
                     .AddEventHandler<MyBookingsProjection>()
+                    .AddEventHandler<BookingStateBlobProjection>()
                     .WithPartitioningByStream(2)
             );
             services.AddSingleton<BookingsQueryService>();

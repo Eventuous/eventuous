@@ -14,9 +14,8 @@ public class CommandService : CommandService<PaymentState> {
     }
 }
 
-// [AggregateCommands(typeof(Payment))]
 public static class PaymentCommands {
-    [HttpCommand]
+    [HttpCommand<PaymentState>]
     public record RecordPayment(
             string                        PaymentId,
             string                        BookingId,

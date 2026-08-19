@@ -17,12 +17,18 @@
   <PropertyGroup Label="Testcontainers version">
     <TestcontainersVersion>4.13.0</TestcontainersVersion>
   </PropertyGroup>
+  <PropertyGroup Label="Aspire version, keep in sync with the Aspire.AppHost.Sdk version in the sample AppHost">
+    <AspireVersion>13.4.6</AspireVersion>
+  </PropertyGroup>
   <PropertyGroup>
     <NpgsqlVersion>10.0.3</NpgsqlVersion>
     <TUnitVersion>1.63.0</TUnitVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.MongoDB" Version="$(AspireVersion)" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.11.0" />
     <PackageVersion Include="FluentValidation" Version="12.0.0" />
     <PackageVersion Include="IsExternalInit" Version="1.0.3" />
     <PackageVersion Include="KurrentDB.Client" Version="1.4.1" />
