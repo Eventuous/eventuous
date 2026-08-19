@@ -1,6 +1,7 @@
 ﻿// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -46,32 +47,25 @@ public class RedisStore : IEventReader, IEventWriter {
     /// </summary>
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         StreamEvent[] events;
+        var           database = _getDatabase();
 
         try {
             // A resumed position is only unambiguous when every entry ID in the stream round-trips
             // through the position encoding (sequence numbers 0-9). Entries the encoding can't
             // represent can hide below the decoded start position while falling inside the
             // requested range, so reads from a non-zero position are conservatively rejected for
-            // streams holding any such entry. The verdict is computed server-side and cached;
-            // entries written by the current store version always carry sequence 0.
+            // streams holding any such entry.
             if (start.Value >= 10) {
-                var unclean = (string?)await _getDatabase().ExecuteAsync("FCALL", "check_stream_clean", 1, stream.ToString()).NoContext();
-
-                if (!string.IsNullOrEmpty(unclean)) {
-                    throw new NotSupportedException(
-                        $"Stream {stream} can't be read from position {start.Value}: it contains entry ID {unclean}, which the position encoding can't represent (only ID sequence numbers 0-9 are supported). " +
-                        "Entries with higher sequence numbers were written with auto-generated IDs by an older version of the store. Read the stream from the start and migrate it."
-                    );
-                }
+                await EnsureStreamPositionsRoundTrip(database, stream, cancellationToken).NoContext();
             }
 
             // Range read is inclusive of the start position, matching the IEventReader contract
             // and the paged read extensions, which advance pages from the last revision + 1
-            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), start.Value.ToRedisValue(), count: count).NoContext();
+            var result = await database.StreamRangeAsync(stream.ToString(), start.Value.ToRedisValue(), count: count).NoContext();
 
             if (result == null! || result.Length == 0) {
                 // An empty result can also mean the read window is past the stream end
-                if (!await _getDatabase().KeyExistsAsync(stream.ToString()).NoContext()) {
+                if (!await database.KeyExistsAsync(stream.ToString()).NoContext()) {
                     throw new StreamNotFound(stream);
                 }
 
@@ -89,6 +83,65 @@ public class RedisStore : IEventReader, IEventWriter {
 
     public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken)
         => throw new NotImplementedException();
+
+    const int ValidationPageSize = 1000;
+
+    readonly ConcurrentDictionary<string, (RedisValue First, RedisValue Last)> _validatedStreams = new();
+
+    // Validates that every entry ID in the stream round-trips through the position encoding.
+    // The verdict is cached per stream, anchored on the first entry ID: Redis only accepts
+    // appends with increasing entry IDs, so a validated range can't gain new entries, and a
+    // changed first entry means the stream was recreated. Only entries appended after the last
+    // validated one are scanned on subsequent reads, one bounded page at a time.
+    async ValueTask EnsureStreamPositionsRoundTrip(IDatabase database, string stream, CancellationToken cancellationToken) {
+        var head = await database.StreamRangeAsync(stream, "-", "+", count: 1).NoContext();
+
+        // A missing stream holds nothing to validate, and no verdict is recorded for the name
+        if (head.Length == 0) return;
+
+        var first = head[0].Id;
+
+        RedisValue from;
+        RedisValue last;
+
+        if (_validatedStreams.TryGetValue(stream, out var validated) && validated.First == first) {
+            from = $"({validated.Last}";
+            last = validated.Last;
+        } else {
+            from = "-";
+            last = first;
+        }
+
+        while (true) {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var batch = await database.StreamRangeAsync(stream, from, "+", count: ValidationPageSize).NoContext();
+
+            if (batch.Length == 0) break;
+
+            foreach (var entry in batch) {
+                if (EntrySequence(entry.Id) > 9) {
+                    throw new NotSupportedException(
+                        $"Stream {stream} can't be read from a non-zero position: it contains entry ID {entry.Id}, which the position encoding can't represent (only ID sequence numbers 0-9 are supported). " +
+                        "Entries with higher sequence numbers were written with auto-generated IDs by an older version of the store. Read the stream from the start and migrate it."
+                    );
+                }
+            }
+
+            last = batch[^1].Id;
+            from = $"({last}";
+
+            if (batch.Length < ValidationPageSize) break;
+        }
+
+        _validatedStreams[stream] = (first, last);
+    }
+
+    static long EntrySequence(RedisValue id) {
+        var value = Ensure.NotNull<string>(id);
+
+        return long.Parse(value.AsSpan(value.IndexOf('-') + 1));
+    }
 
     public async Task<AppendEventsResult> AppendEvents(
             StreamName                          stream,

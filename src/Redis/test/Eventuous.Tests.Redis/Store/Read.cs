@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eventuous.Tests.Redis.Fixtures;
 using Shouldly;
+using StackExchange.Redis;
 using static Eventuous.Tests.Redis.Store.Helpers;
 
 namespace Eventuous.Tests.Redis.Store;
@@ -74,7 +75,7 @@ public class ReadEvents(IntegrationFixture fixture) {
 
         // Entries written by older versions can carry auto-generated IDs with sequence numbers
         // the position encoding can't represent; reading them must fail loudly, not garble positions
-        await AddLegacyEntry(streamName, "12345-10");
+        await AddLegacyEntry(fixture.GetDatabase(), streamName, "12345-10");
 
         await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 10, true, cancellationToken));
     }
@@ -84,8 +85,10 @@ public class ReadEvents(IntegrationFixture fixture) {
         var streamName = GetStreamName();
 
         // Legacy auto-generated IDs from a same-millisecond burst
+        var database = fixture.GetDatabase();
+
         for (var sequence = 0; sequence <= 10; sequence++) {
-            await AddLegacyEntry(streamName, $"12345-{sequence}");
+            await AddLegacyEntry(database, streamName, $"12345-{sequence}");
         }
 
         // The first page ends at 12345-9 and the advanced position decodes past 12345-10,
@@ -106,8 +109,10 @@ public class ReadEvents(IntegrationFixture fixture) {
         // A legacy burst with sequence numbers beyond a single decimal carry: positions minted for
         // such entries by older versions are ambiguous, but any read from the start of the stream
         // must reject the first unrepresentable entry it materializes
+        var database = fixture.GetDatabase();
+
         for (var sequence = 0; sequence <= 20; sequence += 5) {
-            await AddLegacyEntry(streamName, $"12345-{sequence}");
+            await AddLegacyEntry(database, streamName, $"12345-{sequence}");
         }
 
         await Assert.ThrowsAsync<NotSupportedException>(ReadFunc);
@@ -123,8 +128,10 @@ public class ReadEvents(IntegrationFixture fixture) {
     public async Task ShouldRejectResumedCursorOnLegacyBurstStream(CancellationToken cancellationToken) {
         var streamName = GetStreamName();
 
+        var database = fixture.GetDatabase();
+
         for (var sequence = 0; sequence <= 20; sequence++) {
-            await AddLegacyEntry(streamName, $"12345-{sequence}");
+            await AddLegacyEntry(database, streamName, $"12345-{sequence}");
         }
 
         // A cursor minted by a pre-fix reader after consuming 12345-19 (revision 123469 + 1):
@@ -132,10 +139,47 @@ public class ReadEvents(IntegrationFixture fixture) {
         await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, new(123470), 10, true, cancellationToken));
     }
 
-    async Task AddLegacyEntry(StreamName streamName, string id) {
+    [Test]
+    public async Task ShouldRejectResumedReadAfterStreamRecreatedWithLegacyEntries(CancellationToken cancellationToken) {
+        var events     = CreateEvents(3).ToArray();
+        var streamName = GetStreamName();
+        await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream, cancellationToken);
+
+        // A resumed read on the clean stream passes validation
+        var appended = await fixture.EventReader.ReadEvents(streamName, new(10), 10, true, cancellationToken);
+        await Assert.That(appended.Length).IsGreaterThan(0);
+
+        // Recreate the stream under the same name with legacy entries: the earlier verdict must not stick
+        var database = fixture.GetDatabase();
+        await database.KeyDeleteAsync(streamName.ToString());
+
+        for (var sequence = 0; sequence <= 20; sequence++) {
+            await AddLegacyEntry(database, streamName, $"12345-{sequence}");
+        }
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, new(123470), 10, true, cancellationToken));
+    }
+
+    [Test]
+    public async Task ShouldRejectResumedReadAfterMissingStreamGetsLegacyEntries(CancellationToken cancellationToken) {
+        var streamName = GetStreamName();
+
+        // A resumed read of a missing stream must not establish a verdict for the name
+        await Assert.ThrowsAsync<StreamNotFound>(() => fixture.EventReader.ReadEvents(streamName, new(100), 10, true, cancellationToken));
+
+        var database = fixture.GetDatabase();
+
+        for (var sequence = 0; sequence <= 20; sequence++) {
+            await AddLegacyEntry(database, streamName, $"12345-{sequence}");
+        }
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, new(123470), 10, true, cancellationToken));
+    }
+
+    static async Task AddLegacyEntry(IDatabase database, StreamName streamName, string id) {
         var serialized = EventSerializer.Default.SerializeEvent(CreateEvent());
 
-        await fixture.GetDatabase().StreamAddAsync(
+        await database.StreamAddAsync(
             streamName.ToString(),
             [
                 new("message_id", Guid.NewGuid().ToString()),
