@@ -40,7 +40,9 @@ public class RedisStore : IEventReader, IEventWriter {
         StreamEvent[] events;
 
         try {
-            var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count).NoContext();
+            // Range read is inclusive of the start position, matching the IEventReader contract
+            // and the paged read extensions, which advance pages from the last revision + 1
+            var result = await _getDatabase().StreamRangeAsync(stream.ToString(), start.Value.ToRedisValue(), count: count).NoContext();
 
             if (result == null! || result.Length == 0) {
                 // An empty result can also mean the read window is past the stream end

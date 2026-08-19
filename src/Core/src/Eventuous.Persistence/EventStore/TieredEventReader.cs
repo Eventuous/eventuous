@@ -20,7 +20,10 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
 
         switch (hotEvents.Length) {
             case > 0 when hotEvents[0].Revision > start.Value: {
-                (var events, archiveNotFound) = await LoadStreamEvents(archiveReader, streamName, start, (int)hotEvents[0].Revision, cancellationToken).NoContext();
+                // Fill the gap before the first hot event from the archive, bounded by the requested count
+                var gapCount = (int)Math.Min(count, hotEvents[0].Revision - start.Value);
+
+                (var events, archiveNotFound) = await LoadStreamEvents(archiveReader, streamName, start, gapCount, cancellationToken).NoContext();
                 archivedEvents                = events.Select(x => x with { FromArchive = true });
 
                 break;
@@ -32,7 +35,7 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
                 archivedEvents = []; break;
         }
 
-        var combined = archivedEvents.Concat(hotEvents).Distinct(Comparer);
+        var combined = archivedEvents.Concat(hotEvents).Distinct(Comparer).Take(count);
         var any      = false;
 
         foreach (var evt in combined) {
@@ -53,7 +56,8 @@ public class TieredEventReader(IEventReader hotReader, IEventReader archiveReade
         var                      archiveNotFound = false;
 
         switch (hotEvents.Length) {
-            case > 0 when hotEvents.Length < count: {
+            // When the hot store read reached revision 0, no events can precede it
+            case > 0 when hotEvents.Length < count && hotEvents[^1].Revision > 0: {
                 // Hot store returned fewer events than requested, fill the gap from archive
                 var lastHotRevision = hotEvents[^1].Revision;
 

@@ -43,10 +43,29 @@ public class ReadEvents(IntegrationFixture fixture) {
         var events2 = CreateEvents(10).ToArray();
         await fixture.AppendEvents(streamName, events2, ExpectedStreamVersion.Any, cancellationToken);
 
-        var result = await fixture.EventReader.ReadEvents(streamName, new((long)position), 100, true, cancellationToken);
+        // The read position is inclusive, so start from the position right after the first batch
+        var result = await fixture.EventReader.ReadEvents(streamName, new((long)position + 1), 100, true, cancellationToken);
 
         IEnumerable<object> actual = result.Select(x => x.Payload)!;
         await Assert.That(actual).IsEquivalentTo(events2);
+    }
+
+    [Test]
+    public async Task ShouldReadStreamToEndAcrossPages(CancellationToken cancellationToken) {
+        // Keep the batch small so the auto-generated Redis ID sequence numbers stay within
+        // the single digit that the position encoding can represent
+        var events     = CreateEvents(8).ToArray();
+        var streamName = GetStreamName();
+        await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream, cancellationToken);
+
+        var result = new List<StreamEvent>();
+
+        await foreach (var evt in fixture.EventReader.ReadStreamToEnd(streamName, StreamReadPosition.Start, pageSize: 3, cancellationToken: cancellationToken)) {
+            result.Add(evt);
+        }
+
+        IEnumerable<object> actual = result.Select(x => x.Payload)!;
+        await Assert.That(actual).IsEquivalentTo(events);
     }
 
     [Test]
