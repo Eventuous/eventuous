@@ -46,10 +46,13 @@ public class RedisStore : IEventReader, IEventWriter {
     /// To support that rejection, every read from a non-zero position validates the stream prefix
     /// below the position in bounded batches, so resumed reads cost extra roundtrips proportional
     /// to the prefix length.
-    /// Pre-0.16 writers must be quiesced before resumed reads are used: an old writer racing the
+    /// Resumed reads require exclusive write ownership of the stream by this store version: any
+    /// writer that doesn't use its explicit entry ID scheme — a pre-0.16 store version, or any
+    /// external XADD with auto-generated IDs — must be quiesced first. Such a writer racing the
     /// gap between validation and the data read can append an unrepresentable entry below the
-    /// requested position, which that read won't see. Such a stream is rejected by the next
-    /// resumed read, but the racing read itself can't detect it.
+    /// requested position, which that read won't see. The stream is rejected by the next resumed
+    /// read, but the racing read itself can't detect it. Concurrent writers going through this
+    /// store version are safe.
     /// </summary>
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         StreamEvent[] events;
@@ -100,9 +103,10 @@ public class RedisStore : IEventReader, IEventWriter {
     // materializes them, and converting an unrepresentable ID to a revision fails loudly.
     // A key replaced concurrently with an in-flight read can still change underneath the scan,
     // which no non-atomic paged read can detect; that also holds for the data reads themselves.
-    // Likewise, a pre-fix writer appending an unrepresentable entry between this scan and the
-    // data read escapes the racing read (the next resumed read rejects the stream) — old writers
-    // must be quiesced before resumed reads are used, as documented on ReadEvents.
+    // Likewise, a writer not using the explicit entry ID scheme (a pre-fix store version or any
+    // external XADD with auto-generated IDs) appending an unrepresentable entry between this scan
+    // and the data read escapes the racing read (the next resumed read rejects the stream) — such
+    // writers must be quiesced before resumed reads are used, as documented on ReadEvents.
     async ValueTask EnsureStreamPositionsRoundTrip(IDatabase database, string stream, StreamReadPosition start, CancellationToken cancellationToken) {
         RedisValue from = "-";
         var        end  = $"({start.Value.ToRedisValue()}";

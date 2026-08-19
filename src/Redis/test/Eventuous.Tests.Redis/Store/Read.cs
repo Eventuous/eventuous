@@ -115,6 +115,22 @@ public class ReadEvents(IntegrationFixture fixture) {
     }
 
     [Test]
+    public async Task ShouldHandleRevisionBoundaryAtLongMax(CancellationToken cancellationToken) {
+        // long.MaxValue / 10 = 922337203685477580, long.MaxValue % 10 = 7: sequence 7 encodes to
+        // exactly long.MaxValue, sequence 8 no longer fits and must be rejected, not wrap negative
+        var fitting = GetStreamName();
+        await AddLegacyEntry(fixture.GetDatabase(), fitting, "922337203685477580-7");
+
+        var result = await fixture.EventReader.ReadEvents(fitting, StreamReadPosition.Start, 10, true, cancellationToken);
+        await Assert.That(result[0].Revision).IsEqualTo(long.MaxValue);
+
+        var overflowing = GetStreamName();
+        await AddLegacyEntry(fixture.GetDatabase(), overflowing, "922337203685477580-8");
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(overflowing, StreamReadPosition.Start, 10, true, cancellationToken));
+    }
+
+    [Test]
     public async Task ShouldRejectLegacyBurstStreamReadFromStart(CancellationToken cancellationToken) {
         var streamName = GetStreamName();
 

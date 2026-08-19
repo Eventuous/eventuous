@@ -24,9 +24,12 @@ static class Conversions {
 
         var milliseconds = ulong.Parse(first);
 
-        return milliseconds <= long.MaxValue / 10
+        const ulong maxMilliseconds = long.MaxValue / 10;
+
+        // At the quotient boundary only sequences up to long.MaxValue % 10 still fit
+        return milliseconds < maxMilliseconds || (milliseconds == maxMilliseconds && sequence <= long.MaxValue % 10)
             ? (long)milliseconds * 10 + (long)sequence
-            : throw new NotSupportedException($"Redis stream entry ID {value} can't be represented as a stream position: the millisecond part is too large.");
+            : throw new NotSupportedException($"Redis stream entry ID {value} can't be represented as a stream position: the encoded value exceeds the position range.");
     }
 
     public static ulong ToULong(this ReadOnlySpan<char> valueString) {
