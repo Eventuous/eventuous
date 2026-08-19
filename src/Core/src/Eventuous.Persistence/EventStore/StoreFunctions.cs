@@ -240,6 +240,9 @@ public static class StoreFunctions {
 
             if (yielded < pageSize) yield break;
 
+            // The maximum revision is the end of the representable position space
+            if (lastRevision == long.MaxValue) yield break;
+
             position = new(lastRevision + 1);
         }
     }

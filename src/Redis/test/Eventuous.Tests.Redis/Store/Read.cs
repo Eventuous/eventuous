@@ -131,6 +131,23 @@ public class ReadEvents(IntegrationFixture fixture) {
     }
 
     [Test]
+    public async Task ShouldReadStreamToEndAtMaxRevision(CancellationToken cancellationToken) {
+        // An event at the maximum representable revision filling an exact page must complete
+        // the paged read instead of advancing past the end of the position space
+        var streamName = GetStreamName();
+        await AddLegacyEntry(fixture.GetDatabase(), streamName, "922337203685477580-7");
+
+        var result = new List<StreamEvent>();
+
+        await foreach (var evt in fixture.EventReader.ReadStreamToEnd(streamName, StreamReadPosition.Start, pageSize: 1, cancellationToken: cancellationToken)) {
+            result.Add(evt);
+        }
+
+        await Assert.That(result).HasCount().EqualTo(1);
+        await Assert.That(result[0].Revision).IsEqualTo(long.MaxValue);
+    }
+
+    [Test]
     public async Task ShouldRejectLegacyBurstStreamReadFromStart(CancellationToken cancellationToken) {
         var streamName = GetStreamName();
 
