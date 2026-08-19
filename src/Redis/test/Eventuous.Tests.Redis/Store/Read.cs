@@ -119,6 +119,19 @@ public class ReadEvents(IntegrationFixture fixture) {
         }
     }
 
+    [Test]
+    public async Task ShouldRejectResumedCursorOnLegacyBurstStream(CancellationToken cancellationToken) {
+        var streamName = GetStreamName();
+
+        for (var sequence = 0; sequence <= 20; sequence++) {
+            await AddLegacyEntry(streamName, $"12345-{sequence}");
+        }
+
+        // A cursor minted by a pre-fix reader after consuming 12345-19 (revision 123469 + 1):
+        // resuming from it must be rejected, not silently skip the remaining entries
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, new(123470), 10, true, cancellationToken));
+    }
+
     async Task AddLegacyEntry(StreamName streamName, string id) {
         var serialized = EventSerializer.Default.SerializeEvent(CreateEvent());
 

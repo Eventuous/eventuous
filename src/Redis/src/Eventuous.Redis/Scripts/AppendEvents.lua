@@ -12,6 +12,34 @@ local function last_id_ms(key)
   return tonumber(string.sub(id, 1, string.find(id, '-', 1, true) - 1))
 end
 
+-- Returns the ID of the first entry whose sequence number can't be represented by the
+-- client-side position encoding (sequence > 9), or an empty string when the stream is clean.
+-- A clean verdict is cached: entries written by append_events always carry sequence 0, so a
+-- stream verified clean stays clean.
+local function check_stream_clean(keys, args)
+  local key = keys[1]
+  if redis.call('HGET', '_clean_streams', key) == '1' then
+    return ''
+  end
+  local cursor = '-'
+  while true do
+    local entries = redis.call('XRANGE', key, cursor, '+', 'COUNT', 1000)
+    if #entries == 0 then
+      break
+    end
+    for i=1,#entries do
+      local id = entries[i][1]
+      local seq = tonumber(string.sub(id, string.find(id, '-', 1, true) + 1))
+      if seq > 9 then
+        return id
+      end
+    end
+    cursor = '(' .. entries[#entries][1]
+  end
+  redis.call('HSET', '_clean_streams', key, '1')
+  return ''
+end
+
 local function append_events(keys, args)
   local stream_name = keys[1]
   local expected_version = tonumber(keys[2])
@@ -68,3 +96,4 @@ local function append_events(keys, args)
 end
  
 redis.register_function('append_events', append_events)
+redis.register_function('check_stream_clean', check_stream_clean)

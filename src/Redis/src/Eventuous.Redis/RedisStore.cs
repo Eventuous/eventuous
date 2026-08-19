@@ -36,30 +36,31 @@ public class RedisStore : IEventReader, IEventWriter {
 
     const string ContentType = "application/json";
 
+    /// <summary>
+    /// Reads events from a stream. Positions are inclusive of the start position.
+    /// Streams containing entries written by pre-0.16 versions with auto-generated IDs whose
+    /// sequence number exceeds 9 are not readable from a non-zero position: positions for such
+    /// entries don't round-trip through the position encoding, so resumed reads are rejected with
+    /// <see cref="NotSupportedException"/> instead of risking silently skipped events. Read such
+    /// streams from the start, which fails loudly on the first unrepresentable entry, and migrate them.
+    /// </summary>
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         StreamEvent[] events;
 
         try {
-            // Entries written by older versions with auto-generated IDs can sort below the decoded
-            // start position while falling inside the requested range: position m*10+s decodes to
-            // ID m-s, but a legacy entry (m-1)-(s+10) encodes to the same position or higher.
-            // Fail loudly when such entries exist instead of silently skipping them.
-            // This check is complete for every position this store version can produce: revisions
-            // are only emitted for entries with sequence numbers 0-9, so the ID gap between a
-            // revision and the next position is exactly the range probed here, and older entries
-            // are materialized (and rejected) by the pages that precede the position. Positions
-            // minted by pre-fix versions from unrepresentable entries are inherently ambiguous —
-            // the encoding maps e.g. both legacy 12345-20 and valid 12347-0 to 123470 — and can't
-            // be detected without breaking reads of valid data; reading such streams from the
-            // start rejects the first unrepresentable entry.
+            // A resumed position is only unambiguous when every entry ID in the stream round-trips
+            // through the position encoding (sequence numbers 0-9). Entries the encoding can't
+            // represent can hide below the decoded start position while falling inside the
+            // requested range, so reads from a non-zero position are conservatively rejected for
+            // streams holding any such entry. The verdict is computed server-side and cached;
+            // entries written by the current store version always carry sequence 0.
             if (start.Value >= 10) {
-                var previousMs = start.Value / 10 - 1;
-                var hidden     = await _getDatabase().StreamRangeAsync(stream.ToString(), $"{previousMs}-{start.Value % 10 + 10}", $"{previousMs}", count: 1).NoContext();
+                var unclean = (string?)await _getDatabase().ExecuteAsync("FCALL", "check_stream_clean", 1, stream.ToString()).NoContext();
 
-                if (hidden is { Length: > 0 }) {
+                if (!string.IsNullOrEmpty(unclean)) {
                     throw new NotSupportedException(
-                        $"Redis stream entry ID {hidden[0].Id} can't be reached from position {start.Value}: the position encoding only supports ID sequence numbers 0-9. " +
-                        "Entries with higher sequence numbers were written with auto-generated IDs by an older version of the store."
+                        $"Stream {stream} can't be read from position {start.Value}: it contains entry ID {unclean}, which the position encoding can't represent (only ID sequence numbers 0-9 are supported). " +
+                        "Entries with higher sequence numbers were written with auto-generated IDs by an older version of the store. Read the stream from the start and migrate it."
                     );
                 }
             }
