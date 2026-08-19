@@ -1,7 +1,6 @@
 ﻿// Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -44,6 +43,9 @@ public class RedisStore : IEventReader, IEventWriter {
     /// entries don't round-trip through the position encoding, so resumed reads are rejected with
     /// <see cref="NotSupportedException"/> instead of risking silently skipped events. Read such
     /// streams from the start, which fails loudly on the first unrepresentable entry, and migrate them.
+    /// To support that rejection, every read from a non-zero position validates the stream prefix
+    /// below the position in bounded batches, so resumed reads cost extra roundtrips proportional
+    /// to the prefix length.
     /// </summary>
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         StreamEvent[] events;
@@ -56,7 +58,7 @@ public class RedisStore : IEventReader, IEventWriter {
             // requested range, so reads from a non-zero position are conservatively rejected for
             // streams holding any such entry.
             if (start.Value >= 10) {
-                await EnsureStreamPositionsRoundTrip(database, stream, cancellationToken).NoContext();
+                await EnsureStreamPositionsRoundTrip(database, stream, start, cancellationToken).NoContext();
             }
 
             // Range read is inclusive of the start position, matching the IEventReader contract
@@ -86,36 +88,22 @@ public class RedisStore : IEventReader, IEventWriter {
 
     const int ValidationPageSize = 1000;
 
-    readonly ConcurrentDictionary<string, (RedisValue First, RedisValue Last)> _validatedStreams = new();
-
-    // Validates that every entry ID in the stream round-trips through the position encoding.
-    // The verdict is cached per stream, anchored on the first entry ID: Redis only accepts
-    // appends with increasing entry IDs, so a validated range can't gain new entries, and a
-    // changed first entry means the stream was recreated. Only entries appended after the last
-    // validated one are scanned on subsequent reads, one bounded page at a time.
-    async ValueTask EnsureStreamPositionsRoundTrip(IDatabase database, string stream, CancellationToken cancellationToken) {
-        var head = await database.StreamRangeAsync(stream, "-", "+", count: 1).NoContext();
-
-        // A missing stream holds nothing to validate, and no verdict is recorded for the name
-        if (head.Length == 0) return;
-
-        var first = head[0].Id;
-
-        RedisValue from;
-        RedisValue last;
-
-        if (_validatedStreams.TryGetValue(stream, out var validated) && validated.First == first) {
-            from = $"({validated.Last}";
-            last = validated.Last;
-        } else {
-            from = "-";
-            last = first;
-        }
+    // Validates that every entry ID below the decoded start position round-trips through the
+    // position encoding, scanning the current stream contents in bounded pages on every call.
+    // No verdict is cached: Redis has no immutable per-key generation identity, so a cached
+    // verdict can go stale when a key is deleted, recreated, or restored under the same name.
+    // Entries at or above the decoded position don't need validation here — the read
+    // materializes them, and converting an unrepresentable ID to a revision fails loudly.
+    // A key replaced concurrently with an in-flight read can still change underneath the scan,
+    // which no non-atomic paged read can detect; that also holds for the data reads themselves.
+    async ValueTask EnsureStreamPositionsRoundTrip(IDatabase database, string stream, StreamReadPosition start, CancellationToken cancellationToken) {
+        RedisValue from = "-";
+        var        end  = $"({start.Value.ToRedisValue()}";
 
         while (true) {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var batch = await database.StreamRangeAsync(stream, from, "+", count: ValidationPageSize).NoContext();
+            var batch = await database.StreamRangeAsync(stream, from, end, count: ValidationPageSize).NoContext();
 
             if (batch.Length == 0) break;
 
@@ -128,13 +116,10 @@ public class RedisStore : IEventReader, IEventWriter {
                 }
             }
 
-            last = batch[^1].Id;
-            from = $"({last}";
-
             if (batch.Length < ValidationPageSize) break;
-        }
 
-        _validatedStreams[stream] = (first, last);
+            from = $"({batch[^1].Id}";
+        }
     }
 
     static long EntrySequence(RedisValue id) {

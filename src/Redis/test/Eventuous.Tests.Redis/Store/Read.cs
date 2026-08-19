@@ -161,6 +161,28 @@ public class ReadEvents(IntegrationFixture fixture) {
     }
 
     [Test]
+    public async Task ShouldRejectResumedReadAfterStreamRestoredWithSameFirstEntry(CancellationToken cancellationToken) {
+        var streamName = GetStreamName();
+        var database   = fixture.GetDatabase();
+
+        // A clean stream with explicit IDs, validated by a resumed read
+        await AddLegacyEntry(database, streamName, "12345-0");
+        await AddLegacyEntry(database, streamName, "12346-0");
+        await AddLegacyEntry(database, streamName, "12347-0");
+
+        var appended = await fixture.EventReader.ReadEvents(streamName, new(123460), 10, true, cancellationToken);
+        await Assert.That(appended.Length).IsGreaterThan(0);
+
+        // Restore the stream with the same first entry but an unrepresentable entry
+        // below the previously validated range: the earlier verdict must not stick
+        await database.KeyDeleteAsync(streamName.ToString());
+        await AddLegacyEntry(database, streamName, "12345-0");
+        await AddLegacyEntry(database, streamName, "12346-10");
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, new(123470), 10, true, cancellationToken));
+    }
+
+    [Test]
     public async Task ShouldRejectResumedReadAfterMissingStreamGetsLegacyEntries(CancellationToken cancellationToken) {
         var streamName = GetStreamName();
 
