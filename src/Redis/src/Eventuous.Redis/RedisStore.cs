@@ -46,6 +46,10 @@ public class RedisStore : IEventReader, IEventWriter {
     /// To support that rejection, every read from a non-zero position validates the stream prefix
     /// below the position in bounded batches, so resumed reads cost extra roundtrips proportional
     /// to the prefix length.
+    /// Pre-0.16 writers must be quiesced before resumed reads are used: an old writer racing the
+    /// gap between validation and the data read can append an unrepresentable entry below the
+    /// requested position, which that read won't see. Such a stream is rejected by the next
+    /// resumed read, but the racing read itself can't detect it.
     /// </summary>
     public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken) {
         StreamEvent[] events;
@@ -96,6 +100,9 @@ public class RedisStore : IEventReader, IEventWriter {
     // materializes them, and converting an unrepresentable ID to a revision fails loudly.
     // A key replaced concurrently with an in-flight read can still change underneath the scan,
     // which no non-atomic paged read can detect; that also holds for the data reads themselves.
+    // Likewise, a pre-fix writer appending an unrepresentable entry between this scan and the
+    // data read escapes the racing read (the next resumed read rejects the stream) — old writers
+    // must be quiesced before resumed reads are used, as documented on ReadEvents.
     async ValueTask EnsureStreamPositionsRoundTrip(IDatabase database, string stream, StreamReadPosition start, CancellationToken cancellationToken) {
         RedisValue from = "-";
         var        end  = $"({start.Value.ToRedisValue()}";
@@ -122,10 +129,11 @@ public class RedisStore : IEventReader, IEventWriter {
         }
     }
 
-    static long EntrySequence(RedisValue id) {
+    // Redis stream ID sequence components are unsigned 64-bit values
+    static ulong EntrySequence(RedisValue id) {
         var value = Ensure.NotNull<string>(id);
 
-        return long.Parse(value.AsSpan(value.IndexOf('-') + 1));
+        return ulong.Parse(value.AsSpan(value.IndexOf('-') + 1));
     }
 
     public async Task<AppendEventsResult> AppendEvents(

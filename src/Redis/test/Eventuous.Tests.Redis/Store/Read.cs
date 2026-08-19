@@ -103,6 +103,18 @@ public class ReadEvents(IntegrationFixture fixture) {
     }
 
     [Test]
+    public async Task ShouldRejectEntryIdWithSequenceAboveLongRange(CancellationToken cancellationToken) {
+        var streamName = GetStreamName();
+
+        // Redis ID sequence components are unsigned 64-bit; values beyond long range must still
+        // surface as the documented NotSupportedException, both when materialized and when validated
+        await AddLegacyEntry(fixture.GetDatabase(), streamName, "12345-9223372036854775808");
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 10, true, cancellationToken));
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, new(123470), 10, true, cancellationToken));
+    }
+
+    [Test]
     public async Task ShouldRejectLegacyBurstStreamReadFromStart(CancellationToken cancellationToken) {
         var streamName = GetStreamName();
 

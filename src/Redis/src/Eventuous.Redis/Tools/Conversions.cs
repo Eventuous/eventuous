@@ -9,16 +9,24 @@ static class Conversions {
         return long.Parse(first) * 10 + long.Parse(second);
     }
 
+    // Redis stream ID components are unsigned 64-bit values, so both parts are parsed as ulong
+    // and range-checked before conversion to the signed position
     public static long ToRevision(this RedisValue value) {
         var (first, second) = new Split(Ensure.NotNull<string>(value).AsSpan());
-        var sequence = long.Parse(second);
+        var sequence = ulong.Parse(second);
 
-        return sequence <= 9
-            ? long.Parse(first) * 10 + sequence
-            : throw new NotSupportedException(
+        if (sequence > 9) {
+            throw new NotSupportedException(
                 $"Redis stream entry ID {value} can't be represented as a stream position: the position encoding only supports ID sequence numbers 0-9. " +
                 "Entries with higher sequence numbers were written with auto-generated IDs by an older version of the store."
             );
+        }
+
+        var milliseconds = ulong.Parse(first);
+
+        return milliseconds <= long.MaxValue / 10
+            ? (long)milliseconds * 10 + (long)sequence
+            : throw new NotSupportedException($"Redis stream entry ID {value} can't be represented as a stream position: the millisecond part is too large.");
     }
 
     public static ulong ToULong(this ReadOnlySpan<char> valueString) {
