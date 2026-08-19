@@ -158,8 +158,9 @@ public static class StoreFunctions {
         /// </summary>
         /// <param name="streamName">Name of the stream to read from</param>
         /// <param name="start">Stream position to start reading from</param>
-        /// <param name="pageSize">Number of events to read per page. It caps the amount of events a buffering
-        /// implementation of <see cref="IEventReader"/> holds in memory at a time.</param>
+        /// <param name="pageSize">Number of events to read per page. It bounds the memory a buffering
+        /// implementation of <see cref="IEventReader"/> uses: such implementations hold at most a small
+        /// multiple of a page in memory at a time (e.g. a tiered reader combining two stores).</param>
         /// <param name="failIfNotFound">Set to false to complete without yielding anything when the stream isn't found,
         /// instead of throwing <see cref="StreamNotFound"/>. Default is true.</param>
         /// <param name="cancellationToken">Cancellation token</param>

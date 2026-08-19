@@ -1,3 +1,4 @@
+using System.Globalization;
 using Eventuous.Tests.Redis.Fixtures;
 using Shouldly;
 using static Eventuous.Tests.Redis.Store.Helpers;
@@ -52,20 +53,40 @@ public class ReadEvents(IntegrationFixture fixture) {
 
     [Test]
     public async Task ShouldReadStreamToEndAcrossPages(CancellationToken cancellationToken) {
-        // Keep the batch small so the auto-generated Redis ID sequence numbers stay within
-        // the single digit that the position encoding can represent
-        var events     = CreateEvents(8).ToArray();
+        // A single batch this large lands in one millisecond, so all positions must still round-trip
+        var events     = CreateEvents(25).ToArray();
         var streamName = GetStreamName();
         await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream, cancellationToken);
 
         var result = new List<StreamEvent>();
 
-        await foreach (var evt in fixture.EventReader.ReadStreamToEnd(streamName, StreamReadPosition.Start, pageSize: 3, cancellationToken: cancellationToken)) {
+        await foreach (var evt in fixture.EventReader.ReadStreamToEnd(streamName, StreamReadPosition.Start, pageSize: 4, cancellationToken: cancellationToken)) {
             result.Add(evt);
         }
 
         IEnumerable<object> actual = result.Select(x => x.Payload)!;
         await Assert.That(actual).IsEquivalentTo(events);
+    }
+
+    [Test]
+    public async Task ShouldRejectLegacyUnrepresentableEntryId(CancellationToken cancellationToken) {
+        var streamName = GetStreamName();
+        var serialized = EventSerializer.Default.SerializeEvent(CreateEvent());
+
+        // Entries written by older versions can carry auto-generated IDs with sequence numbers
+        // the position encoding can't represent; reading them must fail loudly, not garble positions
+        await fixture.GetDatabase().StreamAddAsync(
+            streamName.ToString(),
+            [
+                new("message_id", Guid.NewGuid().ToString()),
+                new("message_type", serialized.EventType),
+                new("json_data", serialized.Payload),
+                new("created", DateTime.UtcNow.ToString(CultureInfo.InvariantCulture))
+            ],
+            "12345-10"
+        );
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 10, true, cancellationToken));
     }
 
     [Test]

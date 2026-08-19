@@ -9,6 +9,18 @@ static class Conversions {
         return long.Parse(first) * 10 + long.Parse(second);
     }
 
+    public static long ToRevision(this RedisValue value) {
+        var (first, second) = new Split(Ensure.NotNull<string>(value).AsSpan());
+        var sequence = long.Parse(second);
+
+        return sequence <= 9
+            ? long.Parse(first) * 10 + sequence
+            : throw new NotSupportedException(
+                $"Redis stream entry ID {value} can't be represented as a stream position: the position encoding only supports ID sequence numbers 0-9. " +
+                "Entries with higher sequence numbers were written with auto-generated IDs by an older version of the store."
+            );
+    }
+
     public static ulong ToULong(this ReadOnlySpan<char> valueString) {
         var (first, second) = new Split(valueString);
         return ulong.Parse(first) * 10 + ulong.Parse(second);
