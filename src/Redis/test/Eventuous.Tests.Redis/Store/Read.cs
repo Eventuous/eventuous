@@ -99,6 +99,26 @@ public class ReadEvents(IntegrationFixture fixture) {
         }
     }
 
+    [Test]
+    public async Task ShouldRejectLegacyBurstStreamReadFromStart(CancellationToken cancellationToken) {
+        var streamName = GetStreamName();
+
+        // A legacy burst with sequence numbers beyond a single decimal carry: positions minted for
+        // such entries by older versions are ambiguous, but any read from the start of the stream
+        // must reject the first unrepresentable entry it materializes
+        for (var sequence = 0; sequence <= 20; sequence += 5) {
+            await AddLegacyEntry(streamName, $"12345-{sequence}");
+        }
+
+        await Assert.ThrowsAsync<NotSupportedException>(ReadFunc);
+
+        return;
+
+        async Task ReadFunc() {
+            await foreach (var _ in fixture.EventReader.ReadStreamToEnd(streamName, StreamReadPosition.Start, cancellationToken: cancellationToken)) { }
+        }
+    }
+
     async Task AddLegacyEntry(StreamName streamName, string id) {
         var serialized = EventSerializer.Default.SerializeEvent(CreateEvent());
 

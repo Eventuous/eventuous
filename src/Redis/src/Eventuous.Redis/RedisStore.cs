@@ -44,6 +44,14 @@ public class RedisStore : IEventReader, IEventWriter {
             // start position while falling inside the requested range: position m*10+s decodes to
             // ID m-s, but a legacy entry (m-1)-(s+10) encodes to the same position or higher.
             // Fail loudly when such entries exist instead of silently skipping them.
+            // This check is complete for every position this store version can produce: revisions
+            // are only emitted for entries with sequence numbers 0-9, so the ID gap between a
+            // revision and the next position is exactly the range probed here, and older entries
+            // are materialized (and rejected) by the pages that precede the position. Positions
+            // minted by pre-fix versions from unrepresentable entries are inherently ambiguous —
+            // the encoding maps e.g. both legacy 12345-20 and valid 12347-0 to 123470 — and can't
+            // be detected without breaking reads of valid data; reading such streams from the
+            // start rejects the first unrepresentable entry.
             if (start.Value >= 10) {
                 var previousMs = start.Value / 10 - 1;
                 var hidden     = await _getDatabase().StreamRangeAsync(stream.ToString(), $"{previousMs}-{start.Value % 10 + 10}", $"{previousMs}", count: 1).NoContext();
