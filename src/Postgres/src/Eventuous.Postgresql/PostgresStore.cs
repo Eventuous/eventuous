@@ -56,7 +56,8 @@ public class PostgresStore : SqlEventStoreBase<NpgsqlConnection, NpgsqlTransacti
     protected override DbCommand GetReadBackwardsCommand(NpgsqlConnection connection, StreamName stream, StreamReadPosition start, int count)
         => connection.GetCommand(Schema.ReadStreamBackwards)
             .Add("_stream_name", NpgsqlDbType.Varchar, stream.ToString())
-            .Add("_from_position", NpgsqlDbType.Integer, start.Value)
+            // Stream positions are 32-bit, so StreamReadPosition.End gets clamped, and the function trims it to the stream head
+            .Add("_from_position", NpgsqlDbType.Integer, (int)Math.Min(start.Value, int.MaxValue))
             .Add("_count", NpgsqlDbType.Integer, count);
 
     protected override bool IsStreamNotFound(Exception exception)

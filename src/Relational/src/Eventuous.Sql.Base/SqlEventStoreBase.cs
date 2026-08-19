@@ -103,6 +103,9 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
 
         var events = await ReadInternal(stream, start, count, cancellationToken).NoContext();
 
+        // A plain query can't tell a missing stream from a read past the stream end
+        if (events.Length == 0 && !await StreamExists(stream, cancellationToken).NoContext()) throw new StreamNotFound(stream);
+
         foreach (var evt in events) yield return evt;
     }
 
@@ -111,6 +114,9 @@ public abstract class SqlEventStoreBase<TConnection, TTransaction>(IEventSeriali
         if (count <= 0) yield break;
 
         var events = await ReadInternalBackwards(stream, start, count, cancellationToken).NoContext();
+
+        // A plain query can't tell a missing stream from a read past the stream end
+        if (events.Length == 0 && !await StreamExists(stream, cancellationToken).NoContext()) throw new StreamNotFound(stream);
 
         foreach (var evt in events) yield return evt;
     }
