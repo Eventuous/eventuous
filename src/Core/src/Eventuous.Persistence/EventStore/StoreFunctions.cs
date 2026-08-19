@@ -164,43 +164,16 @@ public static class StoreFunctions {
         /// instead of throwing <see cref="StreamNotFound"/>. Default is true.</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>An async enumerable of events retrieved from the stream</returns>
-        public async IAsyncEnumerable<StreamEvent> ReadStreamToEnd(
-                StreamName                                 streamName,
-                StreamReadPosition                         start,
-                int                                        pageSize          = 500,
-                bool                                       failIfNotFound    = true,
-                [EnumeratorCancellation] CancellationToken cancellationToken = default
+        public IAsyncEnumerable<StreamEvent> ReadStreamToEnd(
+                StreamName        streamName,
+                StreamReadPosition start,
+                int               pageSize          = 500,
+                bool              failIfNotFound    = true,
+                CancellationToken cancellationToken = default
             ) {
-            var position = start;
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
 
-            while (true) {
-                var  yielded      = 0;
-                long lastRevision = 0;
-
-                await using var enumerator = eventReader.ReadEvents(streamName, position, pageSize, cancellationToken).GetAsyncEnumerator(cancellationToken);
-
-                while (true) {
-                    bool moved;
-
-                    try {
-                        moved = await enumerator.MoveNextAsync().NoContext();
-                    } catch (StreamNotFound) when (!failIfNotFound) {
-                        yield break;
-                    }
-
-                    if (!moved) break;
-
-                    var evt = enumerator.Current;
-                    yielded++;
-                    lastRevision = evt.Revision;
-
-                    yield return evt;
-                }
-
-                if (yielded < pageSize) yield break;
-
-                position = new(lastRevision + 1);
-            }
+            return ReadToEnd(eventReader, streamName, start, pageSize, failIfNotFound, cancellationToken);
         }
 
         /// <summary>
@@ -225,6 +198,48 @@ public static class StoreFunctions {
             }
 
             return [.. streamEvents];
+        }
+    }
+
+    // Relies on readers yielding exactly `count` events unless the stream end is reached:
+    // a page shorter than pageSize means there is nothing left to read
+    static async IAsyncEnumerable<StreamEvent> ReadToEnd(
+            IEventReader                               eventReader,
+            StreamName                                 streamName,
+            StreamReadPosition                         start,
+            int                                        pageSize,
+            bool                                       failIfNotFound,
+            [EnumeratorCancellation] CancellationToken cancellationToken
+        ) {
+        var position = start;
+
+        while (true) {
+            var  yielded      = 0;
+            long lastRevision = 0;
+
+            await using var enumerator = eventReader.ReadEvents(streamName, position, pageSize, cancellationToken).GetAsyncEnumerator(cancellationToken);
+
+            while (true) {
+                bool moved;
+
+                try {
+                    moved = await enumerator.MoveNextAsync().NoContext();
+                } catch (StreamNotFound) when (!failIfNotFound) {
+                    yield break;
+                }
+
+                if (!moved) break;
+
+                var evt = enumerator.Current;
+                yielded++;
+                lastRevision = evt.Revision;
+
+                yield return evt;
+            }
+
+            if (yielded < pageSize) yield break;
+
+            position = new(lastRevision + 1);
         }
     }
 }

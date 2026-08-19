@@ -218,8 +218,10 @@ public partial class KurrentDBEventStore : IEventStore {
     /// <inheritdoc/>
     public IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default)
         => EnumerateStream(
-            () => _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken),
+            (from, remaining) => _client.ReadStreamAsync(Direction.Forwards, stream, from ?? start.AsStreamPosition(), remaining, cancellationToken: cancellationToken),
+            forwards: true,
             stream,
+            count,
             () => new("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream),
             cancellationToken
         );
@@ -227,51 +229,86 @@ public partial class KurrentDBEventStore : IEventStore {
     /// <inheritdoc/>
     public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default)
         => EnumerateStream(
-            () => _client.ReadStreamAsync(Direction.Backwards, stream, start.AsStreamPosition(), count, resolveLinkTos: true, cancellationToken: cancellationToken),
+            (from, remaining) => _client.ReadStreamAsync(Direction.Backwards, stream, from ?? start.AsStreamPosition(), remaining, resolveLinkTos: true, cancellationToken: cancellationToken),
+            forwards: false,
             stream,
+            count,
             () => new("Unable to read {Count} events backwards from {Stream}", count, stream),
             cancellationToken
         );
 
     // Events are yielded as they arrive from the server, so a read holds at most one
     // deserialized event at a time, regardless of the requested count.
+    // Non-deserializable system events are skipped and compensated for with follow-up
+    // reads, so the enumeration delivers `count` events unless the stream end is reached —
+    // paged readers rely on a short read meaning the end of the stream.
     // The exception mapping wraps each advance of the source enumerator instead of the whole
     // loop because iterators can't yield from inside a try block with a catch clause.
     async IAsyncEnumerable<StreamEvent> EnumerateStream(
-            Func<IAsyncEnumerable<ResolvedEvent>>      read,
-            string                                     stream,
-            Func<ErrorInfo>                            getError,
-            [EnumeratorCancellation] CancellationToken cancellationToken
+            Func<StreamPosition?, int, IAsyncEnumerable<ResolvedEvent>> read,
+            bool                                                        forwards,
+            string                                                      stream,
+            int                                                         count,
+            Func<ErrorInfo>                                             getError,
+            [EnumeratorCancellation] CancellationToken                  cancellationToken
         ) {
-        await using var enumerator = read().GetAsyncEnumerator(cancellationToken);
+        var             remaining = count;
+        StreamPosition? from      = null;
 
-        while (true) {
-            var          moved       = false;
-            StreamEvent? streamEvent = null;
+        while (remaining > 0) {
+            var  requested = remaining;
+            var  received  = 0;
+            long lastRaw   = 0;
 
-            try {
-                moved = await enumerator.MoveNextAsync().NoContext();
+            await using var enumerator = read(from, requested).GetAsyncEnumerator(cancellationToken);
 
-                if (moved) streamEvent = ToStreamEvent(enumerator.Current);
-            } catch (StreamNotFoundException) {
-                LogStreamStreamNotFound(stream);
+            while (true) {
+                var          moved       = false;
+                StreamEvent? streamEvent = null;
 
-                throw new StreamNotFound(stream);
-            } catch (OperationCanceledException) {
-                throw;
-            } catch (Exception ex) {
-                var (message, args) = getError();
-                // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
+                try {
+                    moved = await enumerator.MoveNextAsync().NoContext();
+
+                    if (moved) {
+                        received++;
+                        lastRaw     = enumerator.Current.OriginalEventNumber.ToInt64();
+                        streamEvent = ToStreamEvent(enumerator.Current);
+                    }
+                } catch (StreamNotFoundException) {
+                    LogStreamStreamNotFound(stream);
+
+                    throw new StreamNotFound(stream);
+                } catch (OperationCanceledException) {
+                    throw;
+                } catch (Exception ex) {
+                    var (message, args) = getError();
+                    // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
 #pragma warning disable CA2254
-                _logger.LogWarning(ex, message, args);
+                    _logger.LogWarning(ex, message, args);
 #pragma warning restore CA2254
 
-                throw new ReadFromStreamException(stream, ex);
+                    throw new ReadFromStreamException(stream, ex);
+                }
+
+                if (!moved) break;
+
+                if (streamEvent != null) {
+                    remaining--;
+
+                    yield return streamEvent.Value;
+                }
             }
 
-            if (!moved) yield break;
+            // Fewer events received than requested means the stream end was reached
+            if (received < requested) yield break;
 
-            if (streamEvent != null) yield return streamEvent.Value;
+            // Nothing was skipped and the requested count is delivered
+            if (remaining == 0) yield break;
+
+            // Reading backwards can't continue past the first stream event
+            if (!forwards && lastRaw == 0) yield break;
+
+            from = StreamPosition.FromInt64(forwards ? lastRaw + 1 : lastRaw - 1);
         }
     }
 

@@ -50,6 +50,24 @@ public class ReadEvents(IntegrationFixture fixture) {
     }
 
     [Test]
+    public async Task ShouldReturnEmptyReadingPastEnd(CancellationToken cancellationToken) {
+        var events     = CreateEvents(10).ToArray();
+        var streamName = GetStreamName();
+        var appended   = await fixture.AppendEvents(streamName, events, ExpectedStreamVersion.NoStream, cancellationToken);
+
+        var result = await fixture.EventReader.ReadEvents(streamName, new((long)appended.GlobalPosition + 1000), 10, true, cancellationToken);
+
+        await Assert.That(result).IsEmpty();
+    }
+
+    [Test]
+    public async Task ShouldThrowWhenReadingMissingStream(CancellationToken cancellationToken) {
+        var streamName = GetStreamName();
+
+        await Assert.ThrowsAsync<StreamNotFound>(() => fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 10, true, cancellationToken));
+    }
+
+    [Test]
     public async Task ShouldReadHead(CancellationToken cancellationToken) {
         // ReSharper disable once CoVariantArrayConversion
         var events     = CreateEvents(20).ToArray();

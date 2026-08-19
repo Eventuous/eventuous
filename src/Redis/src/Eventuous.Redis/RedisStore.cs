@@ -43,10 +43,15 @@ public class RedisStore : IEventReader, IEventWriter {
             var result = await _getDatabase().StreamReadAsync(stream.ToString(), start.Value.ToRedisValue(), count).NoContext();
 
             if (result == null! || result.Length == 0) {
-                throw new StreamNotFound(stream);
-            }
+                // An empty result can also mean the read window is past the stream end
+                if (!await _getDatabase().KeyExistsAsync(stream.ToString()).NoContext()) {
+                    throw new StreamNotFound(stream);
+                }
 
-            events = [.. result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer))];
+                events = [];
+            } else {
+                events = [.. result.Select(x => ToStreamEvent(x, _serializer, _metaSerializer))];
+            }
         } catch (InvalidOperationException e) when (e.Message.Contains("Reading is not allowed after reader was completed") ||
                                                     cancellationToken.IsCancellationRequested) {
             throw new OperationCanceledException("Redis read operation terminated", e, cancellationToken);

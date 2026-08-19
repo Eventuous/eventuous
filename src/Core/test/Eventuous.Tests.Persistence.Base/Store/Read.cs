@@ -216,6 +216,21 @@ public abstract class StoreReadTests<T> where T : StoreFixtureBase {
 
     [Test]
     [Category("Store")]
+    public async Task ShouldRejectInvalidPageSizeReadingToEnd(CancellationToken cancellationToken) {
+        var streamName = Helpers.GetStreamName();
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Read(0));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Read(-1));
+
+        return;
+
+        async Task Read(int pageSize) {
+            await foreach (var _ in _fixture.EventStore.ReadStreamToEnd(streamName, StreamReadPosition.Start, pageSize: pageSize, cancellationToken: cancellationToken)) { }
+        }
+    }
+
+    [Test]
+    [Category("Store")]
     public async Task ShouldThrowWhenReadingMissingStreamToEnd(CancellationToken cancellationToken) {
         var streamName = Helpers.GetStreamName();
 

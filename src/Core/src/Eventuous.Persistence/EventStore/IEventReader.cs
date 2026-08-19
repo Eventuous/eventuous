@@ -11,6 +11,8 @@ public interface IEventReader {
     /// events before yielding, so memory usage can grow with <paramref name="count"/>. To read a whole stream,
     /// use <see cref="StoreFunctions.ReadStreamToEnd"/>, which reads in pages, instead of passing
     /// <see cref="int.MaxValue"/> as the count.
+    /// Implementations must yield exactly <paramref name="count"/> events unless the end of the stream is reached,
+    /// and must return an empty sequence, not throw, when reading past the end of an existing stream.
     /// </summary>
     /// <param name="stream">Stream name</param>
     /// <param name="start">Where to start reading events</param>

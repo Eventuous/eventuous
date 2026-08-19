@@ -28,6 +28,44 @@ public abstract class TieredStoreTestsBase<TContainer> where TContainer : Docker
         await Assert.That(loaded.Skip(50).Select(x => x.FromArchive)).DoesNotContain(true);
     }
 
+    protected async Task Should_return_empty_reading_past_end() {
+        const int count = 10;
+
+        var (tieredReader, stream, _) = await SeedTieredStream(count);
+
+        var loaded = await tieredReader.ReadEvents(stream, new(count), 5, true, CancellationToken.None);
+
+        await Assert.That(loaded).IsEmpty();
+    }
+
+    protected async Task Should_read_stream_to_end_with_exact_page_multiple() {
+        const int count = 100;
+
+        var (tieredReader, stream, testEvents) = await SeedTieredStream(count);
+
+        var loaded = new List<StreamEvent>();
+
+        // 100 events with page size 50 forces a final read past the stream end
+        await foreach (var evt in tieredReader.ReadStreamToEnd(stream, StreamReadPosition.Start, pageSize: 50)) {
+            loaded.Add(evt);
+        }
+
+        var actual = loaded.Select(x => (TestEventForTiers)x.Payload!);
+        await Assert.That(actual).IsEquivalentTo(testEvents);
+    }
+
+    async Task<(TieredEventReader Reader, StreamName Stream, TestEventForTiers[] Events)> SeedTieredStream(int count) {
+        var store      = _storeFixture.EventStore;
+        var archive    = new ArchiveStore(_storeFixture.EventStore);
+        var testEvents = TestEventForTiers.CreateMany(count).ToArray();
+        var stream     = new StreamName($"Test-{Guid.NewGuid():N}");
+
+        await store.Store(stream, ExpectedStreamVersion.NoStream, testEvents);
+        await archive.Store(stream, ExpectedStreamVersion.NoStream, testEvents);
+
+        return (new(store, archive), stream, testEvents);
+    }
+
     readonly StoreFixtureBase<TContainer> _storeFixture;
 
     protected TieredStoreTestsBase(StoreFixtureBase<TContainer> storeFixture) {
