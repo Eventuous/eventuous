@@ -40,6 +40,22 @@ public class RedisStore : IEventReader, IEventWriter {
         StreamEvent[] events;
 
         try {
+            // Entries written by older versions with auto-generated IDs can sort below the decoded
+            // start position while falling inside the requested range: position m*10+s decodes to
+            // ID m-s, but a legacy entry (m-1)-(s+10) encodes to the same position or higher.
+            // Fail loudly when such entries exist instead of silently skipping them.
+            if (start.Value >= 10) {
+                var previousMs = start.Value / 10 - 1;
+                var hidden     = await _getDatabase().StreamRangeAsync(stream.ToString(), $"{previousMs}-{start.Value % 10 + 10}", $"{previousMs}", count: 1).NoContext();
+
+                if (hidden is { Length: > 0 }) {
+                    throw new NotSupportedException(
+                        $"Redis stream entry ID {hidden[0].Id} can't be reached from position {start.Value}: the position encoding only supports ID sequence numbers 0-9. " +
+                        "Entries with higher sequence numbers were written with auto-generated IDs by an older version of the store."
+                    );
+                }
+            }
+
             // Range read is inclusive of the start position, matching the IEventReader contract
             // and the paged read extensions, which advance pages from the last revision + 1
             var result = await _getDatabase().StreamRangeAsync(stream.ToString(), start.Value.ToRedisValue(), count: count).NoContext();

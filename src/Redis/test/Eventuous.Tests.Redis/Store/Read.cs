@@ -71,10 +71,37 @@ public class ReadEvents(IntegrationFixture fixture) {
     [Test]
     public async Task ShouldRejectLegacyUnrepresentableEntryId(CancellationToken cancellationToken) {
         var streamName = GetStreamName();
-        var serialized = EventSerializer.Default.SerializeEvent(CreateEvent());
 
         // Entries written by older versions can carry auto-generated IDs with sequence numbers
         // the position encoding can't represent; reading them must fail loudly, not garble positions
+        await AddLegacyEntry(streamName, "12345-10");
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 10, true, cancellationToken));
+    }
+
+    [Test]
+    public async Task ShouldRejectLegacyEntryIdHiddenBehindPageBoundary(CancellationToken cancellationToken) {
+        var streamName = GetStreamName();
+
+        // Legacy auto-generated IDs from a same-millisecond burst
+        for (var sequence = 0; sequence <= 10; sequence++) {
+            await AddLegacyEntry(streamName, $"12345-{sequence}");
+        }
+
+        // The first page ends at 12345-9 and the advanced position decodes past 12345-10,
+        // which must fail loudly instead of being silently skipped
+        await Assert.ThrowsAsync<NotSupportedException>(ReadFunc);
+
+        return;
+
+        async Task ReadFunc() {
+            await foreach (var _ in fixture.EventReader.ReadStreamToEnd(streamName, StreamReadPosition.Start, pageSize: 10, cancellationToken: cancellationToken)) { }
+        }
+    }
+
+    async Task AddLegacyEntry(StreamName streamName, string id) {
+        var serialized = EventSerializer.Default.SerializeEvent(CreateEvent());
+
         await fixture.GetDatabase().StreamAddAsync(
             streamName.ToString(),
             [
@@ -83,10 +110,8 @@ public class ReadEvents(IntegrationFixture fixture) {
                 new("json_data", serialized.Payload),
                 new("created", DateTime.UtcNow.ToString(CultureInfo.InvariantCulture))
             ],
-            "12345-10"
+            id
         );
-
-        await Assert.ThrowsAsync<NotSupportedException>(() => fixture.EventReader.ReadEvents(streamName, StreamReadPosition.Start, 10, true, cancellationToken));
     }
 
     [Test]

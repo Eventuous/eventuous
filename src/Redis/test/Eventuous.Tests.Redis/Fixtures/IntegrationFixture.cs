@@ -37,9 +37,7 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
         IDatabase GetDb() {
             // FLUSHDB in test teardown is an admin command; StackExchange.Redis 3.x enforces the
             // admin gate for raw commands issued through Execute as well.
-            // abortConnect=false keeps the multiplexer retrying when the first connection attempt
-            // races the freshly started container.
-            var muxer = ConnectionMultiplexer.Connect($"{connString},allowAdmin=true,abortConnect=false");
+            var muxer = ConnectionMultiplexer.Connect($"{connString},allowAdmin=true");
 
             return muxer.GetDatabase();
         }
