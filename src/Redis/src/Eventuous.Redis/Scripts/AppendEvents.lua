@@ -1,5 +1,17 @@
 #!lua name=append_events
 
+-- Entry IDs are assigned explicitly as '<milliseconds>-0' with the millisecond part bumped past
+-- the last entry when needed. Auto-generated IDs ('*') bump the sequence part instead, and the
+-- client-side position encoding can only represent sequence numbers 0-9.
+local function last_id_ms(key)
+  local entries = redis.call('XREVRANGE', key, '+', '-', 'COUNT', 1)
+  if #entries == 0 then
+    return 0
+  end
+  local id = entries[1][1]
+  return tonumber(string.sub(id, 1, string.find(id, '-', 1, true) - 1))
+end
+
 local function append_events(keys, args)
   local stream_name = keys[1]
   local expected_version = tonumber(keys[2])
@@ -22,20 +34,29 @@ local function append_events(keys, args)
   local global_position
   local items_inserted = 0
 
+  local time = redis.call('TIME')
+  local now_ms = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
+  local stream_ms = last_id_ms(stream_name)
+  local all_ms = last_id_ms('_all')
+
   for i=1, table.getn(args), 4 do
 
+      stream_ms = math.max(now_ms, stream_ms + 1)
+
       local stream_position = redis.call(
-        'XADD', stream_name, '*', 
+        'XADD', stream_name, string.format('%.0f', stream_ms) .. '-0',
         'message_id', args[i],
-        'message_type', args[i+1], 
-        'json_data', args[i+2], 
+        'message_type', args[i+1],
+        'json_data', args[i+2],
         'json_metadata', args[i+3],
         'created', created
       )
 
+      all_ms = math.max(now_ms, all_ms + 1)
+
       global_position = redis.call(
-        'XADD', '_all', '*', 
-        'stream', stream_name, 
+        'XADD', '_all', string.format('%.0f', all_ms) .. '-0',
+        'stream', stream_name,
         'position', stream_position
       )
 
