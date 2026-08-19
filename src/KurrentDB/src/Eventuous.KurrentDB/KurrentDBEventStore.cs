@@ -216,48 +216,100 @@ public partial class KurrentDBEventStore : IEventStore {
     }
 
     /// <inheritdoc/>
-    public async IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
-        var read = _client.ReadStreamAsync(Direction.Forwards, stream, start.AsStreamPosition(), count, cancellationToken: cancellationToken);
-
-        var events = await TryExecute(
-            async () => {
-                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
-
-                return ToStreamEvents(resolvedEvents);
-            },
+    public IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default)
+        => EnumerateStream(
+            (from, remaining) => _client.ReadStreamAsync(Direction.Forwards, stream, from ?? start.AsStreamPosition(), remaining, cancellationToken: cancellationToken),
+            forwards: true,
             stream,
-            true,
+            count,
             () => new("Unable to read {Count} starting at {Start} events from {Stream}", count, start, stream),
-            (s, ex) => new ReadFromStreamException(s, ex)
+            cancellationToken
         );
-
-        foreach (var evt in events) yield return evt;
-    }
 
     /// <inheritdoc/>
-    public async IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
-        var read = _client.ReadStreamAsync(
-            Direction.Backwards,
+    public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default)
+        => EnumerateStream(
+            (from, remaining) => _client.ReadStreamAsync(Direction.Backwards, stream, from ?? start.AsStreamPosition(), remaining, resolveLinkTos: true, cancellationToken: cancellationToken),
+            forwards: false,
             stream,
-            start.AsStreamPosition(),
             count,
-            resolveLinkTos: true,
-            cancellationToken: cancellationToken
-        );
-
-        var events = await TryExecute(
-            async () => {
-                var resolvedEvents = await read.ToArrayAsync(cancellationToken).NoContext();
-
-                return ToStreamEvents(resolvedEvents);
-            },
-            stream,
-            true,
             () => new("Unable to read {Count} events backwards from {Stream}", count, stream),
-            (s, ex) => new ReadFromStreamException(s, ex)
+            cancellationToken
         );
 
-        foreach (var evt in events) yield return evt;
+    // Events are yielded as they arrive from the server, so a read holds at most one
+    // deserialized event at a time, regardless of the requested count.
+    // Non-deserializable system events are skipped and compensated for with follow-up
+    // reads, so the enumeration delivers `count` events unless the stream end is reached —
+    // paged readers rely on a short read meaning the end of the stream.
+    // The exception mapping wraps each advance of the source enumerator instead of the whole
+    // loop because iterators can't yield from inside a try block with a catch clause.
+    async IAsyncEnumerable<StreamEvent> EnumerateStream(
+            Func<StreamPosition?, int, IAsyncEnumerable<ResolvedEvent>> read,
+            bool                                                        forwards,
+            string                                                      stream,
+            int                                                         count,
+            Func<ErrorInfo>                                             getError,
+            [EnumeratorCancellation] CancellationToken                  cancellationToken
+        ) {
+        var             remaining = count;
+        StreamPosition? from      = null;
+
+        while (remaining > 0) {
+            var  requested = remaining;
+            var  received  = 0;
+            long lastRaw   = 0;
+
+            await using var enumerator = read(from, requested).GetAsyncEnumerator(cancellationToken);
+
+            while (true) {
+                var          moved       = false;
+                StreamEvent? streamEvent = null;
+
+                try {
+                    moved = await enumerator.MoveNextAsync().NoContext();
+
+                    if (moved) {
+                        received++;
+                        lastRaw     = enumerator.Current.OriginalEventNumber.ToInt64();
+                        streamEvent = ToStreamEvent(enumerator.Current);
+                    }
+                } catch (StreamNotFoundException) {
+                    LogStreamStreamNotFound(stream);
+
+                    throw new StreamNotFound(stream);
+                } catch (OperationCanceledException) {
+                    throw;
+                } catch (Exception ex) {
+                    var (message, args) = getError();
+                    // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
+#pragma warning disable CA2254
+                    _logger.LogWarning(ex, message, args);
+#pragma warning restore CA2254
+
+                    throw new ReadFromStreamException(stream, ex);
+                }
+
+                if (!moved) break;
+
+                if (streamEvent != null) {
+                    remaining--;
+
+                    yield return streamEvent.Value;
+                }
+            }
+
+            // Fewer events received than requested means the stream end was reached
+            if (received < requested) yield break;
+
+            // Nothing was skipped and the requested count is delivered
+            if (remaining == 0) yield break;
+
+            // Reading backwards can't continue past the first stream event
+            if (!forwards && lastRaw == 0) yield break;
+
+            from = StreamPosition.FromInt64(forwards ? lastRaw + 1 : lastRaw - 1);
+        }
     }
 
     /// <inheritdoc/>
@@ -361,14 +413,6 @@ public partial class KurrentDBEventStore : IEventStore {
                 resolvedEvent.Event.Created
             );
     }
-
-    StreamEvent[] ToStreamEvents(ResolvedEvent[] resolvedEvents)
-        => [
-            .. resolvedEvents
-                .Select(ToStreamEvent)
-                .Where(x => x != null)
-                .Select(x => x!.Value)
-        ];
 
     record ErrorInfo(string Message, params object[] Args);
 

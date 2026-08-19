@@ -41,7 +41,8 @@ public class SqlServerStore : SqlEventStoreBase<SqlConnection, SqlTransaction> {
         => connection
             .GetStoredProcCommand(Schema.ReadStreamBackwards)
             .Add("@stream_name", SqlDbType.NVarChar, stream.ToString())
-            .Add("@from_position", SqlDbType.Int, start.Value)
+            // Stream positions are 32-bit, so StreamReadPosition.End gets clamped, and the procedure trims it to the stream head
+            .Add("@from_position", SqlDbType.Int, (int)Math.Min(start.Value, int.MaxValue))
             .Add("@count", SqlDbType.Int, count);
 
     protected override bool IsStreamNotFound(Exception exception) => exception is SqlException e && e.Message.StartsWith("StreamNotFound");
