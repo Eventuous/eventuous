@@ -118,7 +118,8 @@ Use per-event blob ID overrides when you need different events to target differe
 
 The projector stores each state as a separate blob in Azure Blob Storage. Each blob contains:
 - The serialized state object (JSON by default)
-- Metadata including stream name, message ID, stream position, and global position
+- Metadata including stream name, message ID, stream position, and global position;
+  because Azure requires metadata values to be ASCII, the stream name and message ID are stored percent-encoded
 - Content type set to `application/json`
 
 This approach provides natural partitioning by stream and enables efficient state retrieval for individual streams.

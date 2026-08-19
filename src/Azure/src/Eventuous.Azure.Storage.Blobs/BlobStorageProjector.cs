@@ -151,38 +151,39 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
 
             var blobClient = projector.ContainerClient.GetBlobClient(blobName);
 
-            return await ModifyBlobWithRetries(projector._raceRetries).NoContext();
+            var retries = projector._raceRetries;
 
-            async Task<EventHandlingStatus> ModifyBlobWithRetries(int retries) {
-                try {
-                    return await ModifyBlob().NoContext();
-                } catch (RequestFailedException ex) when (ex.Status == 412 || ex.Status == 409) {
-                    return retries > 0 ? await ModifyBlobWithRetries(retries - 1).NoContext() : EventHandlingStatus.Failure;
-                }
-            }
+            while (true) {
+                T                     current;
+                BlobRequestConditions conditions;
 
-            async Task<EventHandlingStatus> ModifyBlob() {
                 try {
                     var blobContent = await blobClient.DownloadContentAsync(typedContext.CancellationToken).NoContext();
 
                     // Check idempotency if enabled
-                    if (projector._idempotencyMode != IdempotencyMode.None) {
-                        if (IsDuplicate(blobContent.Value.Details.Metadata)) {
-                            return EventHandlingStatus.Ignored;
-                        }
+                    if (projector._idempotencyMode != IdempotencyMode.None && IsDuplicate(blobContent.Value.Details.Metadata)) {
+                        return EventHandlingStatus.Ignored;
                     }
 
-                    var content = blobContent.Value.Content;
-                    var current = projector.ToObjectFromJson(content);
-
-                    await UploadUpdated(current, new BlobRequestConditions { IfMatch = blobContent.Value.Details.ETag }).NoContext();
-
-                    return EventHandlingStatus.Success;
-                } catch (RequestFailedException ex) when (ex.Status == 404) {
+                    current    = projector.ToObjectFromJson(blobContent.Value.Content);
+                    conditions = new BlobRequestConditions { IfMatch = blobContent.Value.Details.ETag };
+                } catch (RequestFailedException ex) when (ex.Status == 404 && ex.ErrorCode == BlobErrorCode.BlobNotFound.ToString()) {
                     // Blob doesn't exist, start with a new instance
-                    await UploadUpdated(new T(), new BlobRequestConditions { IfNoneMatch = ETag.All }).NoContext();
+                    current    = new T();
+                    conditions = new BlobRequestConditions { IfNoneMatch = ETag.All };
+                }
+
+                // The user-supplied handler runs outside the catch blocks, so its own Azure
+                // exceptions are never mistaken for the projection blob's races
+                var updated = await eventHandler(typedContext, current).NoContext();
+
+                try {
+                    await Upload(updated, conditions).NoContext();
 
                     return EventHandlingStatus.Success;
+                } catch (RequestFailedException ex) when (IsConcurrencyConflict(ex)) {
+                    // Lost the optimistic concurrency race: re-read the state and try again
+                    if (retries-- <= 0) return EventHandlingStatus.Failure;
                 }
             }
 
@@ -193,22 +194,23 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
                     typedContext.GlobalPosition <= currentGlobalPosition,
                 IdempotencyMode.ByMessageId =>
                     metadata.TryGetValue("MessageId", out var storedId) &&
-                    storedId == typedContext.MessageId,
+                    storedId == Uri.EscapeDataString(typedContext.MessageId),
                 _ => false
             };
 
-            async Task UploadUpdated(T current, BlobRequestConditions conditions) {
-                var updated = await eventHandler(typedContext, current).NoContext();
-                var json    = projector.SerializeToUtf8Bytes(updated);
+            async Task Upload(T updated, BlobRequestConditions conditions) {
+                var json = projector.SerializeToUtf8Bytes(updated);
 
                 var uploadOptions = new BlobUploadOptions {
                     Conditions = conditions,
                     HttpHeaders = new BlobHttpHeaders {
                         ContentType = "application/json"
                     },
+                    // Azure requires metadata values to be ASCII, while stream names and message ids
+                    // can be arbitrary strings, so they are stored percent-encoded
                     Metadata = new Dictionary<string, string> {
-                        ["Stream"]         = typedContext.Stream.ToString(),
-                        ["MessageId"]      = typedContext.MessageId,
+                        ["Stream"]         = Uri.EscapeDataString(typedContext.Stream.ToString()),
+                        ["MessageId"]      = Uri.EscapeDataString(typedContext.MessageId),
                         ["StreamPosition"] = typedContext.StreamPosition.ToString(),
                         ["GlobalPosition"] = typedContext.GlobalPosition.ToString()
                     }
@@ -218,5 +220,9 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
                 await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken).NoContext();
             }
         }
+
+        static bool IsConcurrencyConflict(RequestFailedException ex)
+            => ex.Status is 412 or 409 &&
+                (ex.ErrorCode == BlobErrorCode.ConditionNotMet.ToString() || ex.ErrorCode == BlobErrorCode.BlobAlreadyExists.ToString());
     }
 }

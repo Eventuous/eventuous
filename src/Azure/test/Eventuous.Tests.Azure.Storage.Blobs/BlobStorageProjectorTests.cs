@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Azure;
 using Azure.Storage.Blobs;
 using Eventuous.Azure.Storage.Blobs;
 using Eventuous.Subscriptions;
@@ -275,6 +276,42 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         await Assert.That(state.Value).IsEqualTo(105); // 5 + 100
     }
 
+    [Test]
+    public async Task UnicodeStreamName_ShouldStoreStateWithEncodedMetadata() {
+        // Arrange
+        var containerName = await SetupContainer("unicode-stream");
+        const string streamName = "Booking-Ålesund";
+        var projector = new SyncStateProjector(fixture.BlobServiceClient, containerName);
+        var context = CreateContext(new TestEvent { Value = 10 }, stream: streamName);
+
+        // Act
+        var result = await projector.HandleEvent(context);
+
+        // Assert
+        await AssertSuccess(result);
+
+        var blobName = "Ålesund/SyncState.json";
+        var state = await GetBlobState<SyncState>(containerName, blobName);
+        await Assert.That(state.Value).IsEqualTo(10);
+
+        // Metadata values must be ASCII, so the stream name is stored percent-encoded
+        var properties = await GetContainer(containerName).GetBlobClient(blobName).GetPropertiesAsync();
+        await Assert.That(properties.Value.Metadata["Stream"]).IsEqualTo(Uri.EscapeDataString(streamName));
+    }
+
+    [Test]
+    public async Task HandlerThrowingRequestFailed_ShouldPropagateWithoutRaceRetries() {
+        // Arrange
+        var containerName = await SetupContainer("handler-exception");
+        var projector = new ThrowingHandlerProjector(fixture.BlobServiceClient, containerName, raceRetries: 2);
+        var context = CreateContext(new TestEvent { Value = 10 });
+
+        // Act & Assert - the handler's own Azure exception propagates instead of being
+        // classified as an optimistic concurrency race and retried
+        await Assert.ThrowsAsync<RequestFailedException>(() => projector.HandleEvent(context).AsTask());
+        await Assert.That(projector.HandlerCalls).IsEqualTo(1);
+    }
+
     // ========== RACE RETRY TESTS ==========
 
     [Test]
@@ -505,12 +542,12 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
 
     // ========== TEST CONTEXT FACTORY ==========
 
-    static IMessageConsumeContext CreateContext(object message, string? messageId = null, ulong globalPosition = 0) =>
+    static IMessageConsumeContext CreateContext(object message, string? messageId = null, ulong globalPosition = 0, string stream = DefaultStream) =>
         new MessageConsumeContext(
             eventId: messageId ?? Guid.NewGuid().ToString(),
             eventType: message.GetType().Name,
             contentType: "application/json",
-            stream: DefaultStream,
+            stream: stream,
             eventNumber: 0,
             streamPosition: 0,
             globalPosition: globalPosition,
@@ -658,6 +695,22 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
                 state.Value += ctx.Message.Value;
                 return state;
             }, getBlobId: ctx => new ValueTask<string>(ctx.Message.Id));
+        }
+    }
+
+    /// <summary>
+    /// Tests that a handler-thrown RequestFailedException is not mistaken for a blob race
+    /// </summary>
+    class ThrowingHandlerProjector : BlobStorageProjector<SyncState> {
+        public int HandlerCalls { get; private set; }
+
+        public ThrowingHandlerProjector(BlobServiceClient serviceClient, string containerName, int raceRetries)
+            : base(serviceClient, containerName, new BlobStorageProjectorOptions { RaceRetries = raceRetries }) {
+            Func<IMessageConsumeContext<TestEvent>, SyncState, SyncState> handler = (_, _) => {
+                HandlerCalls++;
+                throw new RequestFailedException(409, "Handler-side conflict talking to another service");
+            };
+            On(handler);
         }
     }
 
