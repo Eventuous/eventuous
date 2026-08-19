@@ -13,15 +13,17 @@ The class provides two constructors:
 * `BlobStorageProjector(BlobContainerClient container, ...` where the container client is passed directly
 * `BlobStorageProjector(BlobServiceClient serviceClient, string containerName, ...` where the service client is set up by Azure DI and the container name is set by the projection
 
-By using `IOptions<JsonSerializerOptions>` we can also use the Json serialization options as set in ASP DI.
+The blob container must exist before the projector handles events; the projector doesn't create it.
+
+JSON serialization is configured via `BlobStorageProjectorOptions.JsonOptions`. When you keep serializer options in ASP.NET Core DI, pass them on: `new BlobStorageProjectorOptions { JsonOptions = options.Value }`.
 
 By default, the blob ID is extracted from the stream using `context.Stream.GetId()`. You can override this by providing a custom `getBlobId` function in the event registration:
 
 ```csharp
 public class BookingProjection : BlobStorageProjector<BookingState> {
-    public BookingProjection(BlobServiceClient client, IOptions<JsonSerializerOptions> serializerOptions)
-        : base(client, "bookings-container", serializerOptions.Value) {
-        
+    public BookingProjection(BlobServiceClient client)
+        : base(client, "bookings-container") {
+
         // Uses default blob ID from stream
         On<BookingImported>((state, evt) => {
             state.RoomId = evt.RoomId;
@@ -59,6 +61,9 @@ The `IdempotencyMode` enum controls how the projector handles duplicate messages
 checking for duplicates.
 - **`ByGlobalPosition`** - Skips processing if the existing blob has a global position set in
 its metadata that indicates it has already been processed. The event global position must be greater than that stored in the blob.
+This mode requires a subscription that provides real global positions, such as an all-stream subscription.
+Do not use it with message broker subscriptions where the global position is always zero — the first event would store
+position `0` and every subsequent event would be treated as a duplicate and silently ignored. Use `ByMessageId` instead.
 - **`ByMessageId`** - Use this when building projections directly from integration events. Skips
 processing if the message ID in the blob metadata matches that in the event.
 Note, this means the idempotency is weaker as only the last message ID is checked. Older messages that are replayed will be processed as normal.
@@ -92,11 +97,14 @@ On<BookingPaymentRegistered>(
         return state;
     },
     // Custom blob ID for this specific event only
-    context => new ValueTask<string>($"payments/{context.Message.BookingId}.json")
+    context => new ValueTask<string>($"payments-{context.Message.BookingId}")
 );
 ```
 
-Use per-event blob ID overrides when you need different events to target different blob paths or naming conventions within the same projector, such as when the business identifier differs from the stream identifier.
+Note that `getBlobId` returns a blob _ID_, not a full blob name: the result is still passed to `GetBlobName`, so with the default naming the example above produces `payments-{id}/BookingState.json`. To change the full blob path, override `GetBlobName` as well.
+
+Use per-event blob ID overrides when you need different events to target different blobs within the same projector, such as when the business identifier differs from the stream identifier.
+
 ## Features
 
 - **Automatic state management** - Creates new state instances when blobs don't exist

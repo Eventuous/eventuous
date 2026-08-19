@@ -23,7 +23,7 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
     /// <param name="consumePipe">Consume pipe instance</param>
     /// <param name="loggerFactory">Logger factory (optional)</param>
     /// <param name="eventSerializer">Event serializer (optional)</param>
-    public ServiceBusSubscription(ServiceBusClient client, ServiceBusSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory, IEventSerializer? eventSerializer = null) :
+    public ServiceBusSubscription(ServiceBusClient client, ServiceBusSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory, IEventSerializer? eventSerializer) :
         base(options, consumePipe, loggerFactory, eventSerializer) {
         _defaultErrorHandler = Options.ErrorHandler ?? DefaultErrorHandler;
 

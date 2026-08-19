@@ -1,3 +1,6 @@
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using System.Text.Json;
 
 namespace Eventuous.Azure.Storage.Blobs;
@@ -8,7 +11,7 @@ namespace Eventuous.Azure.Storage.Blobs;
 public class BlobStorageProjectorOptions {
     /// <summary>
     /// Gets or sets the JSON serializer options to use when serializing or deserializing projection state.
-    /// By default, the default JSON serializer options will be used if this property is not set.
+    /// When not set, <see cref="JsonSerializerOptions.Web"/> is used.
     /// </summary>
     public JsonSerializerOptions? JsonOptions { get; set; }
 
@@ -16,7 +19,7 @@ public class BlobStorageProjectorOptions {
     /// Gets or sets the number of retry attempts for race condition handling when saving projection state.
     /// Default is 0 (no retries).
     /// </summary>
-    public int RaceRetries { get; set; } = 0;
+    public int RaceRetries { get; set; }
 
     /// <summary>
     /// Gets or sets the idempotency mode for the projector. When enabled, the projector will skip processing
@@ -37,9 +40,11 @@ public enum IdempotencyMode {
     None,
 
     /// <summary>
-    /// Skips processing if the existing blob was created from a message at the same global position.
+    /// Skips processing if the existing blob was created from a message at the same or later global position.
     /// Uses the <c>GlobalPosition</c> metadata stored with the blob for comparison.
-    /// Effective for append-only event streams where global position uniquely identifies a message.
+    /// Requires a subscription that provides real global positions, such as an all-stream subscription.
+    /// Do not use with message broker subscriptions where the global position is always 0 — every event
+    /// after the first would be treated as a duplicate and ignored. Use <see cref="ByMessageId"/> instead.
     /// </summary>
     ByGlobalPosition,
 

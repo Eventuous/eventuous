@@ -1,7 +1,11 @@
+// Copyright (C) Eventuous HQ OÜ. All rights reserved
+// Licensed under the Apache License, Version 2.0.
+
 using Azure;
 using Azure.Storage.Blobs.Models;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
+using Eventuous.Subscriptions.Logging;
 using System.Text.Json;
 
 using static Eventuous.Subscriptions.Diagnostics.SubscriptionsEventSource;
@@ -20,18 +24,18 @@ namespace Eventuous.Azure.Storage.Blobs;
 /// for customizing blob naming conventions. Multiple event types can be handled by registering handlers using the On(TEvent) methods.
 /// The optional getBlobId parameter in event registration allows custom blob ID generation, which is useful when the default
 /// stream ID from context.Stream.GetId() needs to be overridden, such as using event metadata or custom business logic.
+/// The blob container must exist; the projector doesn't create it.
 /// </para>
 /// </remarks>
 public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
     /// <summary>Azure Blob Storage container client.</summary>
     protected readonly BlobContainerClient ContainerClient;
 
-    readonly JsonSerializerOptions _jsonOptions;
+    readonly JsonSerializerOptions                                                          _jsonOptions;
     readonly Dictionary<Type, Func<IMessageConsumeContext, ValueTask<EventHandlingStatus>>> _handlers = new();
-    readonly ITypeMapper _map;
-
-    private readonly int _raceRetries;
-    private readonly IdempotencyMode _idempotencyMode;
+    readonly ITypeMapper                                                                    _map;
+    readonly int                                                                            _raceRetries;
+    readonly IdempotencyMode                                                                _idempotencyMode;
 
     /// <summary>Delegate for custom blob ID generation from consume context.</summary>
     /// <typeparam name="TEvent">Event type being consumed.</typeparam>
@@ -44,18 +48,12 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
     /// </summary>
     /// <param name="container">Azure Blob Storage container client.</param>
     /// <param name="projectorOptions">Optional projector configuration.</param>
-    /// <param name="serializerOptions">Optional JSON serializer options.</param>
     /// <param name="mapper">Optional type mapper for event type resolution.</param>
-    public BlobStorageProjector(
-        BlobContainerClient container,
-        JsonSerializerOptions? serializerOptions = null,
-        BlobStorageProjectorOptions? projectorOptions = null,
-        ITypeMapper? mapper = null
-    ) {
-        ContainerClient = container;
-        _jsonOptions = new(projectorOptions?.JsonOptions ?? serializerOptions ?? JsonSerializerOptions.Web);
-        _map = mapper ?? TypeMap.Instance;
-        _raceRetries = projectorOptions?.RaceRetries ?? 0;
+    public BlobStorageProjector(BlobContainerClient container, BlobStorageProjectorOptions? projectorOptions = null, ITypeMapper? mapper = null) {
+        ContainerClient  = container;
+        _jsonOptions     = new(projectorOptions?.JsonOptions ?? JsonSerializerOptions.Web);
+        _map             = mapper ?? TypeMap.Instance;
+        _raceRetries     = projectorOptions?.RaceRetries ?? 0;
         _idempotencyMode = projectorOptions?.IdempotencyMode ?? IdempotencyMode.None;
     }
 
@@ -64,16 +62,14 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
     /// </summary>
     /// <param name="serviceClient">Azure Blob Storage service client.</param>
     /// <param name="containerName">Name of the container to use.</param>
-    /// <param name="serializerOptions">Optional JSON serializer options.</param>
-    /// <param name="mapper">Optional type mapper for event type resolution.</param>
     /// <param name="projectorOptions">Optional projector configuration.</param>
+    /// <param name="mapper">Optional type mapper for event type resolution.</param>
     public BlobStorageProjector(
-        BlobServiceClient serviceClient,
-        string containerName,
-        JsonSerializerOptions? serializerOptions = null,
+        BlobServiceClient            serviceClient,
+        string                       containerName,
         BlobStorageProjectorOptions? projectorOptions = null,
-        ITypeMapper? mapper = null
-    ) : this(serviceClient.GetBlobContainerClient(containerName), serializerOptions, projectorOptions, mapper) { }
+        ITypeMapper?                 mapper           = null
+    ) : this(serviceClient.GetBlobContainerClient(containerName), projectorOptions, mapper) { }
 
     /// <summary>Registers event handler with sync state update.</summary>
     /// <typeparam name="TEvent">Event type to handle.</typeparam>
@@ -110,14 +106,6 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
         }
     }
 
-    private BlobClient GetBlobContainerClient(string blobName) => ContainerClient.GetBlobClient(blobName);
-
-    /// <summary>Registers event handler without custom blob ID.</summary>
-    /// <typeparam name="TEvent">Event type to handle.</typeparam>
-    /// <param name="handler">Async state update function receiving context, current state, and event.</param>
-    protected void On<TEvent>(Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler) where TEvent : class
-        => On(handler, default);
-
     /// <summary>Handles incoming event by dispatching to registered handler.</summary>
     /// <param name="context">Event consume context.</param>
     /// <returns>Event handling status indicating success, failure, or ignore.</returns>
@@ -126,8 +114,9 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
             ? await handler(context).NoContext()
             : EventHandlingStatus.Ignored;
 
-    private T ToObjectFromJson(BinaryData content) => content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
-    private byte[] SerializeToUtf8Bytes(T updated) => JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
+    T ToObjectFromJson(BinaryData content) => content.ToObjectFromJson<T>(_jsonOptions) ?? new T();
+
+    byte[] SerializeToUtf8Bytes(T updated) => JsonSerializer.SerializeToUtf8Bytes(updated, _jsonOptions);
 
     /// <summary>Gets blob name from ID and context. Can be overridden for custom naming.</summary>
     /// <param name="id">Blob identifier.</param>
@@ -140,26 +129,27 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
     /// <returns>Blob name as string.</returns>
     protected virtual string GetBlobName(string id) => $"{id}/{typeof(T).Name}.json";
 
-    private class Handler<TEvent>
+    class Handler<TEvent>(BlobStorageProjector<T> projector, Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> eventHandler, GetBlobId<TEvent>? getBlobId)
         where TEvent : class {
-        private readonly BlobStorageProjector<T> projector;
-        private readonly Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> EventHandler;
-        private readonly GetBlobId<TEvent>? GetBlobId;
-
-        public Handler(BlobStorageProjector<T> blobStorageProjector, Func<IMessageConsumeContext<TEvent>, T, ValueTask<T>> handler, GetBlobId<TEvent>? getBlobId) {
-            projector = blobStorageProjector;
-            EventHandler = handler;
-            GetBlobId = getBlobId;
-        }
+        bool _warnedZeroGlobalPosition;
 
         public async ValueTask<EventHandlingStatus> Handle(IMessageConsumeContext context) {
             var typedContext = context as MessageConsumeContext<TEvent> ?? new MessageConsumeContext<TEvent>(context);
-            var blobId = GetBlobId == null
+
+            if (projector._idempotencyMode == IdempotencyMode.ByGlobalPosition && context.GlobalPosition == 0 && !_warnedZeroGlobalPosition) {
+                _warnedZeroGlobalPosition = true;
+
+                Logger.Current?.WarnLog?.Log(
+                    "ByGlobalPosition idempotency requires events with real global positions, but an event arrived with global position 0. Subsequent events may be treated as duplicates and ignored. Use ByMessageId for message broker subscriptions."
+                );
+            }
+
+            var blobId = getBlobId == null
                 ? context.Stream.GetId()
-                : await GetBlobId(typedContext).NoContext();
+                : await getBlobId(typedContext).NoContext();
             var blobName = projector.GetBlobName(blobId, typedContext);
 
-            var blobClient = projector.GetBlobContainerClient(blobName);
+            var blobClient = projector.ContainerClient.GetBlobClient(blobName);
 
             return await ModifyBlobWithRetries(projector._raceRetries).NoContext();
 
@@ -186,10 +176,12 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
                     var current = projector.ToObjectFromJson(content);
 
                     await UploadUpdated(current, new BlobRequestConditions { IfMatch = blobContent.Value.Details.ETag }).NoContext();
+
                     return EventHandlingStatus.Success;
                 } catch (RequestFailedException ex) when (ex.Status == 404) {
                     // Blob doesn't exist, start with a new instance
                     await UploadUpdated(new T(), new BlobRequestConditions { IfNoneMatch = ETag.All }).NoContext();
+
                     return EventHandlingStatus.Success;
                 }
             }
@@ -206,11 +198,8 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
             };
 
             async Task UploadUpdated(T current, BlobRequestConditions conditions) {
-                var task = EventHandler(typedContext, current);
-                var updated = task.IsCompletedSuccessfully
-                    ? task.Result
-                    : await task.NoContext();
-                var json = projector.SerializeToUtf8Bytes(updated);
+                var updated = await eventHandler(typedContext, current).NoContext();
+                var json    = projector.SerializeToUtf8Bytes(updated);
 
                 var uploadOptions = new BlobUploadOptions {
                     Conditions = conditions,
@@ -218,15 +207,15 @@ public class BlobStorageProjector<T> : BaseEventHandler where T : class, new() {
                         ContentType = "application/json"
                     },
                     Metadata = new Dictionary<string, string> {
-                        ["Stream"] = typedContext.Stream.ToString(),
-                        ["MessageId"] = typedContext.MessageId,
+                        ["Stream"]         = typedContext.Stream.ToString(),
+                        ["MessageId"]      = typedContext.MessageId,
                         ["StreamPosition"] = typedContext.StreamPosition.ToString(),
                         ["GlobalPosition"] = typedContext.GlobalPosition.ToString()
                     }
                 };
 
                 using var stream = new MemoryStream(json);
-                var response = await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken).NoContext();
+                await blobClient.UploadAsync(stream, uploadOptions, typedContext.CancellationToken).NoContext();
             }
         }
     }

@@ -63,6 +63,16 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
     /// </summary>
     static async Task AssertFailure(EventHandlingStatus result) => await Assert.That(result).IsEqualTo(EventHandlingStatus.Failure);
 
+    /// <summary>
+    /// Creates a concurrent-modification action that overwrites the blob directly with a different value
+    /// </summary>
+    Func<Task> OverwriteBlob(string containerName, string blobName) => async () => {
+        var modifiedState = new ConcurrentState { Value = 999 };
+        var modifiedJson  = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
+        var blobClient    = GetContainer(containerName).GetBlobClient(blobName);
+        await blobClient.UploadAsync(new MemoryStream(modifiedJson), overwrite: true);
+    };
+
     // ========== SYNC STATE HANDLER TESTS ==========
 
     [Test]
@@ -276,15 +286,9 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         await SetupExistingBlob(containerName, blobName, new ConcurrentState { Value = 1 });
 
         var projector = new ConcurrentModificationProjector(
-            fixture.BlobServiceClient, 
+            fixture.BlobServiceClient,
             containerName,
-            messWithState: async () => {
-                // Simulate concurrent modification: modify the blob directly with a different value
-                var modifiedState = new ConcurrentState { Value = 999 };
-                var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
-                var blobClient = GetContainer(containerName).GetBlobClient(blobName);
-                await blobClient.UploadAsync(new MemoryStream(modifiedJson), overwrite: true);
-            },
+            messWithState: OverwriteBlob(containerName, blobName),
             raceRetries: 1);
         var context = CreateContext(new TestEvent { Value = 10 });
 
@@ -304,44 +308,32 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
     public async Task ConcurrentAdditionOfNewBlob_ShouldReturnFailure() {
         // Arrange
         var containerName = await SetupContainer("concurrent-new");
-        var blobName = "stream/ConcurrentState.json";
+        var blobName = $"{DefaultStream}/ConcurrentState.json";
 
         var projector = new ConcurrentModificationProjector(
-            fixture.BlobServiceClient, 
+            fixture.BlobServiceClient,
             containerName,
-            messWithState: async () => {
-                // Simulate concurrent modification: modify the blob directly with a different value
-                var modifiedState = new ConcurrentState { Value = 999 };
-                var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
-                var blobClient = GetContainer(containerName).GetBlobClient(blobName);
-                await blobClient.UploadAsync(new MemoryStream(modifiedJson), overwrite: true);
-            },
+            messWithState: OverwriteBlob(containerName, blobName),
             onCall: 1);
         var context = CreateContext(new TestEvent { Value = 10 });
 
         // This should now fail with 412 because the ETag won't match
         var result2 = await projector.HandleEvent(context);
-        await BlobStorageProjectorTests.AssertFailure(result2);
+        await AssertFailure(result2);
     }
 
     [Test]
     public async Task ConcurrentModificationOfExistingBlob_ShouldReturnFailure() {
         // Arrange
         var containerName = await SetupContainer("concurrent-existing");
-        var blobName = "stream/ConcurrentState.json";
+        var blobName = $"{DefaultStream}/ConcurrentState.json";
 
         await SetupExistingBlob(containerName, blobName, new ConcurrentState { Value = 1 });
 
         var projector = new ConcurrentModificationProjector(
-            fixture.BlobServiceClient, 
+            fixture.BlobServiceClient,
             containerName,
-            messWithState: async() => {
-                // Simulate concurrent modification: modify the blob directly with a different value
-                var modifiedState = new ConcurrentState { Value = 999 };
-                var modifiedJson = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
-                var blobClient = GetContainer(containerName).GetBlobClient(blobName);
-                await blobClient.UploadAsync(new MemoryStream(modifiedJson), overwrite: true);
-            },
+            messWithState: OverwriteBlob(containerName, blobName),
             onCall: 2);
         var context = CreateContext(new TestEvent { Value = 10 });
 
@@ -351,7 +343,7 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
 
         // This should now fail with 412 because the ETag won't match
         var result2 = await projector.HandleEvent(context);
-        await BlobStorageProjectorTests.AssertFailure(result2);
+        await AssertFailure(result2);
     }
 
     // ========== IDEMPOTENCY TESTS ==========
@@ -361,27 +353,27 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         // Arrange
         var containerName = await SetupContainer("idempotency-messageid");
         var blobName = $"{DefaultStream}/SyncState.json";
-        
+
         var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.ByMessageId);
         var messageId = Guid.NewGuid().ToString();
-        
+
         // First context with specific message ID
         var context1 = CreateContext(new TestEvent { Value = 10 }, messageId: messageId);
-        
+
         // Act - first processing should succeed
         var result1 = await projector.HandleEvent(context1);
         await AssertSuccess(result1);
-        
+
         var state1 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state1.Value).IsEqualTo(10);
-        
+
         // Second context with SAME message ID (duplicate)
         var context2 = CreateContext(new TestEvent { Value = 20 }, messageId: messageId);
-        
+
         // Act - second processing should be ignored
         var result2 = await projector.HandleEvent(context2);
         await AssertIgnored(result2);
-        
+
         // State should NOT have been updated (still 10, not 30)
         var state2 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state2.Value).IsEqualTo(10);
@@ -392,27 +384,27 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         // Arrange
         var containerName = await SetupContainer("idempotency-messageid-different");
         var blobName = $"{DefaultStream}/SyncState.json";
-        
+
         var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.ByMessageId);
-        
+
         var messageId1 = Guid.NewGuid().ToString();
         var context1 = CreateContext(new TestEvent { Value = 10 }, messageId: messageId1);
-        
+
         // Act - first message
         var result1 = await projector.HandleEvent(context1);
         await AssertSuccess(result1);
-        
+
         var state1 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state1.Value).IsEqualTo(10);
-        
+
         // Different message ID
         var messageId2 = Guid.NewGuid().ToString();
         var context2 = CreateContext(new TestEvent { Value = 20 }, messageId: messageId2);
-        
+
         // Act - different message should be processed
         var result2 = await projector.HandleEvent(context2);
         await AssertSuccess(result2);
-        
+
         // State should have been updated (10 + 20 = 30)
         var state2 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state2.Value).IsEqualTo(30);
@@ -425,26 +417,26 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         // Arrange
         var containerName = await SetupContainer("idempotency-globalposition");
         var blobName = $"{DefaultStream}/SyncState.json";
-        
+
         var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.ByGlobalPosition);
-        
+
         // First context with specific global position
         var context1 = CreateContext(new TestEvent { Value = 10 }, globalPosition: 100u);
-        
+
         // Act - first processing should succeed
         var result1 = await projector.HandleEvent(context1);
         await AssertSuccess(result1);
-        
+
         var state1 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state1.Value).IsEqualTo(10);
-        
+
         // Second context with SAME global position (duplicate)
         var context2 = CreateContext(new TestEvent { Value = 20 }, globalPosition: duplicatePosition);
-        
+
         // Act - second processing should be ignored
         var result2 = await projector.HandleEvent(context2);
         await AssertIgnored(result2);
-        
+
         // State should NOT have been updated (still 10, not 30)
         var state2 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state2.Value).IsEqualTo(10);
@@ -455,26 +447,26 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         // Arrange
         var containerName = await SetupContainer("idempotency-globalposition-different");
         var blobName = $"{DefaultStream}/SyncState.json";
-        
+
         var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.ByGlobalPosition);
-        
+
         // First context with specific global position
         var context1 = CreateContext(new TestEvent { Value = 10 }, globalPosition: 100);
-        
+
         // Act - first processing should succeed
         var result1 = await projector.HandleEvent(context1);
         await AssertSuccess(result1);
-        
+
         var state1 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state1.Value).IsEqualTo(10);
-        
+
         // Different global position
         var context2 = CreateContext(new TestEvent { Value = 20 }, globalPosition: 101u);
-        
+
         // Act - different position should be processed
         var result2 = await projector.HandleEvent(context2);
         await AssertSuccess(result2);
-        
+
         // State should have been updated (10 + 20 = 30)
         var state2 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state2.Value).IsEqualTo(30);
@@ -485,27 +477,27 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         // Arrange - explicitly set to None (which is also the default)
         var containerName = await SetupContainer("idempotency-none");
         var blobName = $"{DefaultStream}/SyncState.json";
-        
+
         var projector = new IdempotencyProjector(fixture.BlobServiceClient, containerName, IdempotencyMode.None);
         var messageId = Guid.NewGuid().ToString();
-        
+
         // First context
         var context1 = CreateContext(new TestEvent { Value = 10 }, messageId: messageId);
-        
+
         // Act
         var result1 = await projector.HandleEvent(context1);
         await AssertSuccess(result1);
-        
+
         var state1 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state1.Value).IsEqualTo(10);
-        
+
         // Second context with SAME message ID - should still process
         var context2 = CreateContext(new TestEvent { Value = 20 }, messageId: messageId);
-        
+
         // Act - should process even with same message ID
         var result2 = await projector.HandleEvent(context2);
         await AssertSuccess(result2);
-        
+
         // State should have been updated (10 + 20 = 30) - no idempotency
         var state2 = await GetBlobState<SyncState>(containerName, blobName);
         await Assert.That(state2.Value).IsEqualTo(30);
@@ -633,12 +625,12 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
     /// Tests concurrent modification scenario with configurable race retries and onCall
     /// </summary>
     class ConcurrentModificationProjector : BlobStorageProjector<ConcurrentState> {
-        private int _callCount = 0;
-        private readonly Func<Task>? _messWithState;
-        private readonly int _onCall;
+        int _callCount;
+        readonly Func<Task>? _messWithState;
+        readonly int _onCall;
 
         public ConcurrentModificationProjector(
-            BlobServiceClient serviceClient, 
+            BlobServiceClient serviceClient,
             string containerName,
             Func<Task>? messWithState = null,
             int onCall = 1,
