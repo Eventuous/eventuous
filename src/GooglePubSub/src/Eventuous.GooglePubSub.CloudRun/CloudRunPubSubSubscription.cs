@@ -13,9 +13,18 @@ namespace Eventuous.GooglePubSub.CloudRun;
 
 public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions options, ConsumePipe consumePipe, ILoggerFactory? loggerFactory, IEventSerializer? eventSerializer = null)
     : EventSubscription<CloudRunPubSubSubscriptionOptions>(options, consumePipe, loggerFactory, eventSerializer) {
-    protected override ValueTask Subscribe(CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    // A push subscription has no connection to establish and no pump to run, so nothing can end its run
+    // short of shutdown: it has exactly one run for its whole life.
+    protected override ValueTask Connect(SubscriptionRun run) => default;
 
-    protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    ulong _sequence;
+
+    /// <summary>
+    /// The sequence for the next pushed message. Counted here rather than on the run: with one run for the
+    /// whole life of the subscription the two are the same number, and the endpoint is reachable whether or
+    /// not anything ever started this subscription — it is mapped on the app, not on the run.
+    /// </summary>
+    ulong NextSequence() => Interlocked.Increment(ref _sequence) - 1;
 
     const string DefaultContentType = "application/json";
 
@@ -71,7 +80,7 @@ public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions option
                     0,
                     0,
                     0,
-                    subscription.Sequence++,
+                    subscription.NextSequence(),
                     envelope.Message.PublishTime,
                     message,
                     null,

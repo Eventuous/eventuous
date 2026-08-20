@@ -55,17 +55,16 @@ public class ResubscribeOnHandlerFailureTests {
 
         // Assert
         if (completedTask == droppedTcs.Task) {
+            // Reaching the drop callback at all is the assertion: it is the only report of a drop there is.
             var (id, _, _) = await droppedTcs.Task;
             id.ShouldBe("test-handler-failure");
-            // Subscription should have been dropped due to error
-            subscription.IsDropped.ShouldBeTrue("Subscription should be marked as dropped after handler failure");
         }
         else {
             var handledCount = handler.HandledCount;
 
             Assert.Fail(
                 $"Dropped was never called. Handler processed {handledCount} events before failure. " +
-                $"IsRunning={subscription.IsRunning}, IsDropped={subscription.IsDropped}. "           +
+                $"IsRunning={subscription.IsRunning}, subscribed {subscribedCount} time(s). "         +
                 "This confirms the bug: exception in handler causes silent subscription death."
             );
         }
@@ -156,98 +155,9 @@ public class ResubscribeOnHandlerFailureTests {
         }
     }
 
-    /// <summary>
-    /// Validates that Ack does not throw when CheckpointCommitHandler is concurrently
-    /// nulled by Resubscribe/DisposeCommitHandler on another thread while the
-    /// AsyncHandlingFilter worker is still completing a message.
-    /// </summary>
-    [Test]
-    [Retry(3)]
-    public async Task Should_not_throw_nre_when_ack_races_with_resubscribe(CancellationToken ct) {
-        // Arrange
-        var loggerFactory = LoggingExtensions.GetLoggerFactory();
-        var nreTcs        = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var ackStarted    = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var proceedToAck  = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        var options = new TestSubscriptionOptions {
-            SubscriptionId            = "test-ack-race",
-            ThrowOnError              = true,
-            CheckpointCommitBatchSize = 1,
-            CheckpointCommitDelayMs   = 100
-        };
-
-        // A handler that signals when it's about to ack, then waits for the test to
-        // trigger resubscribe before the ack path runs.
-        var handler = new SlowAckHandler(ackStarted, proceedToAck);
-        var pipe    = new ConsumePipe().AddDefaultConsumer(handler);
-
-        var checkpointStore = new NoOpCheckpointStore();
-
-        var subscription = new TestPollingSubscription(
-            options,
-            checkpointStore,
-            pipe,
-            loggerFactory,
-            eventCount: 20
-        );
-
-        // Act
-        await subscription.Subscribe(
-            _ => { },
-            (_, _, ex) => {
-                if (ex is NullReferenceException nre) nreTcs.TrySetResult(nre);
-            },
-            ct
-        );
-
-        // Wait until the handler has processed an event and is about to ack
-        var started = await Task.WhenAny(ackStarted.Task, Task.Delay(TimeSpan.FromSeconds(10), ct));
-        started.ShouldBe(ackStarted.Task, "Handler should have started processing an event");
-
-        // Now trigger Dropped → Resubscribe, which will null CheckpointCommitHandler
-        subscription.TriggerDropped();
-
-        // Give Resubscribe a moment to dispose the commit handler
-        await Task.Delay(200, ct);
-
-        // Let the handler complete — the AsyncHandlingFilter worker will now call Acknowledge → Ack.
-        // Without the fix, the commit handler is already null at this point, causing an NRE.
-        proceedToAck.TrySetResult();
-
-        // Assert — wait for either the NRE or a timeout
-        var result = await Task.WhenAny(nreTcs.Task, Task.Delay(TimeSpan.FromSeconds(5), ct));
-
-        if (result == nreTcs.Task) {
-            var exception = await nreTcs.Task;
-            Assert.Fail(
-                $"NullReferenceException in Ack path during resubscribe race: {exception}. " +
-                "CheckpointCommitHandler was null when Ack tried to call Commit()."
-            );
-        }
-
-        // Cleanup
-        await subscription.Unsubscribe(_ => { }, ct);
-    }
-
-    /// <summary>
-    /// A handler that signals the test when processing is happening,
-    /// then blocks until the test allows it to complete. This creates the
-    /// window for the race between Ack and Resubscribe.
-    /// </summary>
-    class SlowAckHandler(TaskCompletionSource ackStarted, TaskCompletionSource proceedToAck) : BaseEventHandler {
-        int _signaled;
-
-        public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-            // Signal only on the first event to avoid double-signaling
-            if (Interlocked.CompareExchange(ref _signaled, 1, 0) == 0) {
-                ackStarted.TrySetResult();
-                await proceedToAck.Task;
-            }
-
-            return EventHandlingStatus.Success;
-        }
-    }
+    // A test watching OnDropped for an NRE on an ack/teardown race used to live here, but was unreachable
+    // (SubscriptionRun.Fail keeps only the first reason). The invariant it meant to cover is now asserted in
+    // ResubscribeConcurrencyTests.An_acknowledgement_from_a_dropped_run_is_refused.
 
     record TestSubscriptionOptions : SubscriptionWithCheckpointOptions;
 
@@ -273,33 +183,28 @@ public class ResubscribeOnHandlerFailureTests {
             null,
             null
         ) {
-        TaskRunner? _runner;
+        SubscriptionRun? _run;
+
+        protected override async ValueTask Connect(SubscriptionRun run) {
+            Volatile.Write(ref _run, run);
+
+            var checkpoint = await GetCheckpoint(run).NoContext();
+
+            // Started on a task of its own so it never runs inline on the supervisor's stack during Connect.
+            var pumping = Task.Run(() => RunPollEvents(run, (int)(checkpoint.Position ?? 0)), CancellationToken.None);
+
+            // No handle of its own to release: registered purely to join the loop before the next Connect.
+            run.OnDisconnect(_ => new(pumping));
+        }
 
         /// <summary>
-        /// Exposes the protected Dropped method so the test can trigger a resubscribe.
+        /// Runs <see cref="PollEvents"/> and reports its own death, the same contract a real transport keeps.
         /// </summary>
-        public void TriggerDropped()
-            => Dropped(DropReason.SubscriptionError, new InvalidOperationException("Simulated drop for race test"));
+        Task RunPollEvents(SubscriptionRun run, int start)
+            => TransportPump.Run(run, () => PollEvents(run, start), "TestPollingSubscription pump ended while the connection was up");
 
-        protected override ValueTask Subscribe(CancellationToken cancellationToken) {
-            _runner = new TaskRunner(PollEvents).Start();
-
-            return default;
-        }
-
-        protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-            if (_runner == null) return;
-
-            await _runner.Stop(cancellationToken);
-            _runner.Dispose();
-            _runner = null;
-        }
-
-        async Task PollEvents(CancellationToken cancellationToken) {
-            var checkpoint = await GetCheckpoint(cancellationToken);
-            var start = (int)(checkpoint.Position ?? 0);
-
-            for (var i = start; i < eventCount && !cancellationToken.IsCancellationRequested; i++) {
+        async Task PollEvents(SubscriptionRun run, int start) {
+            for (var i = start; i < eventCount && !run.Token.IsCancellationRequested; i++) {
                 var context = new MessageConsumeContext(
                     Guid.NewGuid().ToString(),
                     "TestEvent",
@@ -308,20 +213,23 @@ public class ResubscribeOnHandlerFailureTests {
                     (ulong)i,
                     (ulong)i,
                     (ulong)i,
-                    Sequence++,
+                    run.NextSequence(),
                     DateTime.UtcNow,
                     new { EventNumber = i },
                     new(),
                     Options.SubscriptionId,
-                    cancellationToken
+                    run.Token
                 ) { LogContext = Log };
 
-                await HandleInternal(context).NoContext();
+                await HandleInternal(run, context).NoContext();
 
-                await Task.Delay(50, cancellationToken);
+                await Task.Delay(50, run.Token).NoContext();
             }
 
             onCompleted?.Invoke();
+
+            // Parked rather than returned: a pump ending while its connection is up is read as a drop.
+            await run.Ended.NoContext();
         }
     }
 }

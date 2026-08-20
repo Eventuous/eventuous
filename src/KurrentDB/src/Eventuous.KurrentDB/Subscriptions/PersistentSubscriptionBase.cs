@@ -42,8 +42,6 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
 
     readonly HandleEventProcessingFailure _handleEventProcessingFailure;
 
-    PersistentSubscription? _subscription;
-
     /// <summary>
     /// EventStoreDB persistent subscription base class constructor
     /// </summary>
@@ -115,27 +113,31 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// <summary>
     /// Subscribe to a persistent subscription
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
+    protected override async ValueTask Connect(SubscriptionRun run) {
         var settings = Options.SubscriptionSettings ?? new PersistentSubscriptionSettings(Options.ResolveLinkTos);
 
-        try {
-            _subscription = await LocalSubscribe(HandleEvent, HandleDrop, cancellationToken).NoContext();
-        } catch (PersistentSubscriptionNotFoundException) {
-            await CreatePersistentSubscription(settings, cancellationToken);
+        PersistentSubscription connected;
 
-            _subscription = await LocalSubscribe(HandleEvent, HandleDrop, cancellationToken).NoContext();
+        try {
+            connected = await LocalSubscribe(HandleEvent, HandleDrop, run.Token).NoContext();
+        } catch (PersistentSubscriptionNotFoundException) {
+            await CreatePersistentSubscription(settings, run.Token).NoContext();
+
+            connected = await LocalSubscribe(HandleEvent, HandleDrop, run.Token).NoContext();
         }
+
+        // No settling delay needed: the supervisor now ignores failures raised while shutting down.
+        run.OnDisconnect(_ => { connected.Dispose(); return default; });
 
         return;
 
         void HandleDrop(PersistentSubscription __, SubscriptionDroppedReason reason, Exception? exception)
-            => Dropped(KurrentDBMappings.AsDropReason(reason), exception);
+            => run.Fail(KurrentDBMappings.AsDropReason(reason), exception);
 
         async Task HandleEvent(PersistentSubscription subscription, ResolvedEvent re, int? retryCount, CancellationToken ct) {
             Logger.Configure(Options.SubscriptionId, LoggerFactory);
 
-            var context = CreateContext(re, ct)
+            var context = CreateContext(run, re, ct)
                 .WithItem(ResolvedEventKey, re)
                 .WithItem(SubscriptionKey, subscription);
 
@@ -143,8 +145,8 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
                 await Handler(context).NoContext();
                 LastProcessed = EventPosition.FromContext(context);
                 await Ack(context).NoContext();
-            } catch (OperationCanceledException e) when (ct.IsCancellationRequested) {
-                Dropped(DropReason.Stopped, e);
+            } catch (OperationCanceledException) when (ct.IsCancellationRequested) {
+                // Its own token was cancelled: the supervisor already knows the run is over.
             } catch (Exception e) {
                 await Nack(context, e).NoContext();
             }
@@ -194,7 +196,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
         await _handleEventProcessingFailure(Client, subscription, re, exception).NoContext();
     }
 
-    MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
+    MessageConsumeContext CreateContext(SubscriptionRun run, ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -211,7 +213,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             re.Event.EventNumber,
             GetContextStreamPosition(re),
             re.Event.Position.CommitPosition,
-            Sequence++,
+            run.NextSequence(),
             re.Event.Created,
             evt,
             MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId, re.Event.EventNumber),
@@ -226,20 +228,6 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// <param name="re">Resolved event received from the database</param>
     /// <returns></returns>
     protected abstract ulong GetContextStreamPosition(ResolvedEvent re);
-
-    /// <summary>
-    /// Unsubscribe from a persistent subscription
-    /// </summary>
-    /// <param name="cancellationToken"></param>
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        try {
-            _subscription?.Dispose();
-            Stopping.Cancel(false);
-            await Task.Delay(100, cancellationToken);
-        } catch (Exception) {
-            // It might throw
-        }
-    }
 
     static Task DefaultEventProcessingFailureHandler(
             KurrentDBClient        client,

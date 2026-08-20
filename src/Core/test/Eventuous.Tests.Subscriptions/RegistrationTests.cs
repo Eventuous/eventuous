@@ -154,9 +154,7 @@ public class RegistrationTests {
 
     class TestSub(TestOptions options, ConsumePipe consumePipe)
         : EventSubscription<TestOptions>(options, consumePipe, NullLoggerFactory.Instance, null), IMeasuredSubscription {
-        protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
-
-        protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
+        protected override ValueTask Connect(SubscriptionRun run) => default;
 
         public GetSubscriptionEndOfStream GetMeasure() => _ => new(new EndOfStream(SubscriptionId, 0, DateTime.UtcNow));
     }

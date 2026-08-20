@@ -1,4 +1,3 @@
-using System.Threading.Channels;
 using Eventuous.Subscriptions.Checkpoints;
 using Shouldly;
 
@@ -110,19 +109,14 @@ public class CheckpointCommitHandlerBackpressureTests {
             await Task.Delay(200, cancellationToken);
             overflow.IsCompleted.ShouldBeFalse("The overflow Commit should be backpressured before Dispose begins");
 
-            // Dispose while the store is stalled and a writer is parked on the full channel. Dispose
-            // completes the channel writer, which releases the parked write rather than leaving it
-            // hanging forever: the pending WriteAsync faults with ChannelClosedException (observed
-            // behaviour, pinned here). The position is lost, but only because the handler is shutting
-            // down — the caller is unblocked, not stalled. The outcome is captured first, then
-            // asserted, so a surprise here still flows through the finally-side cleanup.
+            // The parked caller must come back rather than hang, and be told its position never made it —
+            // silence here would let the acknowledgement path treat a dropped position as committed.
             disposeTask = handler.DisposeAsync().AsTask();
 
-            var overflowOutcome = await overflow.AsTask()
-                .WaitAsync(TimeSpan.FromSeconds(5), cancellationToken)
-                .ContinueWith(t => t.Exception?.GetBaseException(), TaskContinuationOptions.ExecuteSynchronously);
+            // Generous rather than tight: the release is immediate, but happens on disposal's thread while the store is stalled.
+            var accepted = await overflow.AsTask().WaitAsync(TimeSpan.FromSeconds(20), cancellationToken);
 
-            overflowOutcome.ShouldBeOfType<ChannelClosedException>("Completing the writer should release the parked Commit with ChannelClosedException");
+            accepted.ShouldBeFalse("a Commit released by disposal never queued its position, and has to say so");
 
             // Let the store recover so dispose can drain the queued positions and run its final
             // force-commit within its own internal bounds.

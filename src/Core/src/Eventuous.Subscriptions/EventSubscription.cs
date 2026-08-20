@@ -17,21 +17,18 @@ using Filters;
 using Logging;
 
 public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposable where T : SubscriptionOptions {
-    [PublicAPI]
-    public bool IsRunning { get; set; }
-
-    [PublicAPI]
-    public bool IsDropped { get; set; }
-
     protected internal T Options { get; }
 
-    IEventSerializer                  EventSerializer { get; }
-    internal  ConsumePipe             Pipe            { get; }
-    protected ILoggerFactory?         LoggerFactory   { get; }
-    protected LogContext              Log             { get; }
-    protected CancellationTokenSource Stopping        { get; set; } = new();
+    IEventSerializer          EventSerializer { get; }
+    internal  ConsumePipe     Pipe            { get; }
+    protected ILoggerFactory? LoggerFactory   { get; }
+    protected LogContext      Log             { get; }
 
-    protected ulong Sequence;
+    Session? _session;
+    int      _disposed;
+
+    [PublicAPI]
+    public bool IsRunning => Volatile.Read(ref _session) is not null;
 
     protected EventSubscription(
             T                    options,
@@ -48,35 +45,187 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         Log             = Logger.CreateContext(options.SubscriptionId, loggerFactory);
     }
 
-    OnSubscribed? _onSubscribed;
-    OnDropped?    _onDropped;
-
     public string SubscriptionId => Options.SubscriptionId;
 
     public async ValueTask Subscribe(OnSubscribed onSubscribed, OnDropped onDropped, CancellationToken cancellationToken) {
-        if (IsRunning) return;
+        // Otherwise a new run could deliver into a pipe that's already disposed.
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
 
-        Stopping = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var lifetime    = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var finishedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var settings    = SupervisorSettings.From(Options, Log);
+        var session     = new Session(lifetime, finishedTcs, onSubscribed, onDropped, settings);
 
-        _onSubscribed = onSubscribed;
-        _onDropped    = onDropped;
-        await Subscribe(Stopping.Token).NoContext();
-        IsRunning = true;
+        // Refused, not silently ignored: serving a second caller would take the run away from the first
+        // without telling it.
+        if (Interlocked.CompareExchange(ref _session, session, comparand: null) is not null) {
+            lifetime.Dispose();
+            throw new InvalidOperationException($"Subscription {SubscriptionId} is already running. Unsubscribe before subscribing again.");
+        }
+
+        // Rechecked after publishing, because the check at the top races DisposeAsync: publish-then-check here
+        // against set-then-read there guarantees one side observes the other — either the disposal finds this
+        // session and stops it, or this read finds _disposed set and unwinds. The top check alone lets a
+        // subscribe slip past a concurrent disposal into a disposed pipe, with nothing left to stop it.
+        if (Volatile.Read(ref _disposed) != 0) {
+            RetireSession(session);
+
+            throw new ObjectDisposedException(GetType().FullName);
+        }
+
+        // Guarded because CreateRun can throw: a session published with no supervisor to clear it is an
+        // unstoppable subscription whose DisposeAsync never returns.
+        SubscriptionRun? run = null;
+
+        try {
+            run = CreateRun(lifetime.Token);
+            await Connect(run).NoContext();
+        } catch {
+            if (run is not null) {
+                using var graceful = GracefulStop(settings);
+                await run.Stop(graceful.Token, Log).NoContext();
+            }
+
+            // Retired before rethrowing so an immediate retry isn't refused.
+            RetireSession(session);
+
+            throw;
+        }
+
         Log.SubscriptionStarted();
-        onSubscribed(Options.SubscriptionId);
+        ReportConnected(session);
+
+        _ = Task.Run(() => RunSubscriptionLoop(session, run), CancellationToken.None);
     }
 
     public async ValueTask Unsubscribe(OnUnsubscribed onUnsubscribed, CancellationToken cancellationToken) {
-        IsRunning = false;
-        await Unsubscribe(cancellationToken).NoContext();
+        await StopSession(cancellationToken).NoContext();
+
         Log.SubscriptionStopped();
-        onUnsubscribed(Options.SubscriptionId);
-        await Finalize(cancellationToken);
-        Sequence = 0;
-        Stopping.Dispose();
+        onUnsubscribed(SubscriptionId);
     }
 
-    protected virtual ValueTask Finalize(CancellationToken cancellationToken) => default;
+    /// <summary>
+    /// Cancels the running session, if any, and waits for its supervisor to finish.
+    /// <paramref name="cancellationToken"/> bounds only this wait — teardown has its own budget.
+    /// </summary>
+    async ValueTask StopSession(CancellationToken cancellationToken) {
+        if (Volatile.Read(ref _session) is not { } session) return;
+
+        // Guarded: cancelling runs whatever the transport registered on the token, and its failure
+        // shouldn't cost the caller its stop report.
+        try {
+            await session.Lifetime.CancelAsync().NoContext();
+        } catch (ObjectDisposedException) {
+            // Already disposed means the supervisor already finished; nothing left to cancel.
+        } catch (Exception e) {
+            Log.SubscriptionDisconnectFailed(e);
+        }
+
+        try {
+            await session.Finished.Task.WaitAsync(cancellationToken).NoContext();
+        } catch (OperationCanceledException) {
+            // Logged, not thrown: this runs on the host's shutdown token from IHostedService.StopAsync,
+            // and throwing would abort every service queued behind it.
+            Log.SubscriptionStopTimedOut();
+        }
+
+        // Discarded even on timeout, or a teardown that outlived the caller would refuse every later Subscribe.
+        Interlocked.CompareExchange(ref _session, null, session);
+    }
+
+    /// <summary>
+    /// The subscription's lifecycle from the first successful connect onward, sequential and single-threaded.
+    /// <paramref name="run"/> arrives already connected, so every failure here is a drop to report and
+    /// recover from, never a caller still waiting on the first attempt.
+    /// </summary>
+    async Task RunSubscriptionLoop(Session session, SubscriptionRun run) {
+        var lifetime = session.Lifetime.Token;
+        var settings = session.Settings;
+
+        try {
+            while (true) {
+                // Fires on a reported drop, a dying pump, or shutdown cancelling the run's token.
+                await run.Ended.NoContext();
+
+                // Skipped during shutdown: a transport whose client reacts to token cancellation would
+                // double-report otherwise; Fail is first-wins, so this only fires for a genuine failure.
+                if (run.Failure is { } failure && !lifetime.IsCancellationRequested) ReportConnectionDropped(session, failure);
+
+                // Same teardown whether replaced or final — a stop is a resubscribe that doesn't come back.
+                using (var graceful = GracefulStop(settings)) {
+                    await run.Stop(graceful.Token, Log).NoContext();
+                }
+
+                if (lifetime.IsCancellationRequested) break;
+
+                Log.SubscriptionWillResubscribe(settings.RetryDelay);
+
+                try {
+                    await Task.Delay(settings.RetryDelay, lifetime).NoContext();
+                } catch (OperationCanceledException) when (lifetime.IsCancellationRequested) {
+                    break;
+                }
+
+                Log.SubscriptionResubscribing();
+
+                // Outside the try: failing here is the supervisor's fault, not a transport drop, and there's no
+                // live run to carry it — blaming the one just released would re-report its stale failure.
+                run = CreateRun(lifetime);
+
+                try {
+                    await Connect(run).NoContext();
+                    Log.SubscriptionResubscribed();
+                    ReportConnected(session);
+                } catch (Exception e) {
+                    // Handled by the top of the loop, same path as a mid-run drop.
+                    run.Fail(DropReason.ServerError, e);
+                }
+            }
+        } catch (OperationCanceledException) when (lifetime.IsCancellationRequested) {
+            // Shutdown landed mid-run or mid-delay.
+        } catch (Exception e) {
+            Log.SubscriptionSuperviseFailed(e);
+
+            // Only chance to report: health is wired to these two callbacks, so dying silently here would
+            // leave health green. SubscriptionError since this is the supervisor's failure, not the transport's.
+            if (!lifetime.IsCancellationRequested) ReportConnectionDropped(session, new(DropReason.SubscriptionError, e));
+        } finally {
+            RetireSession(session);
+        }
+    }
+
+    /// <summary>
+    /// Retires a session in the one order every exit path shares: unpublish, wake the waiters, release the
+    /// lifetime. Disposing the lifetime unregisters the session from the caller's long-lived token; otherwise
+    /// each subscribe cycle leaks a registration the GC can't reclaim. An Unsubscribe that races the disposal
+    /// finds the source already disposed, which is the answer it wants.
+    /// </summary>
+    void RetireSession(Session session) {
+        Interlocked.CompareExchange(ref _session, null, session);
+        session.Finished.TrySetResult();
+        session.Lifetime.Dispose();
+    }
+
+    void ReportConnected(Session session) {
+        try { session.OnSubscribed(SubscriptionId); } catch (Exception e) { Log.SubscriptionCallbackFailed(e); }
+    }
+
+    void ReportConnectionDropped(Session session, Failure failure) {
+        Log.SubscriptionDropped(failure.Reason, failure.Exception);
+
+        try { session.OnDropped(SubscriptionId, failure.Reason, failure.Exception); } catch (Exception e) { Log.SubscriptionCallbackFailed(e); }
+    }
+
+    /// <summary>
+    /// The budget a run gets to stop itself in, on the one path that has no caller waiting to supply one.
+    /// </summary>
+    CancellationTokenSource GracefulStop(SupervisorSettings settings) => new(settings.TeardownTimeout);
+
+    /// <summary>
+    /// Creates the run for one attempt. Override to attach attempt-scoped state a base run field can't hold.
+    /// </summary>
+    protected virtual SubscriptionRun CreateRun(CancellationToken lifetime) => new(lifetime);
 
     // ReSharper disable once CognitiveComplexity
     // ReSharper disable once CyclomaticComplexity
@@ -129,7 +278,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
                 }
 
                 if (context.WasIgnored() && activity != null) activity.ActivityTraceFlags = ActivityTraceFlags.None;
-            } catch (OperationCanceledException e) when (Stopping.IsCancellationRequested) {
+            } catch (OperationCanceledException e) when (context.CancellationToken.IsCancellationRequested) {
                 Log.MessageIgnoredWhenStopping(e);
             } catch (Exception e) { context.Nack(SubscriptionId, e); }
 
@@ -178,85 +327,77 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         }
     }
 
-    // TODO: Passing the handler function would allow decoupling subscribers from handlers
-    protected abstract ValueTask Subscribe(CancellationToken cancellationToken);
-
-    protected abstract ValueTask Unsubscribe(CancellationToken cancellationToken);
-
-    [PublicAPI]
-    protected virtual async Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
-        await Task.Delay(delay, cancellationToken).NoContext();
-
-        while (IsRunning && IsDropped && !cancellationToken.IsCancellationRequested) {
-            try {
-                Log.SubscriptionResubscribing();
-
-                await Subscribe(cancellationToken).NoContext();
-
-                IsDropped = false;
-                _onSubscribed?.Invoke(Options.SubscriptionId);
-
-                Log.SubscriptionResubscribed();
-            } catch (OperationCanceledException) { } catch (Exception e) {
-                Log.SubscriptionResubscribeFailed(e);
-                await Task.Delay(1000, cancellationToken).NoContext();
-            }
-        }
-    }
-
-    protected void Dropped(DropReason reason, Exception? exception) {
-        if (!IsRunning) return;
-
-        Log.SubscriptionDropped(reason, exception);
-
-        IsDropped = true;
-        _onDropped?.Invoke(Options.SubscriptionId, reason, exception);
-
-        // Read the token here rather than inside the background task below: Unsubscribe disposes
-        // Stopping, and reading .Token from a disposed source throws, which the task would surface as
-        // a spurious warning plus an unobserved exception. A token captured before the dispose stays
-        // usable afterwards, so hoisting the read is what makes the resubscribe safe. Losing the race
-        // outright means shutdown already got there, and there's nothing left to resubscribe to.
-        CancellationToken stopping;
-
-        try { stopping = Stopping.Token; } catch (ObjectDisposedException) { return; }
-
-        // Same reasoning for a token that's merely cancelled, which is the state Unsubscribe leaves it
-        // in for most of shutdown. Resubscribing from there can't succeed, and it isn't free: the
-        // checkpoint subscription's Resubscribe disposes the commit handler before it ever looks at the
-        // token, putting a second disposer in the race with Finalize.
-        if (stopping.IsCancellationRequested) return;
-
-        Task.Run(
-            async () => {
-                // Check again: Unsubscribe may have cancelled between the check above and this task
-                // getting scheduled. It doesn't close the race — Resubscribe still disposes the commit
-                // handler before it looks at the token — but it keeps the common case out of it.
-                if (stopping.IsCancellationRequested) return;
-
-                var delay = reason == DropReason.Stopped ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(2);
-                Log.SubscriptionWillResubscribe(delay);
-
-                try { await Resubscribe(delay, stopping).NoContext(); } catch (Exception e) {
-                    Log.WarnLog?.Log(e.Message);
-
-                    throw;
-                }
-            }
-        );
-    }
-
-    bool _disposed;
+    /// <summary>
+    /// Connects the transport. Returns once up, throws if it can't come up. Called once per run and must be
+    /// repeatable on the same instance — reassign fields rather than assume them unset.
+    /// </summary>
+    /// <remarks>
+    /// A transport with its own polling or reading loop starts it here on a task of its own, reports the
+    /// loop's death as this run's failure (unless <see cref="SubscriptionRun.Token"/> itself ended it), and
+    /// registers an <see cref="SubscriptionRun.OnDisconnect"/> callback that awaits the loop so the next
+    /// Connect never overlaps it. A callback-driven transport just connects and returns. Register each
+    /// acquired handle on <paramref name="run"/> via <see cref="SubscriptionRun.OnDisconnect"/> as it's
+    /// acquired, so a Connect that fails part-way still releases what was taken.
+    /// </remarks>
+    protected abstract ValueTask Connect(SubscriptionRun run);
 
     public async ValueTask DisposeAsync() {
-        if (_disposed) return;
+        // Exchange, not check-then-set: prevents two concurrent disposals both reaching the pipe (disposing
+        // it twice double-disposes every filter).
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+
+        // Before the pipe, since a live run delivers into it. Unbounded wait is safe because teardown
+        // carries its own budget.
+        await StopSession(CancellationToken.None).NoContext();
 
         await Pipe.DisposeAsync().NoContext();
 
-        // Stopping.Dispose();
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
+
+    /// <summary>
+    /// Everything one <see cref="Subscribe"/> call brought: the run token, stop signal, callbacks, and
+    /// settings. One record, so <c>Unsubscribe</c> reads a consistent set rather than independently-moving
+    /// fields.
+    /// </summary>
+    sealed record Session(CancellationTokenSource Lifetime, TaskCompletionSource Finished, OnSubscribed OnSubscribed, OnDropped OnDropped, SupervisorSettings Settings);
+}
+
+/// <summary>
+/// <see cref="SubscriptionOptions"/> validated once, at <see cref="EventSubscription{T}.Subscribe"/>, rather
+/// than on every use, since options are mutable and an operator should hear about a bad setting once per
+/// subscribe, not once per reconnect.
+/// </summary>
+internal readonly record struct SupervisorSettings(TimeSpan RetryDelay, TimeSpan TeardownTimeout) {
+    /// <summary>
+    /// The longest finite wait <see cref="Task.Delay(TimeSpan, CancellationToken)"/> and
+    /// <see cref="CancellationTokenSource(TimeSpan)"/> accept, about 49 days. Both throw above it, and a throw
+    /// from the supervisor's delay or its graceful stop ends the loop for good.
+    /// </summary>
+    static readonly TimeSpan MaxDelay = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
+
+    public static SupervisorSettings From(SubscriptionOptions options, LogContext log) {
+        var retryDelay = options.RetryDelay;
+
+        if (!CanBeWaitedOn(retryDelay)) {
+            log.SubscriptionRetryDelayInvalid(retryDelay, SubscriptionOptions.DefaultRetryDelay);
+            retryDelay = SubscriptionOptions.DefaultRetryDelay;
+        }
+
+        var teardownTimeout = options.TeardownTimeout;
+
+        if (!CanBeWaitedOn(teardownTimeout)) {
+            log.SubscriptionTeardownTimeoutInvalid(teardownTimeout, SubscriptionOptions.DefaultTeardownTimeout);
+            teardownTimeout = SubscriptionOptions.DefaultTeardownTimeout;
+        }
+
+        return new(retryDelay, teardownTimeout);
+    }
+
+    // InfiniteTimeSpan is exempt: both Task.Delay and CancellationTokenSource accept it as "never". Every other
+    // out-of-range value is a configuration mistake that would otherwise surface as an exception thrown deep in
+    // the supervisor, where the only available answer is to give up on the subscription.
+    static bool CanBeWaitedOn(TimeSpan delay) => delay == Timeout.InfiniteTimeSpan || (delay >= TimeSpan.Zero && delay <= MaxDelay);
 }
 
 [StructLayout(LayoutKind.Auto)]

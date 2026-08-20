@@ -6,7 +6,7 @@ namespace Eventuous.KurrentDB.Subscriptions;
 static class KurrentDBMappings {
     public static DropReason AsDropReason(SubscriptionDroppedReason reason)
         => reason switch {
-            SubscriptionDroppedReason.Disposed => DropReason.Stopped,
+            SubscriptionDroppedReason.Disposed => DropReason.ServerError,
             SubscriptionDroppedReason.ServerError => DropReason.ServerError,
             SubscriptionDroppedReason.SubscriberError => DropReason.SubscriptionError,
             _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, null)

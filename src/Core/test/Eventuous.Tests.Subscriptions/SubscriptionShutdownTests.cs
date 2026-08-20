@@ -1,123 +1,130 @@
-using System.Collections.Concurrent;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Filters;
-using Microsoft.Extensions.Logging;
 using Shouldly;
 
 namespace Eventuous.Tests.Subscriptions;
 
 /// <summary>
-/// A dropped subscription schedules the resubscribe on a background task, and that task used to read
-/// <c>Stopping.Token</c> long after <c>Unsubscribe</c> got to the source. A drop that races shutdown is
-/// benign — there is nothing left to resubscribe to — but it used to cost a spurious warning, an
-/// unobserved exception, and a commit-handler dispose racing the one in <c>Finalize</c> (AI-1699).
+/// A failure can be reported from any thread, at any time, including on a run shutdown has already ended.
+/// That used to cost a spurious warning, an unobserved exception, or a commit-handler dispose racing the
+/// one in teardown (AI-1699); now it should cost nothing at all.
 /// </summary>
 public class SubscriptionShutdownTests {
     /// <summary>
-    /// The KurrentDB subscriptions cancel <c>Stopping</c> at the top of their <c>Unsubscribe</c>, so a
-    /// drop during shutdown normally finds the token cancelled. Resubscribing from there is pure waste:
-    /// <c>EventSubscriptionWithCheckpoint.Resubscribe</c> disposes the commit handler before it ever
-    /// looks at the token, which is what put a second disposer in the race with <c>Finalize</c>.
+    /// A failure arriving after the subscription's lifetime is cancelled has nothing to restart, observed
+    /// by counting connects — a second one would mean the failure bought an unwanted replacement run.
     /// </summary>
     [Test]
-    public async Task Drop_after_shutdown_started_does_not_resubscribe(CancellationToken ct) {
-        var subscription = new TestSubscription(new() { SubscriptionId = "test-drop-when-cancelled" }, new ConsumePipe(), new CapturingLoggerFactory());
+    public async Task Failure_after_shutdown_started_does_not_reconnect(CancellationToken ct) {
+        var subscription = new TestSubscription(new() { SubscriptionId = "test-fail-when-cancelled", RetryDelay = ShortRetry }, new ConsumePipe(), new CapturingLoggerFactory());
 
-        await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
+        using var host = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
-        subscription.DropAfterCancellingStopping();
+        await subscription.Subscribe(_ => { }, (_, _, _) => { }, host.Token);
 
-        var resubscribed = await subscription.WaitForResubscribe(TimeSpan.FromSeconds(2));
+        // Cancelled through the token Subscribe was given — the route shutdown uses — not the subscription's own.
+        await host.CancelAsync();
+        subscription.Fail();
 
-        resubscribed.ShouldBeFalse("a subscription that is already stopping has nothing to resubscribe to");
+        (await Wait.Until(() => !subscription.IsRunning, TimeSpan.FromSeconds(5)))
+            .ShouldBeTrue("the cancelled subscription should have finished stopping");
+
+        // Ten retry delays after it stopped: an unwanted replacement run would have connected by now.
+        await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+
+        subscription.Connects.ShouldBe(1, "a subscription that is already stopping has nothing to reconnect to");
+        subscription.IsRunning.ShouldBeFalse();
     }
 
+    /// <summary>
+    /// The losing side of the race: shutdown disposes the run's source while a failure is still being
+    /// reported against it. Run many times, since the window can't be reconstructed deterministically.
+    /// </summary>
     [Test]
-    public async Task Drop_racing_unsubscribe_does_not_report_a_disposed_cts(CancellationToken ct) {
+    public async Task Failure_racing_unsubscribe_does_not_report_a_disposed_cts(CancellationToken ct) {
         var logs = new CapturingLoggerFactory();
 
-        var subscription = new TestSubscription(new() { SubscriptionId = "test-drop-race" }, new ConsumePipe(), logs);
+        for (var i = 0; i < 50; i++) {
+            var subscription = new TestSubscription(new() { SubscriptionId = $"test-fail-race-{i}", RetryDelay = ShortRetry }, new ConsumePipe(), logs);
 
-        await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
+            await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
 
-        // Reproduce the losing side of the race: Unsubscribe has already disposed Stopping while the
-        // subscription still believes it's running, which is exactly what lets Dropped reach the token.
-        subscription.DropAfterDisposingStopping();
+            var failing = Task.Run(
+                () => {
+                    for (var fail = 0; fail < 20; fail++) subscription.Fail();
+                },
+                ct
+            );
 
-        var reported = await logs.WaitForWarning("CancellationTokenSource has been disposed", TimeSpan.FromSeconds(2));
+            await subscription.Unsubscribe(_ => { }, ct);
+            await failing;
+        }
 
-        reported.ShouldBeFalse("dropping while Unsubscribe disposes Stopping is a benign shutdown race, not an error");
+        // Matches text that only appears in an ObjectDisposedException's message, not just the log template.
+        var reported = logs.Contains("CancellationTokenSource has been disposed");
+
+        reported.ShouldBeFalse("failing a run while shutdown tears it down is a benign race, not an error");
     }
+
+    /// <summary>
+    /// Two shutdown paths racing: whichever caller reads the session before the supervisor retires it
+    /// performs the stop, but <c>OnUnsubscribed</c> answers "is this subscription stopped", not "did this
+    /// call stop it" — so both callers are owed an answer, and neither may hang or throw.
+    /// </summary>
+    /// <remarks>
+    /// Does not reach the window <c>Unsubscribe</c>'s <c>ObjectDisposedException</c> clause guards — 150
+    /// attempts never landed it. That clause stands on AI-1699, not on this test.
+    /// </remarks>
+    [Test]
+    public async Task Concurrent_unsubscribes_do_not_report_a_disposed_cts(CancellationToken ct) {
+        var logs = new CapturingLoggerFactory();
+
+        for (var i = 0; i < 50; i++) {
+            var subscription = new TestSubscription(new() { SubscriptionId = $"test-stop-race-{i}", RetryDelay = ShortRetry }, new ConsumePipe(), logs);
+
+            await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
+
+            var stops = 0;
+            var second = Task.Run(async () => await subscription.Unsubscribe(_ => Interlocked.Increment(ref stops), ct), ct);
+
+            await subscription.Unsubscribe(_ => Interlocked.Increment(ref stops), ct);
+            await second;
+
+            stops.ShouldBe(2, "both callers asked to be told the subscription stopped, and for both of them it is");
+            subscription.IsRunning.ShouldBeFalse("both callers returned, so the subscription is down either way");
+        }
+
+        var reported = logs.Contains("CancellationTokenSource has been disposed");
+
+        reported.ShouldBeFalse("a supervisor that finished before the second caller reached it is not a disconnect failure");
+    }
+
+    /// <summary>
+    /// Short, so the races below churn through connects and teardowns rather than sitting in the retry delay.
+    /// </summary>
+    static readonly TimeSpan ShortRetry = TimeSpan.FromMilliseconds(20);
 
     record TestSubscriptionOptions : SubscriptionOptions;
 
     /// <summary>
-    /// A subscription that does nothing but expose the drop path. <c>Stopping</c> is protected, so both
-    /// shutdown states can be reproduced without any test-only hooks in the production class.
+    /// Counts its connects and hands out the run to fail; the run is kept past its own teardown on purpose,
+    /// since failing a retired run is exactly what these tests are about.
     /// </summary>
     class TestSubscription(TestSubscriptionOptions options, ConsumePipe pipe, ILoggerFactory loggerFactory)
         : EventSubscription<TestSubscriptionOptions>(options, pipe, loggerFactory, null) {
-        readonly TaskCompletionSource _resubscribed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int              _connects;
+        SubscriptionRun? _run;
 
-        public void DropAfterCancellingStopping() {
-            Stopping.Cancel(false);
-            Drop();
-        }
+        public int Connects => Volatile.Read(ref _connects);
 
-        public void DropAfterDisposingStopping() {
-            Stopping.Dispose();
-            Drop();
-        }
+        public void Fail() => Volatile.Read(ref _run)?.Fail(DropReason.SubscriptionError, new InvalidOperationException("Simulated failure during shutdown"));
 
-        public async Task<bool> WaitForResubscribe(TimeSpan timeout)
-            => await Task.WhenAny(_resubscribed.Task, Task.Delay(timeout)) == _resubscribed.Task;
+        protected override ValueTask Connect(SubscriptionRun run) {
+            Volatile.Write(ref _run, run);
+            Interlocked.Increment(ref _connects);
 
-        protected override Task Resubscribe(TimeSpan delay, CancellationToken cancellationToken) {
-            _resubscribed.TrySetResult();
-
-            return Task.CompletedTask;
-        }
-
-        protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
-
-        protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
-
-        void Drop() => Dropped(DropReason.SubscriptionError, new InvalidOperationException("Simulated drop during shutdown"));
-    }
-
-    sealed class CapturingLoggerFactory : ILoggerFactory {
-        readonly ConcurrentQueue<string> _warnings = [];
-
-        /// <summary>
-        /// Polls rather than waiting out the full timeout, so the failing case reports in milliseconds.
-        /// The resubscribe runs on a fire-and-forget task, so there is nothing to await on.
-        /// </summary>
-        public async Task<bool> WaitForWarning(string contains, TimeSpan timeout) {
-            var deadline = DateTime.UtcNow + timeout;
-
-            while (DateTime.UtcNow < deadline) {
-                if (_warnings.Any(w => w.Contains(contains))) return true;
-
-                await Task.Delay(20);
-            }
-
-            return false;
-        }
-
-        public ILogger CreateLogger(string categoryName) => new CapturingLogger(_warnings);
-
-        public void AddProvider(ILoggerProvider provider) { }
-
-        public void Dispose() { }
-
-        sealed class CapturingLogger(ConcurrentQueue<string> warnings) : ILogger {
-            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-            public bool IsEnabled(LogLevel logLevel) => true;
-
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
-                if (logLevel >= LogLevel.Warning) warnings.Enqueue(formatter(state, exception));
-            }
+            return default;
         }
     }
+
 }

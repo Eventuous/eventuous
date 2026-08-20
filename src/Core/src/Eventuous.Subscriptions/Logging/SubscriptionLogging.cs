@@ -76,6 +76,30 @@ public static class LoggingExtensions {
         public void MessageAcked(string messageType, ulong position)
             => log.TraceLog?.Log("Message {Type} acknowledged at {Position}", messageType, position);
 
+        /// <summary>
+        /// A message from a dropped run that finished after its replacement started; unacked, so the new
+        /// run redelivers it from the checkpoint.
+        /// </summary>
+        public void MessageFromPreviousRunIgnored(IBaseConsumeContext context)
+            => log.DebugLog?.Log(
+                "Message {MessageType} from {Stream}:{Position} belongs to a previous run and was not acknowledged",
+                context.MessageType,
+                context.Stream,
+                context.GlobalPosition
+            );
+
+        /// <summary>
+        /// The handling worker is stopping and never took the message; left unacknowledged, so it comes
+        /// back on the next run.
+        /// </summary>
+        public void MessageNotQueued(IBaseConsumeContext context)
+            => log.WarnLog?.Log(
+                "Message {MessageType} from {Stream}:{Position} was not queued for handling because the subscription is stopping",
+                context.MessageType,
+                context.Stream,
+                context.GlobalPosition
+            );
+
         public void MessageNacked(string messageType, ulong position, Exception exception)
             => log.WarnLog?.Log(exception, "Message {Type} not acknowledged at {Position}", messageType, position);
 
@@ -86,9 +110,39 @@ public static class LoggingExtensions {
             => log.WarnLog?.Log(exception, "Dropped: {Reason}", reason);
 
         public void SubscriptionWillResubscribe(TimeSpan delay) => log.WarnLog?.Log($"Will resubscribe after {delay}");
+
+        /// <summary>
+        /// Configured retry delay can't be waited on; fell back to the default. Otherwise this
+        /// misconfiguration would only show up as a subscription retrying flat out.
+        /// </summary>
+        public void SubscriptionRetryDelayInvalid(TimeSpan configured, TimeSpan used)
+            => log.WarnLog?.Log($"Retry delay {configured} cannot be waited on, using {used} instead");
+
+        /// <summary>
+        /// Configured teardown timeout can't be waited on; fell back to the default. Otherwise this
+        /// misconfiguration would only show up as a teardown that never gives up.
+        /// </summary>
+        public void SubscriptionTeardownTimeoutInvalid(TimeSpan configured, TimeSpan used)
+            => log.WarnLog?.Log($"Teardown timeout {configured} cannot be waited on, using {used} instead");
+
+        /// <summary>
+        /// The caller stopped waiting for the subscription to finish stopping. Not a failed stop — teardown
+        /// runs on its own budget regardless.
+        /// </summary>
+        public void SubscriptionStopTimedOut() => log.WarnLog?.Log("Gave up waiting for the subscription to stop");
+
         public void SubscriptionResubscribing() => log.WarnLog?.Log("Resubscribing");
         public void SubscriptionResubscribed() => log.InfoLog?.Log("Resubscribed");
-        public void SubscriptionResubscribeFailed(Exception e) => log.ErrorLog?.Log(e, "Failed to resubscribe");
+
+        /// <summary>
+        /// The supervisor itself failed, leaving the subscription down for good — anything else it sees is
+        /// reported as a drop and retried.
+        /// </summary>
+        public void SubscriptionSuperviseFailed(Exception e) => log.ErrorLog?.Log(e, "Subscription supervisor failed");
+
+        public void SubscriptionDisconnectFailed(Exception e) => log.WarnLog?.Log(e, "Failed to release the subscription");
+
+        public void SubscriptionCallbackFailed(Exception e) => log.WarnLog?.Log(e, "Subscription callback failed");
     }
 
     public static void MessageTypeNotFound<T>(this ILogger? log)

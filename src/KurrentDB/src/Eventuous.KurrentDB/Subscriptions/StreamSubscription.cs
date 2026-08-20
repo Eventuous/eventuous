@@ -85,23 +85,25 @@ public class StreamSubscription : KurrentDBCatchUpSubscriptionBase<StreamSubscri
     /// <summary>
     /// Starts a catch-up subscription
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    protected override async ValueTask Subscribe(CancellationToken cancellationToken) {
-        var (_, position) = await GetCheckpoint(cancellationToken).NoContext();
+    protected override async ValueTask Connect(SubscriptionRun run) {
+        var (_, position) = await GetCheckpoint(run).NoContext();
 
         var fromStream = GetStreamPosition();
 
-        Subscription = await Client.SubscribeToStreamAsync(
+        var subscription = await Client.SubscribeToStreamAsync(
                 Options.StreamName,
                 fromStream,
                 (_, @event, ct) => HandleEvent(@event, ct),
                 Options.ResolveLinkTos,
                 HandleDrop,
                 Options.Credentials,
-                cancellationToken
+                run.Token
             )
             .NoContext();
         Log.InfoLog?.Log("Subscribed to stream {Stream}", Options.StreamName);
+
+        // No settling delay needed: the supervisor now ignores failures raised while shutting down.
+        run.OnDisconnect(_ => { subscription.Dispose(); return default; });
 
         return;
 
@@ -119,14 +121,14 @@ public class StreamSubscription : KurrentDBCatchUpSubscriptionBase<StreamSubscri
 
             if (Options.IgnoreSystemEvents && re.Event.EventType.Length > 0 && re.Event.EventType[0] == '$') return;
 
-            await HandleInternal(CreateContext(re, ct)).NoContext();
+            await HandleInternal(run, CreateContext(run, re, ct)).NoContext();
         }
 
         void HandleDrop(global::KurrentDB.Client.StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex)
-            => Dropped(KurrentDBMappings.AsDropReason(reason), ex);
+            => run.Fail(KurrentDBMappings.AsDropReason(reason), ex);
     }
 
-    MessageConsumeContext CreateContext(ResolvedEvent re, CancellationToken cancellationToken) {
+    MessageConsumeContext CreateContext(SubscriptionRun run, ResolvedEvent re, CancellationToken cancellationToken) {
         var evt = DeserializeData(
             re.Event.ContentType,
             re.Event.EventType,
@@ -150,7 +152,7 @@ public class StreamSubscription : KurrentDBCatchUpSubscriptionBase<StreamSubscri
             re.Event.EventNumber,
             re.OriginalEventNumber.ToUInt64(),
             re.Event.Position.CommitPosition,
-            Sequence++,
+            run.NextSequence(),
             re.Event.Created,
             evt,
             meta,

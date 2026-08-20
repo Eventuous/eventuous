@@ -47,9 +47,7 @@ public class RegistrationTests {
     record TestOptions : SubscriptionOptions;
 
     class TestSub(TestOptions options, ConsumePipe consumePipe) : EventSubscription<TestOptions>(options, consumePipe, NullLoggerFactory.Instance, null) {
-        protected override ValueTask Subscribe(CancellationToken cancellationToken) => default;
-
-        protected override ValueTask Unsubscribe(CancellationToken cancellationToken) => default;
+        protected override ValueTask Connect(SubscriptionRun run) => default;
     }
 
     class TestProducer : BaseProducer<TestProduceOptions> {

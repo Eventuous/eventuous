@@ -34,12 +34,6 @@ static class ChannelExtensions {
             }
         }
 
-        public ValueTask Write(T element, bool throwOnFull, CancellationToken cancellationToken) {
-            return throwOnFull ? WriteOrThrow() : channel.Writer.WriteAsync(element, cancellationToken);
-
-            ValueTask WriteOrThrow() => !channel.Writer.TryWrite(element) ? throw new ChannelFullException() : default;
-        }
-
         public async ValueTask Stop(
                 CancellationTokenSource             cts,
                 Task[]                              readers,
@@ -49,15 +43,22 @@ static class ChannelExtensions {
 
             var incompleteReaders = readers.Where(r => !r.IsCompleted).ToArray();
 
-            if (readers.Length > 0) {
-                cts.CancelAfter(TimeSpan.FromSeconds(10));
-                await Task.WhenAll(incompleteReaders).NoContext();
+            try {
+                // Only incomplete readers need a deadline; arming one for readers already done would cancel
+                // a drain that's already finished.
+                if (incompleteReaders.Length > 0) {
+                    cts.CancelAfter(TimeSpan.FromSeconds(10));
+                    await Task.WhenAll(incompleteReaders).NoContext();
+                }
+            } finally {
+                // In a finally: finalize is the only forced checkpoint commit, and matters most when the
+                // drain above times out (a batch reader rethrows that cancellation). The reader's own failure
+                // still propagates afterwards, so a broken shutdown isn't traded away for the flush.
+                if (finalize != null) {
+                    using var ts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    await finalize(ts.Token).NoContext();
+                }
             }
-
-            if (finalize == null) return;
-
-            using var ts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            await finalize(ts.Token).NoContext();
         }
     }
 

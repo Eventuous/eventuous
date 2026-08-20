@@ -90,9 +90,9 @@ public sealed class CheckpointCommitHandler : IAsyncDisposable {
     /// </summary>
     /// <param name="position">Position to commit</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns></returns>
+    /// <returns>False if the handler stopped without taking the position — don't treat that as a commit.</returns>
     [PublicAPI]
-    public ValueTask Commit(CommitPosition position, CancellationToken cancellationToken) {
+    public ValueTask<bool> Commit(CommitPosition position, CancellationToken cancellationToken) {
         // No _positions access here — that read moved to the worker thread's Process (AI-1329). This
         // runs on the ack caller thread and must never touch the worker-owned, non-thread-safe set.
         position.LogContext?.PositionReceived(position);

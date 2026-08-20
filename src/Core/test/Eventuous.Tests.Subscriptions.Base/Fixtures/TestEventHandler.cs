@@ -34,8 +34,19 @@ public class TestEventHandler(TestEventHandlerOptions? options) : BaseEventHandl
 
     public On<object> AssertThat() => Hypothesis.On(_observer);
 
+    /// <summary>
+    /// Expects exactly <paramref name="collection"/> to be handled within <paramref name="deadline"/>. Takes
+    /// the whole deadline: proving "n and no more" means watching the window out, so pick one that suits the
+    /// transport rather than one padded for the worst case.
+    /// </summary>
+    /// <remarks>
+    /// An empty expectation matches everything instead, since <c>Contains</c> on an empty collection rejects
+    /// every message and would leave nothing for <c>Exactly(0)</c> to count — an assertion that cannot fail.
+    /// </remarks>
     public Hypothesis<object> AssertCollection(TimeSpan deadline, List<object> collection)
-        => Hypothesis.On(_observer).Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
+        => collection.Count == 0
+            ? Hypothesis.On(_observer).Timebox(deadline).AtMost(0).Match(_ => true)
+            : Hypothesis.On(_observer).Timebox(deadline).Exactly(collection.Count).Match(collection.Contains);
 
     /// <summary>
     /// Messages handled so far. Backed by a concurrent queue so tests can poll it while the subscription
@@ -59,3 +70,4 @@ public class TestEventHandler(TestEventHandlerOptions? options) : BaseEventHandl
 }
 
 public record TestEventHandlerOptions(TimeSpan? Delay = null);
+

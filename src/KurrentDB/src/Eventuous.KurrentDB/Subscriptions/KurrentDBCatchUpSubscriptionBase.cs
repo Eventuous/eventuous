@@ -40,23 +40,4 @@ public abstract class KurrentDBCatchUpSubscriptionBase<T> : EventSubscriptionWit
     /// EventStoreDB client instance
     /// </summary>
     protected KurrentDBClient Client { get; }
-
-    /// <summary>
-    /// Stops the subscription
-    /// </summary>
-    /// <param name="cancellationToken"></param>
-    protected override async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-        try {
-            Stopping.Cancel(false);
-            Subscription?.Dispose();
-            await Task.Delay(100, cancellationToken);
-        } catch (Exception) {
-            // Nothing to see here
-        }
-    }
-
-    /// <summary>
-    /// Underlying EventStoreDB subscription
-    /// </summary>
-    protected global::KurrentDB.Client.StreamSubscription? Subscription { get; set; }
 }

@@ -46,7 +46,19 @@ public class PersistentSubscriptionFixture<TSubscription, TOptions, THandler>(
     }
 
     public async ValueTask DisposeAsync() {
-        if (autoStart) await Stop();
-        _listener.Dispose();
+        // Guarded, and the fixture released in the finally: both statements below touch fields that stay null
+        // until late in InitializeAsync, so an initialisation that failed earlier than that — a container that
+        // never became ready being the realistic case — would otherwise throw past the release.
+        try {
+            if (autoStart) await Stop();
+            _listener.Dispose();
+        } catch (Exception) {
+            // Whatever went wrong starting up, it must not cost us the container below.
+        } finally {
+            // The inner fixture owns the container this one started, so it has to go back here: nothing else
+            // holds a reference to it, and with it left running every use of this fixture costs the machine
+            // another KurrentDB instance until something reaps it.
+            await Fixture.DisposeAsync();
+        }
     }
 }
