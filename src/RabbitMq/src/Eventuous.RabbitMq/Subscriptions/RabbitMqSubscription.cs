@@ -145,7 +145,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         // Channel captured as a local rather than looked up at ack time, since a delivery tag only means
         // something on the channel it came from, and a resubscribe would have moved on to a different one.
         var consumer = new AsyncEventingBasicConsumer(channel);
-        consumer.ReceivedAsync += (_, received) => HandleReceived(channel, received, run.Token);
+        consumer.ReceivedAsync += (_, received) => HandleReceived(run, channel, received);
 
         await channel.BasicConsumeAsync(queue, false, consumer, run.Token).NoContext();
 
@@ -170,17 +170,19 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         }
     }
 
-    const string ReceivedMessageKey = "receivedMessage";
-
-    async Task HandleReceived(IChannel channel, BasicDeliverEventArgs received, CancellationToken cancellationToken) {
+    /// <summary>
+    /// Failures end this run instead of being thrown. A throw here reaches the client's consumer dispatcher,
+    /// which routes it to <c>CallbackException</c> and carries on, so under <c>ThrowOnError</c> the
+    /// subscription kept running as if nothing had happened.
+    /// </summary>
+    async Task HandleReceived(SubscriptionRun run, IChannel channel, BasicDeliverEventArgs received) {
         Logger.Current = Log;
 
         try {
-            var ctx = CreateContext(received, cancellationToken).WithItem(ReceivedMessageKey, received);
+            var ctx = CreateContext(received, run.Token);
             await Handler(new AsyncConsumeContext(ctx, Ack, Nack)).NoContext();
-        } catch (Exception) {
-            // This won't stop the subscription, but the reader will be gone. Not sure how to solve this one.
-            if (Options.ThrowOnError) throw;
+        } catch (Exception e) {
+            if (Options.ThrowOnError) run.Fail(DropReason.SubscriptionError, e);
         }
 
         return;
@@ -192,11 +194,22 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
         }
 
         async ValueTask Nack(IMessageConsumeContext _, Exception exception) {
-            if (Options.ThrowOnError) throw exception;
-
+            // The broker is told first, and told whatever ThrowOnError says, because deciding the delivery is
+            // what the failure handler is for: leaving it to the channel close would requeue it no matter what
+            // the handler was configured to do with it. Rejecting before the run ends also keeps the channel
+            // alive for the call.
             try {
                 await _failureHandler(channel, received, exception).NoContext();
-            } catch (Exception e) when (IsChannelGone(e)) { LogDeliveryUndecided(e); }
+            } catch (Exception e) when (IsChannelGone(e)) {
+                LogDeliveryUndecided(e);
+            } finally {
+                // Then the run ends, which is what ThrowOnError means here. In a finally because a failure
+                // handler is user code: one that throws anything else would otherwise skip this, and the
+                // filter would log that throw and leave the run looking healthy with nothing consuming.
+                // Reported rather than thrown, since a throw on the filter's channel worker kills the reader
+                // and nothing observes its task until dispose.
+                if (Options.ThrowOnError) run.Fail(DropReason.SubscriptionError, exception);
+            }
         }
 
         void LogDeliveryUndecided(Exception e)

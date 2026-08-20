@@ -117,14 +117,16 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
         );
 
         // StopAsync first, then join: the client's task only ends once StopAsync has run, so joining first
-        // would deadlock until the graceful budget expires. The join is in a finally because StopAsync throws
-        // when the graceful budget forces a hard stop — the pump still ends, and skipping the join would let
-        // the replacement client start alongside it.
+        // would deadlock until the graceful budget expires. Both the join and the disposal are in a finally
+        // because StopAsync throws when the graceful budget forces a hard stop — the pump still ends, and
+        // skipping the join would let the replacement client start alongside it. Disposed rather than left to
+        // the stop path, since this run built the client and releases it whatever the stop did.
         run.OnDisconnect(async ct => {
             try {
                 await client.StopAsync(ct).NoContext();
             } finally {
                 await reporting.NoContext();
+                await client.DisposeAsync().NoContext();
             }
         });
 

@@ -79,7 +79,16 @@ public sealed class AsyncHandlingFilter : ConsumeFilter<AsyncConsumeContext>, IA
             } catch (Exception e) {
                 ctx.LogContext.MessageHandlingFailed(nameof(AsyncHandlingFilter), workerTask.Context, e);
                 activity?.SetActivityStatus(ActivityStatus.Error(e));
-                await ctx.Fail(e).NoContext();
+
+                // Guarded: Fail runs the subscription's nack, which is transport-supplied and does throw
+                // under ThrowOnError. Unguarded it would take this reader down with it — silently, since
+                // nothing observes a channel worker's task until dispose — and the subscription would go on
+                // looking healthy while consuming nothing.
+                try {
+                    await ctx.Fail(e).NoContext();
+                } catch (Exception nackFailed) {
+                    ctx.LogContext.MessageHandlingFailed(nameof(AsyncHandlingFilter), workerTask.Context, nackFailed);
+                }
             }
 
             if (activity != null && ctx.WasIgnored()) activity.ActivityTraceFlags = ActivityTraceFlags.None;
