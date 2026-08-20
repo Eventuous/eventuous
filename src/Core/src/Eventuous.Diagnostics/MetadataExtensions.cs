@@ -21,8 +21,8 @@ public static class MetadataExtensions {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Metadata AddTracingMeta(TracingMeta tracingMeta)
-            => metadata.ContainsKey(TraceId) || tracingMeta.TraceId == EmptyId
-                ? metadata // don't override existing tracing data
+            => metadata.ContainsKey(TraceId) || !tracingMeta.IsValid()
+                ? metadata // don't override existing tracing data, and don't persist an unusable one
                 : metadata
                     .AddNotNull(TraceId, tracingMeta.TraceId)
                     .AddNotNull(SpanId, tracingMeta.SpanId);
@@ -31,6 +31,4 @@ public static class MetadataExtensions {
         public TracingMeta GetTracingMeta()
             => new(metadata.GetString(TraceId), metadata.GetString(SpanId));
     }
-
-    const string EmptyId = "0000000000000000";
 }

@@ -8,6 +8,9 @@
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     </ItemGroup>
     <ItemGroup>
+        <InternalsVisibleTo Include="Eventuous.Tests.SignalR" />
+    </ItemGroup>
+    <ItemGroup>
         <Compile Include="..\Eventuous.SignalR.Server\Contracts\*.cs" LinkBase="Contracts" />
     </ItemGroup>
     <ItemGroup>
