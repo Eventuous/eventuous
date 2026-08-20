@@ -68,9 +68,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         // session and stops it, or this read finds _disposed set and unwinds. The top check alone lets a
         // subscribe slip past a concurrent disposal into a disposed pipe, with nothing left to stop it.
         if (Volatile.Read(ref _disposed) != 0) {
-            Interlocked.CompareExchange(ref _session, null, session);
-            finishedTcs.TrySetResult();
-            lifetime.Dispose();
+            RetireSession(session);
 
             throw new ObjectDisposedException(GetType().FullName);
         }
@@ -88,10 +86,8 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
                 await run.Stop(graceful.Token, Log).NoContext();
             }
 
-            // Cleared before rethrowing so an immediate retry isn't refused.
-            Interlocked.CompareExchange(ref _session, null, session);
-            finishedTcs.TrySetResult();
-            lifetime.Dispose();
+            // Retired before rethrowing so an immediate retry isn't refused.
+            RetireSession(session);
 
             throw;
         }
@@ -195,14 +191,20 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
             // leave health green. SubscriptionError since this is the supervisor's failure, not the transport's.
             if (!lifetime.IsCancellationRequested) ReportConnectionDropped(session, new(DropReason.SubscriptionError, e));
         } finally {
-            Interlocked.CompareExchange(ref _session, null, session);
-            session.Finished.TrySetResult();
-
-            // Unregisters the session from the caller's long-lived token; otherwise each subscribe cycle
-            // leaks a registration the GC can't reclaim. An Unsubscribe that races this finds the source
-            // already disposed, which is the answer it wants.
-            session.Lifetime.Dispose();
+            RetireSession(session);
         }
+    }
+
+    /// <summary>
+    /// Retires a session in the one order every exit path shares: unpublish, wake the waiters, release the
+    /// lifetime. Disposing the lifetime unregisters the session from the caller's long-lived token; otherwise
+    /// each subscribe cycle leaks a registration the GC can't reclaim. An Unsubscribe that races the disposal
+    /// finds the source already disposed, which is the answer it wants.
+    /// </summary>
+    void RetireSession(Session session) {
+        Interlocked.CompareExchange(ref _session, null, session);
+        session.Finished.TrySetResult();
+        session.Lifetime.Dispose();
     }
 
     void ReportConnected(Session session) {
