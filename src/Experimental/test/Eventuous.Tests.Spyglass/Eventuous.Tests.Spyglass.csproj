@@ -2,6 +2,8 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <IncludeTestHost>true</IncludeTestHost>
+        <!-- The sample apps used as fixtures are pinned to net10.0 for the Aspire AppHost -->
+        <TargetFrameworks>net10.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations"/>

@@ -24,6 +24,7 @@
         <PackageReference Include="Swashbuckle.AspNetCore"/>
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="$(SrcRoot)\Azure\src\Eventuous.Azure.Storage.Blobs\Eventuous.Azure.Storage.Blobs.csproj"/>
         <ProjectReference Include="$(SrcRoot)\Diagnostics\src\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
         <ProjectReference Include="$(SrcRoot)\KurrentDB\src\Eventuous.KurrentDB\Eventuous.KurrentDB.csproj" />
         <ProjectReference Include="$(SrcRoot)\Experimental\src\Eventuous.Spyglass\Eventuous.Spyglass.csproj"/>

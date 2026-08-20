@@ -92,7 +92,7 @@ src/Diagnostics/      OpenTelemetry, Logging
 src/Gateway/          Event gateway
 src/Testing/          Test utilities
 test/                 Shared test helpers (Eventuous.Sut.App, Eventuous.Sut.Domain, Eventuous.TestHelpers, Eventuous.TestHelpers.TUnit)
-samples/              Sample apps (esdb, postgres, kurrentdb, banking)
+samples/              Sample apps (kurrentdb with Aspire AppHost, postgres)
 ```
 
 ## External Repos to Update

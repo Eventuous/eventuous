@@ -156,6 +156,7 @@
     </Folder>
     <Folder Name="/Samples/" />
     <Folder Name="/Samples/KurrentDB/">
+        <Project Path="samples/kurrentdb/Bookings.AppHost/Bookings.AppHost.csproj" />
         <Project Path="samples/kurrentdb/Bookings.Domain/Bookings.Domain.csproj" />
         <Project Path="samples/kurrentdb/Bookings.Payments/Bookings.Payments.csproj" />
         <Project Path="samples/kurrentdb/Bookings/Bookings.csproj" />

@@ -1,0 +1,19 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <UserSecretsId>830ae8e6-48ba-4d84-b460-a2922dc3ec63</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Bookings\Bookings.csproj"/>
+        <ProjectReference Include="..\Bookings.Payments\Bookings.Payments.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.Azure.Storage"/>
+        <PackageReference Include="Aspire.Hosting.MongoDB"/>
+        <PackageReference Include="Scalar.Aspire"/>
+    </ItemGroup>
+
+</Project>
