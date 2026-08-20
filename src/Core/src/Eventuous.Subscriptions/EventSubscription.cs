@@ -355,24 +355,35 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
 /// subscribe, not once per reconnect.
 /// </summary>
 internal readonly record struct SupervisorSettings(TimeSpan RetryDelay, TimeSpan TeardownTimeout) {
+    /// <summary>
+    /// The longest finite wait <see cref="Task.Delay(TimeSpan, CancellationToken)"/> and
+    /// <see cref="CancellationTokenSource(TimeSpan)"/> accept, about 49 days. Both throw above it, and a throw
+    /// from the supervisor's delay or its graceful stop ends the loop for good.
+    /// </summary>
+    static readonly TimeSpan MaxDelay = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
+
     public static SupervisorSettings From(SubscriptionOptions options, LogContext log) {
         var retryDelay = options.RetryDelay;
 
-        // InfiniteTimeSpan is exempt: both Task.Delay and CancellationTokenSource accept it as "never".
-        if (retryDelay < TimeSpan.Zero && retryDelay != Timeout.InfiniteTimeSpan) {
+        if (!CanBeWaitedOn(retryDelay)) {
             log.SubscriptionRetryDelayInvalid(retryDelay, SubscriptionOptions.DefaultRetryDelay);
             retryDelay = SubscriptionOptions.DefaultRetryDelay;
         }
 
         var teardownTimeout = options.TeardownTimeout;
 
-        if (teardownTimeout < TimeSpan.Zero && teardownTimeout != Timeout.InfiniteTimeSpan) {
+        if (!CanBeWaitedOn(teardownTimeout)) {
             log.SubscriptionTeardownTimeoutInvalid(teardownTimeout, SubscriptionOptions.DefaultTeardownTimeout);
             teardownTimeout = SubscriptionOptions.DefaultTeardownTimeout;
         }
 
         return new(retryDelay, teardownTimeout);
     }
+
+    // InfiniteTimeSpan is exempt: both Task.Delay and CancellationTokenSource accept it as "never". Every other
+    // out-of-range value is a configuration mistake that would otherwise surface as an exception thrown deep in
+    // the supervisor, where the only available answer is to give up on the subscription.
+    static bool CanBeWaitedOn(TimeSpan delay) => delay == Timeout.InfiniteTimeSpan || (delay >= TimeSpan.Zero && delay <= MaxDelay);
 }
 
 [StructLayout(LayoutKind.Auto)]
