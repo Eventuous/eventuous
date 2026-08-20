@@ -121,7 +121,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
         try {
             connected = await LocalSubscribe(HandleEvent, HandleDrop, run.Token).NoContext();
         } catch (PersistentSubscriptionNotFoundException) {
-            await CreatePersistentSubscription(settings, run.Token);
+            await CreatePersistentSubscription(settings, run.Token).NoContext();
 
             connected = await LocalSubscribe(HandleEvent, HandleDrop, run.Token).NoContext();
         }

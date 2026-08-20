@@ -263,6 +263,53 @@ public class SupervisorTests {
     }
 
     /// <summary>
+    /// Subscribe racing DisposeAsync must end in one of two states: the subscribe refused, or the session it
+    /// published stopped by the disposal. A subscribe that slips between the disposed check and the pipe
+    /// release leaves a live supervisor delivering into disposed filters, with a disposal already returned
+    /// and nothing left to stop it.
+    /// </summary>
+    [Test]
+    [Timeout(120_000)]
+    public async Task A_subscribe_racing_disposal_is_refused_or_stopped(CancellationToken ct) {
+        for (var i = 0; i < 20_000; i++) {
+            var       subscription = new FakeSubscription();
+            using var barrier      = new Barrier(2);
+
+            // Swept, not random: the vulnerable window is a few hundred nanoseconds wide, so the disposal's
+            // start is scanned across it instead of hoping scheduling noise lands there.
+            var spin = i % 128;
+
+            var subscribed = Task.Run(
+                async () => {
+                    barrier.SignalAndWait(ct);
+
+                    try {
+                        await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
+
+                        return true;
+                    } catch (ObjectDisposedException) {
+                        return false;
+                    }
+                },
+                ct
+            );
+
+            var disposed = Task.Run(
+                async () => {
+                    barrier.SignalAndWait(ct);
+                    Thread.SpinWait(spin);
+                    await subscription.DisposeAsync();
+                },
+                ct
+            );
+
+            await Task.WhenAll(subscribed, disposed);
+
+            subscription.IsRunning.ShouldBeFalse($"iteration {i}: a session that survived DisposeAsync has nothing left to stop it");
+        }
+    }
+
+    /// <summary>
     /// Disconnect must get a token of its own, not the run token teardown just cancelled — an already-cancelled
     /// token turns release logic into an instant no-op and leaks the connection.
     /// </summary>

@@ -152,6 +152,11 @@ checkpoint flush running detached while the supervisor moved on to the retry del
 so the checkpoint could move *backwards*. Waiting is what makes the flush-then-read ordering a fact rather
 than a hope.
 
+That ordering holds within one subscription lifecycle. Its one boundary is an `Unsubscribe` whose token
+expires before teardown finishes: the session is discarded anyway — refusing every later `Subscribe` on
+behalf of a hung teardown would be worse — so a re-subscribe after a timed-out stop can overlap the old
+run's final flush. The stop is logged as timed out, which is the operator's cue that the window exists.
+
 Each release is guarded individually, so one that throws is logged and the ones behind it still run.
 
 ## Checkpoints

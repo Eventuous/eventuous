@@ -63,6 +63,18 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
             throw new InvalidOperationException($"Subscription {SubscriptionId} is already running. Unsubscribe before subscribing again.");
         }
 
+        // Rechecked after publishing, because the check at the top races DisposeAsync: publish-then-check here
+        // against set-then-read there guarantees one side observes the other — either the disposal finds this
+        // session and stops it, or this read finds _disposed set and unwinds. The top check alone lets a
+        // subscribe slip past a concurrent disposal into a disposed pipe, with nothing left to stop it.
+        if (Volatile.Read(ref _disposed) != 0) {
+            Interlocked.CompareExchange(ref _session, null, session);
+            finishedTcs.TrySetResult();
+            lifetime.Dispose();
+
+            throw new ObjectDisposedException(GetType().FullName);
+        }
+
         // Guarded because CreateRun can throw: a session published with no supervisor to clear it is an
         // unstoppable subscription whose DisposeAsync never returns.
         SubscriptionRun? run = null;
