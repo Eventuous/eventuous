@@ -68,9 +68,9 @@ app.MapGet(
 );
 
 // The blob projector doesn't create the container, and outside Aspire nothing else does
-app.Services.GetRequiredService<BlobServiceClient>()
+await app.Services.GetRequiredService<BlobServiceClient>()
     .GetBlobContainerClient(BookingStateBlobProjection.ContainerName)
-    .CreateIfNotExists();
+    .CreateIfNotExistsAsync();
 
 var factory  = app.Services.GetRequiredService<ILoggerFactory>();
 var listener = new LoggingEventListener(factory, "OpenTelemetry");

@@ -4,8 +4,10 @@ A two-service hotel booking application demonstrating Eventuous with KurrentDB a
 
 - **Bookings** — commands and queries for room bookings. Projects booking state to **MongoDB**
   (`BookingStateProjection`, `MyBookingsProjection`) and to **Azure Blob Storage**
-  (`BookingStateBlobProjection`) from the same all-stream subscription, showing multiple projection
-  targets side by side. The blob projection uses `ByGlobalPosition` idempotency and race retries.
+  (`BookingStateBlobProjection`), showing multiple projection targets side by side. The blob
+  projection uses `ByGlobalPosition` idempotency and race retries, and runs on its own
+  subscription with its own checkpoint — so when it's added to a system with existing data,
+  it replays the stream from the beginning and backfills the blobs.
 - **Bookings.Payments** — records payments and publishes integration events back to KurrentDB
   through the Eventuous gateway; the Bookings service consumes them with a persistent subscription.
 

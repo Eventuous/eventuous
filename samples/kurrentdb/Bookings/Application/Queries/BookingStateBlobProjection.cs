@@ -5,10 +5,11 @@ using static Bookings.Domain.Bookings.BookingEvents;
 namespace Bookings.Application.Queries;
 
 /// <summary>
-/// Projects the booking state to Azure Blob Storage, in parallel with the MongoDB projections
-/// registered on the same subscription. Each booking stream becomes one JSON blob.
-/// The all-stream subscription provides real global positions, so the projector can use
-/// ByGlobalPosition idempotency to skip replayed events.
+/// Projects the booking state to Azure Blob Storage, in parallel with the MongoDB projections.
+/// Each booking stream becomes one JSON blob. It runs on its own all-stream subscription with
+/// its own checkpoint, so it can replay from the beginning of the stream and backfill the blobs
+/// when added to an existing system. The all-stream subscription provides real global positions,
+/// so the projector can use ByGlobalPosition idempotency to skip replayed events.
 /// </summary>
 public class BookingStateBlobProjection : BlobStorageProjector<BookingView> {
     public const string ContainerName = "bookings";

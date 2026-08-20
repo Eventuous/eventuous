@@ -52,8 +52,17 @@ public static class Registrations {
                     .UseCheckpointStore<MongoCheckpointStore>()
                     .AddEventHandler<BookingStateProjection>()
                     .AddEventHandler<MyBookingsProjection>()
-                    .AddEventHandler<BookingStateBlobProjection>()
                     .WithPartitioningByStream(2)
+            );
+
+            // The blob projection runs on its own subscription with its own checkpoint, so when
+            // it's added to a system with existing data, it replays all events from the beginning
+            // and backfills the blobs instead of starting from the other projections' position
+            services.AddSubscription<AllStreamSubscription, AllStreamSubscriptionOptions>(
+                "BookingsBlobProjection",
+                builder => builder
+                    .UseCheckpointStore<MongoCheckpointStore>()
+                    .AddEventHandler<BookingStateBlobProjection>()
             );
             services.AddSingleton<BookingsQueryService>();
 
