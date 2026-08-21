@@ -38,11 +38,12 @@ public class CompositionHandlerTests {
 
     [Test]
     public async Task ShouldResolveCompositionHandlerWithFactory() {
-        // This test validates that AddCompositionEventHandler correctly registers
-        // handlers when using a factory function
-        var handler = _server.Services.GetRequiredKeyedService<TestHandler>("sub-with-factory");
-        await Assert.That(handler).IsNotNull();
-        await Assert.That(handler.Dependency.Value).IsEqualTo("test-value");
+        // This test validates that AddCompositionEventHandler builds the inner handler from the factory,
+        // giving it access to the service provider. The handler is owned by the builder, not the container.
+        var capture = _server.Services.GetRequiredService<HandlerCapture>();
+
+        await Assert.That(capture.Handler).IsNotNull();
+        await Assert.That(capture.Handler!.Dependency.Value).IsEqualTo("test-value");
     }
 
     [Test]
@@ -82,12 +83,13 @@ public class CompositionHandlerTests {
         public static void ConfigureServices(IServiceCollection services) {
             services.AddSingleton(new TestHandlerLogger());
             services.AddSingleton<TestDependency>();
+            services.AddSingleton<HandlerCapture>();
 
             // Test the AddCompositionEventHandler with a factory function
             services.AddSubscription<TestSub, TestOptions>(
                 "sub-with-factory",
                 builder => builder.AddCompositionEventHandler<TestHandler, CompositionWrapper>(
-                    sp => new(sp.GetRequiredService<TestDependency>(), sp.GetRequiredService<TestHandlerLogger>()),
+                    sp => sp.GetRequiredService<HandlerCapture>().Handler = new(sp.GetRequiredService<TestDependency>(), sp.GetRequiredService<TestHandlerLogger>()),
                     (handler, sp) => new(handler, sp.GetRequiredService<TestHandlerLogger>())
                 )
             );
@@ -101,6 +103,14 @@ public class CompositionHandlerTests {
     class TestSub(TestOptions options, ConsumePipe consumePipe)
         : EventSubscription<TestOptions>(options, consumePipe, NullLoggerFactory.Instance, null) {
         protected override ValueTask Connect(SubscriptionRun run) => default;
+    }
+
+    /// <summary>
+    /// Keeps the handler the factory created, as it's owned by the subscription builder and not resolvable
+    /// from the container.
+    /// </summary>
+    class HandlerCapture {
+        public TestHandler? Handler { get; set; }
     }
 
     public class TestDependency {
