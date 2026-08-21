@@ -7,44 +7,43 @@ on:
     paths-ignore:
       - 'docs/**'
       - '*.md'
+
 jobs:
+  event_file:
+    # Consumed by the Test Results workflow (test-results.yml) to publish results on the commit.
+    name: "Event File"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
+
+  tests:
+    # Same sharded jobs as PR CI — running the whole solution's tests on one runner stacked all
+    # provider containers at once and made KurrentDB container startup (and the tests) flaky.
+    name: Tests
+    uses: ./.github/workflows/tests.yml
+
   nuget:
     runs-on: ubuntu-latest
-#    runs-on: [ self-hosted, type-cpx52, setup-docker, volume-cache-50GB ]
+    needs: tests
     permissions:
       id-token: write
       contents: read
-      checks: write
-#    env:
-#      NUGET_PACKAGES: "/mnt/cache/.nuget/packages"
-#      DOTNET_INSTALL_DIR: "/mnt/cache/.dotnet"
     steps:
-      -
-        name: Setup Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: 3.8
       -
         name: Checkout code
         uses: actions/checkout@v7
         with:
+          # MinVer derives the package version from Git tags, so the full history is needed
           fetch-depth: 0
       -
         name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-      -
-        name: Run tests
-        run: dotnet test --framework net10.0
-      -
-        name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action/linux@v2
-        if: always()
-        with:
-          files: |
-            test-results/**/*.xml
-            test-results/**/*.trx
       -
         name: NuGet trusted publishing login
         id: nuget-login
