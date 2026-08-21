@@ -35,10 +35,24 @@ file class TestFunctionalService : CommandService<TestState> {
             .InState(ExpectedState.Existing)
             .GetStream(cmd => new StreamName($"Booking-{cmd.BookingId}"))
             .ActAsync((state, events, cmd, ct) => Task.FromResult<IEnumerable<object>>(new object[] { new Events.BookingCancelled(cmd.BookingId) }));
+
+        // Sync handler with a helper allocation: List<object> must not be flagged,
+        // and TableBooked must be reported exactly once (not by both analysis paths)
+        On<BookTable>()
+            .InState(ExpectedState.New)
+            .GetStream(cmd => new StreamName($"Table-{cmd.TableId}"))
+            .Act(cmd => {
+                 var events = new List<object>();
+                 events.Add(new Events.TableBooked(cmd.TableId));
+
+                 return events;
+             });
     }
 }
 
 file record CancelBooking(string BookingId);
+
+file record BookTable(string TableId);
 
 file static class TypeRegistration {
     // Events.RoomRegistered has no [EventType] but is registered explicitly, so it must not be flagged
@@ -71,4 +85,7 @@ file static class Events {
 
     [PublicAPI]
     public record RoomRegistered(string RoomId);
+
+    [PublicAPI]
+    public record TableBooked(string TableId);
 }

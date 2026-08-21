@@ -215,11 +215,20 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
         if (method == null) return;
 
-        if (ReturnsNewEvents(method)) {
+        // Creations inside lambdas passed to Act/ActAsync are reported by the invocation traversal; skip them here
+        if (ReturnsNewEvents(method) && !IsWithinFunctionalActInvocation(create, knownTypes)) {
             if (!HasEventTypeAttribute(created, knownTypes) && !IsExplicitlyRegistered(created, ctx, knownTypes)) {
                 ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, create.Syntax.GetLocation(), created.ToDisplayString()));
             }
         }
+    }
+
+    static bool IsWithinFunctionalActInvocation(IOperation op, KnownTypeSymbols knownTypes) {
+        for (var p = op.Parent; p != null; p = p.Parent) {
+            if (p is IInvocationOperation inv && IsFunctionalServiceAct(inv.TargetMethod, knownTypes)) return true;
+        }
+
+        return false;
     }
 
     static IMethodSymbol? GetEnclosingMethod(IOperation op) {
@@ -293,8 +302,21 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
     }
 
     // System.Object is excluded: an object-typed value (e.g. StreamEvent.Payload or IMessageConsumeContext.Message)
-    // carries a runtime-resolved event type, so there is nothing to annotate at the call site
-    static bool IsConcreteEvent(ITypeSymbol type) => type.SpecialType is not SpecialType.System_Object && type.TypeKind is TypeKind.Class or TypeKind.Struct;
+    // carries a runtime-resolved event type, so there is nothing to annotate at the call site.
+    // The System namespace is excluded as a whole: framework types constructed inside handlers
+    // (List<object>, DateTime, ...) are never domain events.
+    static bool IsConcreteEvent(ITypeSymbol type)
+        => type.SpecialType is not SpecialType.System_Object
+        && type.TypeKind is TypeKind.Class or TypeKind.Struct
+        && !IsInSystemNamespace(type);
+
+    static bool IsInSystemNamespace(ITypeSymbol type) {
+        for (var ns = type.ContainingNamespace; ns is { IsGlobalNamespace: false }; ns = ns.ContainingNamespace) {
+            if (ns.ContainingNamespace is { IsGlobalNamespace: true }) return ns.Name == "System";
+        }
+
+        return false;
+    }
 
     static bool HasEventTypeAttribute(ITypeSymbol type, KnownTypeSymbols knownTypes)
         => knownTypes.EventTypeAttribute != null

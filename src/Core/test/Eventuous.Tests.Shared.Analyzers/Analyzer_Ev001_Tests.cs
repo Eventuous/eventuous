@@ -78,6 +78,32 @@ public class Analyzer_Ev001_Tests {
     }
 
     [Test]
+    public async Task Should_not_warn_for_helper_allocations_in_act_handlers() {
+        // Infrastructure allocations inside Act handlers (e.g. List<object>) are not domain events
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Any(d => d.GetMessage().Contains("List"))).IsFalse();
+    }
+
+    [Test]
+    public async Task Should_report_sync_act_event_exactly_once() {
+        // The Act invocation traversal and the object-creation safety net must not both report the same creation
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Count(d => d.GetMessage().Contains("TableBooked"))).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Should_resolve_all_well_known_type_names() {
         // Every metadata name the analyzer relies on must resolve against the current assemblies;
         // a type rename that misses the analyzer fails here
