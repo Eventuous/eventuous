@@ -1,0 +1,133 @@
+# Reusable test workflow, called from pull-request.yml (PRs) and preview.yml (pushes to dev).
+# Keeping both callers on the same sharded jobs means the preview publish gate runs the tests
+# under the same conditions PR CI does — one runner per container family, never the whole
+# solution on a single runner.
+name: Tests
+
+on:
+  workflow_call:
+
+jobs:
+  unit-tests:
+    # Container-less test projects. Run across all target frameworks — these exercise the
+    # library code paths, so multi-TFM coverage matters here. No Docker needed.
+    name: "Build and test core (${{ matrix.dotnet-version }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dotnet-version: [ '8.0', '9.0', '10.0' ]
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v7
+      -
+        name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      -
+        name: Run tests
+        run: |
+          set -euo pipefail
+          projects="
+            src/Core/test/Eventuous.Tests/Eventuous.Tests.csproj
+            src/Core/test/Eventuous.Tests.Application/Eventuous.Tests.Application.csproj
+            src/Core/test/Eventuous.Tests.Subscriptions/Eventuous.Tests.Subscriptions.csproj
+            src/Core/test/Eventuous.Tests.Shared.Analyzers/Eventuous.Tests.Shared.Analyzers.csproj
+            src/Extensions/test/Eventuous.Tests.DependencyInjection/Eventuous.Tests.DependencyInjection.csproj
+            src/Extensions/test/Eventuous.Tests.Extensions.AspNetCore/Eventuous.Tests.Extensions.AspNetCore.csproj
+            src/Extensions/test/Eventuous.Tests.Extensions.AspNetCore.Analyzers/Eventuous.Tests.Extensions.AspNetCore.Analyzers.csproj
+            src/Gateway/test/Eventuous.Tests.Gateway/Eventuous.Tests.Gateway.csproj
+            src/Experimental/test/Eventuous.Tests.Spyglass.Generators/Eventuous.Tests.Spyglass.Generators.csproj
+            src/Sqlite/test/Eventuous.Tests.Sqlite/Eventuous.Tests.Sqlite.csproj
+            src/SignalR/test/Eventuous.Tests.SignalR/Eventuous.Tests.SignalR.csproj
+          "
+          for proj in $projects; do
+            echo "::group::dotnet test $proj (net${{ matrix.dotnet-version }})"
+            dotnet test "$proj" -c "Debug CI" -f net${{ matrix.dotnet-version }}
+            echo "::endgroup::"
+          done
+      -
+        # Uses the sample apps as fixtures, which are pinned to net10.0 for the Aspire AppHost
+        name: Run Spyglass tests
+        if: matrix.dotnet-version == '10.0'
+        run: dotnet test src/Experimental/test/Eventuous.Tests.Spyglass/Eventuous.Tests.Spyglass.csproj -c "Debug CI" -f net10.0
+      -
+        name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Test Results core ${{ matrix.dotnet-version }}
+          path: |
+            test-results/**/*.xml
+            test-results/**/*.trx
+            test-results/**/*.json
+
+  integration-tests:
+    # One job per provider so a single runner only ever starts one container family — running
+    # the whole solution on one runner stacked KurrentDB + Postgres + SQL Server + Mongo + Kafka
+    # + RabbitMQ containers at once and made container startup (and the tests) flaky.
+    #
+    # Integration suites run on a single TFM: the DB adapter behaves the same across runtimes, so
+    # multi-TFM runs mostly re-pull the same images for little extra signal. max-parallel throttles
+    # concurrent Docker Hub image pulls to stay under the pull rate limit.
+    #
+    # When adding a new integration test project (one that uses Testcontainers), add a suite entry.
+    name: "Build and test ${{ matrix.suite.name }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        suite:
+          - name: kurrentdb
+            project: src/KurrentDB/test/Eventuous.Tests.KurrentDB/Eventuous.Tests.KurrentDB.csproj
+          - name: postgres
+            project: src/Postgres/test/Eventuous.Tests.Postgres/Eventuous.Tests.Postgres.csproj
+          - name: sqlserver
+            project: src/SqlServer/test/Eventuous.Tests.SqlServer/Eventuous.Tests.SqlServer.csproj
+          - name: mongo
+            project: src/Mongo/test/Eventuous.Tests.Projections.MongoDB/Eventuous.Tests.Projections.MongoDB.csproj
+          - name: kafka
+            project: src/Kafka/test/Eventuous.Tests.Kafka/Eventuous.Tests.Kafka.csproj
+          - name: rabbitmq
+            project: src/RabbitMq/test/Eventuous.Tests.RabbitMq/Eventuous.Tests.RabbitMq.csproj
+          - name: redis
+            project: src/Redis/test/Eventuous.Tests.Redis/Eventuous.Tests.Redis.csproj
+          - name: azure-servicebus
+            project: src/Azure/test/Eventuous.Tests.Azure.ServiceBus/Eventuous.Tests.Azure.ServiceBus.csproj
+          - name: azure-blobs
+            project: src/Azure/test/Eventuous.Tests.Azure.Storage.Blobs/Eventuous.Tests.Azure.Storage.Blobs.csproj
+          - name: googlepubsub
+            project: src/GooglePubSub/test/Eventuous.Tests.GooglePubSub/Eventuous.Tests.GooglePubSub.csproj
+          - name: signalr-integration
+            project: src/SignalR/test/Eventuous.Tests.SignalR.Integration/Eventuous.Tests.SignalR.Integration.csproj
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v7
+      -
+        name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      -
+        name: Run tests
+        run: dotnet test "${{ matrix.suite.project }}" -c "Debug CI" -f net10.0
+      -
+        name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Test Results ${{ matrix.suite.name }}
+          path: |
+            test-results/**/*.xml
+            test-results/**/*.trx
+            test-results/**/*.json

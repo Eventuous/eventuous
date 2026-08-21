@@ -2,7 +2,7 @@ name: Test Results
 
 on:
   workflow_run:
-    workflows: ["PR Build and test"]
+    workflows: ["PR Build and test", "Publish Preview NuGet"]
     types:
       - completed
 permissions: {}
