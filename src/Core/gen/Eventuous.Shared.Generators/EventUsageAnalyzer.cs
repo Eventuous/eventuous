@@ -6,7 +6,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Eventuous.Shared.Generators.Constants;
 
 // ReSharper disable CognitiveComplexity
 
@@ -37,6 +36,10 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             var compilation = compilationContext.Compilation;
             var knownTypes = new KnownTypeSymbols(compilation);
 
+            // Without these two, annotations and explicit registrations cannot be checked,
+            // so any diagnostic would be an unverifiable false positive — stay silent instead
+            if (knownTypes.EventTypeAttribute == null || knownTypes.TypeMapper == null) return;
+
             compilationContext.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, knownTypes), OperationKind.Invocation);
             compilationContext.RegisterOperationAction(ctx => AnalyzeObjectCreation(ctx, knownTypes), OperationKind.ObjectCreation);
         });
@@ -44,23 +47,46 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>
     /// Cache of well-known type symbols resolved from the compilation.
-    /// This makes the analyzer refactoring-safe by using symbol comparison instead of string matching.
+    /// Symbol comparison against these is the only matching mechanism; if a symbol doesn't resolve,
+    /// the corresponding check simply doesn't apply. The metadata names in <see cref="WellKnownTypeNames"/>
+    /// are pinned by tests against the real Eventuous assemblies.
     /// </summary>
     sealed class KnownTypeSymbols(Compilation compilation) {
-        public INamedTypeSymbol? EventTypeAttribute      { get; } = compilation.GetTypeByMetadataName(EventTypeAttrFqcn);
-        public INamedTypeSymbol? TypeMapper              { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.TypeMapper");
-        public INamedTypeSymbol? Aggregate               { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.Aggregate`1");
-        public INamedTypeSymbol? State                   { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.State`1");
-        public INamedTypeSymbol? CommandHandlerBuilder   { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.CommandHandlerBuilder");
-        public INamedTypeSymbol? IDefineExecution        { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineExecution");
-        public INamedTypeSymbol? ICommandHandlerBuilder  { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.ICommandHandlerBuilder");
-        public INamedTypeSymbol? IDefineStoreOrExecution { get; } = compilation.GetTypeByMetadataName($"{BaseNamespace}.IDefineStoreOrExecution");
-        public INamedTypeSymbol? BaseEventHandler       { get; } = compilation.GetTypeByMetadataName("Eventuous.Subscriptions.BaseEventHandler");
+        public INamedTypeSymbol? EventTypeAttribute      { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.EventTypeAttribute);
+        public INamedTypeSymbol? TypeMapper              { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.TypeMapper);
+        public INamedTypeSymbol? Aggregate               { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.Aggregate);
+        public INamedTypeSymbol? State                   { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.State);
+        public INamedTypeSymbol? CommandHandlerBuilder   { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.CommandHandlerBuilder);
+        public INamedTypeSymbol? IDefineExecution        { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.IDefineExecution);
+        public INamedTypeSymbol? ICommandHandlerBuilder  { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.ICommandHandlerBuilder);
+        public INamedTypeSymbol? IDefineStoreOrExecution { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.IDefineStoreOrExecution);
+        public INamedTypeSymbol? BaseEventHandler        { get; } = GetBestTypeByMetadataName(compilation, WellKnownTypeNames.BaseEventHandler);
+
+        // GetTypeByMetadataName returns null not only when the type is missing but also when more than
+        // one referenced assembly defines it; in the ambiguous case pick the single accessible candidate
+        static INamedTypeSymbol? GetBestTypeByMetadataName(Compilation compilation, string metadataName) {
+            var type = compilation.GetTypeByMetadataName(metadataName);
+
+            if (type != null) return type;
+
+            INamedTypeSymbol? best = null;
+
+            foreach (var candidate in compilation.GetTypesByMetadataName(metadataName)) {
+                if (candidate.DeclaredAccessibility != Accessibility.Public
+                 && !SymbolEqualityComparer.Default.Equals(candidate.ContainingAssembly, compilation.Assembly)) continue;
+
+                if (best != null) return null;
+
+                best = candidate;
+            }
+
+            return best;
+        }
     }
 
     static ImmutableHashSet<ITypeSymbol> GetExplicitRegistrations(OperationAnalysisContext ctx, KnownTypeSymbols knownTypes) {
         var model = ctx.Operation.SemanticModel;
-        if (model == null) return ImmutableHashSet<ITypeSymbol>.Empty;
+        if (model == null || knownTypes.TypeMapper == null) return ImmutableHashSet<ITypeSymbol>.Empty;
         var root = ctx.Operation.Syntax.SyntaxTree.GetRoot();
         var set = ImmutableHashSet.CreateBuilder<ITypeSymbol>(SymbolEqualityComparer.Default);
 
@@ -68,17 +94,8 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             if (model.GetOperation(invSyntax) is not IInvocationOperation op) continue;
             var m = op.TargetMethod;
 
-            // Use symbol comparison when available, fall back to string comparison
             if (m.Name != "AddType") continue;
-            var ct = m.ContainingType;
-            if (ct == null) continue;
-
-            // Prefer symbol comparison (refactoring-safe)
-            var isTypeMapper = knownTypes.TypeMapper != null
-                ? SymbolEqualityComparer.Default.Equals(ct, knownTypes.TypeMapper)
-                : ct.Name == "TypeMapper" && ct.ContainingNamespace?.ToDisplayString() == BaseNamespace;
-
-            if (!isTypeMapper) continue;
+            if (!SymbolEqualityComparer.Default.Equals(m.ContainingType, knownTypes.TypeMapper)) continue;
 
             if (m.TypeArguments.Length == 1) {
                 set.Add(m.TypeArguments[0]);
@@ -159,20 +176,18 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             // Heuristic: only consider the overloads that accept a delegate and are defined in CommandHandlerBuilder interfaces/classes
             if (!IsFunctionalServiceAct(method, knownTypes)) return;
 
+            // If the argument is a lambda, analyze its body for created event instances.
+            // Lambdas passed as delegate arguments surface as IDelegateCreationOperation, possibly wrapped in a conversion.
             foreach (var value in inv.Arguments.Select(arg => arg.Value)) {
-                switch (value) {
-                    case null:
-                        continue;
-                    // If the argument is a lambda, analyze its body for created event instances
-                    case IAnonymousFunctionOperation lambda:
-                        AnalyzeDelegateBodyForEventCreations(ctx, lambda.Body, knownTypes);
+                var lambda = value switch {
+                    IAnonymousFunctionOperation anon                                                              => anon,
+                    IDelegateCreationOperation { Target: IAnonymousFunctionOperation anon }                       => anon,
+                    IConversionOperation { Operand: IAnonymousFunctionOperation anon }                            => anon,
+                    IConversionOperation { Operand: IDelegateCreationOperation { Target: IAnonymousFunctionOperation anon } } => anon,
+                    _                                                                                             => null
+                };
 
-                        break;
-                    case IConversionOperation { Operand: IAnonymousFunctionOperation lambdaConv }:
-                        AnalyzeDelegateBodyForEventCreations(ctx, lambdaConv.Body, knownTypes);
-
-                        break;
-                }
+                if (lambda != null) AnalyzeDelegateBodyForEventCreations(ctx, lambda.Body, knownTypes);
             }
         }
     }
@@ -204,11 +219,20 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
 
         if (method == null) return;
 
-        if (ReturnsNewEvents(method)) {
+        // Creations inside lambdas passed to Act/ActAsync are reported by the invocation traversal; skip them here
+        if (ReturnsNewEvents(method) && !IsWithinFunctionalActInvocation(create, knownTypes)) {
             if (!HasEventTypeAttribute(created, knownTypes) && !IsExplicitlyRegistered(created, ctx, knownTypes)) {
                 ctx.ReportDiagnostic(Diagnostic.Create(MissingEventTypeAttribute, create.Syntax.GetLocation(), created.ToDisplayString()));
             }
         }
+    }
+
+    static bool IsWithinFunctionalActInvocation(IOperation op, KnownTypeSymbols knownTypes) {
+        for (var p = op.Parent; p != null; p = p.Parent) {
+            if (p is IInvocationOperation inv && IsFunctionalServiceAct(inv.TargetMethod, knownTypes)) return true;
+        }
+
+        return false;
     }
 
     static IMethodSymbol? GetEnclosingMethod(IOperation op) {
@@ -248,105 +272,57 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
         return false;
     }
 
-    static bool IsAggregate(INamedTypeSymbol? type, KnownTypeSymbols knownTypes) {
-        if (type == null) return false;
+    // Walk base types to check if the type derives from Eventuous.Aggregate<>
+    static bool IsAggregate(INamedTypeSymbol? type, KnownTypeSymbols knownTypes) => DerivesFrom(type, knownTypes.Aggregate);
 
-        // Walk base types to check if it derives from Eventuous.Aggregate<>
-        for (var t = type; t != null; t = t.BaseType) {
-            // Prefer symbol comparison (refactoring-safe)
-            if (knownTypes.Aggregate != null) {
-                if (SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, knownTypes.Aggregate)) {
-                    return true;
-                }
-            }
-            else {
-                // Fallback to string comparison
-                if (t is { Name: "Aggregate", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == BaseNamespace) {
-                    return true;
-                }
-            }
-        }
+    // Walk base types to check if the type derives from Eventuous.State<>
+    static bool IsState(INamedTypeSymbol? type, KnownTypeSymbols knownTypes) => DerivesFrom(type, knownTypes.State);
 
-        return false;
-    }
+    static bool IsEventHandler(INamedTypeSymbol? type, KnownTypeSymbols knownTypes) => DerivesFrom(type, knownTypes.BaseEventHandler);
 
-    static bool IsState(INamedTypeSymbol? type, KnownTypeSymbols knownTypes) {
-        if (type == null) return false;
-
-        // Walk base types to check if it derives from Eventuous.State<>
-        for (var t = type; t != null; t = t.BaseType) {
-            // Prefer symbol comparison (refactoring-safe)
-            if (knownTypes.State != null) {
-                if (SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, knownTypes.State)) {
-                    return true;
-                }
-            }
-            else {
-                // Fallback to string comparison
-                if (t is { Name: "State", Arity: 1 } && t.ContainingNamespace.ToDisplayString() == BaseNamespace) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    static bool IsEventHandler(INamedTypeSymbol? type, KnownTypeSymbols knownTypes) {
-        if (type == null) return false;
+    static bool DerivesFrom(INamedTypeSymbol? type, INamedTypeSymbol? baseDefinition) {
+        if (baseDefinition == null) return false;
 
         for (var t = type; t != null; t = t.BaseType) {
-            if (knownTypes.BaseEventHandler != null) {
-                if (SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, knownTypes.BaseEventHandler)) {
-                    return true;
-                }
-            }
-            else {
-                if (t is { Name: "BaseEventHandler", Arity: 0 } && t.ContainingNamespace?.ToDisplayString() == "Eventuous.Subscriptions") {
-                    return true;
-                }
-            }
+            if (SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, baseDefinition)) return true;
         }
 
         return false;
     }
 
     static bool IsFunctionalServiceAct(IMethodSymbol method, KnownTypeSymbols knownTypes) {
-        // We only care about the Act methods from CommandHandlerBuilder and the related interfaces in Eventuous namespace
+        // We only care about the Act methods from CommandHandlerBuilder and the related interfaces in Eventuous namespace.
+        // The containing type at the call site is a constructed generic, so compare its original definition.
         if (method.Name is not ("Act" or "ActAsync")) return false;
 
-        var containing = method.ContainingType;
+        var definition = method.ContainingType?.OriginalDefinition;
 
-        if (containing == null) return false;
+        if (definition == null) return false;
 
-        // Prefer symbol comparison (refactoring-safe)
-        if (knownTypes.CommandHandlerBuilder != null || knownTypes.IDefineExecution != null ||
-            knownTypes.ICommandHandlerBuilder != null || knownTypes.IDefineStoreOrExecution != null) {
-            return SymbolEqualityComparer.Default.Equals(containing, knownTypes.CommandHandlerBuilder) ||
-                   SymbolEqualityComparer.Default.Equals(containing, knownTypes.IDefineExecution) ||
-                   SymbolEqualityComparer.Default.Equals(containing, knownTypes.ICommandHandlerBuilder) ||
-                   SymbolEqualityComparer.Default.Equals(containing, knownTypes.IDefineStoreOrExecution);
-        }
-
-        // Fallback to string comparison
-        var ns = containing.ContainingNamespace?.ToDisplayString();
-        if (ns != BaseNamespace) return false;
-
-        return containing.Name is "CommandHandlerBuilder" or "IDefineExecution" or "ICommandHandlerBuilder" or "IDefineStoreOrExecution";
+        return SymbolEqualityComparer.Default.Equals(definition, knownTypes.CommandHandlerBuilder)
+            || SymbolEqualityComparer.Default.Equals(definition, knownTypes.IDefineExecution)
+            || SymbolEqualityComparer.Default.Equals(definition, knownTypes.ICommandHandlerBuilder)
+            || SymbolEqualityComparer.Default.Equals(definition, knownTypes.IDefineStoreOrExecution);
     }
 
-    static bool IsConcreteEvent(ITypeSymbol type) => type.TypeKind is TypeKind.Class or TypeKind.Struct;
+    // System.Object is excluded: an object-typed value (e.g. StreamEvent.Payload or IMessageConsumeContext.Message)
+    // carries a runtime-resolved event type, so there is nothing to annotate at the call site.
+    // The System namespace is excluded as a whole: framework types constructed inside handlers
+    // (List<object>, DateTime, ...) are never domain events.
+    static bool IsConcreteEvent(ITypeSymbol type)
+        => type.SpecialType is not SpecialType.System_Object
+        && type.TypeKind is TypeKind.Class or TypeKind.Struct
+        && !IsInSystemNamespace(type);
 
-    static bool HasEventTypeAttribute(ITypeSymbol type, KnownTypeSymbols knownTypes) {
-        // Prefer symbol comparison (refactoring-safe)
-        if (knownTypes.EventTypeAttribute != null) {
-            return type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, knownTypes.EventTypeAttribute));
+    static bool IsInSystemNamespace(ITypeSymbol type) {
+        for (var ns = type.ContainingNamespace; ns is { IsGlobalNamespace: false }; ns = ns.ContainingNamespace) {
+            if (ns.ContainingNamespace is { IsGlobalNamespace: true }) return ns.Name == "System";
         }
 
-        // Fallback to string comparison
-        return (from attrClass in type.GetAttributes().Select(a => a.AttributeClass).OfType<INamedTypeSymbol>()
-                let name = attrClass.ToDisplayString()
-                where name == EventTypeAttrFqcn || attrClass.Name is EventTypeAttribute
-                select attrClass).Any();
+        return false;
     }
+
+    static bool HasEventTypeAttribute(ITypeSymbol type, KnownTypeSymbols knownTypes)
+        => knownTypes.EventTypeAttribute != null
+        && type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, knownTypes.EventTypeAttribute));
 }

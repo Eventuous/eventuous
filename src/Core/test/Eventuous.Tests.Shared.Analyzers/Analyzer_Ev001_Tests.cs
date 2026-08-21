@@ -33,6 +33,101 @@ public class Analyzer_Ev001_Tests {
         await Assert.That(ev001.Any(d => d.GetMessage().Contains("RoomBooked"))).IsTrue();
     }
 
+    [Test]
+    public async Task Should_not_warn_for_object_typed_payload_passed_to_when() {
+        // Issue #535: replaying deserialized payloads (statically typed as object) through
+        // State<T>.When() must not produce a false positive for 'object'
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        var objectDiagnostics = diagnostics.Where(d => d.GetMessage().Contains("'object'")).ToArray();
+
+        await Assert.That(objectDiagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Should_warn_for_unannotated_event_created_in_functional_act() {
+        // Pins the functional-service Act/ActAsync path: if the builder type lookups go stale,
+        // this diagnostic disappears and the test fails
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Any(d => d.GetMessage().Contains("BookingCancelled"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Should_not_warn_for_event_registered_via_type_map() {
+        // Pins the TypeMapper.AddType suppression: if the TypeMapper lookup goes stale,
+        // an unexpected diagnostic appears and the test fails
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Any(d => d.GetMessage().Contains("RoomRegistered"))).IsFalse();
+    }
+
+    [Test]
+    public async Task Should_not_warn_for_helper_allocations_in_act_handlers() {
+        // Infrastructure allocations inside Act handlers (e.g. List<object>) are not domain events
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Any(d => d.GetMessage().Contains("List"))).IsFalse();
+    }
+
+    [Test]
+    public async Task Should_report_sync_act_event_exactly_once() {
+        // The Act invocation traversal and the object-creation safety net must not both report the same creation
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Count(d => d.GetMessage().Contains("TableBooked"))).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Should_stay_silent_when_event_type_attribute_cannot_be_resolved() {
+        // Without the assembly defining [EventType] and TypeMapper, neither annotations nor explicit
+        // registrations can be checked — the analyzer must stay silent rather than risk false positives
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source, includeSharedAssembly: false);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Should_resolve_all_well_known_type_names() {
+        // Every metadata name the analyzer relies on must resolve against the current assemblies;
+        // a type rename that misses the analyzer fails here
+        var compilation = CreateCompilation("// intentionally empty");
+
+        var unresolved = WellKnownTypeNames.All.Where(name => compilation.GetTypeByMetadataName(name) == null).ToArray();
+
+        await Assert.That(unresolved).IsEmpty();
+    }
+
     static async Task<Diagnostic[]> GetAnalyzerDiagnosticsAsync(Compilation compilation, EventUsageAnalyzer analyzer) {
         var withAnalyzers = compilation.WithAnalyzers([analyzer]);
         var diagnostics   = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
@@ -46,17 +141,22 @@ public class Analyzer_Ev001_Tests {
         return File.ReadAllText(path);
     }
 
-    static CSharpCompilation CreateCompilation(string source) {
+    static CSharpCompilation CreateCompilation(string source, bool includeSharedAssembly = true) {
         var syntaxTree = CSharpSyntaxTree.ParseText(source, new(LanguageVersion.Preview));
 
         var refs = new List<MetadataReference> {
             MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Enumerable).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(State<>).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Aggregate<>).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(EventTypeAttribute).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Eventuous.Subscriptions.EventHandler).Assembly.Location)
+            MetadataReference.CreateFromFile(typeof(Aggregate<>).Assembly.Location)
         };
+
+        if (includeSharedAssembly) {
+            refs.Add(MetadataReference.CreateFromFile(typeof(EventTypeAttribute).Assembly.Location));
+            refs.Add(MetadataReference.CreateFromFile(typeof(Eventuous.Subscriptions.EventHandler).Assembly.Location));
+            refs.Add(MetadataReference.CreateFromFile(typeof(ExpectedState).Assembly.Location));
+            refs.Add(MetadataReference.CreateFromFile(typeof(IEventStore).Assembly.Location));
+        }
 
         // Add runtime assemblies to resolve core types (DateTime, ValueTask, etc.)
         var runtimeDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
