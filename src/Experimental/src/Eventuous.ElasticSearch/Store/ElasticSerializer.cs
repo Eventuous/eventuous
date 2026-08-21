@@ -11,8 +11,9 @@ public class ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerO
     readonly ITypeMapper           _typeMapper = typeMapper ?? TypeMap.Instance;
 
     public object Deserialize(Type type, Stream stream) {
-        var reader = new BinaryReader(stream);
-        var obj    = JsonSerializer.Deserialize(reader.ReadBytes((int)stream.Length), type, _options);
+        // Read the stream directly: a BinaryReader here would either close the caller's stream when
+        // disposed, or leak its buffers when not, and it only added a full copy of the payload
+        var obj = JsonSerializer.Deserialize(stream, type, _options);
 
         if (type != typeof(PersistedEvent)) return obj!;
 
@@ -31,7 +32,8 @@ public class ElasticSerializer(IElasticsearchSerializer builtIn, JsonSerializerO
             return;
         }
 
-        var writer = new Utf8JsonWriter(stream);
+        // Disposing the writer returns its pooled buffers and flushes; it doesn't close the caller's stream
+        using var writer = new Utf8JsonWriter(stream);
         JsonSerializer.Serialize(writer, data, _options);
     }
 
