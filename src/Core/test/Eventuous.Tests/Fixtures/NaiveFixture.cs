@@ -8,7 +8,10 @@ using Testing;
 public class NaiveFixture {
     protected IEventStore EventStore { get; } = new InMemoryEventStore();
 
-    static readonly Faker<Commands.BookRoom> Faker = new Faker<Commands.BookRoom>()
+    // A fresh Faker per call rather than one shared instance: f.Noda() caches its dataset in that
+    // Faker's Bogus.Premium context, a plain Dictionary, so tests running in parallel would race
+    // its first write and corrupt it. Same shape as DomainFixture in the other test suites.
+    static Faker<Commands.BookRoom> Faker => new Faker<Commands.BookRoom>()
         .CustomInstantiator(
             f => {
                 var checkin  = f.Noda().LocalDate.Soon();
