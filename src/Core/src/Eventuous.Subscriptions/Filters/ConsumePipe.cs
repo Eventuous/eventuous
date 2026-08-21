@@ -9,7 +9,13 @@ public sealed class ConsumePipe : IAsyncDisposable {
     readonly LinkedList<IConsumeFilter> _filters = [];
     readonly List<object>               _owned   = [];
 
-    bool _disposed;
+    /// <summary>
+    /// Completed when the disposal that won <see cref="_disposing"/> is done, so callers that lost the race
+    /// wait for the teardown instead of being told it finished.
+    /// </summary>
+    readonly TaskCompletionSource _disposed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    int _disposing;
 
     public IEnumerable<object> RegisteredFilters => _filters.AsEnumerable();
 
@@ -60,30 +66,46 @@ public sealed class ConsumePipe : IAsyncDisposable {
 
     static ValueTask Move(LinkedListNode<IConsumeFilter>? node, IBaseConsumeContext context) => node == null ? default : node.Value.Send(context, node.Next);
 
+    /// <summary>
+    /// Disposes the filters and everything the pipe owns, exactly once. Concurrent callers, which the SignalR
+    /// gateway produces when a disconnect races the gateway shutdown, all wait for the single teardown.
+    /// </summary>
     public async ValueTask DisposeAsync() {
-        if (_disposed) return;
+        // Exchange, not check-then-set: two callers reading a plain flag both pass and double-dispose.
+        if (Interlocked.Exchange(ref _disposing, 1) != 0) {
+            await _disposed.Task.NoContext();
 
-        _disposed = true;
-
-        foreach (var filter in _filters) {
-            if (filter is IAsyncDisposable d) {
-                await d.DisposeAsync().NoContext();
-            }
+            return;
         }
 
-        // After the filters, as they drain in-flight messages that still need their handlers, and in reverse
-        // order of creation.
-        for (var i = _owned.Count - 1; i >= 0; i--) {
-            switch (_owned[i]) {
-                case IAsyncDisposable d:
+        try {
+            foreach (var filter in _filters) {
+                if (filter is IAsyncDisposable d) {
                     await d.DisposeAsync().NoContext();
-
-                    break;
-                case IDisposable d:
-                    d.Dispose();
-
-                    break;
+                }
             }
+
+            // After the filters, as they drain in-flight messages that still need their handlers, and in
+            // reverse order of creation.
+            for (var i = _owned.Count - 1; i >= 0; i--) {
+                switch (_owned[i]) {
+                    case IAsyncDisposable d:
+                        await d.DisposeAsync().NoContext();
+
+                        break;
+                    case IDisposable d:
+                        d.Dispose();
+
+                        break;
+                }
+            }
+
+            _disposed.TrySetResult();
+        } catch (Exception e) {
+            // The losing callers get the same failure rather than a teardown that looks clean.
+            _disposed.TrySetException(e);
+
+            throw;
         }
     }
 }

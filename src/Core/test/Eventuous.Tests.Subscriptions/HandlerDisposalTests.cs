@@ -18,7 +18,7 @@ public class HandlerDisposalTests {
     public async Task ShouldDisposeHandlerCreatedByFactory() {
         DisposableHandler? handler = null;
 
-        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new()));
+        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new(), ownsHandler: true));
         await resolved.Subscription.DisposeAsync();
 
         await Assert.That(handler!.Disposals).IsEqualTo(1);
@@ -28,7 +28,7 @@ public class HandlerDisposalTests {
     public async Task ShouldDisposeAsyncHandlerCreatedByFactory() {
         AsyncDisposableHandler? handler = null;
 
-        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new()));
+        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new(), ownsHandler: true));
         await resolved.Subscription.DisposeAsync();
 
         await Assert.That(handler!.Disposals).IsEqualTo(1);
@@ -38,7 +38,7 @@ public class HandlerDisposalTests {
     public async Task ShouldPreferAsyncDisposal() {
         DoublyDisposableHandler? handler = null;
 
-        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new()));
+        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new(), ownsHandler: true));
         await resolved.Subscription.DisposeAsync();
 
         await Assert.That(handler!.AsyncDisposals).IsEqualTo(1);
@@ -53,7 +53,8 @@ public class HandlerDisposalTests {
         var resolved = Resolve(
             builder => builder.AddCompositionEventHandler<DisposableHandler, DisposableWrappingHandler>(
                 _ => inner = new(),
-                handler => wrapper = new(handler)
+                handler => wrapper = new(handler),
+                ownsInnerHandler: true
             )
         );
         await resolved.Subscription.DisposeAsync();
@@ -88,6 +89,29 @@ public class HandlerDisposalTests {
     }
 
     [Test]
+    public async Task ShouldNotDisposeFactoryHandlerByDefault() {
+        DisposableHandler? handler = null;
+
+        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new()));
+        await resolved.Subscription.DisposeAsync();
+
+        await Assert.That(handler!.Disposals).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task ShouldNotDisposeHandlerTheFactoryResolvedFromTheContainer() {
+        var resolved = Resolve(
+            builder => builder.AddEventHandler(sp => sp.GetRequiredService<DisposableHandler>()),
+            services => services.AddSingleton<DisposableHandler>()
+        );
+        var handler = resolved.Provider.GetRequiredService<DisposableHandler>();
+
+        await resolved.Subscription.DisposeAsync();
+
+        await Assert.That(handler.Disposals).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task ShouldNotDisposeHandlerSuppliedByCaller() {
         var handler = new DisposableHandler();
 
@@ -101,7 +125,7 @@ public class HandlerDisposalTests {
     public async Task ShouldDisposeHandlerOnlyOnce() {
         DisposableHandler? handler = null;
 
-        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new()));
+        var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new(), ownsHandler: true));
         await resolved.Subscription.DisposeAsync();
         await resolved.Subscription.DisposeAsync();
 
@@ -115,15 +139,16 @@ public class HandlerDisposalTests {
         var resolved = Resolve(
             builder => builder
                 .AddConsumeFilterFirst(new RecordingFilter(order))
-                .AddEventHandler(_ => new RecordingHandler(order))
+                .AddEventHandler(_ => new RecordingHandler(order), ownsHandler: true)
         );
         await resolved.Subscription.DisposeAsync();
 
         await Assert.That(order).IsEquivalentTo(["filter", "handler"]);
     }
 
-    static Resolved Resolve(Action<SubscriptionBuilder<TestSub, TestOptions>> configure) {
+    static Resolved Resolve(Action<SubscriptionBuilder<TestSub, TestOptions>> configure, Action<IServiceCollection>? configureServices = null) {
         var services = new ServiceCollection();
+        configureServices?.Invoke(services);
         services.AddSubscription<TestSub, TestOptions>(SubscriptionId, configure);
 
         var provider = services.BuildServiceProvider();
@@ -186,7 +211,7 @@ public class HandlerDisposalTests {
 
     sealed class RecordingFilter(List<string> order) : ConsumeFilter<IMessageConsumeContext>, IAsyncDisposable {
         protected override ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next)
-            => next?.Value.Send(context, next.Next) ?? default;
+            => next == null ? default : next.Value.Send(context, next.Next);
 
         public ValueTask DisposeAsync() {
             order.Add("filter");

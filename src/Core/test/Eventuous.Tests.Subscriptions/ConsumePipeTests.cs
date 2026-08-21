@@ -35,6 +35,45 @@ public class ConsumePipeTests {
         await Assert.That(handler.Received!.Items.GetItem<string>(Key)).IsEqualTo(baggage);
     }
 
+    [Test]
+    public async Task ShouldMakeSecondDisposalWaitForTheFirst() {
+        var filter = new BlockingFilter();
+        var pipe   = new ConsumePipe().AddFilterFirst(filter);
+
+        var first  = pipe.DisposeAsync();
+        var second = pipe.DisposeAsync();
+
+        // The pipe is still disposing, so a second caller must not be told the teardown is done
+        await Assert.That(second.IsCompleted).IsFalse();
+
+        filter.Release();
+        await first;
+        await second;
+
+        await Assert.That(filter.Disposals).IsEqualTo(1);
+    }
+
+    /// <summary>
+    /// Blocks inside <see cref="DisposeAsync"/> until released, so a second disposal can be observed while the
+    /// first one is still running.
+    /// </summary>
+    class BlockingFilter : ConsumeFilter<IMessageConsumeContext>, IAsyncDisposable {
+        readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int Disposals { get; private set; }
+
+        public void Release() => _release.TrySetResult();
+
+        protected override ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next)
+            => next == null ? default : next.Value.Send(context, next.Next);
+
+        public async ValueTask DisposeAsync() {
+            Disposals++;
+
+            await _release.Task;
+        }
+    }
+
     class TestFilter(string key, string payload) : ConsumeFilter<IMessageConsumeContext> {
         protected override ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
             context.Items.AddItem(key, payload);

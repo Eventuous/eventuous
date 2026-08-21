@@ -44,16 +44,32 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     }
 
     /// <summary>
-    /// Adds an event handler to the subscription. The handler is created once by the given function and owned by
-    /// the subscription rather than the container, so it gets disposed when the subscription is disposed if it
-    /// implements <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>.
+    /// Adds an event handler to the subscription. The handler is created once by the given function and kept by
+    /// the subscription, it isn't registered in the container. Nothing disposes it, as the function might return
+    /// a handler owned elsewhere; use the overload with <c>ownsHandler</c> for a handler the function creates.
     /// </summary>
     /// <param name="getHandler">A function to resolve event handler using the service provider</param>
     /// <typeparam name="THandler">Event handler type</typeparam>
     /// <returns></returns>
-    public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler) where THandler : class, IEventHandler {
+    public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler) where THandler : class, IEventHandler
+        => AddEventHandler(getHandler, false);
+
+    /// <summary>
+    /// Adds an event handler to the subscription. The handler is created once by the given function and kept by
+    /// the subscription, it isn't registered in the container.
+    /// </summary>
+    /// <param name="getHandler">A function to resolve event handler using the service provider</param>
+    /// <param name="ownsHandler">
+    /// When <c>true</c>, the subscription owns the handler and disposes it when the subscription is disposed, if it
+    /// implements <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>. Only set it when the function creates
+    /// the handler: a handler the function resolves from the container is owned by the container, and disposing it
+    /// would break the other components using it.
+    /// </param>
+    /// <typeparam name="THandler">Event handler type</typeparam>
+    /// <returns></returns>
+    public SubscriptionBuilder AddEventHandler<THandler>(Func<IServiceProvider, THandler> getHandler, bool ownsHandler) where THandler : class, IEventHandler {
         THandler? handler = null;
-        AddHandlerResolve(sp => handler ??= Own(getHandler(sp)));
+        AddHandlerResolve(sp => handler ??= Own(getHandler(sp), ownsHandler));
 
         return this;
     }
@@ -96,9 +112,10 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// Adds a composition event handler to the subscription with a custom inner handler resolver.
     /// The inner handler is created via <paramref name="getInnerHandler"/> and then wrapped into
     /// <typeparamref name="TWrappingHandler"/> using <paramref name="getWrappingHandler"/>.
-    /// The inner handler is created once and owned by the subscription rather than the container, so it gets
-    /// disposed when the subscription is disposed if it implements <see cref="IDisposable"/> or
-    /// <see cref="IAsyncDisposable"/>. The wrapping handler decorates it and isn't disposed.
+    /// The inner handler is created once and kept by the subscription, it isn't registered in the container.
+    /// Nothing disposes it, as <paramref name="getInnerHandler"/> might return a handler owned elsewhere; use the
+    /// overload with <c>ownsInnerHandler</c> for an inner handler the function creates. The wrapping handler
+    /// decorates the inner one and is never disposed.
     /// </summary>
     /// <typeparam name="THandler">Inner event handler type</typeparam>
     /// <typeparam name="TWrappingHandler">Wrapping event handler type</typeparam>
@@ -108,9 +125,34 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(
             Func<IServiceProvider, THandler> getInnerHandler,
             Func<THandler, TWrappingHandler> getWrappingHandler
+        ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler
+        => AddCompositionEventHandler(getInnerHandler, getWrappingHandler, false);
+
+    /// <summary>
+    /// Adds a composition event handler to the subscription with a custom inner handler resolver.
+    /// The inner handler is created via <paramref name="getInnerHandler"/> and then wrapped into
+    /// <typeparamref name="TWrappingHandler"/> using <paramref name="getWrappingHandler"/>.
+    /// The inner handler is created once and kept by the subscription, it isn't registered in the container.
+    /// The wrapping handler decorates the inner one and is never disposed.
+    /// </summary>
+    /// <typeparam name="THandler">Inner event handler type</typeparam>
+    /// <typeparam name="TWrappingHandler">Wrapping event handler type</typeparam>
+    /// <param name="getInnerHandler">Function that resolves or creates the inner handler using the service provider</param>
+    /// <param name="getWrappingHandler">Factory that produces the wrapping handler from the inner handler</param>
+    /// <param name="ownsInnerHandler">
+    /// When <c>true</c>, the subscription owns the inner handler and disposes it when the subscription is disposed,
+    /// if it implements <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>. Only set it when
+    /// <paramref name="getInnerHandler"/> creates the handler: a handler it resolves from the container is owned by
+    /// the container, and disposing it would break the other components using it.
+    /// </param>
+    /// <returns>The current <see cref="SubscriptionBuilder"/> instance</returns>
+    public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(
+            Func<IServiceProvider, THandler> getInnerHandler,
+            Func<THandler, TWrappingHandler> getWrappingHandler,
+            bool                             ownsInnerHandler
         ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         THandler? innerHandler = null;
-        AddHandlerResolve(sp => getWrappingHandler(innerHandler ??= Own(getInnerHandler(sp))));
+        AddHandlerResolve(sp => getWrappingHandler(innerHandler ??= Own(getInnerHandler(sp), ownsInnerHandler)));
 
         return this;
     }
@@ -119,9 +161,10 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     /// Adds a composition event handler to the subscription with a custom inner handler resolver.
     /// The inner handler is created via <paramref name="getInnerHandler"/> and then wrapped into
     /// <typeparamref name="TWrappingHandler"/> using <paramref name="getWrappingHandler"/>.
-    /// The inner handler is created once and owned by the subscription rather than the container, so it gets
-    /// disposed when the subscription is disposed if it implements <see cref="IDisposable"/> or
-    /// <see cref="IAsyncDisposable"/>. The wrapping handler decorates it and isn't disposed.
+    /// The inner handler is created once and kept by the subscription, it isn't registered in the container.
+    /// Nothing disposes it, as <paramref name="getInnerHandler"/> might return a handler owned elsewhere; use the
+    /// overload with <c>ownsInnerHandler</c> for an inner handler the function creates. The wrapping handler
+    /// decorates the inner one and is never disposed.
     /// </summary>
     /// <typeparam name="THandler">Inner event handler type</typeparam>
     /// <typeparam name="TWrappingHandler">Wrapping event handler type</typeparam>
@@ -131,9 +174,34 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(
             Func<IServiceProvider, THandler> getInnerHandler,
             Func<THandler, IServiceProvider, TWrappingHandler> getWrappingHandler
+        ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler
+        => AddCompositionEventHandler(getInnerHandler, getWrappingHandler, false);
+
+    /// <summary>
+    /// Adds a composition event handler to the subscription with a custom inner handler resolver.
+    /// The inner handler is created via <paramref name="getInnerHandler"/> and then wrapped into
+    /// <typeparamref name="TWrappingHandler"/> using <paramref name="getWrappingHandler"/>.
+    /// The inner handler is created once and kept by the subscription, it isn't registered in the container.
+    /// The wrapping handler decorates the inner one and is never disposed.
+    /// </summary>
+    /// <typeparam name="THandler">Inner event handler type</typeparam>
+    /// <typeparam name="TWrappingHandler">Wrapping event handler type</typeparam>
+    /// <param name="getInnerHandler">Function that resolves or creates the inner handler using the service provider</param>
+    /// <param name="getWrappingHandler">Factory that produces the wrapping handler from the inner handler</param>
+    /// <param name="ownsInnerHandler">
+    /// When <c>true</c>, the subscription owns the inner handler and disposes it when the subscription is disposed,
+    /// if it implements <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>. Only set it when
+    /// <paramref name="getInnerHandler"/> creates the handler: a handler it resolves from the container is owned by
+    /// the container, and disposing it would break the other components using it.
+    /// </param>
+    /// <returns>The current <see cref="SubscriptionBuilder"/> instance</returns>
+    public SubscriptionBuilder AddCompositionEventHandler<THandler, TWrappingHandler>(
+            Func<IServiceProvider, THandler>                   getInnerHandler,
+            Func<THandler, IServiceProvider, TWrappingHandler> getWrappingHandler,
+            bool                                               ownsInnerHandler
         ) where THandler : class, IEventHandler where TWrappingHandler : class, IEventHandler {
         THandler? innerHandler = null;
-        AddHandlerResolve(sp => getWrappingHandler(innerHandler ??= Own(getInnerHandler(sp)), sp));
+        AddHandlerResolve(sp => getWrappingHandler(innerHandler ??= Own(getInnerHandler(sp), ownsInnerHandler), sp));
 
         return this;
     }
@@ -183,11 +251,12 @@ public abstract class SubscriptionBuilder(IServiceCollection services, string su
     }
 
     /// <summary>
-    /// Records a handler the builder created, so the subscription disposes it. Handlers resolved from the
-    /// container and handlers supplied by the caller are owned elsewhere and are left alone.
+    /// Records a handler the subscription owns, so it gets disposed with the subscription. Ownership is stated by
+    /// the caller rather than inferred: a handler factory is free to return a handler the container owns, and
+    /// disposing that would break the other components using it.
     /// </summary>
-    THandler Own<THandler>(THandler handler) where THandler : class, IEventHandler {
-        if (handler is IDisposable or IAsyncDisposable) _ownedHandlers.Add(handler);
+    THandler Own<THandler>(THandler handler, bool owns) where THandler : class, IEventHandler {
+        if (owns && handler is IDisposable or IAsyncDisposable) _ownedHandlers.Add(handler);
 
         return handler;
     }
