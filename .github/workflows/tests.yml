@@ -100,6 +100,8 @@ jobs:
             project: src/Redis/test/Eventuous.Tests.Redis/Eventuous.Tests.Redis.csproj
           - name: azure-servicebus
             project: src/Azure/test/Eventuous.Tests.Azure.ServiceBus/Eventuous.Tests.Azure.ServiceBus.csproj
+          - name: azure-blobs
+            project: src/Azure/test/Eventuous.Tests.Azure.Storage.Blobs/Eventuous.Tests.Azure.Storage.Blobs.csproj
           - name: googlepubsub
             project: src/GooglePubSub/test/Eventuous.Tests.GooglePubSub/Eventuous.Tests.GooglePubSub.csproj
           - name: signalr-integration
