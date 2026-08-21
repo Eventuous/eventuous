@@ -140,7 +140,7 @@ public static class StoreFunctions {
             try {
                 var result = new List<StreamEvent>();
 
-                await foreach (var evt in eventReader.ReadEventsBackwards(stream, start, count, cancellationToken).ConfigureAwait(false)) {
+                await foreach (var evt in eventReader.ReadEventsBackwards(stream, start, count, cancellationToken).NoContext(cancellationToken)) {
                     result.Add(evt);
                 }
 

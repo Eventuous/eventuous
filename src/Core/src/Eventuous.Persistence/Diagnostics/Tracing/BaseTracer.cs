@@ -59,12 +59,12 @@ public abstract class BaseTracer {
 
         var enumerator = source.GetAsyncEnumerator(cancellationToken);
 
-        await using (enumerator.ConfigureAwait(false)) {
+        await using (enumerator.NoContext()) {
             while (true) {
                 bool moved;
 
                 try {
-                    moved = await enumerator.MoveNextAsync().ConfigureAwait(false);
+                    moved = await enumerator.MoveNextAsync().NoContext();
                 } catch (Exception e) {
                     activity?.SetActivityStatus(ActivityStatus.Error(e));
                     measure.SetError();

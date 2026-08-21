@@ -26,6 +26,9 @@ static class TaskExtensions {
         => source.WithCancellation(cancellationToken).ConfigureAwait(false);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ConfiguredAsyncDisposable NoContext(this IAsyncDisposable disposable) => disposable.ConfigureAwait(false);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Task WhenAll(this IEnumerable<Task> tasks) => Task.WhenAll(tasks);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
