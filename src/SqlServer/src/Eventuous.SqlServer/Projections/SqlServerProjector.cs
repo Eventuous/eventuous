@@ -34,10 +34,12 @@ public abstract class SqlServerProjector(SqlServerConnectionOptions options, ITy
         => base.On<T>(async ctx => await Handle(ctx, handler).NoContext());
 
     async Task Handle<T>(MessageConsumeContext<T> context, ProjectToSqlServerAsync<T> handler) where T : class {
-        await using var connection = await ConnectionFactory.GetConnection(_connectionString, context.CancellationToken).NoContext();
+        var connection = await ConnectionFactory.GetConnection(_connectionString, context.CancellationToken).NoContext();
 
-        var cmd = await handler(connection, context).NoContext();
-        await cmd.ExecuteNonQueryAsync(context.CancellationToken).NoContext();
+        await using (connection.NoContext()) {
+            var cmd = await handler(connection, context).NoContext();
+            await cmd.ExecuteNonQueryAsync(context.CancellationToken).NoContext();
+        }
     }
 
     protected static SqlCommand Project(SqlConnection connection, string commandText, params SqlParameter[] parameters) {

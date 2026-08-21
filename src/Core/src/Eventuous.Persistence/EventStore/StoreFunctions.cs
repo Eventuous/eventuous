@@ -218,24 +218,26 @@ public static class StoreFunctions {
             var  yielded      = 0;
             long lastRevision = 0;
 
-            await using var enumerator = eventReader.ReadEvents(streamName, position, pageSize, cancellationToken).GetAsyncEnumerator(cancellationToken);
+            var enumerator = eventReader.ReadEvents(streamName, position, pageSize, cancellationToken).GetAsyncEnumerator(cancellationToken);
 
-            while (true) {
-                bool moved;
+            await using (enumerator.NoContext()) {
+                while (true) {
+                    bool moved;
 
-                try {
-                    moved = await enumerator.MoveNextAsync().NoContext();
-                } catch (StreamNotFound) when (!failIfNotFound) {
-                    yield break;
+                    try {
+                        moved = await enumerator.MoveNextAsync().NoContext();
+                    } catch (StreamNotFound) when (!failIfNotFound) {
+                        yield break;
+                    }
+
+                    if (!moved) break;
+
+                    var evt = enumerator.Current;
+                    yielded++;
+                    lastRevision = evt.Revision;
+
+                    yield return evt;
                 }
-
-                if (!moved) break;
-
-                var evt = enumerator.Current;
-                yielded++;
-                lastRevision = evt.Revision;
-
-                yield return evt;
             }
 
             if (yielded < pageSize) yield break;
