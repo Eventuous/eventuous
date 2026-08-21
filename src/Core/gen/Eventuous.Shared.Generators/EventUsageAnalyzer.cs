@@ -36,6 +36,10 @@ public sealed class EventUsageAnalyzer : DiagnosticAnalyzer {
             var compilation = compilationContext.Compilation;
             var knownTypes = new KnownTypeSymbols(compilation);
 
+            // Without these two, annotations and explicit registrations cannot be checked,
+            // so any diagnostic would be an unverifiable false positive — stay silent instead
+            if (knownTypes.EventTypeAttribute == null || knownTypes.TypeMapper == null) return;
+
             compilationContext.RegisterOperationAction(ctx => AnalyzeInvocation(ctx, knownTypes), OperationKind.Invocation);
             compilationContext.RegisterOperationAction(ctx => AnalyzeObjectCreation(ctx, knownTypes), OperationKind.ObjectCreation);
         });
