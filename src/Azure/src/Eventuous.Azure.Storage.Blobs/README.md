@@ -70,23 +70,28 @@ Note, this means the idempotency is weaker as only the last message ID is checke
 
 ### Custom blob naming
 
-By default, blob names are generated using `GetBlobName(string id)` which creates names in the format `{id}/{T}.json`, where `id` defaults to the stream ID from `context.Stream.GetId()`.
+By default, blob names are generated using `GetBlobName(string id)` which creates names in the format `{id}/{StateType}.json`, where `id` defaults to the stream ID from `context.Stream.GetId()`.
 
 You can customize blob naming in two ways:
 
 **1. Override the virtual methods globally for all events:**
 
 ```csharp
-protected override string GetBlobName(string id, IMessageConsumeContext context) {
-    // Use stream name and type in the path
-    var streamName = context.Stream.ToString();
-    return $"projections/{streamName}/{id}.json";
-}
+public class BookingProjection : BlobStorageProjector<BookingState> {
+    // ...
 
-protected override string GetBlobName(string id) {
-    return $"{id}/{typeof(T).Name}.json";
+    protected override string GetBlobName(string id) => $"bookings/{id}.json";
 }
 ```
+
+When the blob name depends on the event, override the overload that takes the consume context instead:
+
+```csharp
+protected override string GetBlobName(string id, IMessageConsumeContext context)
+    => $"projections/{context.Stream}/{id}.json";
+```
+
+The default implementation of the two-argument overload calls the one-argument overload, so overriding the two-argument version replaces the naming completely — a one-argument override is then never called.
 
 **2. Override blob ID per event handler using `getBlobId`:**
 
