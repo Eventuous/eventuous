@@ -123,4 +123,48 @@ public abstract class StoreAppendTests<T> where T : StoreFixtureBase {
         var results = await _fixture.AppendEventsToMultipleStreams([]);
         await Assert.That(results).HasCount().EqualTo(0);
     }
+
+    [Test]
+    [Category("Store")]
+    public async Task ShouldNotLoseConcurrentAppends(CancellationToken cancellationToken) {
+        const int writers = 20;
+
+        var stream = Helpers.GetStreamName();
+        await _fixture.AppendEvent(stream, Helpers.CreateEvent(), ExpectedStreamVersion.NoStream);
+
+        var results   = await Task.WhenAll(Enumerable.Range(0, writers).Select(_ => TryAppend(stream, ExpectedStreamVersion.Any)));
+        var succeeded = results.Count(x => x);
+
+        var stored = await _fixture.EventStore.ReadEvents(stream, StreamReadPosition.Start, writers * 2, true, cancellationToken);
+
+        await Assert.That(succeeded).IsGreaterThan(0);
+        await Assert.That(stored.Length).IsEqualTo(1 + succeeded);
+    }
+
+    [Test]
+    [Category("Store")]
+    public async Task ShouldRejectConcurrentAppendsWithSameVersion(CancellationToken cancellationToken) {
+        const int writers = 20;
+
+        var stream = Helpers.GetStreamName();
+        await _fixture.AppendEvent(stream, Helpers.CreateEvent(), ExpectedStreamVersion.NoStream);
+
+        var results   = await Task.WhenAll(Enumerable.Range(0, writers).Select(_ => TryAppend(stream, new(0))));
+        var succeeded = results.Count(x => x);
+
+        var stored = await _fixture.EventStore.ReadEvents(stream, StreamReadPosition.Start, writers * 2, true, cancellationToken);
+
+        await Assert.That(succeeded).IsEqualTo(1);
+        await Assert.That(stored.Length).IsEqualTo(1 + succeeded);
+    }
+
+    async Task<bool> TryAppend(StreamName stream, ExpectedStreamVersion version) {
+        try {
+            await _fixture.AppendEvent(stream, Helpers.CreateEvent(), version);
+
+            return true;
+        } catch (AppendToStreamException) {
+            return false;
+        }
+    }
 }
