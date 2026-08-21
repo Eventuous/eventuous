@@ -53,8 +53,7 @@ public class HandlerDisposalTests {
         var resolved = Resolve(
             builder => builder.AddCompositionEventHandler<DisposableHandler, DisposableWrappingHandler>(
                 _ => inner = new(),
-                handler => wrapper = new(handler),
-                ownsInnerHandler: true
+                handler => wrapper = new(handler)
             )
         );
         await resolved.Subscription.DisposeAsync();
@@ -89,19 +88,20 @@ public class HandlerDisposalTests {
     }
 
     [Test]
-    public async Task ShouldNotDisposeFactoryHandlerByDefault() {
+    public async Task ShouldDisposeFactoryHandlerByDefault() {
         DisposableHandler? handler = null;
 
         var resolved = Resolve(builder => builder.AddEventHandler(_ => handler = new()));
         await resolved.Subscription.DisposeAsync();
 
-        await Assert.That(handler!.Disposals).IsEqualTo(0);
+        await Assert.That(handler!.Disposals).IsEqualTo(1);
     }
 
     [Test]
-    public async Task ShouldNotDisposeHandlerTheFactoryResolvedFromTheContainer() {
+    public async Task ShouldNotDisposeHandlerWhenOwnershipIsDeclined() {
+        // A factory is free to return a handler owned elsewhere, which is what declining ownership is for
         var resolved = Resolve(
-            builder => builder.AddEventHandler(sp => sp.GetRequiredService<DisposableHandler>()),
+            builder => builder.AddEventHandler(sp => sp.GetRequiredService<DisposableHandler>(), ownsHandler: false),
             services => services.AddSingleton<DisposableHandler>()
         );
         var handler = resolved.Provider.GetRequiredService<DisposableHandler>();
@@ -109,6 +109,23 @@ public class HandlerDisposalTests {
         await resolved.Subscription.DisposeAsync();
 
         await Assert.That(handler.Disposals).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task ShouldNotDisposeCompositionInnerHandlerWhenOwnershipIsDeclined() {
+        var resolved = Resolve(
+            builder => builder.AddCompositionEventHandler<DisposableHandler, DisposableWrappingHandler>(
+                sp => sp.GetRequiredService<DisposableHandler>(),
+                handler => new(handler),
+                ownsInnerHandler: false
+            ),
+            services => services.AddSingleton<DisposableHandler>()
+        );
+        var inner = resolved.Provider.GetRequiredService<DisposableHandler>();
+
+        await resolved.Subscription.DisposeAsync();
+
+        await Assert.That(inner.Disposals).IsEqualTo(0);
     }
 
     [Test]
