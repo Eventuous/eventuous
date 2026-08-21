@@ -33,6 +33,61 @@ public class Analyzer_Ev001_Tests {
         await Assert.That(ev001.Any(d => d.GetMessage().Contains("RoomBooked"))).IsTrue();
     }
 
+    [Test]
+    public async Task Should_not_warn_for_object_typed_payload_passed_to_when() {
+        // Issue #535: replaying deserialized payloads (statically typed as object) through
+        // State<T>.When() must not produce a false positive for 'object'
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        var objectDiagnostics = diagnostics.Where(d => d.GetMessage().Contains("'object'")).ToArray();
+
+        await Assert.That(objectDiagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Should_warn_for_unannotated_event_created_in_functional_act() {
+        // Pins the functional-service Act/ActAsync path: if the builder type lookups go stale,
+        // this diagnostic disappears and the test fails
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Any(d => d.GetMessage().Contains("BookingCancelled"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Should_not_warn_for_event_registered_via_type_map() {
+        // Pins the TypeMapper.AddType suppression: if the TypeMapper lookup goes stale,
+        // an unexpected diagnostic appears and the test fails
+        var source = LoadAnalyzedSource();
+
+        var compilation = CreateCompilation(source);
+        var analyzer    = new EventUsageAnalyzer();
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+
+        await Assert.That(diagnostics.Any(d => d.GetMessage().Contains("RoomRegistered"))).IsFalse();
+    }
+
+    [Test]
+    public async Task Should_resolve_all_well_known_type_names() {
+        // Every metadata name the analyzer relies on must resolve against the current assemblies;
+        // a type rename that misses the analyzer fails here
+        var compilation = CreateCompilation("// intentionally empty");
+
+        var unresolved = WellKnownTypeNames.All.Where(name => compilation.GetTypeByMetadataName(name) == null).ToArray();
+
+        await Assert.That(unresolved).IsEmpty();
+    }
+
     static async Task<Diagnostic[]> GetAnalyzerDiagnosticsAsync(Compilation compilation, EventUsageAnalyzer analyzer) {
         var withAnalyzers = compilation.WithAnalyzers([analyzer]);
         var diagnostics   = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
@@ -55,7 +110,9 @@ public class Analyzer_Ev001_Tests {
             MetadataReference.CreateFromFile(typeof(State<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Aggregate<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(EventTypeAttribute).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Eventuous.Subscriptions.EventHandler).Assembly.Location)
+            MetadataReference.CreateFromFile(typeof(Eventuous.Subscriptions.EventHandler).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(ExpectedState).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(IEventStore).Assembly.Location)
         };
 
         // Add runtime assemblies to resolve core types (DateTime, ValueTask, etc.)

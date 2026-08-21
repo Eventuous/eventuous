@@ -4,11 +4,9 @@
 namespace Eventuous.Shared.Generators;
 
 /// <summary>
-/// Constants used for type and member lookups.
-/// These are primarily used for symbol resolution via Compilation.GetTypeByMetadataName()
-/// and as fallback when symbol-based comparison is not available.
-/// The generators now prefer symbol-based comparisons using SymbolEqualityComparer,
-/// which are refactoring-safe and won't break when types are renamed.
+/// Constants used for type and member lookups via Compilation.GetTypeByMetadataName().
+/// The full list of metadata names the analyzers depend on lives in <see cref="WellKnownTypeNames"/>,
+/// which is pinned by tests against the real Eventuous assemblies.
 /// </summary>
 internal static class Constants {
     /// <summary>Base namespace for Eventuous types.</summary>
