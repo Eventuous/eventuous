@@ -114,7 +114,7 @@ static class ChannelExtensions {
 
             // Propagate possible failure of the channel.
             if (source.Completion.IsCompleted)
-                await source.Completion.ConfigureAwait(false);
+                await source.Completion.NoContext();
         } finally { timerCts.Dispose(); }
     }
 }

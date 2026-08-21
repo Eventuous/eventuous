@@ -34,10 +34,12 @@ public abstract class SqliteProjector(SqliteConnectionOptions options, ITypeMapp
         => base.On<T>(async ctx => await Handle(ctx, handler).NoContext());
 
     async Task Handle<T>(MessageConsumeContext<T> context, ProjectToSqliteAsync<T> handler) where T : class {
-        await using var connection = await ConnectionFactory.GetConnection(_connectionString, context.CancellationToken);
+        var connection = await ConnectionFactory.GetConnection(_connectionString, context.CancellationToken).NoContext();
 
-        var cmd = await handler(connection, context).ConfigureAwait(false);
-        await cmd.ExecuteNonQueryAsync(context.CancellationToken).ConfigureAwait(false);
+        await using (connection.NoContext()) {
+            var cmd = await handler(connection, context).NoContext();
+            await cmd.ExecuteNonQueryAsync(context.CancellationToken).NoContext();
+        }
     }
 
     protected static SqliteCommand Project(SqliteConnection connection, string commandText, params SqliteParameter[] parameters) {
