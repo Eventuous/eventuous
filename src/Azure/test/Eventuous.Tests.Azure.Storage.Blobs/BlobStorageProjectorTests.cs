@@ -37,7 +37,8 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
     async Task SetupExistingBlob<TState>(string containerName, string blobName, TState initialState) {
         var blobClient = GetContainer(containerName).GetBlobClient(blobName);
         var json = JsonSerializer.SerializeToUtf8Bytes(initialState);
-        await blobClient.UploadAsync(new MemoryStream(json), overwrite: true);
+        using var stream = new MemoryStream(json);
+        await blobClient.UploadAsync(stream, overwrite: true);
     }
 
     /// <summary>
@@ -71,7 +72,8 @@ public class BlobStorageProjectorTests(IntegrationFixture fixture) {
         var modifiedState = new ConcurrentState { Value = 999 };
         var modifiedJson  = JsonSerializer.SerializeToUtf8Bytes(modifiedState);
         var blobClient    = GetContainer(containerName).GetBlobClient(blobName);
-        await blobClient.UploadAsync(new MemoryStream(modifiedJson), overwrite: true);
+        using var stream  = new MemoryStream(modifiedJson);
+        await blobClient.UploadAsync(stream, overwrite: true);
     };
 
     // ========== SYNC STATE HANDLER TESTS ==========
