@@ -1,13 +1,13 @@
 using Eventuous.Tests.OpenTelemetry;
 
-namespace Eventuous.Tests.Postgres.Metrics;
+namespace Eventuous.Tests.Sqlite.Metrics;
 
 [ClassDataSource<MetricsFixture>]
 [NotInParallel]
 public class MetricsTests(MetricsFixture fixture) : MetricsTestsBase(fixture) {
     [Test]
     [Retry(3)]
-    public async Task ShouldMeasureSubscriptionGapCountBase_Postgres() {
+    public async Task ShouldMeasureSubscriptionGapCountBase_Sqlite() {
         await ShouldMeasureSubscriptionGapCountBase();
     }
 }
@@ -16,7 +16,7 @@ public class MetricsTests(MetricsFixture fixture) : MetricsTestsBase(fixture) {
 [NotInParallel]
 public class SubscriptionGapMetricsTests(MetricsFixture fixture) : SubscriptionGapMetricsTestsBase(fixture) {
     [Test]
-    public async Task ShouldReportZeroGapWhenCaughtUp_Postgres(CancellationToken cancellationToken) {
+    public async Task ShouldReportZeroGapWhenCaughtUp_Sqlite(CancellationToken cancellationToken) {
         await ShouldReportZeroGapWhenCaughtUp(cancellationToken);
     }
 }

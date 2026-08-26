@@ -11,3 +11,12 @@ public class MetricsTests(MetricsFixture fixture) : MetricsTestsBase(fixture) {
         await ShouldMeasureSubscriptionGapCountBase();
     }
 }
+
+[ClassDataSource<MetricsFixture>]
+[NotInParallel]
+public class SubscriptionGapMetricsTests(MetricsFixture fixture) : SubscriptionGapMetricsTestsBase(fixture) {
+    [Test]
+    public async Task ShouldReportZeroGapWhenCaughtUp_Esdb(CancellationToken cancellationToken) {
+        await ShouldReportZeroGapWhenCaughtUp(cancellationToken);
+    }
+}
