@@ -18,3 +18,18 @@ public class SubscriptionMeasure()
         await ShouldMeasureEndOfStream(cancellationToken);
     }
 }
+
+[ClassDataSource<StreamNameFixture>(Shared = SharedType.None)]
+[NotInParallel]
+public class StreamSubscriptionMeasure(StreamNameFixture streamNameFixture)
+    : SubscriptionMeasureBase<PostgreSqlContainer, PostgresStreamSubscription, PostgresStreamSubscriptionOptions, PostgresCheckpointStore>(
+        new SubscriptionFixture<PostgresStore, PostgresStreamSubscription, PostgresStreamSubscriptionOptions, TestEventHandler>(
+            opt => opt.Stream = streamNameFixture.StreamName,
+            false
+        )
+    ) {
+    [Test]
+    public async Task Postgres_ShouldMeasureEndOfSubscribedStream(CancellationToken cancellationToken) {
+        await ShouldMeasureEndOfSubscribedStream(streamNameFixture.StreamName, cancellationToken);
+    }
+}

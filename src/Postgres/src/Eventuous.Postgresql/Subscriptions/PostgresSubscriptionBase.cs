@@ -45,9 +45,6 @@ public abstract class PostgresSubscriptionBase<T>(
 
     protected override bool IsTransient(Exception exception) => exception is PostgresException { IsTransient: true };
 
-    protected override string GetEndOfStream { get; } = $"select max(stream_position) from {options.Schema}.messages";
-    protected override string GetEndOfAll    { get; } = $"select max(global_position) from {options.Schema}.messages";
-
     protected override async ValueTask HandleGapTimeout(long gapPosition, long currentStart, CancellationToken cancellationToken) {
         try {
             await using var connection = await DataSource.OpenConnectionAsync(cancellationToken).NoContext();

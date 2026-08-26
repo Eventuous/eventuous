@@ -49,6 +49,19 @@ public class SqliteStreamSubscription(
             .Add("@from_position", (int)start + 1)
             .Add("@count", Options.MaxPageSize);
 
+    // Filtered by name rather than the id resolved in BeforeSubscribe, so the measure is valid before the
+    // subscription connects; a stream that doesn't exist yet reads as empty.
+    protected override SqliteCommand PrepareEndOfStreamCommand(SqliteConnection connection)
+        => connection.GetTextCommand(
+                $"""
+                 SELECT MAX(m.stream_position)
+                 FROM {Schema.MessagesTable} m
+                 INNER JOIN {Schema.StreamsTable} s ON s.stream_id = m.stream_id
+                 WHERE s.stream_name = @stream_name
+                 """
+            )
+            .Add("@stream_name", _streamName);
+
     protected override async Task BeforeSubscribe(CancellationToken cancellationToken) {
         await using var connection = await OpenConnection(cancellationToken).NoContext();
 

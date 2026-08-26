@@ -31,8 +31,6 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
         );
         var connectionString = connectionOptions?.ConnectionString ?? options.ConnectionString;
         _connectionString = Ensure.NotEmptyString(connectionString);
-        GetEndOfStream    = $"SELECT MAX(StreamPosition) FROM {options.Schema}.Messages";
-        GetEndOfAll       = $"SELECT MAX(GlobalPosition) FROM {options.Schema}.Messages";
     }
 
     protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken)
@@ -51,9 +49,6 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
                 sqlException.Number == 3980 && sqlException.Message.Contains("Operation cancelled by user."),
             _ => false
         };
-
-    protected override string GetEndOfStream { get; }
-    protected override string GetEndOfAll    { get; }
 }
 
 public abstract record SqlServerSubscriptionBaseOptions : SqlSubscriptionOptionsBase {

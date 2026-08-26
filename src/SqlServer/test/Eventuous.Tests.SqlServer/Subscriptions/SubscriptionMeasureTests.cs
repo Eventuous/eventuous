@@ -17,3 +17,18 @@ public class SubscriptionMeasure()
         await ShouldMeasureEndOfStream(cancellationToken);
     }
 }
+
+[ClassDataSource<StreamNameFixture>(Shared = SharedType.None)]
+[NotInParallel]
+public class StreamSubscriptionMeasure(StreamNameFixture streamNameFixture)
+    : SubscriptionMeasureBase<MsSqlContainer, SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, SqlServerCheckpointStore>(
+        new SubscriptionFixture<SqlServerStreamSubscription, SqlServerStreamSubscriptionOptions, TestEventHandler>(
+            opt => opt.Stream = streamNameFixture.StreamName,
+            false
+        )
+    ) {
+    [Test]
+    public async Task SqlServer_ShouldMeasureEndOfSubscribedStream(CancellationToken cancellationToken) {
+        await ShouldMeasureEndOfSubscribedStream(streamNameFixture.StreamName, cancellationToken);
+    }
+}

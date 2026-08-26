@@ -1,7 +1,6 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Data;
 using System.Data.Common;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -321,26 +320,23 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     GetSubscriptionEndOfStream IMeasuredSubscription.GetMeasure() => GetSubscriptionEndOfStream;
 
     /// <summary>
-    /// Get SQL statement to get the end of the stream
+    /// Prepares a command that returns the position the subscription gap is measured against: the last global
+    /// position for an <see cref="SubscriptionKind.All"/> subscription, or the last position within the subscribed
+    /// stream for a <see cref="SubscriptionKind.Stream"/> one. The position is read from the first column of the
+    /// first row and may be <c>NULL</c> when there is nothing to measure yet.
     /// </summary>
-    protected abstract string GetEndOfStream { get; }
-
-    /// <summary>
-    /// Get SQL statement to get the end of the global log
-    /// </summary>
-    protected abstract string GetEndOfAll { get; }
+    /// <param name="connection">Connection that can be used to create the command</param>
+    /// <remarks>
+    /// The measure is also handed to the metrics observer, which can invoke it before the subscription has ever
+    /// connected, so the command must not depend on state resolved in <see cref="BeforeSubscribe"/>.
+    /// </remarks>
+    protected abstract DbCommand PrepareEndOfStreamCommand(TConnection connection);
 
     async ValueTask<EndOfStream> GetSubscriptionEndOfStream(CancellationToken cancellationToken) {
         try {
             await using var connection = await OpenConnection(cancellationToken).NoContext();
-            await using var cmd        = connection.CreateCommand();
-            cmd.CommandType = CommandType.Text;
-
-            cmd.CommandText = Kind switch {
-                SubscriptionKind.All    => GetEndOfAll,
-                SubscriptionKind.Stream => GetEndOfStream
-            };
-            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
+            await using var cmd        = PrepareEndOfStreamCommand(connection);
+            await using var reader     = await cmd.ExecuteReaderAsync(cancellationToken).NoContext();
 
             // MAX(...) returns NULL on an empty table, and providers may return the position column as either
             // Int32 or Int64, so guard against DBNull and convert rather than calling the strict GetInt64.

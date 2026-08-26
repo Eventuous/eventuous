@@ -38,6 +38,9 @@ public class PostgresAllStreamSubscription(
         => connection.GetCommand(Schema.ReadAllForwards)
             .Add("_from_position", NpgsqlDbType.Bigint, start + 1)
             .Add("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
+
+    protected override NpgsqlCommand PrepareEndOfStreamCommand(NpgsqlConnection connection)
+        => connection.GetCommand($"select max(global_position) from {Schema.Name}.messages");
 }
 
 public record PostgresAllStreamSubscriptionOptions : PostgresSubscriptionBaseOptions;
