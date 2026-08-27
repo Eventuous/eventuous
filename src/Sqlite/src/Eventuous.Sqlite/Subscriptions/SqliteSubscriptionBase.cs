@@ -31,8 +31,6 @@ public abstract class SqliteSubscriptionBase<T> : SqlSubscriptionBase<T, SqliteC
         );
         var connectionString = connectionOptions?.ConnectionString ?? options.ConnectionString;
         _connectionString = Ensure.NotEmptyString(connectionString);
-        GetEndOfStream    = $"SELECT MAX(stream_position) FROM {Schema.MessagesTable}";
-        GetEndOfAll       = $"SELECT MAX(global_position) FROM {Schema.MessagesTable}";
     }
 
     protected override async ValueTask<SqliteConnection> OpenConnection(CancellationToken cancellationToken)
@@ -42,9 +40,6 @@ public abstract class SqliteSubscriptionBase<T> : SqlSubscriptionBase<T, SqliteC
 
     protected override bool IsStopping(Exception exception)
         => exception is OperationCanceledException;
-
-    protected override string GetEndOfStream { get; }
-    protected override string GetEndOfAll    { get; }
 }
 
 public abstract record SqliteSubscriptionBaseOptions : SqlSubscriptionOptionsBase {

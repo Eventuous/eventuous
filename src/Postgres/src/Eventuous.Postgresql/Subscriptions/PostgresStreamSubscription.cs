@@ -40,6 +40,19 @@ public class PostgresStreamSubscription(
             .Add("_from_position", NpgsqlDbType.Integer, (int)start + 1)
             .Add("_count", NpgsqlDbType.Integer, Options.MaxPageSize);
 
+    // Filtered by name rather than the id resolved in BeforeSubscribe, so the measure is valid before the
+    // subscription connects; a stream that doesn't exist yet reads as empty.
+    protected override NpgsqlCommand PrepareEndOfStreamCommand(NpgsqlConnection connection)
+        => connection.GetCommand(
+                $"""
+                 select max(m.stream_position)
+                 from {Schema.Name}.messages m
+                 inner join {Schema.Name}.streams s on s.stream_id = m.stream_id
+                 where s.stream_name = @_stream_name
+                 """
+            )
+            .Add("_stream_name", NpgsqlDbType.Varchar, _streamName);
+
     protected override async Task BeforeSubscribe(CancellationToken cancellationToken) {
         await using var connection = await DataSource.OpenConnectionAsync(cancellationToken).NoContext();
 

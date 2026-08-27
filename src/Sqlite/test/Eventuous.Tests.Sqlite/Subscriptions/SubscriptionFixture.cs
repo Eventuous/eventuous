@@ -4,6 +4,7 @@ using Eventuous.Sqlite;
 using Eventuous.Sqlite.Subscriptions;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
+using Eventuous.Subscriptions.Diagnostics;
 using Eventuous.Sut.Domain;
 using Eventuous.TestHelpers;
 using Eventuous.TestHelpers.TUnit.Logging;
@@ -100,6 +101,11 @@ public partial class SubscriptionFixture<TSubscription, TSubscriptionOptions, TE
     internal ValueTask StartSubscription() => Subscription.SubscribeWithLog(Log);
 
     internal ValueTask StopSubscription() => Subscription.UnsubscribeWithLog(Log);
+
+    /// <summary>
+    /// Returns the subscription's end-of-stream measure delegate (requires an <see cref="IMeasuredSubscription"/>).
+    /// </summary>
+    internal GetSubscriptionEndOfStream GetMeasure() => ((IMeasuredSubscription)Subscription).GetMeasure();
 
     public async Task<ulong> GetLastPosition() {
         await using var connection = await ConnectionFactory.GetConnection(ConnectionString, default);

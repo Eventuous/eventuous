@@ -36,6 +36,43 @@ public abstract class SubscriptionMeasureBase<TContainer, TSubscription, TSubscr
         await Assert.That(measured.Position).IsEqualTo(last);
     }
 
+    /// <summary>
+    /// For a stream subscription, the measure must report the tail of the subscribed stream only. Reproduces GitHub
+    /// #586, where the relational implementation returned <c>MAX(stream_position)</c> across every stream in the
+    /// store, so any longer stream inflated the gap of a fully caught-up subscription.
+    /// </summary>
+    protected async Task ShouldMeasureEndOfSubscribedStream(StreamName streamName, CancellationToken cancellationToken) {
+        const int otherStreamLength      = 20;
+        const int subscribedStreamLength = 5;
+
+        var measure = fixture.GetMeasure();
+
+        // Invoked before the subscription has ever connected, as the metrics observer does. The subscribed stream
+        // doesn't exist yet, which must read as an empty stream rather than EndOfStream.Invalid.
+        var empty = await measure(cancellationToken);
+        await Assert.That(empty.SubscriptionId).IsEqualTo(fixture.SubscriptionId);
+        await Assert.That(empty.Position).IsEqualTo(0ul);
+
+        // A longer, unrelated stream: its tail must not leak into the subscribed stream's measure.
+        await fixture.AppendEvents(new($"other-{Guid.NewGuid():N}"), [.. fixture.CreateEvents(otherStreamLength)], ExpectedStreamVersion.NoStream);
+
+        var events = fixture.CreateEvents(subscribedStreamLength).ToList();
+        await fixture.AppendEvents(streamName, [.. events], ExpectedStreamVersion.NoStream);
+
+        var measured = await measure(cancellationToken);
+        await Assert.That(measured.SubscriptionId).IsEqualTo(fixture.SubscriptionId);
+        await Assert.That(measured.Position).IsEqualTo((ulong)(subscribedStreamLength - 1));
+
+        await fixture.StartSubscription();
+        await fixture.Handler.AssertCollection(TimeSpan.FromSeconds(2), [.. events]).Validate(cancellationToken);
+        await fixture.StopSubscription();
+
+        // Once caught up, the gap the metrics derive from this measure and the checkpoint must be zero.
+        var checkpoint = await fixture.CheckpointStore.GetLastCheckpoint(fixture.SubscriptionId, cancellationToken);
+        var caughtUp   = await measure(cancellationToken);
+        await Assert.That(caughtUp.Position - checkpoint.Position!.Value).IsEqualTo(0ul);
+    }
+
     async Task GenerateAndHandleCommands(int count) {
         var commands = Enumerable
             .Range(0, count)

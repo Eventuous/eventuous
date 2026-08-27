@@ -145,6 +145,14 @@ public class TestSubscription(
 
         return command;
     }
+
+    protected override SqlCommand PrepareEndOfStreamCommand(SqlConnection connection) {
+        var command = connection.CreateCommand();
+        command.CommandType = CommandType.Text;
+        command.CommandText = "SELECT MAX(GlobalPosition) FROM dbo.Messages";
+
+        return command;
+    }
 }
 
 /// <summary>

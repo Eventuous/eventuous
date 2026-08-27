@@ -37,6 +37,9 @@ public class SqlServerAllStreamSubscription(
         => connection.GetStoredProcCommand(Schema.ReadAllForwards)
             .Add("@from_position", SqlDbType.BigInt, start + 1)
             .Add("@count", SqlDbType.Int, Options.MaxPageSize);
+
+    protected override SqlCommand PrepareEndOfStreamCommand(SqlConnection connection)
+        => connection.GetTextCommand($"SELECT MAX(GlobalPosition) FROM {Schema.SchemaName}.Messages");
 }
 
 public record SqlServerAllStreamSubscriptionOptions : SqlServerSubscriptionBaseOptions;

@@ -47,6 +47,9 @@ public class SqliteAllStreamSubscription(
             )
             .Add("@from_position", start + 1)
             .Add("@count", Options.MaxPageSize);
+
+    protected override SqliteCommand PrepareEndOfStreamCommand(SqliteConnection connection)
+        => connection.GetTextCommand($"SELECT MAX(global_position) FROM {Schema.MessagesTable}");
 }
 
 public record SqliteAllStreamSubscriptionOptions : SqliteSubscriptionBaseOptions;
