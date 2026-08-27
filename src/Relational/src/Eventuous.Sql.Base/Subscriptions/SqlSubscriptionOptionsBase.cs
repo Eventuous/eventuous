@@ -31,22 +31,28 @@ public abstract record SqlSubscriptionOptionsBase : SubscriptionWithCheckpointOp
     public RetryOptions Retry { get; set; } = new();
 
     /// <summary>
-    /// Gap age threshold in milliseconds. If != null, gaps older than this threshold will be ignored entirely,
-    /// allowing the subscription to skip past old missing positions. This is useful for scenarios where
-    /// old tombstones may have been deleted and should not be recreated during replay. Default is 1 hour.
+    /// Gap age threshold in milliseconds. If != null, a gap is ignored entirely when the event that follows it is
+    /// older than this threshold, so replaying history doesn't wait for transactions that finished long ago.
+    /// It's also what lets a subscription eventually move past a position no transaction will ever fill.
+    /// Default is 1 hour.
     /// </summary>
     public int? GapAgeThresholdMs { get; set; } = 60 * 60 * 1000;
 
     /// <summary>
-    /// Gap skip timeout in milliseconds. If != null, a detected gap will only hold the subscription from
-    /// advancing for this duration. Default value is 5 sec.
+    /// Gap skip timeout in milliseconds. If != null, a detected gap stops holding the subscription after this
+    /// duration, and the subscription advances past the missing position. The position is abandoned on elapsed
+    /// time alone, so an append taking longer than this to commit will have its event skipped. Prefer
+    /// <see cref="GapHandlingTimeoutMs"/>, which resolves a gap without that risk and takes precedence over this
+    /// timeout; set this only when advancing matters more than never missing an event.
+    /// Default is null (never abandon a position on time alone).
     /// </summary>
-    public int? GapSkipTimeoutMs { get; set; } = 5000;
+    public int? GapSkipTimeoutMs { get; set; }
 
     /// <summary>
     /// Gap handling timeout in milliseconds. If != null, when a gap in the global position sequence is detected
     /// and it persists for at least this duration, the subscription will attempt to handle it in a provider-specific
-    /// way (e.g. creating tombstones). Default is null (don't create tombstones).
+    /// way (e.g. creating tombstones). Unlike <see cref="GapSkipTimeoutMs"/>, this resolves the position rather than
+    /// abandoning it, and so runs before any skip. Default is null (don't create tombstones).
     /// </summary>
     public int? GapHandlingTimeoutMs { get; set; }
 

@@ -73,7 +73,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     // ReSharper disable once CognitiveComplexity
 
-    private record DetectedGap(long Position, DateTime FirstSeen);
+    private record DetectedGap(long Position, DateTime FirstSeen, bool RemediationAttempted = false);
 
     /// <summary>
     /// The polling loop. Its only clean exit is a stop request; every other exit is a fault the pump in
@@ -129,6 +129,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
                     if (gapAge.TotalMilliseconds >= Options.GapHandlingTimeoutMs.Value) {
                         await HandleGapTimeout(gap.Position, start, cancellationToken).NoContext();
+                        gap = gap with { RemediationAttempted = true };
                     }
                 }
 
@@ -179,21 +180,30 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     DetectedGap? DetectGap(long start, PersistedEvent persistedEvent, DetectedGap? previousGap) {
         var expectedNext = start < 0 ? 1 : start + 1; // global position identity starts at 1
 
-        if (persistedEvent.GlobalPosition > expectedNext) {
-            if (previousGap != null) {
-                if (Options.GapSkipTimeoutMs == null || (DateTime.UtcNow - previousGap.FirstSeen) < TimeSpan.FromMilliseconds(Options.GapSkipTimeoutMs.Value)) {
-                    return previousGap;
-                }
-            }
+        if (persistedEvent.GlobalPosition <= expectedNext) return null;
 
-            var newGapAge = DateTime.UtcNow - persistedEvent.Created;
-
-            if (Options.GapAgeThresholdMs == null || newGapAge.TotalMilliseconds < Options.GapAgeThresholdMs.Value) {
-                return new(expectedNext, DateTime.UtcNow);
-            }
+        // Evaluated on every poll rather than only when the gap is first seen, and ahead of the held-gap
+        // branch below, which returns without reaching it. A gap whose following event has aged past the
+        // threshold is abandoned however long it has been held; with neither timeout configured this is the
+        // only thing that releases a position no transaction will ever fill.
+        if (Options.GapAgeThresholdMs != null
+         && (DateTime.UtcNow - persistedEvent.Created).TotalMilliseconds >= Options.GapAgeThresholdMs.Value) {
+            return null;
         }
 
-        return null;
+        // The gap we are already holding. Keep the original FirstSeen, so the skip timeout can actually expire:
+        // reporting it as a new gap would restart the timer on every poll and hold the subscription forever
+        // on a position no transaction will ever fill (a rolled back append still consumes the sequence value).
+        if (previousGap?.Position == expectedNext) {
+            if (Options.GapSkipTimeoutMs == null) return previousGap;
+
+            if (DateTime.UtcNow - previousGap.FirstSeen < TimeSpan.FromMilliseconds(Options.GapSkipTimeoutMs.Value)) return previousGap;
+
+            // Remediation resolves the position safely, unlike skipping it, so it gets its chance first.
+            return Options.GapHandlingTimeoutMs != null && !previousGap.RemediationAttempted ? previousGap : null;
+        }
+
+        return new DetectedGap(expectedNext, DateTime.UtcNow);
     }
 
     /// <summary>
