@@ -5,6 +5,7 @@ using Eventuous.Postgresql;
 using Eventuous.Postgresql.Extensions;
 using Eventuous.Postgresql.Subscriptions;
 using Eventuous.Sql.Base;
+using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
@@ -16,6 +17,30 @@ public class TombstonesFixture(
     protected internal new TestEventHandler Handler => base.Handler;
     protected internal new ValueTask StartSubscription() => base.StartSubscription();
     protected internal new ValueTask StopSubscription() => base.StopSubscription();
+
+    /// <summary>
+    /// Two events, then a global position burnt by a rolled back append, then three more events. The burnt
+    /// position is never filled, so only gap handling decides whether the last three are ever seen.
+    /// </summary>
+    public async Task ArrangePermanentGap(StreamName streamName) {
+        await this.AppendEvents(streamName, [.. this.CreateEvents(2)], ExpectedStreamVersion.NoStream);
+        await InsertGap(streamName, 1);
+        await this.AppendEvents(streamName, [.. this.CreateEvents(3)], ExpectedStreamVersion.Any);
+    }
+
+    /// <summary>
+    /// Polls the handled messages until <paramref name="count"/> arrive or the timeout expires, and returns
+    /// how many actually arrived so the caller can assert on it.
+    /// </summary>
+    public async Task<int> WaitForHandled(int count, TimeSpan timeout, CancellationToken cancellationToken) {
+        var deadline = DateTime.UtcNow + timeout;
+
+        while (Handler.Handled.Count < count && DateTime.UtcNow < deadline) {
+            await Task.Delay(50, cancellationToken);
+        }
+
+        return Handler.Handled.Count;
+    }
 
     public async Task InsertGap(StreamName streamName, int expectedVersion) {
         await using var conn = await DataSource.OpenConnectionAsync();

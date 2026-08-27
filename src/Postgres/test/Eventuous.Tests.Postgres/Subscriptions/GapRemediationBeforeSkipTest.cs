@@ -11,36 +11,36 @@ namespace Eventuous.Tests.Postgres.Subscriptions;
 public class GapRemediationBeforeSkipTest() : SubscriptionTestBase(Fixture) {
     static readonly TombstonesFixture Fixture = new(ConfigureOptions);
 
+    const int TimeoutMs = 2000;
+
+    /// <summary>
+    /// Both timeouts expire on the same poll, so remediation only runs if it takes precedence over the skip.
+    /// The tombstone resolves the position safely — it conflicts with a committed row and blocks on an
+    /// in-flight one — where skipping abandons it on elapsed time alone.
+    /// </summary>
     [Test]
     public async Task ShouldCreateTombstoneBeforeSkippingGap(CancellationToken cancellationToken) {
-        var streamName = new StreamName("test-stream-gap-remediation");
-
-        await Fixture.AppendEvents(streamName, [.. Fixture.CreateEvents(2)], ExpectedStreamVersion.NoStream);
-
-        await Fixture.InsertGap(streamName, 1);
-
-        await Fixture.AppendEvents(streamName, [.. Fixture.CreateEvents(3)], ExpectedStreamVersion.Any);
+        await Fixture.ArrangePermanentGap(new("test-stream-gap-remediation"));
 
         await Fixture.StartSubscription();
 
-        await Fixture.Handler.AssertThat()
-            .Timebox(TimeSpan.FromSeconds(10))
-            .Exactly(5)
-            .Match(_ => true)
-            .Validate(cancellationToken);
+        // Well inside both timeouts: nothing has been remediated or skipped yet
+        await Task.Delay(TimeoutMs / 4, cancellationToken);
+        await Assert.That(Fixture.Handler.Handled.Count).IsEqualTo(2);
+        await Assert.That(await Fixture.CountTombstones()).IsEqualTo(0);
+
+        var handled = await Fixture.WaitForHandled(5, TimeSpan.FromSeconds(10), cancellationToken);
+        await Assert.That(handled).IsEqualTo(5);
 
         await Fixture.StopSubscription();
 
-        // The tombstone resolves the gap safely: it can only be inserted once the position is proven dead,
-        // so it must be attempted before the skip timeout is allowed to advance the subscription past it.
         var tombstonesCount = await Fixture.CountTombstones();
         await Assert.That(tombstonesCount).IsEqualTo(1);
     }
 
     static void ConfigureOptions(PostgresAllStreamSubscriptionOptions options) {
-        // Both timeouts expire on the same poll, so remediation only runs if it takes precedence over the skip
-        options.GapHandlingTimeoutMs = 500;
-        options.GapSkipTimeoutMs     = 500;
+        options.GapHandlingTimeoutMs = TimeoutMs;
+        options.GapSkipTimeoutMs     = TimeoutMs;
         options.GapAgeThresholdMs    = null; // the gap must not be released by age
     }
 }

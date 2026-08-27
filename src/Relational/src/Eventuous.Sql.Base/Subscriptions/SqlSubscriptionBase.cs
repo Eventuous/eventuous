@@ -183,6 +183,15 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
         if (persistedEvent.GlobalPosition <= expectedNext) return null;
 
+        // Evaluated on every poll rather than only when the gap is first seen, and ahead of the held-gap
+        // branch below, which returns without reaching it. A gap whose following event has aged past the
+        // threshold is abandoned however long it has been held; with neither timeout configured this is the
+        // only thing that releases a position no transaction will ever fill.
+        if (Options.GapAgeThresholdMs != null
+         && (DateTime.UtcNow - persistedEvent.Created).TotalMilliseconds >= Options.GapAgeThresholdMs.Value) {
+            return null;
+        }
+
         // The gap we are already holding. Keep the original FirstSeen, so the skip timeout can actually expire:
         // reporting it as a new gap would restart the timer on every poll and hold the subscription forever
         // on a position no transaction will ever fill (a rolled back append still consumes the sequence value).
@@ -195,11 +204,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
             return Options.GapHandlingTimeoutMs != null && !previousGap.RemediationAttempted ? previousGap : null;
         }
 
-        var newGapAge = DateTime.UtcNow - persistedEvent.Created;
-
-        return Options.GapAgeThresholdMs == null || newGapAge.TotalMilliseconds < Options.GapAgeThresholdMs.Value
-            ? new DetectedGap(expectedNext, DateTime.UtcNow)
-            : null;
+        return new DetectedGap(expectedNext, DateTime.UtcNow);
     }
 
     /// <summary>
