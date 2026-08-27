@@ -74,7 +74,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
     // ReSharper disable once CognitiveComplexity
 
-    private record DetectedGap(long Position, DateTime FirstSeen);
+    private record DetectedGap(long Position, DateTime FirstSeen, bool RemediationAttempted = false);
 
     /// <summary>
     /// The polling loop. Its only clean exit is a stop request; every other exit is a fault the pump in
@@ -130,6 +130,7 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
                     if (gapAge.TotalMilliseconds >= Options.GapHandlingTimeoutMs.Value) {
                         await HandleGapTimeout(gap.Position, start, cancellationToken).NoContext();
+                        gap = gap with { RemediationAttempted = true };
                     }
                 }
 
@@ -188,7 +189,10 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
         if (previousGap?.Position == expectedNext) {
             if (Options.GapSkipTimeoutMs == null) return previousGap;
 
-            return DateTime.UtcNow - previousGap.FirstSeen < TimeSpan.FromMilliseconds(Options.GapSkipTimeoutMs.Value) ? previousGap : null;
+            if (DateTime.UtcNow - previousGap.FirstSeen < TimeSpan.FromMilliseconds(Options.GapSkipTimeoutMs.Value)) return previousGap;
+
+            // Remediation resolves the position safely, unlike skipping it, so it gets its chance first.
+            return Options.GapHandlingTimeoutMs != null && !previousGap.RemediationAttempted ? previousGap : null;
         }
 
         var newGapAge = DateTime.UtcNow - persistedEvent.Created;
