@@ -18,7 +18,8 @@ public static class MeterProviderBuilderExtensions {
         /// <param name="customTags"></param>
         /// <returns></returns>
         public MeterProviderBuilder AddEventuousSubscriptions(TagList? customTags = null)
-            => Ensure.NotNull(builder).AddMeter(SubscriptionMetrics.MeterName).AddMetrics<SubscriptionMetrics>(customTags);
+            => Ensure.NotNull(builder).AddMeter(SubscriptionMetrics.MeterName)
+                .AddMetrics(sp => new SubscriptionMetrics(sp.GetServices<GetSubscriptionEndOfStream>()), customTags);
 
         /// <summary>
         /// Adds metrics instrumentation for core components such as application service and event store
@@ -28,13 +29,13 @@ public static class MeterProviderBuilderExtensions {
         public MeterProviderBuilder AddEventuous(TagList? customTags = null)
             => Ensure.NotNull(builder)
                 .AddMeter(CommandServiceMetrics.MeterName)
-                .AddMetrics<CommandServiceMetrics>(customTags)
+                .AddMetrics(_ => new CommandServiceMetrics(), customTags)
                 .AddMeter(PersistenceMetrics.MeterName)
-                .AddMetrics<PersistenceMetrics>(customTags);
+                .AddMetrics(_ => new PersistenceMetrics(), customTags);
 
-        MeterProviderBuilder AddMetrics<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(TagList? customTags = null)
+        MeterProviderBuilder AddMetrics<T>(Func<IServiceProvider, T> factory, TagList? customTags)
             where T : class, IWithCustomTags {
-            builder.ConfigureServices(services => services.AddSingleton<T>());
+            builder.ConfigureServices(services => services.AddSingleton(factory));
 
             return builder is IDeferredMeterProviderBuilder deferredMeterProviderBuilder
                 ? deferredMeterProviderBuilder.Configure(

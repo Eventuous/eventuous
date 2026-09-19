@@ -12,4 +12,21 @@
     <ItemGroup>
       <None Remove="Eventuous.Diagnostics.csproj.DotSettings" />
     </ItemGroup>
+    <Target Name="GenerateInstrumentationVersion" BeforeTargets="CoreCompile" DependsOnTargets="GetAssemblyVersion">
+        <PropertyGroup>
+            <_DiagnosticsMajor>$([System.Version]::Parse('$(AssemblyVersion)').Major)</_DiagnosticsMajor>
+            <_DiagnosticsMinor>$([System.Version]::Parse('$(AssemblyVersion)').Minor)</_DiagnosticsMinor>
+            <_DiagnosticsBuild>$([System.Math]::Max(0, $([System.Version]::Parse('$(AssemblyVersion)').Build)))</_DiagnosticsBuild>
+            <_DiagnosticsRevision>$([System.Math]::Max(0, $([System.Version]::Parse('$(AssemblyVersion)').Revision)))</_DiagnosticsRevision>
+            <_DiagnosticsVersion>$(_DiagnosticsMajor).$(_DiagnosticsMinor).$(_DiagnosticsBuild).$(_DiagnosticsRevision)</_DiagnosticsVersion>
+            <_DiagnosticsVersionFile>$(IntermediateOutputPath)InstrumentationVersion.g.cs</_DiagnosticsVersionFile>
+        </PropertyGroup>
+        <WriteLinesToFile File="$(_DiagnosticsVersionFile)"
+                          Lines="namespace Eventuous.Diagnostics { internal static class InstrumentationVersion { internal const string Value = &quot;$(_DiagnosticsVersion)&quot;%3B } }"
+                          Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <Compile Include="$(_DiagnosticsVersionFile)" />
+            <FileWrites Include="$(_DiagnosticsVersionFile)" />
+        </ItemGroup>
+    </Target>
 </Project>
