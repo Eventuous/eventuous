@@ -10,8 +10,11 @@
         <ProjectReference Include="$(CoreRoot)\Eventuous.Serialization.Json.Dynamic\Eventuous.Serialization.Json.Dynamic.csproj"/>
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(RepoRoot)\test\Eventuous.TestHelpers.TUnit\Eventuous.TestHelpers.TUnit.csproj"/>
+        <ProjectReference Include="$(LocalGenRoot)\Eventuous.Subscriptions.Generators\Eventuous.Subscriptions.Generators.csproj"/>
     </ItemGroup>
     <ItemGroup>
+      <PackageReference Include="Microsoft.CodeAnalysis" PrivateAssets="all" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
       <PackageReference Include="Shouldly" />
       <PackageReference Update="coverlet.collector">
         <PrivateAssets>all</PrivateAssets>

@@ -40,7 +40,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
             .Combine(knownSymbols)
             .Select(static (pair, _) => TransformWithSymbol(pair.Left, pair.Right))
             .Where(static t => t is not null)
-            .Select(static (t, _) => t!)
+            .Select(static (t, _) => t!.Value)
             .Collect();
 
         var eventTypeCandidates = eventTypeAttributeSymbol
@@ -71,7 +71,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         return ctx;
     }
 
-    static string? TransformWithSymbol(GeneratorSyntaxContext? ctx, KnownSymbols known) {
+    static (string Name, int Specificity)? TransformWithSymbol(GeneratorSyntaxContext? ctx, KnownSymbols known) {
         if (ctx is not { } context) return null;
 
         // Explicit generic type usage: IMessageConsumeContext<T>
@@ -84,7 +84,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
                 var def = symbol.OriginalDefinition;
                 if (IsTargetInterface(def, known.MessageConsumeContext) && symbol.TypeArguments.Length == 1) {
                     var arg = symbol.TypeArguments[0];
-                    return GetTypeSyntax(arg);
+                    return GetCandidate(arg);
                 }
             }
 
@@ -97,7 +97,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
                     var method = symbolInfo as IMethodSymbol;
                     if (method?.TypeArguments.Length == 1 && IsEventHandlerOnMethod(method, known.BaseEventHandler)) {
                         var tArg = method.TypeArguments[0];
-                        if (tArg.IsReferenceType) return GetTypeSyntax(tArg);
+                        if (tArg.IsReferenceType) return GetCandidate(tArg);
                     }
                 }
                 // If we cannot resolve the method symbol reliably, skip to avoid false positives
@@ -113,7 +113,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
                 var def = symbol.OriginalDefinition;
                 if (IsTargetInterface(def, known.MessageConsumeContext) && symbol.TypeArguments.Length == 1) {
                     var arg = symbol.TypeArguments[0];
-                    return GetTypeSyntax(arg);
+                    return GetCandidate(arg);
                 }
             }
         }
@@ -126,13 +126,27 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
             if (invoke is not null) {
                 foreach (var p in invoke.Parameters) {
                     if (TryExtractTypeArgFromIMessageConsumeContext(p.Type, known.MessageConsumeContext, out var typeArg)) {
-                        return GetTypeSyntax(typeArg);
+                        return GetCandidate(typeArg);
                     }
                 }
             }
         }
 
         return null;
+    }
+
+    static (string Name, int Specificity)? GetCandidate(ITypeSymbol symbol)
+        => GetTypeSyntax(symbol) is { } name ? (name, GetSpecificity(symbol)) : null;
+
+    // A type always has strictly more supertypes (base classes and interfaces) than any of its supertypes has,
+    // so emitting switch arms by this count in descending order keeps the arm of a type ahead of the arms of its
+    // supertypes. Types related only through generic variance or array covariance get the same count.
+    static int GetSpecificity(ITypeSymbol symbol) {
+        var count = symbol.AllInterfaces.Length;
+
+        for (var baseType = symbol.BaseType; baseType != null; baseType = baseType.BaseType) count++;
+
+        return count;
     }
 
     static string? GetTypeSyntax(ITypeSymbol symbol) {
@@ -210,8 +224,17 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         return false;
     }
 
-    static void Generate(SourceProductionContext context, ImmutableArray<string> typeNames) {
-        var distinct = typeNames.Where(static t => !string.IsNullOrWhiteSpace(t)).Distinct().ToArray();
+    static void Generate(SourceProductionContext context, ImmutableArray<(string Name, int Specificity)> candidates) {
+        // Most specific types go first, otherwise the arm of a base type or an interface makes the arms of its subtypes
+        // unreachable (CS8510). The sort is stable, so types of equal specificity keep their discovery order: that is
+        // deterministic, and it keeps arms that are related only through variance in the order they were declared.
+        var distinct = candidates
+            .Where(static c => !string.IsNullOrWhiteSpace(c.Name))
+            .GroupBy(static c => c.Name, StringComparer.Ordinal)
+            .Select(static g => (Name: g.Key, Specificity: g.Max(static c => c.Specificity)))
+            .OrderByDescending(static c => c.Specificity)
+            .Select(static c => c.Name)
+            .ToArray();
 
         if (distinct.Length == 0) {
             // Always emit a marker file so users can verify the generator ran
@@ -249,10 +272,10 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         context.AddSource("MessageConsumeContext_Converters.g.cs", sb.ToString());
     }
 
-    static ImmutableArray<string> DiscoverEventTypes(Compilation compilation, INamedTypeSymbol? eventTypeAttributeSymbol) {
-        if (eventTypeAttributeSymbol is null) return ImmutableArray<string>.Empty;
+    static ImmutableArray<(string Name, int Specificity)> DiscoverEventTypes(Compilation compilation, INamedTypeSymbol? eventTypeAttributeSymbol) {
+        if (eventTypeAttributeSymbol is null) return ImmutableArray<(string Name, int Specificity)>.Empty;
 
-        var builder = ImmutableArray.CreateBuilder<string>();
+        var builder = ImmutableArray.CreateBuilder<(string Name, int Specificity)>();
 
         ProcessNamespace(compilation.Assembly.GlobalNamespace, isReferenced: false);
 
@@ -264,8 +287,7 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
 
         void ProcessType(INamedTypeSymbol type, bool isReferenced) {
             if (HasEventTypeAttribute(type) && (!isReferenced || IsPublicType(type))) {
-                var name = GetTypeSyntax(type);
-                if (name is not null) builder.Add(name);
+                if (GetCandidate(type) is { } candidate) builder.Add(candidate);
             }
 
             foreach (var nt in type.GetTypeMembers()) {
