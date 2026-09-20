@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using Eventuous.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
@@ -29,6 +30,25 @@ public class ActivitySourceTests {
     public async Task ShouldKeepFallbackContextPropagationWithoutOpenTelemetry() {
         Activity.Current = null;
         using var diagnostics = new IsolatedDiagnostics();
+        using var activity = diagnostics.Source.StartActivity("publish", ActivityKind.Producer, default(ActivityContext));
+
+        await Assert.That(activity).IsNotNull();
+        await Assert.That(activity!.TraceId).IsNotEqualTo(default(ActivityTraceId));
+        await Assert.That(activity.IsAllDataRequested).IsTrue();
+        await Assert.That(activity.Recorded).IsFalse();
+    }
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task ShouldKeepFallbackContextPropagationWhenRegistrationRejectsNull(bool initializeSourceFirst) {
+        Activity.Current = null;
+        using var diagnostics = new IsolatedDiagnostics();
+        if (initializeSourceFirst) _ = diagnostics.Source;
+
+        var exception = await Assert.That(() => diagnostics.AddTracing(null!)).Throws<TargetInvocationException>();
+        await Assert.That(exception!.InnerException).IsTypeOf<ArgumentNullException>();
+
         using var activity = diagnostics.Source.StartActivity("publish", ActivityKind.Producer, default(ActivityContext));
 
         await Assert.That(activity).IsNotNull();
