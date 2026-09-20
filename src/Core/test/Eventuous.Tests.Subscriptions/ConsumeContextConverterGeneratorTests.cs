@@ -58,6 +58,34 @@ public class ConsumeContextConverterGeneratorTests {
         await Assert.That(ArmIndex(generated, "global::Foo.IBookingEvent")).IsLessThan(ArmIndex(generated, "global::Foo.IAnyEvent"));
     }
 
+    [Test]
+    public async Task Should_keep_discovery_order_for_types_of_equal_specificity() {
+        // Types related only through generic variance have the same number of supertypes, so their relative order
+        // must stay as declared. Names are chosen so that alphabetical order would put the broader type first.
+        const string source = """
+                              using Eventuous.Subscriptions.Context;
+
+                              namespace Foo;
+
+                              public class Animal;
+
+                              public class Zebra : Animal;
+
+                              public interface IEnvelope<out T>;
+
+                              public static class Usages {
+                                  public static void Zebras(IMessageConsumeContext<IEnvelope<Zebra>> ctx) { }
+
+                                  public static void Animals(IMessageConsumeContext<IEnvelope<Animal>> ctx) { }
+                              }
+                              """;
+
+        var (generated, errors) = RunGenerator(source);
+
+        await Assert.That(errors).IsEmpty();
+        await Assert.That(ArmIndex(generated, "global::Foo.IEnvelope<global::Foo.Zebra>")).IsLessThan(ArmIndex(generated, "global::Foo.IEnvelope<global::Foo.Animal>"));
+    }
+
     static int ArmIndex(string generated, string typeName) {
         var index = generated.IndexOf($"{typeName} =>", StringComparison.Ordinal);
 

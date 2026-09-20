@@ -139,7 +139,8 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         => GetTypeSyntax(symbol) is { } name ? (name, GetSpecificity(symbol)) : null;
 
     // A type always has strictly more supertypes (base classes and interfaces) than any of its supertypes has,
-    // so emitting switch arms by this count in descending order guarantees that no arm is subsumed by an earlier one
+    // so emitting switch arms by this count in descending order keeps the arm of a type ahead of the arms of its
+    // supertypes. Types related only through generic variance or array covariance get the same count.
     static int GetSpecificity(ITypeSymbol symbol) {
         var count = symbol.AllInterfaces.Length;
 
@@ -225,13 +226,13 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
 
     static void Generate(SourceProductionContext context, ImmutableArray<(string Name, int Specificity)> candidates) {
         // Most specific types go first, otherwise the arm of a base type or an interface makes the arms of its subtypes
-        // unreachable (CS8510). Ordering by name keeps the output deterministic.
+        // unreachable (CS8510). The sort is stable, so types of equal specificity keep their discovery order: that is
+        // deterministic, and it keeps arms that are related only through variance in the order they were declared.
         var distinct = candidates
             .Where(static c => !string.IsNullOrWhiteSpace(c.Name))
             .GroupBy(static c => c.Name, StringComparer.Ordinal)
             .Select(static g => (Name: g.Key, Specificity: g.Max(static c => c.Specificity)))
             .OrderByDescending(static c => c.Specificity)
-            .ThenBy(static c => c.Name, StringComparer.Ordinal)
             .Select(static c => c.Name)
             .ToArray();
 
