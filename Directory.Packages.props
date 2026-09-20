@@ -83,7 +83,7 @@
   <ItemGroup Label="References for packable projects">
     <PackageVersion Include="MinVer" Version="7.0.0" PrivateAssets="All" />
     <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0" PrivateAssets="All" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.301" PrivateAssets="All" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.303" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Label="References for test projects">
     <PackageVersion Include="AutoFixture" Version="4.18.1" />

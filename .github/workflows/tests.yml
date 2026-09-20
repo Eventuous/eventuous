@@ -38,6 +38,7 @@ jobs:
             src/Core/test/Eventuous.Tests.Application/Eventuous.Tests.Application.csproj
             src/Core/test/Eventuous.Tests.Subscriptions/Eventuous.Tests.Subscriptions.csproj
             src/Core/test/Eventuous.Tests.Shared.Analyzers/Eventuous.Tests.Shared.Analyzers.csproj
+            src/Diagnostics/test/Eventuous.Tests.Diagnostics/Eventuous.Tests.Diagnostics.csproj
             src/Extensions/test/Eventuous.Tests.DependencyInjection/Eventuous.Tests.DependencyInjection.csproj
             src/Extensions/test/Eventuous.Tests.Extensions.AspNetCore/Eventuous.Tests.Extensions.AspNetCore.csproj
             src/Extensions/test/Eventuous.Tests.Extensions.AspNetCore.Analyzers/Eventuous.Tests.Extensions.AspNetCore.Analyzers.csproj

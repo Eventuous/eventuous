@@ -78,6 +78,7 @@
         <Project Path="src/Diagnostics/src/Eventuous.Diagnostics.OpenTelemetry/Eventuous.Diagnostics.OpenTelemetry.csproj" />
     </Folder>
     <Folder Name="/Diagnostics/test/">
+        <Project Path="src/Diagnostics/test/Eventuous.Tests.Diagnostics/Eventuous.Tests.Diagnostics.csproj" />
         <Project Path="src/Diagnostics/test/Eventuous.Tests.OpenTelemetry/Eventuous.Tests.OpenTelemetry.csproj" />
     </Folder>
     <Folder Name="/Experimental/" />

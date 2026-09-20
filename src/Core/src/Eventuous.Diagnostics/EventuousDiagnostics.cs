@@ -2,19 +2,20 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Diagnostics.Metrics;
-using System.Reflection;
 
 namespace Eventuous.Diagnostics;
 
 public static class EventuousDiagnostics {
-    static readonly AssemblyName AssemblyName = typeof(EventuousDiagnostics).Assembly.GetName();
-    static readonly Version?     Version      = AssemblyName.Version;
-
-    static EventuousDiagnostics() => Enabled = Environment.GetEnvironmentVariable("EVENTUOUS_DISABLE_DIAGS") != "1";
+    static EventuousDiagnostics() {
+        Enabled        = Environment.GetEnvironmentVariable("EVENTUOUS_DISABLE_DIAGS") != "1";
+        ActivitySource = new(InstrumentationName, InstrumentationVersion.Value);
+        listener       = DummyActivityListener.Create();
+        ActivitySource.AddActivityListener(listener);
+    }
 
     public const string InstrumentationName = DiagnosticName.BaseName;
 
-    static ActivityListener? listener;
+    static readonly ActivityListener listener;
 
     public static KeyValuePair<string, object?>[] Tags { get; private set; } = [];
 
@@ -43,22 +44,11 @@ public static class EventuousDiagnostics {
 
     public static void Enable() => Enabled = true;
 
-    [field: AllowNull, MaybeNull]
-    public static ActivitySource ActivitySource {
-        get {
-            if (field != null) return field;
+    public static ActivitySource ActivitySource { get; }
 
-            field = new(InstrumentationName, Version?.ToString());
+    public static void RemoveDummyListener() => listener.Dispose();
 
-            listener = DummyActivityListener.Create();
-            ActivitySource.AddActivityListener(listener);
-            return field;
-        }
-    }
-
-    public static void RemoveDummyListener() => listener?.Dispose();
-
-    public static Meter GetMeter(string name) => new(name, AssemblyName.Version?.ToString());
+    public static Meter GetMeter(string name) => new(name, InstrumentationVersion.Value);
 
     public static string GetMeterName(string category) => $"{InstrumentationName}.{category}";
 }
