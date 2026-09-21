@@ -14,6 +14,11 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
     const string InterfaceName      = "IMessageConsumeContext";
     const string InterfaceFqn       = $"{InterfaceNamespace}.{InterfaceName}`1";
 
+    // Keyword types must be emitted by their metadata names (System.String), because they cannot be qualified with global::
+    static readonly SymbolDisplayFormat TypeNameFormat = SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
+        SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions & ~SymbolDisplayMiscellaneousOptions.UseSpecialTypes
+    );
+
     readonly struct KnownSymbols(INamedTypeSymbol? messageConsumeContext, INamedTypeSymbol? baseEventHandler) {
         public INamedTypeSymbol? MessageConsumeContext { get; } = messageConsumeContext;
         public INamedTypeSymbol? BaseEventHandler      { get; } = baseEventHandler;
@@ -142,7 +147,9 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
     // so emitting switch arms by this count in descending order keeps the arm of a type ahead of the arms of its
     // supertypes. Types related only through generic variance or array covariance get the same count.
     static int GetSpecificity(ITypeSymbol symbol) {
-        var count = symbol.AllInterfaces.Length;
+        // An interface converts to object although object is not among its base types, so count it explicitly.
+        // It keeps object the only type with no supertypes, so its arm always goes last.
+        var count = symbol.AllInterfaces.Length + (symbol.TypeKind == TypeKind.Interface ? 1 : 0);
 
         for (var baseType = symbol.BaseType; baseType != null; baseType = baseType.BaseType) count++;
 
@@ -153,12 +160,15 @@ public sealed class ConsumeContextConverterGenerator : IIncrementalGenerator {
         // Skip unresolved generic type parameters (e.g. T in IMessageConsumeContext<T>)
         if (symbol.TypeKind == TypeKind.TypeParameter) return null;
 
+        // Skip dynamic as it can't be used in a type pattern
+        if (symbol.TypeKind == TypeKind.Dynamic) return null;
+
         // Skip types that are inaccessible from module-level generated code
         // (e.g. private nested classes can't be referenced from the generated converter)
         if (!IsAccessibleFromGeneratedCode(symbol)) return null;
 
         // Use fully qualified name with global:: prefix
-        var name = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var name = symbol.ToDisplayString(TypeNameFormat);
         return name.StartsWith("global::", StringComparison.Ordinal) ? name : $"global::{name}";
     }
 

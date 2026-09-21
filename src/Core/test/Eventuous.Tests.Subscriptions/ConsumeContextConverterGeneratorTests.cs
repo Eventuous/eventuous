@@ -86,6 +86,75 @@ public class ConsumeContextConverterGeneratorTests {
         await Assert.That(ArmIndex(generated, "global::Foo.IEnvelope<global::Foo.Zebra>")).IsLessThan(ArmIndex(generated, "global::Foo.IEnvelope<global::Foo.Animal>"));
     }
 
+    [Test]
+    [Arguments("string", "global::System.String")]
+    [Arguments("object", "global::System.Object")]
+    [Arguments("string[]", "global::System.String[]")]
+    public async Task Should_emit_compilable_arm_for_keyword_message_type(string messageType, string expectedArmType) {
+        // Issue #593: keyword types have no namespace to qualify, and 'global::string' is not valid C#
+        var source = $$"""
+                       using Eventuous.Subscriptions.Context;
+
+                       namespace Foo;
+
+                       public static class Usages {
+                           public static void Use(IMessageConsumeContext<{{messageType}}> ctx) { }
+                       }
+                       """;
+
+        var (generated, errors) = RunGenerator(source);
+
+        await Assert.That(errors).IsEmpty();
+        await Assert.That(ArmIndex(generated, expectedArmType)).IsGreaterThanOrEqualTo(0);
+    }
+
+    [Test]
+    public async Task Should_not_emit_arm_for_dynamic_message_type() {
+        // 'dynamic' can be neither qualified nor used in a type pattern
+        const string source = """
+                              using Eventuous;
+                              using Eventuous.Subscriptions.Context;
+
+                              namespace Foo;
+
+                              [EventType("V1.RoomBooked")]
+                              public record RoomBooked;
+
+                              public static class Usages {
+                                  public static void Use(IMessageConsumeContext<dynamic> ctx) { }
+                              }
+                              """;
+
+        var (generated, errors) = RunGenerator(source);
+
+        await Assert.That(errors).IsEmpty();
+        await Assert.That(generated).DoesNotContain("dynamic");
+    }
+
+    [Test]
+    public async Task Should_emit_object_after_interfaces() {
+        // Issue #594: an interface converts to object although object is not among its base types,
+        // and object is discovered first here
+        const string source = """
+                              using Eventuous.Subscriptions.Context;
+
+                              namespace Foo;
+
+                              public interface IFoo;
+
+                              public static class Usages {
+                                  public static void Any(IMessageConsumeContext<object> ctx) { }
+
+                                  public static void Foo(IMessageConsumeContext<IFoo> ctx) { }
+                              }
+                              """;
+
+        var (generated, errors) = RunGenerator(source);
+
+        await Assert.That(errors).IsEmpty();
+        await Assert.That(ArmIndex(generated, "global::Foo.IFoo")).IsLessThan(ArmIndex(generated, "global::System.Object"));
+    }
+
     static int ArmIndex(string generated, string typeName) {
         var index = generated.IndexOf($"{typeName} =>", StringComparison.Ordinal);
 
