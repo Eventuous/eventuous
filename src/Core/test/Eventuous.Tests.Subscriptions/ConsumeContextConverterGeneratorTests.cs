@@ -90,6 +90,7 @@ public class ConsumeContextConverterGeneratorTests {
     [Arguments("string", "global::System.String")]
     [Arguments("object", "global::System.Object")]
     [Arguments("string[]", "global::System.String[]")]
+    [Arguments("System.Collections.Generic.List<string>", "global::System.Collections.Generic.List<global::System.String>")]
     public async Task Should_emit_compilable_arm_for_keyword_message_type(string messageType, string expectedArmType) {
         // Issue #593: keyword types have no namespace to qualify, and 'global::string' is not valid C#
         var source = $$"""
