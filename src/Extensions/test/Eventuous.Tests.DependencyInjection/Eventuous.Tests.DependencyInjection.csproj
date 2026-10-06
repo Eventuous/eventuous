@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <ProjectReference Include="$(LocalRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj" />
+        <ProjectReference Include="$(SrcRoot)\Testing\src\Eventuous.Testing\Eventuous.Testing.csproj" />
     </ItemGroup>
 
     <ItemGroup>
