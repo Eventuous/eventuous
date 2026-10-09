@@ -1,6 +1,7 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Eventuous.Diagnostics;
@@ -37,7 +38,7 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
     public SubscriptionMetrics(IEnumerable<GetSubscriptionEndOfStream> measures) {
         var getGaps = measures.ToArray();
 
-        Dictionary<string, EndOfStream> streams = new();
+        ConcurrentDictionary<string, EndOfStream> streams = new();
 
         ObserveMetric<long> observeGapValues = () => ObserveGapValues(getGaps);
 
@@ -74,11 +75,39 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
                 x => Measure(Math.Round((_checkpointMetrics.GetLastTimestamp(x.SubscriptionId) - x.Timestamp).TotalSeconds), x.SubscriptionId)
             );
 
-        IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionEndOfStream[] getEndOfStreams)
-            => getEndOfStreams
-                .Select(endOfStream => GetGap(endOfStream))
-                .Where(x => x.Item1 != EndOfStream.Invalid)
-                .Select(x => Measure((long)(x.Item1.Position - x.Item2), x.Item1.SubscriptionId));
+        IEnumerable<Measurement<long>> ObserveGapValues(GetSubscriptionEndOfStream[] getEndOfStreams) {
+            // Collection-local: neither successful reads nor failures survive into the next scrape.
+            Dictionary<object, EndOfStream> sources = new();
+            List<Measurement<long>> values = [];
+
+            foreach (var measure in getEndOfStreams) {
+                var registration = measure.Target as RegisteredSubscriptionMeasure;
+                EndOfStream endOfStream;
+
+                if (registration is null) {
+                    endOfStream = ReadEndOfStream(measure);
+                } else {
+                    if (!sources.TryGetValue(registration.SourceKey, out endOfStream)) {
+                        endOfStream = ReadEndOfStream(measure);
+                        sources.Add(registration.SourceKey, endOfStream);
+                    }
+
+                    if (endOfStream != EndOfStream.Invalid)
+                        endOfStream = endOfStream with { SubscriptionId = registration.SubscriptionId };
+                }
+
+                if (endOfStream == EndOfStream.Invalid) continue;
+
+                streams[endOfStream.SubscriptionId] = endOfStream;
+                var lastProcessed = _checkpointMetrics.GetLastCommitPosition(endOfStream.SubscriptionId);
+                // Checkpoints can advance beyond the shared tail while other sources are read.
+                // Such a subscription is caught up to this observation, not negatively behind.
+                var gap = endOfStream.Position > lastProcessed ? endOfStream.Position - lastProcessed : 0;
+                values.Add(Measure((long)gap, endOfStream.SubscriptionId));
+            }
+
+            return values;
+        }
 
         Measurement<T> Measure<T>(T value, string subscriptionId) where T : struct {
             if (_customTags.Length == 0) {
@@ -106,21 +135,17 @@ public sealed class SubscriptionMetrics : IWithCustomTags, IDisposable {
             return tags;
         }
 
-        (EndOfStream, ulong) GetGap(GetSubscriptionEndOfStream getEndOfStream) {
+        EndOfStream ReadEndOfStream(GetSubscriptionEndOfStream getEndOfStream) {
             using var cts = new CancellationTokenSource(500);
 
             try {
                 var t = getEndOfStream(cts.Token);
 
-                var endOfStream = t.IsCompletedSuccessfully ? t.Result : t.NoContext().GetAwaiter().GetResult();
-                streams[endOfStream.SubscriptionId] = endOfStream;
-                var lastProcessed = _checkpointMetrics.GetLastCommitPosition(endOfStream.SubscriptionId);
-
-                return (endOfStream, lastProcessed);
+                return t.IsCompletedSuccessfully ? t.Result : t.NoContext().GetAwaiter().GetResult();
             } catch (Exception e) {
                 Log.MetricCollectionFailed("Subscription Gap", e);
 
-                return (EndOfStream.Invalid, 0);
+                return EndOfStream.Invalid;
             }
         }
     }

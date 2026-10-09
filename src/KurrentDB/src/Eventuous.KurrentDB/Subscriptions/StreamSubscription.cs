@@ -161,6 +161,11 @@ public class StreamSubscription : KurrentDBCatchUpSubscriptionBase<StreamSubscri
         );
     }
 
+    /// <inheritdoc/>
+    // Derived subscriptions must opt in explicitly: their measure may read a different source.
+    public virtual object? EndOfStreamSourceKey
+        => GetType() == typeof(StreamSubscription) ? (typeof(StreamSubscriptionMeasure), (object)Client, Options.StreamName) : null;
+
     /// <summary>
     /// Returns a measure delegate for this subscription
     /// </summary>

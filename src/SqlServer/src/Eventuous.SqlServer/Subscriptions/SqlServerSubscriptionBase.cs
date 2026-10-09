@@ -33,6 +33,10 @@ public abstract class SqlServerSubscriptionBase<T> : SqlSubscriptionBase<T, SqlC
         _connectionString = Ensure.NotEmptyString(connectionString);
     }
 
+    // The concrete type also isolates custom subscriptions that change the end-of-stream query.
+    protected object GetEndOfStreamSourceKey(string? streamName)
+        => (GetType(), _connectionString, Schema.SchemaName, streamName);
+
     protected override async ValueTask<SqlConnection> OpenConnection(CancellationToken cancellationToken)
         => await ConnectionFactory.GetConnection(_connectionString, cancellationToken).NoContext();
 

@@ -33,6 +33,10 @@ public class SqlServerAllStreamSubscription(
         metaSerializer,
         connectionOptions
     ) {
+    // Derived subscriptions may customize the query or connection; sharing must be explicit.
+    public override object? EndOfStreamSourceKey
+        => GetType() == typeof(SqlServerAllStreamSubscription) ? GetEndOfStreamSourceKey(null) : null;
+
     protected override SqlCommand PrepareCommand(SqlConnection connection, long start)
         => connection.GetStoredProcCommand(Schema.ReadAllForwards)
             .Add("@from_position", SqlDbType.BigInt, start + 1)

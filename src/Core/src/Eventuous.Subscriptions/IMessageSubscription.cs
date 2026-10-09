@@ -29,4 +29,12 @@ public interface IMessageSubscription {
 
 public interface IMeasuredSubscription {
     GetSubscriptionEndOfStream GetMeasure();
+
+    /// <summary>
+    /// Identifies the source read by <see cref="GetMeasure"/>. Equal keys share one end-of-stream
+    /// read per metric collection. Include the store/client, schema and stream (and any other
+    /// setting that changes the result). Keys must be immutable and must not contain subscription IDs.
+    /// Null keeps independent reads for existing implementations. Keys are never exported as tags.
+    /// </summary>
+    object? EndOfStreamSourceKey => null;
 }

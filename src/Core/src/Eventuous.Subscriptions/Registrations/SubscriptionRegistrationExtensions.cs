@@ -73,9 +73,14 @@ public static class SubscriptionRegistrationExtensions {
             SubscriptionBuilder<T, TOptions> GetBuilder(IServiceProvider sp) => sp.GetSubscriptionBuilder<T, TOptions>(subscriptionId);
 
             GetSubscriptionEndOfStream GetEndOfStream(IServiceProvider sp) {
-                var subscription = GetBuilder(sp).ResolveSubscription(sp) as IMeasuredSubscription;
+                var resolved = GetBuilder(sp).ResolveSubscription(sp);
+                var subscription = (IMeasuredSubscription)resolved;
 
-                return subscription!.GetMeasure();
+                var measure = subscription.GetMeasure();
+
+                return subscription.EndOfStreamSourceKey is { } key
+                    ? new RegisteredSubscriptionMeasure(resolved.SubscriptionId, key, measure).GetEndOfStream
+                    : measure;
             }
         }
     }

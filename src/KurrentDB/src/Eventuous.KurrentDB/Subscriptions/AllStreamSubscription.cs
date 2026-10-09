@@ -277,6 +277,11 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
         return HandleInternal(run, context).AsTask();
     }
 
+    /// <inheritdoc/>
+    // Derived subscriptions must opt in explicitly: their measure may read a different source.
+    public virtual object? EndOfStreamSourceKey
+        => GetType() == typeof(AllStreamSubscription) ? (typeof(AllStreamSubscriptionMeasure), (object)Client) : null;
+
     /// <summary>
     /// Returns a measure delegate for the subscription
     /// </summary>

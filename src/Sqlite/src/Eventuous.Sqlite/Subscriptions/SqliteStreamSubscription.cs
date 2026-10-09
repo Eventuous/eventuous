@@ -33,6 +33,10 @@ public class SqliteStreamSubscription(
         metaSerializer,
         connectionOptions
     ) {
+    // Derived subscriptions may customize the query or connection; sharing must be explicit.
+    public override object? EndOfStreamSourceKey
+        => GetType() == typeof(SqliteStreamSubscription) ? GetEndOfStreamSourceKey(_streamName) : null;
+
     protected override SqliteCommand PrepareCommand(SqliteConnection connection, long start)
         => connection.GetTextCommand(
                 $"""

@@ -48,7 +48,8 @@ public static class ServiceCollectionExtensions {
                     configureBuilder?.Invoke(sp, builder);
                 },
                 connectionLifetime,
-                dataSourceLifetime
+                dataSourceLifetime,
+                shareSourceIdentity: configureBuilder is null
             );
             services.AddSingleton(options);
             services.AddSingleton<PostgresStore>();
@@ -83,7 +84,8 @@ public static class ServiceCollectionExtensions {
                     configureBuilder?.Invoke(sp, builder);
                 },
                 connectionLifetime,
-                dataSourceLifetime
+                dataSourceLifetime,
+                shareSourceIdentity: configureBuilder is null
             );
 
             services.AddSingleton<PostgresStore>();
@@ -96,8 +98,10 @@ public static class ServiceCollectionExtensions {
                 Func<IServiceProvider, string>                     getConnectionString,
                 Action<IServiceProvider, NpgsqlDataSourceBuilder>? configureDataSource,
                 ServiceLifetime                                    connectionLifetime,
-                ServiceLifetime                                    dataSourceLifetime
+                ServiceLifetime                                    dataSourceLifetime,
+                bool                                               shareSourceIdentity
             ) {
+            var registrationIdentity = new object();
             services.TryAdd(
                 new ServiceDescriptor(
                     typeof(NpgsqlDataSource),
@@ -106,7 +110,12 @@ public static class ServiceCollectionExtensions {
                         dataSourceBuilder.UseLoggerFactory(sp.GetService<ILoggerFactory>());
                         configureDataSource?.Invoke(sp, dataSourceBuilder);
 
-                        return dataSourceBuilder.Build();
+                        var dataSource = dataSourceBuilder.Build();
+                        // A user callback may change session state or credentials on each resolution.
+                        // Only the built-in configuration is known to produce equivalent reads.
+                        if (shareSourceIdentity)
+                            PostgresSourceIdentity.Register(dataSource, registrationIdentity, dataSourceBuilder.ConnectionString);
+                        return dataSource;
                     },
                     dataSourceLifetime
                 )

@@ -34,6 +34,10 @@ public class PostgresAllStreamSubscription(
         metaSerializer,
         storeOptions
     ) {
+    // Derived subscriptions may customize the query or connection; sharing must be explicit.
+    public override object? EndOfStreamSourceKey
+        => GetType() == typeof(PostgresAllStreamSubscription) ? GetEndOfStreamSourceKey(null) : null;
+
     protected override NpgsqlCommand PrepareCommand(NpgsqlConnection connection, long start)
         => connection.GetCommand(Schema.ReadAllForwards)
             .Add("_from_position", NpgsqlDbType.Bigint, start + 1)

@@ -327,6 +327,9 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     [StructLayout(LayoutKind.Auto)]
     readonly record struct PollingResult(bool Continue, bool Retry, int ReceivedEvents);
 
+    /// <summary>Override to share end-of-stream reads for subscriptions with the same source.</summary>
+    public virtual object? EndOfStreamSourceKey => null;
+
     GetSubscriptionEndOfStream IMeasuredSubscription.GetMeasure() => GetSubscriptionEndOfStream;
 
     /// <summary>

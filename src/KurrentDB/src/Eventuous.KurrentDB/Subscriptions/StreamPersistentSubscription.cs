@@ -110,6 +110,11 @@ public class StreamPersistentSubscription : PersistentSubscriptionBase<StreamPer
     protected override ulong GetContextStreamPosition(ResolvedEvent re) => re.Event.EventNumber;
 
     /// <inheritdoc/>
+    // Derived subscriptions must opt in explicitly: their measure may read a different source.
+    public virtual object? EndOfStreamSourceKey
+        => GetType() == typeof(StreamPersistentSubscription) ? (typeof(StreamSubscriptionMeasure), SourceClient, Options.StreamName) : null;
+
+    /// <inheritdoc/>
     public GetSubscriptionEndOfStream GetMeasure()
         => new StreamSubscriptionMeasure(Options.SubscriptionId, Options.StreamName, Client).GetEndOfStream;
 }

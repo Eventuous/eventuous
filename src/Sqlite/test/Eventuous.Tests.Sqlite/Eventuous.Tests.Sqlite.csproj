@@ -14,7 +14,7 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="$(LocalRoot)\Eventuous.Sqlite\Eventuous.Sqlite.csproj"/>
+        <ProjectReference Include="$(LocalRoot)\Eventuous.Sqlite\Eventuous.Sqlite.csproj" Aliases="global,Sqlite"/>
         <ProjectReference Include="$(DiagRoot)\Eventuous.Diagnostics.Logging\Eventuous.Diagnostics.Logging.csproj"/>
         <ProjectReference Include="$(ExtRoot)\Eventuous.Extensions.DependencyInjection\Eventuous.Extensions.DependencyInjection.csproj"/>
         <ProjectReference Include="$(CoreTestRoot)\Eventuous.Tests.Persistence.Base\Eventuous.Tests.Persistence.Base.csproj"/>

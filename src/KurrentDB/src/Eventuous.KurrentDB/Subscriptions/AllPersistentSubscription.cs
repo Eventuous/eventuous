@@ -120,6 +120,11 @@ public class AllPersistentSubscription : PersistentSubscriptionBase<AllPersisten
     /// <inheritdoc />
     protected override ulong GetContextStreamPosition(ResolvedEvent re) => re.Event.Position.CommitPosition;
 
+    /// <inheritdoc/>
+    // Derived subscriptions must opt in explicitly: their measure may read a different source.
+    public virtual object? EndOfStreamSourceKey
+        => GetType() == typeof(AllPersistentSubscription) ? (typeof(AllStreamSubscriptionMeasure), SourceClient) : null;
+
     /// <summary>
     /// Returns a measure callback for the subscription
     /// </summary>

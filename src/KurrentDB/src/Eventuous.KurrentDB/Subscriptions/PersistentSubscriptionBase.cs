@@ -40,6 +40,9 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
     /// </summary>
     protected IMetadataSerializer MetadataSerializer { get; }
 
+    /// <summary>Identity of the supplied client used to share source-position reads.</summary>
+    protected object SourceClient { get; }
+
     readonly HandleEventProcessingFailure _handleEventProcessingFailure;
 
     /// <summary>
@@ -60,6 +63,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             IMetadataSerializer? metaSerializer
         )
         : base(options, consumePipe, loggerFactory, eventSerializer) {
+        SourceClient       = client;
         Client             = client;
         MetadataSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
 
@@ -89,6 +93,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             IMetadataSerializer?                   metaSerializer
         )
         : base(options, consumePipe, loggerFactory, eventSerializer) {
+        SourceClient       = client;
         SubscriptionClient = client;
         MetadataSerializer = metaSerializer ?? DefaultMetadataSerializer.Instance;
         var settings   = client.GetSettings().Copy();

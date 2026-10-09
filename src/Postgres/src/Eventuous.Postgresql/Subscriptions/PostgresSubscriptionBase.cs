@@ -40,6 +40,10 @@ public abstract class PostgresSubscriptionBase<T>(
 
     protected NpgsqlDataSource DataSource { get; } = dataSource;
 
+    // The concrete type also isolates custom subscriptions that change the end-of-stream query.
+    protected object GetEndOfStreamSourceKey(string? streamName)
+        => (GetType(), PostgresSourceIdentity.Get(DataSource), Schema.Name, streamName);
+
     protected override async ValueTask<NpgsqlConnection> OpenConnection(CancellationToken cancellationToken)
         => await DataSource.OpenConnectionAsync(cancellationToken).NoContext();
 
