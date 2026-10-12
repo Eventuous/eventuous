@@ -71,15 +71,19 @@ public class HandlerFailureSpec {
         cts.CancelAfter(TimeSpan.FromSeconds(30));
 
         try {
-            while (_handler.Handled.Count < EventCount) await Task.Delay(100, cts.Token);
-        } catch (OperationCanceledException) when (cts.Token.IsCancellationRequested) {
+            // Rejection can redeliver the failed message before the supervisor reconnects.
+            // Wait for both message recovery and the lifecycle callbacks asserted below.
+            while (_handler.Handled.Count < EventCount || Volatile.Read(ref _dropped) < 1 || Volatile.Read(ref _subscribed) < 2) {
+                await Task.Delay(100, cts.Token).ConfigureAwait(false);
+            }
+        } catch (OperationCanceledException) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested) {
             // Fall through to the assertions, which say more about what went wrong than a cancellation would.
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         await Assert.That(_handler.HasFailed).IsTrue();
 
-        // The event the handler threw on was never acknowledged, so only a resubscribe can bring it back.
-        // Its absence is the regression: the subscription keeps its connection and quietly loses the message.
+        // Verify the failed event was redelivered, not just that subsequent events were handled.
         await Assert.That(_handler.Handled.Order()).IsEquivalentTo(testEvents.Select(x => x.Number).Order());
 
         await Assert.That(Volatile.Read(ref _dropped)).IsGreaterThanOrEqualTo(1);

@@ -36,14 +36,23 @@ public abstract class MetricsTestsBase(IMetricsSubscriptionFixtureBase fixture) 
     static MetricValue? GetValue(MetricValue[] values, string metric) => values.FirstOrDefault(x => x.Name == metric);
 
     [Before(Test)]
-    public async Task InitializeAsync() {
+    public async Task InitializeAsync(CancellationToken cancellationToken) {
         var testEvents = TestEvent.CreateMany(fixture.Count);
-        await fixture.Producer.Produce(fixture.Stream, testEvents, new());
+        await fixture.Producer.Produce(fixture.Stream, testEvents, new(), cancellationToken: cancellationToken);
 
-        while (fixture.Counter.Count < fixture.Count / 2) {
-            await Task.Delay(100);
+        var expectedCount = fixture.Count / 2;
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(30));
+
+        try {
+            while (fixture.Counter.Count < expectedCount) {
+                await Task.Delay(100, cts.Token);
+            }
+        } catch (OperationCanceledException ex) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested) {
+            throw new TimeoutException($"Expected at least {expectedCount} consumed events within 30 seconds, but observed {fixture.Counter.Count}.", ex);
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         fixture.Exporter.Collect(Timeout.Infinite);
         _values = fixture.Exporter.CollectValues();
 

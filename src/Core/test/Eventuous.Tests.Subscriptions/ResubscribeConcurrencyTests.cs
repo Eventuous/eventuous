@@ -14,7 +14,7 @@ namespace Eventuous.Tests.Subscriptions;
 /// </summary>
 public class ResubscribeConcurrencyTests {
     /// <summary>
-    /// A whole page of messages fails at once, so Dropped is called once per message, all in one drop window.
+    /// A whole page of messages is in flight before any handler fails, exercising one concurrent drop window.
     /// </summary>
     [Test]
     public async Task Burst_of_nacks_produces_a_single_resubscribe(CancellationToken ct) {
@@ -22,9 +22,9 @@ public class ResubscribeConcurrencyTests {
 
         const int messageCount = 8;
 
-        var handler = new DeferringHandler(_ => true);
+        var handler = new BurstFailingHandler(messageCount, ct);
 
-        var subscription = new PumpingSubscription(
+        await using var subscription = new PumpingSubscription(
             new() {
                 SubscriptionId            = "burst-of-nacks",
                 ThrowOnError              = true,
@@ -34,7 +34,7 @@ public class ResubscribeConcurrencyTests {
             new NoOpCheckpointStore(),
             new ConsumePipe().AddDefaultConsumer(handler),
             logs,
-            concurrencyLimit: 4,
+            concurrencyLimit: messageCount,
             // Only the first run delivers — a replacement redelivering the same messages would open a second drop window.
             pump: async (sub, transport, start, run) => {
                 if (transport.Index == 0) {
@@ -45,22 +45,29 @@ public class ResubscribeConcurrencyTests {
             }
         ) { ResubscribeDelay = TimeSpan.FromMilliseconds(500) };
 
-        await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
+        try {
+            await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
 
-        // All of them have to fail before the resubscribe fires, or this proves nothing about concurrent drops.
-        (await Wait.Until(() => handler.HandledCount >= messageCount, TimeSpan.FromSeconds(5)))
-            .ShouldBeTrue($"all {messageCount} messages should have been handled and nacked, got {handler.HandledCount}");
+            // A first nack can cancel the pump. Get every delivery into its handler before allowing any nack.
+            await handler.AllStarted.WaitAsync(TimeSpan.FromSeconds(5), ct).NoContext();
+            handler.Release();
 
-        (await Wait.Until(() => subscription.SubscribeCalls > 1, TimeSpan.FromSeconds(5))).ShouldBeTrue("the subscription should have resubscribed");
+            (await Wait.Until(() => handler.FailedCount == messageCount, TimeSpan.FromSeconds(5)))
+                .ShouldBeTrue($"all {messageCount} in-flight handlers should have failed, got {handler.FailedCount}");
 
-        // Give any extra resubscribes scheduled by the other nacks time to show up before asserting.
-        await Task.Delay(TimeSpan.FromSeconds(1), ct);
+            (await Wait.Until(() => subscription.SubscribeCalls > 1, TimeSpan.FromSeconds(5))).ShouldBeTrue("the subscription should have resubscribed");
 
-        await subscription.Unsubscribe(_ => { }, ct);
+            // Give any extra resubscribes scheduled by the other nacks time to show up before asserting.
+            await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
-        subscription.SubscribeCalls.ShouldBe(2, "one initial subscribe plus exactly one resubscribe for the whole drop cycle");
-        logs.Count("Resubscribing").ShouldBe(1, "a burst of nacks is one drop cycle, so it gets one 'Resubscribing' line");
-        logs.Count("Dropped:").ShouldBe(1, "the drop is reported once per cycle, not once per failing message");
+            await subscription.Unsubscribe(_ => { }, ct);
+
+            subscription.SubscribeCalls.ShouldBe(2, "one initial subscribe plus exactly one resubscribe for the whole drop cycle");
+            logs.Count("Resubscribing").ShouldBe(1, "a burst of nacks is one drop cycle, so it gets one 'Resubscribing' line");
+            logs.Count("Dropped:").ShouldBe(1, "the drop is reported once per cycle, not once per failing message");
+        } finally {
+            handler.Release();
+        }
     }
 
     /// <summary>
@@ -802,6 +809,31 @@ public class ResubscribeConcurrencyTests {
 
                 if (observed >= live) return;
             } while (Interlocked.CompareExchange(ref _maxLivePumps, live, observed) != observed);
+        }
+    }
+
+    /// <summary>
+    /// Holds all deliveries until the test releases the burst of failures.
+    /// </summary>
+    sealed class BurstFailingHandler(int messageCount, CancellationToken testCancellation) : BaseEventHandler {
+        readonly TaskCompletionSource _allStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        readonly TaskCompletionSource _release    = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int _started;
+        int _failed;
+
+        public Task AllStarted => _allStarted.Task;
+        public int FailedCount => Volatile.Read(ref _failed);
+
+        public void Release() => _release.TrySetResult();
+
+        public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
+            if (Interlocked.Increment(ref _started) == messageCount) _allStarted.TrySetResult();
+
+            // All in-flight operations must fail even if the first nack cancels their subscription run.
+            await _release.Task.WaitAsync(testCancellation).NoContext();
+            Interlocked.Increment(ref _failed);
+
+            throw new InvalidOperationException($"Precondition not met for {context.Stream}:{context.GlobalPosition}");
         }
     }
 

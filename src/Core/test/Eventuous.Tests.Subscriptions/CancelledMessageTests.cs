@@ -16,6 +16,8 @@ namespace Eventuous.Tests.Subscriptions;
 /// event in flight when a run's own teardown cancelled a parked handler.
 /// </summary>
 public class CancelledMessageTests {
+    static readonly TimeSpan RecoveryTimeout = TimeSpan.FromSeconds(30);
+
     /// <summary>
     /// A handler cancelled because the run is ending was never given a verdict, so it must not be
     /// acknowledged — only redelivered once the successor run comes up.
@@ -40,20 +42,20 @@ public class CancelledMessageTests {
         // The default retry delay is 2s; a short one keeps the test deterministic and fast.
         options.RetryDelay = TimeSpan.FromMilliseconds(20);
 
-        var subscription = new SingleEventSubscription(options, checkpointStore, pipe, loggerFactory);
+        await using var subscription = new SingleEventSubscription(options, checkpointStore, pipe, loggerFactory);
 
         await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
 
-        (await Wait.Until(() => handler.Parked.IsCompleted, TimeSpan.FromSeconds(5)))
-            .ShouldBeTrue("the handler should have received the first delivery and parked on it");
+        await WaitFor(handler.Parked, "the handler to receive the first delivery", ct).NoContext();
 
         committed.ShouldBeEmpty("nothing should commit while the only delivery so far is still parked, undecided");
 
         subscription.FailCurrentRun();
 
+        await WaitFor(subscription.RedeliveryQueued, "the successor run to queue redelivery", ct).NoContext();
+
         // The handler blocks again on redelivery, so the test can inspect the checkpoint before it's allowed to succeed.
-        (await Wait.Until(() => handler.RedeliveryStarted.IsCompleted, TimeSpan.FromSeconds(5)))
-            .ShouldBeTrue("the successor run should redeliver the event the cancelled handler never finished");
+        await WaitFor(handler.RedeliveryStarted, "the handler to start redelivery", ct).NoContext();
 
         // If the fix regresses, DelayedConsume acknowledges the cancelled delivery and this fires.
         committed.ShouldBeEmpty("the checkpoint must never move past an event whose only delivery was cancelled by shutdown, not decided");
@@ -89,7 +91,7 @@ public class CancelledMessageTests {
             CheckpointCommitDelayMs   = 10
         };
 
-        var subscription = new SingleEventSubscription(options, checkpointStore, pipe, loggerFactory);
+        await using var subscription = new SingleEventSubscription(options, checkpointStore, pipe, loggerFactory);
 
         await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
 
@@ -98,8 +100,13 @@ public class CancelledMessageTests {
 
         await subscription.Unsubscribe(_ => { }, ct);
     }
-
-
+    static async Task WaitFor(Task signal, string phase, CancellationToken ct) {
+        try {
+            await signal.WaitAsync(RecoveryTimeout, ct).NoContext();
+        } catch (TimeoutException exception) {
+            throw new TimeoutException($"Timed out after {RecoveryTimeout.TotalSeconds} seconds waiting for {phase}.", exception);
+        }
+    }
 
     record TestOptions : SubscriptionWithCheckpointOptions;
 
@@ -123,6 +130,10 @@ public class CancelledMessageTests {
             null
         ) {
         SubscriptionRun? _run;
+        int              _deliveriesQueued;
+        readonly TaskCompletionSource _redeliveryQueued = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task RedeliveryQueued => _redeliveryQueued.Task;
 
         /// <summary>
         /// Fails the current run, standing in for a transport drop or any other reason the supervisor tears a run down.
@@ -167,6 +178,8 @@ public class CancelledMessageTests {
 
             await HandleInternal(run, context).NoContext();
 
+            if (Interlocked.Increment(ref _deliveriesQueued) == 2) _redeliveryQueued.TrySetResult();
+
             // Parked rather than returned: a pump ending while its connection is up is read as a drop.
             await run.Ended.NoContext();
         }
@@ -199,7 +212,7 @@ public class CancelledMessageTests {
                     break;
                 case 2:
                     _redeliveryStarted.TrySetResult();
-                    await _proceedWithSuccess.Task.NoContext();
+                    await _proceedWithSuccess.Task.WaitAsync(context.CancellationToken).NoContext();
                     break;
             }
 

@@ -1,30 +1,33 @@
 using Eventuous.KurrentDB.Subscriptions;
 using Eventuous.Projections.MongoDB;
 using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.Projections.MongoDB.Fixtures;
+using Eventuous.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using static Microsoft.Extensions.Hosting.Host;
 
 namespace Eventuous.Tests.Projections.MongoDB;
 
 public abstract class ProjectionTestBase {
-    readonly string       _subscriptionId;
+    protected string SubscriptionId { get; }
     readonly IHostBuilder _builder;
 
     protected IHost Host = null!;
 
     protected ProjectionTestBase(string subscriptionId) {
-        _subscriptionId      = subscriptionId;
+        SubscriptionId = subscriptionId;
         _builder = CreateDefaultBuilder().ConfigureLogging(cfg => cfg.ForTests());
     }
 
     protected abstract void ConfigureServices(IServiceCollection services, string subscriptionId);
 
     public async Task InitializeAsync() {
-        _builder.ConfigureServices(collection => ConfigureServices(collection, _subscriptionId));
+        _builder.ConfigureServices(collection => ConfigureServices(collection, SubscriptionId));
         Host = _builder.Build();
         Host.Services.AddEventuousLogs();
         await Host.StartAsync();
@@ -49,16 +52,34 @@ public class ProjectionTestBase<TProjection>(string subscriptionId, IntegrationF
 
     public string CreateId() => new(Guid.NewGuid().ToString("N"));
 
-    public async Task WaitForPosition(ulong position) {
-        var checkpointStore = Host.Services.GetRequiredService<ICheckpointStore>();
-        var count           = 100;
+    public async Task WaitForPosition(ulong position, CancellationToken cancellationToken) {
+        var options = Host.Services.GetRequiredService<IOptions<MongoCheckpointStoreOptions>>().Value;
+        var checkpoints = Fixture.Mongo.GetCollection<StoredCheckpoint>(options.CollectionName);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(30));
 
-        while (count-- > 0) {
-            var checkpoint = await checkpointStore.GetLastCheckpoint(nameof(ProjectWithBuilder), default);
+        ulong? observedPosition = null;
 
-            if (checkpoint.Position.HasValue && checkpoint.Position.Value >= position) break;
+        try {
+            while (true) {
+                // GetLastCheckpoint initializes the store's write subject. Poll storage without replacing the active writer.
+                var checkpoint = await checkpoints.AsQueryable()
+                    .Where(x => x.Id == SubscriptionId)
+                    .SingleOrDefaultAsync(cts.Token)
+                    .NoContext();
+                observedPosition = checkpoint?.Position;
 
-            await Task.Delay(100);
+                if (observedPosition.HasValue && observedPosition.Value >= position) return;
+
+                await Task.Delay(100, cts.Token).NoContext();
+            }
+        } catch (OperationCanceledException ex) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested) {
+            throw new TimeoutException(
+                $"Expected subscription '{SubscriptionId}' to reach checkpoint {position} within 30 seconds, but observed {observedPosition?.ToString() ?? "no checkpoint"}.",
+                ex
+            );
         }
     }
+
+    record StoredCheckpoint(string Id, ulong? Position);
 }

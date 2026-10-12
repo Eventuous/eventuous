@@ -19,9 +19,10 @@ public class IsSerialisableByServiceBus {
         yield return () => 12.34m;
         yield return () => true;
         yield return () => 'c';
-        yield return () => Guid.NewGuid();
-        yield return () => DateTime.UtcNow;
-        yield return () => DateTimeOffset.UtcNow;
+        // Parameter values appear in test names, so keep them stable between runs.
+        yield return () => new Guid("9a8c03f6-9bdf-4072-a43a-772bdae7bb21");
+        yield return () => new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        yield return () => new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
         yield return () => TimeSpan.FromMinutes(5);
         yield return () => new Uri("https://example.com");
         yield return () => new MemoryStream();

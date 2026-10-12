@@ -3,6 +3,7 @@ using Eventuous.Projections.MongoDB.Tools;
 using Eventuous.Subscriptions.Consumers;
 using Eventuous.Sut.Domain;
 using Eventuous.Tests.Projections.MongoDB.Fixtures;
+using Eventuous.Tools;
 using JetBrains.Annotations;
 using MongoDB.Driver;
 using static Eventuous.Sut.Domain.BookingEvents;
@@ -14,7 +15,7 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
     [Test]
     [Retry(3)]
     [MethodDataSource(typeof(CollectionSource), nameof(CollectionSource.TestOptions))]
-    public async Task ShouldProjectImported(MongoProjectionOptions<BookingDocument>? options) {
+    public async Task ShouldProjectImported(MongoProjectionOptions<BookingDocument>? options, CancellationToken cancellationToken) {
         var evt               = DomainFixture.CreateImportBookingEvent();
         var projectionFixture = new ProjectionTestBase<SutProjection>(nameof(ProjectWithBuilder), fixture);
         var id                = new BookingId(projectionFixture.CreateId());
@@ -22,48 +23,53 @@ public class ProjectWithBuilder(IntegrationFixture fixture) {
 
         await projectionFixture.InitializeAsync();
 
-        var first = await Act(projectionFixture, stream, evt);
+        BookingDocument? deletedDocument;
 
-        var expected = new BookingDocument(id.ToString()) {
-            RoomId         = evt.RoomId,
-            CheckInDate    = evt.CheckIn,
-            CheckOutDate   = evt.CheckOut,
-            BookingPrice   = evt.Price,
-            Outstanding    = evt.Price,
-            Position       = first.Append.GlobalPosition,
-            StreamPosition = (ulong)first.Append.NextExpectedVersion
-        };
+        try {
+            var first = await Act(projectionFixture, stream, evt, cancellationToken);
 
-        await Assert.That(first.Doc).IsEquivalentTo(expected);
+            var expected = new BookingDocument(id.ToString()) {
+                RoomId         = evt.RoomId,
+                CheckInDate    = evt.CheckIn,
+                CheckOutDate   = evt.CheckOut,
+                BookingPrice   = evt.Price,
+                Outstanding    = evt.Price,
+                Position       = first.Append.GlobalPosition,
+                StreamPosition = (ulong)first.Append.NextExpectedVersion
+            };
 
-        var payment = new BookingPaymentRegistered(Guid.NewGuid().ToString(), evt.Price);
+            await Assert.That(first.Doc).IsEquivalentTo(expected);
 
-        var second = await Act(projectionFixture, stream, payment);
+            var payment = new BookingPaymentRegistered(Guid.NewGuid().ToString(), evt.Price);
 
-        expected = expected with {
-            PaidAmount = payment.AmountPaid,
-            Position = second.Append.GlobalPosition,
-            StreamPosition = (ulong)second.Append.NextExpectedVersion
-        };
+            var second = await Act(projectionFixture, stream, payment, cancellationToken);
 
-        await Assert.That(second.Doc).IsEquivalentTo(expected);
+            expected = expected with {
+                PaidAmount = payment.AmountPaid,
+                Position = second.Append.GlobalPosition,
+                StreamPosition = (ulong)second.Append.NextExpectedVersion
+            };
 
-        var cancellation = new BookingCancelled();
+            await Assert.That(second.Doc).IsEquivalentTo(expected);
 
-        var third = await Act(projectionFixture, stream, cancellation);
+            var cancellation = new BookingCancelled();
 
-        await projectionFixture.DisposeAsync();
+            var third = await Act(projectionFixture, stream, cancellation, cancellationToken);
+            deletedDocument = third.Doc;
+        } finally {
+            await projectionFixture.DisposeAsync().NoContext();
+        }
 
-        await Assert.That(third.Doc).IsNull();
+        await Assert.That(deletedDocument).IsNull();
         
         // Extra test to make sure that generated context conversions were used
         await Assert.That(MessageConsumeContextConverter.ConversionCache).IsEmpty();
     }
     
-    static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(ProjectionTestBase<SutProjection> f, StreamName stream, T evt) where T : class {
+    static async Task<(AppendEventsResult Append, BookingDocument? Doc)> Act<T>(ProjectionTestBase<SutProjection> f, StreamName stream, T evt, CancellationToken cancellationToken) where T : class {
         var append = await f.Fixture.AppendEvent(stream, evt);
-        await f.WaitForPosition(append.GlobalPosition);
-        var actual = await f.Fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId());
+        await f.WaitForPosition(append.GlobalPosition, cancellationToken);
+        var actual = await f.Fixture.Mongo.LoadDocument<BookingDocument>(stream.GetId(), cancellationToken: cancellationToken);
 
         return (append, actual);
     }

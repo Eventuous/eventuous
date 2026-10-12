@@ -62,7 +62,8 @@ public class SequenceTests {
     }
 
     public static IEnumerable<Func<(CommitPositionSequence, CommitPosition)>> TestData() {
-        var timestamp = DateTime.Now;
+        // Parameter values appear in test names, so keep them stable between runs and time zones.
+        var timestamp = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
 
         yield return () => ([new(0, 1, timestamp), new(0, 2, timestamp), new(0, 4, timestamp), new(0, 6, timestamp)], new(0, 2, timestamp));
         yield return () => ([new(0, 1, timestamp), new(0, 2, timestamp), new(0, 8, timestamp), new(0, 6, timestamp)], new(0, 2, timestamp));
