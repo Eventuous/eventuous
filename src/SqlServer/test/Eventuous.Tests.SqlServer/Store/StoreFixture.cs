@@ -9,6 +9,8 @@ namespace Eventuous.Tests.SqlServer.Store;
 public sealed class StoreFixture() : StoreFixtureBase<MsSqlContainer>(LogLevel.Information) {
     readonly string _schemaName = GetSchemaName();
 
+    public string SchemaName => _schemaName;
+
     protected override void SetupServices(IServiceCollection services) {
         services.AddEventuousSqlServer(Container.GetConnectionString(), _schemaName, true);
         services.AddEventStore<SqlServerStore>();
