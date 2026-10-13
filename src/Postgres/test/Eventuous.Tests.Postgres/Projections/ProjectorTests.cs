@@ -1,5 +1,3 @@
-extern alias Postgresql;
-
 using Eventuous.Postgresql;
 using Eventuous.Postgresql.Projections;
 using Eventuous.Postgresql.Subscriptions;
@@ -8,7 +6,6 @@ using Eventuous.Sut.Domain;
 using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Postgres.Subscriptions;
 using Npgsql;
-using static Postgresql::Eventuous.Tools.TaskExtensions;
 using Assert = TUnit.Assertions.Assert;
 
 namespace Eventuous.Tests.Postgres.Projections;
@@ -29,7 +26,7 @@ public class ProjectorTests {
         await CreateSchema();
         var commands = await GenerateAndProduceEvents(100);
 
-        await WaitForBookings(commands.Count, cancellationToken).NoContext();
+        await WaitForBookings(commands.Count, cancellationToken);
 
         await using var connection = await _fixture.DataSource.OpenConnectionAsync(cancellationToken);
 
@@ -39,7 +36,7 @@ public class ProjectorTests {
             await using var cmd = new NpgsqlCommand(select, connection);
             cmd.Parameters.AddWithValue("@bookingId", command.BookingId);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-            await Assert.That(await reader.ReadAsync(cancellationToken).NoContext()).IsTrue();
+            await Assert.That(await reader.ReadAsync(cancellationToken)).IsTrue();
             await Assert.That(reader["checkin_date"]).IsEqualTo(command.CheckIn.ToDateTimeUnspecified());
             await Assert.That(reader["price"]).IsEqualTo((decimal)command.Price);
         }
@@ -52,14 +49,14 @@ public class ProjectorTests {
         long projectedCount = 0;
 
         try {
-            await using var connection = await _fixture.DataSource.OpenConnectionAsync(cts.Token).NoContext();
+            await using var connection = await _fixture.DataSource.OpenConnectionAsync(cts.Token);
             await using var cmd        = new NpgsqlCommand($"select count(*) from {_fixture.SchemaName}.bookings", connection);
 
             while (true) {
-                projectedCount = (long)(await cmd.ExecuteScalarAsync(cts.Token).NoContext())!;
+                projectedCount = (long)(await cmd.ExecuteScalarAsync(cts.Token))!;
                 if (projectedCount == expectedCount) return;
 
-                await Task.Delay(100, cts.Token).NoContext();
+                await Task.Delay(100, cts.Token);
             }
         } catch (OperationCanceledException ex) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested) {
             throw new TimeoutException($"Expected {expectedCount} projected bookings within 30 seconds, but observed {projectedCount}.", ex);

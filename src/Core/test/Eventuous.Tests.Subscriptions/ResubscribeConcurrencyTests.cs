@@ -14,7 +14,7 @@ namespace Eventuous.Tests.Subscriptions;
 /// </summary>
 public class ResubscribeConcurrencyTests {
     /// <summary>
-    /// A whole page of messages is in flight before any handler fails, exercising one concurrent drop window.
+    /// A whole page is queued before any handler fails, including messages dequeued after the run fails.
     /// </summary>
     [Test]
     public async Task Burst_of_nacks_produces_a_single_resubscribe(CancellationToken ct) {
@@ -22,7 +22,8 @@ public class ResubscribeConcurrencyTests {
 
         const int messageCount = 8;
 
-        var handler = new BurstFailingHandler(messageCount, ct);
+        var delivered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler   = new BurstFailingHandler(ct);
 
         await using var subscription = new PumpingSubscription(
             new() {
@@ -34,11 +35,13 @@ public class ResubscribeConcurrencyTests {
             new NoOpCheckpointStore(),
             new ConsumePipe().AddDefaultConsumer(handler),
             logs,
-            concurrencyLimit: messageCount,
+            concurrencyLimit: 4,
             // Only the first run delivers — a replacement redelivering the same messages would open a second drop window.
             pump: async (sub, transport, start, run) => {
                 if (transport.Index == 0) {
                     for (var i = 0; i < messageCount; i++) await sub.Deliver(run, start + (ulong)i).NoContext();
+
+                    delivered.TrySetResult();
                 }
 
                 await Task.Delay(Timeout.Infinite, run.Token).NoContext();
@@ -48,12 +51,17 @@ public class ResubscribeConcurrencyTests {
         try {
             await subscription.Subscribe(_ => { }, (_, _, _) => { }, ct);
 
-            // A first nack can cancel the pump. Get every delivery into its handler before allowing any nack.
-            await handler.AllStarted.WaitAsync(TimeSpan.FromSeconds(5), ct).NoContext();
+            // Queue the whole page before a nack can cancel the pump, keeping half the messages behind the four workers.
+            try {
+                await delivered.Task.WaitAsync(TimeSpan.FromSeconds(5), ct).NoContext();
+            } catch (TimeoutException exception) {
+                throw new TimeoutException($"Timed out after 5 seconds waiting for the pump to queue all {messageCount} messages.", exception);
+            }
+
             handler.Release();
 
             (await Wait.Until(() => handler.FailedCount == messageCount, TimeSpan.FromSeconds(5)))
-                .ShouldBeTrue($"all {messageCount} in-flight handlers should have failed, got {handler.FailedCount}");
+                .ShouldBeTrue($"all {messageCount} queued messages should have failed, got {handler.FailedCount}");
 
             (await Wait.Until(() => subscription.SubscribeCalls > 1, TimeSpan.FromSeconds(5))).ShouldBeTrue("the subscription should have resubscribed");
 
@@ -815,21 +823,16 @@ public class ResubscribeConcurrencyTests {
     /// <summary>
     /// Holds all deliveries until the test releases the burst of failures.
     /// </summary>
-    sealed class BurstFailingHandler(int messageCount, CancellationToken testCancellation) : BaseEventHandler {
-        readonly TaskCompletionSource _allStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        readonly TaskCompletionSource _release    = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        int _started;
+    sealed class BurstFailingHandler(CancellationToken testCancellation) : BaseEventHandler {
+        readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int _failed;
 
-        public Task AllStarted => _allStarted.Task;
         public int FailedCount => Volatile.Read(ref _failed);
 
         public void Release() => _release.TrySetResult();
 
         public override async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-            if (Interlocked.Increment(ref _started) == messageCount) _allStarted.TrySetResult();
-
-            // All in-flight operations must fail even if the first nack cancels their subscription run.
+            // Queued messages must fail too, even if the first nack has already cancelled their subscription run.
             await _release.Task.WaitAsync(testCancellation).NoContext();
             Interlocked.Increment(ref _failed);
 

@@ -100,6 +100,7 @@ public class CancelledMessageTests {
 
         await subscription.Unsubscribe(_ => { }, ct);
     }
+
     static async Task WaitFor(Task signal, string phase, CancellationToken ct) {
         try {
             await signal.WaitAsync(RecoveryTimeout, ct).NoContext();
