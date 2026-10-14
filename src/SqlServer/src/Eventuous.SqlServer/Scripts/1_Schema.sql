@@ -11,9 +11,20 @@ IF OBJECT_ID('__schema__.Streams', 'U') IS NULL
             StreamName NVARCHAR(850)      NOT NULL,
             [Version]  INT DEFAULT (-1)   NOT NULL,
             CONSTRAINT PK_Streams PRIMARY KEY CLUSTERED (StreamId) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON),
-            CONSTRAINT UQ_StreamName UNIQUE NONCLUSTERED (StreamName),
-            CONSTRAINT CK_VersionGteNegativeOne CHECK ([Version] >= -1)
+            CONSTRAINT CK_VersionGteNegativeOne CHECK ([Version] >= -1),
+            INDEX UQ_StreamName UNIQUE NONCLUSTERED (StreamName) INCLUDE ([Version])
         );
+    END
+
+-- Upgrade existing databases. Schema.CreateSchema runs this in a transaction, keeping uniqueness protected
+-- while the constraint is replaced. Preserve the name used by check_stream's duplicate-key handling.
+IF EXISTS (
+    SELECT 1 FROM sys.key_constraints
+    WHERE parent_object_id = OBJECT_ID('__schema__.Streams') AND name = N'UQ_StreamName' AND type = 'UQ'
+)
+    BEGIN
+        ALTER TABLE __schema__.Streams DROP CONSTRAINT UQ_StreamName;
+        CREATE UNIQUE NONCLUSTERED INDEX UQ_StreamName ON __schema__.Streams (StreamName) INCLUDE ([Version]);
     END
 
 IF OBJECT_ID('__schema__.Messages', 'U') IS NULL
@@ -34,10 +45,13 @@ IF OBJECT_ID('__schema__.Messages', 'U') IS NULL
             CONSTRAINT UQ_StreamIdAndMessageId UNIQUE NONCLUSTERED (StreamId, MessageId),
             CONSTRAINT CK_StreamPositionGteZero CHECK (StreamPosition >= 0),
             CONSTRAINT CK_JsonDataIsJson CHECK (ISJSON(JsonData) = 1),
-            CONSTRAINT CK_JsonMetadataIsJson CHECK (ISJSON(JsonMetadata) = 1),
-            INDEX IDX_EventsStream (StreamId)
+            CONSTRAINT CK_JsonMetadataIsJson CHECK (ISJSON(JsonMetadata) = 1)
         );
     END
+
+-- UQ_StreamIdAndStreamPosition already supports seeks by StreamId. Remove the redundant index from existing databases.
+-- INDEX IDX_EventsStream (StreamId)
+DROP INDEX IF EXISTS IDX_EventsStream ON __schema__.Messages;
 
 IF OBJECT_ID('__schema__.Checkpoints', 'U') IS NULL
     BEGIN

@@ -17,11 +17,6 @@ BEGIN
         @count_messages INT,
         @new_version INT;
 
-    -- capture inserted rows to compute final position
-    DECLARE @inserted TABLE (
-        GlobalPosition BIGINT
-    );
-
     SELECT @count_messages = COUNT(1) FROM @messages;
 
     EXEC __schema__.check_stream
@@ -47,8 +42,6 @@ BEGIN
             JsonMetadata,
             Created
         )
-        OUTPUT inserted.GlobalPosition
-        INTO @inserted (GlobalPosition)
         SELECT
             message_id,
             message_type,
@@ -58,6 +51,8 @@ BEGIN
             json_metadata,
             ISNULL(@created, SYSUTCDATETIME())
         FROM @messages;
+
+        SET @position = SCOPE_IDENTITY();
 
         UPDATE s
         SET [Version] = @new_version
@@ -98,12 +93,6 @@ BEGIN
             ;THROW;
         END;
     END CATCH;
-
-    -- final GlobalPosition value to return
-    SELECT @position = (
-        SELECT MAX(GlobalPosition)
-        FROM @inserted
-    );
 
     SELECT
         @new_version current_version,
