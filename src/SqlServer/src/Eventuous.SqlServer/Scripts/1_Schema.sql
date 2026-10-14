@@ -45,10 +45,13 @@ IF OBJECT_ID('__schema__.Messages', 'U') IS NULL
             CONSTRAINT UQ_StreamIdAndMessageId UNIQUE NONCLUSTERED (StreamId, MessageId),
             CONSTRAINT CK_StreamPositionGteZero CHECK (StreamPosition >= 0),
             CONSTRAINT CK_JsonDataIsJson CHECK (ISJSON(JsonData) = 1),
-            CONSTRAINT CK_JsonMetadataIsJson CHECK (ISJSON(JsonMetadata) = 1),
-            INDEX IDX_EventsStream (StreamId)
+            CONSTRAINT CK_JsonMetadataIsJson CHECK (ISJSON(JsonMetadata) = 1)
         );
     END
+
+-- UQ_StreamIdAndStreamPosition already supports seeks by StreamId. Remove the redundant index from existing databases.
+-- INDEX IDX_EventsStream (StreamId)
+DROP INDEX IF EXISTS IDX_EventsStream ON __schema__.Messages;
 
 IF OBJECT_ID('__schema__.Checkpoints', 'U') IS NULL
     BEGIN

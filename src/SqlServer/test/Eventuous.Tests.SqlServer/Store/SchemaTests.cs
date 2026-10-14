@@ -11,6 +11,53 @@ public class SchemaTests(StoreFixture fixture) {
     [Test]
     [Arguments(false)]
     [Arguments(true)]
+    public async Task ShouldOmitRedundantStreamIndexAfterRepeatedInitialization(bool legacyIndex) {
+        var schema = new Schema(fixture.SchemaName);
+        await using var connection = new SqlConnection(fixture.Container.GetConnectionString());
+        await connection.OpenAsync();
+
+        if (legacyIndex) {
+            await using var legacy = new SqlCommand($"CREATE INDEX IDX_EventsStream ON {schema.SchemaName}.Messages (StreamId);", connection);
+            await legacy.ExecuteNonQueryAsync();
+        }
+
+        // Exercise the upgrade on a populated table, including an off-row JSON payload.
+        await using var seed = new SqlCommand(
+            $"""
+             INSERT INTO {schema.SchemaName}.Streams (StreamName, [Version]) VALUES (N'preserved-events', 0);
+             INSERT INTO {schema.SchemaName}.Messages
+                 (MessageId, MessageType, StreamId, StreamPosition, JsonData, JsonMetadata, Created)
+             VALUES
+                 (NEWID(), N'TestEvent', SCOPE_IDENTITY(), 0, @data, @metadata, SYSUTCDATETIME());
+             """,
+            connection
+        );
+        var payload = "{\"value\":\"" + new string('x', 10000) + "\"}";
+        seed.Parameters.AddWithValue("@data", payload);
+        seed.Parameters.AddWithValue("@metadata", "{}");
+        await seed.ExecuteNonQueryAsync();
+
+        await AssertIndexAbsent(!legacyIndex);
+        await schema.CreateSchema(fixture.Container.GetConnectionString(), null, default);
+        await AssertIndexAbsent(true);
+        await schema.CreateSchema(fixture.Container.GetConnectionString(), null, default);
+        await AssertIndexAbsent(true);
+
+        await using var preserved = new SqlCommand($"SELECT JsonData FROM {schema.SchemaName}.Messages;", connection);
+        await Assert.That((string)(await preserved.ExecuteScalarAsync())!).IsEqualTo(payload);
+
+        async Task AssertIndexAbsent(bool absent) {
+            await using var index = new SqlCommand(
+                $"SELECT COUNT(*) FROM sys.indexes WHERE object_id = OBJECT_ID('{schema.SchemaName}.Messages') AND name = N'IDX_EventsStream';",
+                connection
+            );
+            await Assert.That((int)(await index.ExecuteScalarAsync())!).IsEqualTo(absent ? 0 : 1);
+        }
+    }
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task ShouldCoverStreamLookupAfterRepeatedInitialization(bool legacyConstraint) {
         var schema = new Schema(fixture.SchemaName);
         await using var connection = new SqlConnection(fixture.Container.GetConnectionString());
