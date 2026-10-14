@@ -13,7 +13,6 @@ namespace Eventuous.Tests.Projections.MongoDB;
 [ClassDataSource<IntegrationFixture>]
 public class ProjectWithBuilder(IntegrationFixture fixture) {
     [Test]
-    [Retry(3)]
     [MethodDataSource(typeof(CollectionSource), nameof(CollectionSource.TestOptions))]
     public async Task ShouldProjectImported(MongoProjectionOptions<BookingDocument>? options, CancellationToken cancellationToken) {
         var evt               = DomainFixture.CreateImportBookingEvent();
