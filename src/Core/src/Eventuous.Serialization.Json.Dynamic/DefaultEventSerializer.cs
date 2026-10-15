@@ -11,6 +11,11 @@ public class DefaultEventSerializer : IEventSerializer {
     const string DynamicSerializationMessage =
         "DefaultEventSerializer uses reflection-based System.Text.Json serialization. Use DefaultStaticEventSerializer with a JsonSerializerContext in trimmed or AOT applications.";
 
+    // Failure results are immutable, so one instance per error kind is shared instead of allocating per event
+    static readonly FailedToDeserialize UnknownType         = new(DeserializationError.UnknownType);
+    static readonly FailedToDeserialize ContentTypeMismatch = new(DeserializationError.ContentTypeMismatch);
+    static readonly FailedToDeserialize PayloadEmpty        = new(DeserializationError.PayloadEmpty);
+
     readonly JsonSerializerOptions _options;
     readonly ITypeMapper           _typeMapper;
 
@@ -29,14 +34,14 @@ public class DefaultEventSerializer : IEventSerializer {
     public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType) {
         var typeMapped = _typeMapper.TryGetType(eventType, out var dataType);
 
-        if (!typeMapped) return new FailedToDeserialize(DeserializationError.UnknownType);
-        if (contentType != ContentType) return new FailedToDeserialize(DeserializationError.ContentTypeMismatch);
+        if (!typeMapped) return UnknownType;
+        if (contentType != ContentType) return ContentTypeMismatch;
 
         var deserialized = JsonSerializer.Deserialize(data, dataType!, _options);
 
         return deserialized != null
             ? new SuccessfullyDeserialized(deserialized)
-            : new FailedToDeserialize(DeserializationError.PayloadEmpty);
+            : PayloadEmpty;
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is annotated with RequiresUnreferencedCode, so an instance only exists if the caller acknowledged the requirement")]

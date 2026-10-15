@@ -52,8 +52,25 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
     /// A run carrying this attempt's own commit handler, so an acknowledgement reaches the handler that
     /// dispatched it, and the base class never has to know checkpoints exist.
     /// </summary>
-    sealed class CheckpointedRun(CancellationToken lifetime, CheckpointCommitHandler checkpoint) : SubscriptionRun(lifetime) {
-        internal CheckpointCommitHandler Checkpoint { get; } = checkpoint;
+    sealed class CheckpointedRun : SubscriptionRun {
+        // Not a primary constructor: the ack and nack delegates close over this run, which an initializer
+        // can't reference.
+        public CheckpointedRun(CancellationToken lifetime, CheckpointCommitHandler checkpoint, EventSubscriptionWithCheckpoint<T> subscription)
+            : base(lifetime) {
+            Checkpoint  = checkpoint;
+            AckMessage  = ctx => subscription.Ack(this, ctx);
+            NackMessage = (ctx, exception) => subscription.NackOnAsyncWorker(this, ctx, exception);
+        }
+
+        internal CheckpointCommitHandler Checkpoint { get; }
+
+        /// <summary>
+        /// Created once per run rather than per message, and bound to this run for the reason given on
+        /// <see cref="HandleInternal"/>.
+        /// </summary>
+        internal Acknowledge AckMessage { get; }
+
+        internal Fail NackMessage { get; }
     }
 
     /// <summary>
@@ -69,7 +86,8 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
                 TimeSpan.FromMilliseconds(Options.CheckpointCommitDelayMs),
                 Options.CheckpointCommitBatchSize,
                 LoggerFactory
-            )
+            ),
+            this
         );
 
         // Registered first, before Connect, so it's the first OnDisconnect registration — and since release
@@ -94,7 +112,8 @@ public abstract class EventSubscriptionWithCheckpoint<T>(
         try {
             Logger.Current = Log;
 
-            var ctx = new AsyncConsumeContext(context, c => Ack(run, c), (c, e) => NackOnAsyncWorker(run, c, e));
+            var checkpointedRun = (CheckpointedRun)run;
+            var ctx             = new AsyncConsumeContext(context, checkpointedRun.AckMessage, checkpointedRun.NackMessage);
             await Handler(ctx).NoContext();
         } catch (OperationCanceledException e) when (context.CancellationToken.IsCancellationRequested) {
             context.LogContext.MessageHandlingFailed(Options.SubscriptionId, context, e);

@@ -1,6 +1,7 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -27,6 +28,9 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     Session? _session;
     int      _disposed;
 
+    readonly string                               _activityNamePrefix;
+    readonly ConcurrentDictionary<string, string> _activityNames = new();
+
     [PublicAPI]
     public bool IsRunning => Volatile.Read(ref _session) is not null;
 
@@ -43,6 +47,8 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
         EventSerializer = eventSerializer ?? Eventuous.EventSerializer.Default;
         Options         = options;
         Log             = Logger.CreateContext(options.SubscriptionId, loggerFactory);
+
+        _activityNamePrefix = $"{Constants.Components.Subscription}.{options.SubscriptionId}/";
     }
 
     public string SubscriptionId => Options.SubscriptionId;
@@ -227,6 +233,10 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
     /// </summary>
     protected virtual SubscriptionRun CreateRun(CancellationToken lifetime) => new(lifetime);
 
+    // Keyed defensively: a transport can still hand over a null type, which the dictionary would reject.
+    string GetActivityName(string? messageType)
+        => _activityNames.GetOrAdd(messageType ?? "", static (type, prefix) => prefix + type, _activityNamePrefix);
+
     // ReSharper disable once CognitiveComplexity
     // ReSharper disable once CyclomaticComplexity
     protected async ValueTask Handler(IMessageConsumeContext context) {
@@ -246,7 +256,7 @@ public abstract class EventSubscription<T> : IMessageSubscription, IAsyncDisposa
             // a pure allocation leak, hot since checkpoint-reached contexts arrive payload-less.
             var activity = EventuousDiagnostics.Enabled && context.Message != null
                 ? SubscriptionActivity.Create(
-                    $"{Constants.Components.Subscription}.{SubscriptionId}/{context.MessageType}",
+                    GetActivityName(context.MessageType),
                     ActivityKind.Internal,
                     context,
                     EventuousDiagnostics.Tags

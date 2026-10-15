@@ -10,6 +10,12 @@ public class MetricsTests(MetricsFixture fixture) : MetricsTestsBase(fixture) {
     public async Task ShouldMeasureSubscriptionGapCountBase_Postgres() {
         await ShouldMeasureSubscriptionGapCountBase();
     }
+
+    [Test]
+    [Retry(3)]
+    public async Task ShouldMeasureSubscriptionDurationBase_Postgres() {
+        await ShouldMeasureSubscriptionDurationBase();
+    }
 }
 
 [ClassDataSource<MetricsFixture>]

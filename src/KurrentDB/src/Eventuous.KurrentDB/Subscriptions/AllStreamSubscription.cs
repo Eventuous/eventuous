@@ -242,7 +242,7 @@ public class AllStreamSubscription : KurrentDBCatchUpSubscriptionBase<AllStreamS
             run.NextSequence(),
             re.Event.Created,
             evt,
-            MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId),
+            evt is null ? null : MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId),
             SubscriptionId,
             cancellationToken
         );

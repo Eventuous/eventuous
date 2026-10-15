@@ -22,14 +22,20 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
     protected override async ValueTask Send(IMessageConsumeContext context, LinkedListNode<IConsumeFilter>? next) {
         if (context.Message == null || next == null) return;
 
-        using var activity = Activity.Current?.Context != context.ParentContext
-            ? SubscriptionActivity.Start(
+        // The subscription's own activity is reused, not owned: disposing it would stop it before the
+        // subscription is done with it, so only an activity started here gets disposed.
+        var reuseCurrent = Activity.Current?.Context == context.ParentContext;
+
+        using var started = reuseCurrent
+            ? null
+            : SubscriptionActivity.Start(
                 $"{Constants.Components.Consumer}.{context.SubscriptionId}/{context.MessageType}",
                 ActivityKind.Consumer,
                 context,
                 _defaultTags
-            )
-            : Activity.Current;
+            );
+
+        var activity = reuseCurrent ? Activity.Current : started;
 
         if (activity?.IsAllDataRequested == true && context is AsyncConsumeContext asyncConsumeContext) {
             activity.SetContextTags(context)?.SetTag(TelemetryTags.Eventuous.Partition, asyncConsumeContext.PartitionId);
@@ -43,7 +49,8 @@ public class TracingFilter : ConsumeFilter<IMessageConsumeContext> {
                     activity.ActivityTraceFlags = ActivityTraceFlags.None;
                 }
 
-                activity.SetActivityStatus(ActivityStatus.Ok());
+                // A handler failure is recorded with Nack, not thrown, and Nack has already set the error status
+                if (!context.HasFailed()) activity.SetActivityStatus(ActivityStatus.Ok());
             }
         }
         catch (Exception e) {

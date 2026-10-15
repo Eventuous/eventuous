@@ -23,6 +23,8 @@ public class MessageConsumeContext(
         CancellationToken cancellationToken
     )
     : IMessageConsumeContext {
+    ContextItems? _items;
+
     /// <inheritdoc />
     public string            MessageId         { get; } = eventId;
     /// <inheritdoc />
@@ -44,7 +46,7 @@ public class MessageConsumeContext(
     /// <inheritdoc />
     public object?           Message           { get; } = message;
     /// <inheritdoc />
-    public ContextItems      Items             { get; } = new();
+    public ContextItems      Items             => _items ?? CreateItems();
     /// <inheritdoc />
     public ActivityContext?  ParentContext     { get; set; }
     /// <inheritdoc />
@@ -57,6 +59,9 @@ public class MessageConsumeContext(
     public string            SubscriptionId    { get; }      = subscriptionId;
     /// <inheritdoc />
     public LogContext        LogContext        { get; set; } = Logger.Current;
+
+    // Published atomically: two first accesses racing must share one bag, or an item added to the losing one is lost
+    ContextItems CreateItems() => Interlocked.CompareExchange(ref _items, new(), null) ?? _items;
 }
 
 public class MessageConsumeContext<T>(IMessageConsumeContext innerContext) : WrappedConsumeContext(innerContext), IMessageConsumeContext<T>

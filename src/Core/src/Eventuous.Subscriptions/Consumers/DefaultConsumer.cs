@@ -8,10 +8,10 @@ using Context;
 // ReSharper disable once ParameterTypeCanBeEnumerable.Local
 public class DefaultConsumer(IEventHandler[] eventHandlers) : IMessageConsumer {
     public async ValueTask Consume(IMessageConsumeContext context) {
-        var scope = new Dictionary<string, object> {
-            {"SubscriptionId", context.SubscriptionId},
-            {"Stream", context.Stream},
-            {"MessageType", context.MessageType}
+        var scope = new KeyValuePair<string, object>[] {
+            new("SubscriptionId", context.SubscriptionId),
+            new("Stream", context.Stream),
+            new("MessageType", context.MessageType)
         };
 
         using var _ = context.LogContext.Logger.BeginScope(scope);

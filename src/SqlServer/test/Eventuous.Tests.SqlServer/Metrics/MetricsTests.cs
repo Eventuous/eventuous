@@ -10,6 +10,12 @@ public class MetricsTests(MetricsFixture fixture) : MetricsTestsBase(fixture) {
     public async Task ShouldMeasureSubscriptionGapCountBase_SqlServer() {
         await ShouldMeasureSubscriptionGapCountBase();
     }
+
+    [Test]
+    [Retry(3)]
+    public async Task ShouldMeasureSubscriptionDurationBase_SqlServer() {
+        await ShouldMeasureSubscriptionDurationBase();
+    }
 }
 
 [ClassDataSource<MetricsFixture>]

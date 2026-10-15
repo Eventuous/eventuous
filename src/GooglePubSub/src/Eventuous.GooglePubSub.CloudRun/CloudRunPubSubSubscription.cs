@@ -47,7 +47,7 @@ public class CloudRunPubSubSubscription(CloudRunPubSubSubscriptionOptions option
                     return Results.BadRequest();
                 }
 
-                subscription.Log.InfoLog?.Log("Received {@Message}", envelope.Message);
+                subscription.Log.DebugLog?.Log("Received message {MessageId}", envelope.Message.MessageId);
                 var data = Convert.FromBase64String(envelope.Message.Data);
 
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract

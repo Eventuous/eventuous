@@ -18,7 +18,7 @@ public abstract class BaseTracer {
 
     protected async Task<T> Trace<T>(StreamName stream, string operation, Func<Task<T>> task) {
         using var activity = StartActivity(stream, operation);
-        using var measure  = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, operation));
+        using var measure  = StartMeasure(operation);
 
         try {
             var result = await task().NoContext();
@@ -27,7 +27,7 @@ public abstract class BaseTracer {
             return result;
         } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
-            measure.SetError();
+            measure?.SetError();
 
             throw;
         }
@@ -35,14 +35,14 @@ public abstract class BaseTracer {
 
     protected async Task Trace(StreamName stream, string operation, Func<Task> task) {
         using var activity = StartActivity(stream, operation);
-        using var measure  = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, operation));
+        using var measure  = StartMeasure(operation);
 
         try {
             await task().NoContext();
             activity?.SetActivityStatus(ActivityStatus.Ok());
         } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
-            measure.SetError();
+            measure?.SetError();
 
             throw;
         }
@@ -55,7 +55,7 @@ public abstract class BaseTracer {
             [EnumeratorCancellation] CancellationToken cancellationToken = default
         ) {
         using var activity = StartActivity(stream, operation);
-        using var measure  = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, operation));
+        using var measure  = StartMeasure(operation);
 
         var enumerator = source.GetAsyncEnumerator(cancellationToken);
 
@@ -67,7 +67,7 @@ public abstract class BaseTracer {
                     moved = await enumerator.MoveNextAsync().NoContext();
                 } catch (Exception e) {
                     activity?.SetActivityStatus(ActivityStatus.Error(e));
-                    measure.SetError();
+                    measure?.SetError();
 
                     throw;
                 }
@@ -80,6 +80,12 @@ public abstract class BaseTracer {
 
         activity?.SetActivityStatus(ActivityStatus.Ok());
     }
+
+    // Nobody listening means nothing to record, so skip the measure and its context rather than allocate both.
+    private protected Measure? StartMeasure(string operation)
+        => MetricsSource.IsEnabled(Measure.EventName)
+            ? Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, operation))
+            : null;
 
     protected static Activity? StartActivity(StreamName stream, string operationName) {
         if (!EventuousDiagnostics.Enabled) return null;

@@ -32,8 +32,6 @@ public abstract class RedisSubscriptionBase<T>(
         metadataSerializer
     )
     where T : RedisSubscriptionBaseOptions {
-    readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
-
     protected GetRedisDatabase GetDatabase { get; } = Ensure.NotNull(getDatabase, "Connection factory");
 
     protected override async ValueTask Connect(SubscriptionRun run) {
@@ -102,7 +100,10 @@ public abstract class RedisSubscriptionBase<T>(
             (ulong)evt.StreamPosition
         );
 
-        var meta = (evt.JsonMetadata == null) ? new() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata));
+        // A payload-less context is acknowledged without entering the pipe, so its metadata would never be read
+        var meta = data is null ? null
+            : evt.JsonMetadata == null ? new()
+            : MetadataSerializer.DeserializeMeta(Options, Encoding.UTF8.GetBytes(evt.JsonMetadata), evt.StreamName, (ulong)evt.StreamPosition);
 
         return AsContext(run, evt, data, meta, cancellationToken);
     }

@@ -245,9 +245,9 @@ public class CommandHandlerBuilder<TCommand, [DynamicallyAccessedMembers(Dynamic
         );
 
         Func<TCommand, IEventWriter> DefaultResolveWriter()
-            => _ => Ensure.NotNull(writer, $"Function to resolve event writer from {typeof(TCommand).Name} is not defined and no default writer is set");
+            => _ => writer ?? throw new ArgumentNullException($"Function to resolve event writer from {typeof(TCommand).Name} is not defined and no default writer is set");
 
         Func<TCommand, IEventReader> DefaultResolveReader()
-            => _ => Ensure.NotNull(reader, $"Function to resolve event reader from {typeof(TCommand).Name} is not defined and no default reader is set");
+            => _ => reader ?? throw new ArgumentNullException($"Function to resolve event reader from {typeof(TCommand).Name} is not defined and no default reader is set");
     }
 }

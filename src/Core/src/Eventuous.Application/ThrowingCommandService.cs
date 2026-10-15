@@ -15,6 +15,6 @@ public class ThrowingCommandService<TState>(ICommandService<TState> inner) : ICo
 
         result.ThrowIfError();
 
-        throw new ApplicationException($"Error handling command {command}");
+        return result;
     }
 }

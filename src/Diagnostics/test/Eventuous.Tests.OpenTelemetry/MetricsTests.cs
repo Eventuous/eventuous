@@ -20,18 +20,16 @@ public abstract class MetricsTestsBase(IMetricsSubscriptionFixtureBase fixture) 
         await gapCount.CheckTag(fixture.DefaultTagKey, fixture.DefaultTagValue);
     }
 
-    // [Fact]
-    // [Trait("Category", "Diagnostics")]
-    // public void ShouldMeasureSubscriptionDuration() {
-    //     Fixture.Output?.WriteLine($"Stream {Fixture.Stream}");
-    //     Assert.NotNull(_values);
-    //     var duration = GetValue(_values, SubscriptionMetrics.ProcessingRateName)!;
-    //
-    //     duration.Should().NotBeNull();
-    //     duration.CheckTag(SubscriptionMetrics.SubscriptionIdTag, Fixture.SubscriptionId);
-    //     duration.CheckTag(Fixture.DefaultTagKey, Fixture.DefaultTagValue);
-    //     duration.CheckTag(SubscriptionMetrics.MessageTypeTag, TestEvent.TypeName);
-    // }
+    protected async Task ShouldMeasureSubscriptionDurationBase() {
+        TestContext.Current?.OutputWriter.WriteLine($"Stream {fixture.Stream}");
+        await Assert.That(_values).IsNotNull();
+        var duration = GetValue(_values!, SubscriptionMetrics.ProcessingRateName);
+
+        await Assert.That(duration).IsNotNull();
+        await duration!.CheckTag(SubscriptionMetrics.SubscriptionIdTag, fixture.SubscriptionId);
+        await duration.CheckTag(fixture.DefaultTagKey, fixture.DefaultTagValue);
+        await duration.CheckTag(SubscriptionMetrics.MessageTypeTag, TestEvent.TypeName);
+    }
 
     static MetricValue? GetValue(MetricValue[] values, string metric) => values.FirstOrDefault(x => x.Name == metric);
 

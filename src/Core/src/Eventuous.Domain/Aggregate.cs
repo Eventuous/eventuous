@@ -13,7 +13,7 @@ public abstract class Aggregate<T> where T : State<T>, new() {
     /// <summary>
     /// Get the list of pending changes (new events) within the scope of the current operation.
     /// </summary>
-    public IReadOnlyCollection<object> Changes => _changes.AsReadOnly();
+    public IReadOnlyCollection<object> Changes => _changesView ??= _changes.AsReadOnly();
 
     /// <summary>
     /// A collection with all the aggregate events, previously persisted and new
@@ -36,9 +36,12 @@ public abstract class Aggregate<T> where T : State<T>, new() {
     /// The current version is set to the original version when the aggregate is loaded from the store.
     /// It should increase for each state transition performed within the scope of the current operation.
     /// </summary>
-    public long CurrentVersion => OriginalVersion + Changes.Count;
+    public long CurrentVersion => OriginalVersion + _changes.Count;
 
     readonly List<object> _changes = [];
+
+    // The view wraps the live list, so it can be created once and reused
+    IReadOnlyCollection<object>? _changesView;
 
     /// <summary>
     /// Adds an event to the list of pending changes.

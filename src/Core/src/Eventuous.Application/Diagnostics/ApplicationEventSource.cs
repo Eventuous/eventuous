@@ -18,10 +18,14 @@ class ApplicationEventSource : EventSource {
     const int CommandHandlerRegisteredId        = 5;
 
     [NonEvent]
-    public void CommandHandlerNotFound<TCommand>() => CommandHandlerNotFound(typeof(TCommand).Name);
+    public void CommandHandlerNotFound<TCommand>() {
+        if (IsEnabled(EventLevel.Error, EventKeywords.All)) CommandHandlerNotFound(typeof(TCommand).Name);
+    }
 
     [NonEvent]
-    public void ErrorHandlingCommand<TCommand>(Exception e) => ErrorHandlingCommand(typeof(TCommand).Name, e.ToString());
+    public void ErrorHandlingCommand<TCommand>(Exception e) {
+        if (IsEnabled(EventLevel.Error, EventKeywords.All)) ErrorHandlingCommand(typeof(TCommand).Name, e.ToString());
+    }
 
     [NonEvent]
     public void CommandHandled<TCommand>() {

@@ -28,7 +28,8 @@ public class RedisAllStreamSubscription(
             var stream         = linkEvent[EventuousRedisKeys.Stream];
             var streamPosition = linkEvent[Position];
 
-            var streamEvents = await database.StreamRangeAsync(new(stream), streamPosition).NoContext();
+            // The link holds the exact entry id, so read that one entry rather than the rest of the source stream
+            var streamEvents = await database.StreamRangeAsync(new(stream), minId: streamPosition, maxId: streamPosition, count: 1).NoContext();
             var entry        = streamEvents[0];
 
             persistentEvents.Add(

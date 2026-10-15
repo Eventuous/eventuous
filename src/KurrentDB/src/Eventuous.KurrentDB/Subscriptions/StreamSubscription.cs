@@ -137,12 +137,14 @@ public class StreamSubscription : KurrentDBCatchUpSubscriptionBase<StreamSubscri
             re.Event.EventNumber
         );
 
-        var meta = MetadataSerializer.DeserializeMeta(
-            Options,
-            re.Event.Metadata,
-            re.Event.EventStreamId,
-            re.Event.EventNumber
-        );
+        var meta = evt is null
+            ? null
+            : MetadataSerializer.DeserializeMeta(
+                Options,
+                re.Event.Metadata,
+                re.Event.EventStreamId,
+                re.Event.EventNumber
+            );
 
         return new(
             re.Event.EventId.ToString(),

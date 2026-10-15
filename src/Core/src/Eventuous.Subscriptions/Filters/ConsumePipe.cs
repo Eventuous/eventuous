@@ -53,7 +53,7 @@ public sealed class ConsumePipe : IAsyncDisposable {
         // Deny adding filter of the same type twice
         if (_filters.Any(x => x.GetType() == filter.GetType())) throw new DuplicateFilterException(filter);
 
-        if (_filters.Count > 1 && !typeof(TIn).IsAssignableFrom(_filters.Last().Produces)) {
+        if (_filters.Count > 0 && !typeof(TIn).IsAssignableFrom(_filters.Last().Produces)) {
             throw new InvalidContextTypeException(_filters.Last().Produces, typeof(TIn));
         }
 

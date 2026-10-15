@@ -225,7 +225,7 @@ public class RabbitMqSubscription : EventSubscription<RabbitMqSubscriptionOption
     MessageConsumeContext CreateContext(BasicDeliverEventArgs received, CancellationToken cancellationToken) {
         var evt = DeserializeData(received.BasicProperties.ContentType!, received.BasicProperties.Type!, received.Body, received.Exchange);
 
-        var meta = received.BasicProperties.Headers != null
+        var meta = evt is not null && received.BasicProperties.Headers != null
             ? new Metadata(received.BasicProperties.Headers.ToDictionary(x => x.Key, x => x.Value)!)
             : null;
 
