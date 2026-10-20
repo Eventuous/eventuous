@@ -9,6 +9,10 @@ on:
       - '*.md'
 
 jobs:
+  code-style:
+    name: Code style
+    uses: ./.github/workflows/code-style.yml
+
   event_file:
     # Consumed by the Test Results workflow (test-results.yml) to publish results on the commit.
     name: "Event File"
@@ -28,7 +32,7 @@ jobs:
 
   nuget:
     runs-on: ubuntu-latest
-    needs: tests
+    needs: [ tests, code-style ]
     permissions:
       id-token: write
       contents: read

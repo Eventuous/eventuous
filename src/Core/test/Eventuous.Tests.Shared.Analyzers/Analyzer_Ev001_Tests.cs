@@ -112,7 +112,7 @@ public class Analyzer_Ev001_Tests {
         var compilation = CreateCompilation(source, includeSharedAssembly: false);
         var analyzer    = new EventUsageAnalyzer();
 
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer);
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(compilation, analyzer, allowCompilationErrors: true);
 
         await Assert.That(diagnostics.Length).IsEqualTo(0);
     }
@@ -128,11 +128,18 @@ public class Analyzer_Ev001_Tests {
         await Assert.That(unresolved).IsEmpty();
     }
 
-    static async Task<Diagnostic[]> GetAnalyzerDiagnosticsAsync(Compilation compilation, EventUsageAnalyzer analyzer) {
+    static async Task<Diagnostic[]> GetAnalyzerDiagnosticsAsync(Compilation compilation, EventUsageAnalyzer analyzer, bool allowCompilationErrors = false) {
+        if (!allowCompilationErrors) {
+            var errors = compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
+            await Assert.That(errors).IsEmpty();
+        }
+
         var withAnalyzers = compilation.WithAnalyzers([analyzer]);
         var diagnostics   = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
-        // Filter out anything not from our analyzer id just in case
-        return [.. diagnostics.Where(d => d.Id == EventUsageAnalyzer.DiagnosticId)];
+
+        // Fail on unexpected diagnostics, including analyzer failures such as AD0001.
+        await Assert.That(diagnostics.Where(d => d.Id != EventUsageAnalyzer.DiagnosticId)).IsEmpty();
+        return [.. diagnostics];
     }
 
     static string LoadAnalyzedSource([CallerFilePath] string? caller = null) {
@@ -148,7 +155,8 @@ public class Analyzer_Ev001_Tests {
             MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Enumerable).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(State<>).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Aggregate<>).Assembly.Location)
+            MetadataReference.CreateFromFile(typeof(Aggregate<>).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(JetBrains.Annotations.UsedImplicitlyAttribute).Assembly.Location)
         };
 
         if (includeSharedAssembly) {
@@ -162,7 +170,7 @@ public class Analyzer_Ev001_Tests {
         var runtimeDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
         refs.AddRange(Directory.GetFiles(runtimeDir, "System.*.dll").Select(dll => MetadataReference.CreateFromFile(dll)).Cast<MetadataReference>());
 
-        TryAddRef(refs, "netstandard");
+        refs.Add(MetadataReference.CreateFromFile(Path.Combine(runtimeDir, "netstandard.dll")));
 
         var compilation = CSharpCompilation.Create(
             assemblyName: "Analyzer_Ev001_Tests_Assembly",
@@ -175,15 +183,5 @@ public class Analyzer_Ev001_Tests {
         );
 
         return compilation;
-    }
-
-    static void TryAddRef(List<MetadataReference> refs, string asmName) {
-        try {
-            var asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == asmName);
-            if (asm != null) refs.Add(MetadataReference.CreateFromFile(asm.Location));
-        }
-        catch {
-            // ignore
-        }
     }
 }

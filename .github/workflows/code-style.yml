@@ -1,0 +1,37 @@
+name: Code style
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Verify code style
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      DOTNET_CLI_UI_LANGUAGE: en-US
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Restore solution
+        run: dotnet restore Eventuous.slnx
+      - name: Verify code style
+        shell: bash
+        run: |
+          set -euo pipefail
+          log_file="$RUNNER_TEMP/dotnet-format.log"
+          dotnet format style Eventuous.slnx --verify-no-changes --no-restore --severity warn --verbosity diagnostic 2>&1 | tee "$log_file"
+          if grep -Fq 'Required references did not load for ' "$log_file"; then
+            echo "::error::Code style verification was incomplete because project references could not be loaded."
+            exit 1
+          fi

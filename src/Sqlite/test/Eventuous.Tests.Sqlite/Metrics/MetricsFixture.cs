@@ -6,7 +6,6 @@ using Eventuous.Sqlite;
 using Eventuous.Sqlite.Subscriptions;
 using Eventuous.Subscriptions.Checkpoints;
 using Eventuous.Subscriptions.Registrations;
-using Eventuous.TestHelpers.TUnit.Logging;
 using Eventuous.Tests.OpenTelemetry.Fakes;
 using Eventuous.Tests.OpenTelemetry.Fixtures;
 using Eventuous.Tests.Sqlite.Fixtures;

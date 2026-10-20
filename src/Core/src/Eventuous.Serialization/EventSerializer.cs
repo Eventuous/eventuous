@@ -10,12 +10,12 @@ namespace Eventuous;
 /// </summary>
 [PublicAPI]
 public static class EventSerializer {
-    static IEventSerializer? _default;
+    static IEventSerializer? defaultSerializer;
 
     /// <summary>
     /// Gets the default event serializer. Throws if not configured.
     /// </summary>
-    public static IEventSerializer Default => _default
+    public static IEventSerializer Default => defaultSerializer
         ?? throw new InvalidOperationException(
             "No default event serializer configured. "
           + "Call EventSerializer.SetDefault() at startup or register IEventSerializer in DI. "
@@ -25,7 +25,7 @@ public static class EventSerializer {
     /// Sets the default event serializer instance.
     /// </summary>
     public static void SetDefault(IEventSerializer serializer)
-        => _default = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        => defaultSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
 
     /// <summary>
     /// Sets the default event serializer only if one has not already been configured.
@@ -34,6 +34,6 @@ public static class EventSerializer {
     public static bool TrySetDefault(IEventSerializer serializer) {
         ArgumentNullException.ThrowIfNull(serializer);
 
-        return Interlocked.CompareExchange(ref _default, serializer, null) == null;
+        return Interlocked.CompareExchange(ref defaultSerializer, serializer, null) == null;
     }
 }

@@ -11,6 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  code-style:
+    name: Code style
+    uses: ./.github/workflows/code-style.yml
+
   event_file:
     # Consumed by the Test Results workflow (test-results.yml) to publish results with the
     # correct PR context.

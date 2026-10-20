@@ -9,13 +9,13 @@ public static class EventuousDiagnostics {
     static EventuousDiagnostics() {
         Enabled        = Environment.GetEnvironmentVariable("EVENTUOUS_DISABLE_DIAGS") != "1";
         ActivitySource = new(InstrumentationName, InstrumentationVersion.Value);
-        listener       = DummyActivityListener.Create();
-        ActivitySource.AddActivityListener(listener);
+        Listener       = DummyActivityListener.Create();
+        ActivitySource.AddActivityListener(Listener);
     }
 
     public const string InstrumentationName = DiagnosticName.BaseName;
 
-    static readonly ActivityListener listener;
+    static readonly ActivityListener Listener;
 
     public static KeyValuePair<string, object?>[] Tags { get; private set; } = [];
 
@@ -46,7 +46,7 @@ public static class EventuousDiagnostics {
 
     public static ActivitySource ActivitySource { get; }
 
-    public static void RemoveDummyListener() => listener.Dispose();
+    public static void RemoveDummyListener() => Listener.Dispose();
 
     public static Meter GetMeter(string name) => new(name, InstrumentationVersion.Value);
 

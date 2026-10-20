@@ -42,7 +42,9 @@ public sealed class IntegrationFixture : IAsyncInitializer, IAsyncDisposable {
         var settings = KurrentDBClientSettings.Create(_esdbContainer.GetConnectionString());
         Client          = new(settings);
         EventStore      = new KurrentDBEventStore(Client);
-        _mongoContainer = new MongoDbBuilder().WithImage("mongo:8").Build();
+        // MongoDB 8 cannot start on affected Linux 6.19+ kernels used by CI runners.
+        // MongoDB 7.0 is unaffected: https://jira.mongodb.org/browse/SERVER-125742
+        _mongoContainer = new MongoDbBuilder().WithImage("mongo:7.0").Build();
         await _mongoContainer.StartAsync();
         var mongoSettings = MongoClientSettings.FromConnectionString(_mongoContainer.GetConnectionString());
         Mongo = new MongoClient(mongoSettings).GetDatabase("bookings");

@@ -11,10 +11,10 @@ public readonly record struct ExpectedStreamVersion(long Value) {
 }
 
 public record struct StreamReadPosition {
-    public StreamReadPosition(long Value) {
-        if (Value < 0) throw new ArgumentOutOfRangeException(nameof(Value), "StreamReadPosition cannot be negative.");
+    public StreamReadPosition(long value) {
+        if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "StreamReadPosition cannot be negative.");
 
-        this.Value = Value;
+        Value = value;
     }
 
     public static readonly StreamReadPosition Start = new(0L);

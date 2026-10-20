@@ -5,6 +5,11 @@
         <IsTestProject>true</IsTestProject>
     </PropertyGroup>
     <ItemGroup>
+        <!-- Analyzer input is compiled and validated by the tests. -->
+        <Compile Remove="Analyzed.cs" />
+        <None Include="Analyzed.cs" />
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="JetBrains.Annotations"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
         <PackageReference Include="NodaTime.Bogus" />

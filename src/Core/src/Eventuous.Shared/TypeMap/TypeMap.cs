@@ -46,23 +46,22 @@ public class TypeMap<TV> {
         public TV?  Value    { get; set; }
     }
 
-    // ReSharper disable once InconsistentNaming
     // ReSharper disable once StaticMemberInGenericType
-    static volatile int _index = -1;
+    static volatile int index = -1;
 
     const int DefaultCapacity = 10;
 
     // ReSharper disable once UnusedTypeParameter
     static class TypeSlot<T> {
         // ReSharper disable once StaticMemberInGenericType
-        internal static readonly int Index = Interlocked.Increment(ref _index);
+        internal static readonly int Index = Interlocked.Increment(ref index);
     }
 
     static int GetIndex<TK>() => TypeSlot<TK>.Index;
 
     static int RecommendedCapacity {
         get {
-            var capacity = _index + 1;
+            var capacity = index + 1;
 
             if (capacity < DefaultCapacity) {
                 capacity = DefaultCapacity;

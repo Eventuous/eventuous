@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using Eventuous.Postgresql.Subscriptions;
-using Eventuous.Tests.Persistence.Base.Fixtures;
 using Eventuous.Tests.Subscriptions.Base;
 
 namespace Eventuous.Tests.Postgres.Subscriptions;
