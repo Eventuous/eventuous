@@ -1,6 +1,7 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Eventuous.Diagnostics;
 using Eventuous.Diagnostics.Metrics;
@@ -12,19 +13,26 @@ using Context;
 using Diagnostics;
 
 public class TracedEventHandler(IEventHandler eventHandler) : IEventHandler {
-    readonly DiagnosticSource _metricsSource = new DiagnosticListener(SubscriptionMetrics.ListenerName);
+    // One listener for all handlers: the metrics listener only observes the latest listener announced under a name.
+    static readonly DiagnosticSource MetricsSource = new DiagnosticListener(SubscriptionMetrics.ListenerName);
 
     readonly KeyValuePair<string, object?>[] _defaultTags = [new (TelemetryTags.Eventuous.EventHandler, eventHandler.GetType().Name)];
 
     public string DiagnosticName { get; } = eventHandler.DiagnosticName;
 
+    readonly string                               _activityNamePrefix = $"{Constants.Components.EventHandler}.{eventHandler.DiagnosticName}/";
+    readonly ConcurrentDictionary<string, string> _activityNames      = new();
+
     public async ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
         using var activity = SubscriptionActivity
-            .Create($"{Constants.Components.EventHandler}.{DiagnosticName}/{context.MessageType}", ActivityKind.Internal, tags: _defaultTags)
+            .Create(GetActivityName(context.MessageType), ActivityKind.Internal, tags: _defaultTags)
             ?.SetContextTags(context)
             ?.Start();
 
-        using var measure = Measure.Start(_metricsSource, new SubscriptionMetrics.SubscriptionMetricsContext(DiagnosticName, context));
+        // Nobody listening means nothing to record, so skip the measure and its context rather than allocate both.
+        using var measure = MetricsSource.IsEnabled(Measure.EventName)
+            ? Measure.Start(MetricsSource, new SubscriptionMetrics.SubscriptionMetricsContext(DiagnosticName, context))
+            : null;
 
         try {
             var status = await eventHandler.HandleEvent(context).NoContext();
@@ -38,9 +46,13 @@ public class TracedEventHandler(IEventHandler eventHandler) : IEventHandler {
             return EventHandlingStatus.Pending;
         } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e, $"Error handling {context.MessageType}"));
-            measure.SetError();
+            measure?.SetError();
 
             throw;
         }
     }
+
+    // Keyed defensively: a transport can still hand over a null type, which the dictionary would reject.
+    string GetActivityName(string? messageType)
+        => _activityNames.GetOrAdd(messageType ?? "", static (type, prefix) => prefix + type, _activityNamePrefix);
 }

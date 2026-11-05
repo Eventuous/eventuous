@@ -16,12 +16,11 @@ public sealed class Measure(DiagnosticSource diagnosticSource, object context) :
         Justification = "MeasureContext is not referencing anything."
     )]
     void Record() {
-        var stoppedAt = DateTime.UtcNow;
-        var duration  = stoppedAt - _startedAt;
+        var duration = Stopwatch.GetElapsedTime(_startedAt);
         diagnosticSource.Write(EventName, new MeasureContext(duration, _error, context));
     }
 
-    readonly DateTime _startedAt = DateTime.UtcNow;
+    readonly long _startedAt = Stopwatch.GetTimestamp();
 
     bool _error;
 

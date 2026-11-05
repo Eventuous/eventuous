@@ -216,7 +216,7 @@ public abstract class PersistentSubscriptionBase<T> : EventSubscription<T> where
             run.NextSequence(),
             re.Event.Created,
             evt,
-            MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId, re.Event.EventNumber),
+            evt is null ? null : MetadataSerializer.DeserializeMeta(Options, re.Event.Metadata, re.Event.EventStreamId, re.Event.EventNumber),
             SubscriptionId,
             cancellationToken
         );

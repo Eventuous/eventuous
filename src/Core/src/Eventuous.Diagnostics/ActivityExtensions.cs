@@ -5,9 +5,10 @@ namespace Eventuous.Diagnostics;
 
 public static class ActivityExtensions {
     extension(Activity activity) {
+        // Same result as searching Tags, which only yields string values, without allocating an enumerator and a closure.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         string? GetParentTag(string tag)
-            => activity.Parent?.Tags.FirstOrDefault(x => x.Key == tag).Value;
+            => activity.Parent?.GetTagItem(tag) as string;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Activity CopyParentTag(string tag, string? parentTag = null) {

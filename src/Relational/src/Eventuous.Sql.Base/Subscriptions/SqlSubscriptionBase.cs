@@ -40,8 +40,6 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
     : EventSubscriptionWithCheckpoint<TOptions>(options, checkpointStore, consumePipe, concurrencyLimit, kind, loggerFactory, eventSerializer, metaSerializer),
         IMeasuredSubscription
     where TOptions : SqlSubscriptionOptionsBase where TConnection : DbConnection {
-    readonly IMetadataSerializer _metaSerializer = DefaultMetadataSerializer.Instance;
-
     /// <summary>
     /// Create and open the SQL connection
     /// </summary>
@@ -264,7 +262,10 @@ public abstract class SqlSubscriptionBase<TOptions, TConnection>(
 
         var data = DeserializeData(ContentType, evt.MessageType, Encoding.UTF8.GetBytes(evt.JsonData), evt.StreamName!, (ulong)evt.StreamPosition);
 
-        var meta = evt.JsonMetadata == null ? new() : _metaSerializer.Deserialize(Encoding.UTF8.GetBytes(evt.JsonMetadata!));
+        // A payload-less context is acknowledged without entering the pipe, so its metadata would never be read
+        var meta = data is null ? null
+            : evt.JsonMetadata == null ? new()
+            : MetadataSerializer.DeserializeMeta(Options, Encoding.UTF8.GetBytes(evt.JsonMetadata), evt.StreamName!, (ulong)evt.StreamPosition);
 
         return AsContext(run, evt, data, meta, cancellationToken);
     }

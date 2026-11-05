@@ -1,8 +1,6 @@
 // Copyright (C) Eventuous HQ OÜ. All rights reserved
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics;
-
 namespace Eventuous.Diagnostics;
 
 public class TracedCommandService<TState> : ICommandService<TState> where TState : State<TState>, new() {
@@ -10,8 +8,7 @@ public class TracedCommandService<TState> : ICommandService<TState> where TState
 
     ICommandService<TState> InnerService { get; }
 
-    readonly string           _appServiceTypeName;
-    readonly DiagnosticSource _metricsSource = new DiagnosticListener(CommandServiceMetrics.ListenerName);
+    readonly string _appServiceTypeName;
 
     TracedCommandService(ICommandService<TState> appService) {
         _appServiceTypeName = appService.GetType().Name;
@@ -23,7 +20,6 @@ public class TracedCommandService<TState> : ICommandService<TState> where TState
         => CommandServiceActivity.TryExecute(
             _appServiceTypeName,
             command,
-            _metricsSource,
             InnerService.Handle,
             cancellationToken
         );

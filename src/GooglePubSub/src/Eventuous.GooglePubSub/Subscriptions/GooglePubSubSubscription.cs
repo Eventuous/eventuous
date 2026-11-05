@@ -138,7 +138,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
 
             Logger.Current = Log;
 
-            var evt = DeserializeData(contentType, eventType, msg.Data.ToByteArray(), _topicName.TopicId);
+            var evt = DeserializeData(contentType, eventType, msg.Data.Memory, _topicName.TopicId);
 
             var ctx = new MessageConsumeContext(
                 msg.MessageId,
@@ -151,7 +151,7 @@ public class GooglePubSubSubscription : EventSubscription<PubSubSubscriptionOpti
                 run.NextSequence(),
                 msg.PublishTime.ToDateTime(),
                 evt,
-                AsMeta(msg.Attributes),
+                evt is null ? null : AsMeta(msg.Attributes),
                 SubscriptionId,
                 ct
             );

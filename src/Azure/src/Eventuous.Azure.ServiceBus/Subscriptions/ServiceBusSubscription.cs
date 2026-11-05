@@ -110,7 +110,6 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
 
         Logger.Current = Log;
         var evt                   = DeserializeData(contentType, eventType, msg.Body, streamName);
-        var applicationProperties = msg.ApplicationProperties.Concat(MessageProperties(msg));
 
         var ctx = new MessageConsumeContext(
             msg.MessageId,
@@ -123,7 +122,7 @@ public class ServiceBusSubscription : EventSubscription<ServiceBusSubscriptionOp
             run.NextSequence(),
             msg.EnqueuedTime.UtcDateTime,
             evt,
-            AsMeta(applicationProperties),
+            evt is null ? null : AsMeta(msg.ApplicationProperties.Concat(MessageProperties(msg))),
             SubscriptionId,
             ct
         );

@@ -9,19 +9,24 @@ namespace Eventuous;
 
 [PublicAPI]
 public class DefaultStaticEventSerializer(JsonSerializerContext context, ITypeMapper? typeMapper = null) : IEventSerializer {
+    // Failure results are immutable, so one instance per error kind is shared instead of allocating per event
+    static readonly FailedToDeserialize UnknownType         = new(DeserializationError.UnknownType);
+    static readonly FailedToDeserialize ContentTypeMismatch = new(DeserializationError.ContentTypeMismatch);
+    static readonly FailedToDeserialize PayloadEmpty        = new(DeserializationError.PayloadEmpty);
+
     readonly ITypeMapper _typeMapper = typeMapper ?? TypeMap.Instance;
 
     public DeserializationResult DeserializeEvent(ReadOnlySpan<byte> data, string eventType, string contentType) {
         var typeMapped = _typeMapper.TryGetType(eventType, out var dataType);
 
-        if (!typeMapped) return new FailedToDeserialize(DeserializationError.UnknownType);
-        if (contentType != ContentType) return new FailedToDeserialize(DeserializationError.ContentTypeMismatch);
+        if (!typeMapped) return UnknownType;
+        if (contentType != ContentType) return ContentTypeMismatch;
 
         var deserialized = JsonSerializer.Deserialize(data, dataType!, context);
 
         return deserialized != null
             ? new SuccessfullyDeserialized(deserialized)
-            : new FailedToDeserialize(DeserializationError.PayloadEmpty);
+            : PayloadEmpty;
     }
 
     public SerializationResult SerializeEvent(object evt)

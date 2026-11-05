@@ -5,7 +5,6 @@
 
 namespace Eventuous.Diagnostics.Tracing;
 
-using Metrics;
 using static Constants;
 
 public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
@@ -21,8 +20,9 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
         ) {
         using var activity = StartActivity(stream, Operations.AppendEvents);
 
-        using var measure = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, Operations.AppendEvents));
+        using var measure = StartMeasure(Operations.AppendEvents);
 
+        // Snapshot, so the inner writer can't see the caller change the collection while the append is in flight
         var tracedEvents = events
             .Select(x => x with { Metadata = x.Metadata.AddActivityTags(activity) })
             .ToArray();
@@ -34,7 +34,7 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
             return result;
         } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
-            measure.SetError();
+            measure?.SetError();
 
             throw;
         }
@@ -46,7 +46,7 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
         var       streamNames = new StreamName(string.Join(", ", appends.Select(a => a.StreamName.ToString())));
         using var activity    = StartActivity(streamNames, Operations.AppendEvents);
 
-        using var measure = Measure.Start(MetricsSource, new PersistenceMetricsContext(ComponentName, Operations.AppendEvents));
+        using var measure = StartMeasure(Operations.AppendEvents);
 
         var tracedAppends = appends.Select(a => a with { Events = [.. a.Events.Select(x => x with { Metadata = x.Metadata.AddActivityTags(activity) })] }).ToArray();
 
@@ -57,7 +57,7 @@ public class TracedEventWriter(IEventWriter writer) : BaseTracer, IEventWriter {
             return results;
         } catch (Exception e) {
             activity?.SetActivityStatus(ActivityStatus.Error(e));
-            measure.SetError();
+            measure?.SetError();
 
             throw;
         }

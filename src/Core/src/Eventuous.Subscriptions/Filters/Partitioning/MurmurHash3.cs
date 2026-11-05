@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Eventuous.Subscriptions.Filters.Partitioning;
 
@@ -11,21 +12,9 @@ static class MurmurHash3 {
 
     const uint Seed = 0xc58f1a7b;
 
-    const int CharSize = sizeof(char);
-
-    static unsafe Span<byte> GetBytes(string data)
-    {
-        ArgumentNullException.ThrowIfNull(data);
-        if (data.Length == 0) return Span<byte>.Empty;
-
-        fixed (char* p = data)
-        {
-            return new(p, data.Length * CharSize);
-        }
-    }
-
     public static uint Hash(string partitionKey) {
-        var bytes    = GetBytes(partitionKey);
+        ArgumentNullException.ThrowIfNull(partitionKey);
+        var bytes    = MemoryMarshal.AsBytes(partitionKey.AsSpan());
         var length   = bytes.Length;
         var h1       = Seed;
         var tailLen  = length & 3;

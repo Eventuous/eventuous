@@ -53,6 +53,20 @@ public class ConsumePipeTests {
         await Assert.That(filter.Disposals).IsEqualTo(1);
     }
 
+    [Test]
+    public async Task ShouldRejectSecondFilterThatCannotConsumeWhatTheFirstProduces() {
+        // The first filter produces IMessageConsumeContext, the second needs AsyncConsumeContext
+        var pipe = new ConsumePipe().AddFilterLast(new TestFilter(Key, "payload"));
+
+        await Assert.That(() => pipe.AddFilterLast(new AsyncOnlyFilter())).Throws<InvalidContextTypeException>();
+        await Assert.That(pipe.RegisteredFilters.Count()).IsEqualTo(1);
+    }
+
+    class AsyncOnlyFilter : ConsumeFilter<AsyncConsumeContext> {
+        protected override ValueTask Send(AsyncConsumeContext context, LinkedListNode<IConsumeFilter>? next)
+            => next?.Value.Send(context, next.Next) ?? default;
+    }
+
     /// <summary>
     /// Blocks inside <see cref="DisposeAsync"/> until released, so a second disposal can be observed while the
     /// first one is still running.

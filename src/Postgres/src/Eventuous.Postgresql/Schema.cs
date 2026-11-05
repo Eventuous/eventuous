@@ -17,19 +17,19 @@ public class Schema(string schema = Schema.DefaultSchema) {
 
     public string Name => schema;
 
-    public string StreamMessage       => GetStreamMessageTypeName(schema);
-    public string AppendEvents        => $"select * from {schema}.append_events(@_stream_name, @_expected_version, @_created, @_messages)";
-    public string ReadStreamForwards  => $"select * from {schema}.read_stream_forwards(@_stream_name, @_from_position, @_count)";
-    public string ReadStreamBackwards => $"select * from {schema}.read_stream_backwards(@_stream_name, @_from_position, @_count)";
-    public string ReadStreamSub       => $"select * from {schema}.read_stream_sub(@_stream_id, @_stream_name, @_from_position, @_count)";
-    public string ReadAllForwards     => $"select * from {schema}.read_all_forwards(@_from_position, @_count)";
-    public string CheckStream         => $"select * from {schema}.check_stream(@_stream_name, @_expected_version)";
-    public string StreamExists        => $"select exists (select 1 from {schema}.streams where stream_name = (@name))";
-    public string TruncateStream      => $"select * from {schema}.truncate_stream(@_stream_name, @_expected_version, @_position)";
-    public string GetCheckpointSql    => $"select position from {schema}.checkpoints where id=(@checkpointId)";
-    public string AddCheckpointSql    => $"insert into {schema}.checkpoints (id) values (@checkpointId)";
-    public string UpdateCheckpointSql => $"update {schema}.checkpoints set position=(@position) where id=(@checkpointId)";
-    public string TryInsertTombstone  => $"select {schema}.try_insert_tombstone(@_gap_position, @_stream_name, @_type, @_id)";
+    public string StreamMessage       { get; } = GetStreamMessageTypeName(schema);
+    public string AppendEvents        { get; } = $"select * from {schema}.append_events(@_stream_name, @_expected_version, @_created, @_messages)";
+    public string ReadStreamForwards  { get; } = $"select * from {schema}.read_stream_forwards(@_stream_name, @_from_position, @_count)";
+    public string ReadStreamBackwards { get; } = $"select * from {schema}.read_stream_backwards(@_stream_name, @_from_position, @_count)";
+    public string ReadStreamSub       { get; } = $"select * from {schema}.read_stream_sub(@_stream_id, @_stream_name, @_from_position, @_count)";
+    public string ReadAllForwards     { get; } = $"select * from {schema}.read_all_forwards(@_from_position, @_count)";
+    public string CheckStream         { get; } = $"select * from {schema}.check_stream(@_stream_name, @_expected_version)";
+    public string StreamExists        { get; } = $"select exists (select 1 from {schema}.streams where stream_name = (@name))";
+    public string TruncateStream      { get; } = $"select * from {schema}.truncate_stream(@_stream_name, @_expected_version, @_position)";
+    public string GetCheckpointSql    { get; } = $"select position from {schema}.checkpoints where id=(@checkpointId)";
+    public string AddCheckpointSql    { get; } = $"insert into {schema}.checkpoints (id) values (@checkpointId)";
+    public string UpdateCheckpointSql { get; } = $"update {schema}.checkpoints set position=(@position) where id=(@checkpointId)";
+    public string TryInsertTombstone  { get; } = $"select {schema}.try_insert_tombstone(@_gap_position, @_stream_name, @_type, @_id)";
 
     static readonly Assembly Assembly = typeof(Schema).Assembly;
 
